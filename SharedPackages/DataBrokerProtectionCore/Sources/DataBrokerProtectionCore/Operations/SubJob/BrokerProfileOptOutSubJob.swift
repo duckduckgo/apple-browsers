@@ -65,13 +65,13 @@ struct BrokerProfileOptOutSubJob {
         }
 
         let stageDurationContext = createStageDurationContext(for: brokerProfileQueryData,
-                                                             identifiers: identifiers,
-                                                             extractedProfile: extractedProfile,
-                                                             database: dependencies.database,
-                                                             pixelHandler: dependencies.pixelHandler,
-                                                             vpnConnectionState: vpnConnectionState,
-                                                             vpnBypassStatus: vpnBypassStatus,
-                                                             featureFlagger: dependencies.featureFlagger)
+                                                              identifiers: identifiers,
+                                                              extractedProfile: extractedProfile,
+                                                              database: dependencies.database,
+                                                              pixelHandler: dependencies.pixelHandler,
+                                                              vpnConnectionState: vpnConnectionState,
+                                                              vpnBypassStatus: vpnBypassStatus,
+                                                              featureFlagger: dependencies.featureFlagger)
 
         // Set up a defer block to report opt-out job completion regardless of its success:
         defer {

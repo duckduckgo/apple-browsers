@@ -55,7 +55,7 @@ enum SettingsPixel: PixelKitEvent {
     /**
      * Event Trigger: Browser Theme Appearance settings was changed.
      *
-     * > Note: This is a unique pixel.
+     * > Note: This pixel will be fired everytime the setting is changed (non uniqued).
      *
      * > Related links:
      * [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210380019277469?focus=true)
@@ -69,7 +69,7 @@ enum SettingsPixel: PixelKitEvent {
     /**
      * Event Trigger: Browser Theme Name settings was changed.
      *
-     * > Note: This is a unique pixel.
+     * > Note: This pixel will be fired everytime the setting is changed (non uniqued).
      *
      * > Related links:
      * [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1212520579673409?focus=true)

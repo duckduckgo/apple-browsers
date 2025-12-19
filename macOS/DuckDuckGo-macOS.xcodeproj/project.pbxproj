@@ -3345,8 +3345,6 @@
 		BB32C5952DCCF77F00775E80 /* RampView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C5932DCCF77C00775E80 /* RampView.swift */; };
 		BB32C5972DCCF7AA00775E80 /* PinnedTabRampView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C5962DCCF79D00775E80 /* PinnedTabRampView.swift */; };
 		BB32C5982DCCF7AA00775E80 /* PinnedTabRampView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C5962DCCF79D00775E80 /* PinnedTabRampView.swift */; };
-		BB32C59A2DCD2CA600775E80 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C5992DCD2CA300775E80 /* ColorPalette.swift */; };
-		BB32C59B2DCD2CA600775E80 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C5992DCD2CA300775E80 /* ColorPalette.swift */; };
 		BB32C59D2DCD417600775E80 /* ColorsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C59C2DCD416E00775E80 /* ColorsProviding.swift */; };
 		BB32C59E2DCD417600775E80 /* ColorsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C59C2DCD416E00775E80 /* ColorsProviding.swift */; };
 		BB33643F2EE0B4EA003F50FF /* ReinstallingUserDetecting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB33643E2EE0B4EA003F50FF /* ReinstallingUserDetecting.swift */; };
@@ -6019,7 +6017,6 @@
 		BB32A87C2E3CF75700E0C2AF /* VPNUpsellPopoverViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellPopoverViewModelTests.swift; sourceTree = "<group>"; };
 		BB32C5932DCCF77C00775E80 /* RampView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RampView.swift; sourceTree = "<group>"; };
 		BB32C5962DCCF79D00775E80 /* PinnedTabRampView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabRampView.swift; sourceTree = "<group>"; };
-		BB32C5992DCD2CA300775E80 /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
 		BB32C59C2DCD416E00775E80 /* ColorsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorsProviding.swift; sourceTree = "<group>"; };
 		BB33643E2EE0B4EA003F50FF /* ReinstallingUserDetecting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallingUserDetecting.swift; sourceTree = "<group>"; };
 		BB349A4D2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserProvider.swift; sourceTree = "<group>"; };
@@ -11582,7 +11579,6 @@
 				BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */,
 				BB7BAAC12DDBB089004A5A58 /* AddressBarStyleProviding.swift */,
 				BB960BD22DD788FD002C46DD /* BookmarksIconsProviding.swift */,
-				BB32C5992DCD2CA300775E80 /* ColorPalette.swift */,
 				BB32C59C2DCD416E00775E80 /* ColorsProviding.swift */,
 				BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */,
 				BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */,
@@ -14520,7 +14516,6 @@
 				987799F72999996B005D8EB6 /* BookmarkDatabase.swift in Sources */,
 				EE1886522EB3BA4900A46272 /* NewImportSummaryView.swift in Sources */,
 				F1C5763F2BFF972900C78647 /* SubscriptionUIHandling.swift in Sources */,
-				BB32C59B2DCD2CA600775E80 /* ColorPalette.swift in Sources */,
 				B541A3552E858041004AEAAD /* ThemeColors.swift in Sources */,
 				31C26A0A2CBE9D2700FFF462 /* PreferencesAIChat.swift in Sources */,
 				CC438E1E2EBCE234008537AD /* DefaultBrowserAndDockPromptUIProvider.swift in Sources */,
@@ -16871,7 +16866,6 @@
 				CCAED3B82EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDecider+InactiveUser.swift in Sources */,
 				CCAED3B92EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDeciding.swift in Sources */,
 				7BAB80C72E2A420400F59FF4 /* UpdateCheckActor.swift in Sources */,
-				BB32C59A2DCD2CA600775E80 /* ColorPalette.swift in Sources */,
 				379858102D730EDA008773F6 /* HistoryViewDeleteDialogModel.swift in Sources */,
 				31C26A0B2CBE9D2700FFF462 /* PreferencesAIChat.swift in Sources */,
 				EE7E0FD72E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */,

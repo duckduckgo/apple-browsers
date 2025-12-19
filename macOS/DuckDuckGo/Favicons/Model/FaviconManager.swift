@@ -175,6 +175,7 @@ final class FaviconManager: FaviconManagement {
 
     func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> Favicon? {
         await awaitFaviconsLoaded()
+        guard !Task.isCancelled else { return nil }
 
         // If we have links from the page, try those first
         // Fetch favicons if needed
@@ -183,6 +184,7 @@ final class FaviconManager: FaviconManagement {
         if let favicon = await cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.map(\.href), for: documentUrl) {
             return favicon
         }
+        guard !Task.isCancelled else { return nil }
 
         // If main links failed or were empty, try fallback
         let fallbackLinks = fallbackFaviconLinks(for: documentUrl)

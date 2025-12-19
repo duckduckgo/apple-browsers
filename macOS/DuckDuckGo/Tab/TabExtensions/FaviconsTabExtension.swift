@@ -94,18 +94,17 @@ extension FaviconsTabExtension: FaviconUserScriptDelegate {
     @MainActor
     func faviconUserScript(_ faviconUserScript: FaviconUserScript, didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink], for documentUrl: URL, in webView: WKWebView?) {
         guard documentUrl != .error, documentUrl == content?.urlForWebView else { return }
+        // old task cancelled in setter
         faviconHandlingTask = Task { [weak self, faviconManagement] in
-            if let favicon = await faviconManagement.handleFaviconLinks(faviconLinks, documentUrl: documentUrl, webView: webView) {
-                self?.favicon = favicon.image
+            if let favicon = await faviconManagement.handleFaviconLinks(faviconLinks, documentUrl: documentUrl, webView: webView),
+               !Task.isCancelled, let self, documentUrl == content?.urlForWebView {
+                self.favicon = favicon.image
             }
         }
     }
 }
 
-extension FaviconsTabExtension: NavigationResponder {
-}
-
-protocol FaviconsTabExtensionProtocol: AnyObject, NavigationResponder {
+protocol FaviconsTabExtensionProtocol: AnyObject {
     @MainActor
     func loadCachedFavicon(oldValue: TabContent?, isBurner: Bool, error: Error?)
 

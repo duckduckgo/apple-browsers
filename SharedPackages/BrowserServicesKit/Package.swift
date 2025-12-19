@@ -637,6 +637,7 @@ let package = Package(
                 "BookmarksTestsUtils",
                 "DDGSync",
                 "PersistenceTestingUtils",
+                "PrivacyConfigTestsUtils",
                 "NetworkingTestingUtils"
             ],
             resources: [

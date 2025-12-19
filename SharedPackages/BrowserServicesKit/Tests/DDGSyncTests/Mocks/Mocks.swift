@@ -23,6 +23,7 @@ import Gzip
 import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 import Networking
 
 @testable import DDGSync

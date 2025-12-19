@@ -33,83 +33,90 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
     @Test("Get and set observable throwing value")
     func getAndSet() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
+        let key = "observableThrowingValue"
 
         // Given - empty store
-        #expect(try store.observableThrowingValue.get() == nil)
+        #expect(try store.object(forKey: key) as? Int == nil)
 
         // When - set a value
-        try store.observableThrowingValue.set(42)
+        try store.set(42, forKey: key)
 
         // Then - value is retrieved
-        #expect(try store.observableThrowingValue.get() == 42)
+        #expect(try store.object(forKey: key) as? Int == 42)
     }
 
     @Test("Throws on get")
     func throwsOnGet() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
+        let key = "observableThrowingValue"
         store.shouldThrowOnGet = true
 
         // When/Then - get throws
         #expect(throws: InMemoryObservableThrowingKeyValueStore.MockError.getError) {
-            try store.observableThrowingValue.get()
+            try store.object(forKey: key)
         }
     }
 
     @Test("Throws on set")
     func throwsOnSet() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
+        let key = "observableThrowingValue"
         store.shouldThrowOnSet = true
 
         // When/Then - set throws
         #expect(throws: InMemoryObservableThrowingKeyValueStore.MockError.setError) {
-            try store.observableThrowingValue.set(42)
+            try store.set(42, forKey: key)
         }
     }
 
     @Test("Remove value sets to nil")
     func removeValue() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
+        let key = "observableThrowingValue"
 
         // Given - value exists
-        try store.observableThrowingValue.set(42)
-        #expect(try store.observableThrowingValue.get() == 42)
+        try store.set(42, forKey: key)
+        #expect(try store.object(forKey: key) as? Int == 42)
 
-        // When - set to nil
-        try store.observableThrowingValue.set(nil)
+        // When - remove
+        try store.removeObject(forKey: key)
 
         // Then - value is removed
-        #expect(try store.observableThrowingValue.get() == nil)
+        #expect(try store.object(forKey: key) as? Int == nil)
     }
 
     @Test("Multiple properties store independently")
     func multipleProperties() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
+        let key1 = "observableThrowingValue"
+        let key2 = "observableThrowingName"
 
-        // When - set values on different properties
-        try store.observableThrowingValue.set(42)
-        try store.observableThrowingName.set("Alice")
+        // When - set values for different keys
+        try store.set(42, forKey: key1)
+        try store.set("Alice", forKey: key2)
 
         // Then - both values are stored independently
-        #expect(try store.observableThrowingValue.get() == 42)
-        #expect(try store.observableThrowingName.get() == "Alice")
+        #expect(try store.object(forKey: key1) as? Int == 42)
+        #expect(try store.object(forKey: key2) as? String == "Alice")
 
         // When - modify one
-        try store.observableThrowingValue.set(100)
+        try store.set(100, forKey: key1)
 
         // Then - other remains unchanged
-        #expect(try store.observableThrowingValue.get() == 100)
-        #expect(try store.observableThrowingName.get() == "Alice")
+        #expect(try store.object(forKey: key1) as? Int == 100)
+        #expect(try store.object(forKey: key2) as? String == "Alice")
     }
 
-    @Test("Value property works")
-    func usingValueProperty() throws {
+    @Test("Direct dictionary access works")
+    func directDictionaryAccess() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
+        let key = "observableThrowingValue"
 
-        // When - use value property
-        try store.observableThrowingValue.set(42)
+        // When - set value
+        try store.set(42, forKey: key)
 
-        // Then - value property returns same value
-        #expect(try store.observableThrowingValue.value == 42)
+        // Then - direct dictionary access returns same value
+        #expect(store.underlyingDict[key] as? Int == 42)
     }
 
     // MARK: - Observable Tests

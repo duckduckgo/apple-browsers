@@ -17,27 +17,23 @@
 //
 
 import AppKit
-import Macros
 import Persistence
 
-@Storage
-protocol AIChatDebugURLSettings: AnyObject, KeyValueStoring {
-    var customURL: String? { get set }
+struct AIChatDebugURLSettings: StoringKeys {
+    let customURL = StorageKey<String>(.aiChatDebugURLSettings)
 }
 
-extension UserDefaults: AIChatDebugURLSettings {}
+extension KeyedStoring where Keys == AIChatDebugURLSettings {
 
-extension AIChatDebugURLSettings {
-
-    public var customURLHostname: String? {
-        if let customURL = customURL,
+    var customURLHostname: String? {
+        if let customURL = self.customURL,
             let url = URL(string: customURL) {
             return url.host
         }
         return nil
     }
 
-    public func reset() {
-        customURL = nil
+    func resetCustomURL() {
+        self.customURL = nil
     }
 }

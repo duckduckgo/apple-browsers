@@ -62,5 +62,17 @@ extension InMemoryKeyValueStore: DictionaryRepresentable {
     }
 }
 
+// MARK: - KeyedStoring Convenience
+
+extension InMemoryKeyValueStore {
+    public func keyedStoring<Keys: StoringKeys>(for keysType: Keys.Type = Keys.self) -> some KeyedStoring<Keys> {
+        return KeyedStorage(storage: self)
+    }
+
+    public func observableKeyedStoring<Keys: StoringKeys>(for keysType: Keys.Type = Keys.self) -> some ObservableKeyedStoring<Keys> {
+        return ObservableKeyedStorage(storage: self)
+    }
+}
+
 /// Backward compatibility typealias for existing code
 public typealias MockKeyValueStore = InMemoryKeyValueStore

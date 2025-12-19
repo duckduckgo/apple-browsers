@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import UserScript
 import WebKit
+import Persistence
 import PersistenceTestingUtils
 import XCTest
 
@@ -287,8 +288,9 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
 }
 
-extension MockKeyValueStore: AIChatDebugURLSettings {}
-typealias AIChatMockDebugSettings = MockKeyValueStore
+func AIChatMockDebugSettings() -> any KeyedStoring<AIChatDebugURLSettings> {
+    return MockKeyValueStore().keyedStoring()
+}
 
 private final class MockAIChatMessageHandling: AIChatMessageHandling {
     func getDataForMessageType(_ type: DuckDuckGo_Privacy_Browser.AIChatMessageType) -> (any Encodable)? {

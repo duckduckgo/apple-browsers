@@ -16,16 +16,17 @@
 //  limitations under the License.
 //
 
-import AppKit
 import AIChat
+import AppKit
+import Persistence
 
 final class AIChatDebugMenu: NSMenu {
     private var storage = DefaultAIChatPreferencesStorage()
     private let customURLLabelMenuItem = NSMenuItem(title: "")
-    private let debugStorage: AIChatDebugURLSettings
+    private let debugStorage: any KeyedStoring<AIChatDebugURLSettings>
 
-    init(debugStorage: AIChatDebugURLSettings = UserDefaults.standard) {
-        self.debugStorage = debugStorage
+    init(debugStorage: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
+        self.debugStorage = if let debugStorage { debugStorage } else { UserDefaults.standard.keyedStoring() }
         super.init(title: "")
 
         buildItems {
@@ -65,7 +66,7 @@ final class AIChatDebugMenu: NSMenu {
     }
 
     @objc func resetCustomURL() {
-        debugStorage.reset()
+        debugStorage.resetCustomURL()
         updateWebUIMenuItemsState()
     }
 

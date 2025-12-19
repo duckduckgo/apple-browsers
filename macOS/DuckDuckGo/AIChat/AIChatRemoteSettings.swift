@@ -19,6 +19,7 @@
 import AIChat
 import BrowserServicesKit
 import Foundation
+import Persistence
 import PixelKit
 
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
@@ -50,17 +51,17 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let debugURLSettings: AIChatDebugURLSettings
+    private let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings>
     private var settings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        debugURLSettings: AIChatDebugURLSettings = UserDefaults.standard
+        debugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.debugURLSettings = debugURLSettings
+        self.debugURLSettings = if let debugURLSettings { debugURLSettings } else { UserDefaults.standard.keyedStoring() }
     }
 
     // MARK: - Public

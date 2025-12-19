@@ -22,24 +22,16 @@ import BrowserServicesKit
 import Common
 import History
 import HistoryView
-import Macros
 import Persistence
 import PixelKit
 
-@Storage
-protocol FireDialogViewSettings: AnyObject, ObservableKeyValueStoring {
-    @Key("fire-dialog_selectedClearingOption")
-    var lastSelectedClearingOption: FireDialogViewModel.ClearingOption? { get set }
-    @Key("fire-dialog_includeTabsAndWindowsState")
-    var lastIncludeTabsAndWindowsState: Bool? { get set }
-    @Key("fire-dialog_includeHistoryState")
-    var lastIncludeHistoryState: Bool? { get set }
-    @Key("fire-dialog_includeCookiesAndSiteDataState")
-    var lastIncludeCookiesAndSiteDataState: Bool? { get set }
-    @Key("fire-dialog_includeChatHistoryState")
-    var lastIncludeChatHistoryState: Bool? { get set }
+struct FireDialogViewSettings: StoringKeys {
+    let lastSelectedClearingOption = StorageKey<FireDialogViewModel.ClearingOption>(.fireDialogSelectedClearingOption)
+    let lastIncludeTabsAndWindowsState = StorageKey<Bool>(.fireDialogIncludeTabsAndWindows)
+    let lastIncludeHistoryState = StorageKey<Bool>(.fireDialogIncludeHistory)
+    let lastIncludeCookiesAndSiteDataState = StorageKey<Bool>(.fireDialogIncludeCookiesAndSiteData)
+    let lastIncludeChatHistoryState = StorageKey<Bool>(.fireDialogIncludeChatHistory)
 }
-extension UserDefaults: FireDialogViewSettings {}
 
 @MainActor
 final class FireDialogViewModel: ObservableObject {
@@ -138,7 +130,7 @@ final class FireDialogViewModel: ObservableObject {
     }
 
     /// Remember last selected scope
-    private var settings: any FireDialogViewSettings
+    private var settings: any KeyedStoring<FireDialogViewSettings>
 
     init(fireViewModel: FireViewModel,
          tabCollectionViewModel: TabCollectionViewModel,
@@ -152,7 +144,7 @@ final class FireDialogViewModel: ObservableObject {
          includeCookiesAndSiteData: Bool? = nil,
          includeChatHistory: Bool? = nil,
          mode: Mode = .fireButton,
-         settings: (any FireDialogViewSettings)? = nil,
+         settings: (any KeyedStoring<FireDialogViewSettings>)? = nil,
          scopeCookieDomains: Set<String>? = nil,
          scopeVisits: [Visit]? = nil,
          tld: TLD) {
@@ -171,7 +163,7 @@ final class FireDialogViewModel: ObservableObject {
         // Apply provided scope domains BEFORE computing lists to avoid any flash
         self.scopeCookieDomains = scopeCookieDomains
 
-        self.settings = settings ?? UserDefaults.standard
+        self.settings = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
         self.clearingOption = clearingOption ?? self.settings.lastSelectedClearingOption ?? .currentTab
         self.includeTabsAndWindows = includeTabsAndWindows ?? self.settings.lastIncludeTabsAndWindowsState ?? true
         self.includeHistory = includeHistory ?? self.settings.lastIncludeHistoryState ?? true

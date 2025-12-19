@@ -19,13 +19,15 @@
 import XCTest
 import Combine
 import BrowserServicesKit
+import Persistence
+import PersistenceTestingUtils
 
 @testable import DuckDuckGo_Privacy_Browser
 
 class AIChatRemoteSettingsTests: XCTestCase {
     var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
     var aiChatRemoteSettings: AIChatRemoteSettings!
-    var debugURLProvider: AIChatDebugURLSettings!
+    var debugURLProvider: (any KeyedStoring<AIChatDebugURLSettings>)!
 
     private func setupAIChatRemoteSettings(with config: MockConfig) -> AIChatRemoteSettings {
         let embeddedDataProvider = MockEmbeddedDataProvider()

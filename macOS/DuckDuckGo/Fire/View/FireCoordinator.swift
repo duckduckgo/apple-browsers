@@ -22,6 +22,7 @@ import Combine
 import Common
 import History
 import HistoryView
+import Persistence
 import PixelKit
 
 // MARK: - Fire Dialog Presentation Abstractions (for testability)
@@ -149,7 +150,10 @@ extension FireCoordinator {
 
     /// Unified Fire dialog presenter for all entry points
     @MainActor
-    func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeVisits providedVisits: [Visit]? = nil, settings: FireDialogViewSettings? = nil) async -> FireDialogView.Response {
+    func presentFireDialog(mode: FireDialogViewModel.Mode,
+                           in window: NSWindow? = nil,
+                           scopeVisits providedVisits: [Visit]? = nil,
+                           settings: (any KeyedStoring<FireDialogViewSettings>)? = nil) async -> FireDialogView.Response {
         let targetWindow = window ?? windowControllersManager.lastKeyMainWindowController?.window
         guard let parentWindow = targetWindow,
               let tabCollectionViewModel = tabViewModelGetter(parentWindow) else { return .noAction }

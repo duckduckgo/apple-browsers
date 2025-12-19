@@ -21,12 +21,13 @@ import BrowserServicesKit
 import Foundation
 import HistoryView
 import NewTabPage
+import Persistence
 import PixelKit
+import SERPSettings
 import SpecialErrorPages
 import Subscription
 import UserScript
 import WebKit
-import SERPSettings
 
 @MainActor
 final class UserScripts: UserScriptsProvider {
@@ -65,7 +66,10 @@ final class UserScripts: UserScriptsProvider {
     private let contentScopePreferences: ContentScopePreferences
 
     // swiftlint:disable:next cyclomatic_complexity
-    init(with sourceProvider: ScriptSourceProviding, contentScopePreferences: ContentScopePreferences, aiChatDebugURLSettings: AIChatDebugURLSettings = UserDefaults.standard) {
+    init(with sourceProvider: ScriptSourceProviding,
+         contentScopePreferences: ContentScopePreferences,
+         aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
+
         self.contentScopePreferences = contentScopePreferences
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
@@ -76,6 +80,7 @@ final class UserScripts: UserScriptsProvider {
             pixelFiring: PixelKit.shared,
             statisticsLoader: StatisticsLoader.shared
         )
+        let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,

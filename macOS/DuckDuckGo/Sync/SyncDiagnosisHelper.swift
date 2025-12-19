@@ -18,20 +18,14 @@
 
 import DDGSync
 import Foundation
-import Macros
 import Persistence
 import PixelKit
 
-extension UserDefaults: SyncDiagnosisHelper.Settings {}
-
 struct SyncDiagnosisHelper {
 
-    @Storage
-    protocol Settings: AnyObject, KeyValueStoring {
-        @Key("com.duckduckgo.app.key.debug.SyncManuallyDisabled")
-        var syncManuallyDisabled: Bool? { get set }
-        @Key("com.duckduckgo.app.key.debug.SyncWasDisabledUnexpectedlyPixelFired")
-        var syncWasDisabledUnexpectedlyPixelFired: Bool? { get set }
+    struct Settings: StoringKeys {
+        let syncManuallyDisabled = StorageKey<Bool>("com.duckduckgo.app.key.debug.SyncManuallyDisabled", assertionHandler: { _ in })
+        let syncWasDisabledUnexpectedlyPixelFired = StorageKey<Bool>("com.duckduckgo.app.key.debug.SyncWasDisabledUnexpectedlyPixelFired", assertionHandler: { _ in })
     }
 
     private enum Const {
@@ -41,16 +35,15 @@ struct SyncDiagnosisHelper {
     private let userDefaults = UserDefaults.standard
     private let syncService: DDGSyncing
 
-    private let settings: SyncDiagnosisHelper.Settings
+    private let settings: any KeyedStoring<SyncDiagnosisHelper.Settings>
 
-    init(syncService: DDGSyncing, settings: SyncDiagnosisHelper.Settings = UserDefaults.standard) {
+    init(syncService: DDGSyncing, settings: (any KeyedStoring<SyncDiagnosisHelper.Settings>)? = nil) {
         self.syncService = syncService
-        self.settings = settings
+        self.settings = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
     }
 
-// Non-user-initiated deactivation
-// For events to help understand the impact of https://app.asana.com/0/1201493110486074/1208538487332133/f
-
+    // Non-user-initiated deactivation
+    // For events to help understand the impact of https://app.asana.com/0/1201493110486074/1208538487332133/f
     func didManuallyDisableSync() {
         settings.syncManuallyDisabled = true
     }

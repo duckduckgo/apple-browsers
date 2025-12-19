@@ -67,6 +67,18 @@ final class FaviconDownloader: NSObject {
         let continuation: CheckedContinuation<Data, Error>
         var destinationURL: URL?
     }
+
+    deinit {
+        let pendingDownloads = self.pendingDownloads
+        self.pendingDownloads.removeAll()
+
+        for (download, task) in pendingDownloads {
+            DispatchQueue.main.asyncOrNow {
+                download.cancel()
+            }
+            task.continuation.resume(with: .failure(URLError(.cancelled)))
+        }
+    }
 }
 
 extension FaviconDownloader: WKNavigationDelegate {
@@ -104,29 +116,31 @@ extension FaviconDownloader: WKDownloadDelegate {
     }
 
     func downloadDidFinish(_ download: WKDownload) {
-        guard let task = pendingDownloads.removeValue(forKey: download),
-              let destinationURL = task.destinationURL else {
-            Logger.favicons.error("FaviconDownloader: No task or destination found for finished download")
-            return
+        guard let task = pendingDownloads.removeValue(forKey: download) else { return }
+        let result: Result<Data, Error>
+        defer {
+            task.continuation.resume(with: result)
         }
 
         // Read the downloaded file
         do {
+            guard let destinationURL = task.destinationURL else { throw CocoaError(.fileNoSuchFile) }
             let data = try Data(contentsOf: destinationURL)
-            task.continuation.resume(returning: data)
+            result = .success(data)
 
             // Clean up the temporary file
             try? FileManager.default.removeItem(at: destinationURL)
         } catch {
             Logger.favicons.error("FaviconDownloader: Failed to read downloaded file: \(error.localizedDescription)")
-            task.continuation.resume(throwing: error)
+            result = .failure(error)
         }
     }
 
     func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
-        guard let task = pendingDownloads.removeValue(forKey: download) else {
-            Logger.favicons.error("FaviconDownloader: No task found for failed download")
-            return
+        guard let task = pendingDownloads.removeValue(forKey: download) else { return }
+        let result: Result<Data, Error>
+        defer {
+            task.continuation.resume(with: result)
         }
 
         Logger.favicons.debug("FaviconDownloader: Download failed for \(task.url.absoluteString): \(error.localizedDescription)")
@@ -136,6 +150,6 @@ extension FaviconDownloader: WKDownloadDelegate {
             try? FileManager.default.removeItem(at: destinationURL)
         }
 
-        task.continuation.resume(throwing: error)
+        result = .failure(error)
     }
 }

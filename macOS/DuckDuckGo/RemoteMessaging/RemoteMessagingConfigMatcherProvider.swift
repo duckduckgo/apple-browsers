@@ -42,7 +42,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger,
         themeManager: ThemeManaging,
-        dbpDataManager: DataBrokerProtectionDataManaging? = nil
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
     ) {
         self.init(
             bookmarksDatabase: bookmarksDatabase,
@@ -57,7 +57,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
             themeManager: themeManager,
-            dbpDataManager: dbpDataManager
+            dbpDataManagerProvider: dbpDataManagerProvider
         )
     }
 
@@ -74,7 +74,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger,
         themeManager: ThemeManaging,
-        dbpDataManager: DataBrokerProtectionDataManaging? = nil
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
@@ -88,7 +88,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.themeManager = themeManager
-        self.dbpDataManager = dbpDataManager
+        self.dbpDataManagerProvider = dbpDataManagerProvider
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -103,7 +103,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
-    let dbpDataManager: DataBrokerProtectionDataManaging?
+    let dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)?
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -186,6 +186,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let isCurrentFreemiumDBPUser = !subscriptionManager.isUserAuthenticated && freemiumDBPUserStateManager.didActivate
 
         let hasPIREntitlement = (try? await subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false
+        let dbpDataManager = dbpDataManagerProvider?()
         let isCurrentPIRUser = hasPIREntitlement && ((try? dbpDataManager?.fetchProfile()) != nil)
 
         let pinnedTabsCount: Int = await MainActor.run {

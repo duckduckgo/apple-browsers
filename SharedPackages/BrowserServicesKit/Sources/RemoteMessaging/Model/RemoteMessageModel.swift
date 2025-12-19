@@ -225,6 +225,7 @@ public enum RemotePlaceholder: String, Codable, CaseIterable {
     case appUpdate = "RemoteMessageAppUpdate"
     case macComputer = "RemoteMessageMacComputer"
     case newForMacAndWindows = "RemoteMessageNewForMacAndWindows"
+    case privacyShield = "RemoteMessagePrivacyShield"
     case aiChat = "RemoteDuckAi"
     case visualDesignUpdate = "RemoteVisualDesignUpdate"
     case imageAI = "RemoteImageAI"

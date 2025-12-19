@@ -147,9 +147,20 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case autofill
     case accessibility
     case duckPlayer = "duckplayer"
-    case otherPlatforms = "https://duckduckgo.com/app/devices?origin=funnel_app_macos"
+    case otherPlatforms
     case aiChat = "aichat"
     case about
+
+    /// Returns a URL if this pane should open a URL instead of displaying content.
+    /// Used for special panes like "Other Platforms" that open a new tab.
+    var externalURL: URL? {
+        switch self {
+        case .otherPlatforms:
+            return URL.otherPlatforms
+        default:
+            return nil
+        }
+    }
 
     var id: Self {
         self

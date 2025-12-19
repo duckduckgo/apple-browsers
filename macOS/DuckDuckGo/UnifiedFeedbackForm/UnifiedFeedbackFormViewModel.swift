@@ -28,7 +28,6 @@ protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
 }
 
 final class UnifiedFeedbackFormViewModel: ObservableObject {
-    private static let supportURL = URL(string: "https://duckduckgo.com/subscription-support")!
     private let featureFlagger: FeatureFlagger
 
     enum ViewState {
@@ -293,6 +292,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
 
     @MainActor
     private func openSupport() {
-        Application.appDelegate.windowControllersManager.show(url: Self.supportURL, source: .ui, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: URL.subscriptionSupport, source: .ui, newTab: true)
     }
 }

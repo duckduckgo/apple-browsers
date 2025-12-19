@@ -40,8 +40,8 @@ class TabSwitcherViewController: UIViewController {
         static let cellMaxHeight: CGFloat = 209.0
 
         static let trackerInfoTopSpacing: CGFloat = 8
-        static let trackerInfoHorizontalPadding: CGFloat = 12
-        static let trackerInfoBottomSpacing: CGFloat = 8
+        static let trackerInfoHorizontalPadding: CGFloat = 16
+        static let trackerInfoBottomSpacing: CGFloat = 0
     }
 
     struct BookmarkAllResult {
@@ -134,9 +134,8 @@ class TabSwitcherViewController: UIViewController {
     private let appSettings: AppSettings
     private var trackerCountCancellable: AnyCancellable?
     private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
-    private let trackerInfoContainer = UIView()
-    private var trackerInfoHiddenConstraint: NSLayoutConstraint?
-    private var trackerInfoHostingController: UIHostingController<InfoPanelView>?
+    private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
+    private var trackerInfoModel: InfoPanelView.Model?
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
 
@@ -194,11 +193,7 @@ class TabSwitcherViewController: UIViewController {
             isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: topOffset) : nil,
             !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: bottomOffset) : nil,
 
-            trackerInfoContainer.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor, constant: Constants.trackerInfoTopSpacing),
-            trackerInfoContainer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.trackerInfoHorizontalPadding),
-            trackerInfoContainer.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Constants.trackerInfoHorizontalPadding),
-
-            collectionView.topAnchor.constraint(equalTo: trackerInfoContainer.bottomAnchor, constant: Constants.trackerInfoBottomSpacing),
+            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor, constant: Constants.trackerInfoTopSpacing),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 
@@ -226,18 +221,16 @@ class TabSwitcherViewController: UIViewController {
         titleBarView.translatesAutoresizingMaskIntoConstraints = false
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
-        trackerInfoContainer.translatesAutoresizingMaskIntoConstraints = false
 
         // Clear existing constraints for these views comprehensively
-        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, toolbar, collectionView, borderView, trackerInfoContainer]
+        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, toolbar, collectionView, borderView]
         viewsToRemoveConstraintsFor.forEach { targetView in
             targetView.removeFromSuperview()
         }
-        
+
         // Re-add the views to the hierarchy
         view.addSubview(titleBarView)
         view.addSubview(toolbar)
-        view.addSubview(trackerInfoContainer)
         view.addSubview(collectionView)
         view.addSubview(borderView)
 
@@ -258,6 +251,11 @@ class TabSwitcherViewController: UIViewController {
         // These should only be done once
         createTitleBar()
         setupBackgroundView()
+        collectionView.register(
+            TabSwitcherTrackerInfoHeaderView.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+            withReuseIdentifier: TabSwitcherTrackerInfoHeaderView.reuseIdentifier
+        )
         tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.collectionView.reloadData()
         }
@@ -270,7 +268,6 @@ class TabSwitcherViewController: UIViewController {
         collectionView.allowsSelection = true
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
-        setupTrackerInfoContainer()
         bindTrackerCount()
         trackerCountViewModel?.refresh()
 
@@ -291,14 +288,12 @@ class TabSwitcherViewController: UIViewController {
         tabsStyle = tabSwitcherSettings.isGridViewEnabled ? .grid : .list
     }
 
-    private func setupTrackerInfoContainer() {
-        trackerInfoContainer.isHidden = true
-        trackerInfoHiddenConstraint = trackerInfoContainer.heightAnchor.constraint(equalToConstant: 0)
-        trackerInfoHiddenConstraint?.isActive = true
-    }
-
     private func bindTrackerCount() {
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: tabSwitcherSettings, privacyStats: privacyStats)
+        let viewModel = TabSwitcherTrackerCountViewModel(
+            settings: tabSwitcherSettings,
+            privacyStats: privacyStats,
+            featureFlagger: AppDependencyProvider.shared.featureFlagger
+        )
         trackerCountViewModel = viewModel
         trackerCountCancellable = viewModel.$state
             .receive(on: DispatchQueue.main)
@@ -308,25 +303,18 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func applyTrackerCountState(_ state: TabSwitcherTrackerCountViewModel.State) {
+        guard state != lastAppliedTrackerCountState else { return }
+        lastAppliedTrackerCountState = state
+
         guard state.isVisible else {
-            trackerInfoHostingController?.willMove(toParent: nil)
-            trackerInfoHostingController?.view.removeFromSuperview()
-            trackerInfoHostingController?.removeFromParent()
-            trackerInfoHostingController = nil
-            trackerInfoHiddenConstraint?.isActive = true
-            trackerInfoContainer.isHidden = true
+            trackerInfoModel = nil
+            updateTrackerInfoHeaderIfVisible()
+            collectionView.collectionViewLayout.invalidateLayout()
             return
         }
 
-        trackerInfoContainer.isHidden = false
-        trackerInfoHiddenConstraint?.isActive = false
-
-        let model = InfoPanelView.Model(
-            title: state.title,
-            subtitle: state.subtitle,
-            icon: UIImage(resource: .shieldDot),
-            accentColor: Color(designSystemColor: .accent),
-            backgroundColor: Color(designSystemColor: .surface),
+        trackerInfoModel = .trackerInfoPanel(
+            state: state,
             onTap: { [weak self] in
                 self?.trackerCountViewModel?.refresh()
             },
@@ -334,24 +322,20 @@ class TabSwitcherViewController: UIViewController {
                 self?.presentHideTrackerCountAlert()
             }
         )
+        updateTrackerInfoHeaderIfVisible()
+        collectionView.collectionViewLayout.invalidateLayout()
+    }
 
-        let hosting = UIHostingController(rootView: InfoPanelView(model: model))
-        addChild(hosting)
-        hosting.view.translatesAutoresizingMaskIntoConstraints = false
-        trackerInfoHostingController?.willMove(toParent: nil)
-        trackerInfoHostingController?.view.removeFromSuperview()
-        trackerInfoHostingController?.removeFromParent()
-        trackerInfoHostingController = hosting
-        trackerInfoContainer.addSubview(hosting.view)
+    private func updateTrackerInfoHeaderIfVisible() {
+        let indexPath = IndexPath(item: 0, section: 0)
+        guard let header = collectionView.supplementaryView(
+            forElementKind: UICollectionView.elementKindSectionHeader,
+            at: indexPath
+        ) as? TabSwitcherTrackerInfoHeaderView else {
+            return
+        }
 
-        NSLayoutConstraint.activate([
-            hosting.view.topAnchor.constraint(equalTo: trackerInfoContainer.topAnchor),
-            hosting.view.leadingAnchor.constraint(equalTo: trackerInfoContainer.leadingAnchor),
-            hosting.view.trailingAnchor.constraint(equalTo: trackerInfoContainer.trailingAnchor),
-            hosting.view.bottomAnchor.constraint(equalTo: trackerInfoContainer.bottomAnchor)
-        ])
-
-        hosting.didMove(toParent: self)
+        header.configure(in: self, model: trackerInfoModel)
     }
 
     private func presentHideTrackerCountAlert() {
@@ -592,6 +576,25 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
         return cell
     }
 
+    public func collectionView(_ collectionView: UICollectionView,
+                               viewForSupplementaryElementOfKind kind: String,
+                               at indexPath: IndexPath) -> UICollectionReusableView {
+        guard kind == UICollectionView.elementKindSectionHeader else {
+            return UICollectionReusableView()
+        }
+
+        guard let header = collectionView.dequeueReusableSupplementaryView(
+            ofKind: kind,
+            withReuseIdentifier: TabSwitcherTrackerInfoHeaderView.reuseIdentifier,
+            for: indexPath
+        ) as? TabSwitcherTrackerInfoHeaderView else {
+            return UICollectionReusableView()
+        }
+
+        header.configure(in: self, model: trackerInfoModel)
+        return header
+    }
+
 }
 
 extension TabSwitcherViewController: UICollectionViewDelegate {
@@ -689,7 +692,14 @@ extension TabSwitcherViewController: UICollectionViewDelegateFlowLayout {
         }
         return size
     }
-    
+
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                        referenceSizeForHeaderInSection section: Int) -> CGSize {
+        guard trackerInfoModel != nil else { return .zero }
+        return CGSize(width: collectionView.bounds.width, height: TabSwitcherTrackerInfoHeaderView.estimatedHeight)
+    }
+
 }
 
 extension TabSwitcherViewController: TabObserver {

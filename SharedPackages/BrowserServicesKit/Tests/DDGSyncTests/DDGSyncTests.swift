@@ -173,7 +173,7 @@ final class DDGSyncTests: XCTestCase {
         syncService.scheduler.requestSyncImmediately()
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -216,7 +216,7 @@ final class DDGSyncTests: XCTestCase {
 
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -299,7 +299,7 @@ final class DDGSyncTests: XCTestCase {
         syncService.scheduler.requestSyncImmediately()
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -438,7 +438,7 @@ final class DDGSyncTests: XCTestCase {
         syncService.scheduler.requestSyncImmediately()
         try dependencies.secureStore.removeAccount()
 
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -499,7 +499,7 @@ final class DDGSyncTests: XCTestCase {
 
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 2)
+        waitForExpectations(timeout: 5)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),

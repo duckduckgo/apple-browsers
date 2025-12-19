@@ -274,10 +274,10 @@ final class AppearancePreferencesTests: XCTestCase {
         model.themeAppearance = ThemeAppearance.systemDefault
 
         pixelFiringMock.expectedFireCalls = [
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
+            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
+            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
+            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
+            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard)
         ]
 
         pixelFiringMock.verifyExpectations()

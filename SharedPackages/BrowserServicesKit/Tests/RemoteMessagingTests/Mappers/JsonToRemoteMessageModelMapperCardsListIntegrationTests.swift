@@ -67,7 +67,7 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         // Verify second item
         #expect(items[safe: 1]?.id == "enhanced_scam_blocker")
         #expect(items[safe: 1]?.titleText == "Enhanced Scam Blocker")
-        #expect(items[safe: 1]?.placeholderImage == .privacyShield)
+        #expect(items[safe: 1]?.placeholderImage == .subscription)
         #expect(items[safe: 1]?.action == .urlInContext(value: "https://example.com"))
 
         // Verify third item

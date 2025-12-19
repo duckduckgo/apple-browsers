@@ -25,6 +25,7 @@ import BrowserServicesKit
 import Common
 import os.log
 import DataBrokerProtectionCore
+import PrivacyConfig
 import Subscription
 import enum UserScript.UserScriptError
 

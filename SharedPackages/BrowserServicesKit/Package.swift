@@ -25,6 +25,8 @@ let package = Package(
         .library(name: "Crashes", targets: ["Crashes"]),
         .library(name: "CxxCrashHandler", targets: ["CxxCrashHandler"]),
         .library(name: "ContentBlocking", targets: ["ContentBlocking"]),
+        .library(name: "PrivacyConfig", targets: ["PrivacyConfig"]),
+        .library(name: "PrivacyConfigTestsUtils", targets: ["PrivacyConfigTestsUtils"]),
         .library(name: "PrivacyDashboard", targets: ["PrivacyDashboard"]),
         .library(name: "Configuration", targets: ["Configuration"]),
         .library(name: "Networking", targets: ["Networking"]),
@@ -81,6 +83,7 @@ let package = Package(
                 .product(name: "Autofill", package: "duckduckgo-autofill"),
                 "ContentScopeScripts",
                 "Persistence",
+                "PrivacyConfig",
                 "TrackerRadarKit",
                 "BloomFilterWrapper",
                 "Common",
@@ -123,6 +126,26 @@ let package = Package(
             name: "PersistenceTestingUtils",
             dependencies: [
                 "Persistence"
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "PrivacyConfig",
+            dependencies: [
+                "Common",
+                "ContentBlocking",
+                "Persistence",
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "PrivacyConfigTestsUtils",
+            dependencies: [
+                "PrivacyConfig",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -209,11 +232,11 @@ let package = Package(
         .target(
             name: "DDGSync",
             dependencies: [
-                "BrowserServicesKit",
                 "Common",
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
                 .product(name: "Gzip", package: "GzipSwift"),
                 "Networking",
+                "PrivacyConfig",
             ],
             resources: [
                 .process("SyncMetadata.xcdatamodeld"),
@@ -299,7 +322,7 @@ let package = Package(
                 "UserScript",
                 "ContentBlocking",
                 "Persistence",
-                "BrowserServicesKit",
+                "PrivacyConfig",
                 "MaliciousSiteProtection",
                 .product(name: "PrivacyDashboardResources", package: "privacy-dashboard"),
                 "Navigation",
@@ -312,9 +335,9 @@ let package = Package(
         .target(
             name: "Configuration",
             dependencies: [
-                "Networking",
-                "BrowserServicesKit",
                 "Common",
+                "Networking",
+                "PrivacyConfig",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -339,11 +362,12 @@ let package = Package(
         .target(
             name: "RemoteMessaging",
             dependencies: [
+                "BrowserServicesKit",
                 "Common",
                 "Configuration",
-                "BrowserServicesKit",
                 "Networking",
-                "Persistence"
+                "Persistence",
+                "PrivacyConfig",
             ],
             resources: [
                 .process("CoreData/RemoteMessaging.xcdatamodeld")
@@ -447,7 +471,8 @@ let package = Package(
             name: "DuckPlayer",
             dependencies: [
                 "Common",
-                "BrowserServicesKit"
+                "ContentBlocking",
+                "PrivacyConfig",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -456,10 +481,10 @@ let package = Package(
         .target(
             name: "MaliciousSiteProtection",
             dependencies: [
-                "BrowserServicesKit",
                 "Common",
                 "Networking",
                 "PixelKit",
+                "PrivacyConfig",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -469,7 +494,7 @@ let package = Package(
             name: "PixelExperimentKit",
             dependencies: [
                 "PixelKit",
-                "BrowserServicesKit",
+                "PrivacyConfig",
                 "Configuration"
             ],
             swiftSettings: [
@@ -479,7 +504,7 @@ let package = Package(
         .target(
             name: "BrokenSitePrompt",
             dependencies: [
-                "BrowserServicesKit"
+                "PrivacyConfig"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -537,7 +562,6 @@ let package = Package(
                 .headerSearchPath("include"),
             ]
         ),
-
         .testTarget(
             name: "HistoryTests",
             dependencies: [
@@ -592,6 +616,7 @@ let package = Package(
                 "SecureStorageTestsUtils",
                 "Subscription",
                 "PersistenceTestingUtils",
+                "PrivacyConfigTestsUtils",
                 "WKAbstractions",
             ],
             resources: [
@@ -613,6 +638,7 @@ let package = Package(
                 "BookmarksTestsUtils",
                 "DDGSync",
                 "PersistenceTestingUtils",
+                "PrivacyConfigTestsUtils",
                 "NetworkingTestingUtils"
             ],
             resources: [
@@ -681,6 +707,17 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PersistenceTestingUtils",
                 "TrackerRadarKit",
+            ]
+        ),
+        .testTarget(
+            name: "PrivacyConfigTests",
+            dependencies: [
+                "PersistenceTestingUtils",
+                "PrivacyConfig",
+                "PrivacyConfigTestsUtils"
+            ],
+            resources: [
+                .copy("Resources")
             ]
         ),
         .testTarget(
@@ -768,9 +805,10 @@ let package = Package(
         .testTarget(
             name: "DuckPlayerTests",
             dependencies: [
-                "SharedObjCTestsUtils",
-                "DuckPlayer",
                 "BrowserServicesKitTestsUtils",
+                "DuckPlayer",
+                "PrivacyConfigTestsUtils",
+                "SharedObjCTestsUtils",
             ]
         ),
 

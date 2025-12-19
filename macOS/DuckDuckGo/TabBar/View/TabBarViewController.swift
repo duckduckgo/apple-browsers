@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
 import Lottie
 import os.log
+import PrivacyConfig
 import RemoteMessaging
 import SwiftUI
 import WebKit

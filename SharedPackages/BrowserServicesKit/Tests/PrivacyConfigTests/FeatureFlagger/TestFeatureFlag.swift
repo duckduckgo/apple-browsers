@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 
 enum TestFeatureFlag: String, FeatureFlagDescribing {
     var defaultValue: Bool {

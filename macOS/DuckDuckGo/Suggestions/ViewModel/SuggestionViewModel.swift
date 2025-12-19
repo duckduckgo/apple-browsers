@@ -19,7 +19,7 @@
 import Cocoa
 import Common
 import Suggestions
-import BrowserServicesKit
+import PrivacyConfig
 
 struct SuggestionViewModel {
     let isHomePage: Bool

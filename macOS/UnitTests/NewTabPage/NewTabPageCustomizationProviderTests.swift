@@ -19,6 +19,8 @@
 import AppKitExtensions
 import Combine
 import NewTabPage
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import BrowserServicesKit
+@testable import PrivacyConfig
 
 final class ExperimentCohortsManagerTests: XCTestCase {
 

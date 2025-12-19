@@ -28,6 +28,7 @@ import Onboarding
 import os.log
 import PageRefreshMonitor
 import PixelKit
+import PrivacyConfig
 import SpecialErrorPages
 import UserScript
 import WebKit

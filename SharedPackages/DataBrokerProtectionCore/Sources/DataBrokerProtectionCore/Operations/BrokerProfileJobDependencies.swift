@@ -19,6 +19,7 @@
 import Foundation
 import Common
 import os.log
+import PrivacyConfig
 import BrowserServicesKit
 import PixelKit
 

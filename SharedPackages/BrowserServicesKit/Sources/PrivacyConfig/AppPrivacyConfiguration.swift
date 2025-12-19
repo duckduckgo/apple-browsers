@@ -363,7 +363,7 @@ extension AppPrivacyConfiguration {
 
 extension Array where Element == String {
 
-    func normalizedDomainsForContentBlocking() -> [String] {
+    public func normalizedDomainsForContentBlocking() -> [String] {
         map { domain in
             domain.punycodeEncodedHostname.lowercased()
         }

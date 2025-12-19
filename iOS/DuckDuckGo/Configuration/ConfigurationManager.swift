@@ -18,9 +18,10 @@
 //
 
 import Foundation
+import BrowserServicesKit
 import Core
 import Configuration
-import BrowserServicesKit
+import PrivacyConfig
 import Persistence
 import Common
 import os.log

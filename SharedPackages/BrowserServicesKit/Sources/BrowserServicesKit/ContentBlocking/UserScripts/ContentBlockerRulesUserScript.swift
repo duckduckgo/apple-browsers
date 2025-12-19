@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import WebKit
-import TrackerRadarKit
 import Common
-import UserScript
 import ContentBlocking
+import PrivacyConfig
+import TrackerRadarKit
+import UserScript
+import WebKit
 
 public protocol ContentBlockerRulesUserScriptDelegate: NSObjectProtocol {
 

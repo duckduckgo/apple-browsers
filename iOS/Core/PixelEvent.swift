@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Bookmarks
 import Configuration
+import ContentBlocking
 import DDGSync
 import MaliciousSiteProtection
 import PixelKit

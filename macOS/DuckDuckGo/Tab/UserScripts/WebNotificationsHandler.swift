@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
 import Foundation
 import OSLog
+import PrivacyConfig
 import UserNotifications
 import UserScript
 import WebKit

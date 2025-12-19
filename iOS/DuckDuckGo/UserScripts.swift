@@ -28,6 +28,7 @@ import UserScript
 import WebKit
 import SERPSettings
 import Persistence
+import PrivacyConfig
 
 final class UserScripts: UserScriptsProvider {
 

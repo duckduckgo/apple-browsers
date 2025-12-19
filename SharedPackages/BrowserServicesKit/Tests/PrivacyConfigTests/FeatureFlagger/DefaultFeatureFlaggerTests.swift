@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
-import XCTest
 import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import XCTest
 
 final class CapturingFeatureFlagOverriding: FeatureFlagLocalOverriding {
 
@@ -525,9 +526,9 @@ extension FeatureFlagSource: FeatureFlagDescribing {
 
 class MockExperimentManager: ExperimentCohortsManaging {
     var cohortToReturn: CohortID?
-    var experiments: BrowserServicesKit.Experiments?
+    var experiments: Experiments?
 
-    func resolveCohort(for experiment: BrowserServicesKit.ExperimentSubfeature, allowCohortAssignment: Bool) -> CohortID? {
+    func resolveCohort(for experiment: ExperimentSubfeature, allowCohortAssignment: Bool) -> CohortID? {
         return cohortToReturn
     }
 }

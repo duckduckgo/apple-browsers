@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
+import PrivacyConfig
 import WebKit
 import XCTest
 

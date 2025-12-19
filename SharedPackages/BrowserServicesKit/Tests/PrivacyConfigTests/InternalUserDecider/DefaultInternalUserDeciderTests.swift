@@ -17,8 +17,7 @@
 //
 
 import XCTest
-
-@testable import BrowserServicesKit
+@testable import PrivacyConfig
 
 class DefaultInternalUserDeciderTests: XCTestCase {
 

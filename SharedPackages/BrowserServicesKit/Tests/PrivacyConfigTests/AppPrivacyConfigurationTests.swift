@@ -16,31 +16,9 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
-import BrowserServicesKit
-
-class MockEmbeddedDataProvider: EmbeddedDataProvider {
-    var embeddedDataEtag: String
-
-    var embeddedData: Data
-
-    init(data: Data, etag: String) {
-        embeddedData = data
-        embeddedDataEtag = etag
-    }
-}
-
-class MockAppVersionProvider: AppVersionProvider {
-    var mockedVersion: String
-
-    override func appVersion() -> String {
-        return mockedVersion
-    }
-
-    init(appVersion: String) {
-        self.mockedVersion = appVersion
-    }
-}
 
 class AppPrivacyConfigurationTests: XCTestCase {
 

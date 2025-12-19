@@ -18,11 +18,11 @@
 
 import AppKit
 import Combine
-import BrowserServicesKit
 import FeatureFlags
 import NetworkProtectionUI
 import DesignResourcesKit
 import PixelKit
+import PrivacyConfig
 
 protocol ThemeStyleProviding {
     var name: ThemeName { get }

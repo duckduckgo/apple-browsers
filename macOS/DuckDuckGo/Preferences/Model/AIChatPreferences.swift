@@ -18,10 +18,10 @@
 
 import AIChat
 import AppKit
-import BrowserServicesKit
 import Combine
 import Foundation
 import PixelKit
+import PrivacyConfig
 
 final class AIChatPreferences: ObservableObject {
 

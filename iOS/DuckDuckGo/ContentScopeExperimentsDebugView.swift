@@ -18,7 +18,7 @@
 //
 
 import SwiftUI
-import BrowserServicesKit
+import PrivacyConfig
 import Core
 
 public struct ContentScopeExperimentsDebugView: View {

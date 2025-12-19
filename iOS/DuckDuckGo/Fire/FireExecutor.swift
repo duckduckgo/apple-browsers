@@ -22,6 +22,7 @@ import DDGSync
 import Bookmarks
 import AIChat
 import BrowserServicesKit
+import PrivacyConfig
 import UserScript
 import WKAbstractions
 

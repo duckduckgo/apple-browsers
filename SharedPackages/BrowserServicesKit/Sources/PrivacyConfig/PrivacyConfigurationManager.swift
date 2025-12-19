@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import ContentBlocking
 
 public protocol EmbeddedDataProvider {
 

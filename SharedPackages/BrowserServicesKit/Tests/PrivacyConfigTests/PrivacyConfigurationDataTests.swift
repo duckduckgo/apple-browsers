@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import XCTest
 import CommonCrypto
-@testable import BrowserServicesKit
+import XCTest
+@testable import PrivacyConfig
 
 class PrivacyConfigurationDataTests: XCTestCase {
 

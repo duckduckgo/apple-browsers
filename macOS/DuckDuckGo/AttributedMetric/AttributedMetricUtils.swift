@@ -18,7 +18,7 @@
 
 import Foundation
 import AttributedMetric
-import BrowserServicesKit
+import PrivacyConfig
 import Subscription
 import AppKit
 import os.log

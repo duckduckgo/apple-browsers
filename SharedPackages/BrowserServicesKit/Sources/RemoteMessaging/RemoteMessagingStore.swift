@@ -20,7 +20,6 @@ import Foundation
 import Combine
 import Common
 import CoreData
-import BrowserServicesKit
 import Persistence
 import os.log
 

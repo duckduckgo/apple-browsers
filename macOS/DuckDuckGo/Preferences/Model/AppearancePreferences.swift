@@ -18,7 +18,7 @@
 
 import AppKit
 import Bookmarks
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 import FeatureFlags
 import Foundation

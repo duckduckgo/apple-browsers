@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import WebKit
 import XCTest
 @testable import BrowserServicesKit
 @testable import UserScript
-import WebKit
 
 final class ContentScopeUserScriptTests: XCTestCase {
 

@@ -19,6 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 import Subscription
 import VPN
 

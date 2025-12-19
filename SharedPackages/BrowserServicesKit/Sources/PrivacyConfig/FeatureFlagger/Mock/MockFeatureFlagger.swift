@@ -62,7 +62,7 @@ public final class MockFeatureFlagger: FeatureFlagger {
     }
 
     var resolveCohortStub: (any FeatureFlagCohortDescribing)?
-    public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any BrowserServicesKit.FeatureFlagCohortDescribing)? where Flag: BrowserServicesKit.FeatureFlagDescribing {
+    public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
         resolveCohortStub
     }
 }

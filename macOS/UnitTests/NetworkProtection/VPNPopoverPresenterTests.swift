@@ -19,7 +19,7 @@
 import XCTest
 import Combine
 import VPN
-import BrowserServicesKit
+import PrivacyConfig
 import SubscriptionTestingUtilities
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser

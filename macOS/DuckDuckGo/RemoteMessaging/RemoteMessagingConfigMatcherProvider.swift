@@ -187,7 +187,14 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         let hasPIREntitlement = (try? await subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false
         let dbpDataManager = dbpDataManagerProvider?()
-        let isCurrentPIRUser = hasPIREntitlement && ((try? dbpDataManager?.fetchProfile()) != nil)
+        let isCurrentPIRUser: Bool
+
+        if let dbpDataManager {
+            let profile = try? dbpDataManager.fetchProfile()
+            isCurrentPIRUser = hasPIREntitlement && profile != nil
+        } else {
+            isCurrentPIRUser = false
+        }
 
         let pinnedTabsCount: Int = await MainActor.run {
             pinnedTabsManagerProvider.currentPinnedTabManagers.map { $0.tabCollection.tabs.count }.reduce(0, +)

@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
 import Foundation
 import MaliciousSiteProtection
@@ -47,10 +46,18 @@ protocol PrivacyDashboardUserScriptDelegate: AnyObject {
 }
 
 public enum PrivacyDashboardTheme: String, Encodable {
-
     case light
     case dark
+}
 
+public struct PrivacyDashboardStyle: Equatable, Encodable {
+    let theme: String
+    let themeVariant: String
+
+    public init(theme: String, themeVariant: String) {
+        self.theme = theme
+        self.themeVariant = themeVariant
+    }
 }
 
 public enum Screen: String, Decodable, CaseIterable {
@@ -364,6 +371,15 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
             return
         }
         evaluate(js: "window.onChangeTheme(\(themeJson))", in: webView)
+    }
+
+    func setThemeStyle(_ style: PrivacyDashboardStyle, webView: WKWebView) {
+        guard let styleJson = try? JSONEncoder().encode(style).utf8String() else {
+            assertionFailure("Can't encode themeStyle into JSON")
+            return
+        }
+
+        evaluate(js: "window.onChangeTheme(\(styleJson))", in: webView)
     }
 
     func setServerTrust(_ serverTrustViewModel: ServerTrustViewModel, webView: WKWebView) {

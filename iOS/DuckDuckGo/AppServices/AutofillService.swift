@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Core
 import Common
 import Persistence
+import PrivacyConfig
 
 final class AutofillService {
 
@@ -109,7 +110,9 @@ final class AutofillService {
             return
         }
         let importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(syncService: syncService.sync)
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
+        Task {
+            await importPasswordsStatusHandler.checkSyncSuccessStatus()
+        }
     }
 
     // MARK: - Suspend

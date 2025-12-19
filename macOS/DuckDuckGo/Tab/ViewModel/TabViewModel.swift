@@ -22,6 +22,7 @@ import Combine
 import Common
 import FeatureFlags
 import MaliciousSiteProtection
+import PrivacyConfig
 import PrivacyDashboard
 import WebKit
 import DesignResourcesKitIcons
@@ -71,6 +72,7 @@ final class TabViewModel: NSObject {
 
     @Published private(set) var usedPermissions = Permissions()
     @Published private(set) var permissionAuthorizationQuery: PermissionAuthorizationQuery?
+    @Published private(set) var permissionsNeedReload = false
 
     let zoomLevelSubject = PassthroughSubject<DefaultZoomValue, Never>()
     private(set) var zoomLevel: DefaultZoomValue = .percent100 {
@@ -295,6 +297,8 @@ final class TabViewModel: NSObject {
         tab.permissions.$permissions.assign(to: \.usedPermissions, onWeaklyHeld: self)
             .store(in: &cancellables)
         tab.permissions.$authorizationQuery.assign(to: \.permissionAuthorizationQuery, onWeaklyHeld: self)
+            .store(in: &cancellables)
+        tab.permissions.$permissionsNeedReload.assign(to: \.permissionsNeedReload, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 

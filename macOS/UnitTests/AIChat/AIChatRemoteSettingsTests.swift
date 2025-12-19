@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Combine
 import BrowserServicesKit
+import Combine
 import Persistence
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 

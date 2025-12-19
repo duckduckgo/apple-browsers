@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Cocoa
 import Common
 import os.log
@@ -34,7 +35,7 @@ final class SuggestionTableCellView: NSTableCellView {
 
     private enum Constants {
         static let textColor: NSColor = .suggestionText
-        static let suffixColor: NSColor = .addressBarSuffix
+        static let suffixColor: NSColor = NSColor(designSystemColor: .accentTextPrimary)
         static let burnerSuffixColor: NSColor = .burnerAccent
         static let iconColor: NSColor = .suggestionIcon
         static let selectedTintColor: NSColor = .selectedSuggestionTint
@@ -67,6 +68,8 @@ final class SuggestionTableCellView: NSTableCellView {
         view.toolTip = "control + return"
         return view
     }()
+
+    private let aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage()
 
     private var labelLeadingToShortcutsConstraint: NSLayoutConstraint?
 
@@ -344,7 +347,9 @@ final class SuggestionTableCellView: NSTableCellView {
         }
 
         var iconLeadingPadding = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
-        if Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+        let isToggleFeatureEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatPreferencesStorage.isAIFeaturesEnabled
+        let shouldShowToggle = isToggleFeatureEnabled && aiChatPreferencesStorage.showSearchAndDuckAIToggle
+        if shouldShowToggle {
             iconLeadingPadding += 8
         }
         iconImageViewLeadingConstraint.constant = iconLeadingPadding

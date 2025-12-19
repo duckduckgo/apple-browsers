@@ -19,7 +19,7 @@
 
 import Combine
 import AIChat
-import BrowserServicesKit
+import PrivacyConfig
 
 final class OnboardingSearchExperienceSelectionHandler {
     private let daxDialogs: DaxDialogs

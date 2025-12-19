@@ -20,6 +20,7 @@ import XCTest
 @testable import PixelExperimentKit
 @testable import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 import Combine
 
 final class PixelExperimentKitTests: XCTestCase {
@@ -616,7 +617,7 @@ class MockFeatureFlagger: FeatureFlagger {
 
     var internalUserDecider: any InternalUserDecider = MockInternalUserDecider()
 
-    var localOverrides: (any BrowserServicesKit.FeatureFlagLocalOverriding)?
+    var localOverrides: (any FeatureFlagLocalOverriding)?
 
     func resolveCohort<Flag>(for featureFlag: Flag) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
         return nil

@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import Common
 import Foundation
@@ -47,6 +47,8 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
     func createRecoveryKeyTransmitter() throws -> RecoveryKeyTransmitting
     func createExchangePublicKeyTransmitter() throws -> ExchangePublicKeyTransmitting
     func createExchangeRecoveryKeyTransmitter(exchangeMessage: ExchangeMessage) throws -> ExchangeRecoveryKeyTransmitting
+    func createTokenRescope() -> TokenRescoping
+    func createAIChats() -> AIChatsHandling
 }
 
 protocol AccountManaging {
@@ -70,6 +72,9 @@ protocol SecureStoring {
 }
 
 protocol CryptingInternal: Crypting {
+
+    func encrypt(_ value: Data, using secretKey: Data) throws -> Data
+    func decryptData(_ value: Data, using secretKey: Data) throws -> Data
 
     func seal(_ data: Data, secretKey: Data) throws -> Data
     func unseal(encryptedData: Data, publicKey: Data, secretKey: Data) throws -> Data

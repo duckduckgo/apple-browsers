@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import ContentScopeScripts
 import FeatureFlags
 import Foundation
 import MaliciousSiteProtection
+import PrivacyConfig
 import WebKit
 
 final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {

@@ -40,17 +40,17 @@ class DownloadsDirectoryHandlerTests: XCTestCase {
         XCTAssertEqual(handler.downloadsDirectory.standardizedFileURL, expectedPath.standardizedFileURL)
     }
 
-    func testDownloadsDirectoryFilesProperty() {
-        XCTAssertTrue(handler.downloadsDirectoryFiles.isEmpty)
+    func testDownloadsDirectoryFilesProperty() throws {
+        XCTAssert(try handler.downloadsDirectoryFiles.isEmpty)
 
         let fileURL = handler.downloadsDirectory.appendingPathComponent("testFile.txt")
         try? FileManager.default.createDirectory(at: handler.downloadsDirectory, withIntermediateDirectories: true, attributes: nil)
         FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
-        XCTAssertEqual(handler.downloadsDirectoryFiles, [fileURL])
+        XCTAssertEqual(try handler.downloadsDirectoryFiles, [fileURL])
 
         let subdirectoryURL = handler.downloadsDirectory.appendingPathComponent("Subdirectory")
         try? FileManager.default.createDirectory(at: subdirectoryURL, withIntermediateDirectories: true, attributes: nil)
-        XCTAssertEqual(handler.downloadsDirectoryFiles, [fileURL])
+        XCTAssertEqual(try handler.downloadsDirectoryFiles, [fileURL])
     }
 
     func testCreateDownloadsDirectoryIfNeeded() {
@@ -81,11 +81,11 @@ class DownloadsDirectoryHandlerTests: XCTestCase {
         XCTAssertFalse(handler.downloadsDirectoryExists())
     }
 
-    func testDeleteDownloadsDirectoryIfEmptyWhenDirectoryIsEmpty() {
+    func testDeleteDownloadsDirectoryIfEmptyWhenDirectoryIsEmpty() throws {
         // Given
         handler.createDownloadsDirectory()
         XCTAssertTrue(handler.downloadsDirectoryExists())
-        XCTAssertTrue(handler.downloadsDirectoryFiles.isEmpty)
+        XCTAssertTrue(try handler.downloadsDirectoryFiles.isEmpty)
         
         // When
         handler.deleteDownloadsDirectoryIfEmpty()
@@ -94,12 +94,12 @@ class DownloadsDirectoryHandlerTests: XCTestCase {
         XCTAssertFalse(handler.downloadsDirectoryExists(), "Empty directory should be deleted")
     }
 
-    func testDeleteDownloadsDirectoryIfEmptyWhenDirectoryHasFiles() {
+    func testDeleteDownloadsDirectoryIfEmptyWhenDirectoryHasFiles() throws {
         // Given
         handler.createDownloadsDirectory()
         let fileURL = handler.downloadsDirectory.appendingPathComponent("testFile.txt")
         FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
-        XCTAssertFalse(handler.downloadsDirectoryFiles.isEmpty)
+        XCTAssertFalse(try handler.downloadsDirectoryFiles.isEmpty)
         
         // When
         handler.deleteDownloadsDirectoryIfEmpty()
@@ -109,19 +109,37 @@ class DownloadsDirectoryHandlerTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path), "File should still exist")
     }
 
-    func testDeleteDownloadsDirectoryIfEmptyWhenDirectoryHasOnlySubdirectories() {
+    func testDeleteDownloadsDirectoryIfEmptyWhenDirectoryHasOnlySubdirectories() throws {
         // Given
         handler.createDownloadsDirectory()
         let subdirectoryURL = handler.downloadsDirectory.appendingPathComponent("Subdirectory")
         try? FileManager.default.createDirectory(at: subdirectoryURL, withIntermediateDirectories: true, attributes: nil)
         
         // downloadsDirectoryFiles filters out directories
-        XCTAssertTrue(handler.downloadsDirectoryFiles.isEmpty, "Should be empty (no files)")
+        XCTAssertTrue(try handler.downloadsDirectoryFiles.isEmpty, "Should be empty (no files)")
         
         // When
         handler.deleteDownloadsDirectoryIfEmpty()
         
         // Then
         XCTAssertFalse(handler.downloadsDirectoryExists(), "Directory with only subdirectories should be deleted")
+    }
+
+    func testDeleteDownloadsDirectoryIfEmptyWhenReadingDirectoryThrowsThenDirectoryNotDeleted() throws {
+        // Given
+        handler.createDownloadsDirectory()
+        XCTAssertTrue(handler.downloadsDirectoryExists())
+        
+        // Remove read permissions to force contentsOfDirectory to throw
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: handler.downloadsDirectory.path)
+        
+        // When
+        handler.deleteDownloadsDirectoryIfEmpty()
+        
+        // Restore permissions so we can check existence and tearDown can clean up
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: handler.downloadsDirectory.path)
+        
+        // Then
+        XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory should not be deleted when reading throws")
     }
 }

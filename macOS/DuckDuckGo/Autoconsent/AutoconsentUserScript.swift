@@ -16,14 +16,14 @@
 //  limitations under the License.
 //
 
-import WebKit
-import BrowserServicesKit
-import Common
-import UserScript
-import PrivacyDashboard
-import PixelKit
-import os.log
 import Combine
+import Common
+import os.log
+import PixelKit
+import PrivacyConfig
+import PrivacyDashboard
+import UserScript
+import WebKit
 
 protocol AutoconsentUserScriptDelegate: AnyObject {
     func autoconsentUserScript(consentStatus: CookieConsentInfo)

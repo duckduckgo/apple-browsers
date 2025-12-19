@@ -596,5 +596,21 @@ Ich habe sie blockiert!
 			<string>%1$d ausgewählte Tabs</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Website vom Löschen ausgeschlossen</string>
+			<key>other</key>
+			<string>%1$d Websites vom Löschen ausgeschlossen</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

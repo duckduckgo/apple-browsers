@@ -25,9 +25,11 @@ import History
 import NewTabPage
 import Persistence
 import PixelKit
+import PrivacyConfig
 import PrivacyStats
 import AutoconsentStats
 import Suggestions
+import Subscription
 
 typealias HistoryProviderCoordinating = HistoryCoordinating & SuggestionContainer.HistoryProvider
 
@@ -61,7 +63,9 @@ final class NewTabPageCoordinator {
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
+        subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
         protectionsReportModel: NewTabPageProtectionsReportModel,
+        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
@@ -87,7 +91,9 @@ final class NewTabPageCoordinator {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
-            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

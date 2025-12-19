@@ -40,7 +40,7 @@ let package = Package(
         .target(
             name: "FeatureFlags",
             dependencies: [
-                .product(name: "BrowserServicesKit", package: "BrowserServicesKit")
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

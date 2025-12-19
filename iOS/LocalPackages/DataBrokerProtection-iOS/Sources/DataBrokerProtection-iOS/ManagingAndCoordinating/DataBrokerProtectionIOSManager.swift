@@ -28,6 +28,7 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
+import PrivacyConfig
 import SwiftUI
 
 /*
@@ -74,7 +75,7 @@ public class DBPIOSInterface {
                               errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                               completionHandler: (() -> Void)?)
         func runEmailConfirmationJobs() async throws
-        func fireWeeklyPixels()
+        func fireWeeklyPixels() async
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -112,8 +113,8 @@ public class DBPIOSInterface {
     }
 
     protocol PixelsDelegate: AnyObject {
-        func tryToFireEngagementPixels()
-        func tryToFireWeeklyPixels()
+        func tryToFireEngagementPixels(isAuthenticated: Bool)
+        func tryToFireWeeklyPixels(isAuthenticated: Bool)
         func tryToFireStatsPixels()
     }
 
@@ -155,6 +156,9 @@ public final class DataBrokerProtectionIOSManager {
     private let settings: DataBrokerProtectionSettings
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
     private let wideEventSweeper: DBPWideEventSweeper?
+    private let eventsHandler: EventMapping<JobEvent>
+    private let isWebViewInspectable: Bool
+
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: DatabaseConstants.directoryName,
@@ -206,7 +210,9 @@ public final class DataBrokerProtectionIOSManager {
          settings: DataBrokerProtectionSettings,
          subscriptionManager: DataBrokerProtectionSubscriptionManaging,
          wideEvent: WideEventManaging?,
-         engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp)
+         eventsHandler: EventMapping<JobEvent>,
+         engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp),
+         isWebViewInspectable: Bool = false
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -225,6 +231,8 @@ public final class DataBrokerProtectionIOSManager {
         self.settings = settings
         self.subscriptionManager = subscriptionManager
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
+        self.eventsHandler = eventsHandler
+        self.isWebViewInspectable = isWebViewInspectable
 
         self.queueManager.delegate = self
 
@@ -243,8 +251,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
     }
 
     public func appDidBecomeActive() async {
+        await fireMonitoringPixels()
+
         guard await authenticationManager.isUserAuthenticated else { return }
-        fireMonitoringPixels()
 
         if featureFlagger.isForegroundRunningOnAppActiveFeatureOn {
             await startImmediateScanOperations()
@@ -253,11 +262,16 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         }
     }
 
-    func fireMonitoringPixels() {
-        tryToFireEngagementPixels()
-        tryToFireWeeklyPixels()
+    func fireMonitoringPixels() async {
+        let isAuthenticated = await authenticationManager.isUserAuthenticated
+        tryToFireEngagementPixels(isAuthenticated: isAuthenticated)
+        tryToFireWeeklyPixels(isAuthenticated: isAuthenticated)
+
+        // Stats pixels only fire for authenticated users (they relate to opt-outs)
+        guard isAuthenticated else { return }
+
         tryToFireStatsPixels()
-        
+
         Logger.dataBrokerProtection.debug("PIR wide event sweep requested (app active)")
         sweepWideEvents()
     }
@@ -320,10 +334,15 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
         } catch {
             throw error
         }
+        
+        eventPixels.markInitialScansStarted()
+        eventsHandler.fire(.profileSaved)
+
         await startImmediateScanOperations()
     }
 
     public func deleteAllUserProfileData() throws {
+        queueManager.stop()
         try database.deleteProfileData()
         DataBrokerProtectionSettings(defaults: .dbp).resetBrokerDeliveryData()
     }
@@ -339,6 +358,24 @@ extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
             do {
                 try await brokerUpdater?.checkForUpdates()
             }
+        }
+    }
+
+    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging) {
+
+        // Figure out if we've just finished initial scans, and send the appropriate pixel if necessary
+        if eventPixels.hasInitialScansTotalDurationPixelBeenSent() {
+            return
+        }
+
+        do {
+            let hasCompletedInitialScans = try database.haveAllScansRunAtLeastOnce()
+            if hasCompletedInitialScans {
+                let profile = try database.fetchProfile()
+                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0)
+            }
+        } catch {
+            Logger.dataBrokerProtection.error("Error when calculating if we should send the initial scans duration pixel, error: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
@@ -404,12 +441,13 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         queueManager.addEmailConfirmationJobs(showWebView: true, jobDependencies: jobDependencies)
     }
 
-    public func fireWeeklyPixels() {
+    public func fireWeeklyPixels() async {
+        let isAuthenticated = await authenticationManager.isUserAuthenticated
         let eventPixels = DataBrokerProtectionEventPixels(
             database: jobDependencies.database,
             handler: jobDependencies.pixelHandler
         )
-        eventPixels.fireWeeklyReportPixels()
+        eventPixels.fireWeeklyReportPixels(isAuthenticated: isAuthenticated)
     }
 }
 
@@ -461,7 +499,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
                                                   contentScopeProperties: self.jobDependencies.contentScopeProperties,
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
                                                   openURLHandler: quickLinkOpenURLHandler,
-                                                  feedbackViewCreator: feedbackViewCreator)
+                                                  feedbackViewCreator: feedbackViewCreator,
+                                                  isWebViewInspectable: isWebViewInspectable)
     }
 }
 
@@ -478,12 +517,12 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.OptOutEmailConfirmatio
 // MARK: - Private protocol implementations
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.PixelsDelegate {
-    func tryToFireEngagementPixels() {
-        engagementPixels.fireEngagementPixel()
+    func tryToFireEngagementPixels(isAuthenticated: Bool) {
+        engagementPixels.fireEngagementPixel(isAuthenticated: isAuthenticated)
     }
 
-    func tryToFireWeeklyPixels() {
-        eventPixels.tryToFireWeeklyPixels()
+    func tryToFireWeeklyPixels(isAuthenticated: Bool) {
+        eventPixels.tryToFireWeeklyPixels(isAuthenticated: isAuthenticated)
     }
 
     func tryToFireStatsPixels() {
@@ -655,7 +694,19 @@ private extension DataBrokerProtectionIOSManager {
         }
 
         await checkForEmailConfirmationData()
-        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+        queueManager.startImmediateScanOperationsIfPermitted(
+            showWebView: false,
+            jobDependencies: jobDependencies,
+            errorHandler: { [weak self] errors in
+                if errors?.oneTimeError == nil {
+                    self?.eventsHandler.fire(.firstScanCompleted)
+                }
+            }
+        ) { [weak self] in
+            if let hasMatches = try? self?.database.hasMatches(), hasMatches {
+                self?.eventsHandler.fire(.firstScanCompletedAndMatchesFound)
+            }
+            
             DispatchQueue.main.async {
                 backgroundAssertion.release()
             }

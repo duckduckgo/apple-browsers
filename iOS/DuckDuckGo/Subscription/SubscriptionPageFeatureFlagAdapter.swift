@@ -19,6 +19,7 @@
 
 import Foundation
 import BrowserServicesKit
+import PrivacyConfig
 
 /// Adapts the app's FeatureFlagger to the SubscriptionPageFeatureFlagProvider protocol
 /// This keeps the Subscription module decoupled from the app's feature flag system

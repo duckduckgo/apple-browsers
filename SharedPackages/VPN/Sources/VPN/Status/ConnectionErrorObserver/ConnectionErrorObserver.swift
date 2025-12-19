@@ -18,7 +18,6 @@
 
 import Combine
 import Foundation
-import NetworkExtension
 
 public protocol ConnectionErrorObserver {
     var publisher: AnyPublisher<String?, Never> { get }

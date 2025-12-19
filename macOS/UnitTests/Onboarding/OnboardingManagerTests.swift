@@ -18,6 +18,8 @@
 
 import Persistence
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import SwiftUI
 import XCTest

@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import Foundation
 import Navigation
+import PrivacyConfig
 import UserScript
 
 final class FBProtectionTabExtension {

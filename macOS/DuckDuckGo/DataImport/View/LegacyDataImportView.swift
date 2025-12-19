@@ -17,10 +17,11 @@
 //
 
 import AppKit
-import SwiftUI
 import BrowserServicesKit
-import PixelKit
 import DesignResourcesKitIcons
+import PixelKit
+import PrivacyConfig
+import SwiftUI
 import UniformTypeIdentifiers
 
 @MainActor

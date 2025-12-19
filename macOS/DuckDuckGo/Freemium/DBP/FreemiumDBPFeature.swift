@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import BrowserServicesKit
-import Subscription
-import Freemium
 import Combine
+import Foundation
+import Freemium
 import OSLog
+import PrivacyConfig
+import Subscription
 
 /// Constants for UserDefaults keys used by the Freemium DBP feature.
 enum FreemiumDBPFeatureKeys {

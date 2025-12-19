@@ -20,7 +20,7 @@
 import WebKit
 import Common
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 import UserScript
 import PrivacyDashboard
 import os.log

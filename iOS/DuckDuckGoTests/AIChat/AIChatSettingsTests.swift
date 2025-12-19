@@ -20,7 +20,7 @@
 import XCTest
 @testable import Core
 @testable import DuckDuckGo
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import AIChat
 import Persistence
@@ -130,6 +130,22 @@ class AIChatSettingsTests: XCTestCase {
         settings.enableAIChatBrowsingMenuUserSettings(enable: false)
         waitForExpectations(timeout: 1, handler: nil)
         mockNotificationCenter.removeObserver(observer)
+    }
+
+    func testEnableAutomaticContextAttachment() {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        // Default value is true
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+
+        settings.enableAutomaticContextAttachment(enable: false)
+        XCTAssertFalse(settings.isAutomaticContextAttachmentEnabled)
+
+        settings.enableAutomaticContextAttachment(enable: true)
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
     }
 
 }

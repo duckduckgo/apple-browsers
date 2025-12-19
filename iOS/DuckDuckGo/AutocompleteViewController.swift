@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
 import UIKit
 import Core
@@ -27,7 +28,7 @@ import CoreData
 import Persistence
 import History
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import SwiftUI
 import AIChat
 

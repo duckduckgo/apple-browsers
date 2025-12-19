@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
+import PrivacyConfig
 import WebKit
 import XCTest
 
@@ -46,7 +46,8 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockPopupBlockingConfig = MockPopupBlockingConfiguration()
         testPermissionManager = TestPermissionManager()
-        mockPermissionModel = PermissionModel(permissionManager: testPermissionManager, featureFlagger: mockFeatureFlagger)
+        mockPermissionModel = PermissionModel(permissionManager: testPermissionManager,
+                                              featureFlagger: mockFeatureFlagger)
         webView = WebView()
         configuration = WKWebViewConfiguration()
         windowFeatures = WKWindowFeatures()
@@ -2201,6 +2202,15 @@ class TestPermissionManager: PermissionManagerProtocol {
 
     func hasPermissionPersisted(forDomain domain: String, permissionType: PermissionType) -> Bool {
         return persistedPermissions[domain]?[permissionType] != nil
+    }
+
+    func hasAnyPermissionPersisted(forDomain domain: String) -> Bool {
+        return persistedPermissions[domain]?.isEmpty == false
+    }
+
+    func persistedPermissionTypes(forDomain domain: String) -> [PermissionType] {
+        guard let permissions = persistedPermissions[domain] else { return [] }
+        return Array(permissions.keys)
     }
 
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {

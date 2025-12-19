@@ -78,14 +78,18 @@ final class UserScripts: UserScriptsProvider {
             storage: DefaultAIChatPreferencesStorage(),
             windowControllersManager: sourceProvider.windowControllersManager,
             pixelFiring: PixelKit.shared,
-            statisticsLoader: StatisticsLoader.shared
+            statisticsLoader: StatisticsLoader.shared,
+            // ToDo: do we have better way of passing this?
+            syncHandler: AIChatSyncHandler(sync: NSApp.delegateTyped.syncService!),
+            featureFlagger: sourceProvider.featureFlagger
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
+        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
-            paidAIChatFlagStatusProvider: { sourceProvider.featureFlagger.isFeatureOn(.paidAIChat) },
+            featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
@@ -104,8 +108,8 @@ final class UserScripts: UserScriptsProvider {
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
                                            currentCohorts: currentCohorts)
         do {
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -122,8 +126,11 @@ final class UserScripts: UserScriptsProvider {
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
+        let themeManager = NSApp.delegateTyped.themeManager
+
         specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(for: lenguageCode),
-                                                                languageCode: lenguageCode)
+                                                                languageCode: lenguageCode,
+                                                                styleProvider: ScriptStyleProvider(themeManager: themeManager))
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
 

@@ -17,10 +17,10 @@
 //
 
 import AIChat
-import BrowserServicesKit
 import Foundation
 import Persistence
 import PixelKit
+import PrivacyConfig
 
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
 /// It also fire pixels when necessary data is missing.

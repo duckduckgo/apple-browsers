@@ -390,6 +390,12 @@
                         "type": "integer"
                     }
                 }
+            },
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
             }
         ]
     },
@@ -429,6 +435,12 @@
                         "type": "integer"
                     }
                 }
+            },
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
             }
         ]
     },
@@ -473,6 +485,83 @@
                 "key": "duration_median_ms",
                 "description": "Median duration of background task sessions in milliseconds",
                 "type": "number"
+            },
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_ios_dbp_engagement_dau": {
+        "description": "Fired daily for active PIR users",
+        "owners": ["quanganhdo"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_ios_dbp_engagement_wau": {
+        "description": "Fired weekly for active PIR users",
+        "owners": ["quanganhdo"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_ios_dbp_engagement_mau": {
+        "description": "Fired monthly for active PIR users",
+        "owners": ["quanganhdo"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_ios_dbp_weekly_child-broker_orphaned-optouts": {
+        "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",
+        "owners": ["quanganhdo"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            {
+                "key": "child-parent-record-difference",
+                "description": "The difference in record count between child and parent broker",
+                "type": "number"
+            },
+            {
+                "key": "calculated-orphaned-records",
+                "description": "Number of calculated orphaned records",
+                "type": "number"
+            },
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
             }
         ]
     },
@@ -877,5 +966,75 @@
             },
             "dbpParentBroker"
         ]
+    },
+    "m_ios_dbp_notification_sent_first_scan_complete": {
+        "description": "Fires when the initial scan completion notification is sent.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_freemium_notification_sent_first_scan_complete": {
+        "description": "Fires when the initial freemium scan completion notification is sent.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_sent_first_removal": {
+        "description": "Fires when the first profile removal notification is sent.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_sent_all_records_removed": {
+        "description": "Fires when the all record removal notification is sent.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_scheduled_1_week_check_in": {
+        "description": "Fires when the one-week check-in notification is scheduled.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_opened_first_scan_complete": {
+        "description": "Fires when the user opens the initial scan completion notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_freemium_notification_opened_first_scan_complete": {
+        "description": "Fires when the user opens the initial freemium scan completion notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_opened_first_removal": {
+        "description": "Fires when the user opens the first profile removal notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_opened_all_records_removed": {
+        "description": "Fires when the user opens the all record removal notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_opened_1_week_check_in": {
+        "description": "Fires when the user opens the one-week check-in notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

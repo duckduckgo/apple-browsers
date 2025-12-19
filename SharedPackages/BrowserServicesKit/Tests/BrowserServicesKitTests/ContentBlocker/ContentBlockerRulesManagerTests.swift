@@ -19,12 +19,13 @@
 // Tests are disabled on iOS due to WKWebView stability issues on the iOS 17.5+ simulator.
 #if os(macOS)
 
-import XCTest
-import TrackerRadarKit
 import BrowserServicesKit
-import WebKit
 import Combine
 import Common
+import ContentBlocking
+import TrackerRadarKit
+import WebKit
+import XCTest
 
 class ContentBlockerRulesManagerTests: XCTestCase {
 

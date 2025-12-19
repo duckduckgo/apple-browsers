@@ -17,10 +17,10 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import DesignResourcesKitIcons
 import FeatureFlags
+import PrivacyConfig
 import WebKit
 
 struct OtherTabBarViewItemsState {
@@ -1127,7 +1127,7 @@ final class TabBarViewItem: NSCollectionViewItem {
             let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
             cell.closeButton.isShown = showCloseButton
             cell.faviconView.isShown = (widthStage != .withoutTitle || !showCloseButton)
-            cell.titleView.isShown = !widthStage.isTitleHidden || (cell.faviconView.displaysImage == false && !showCloseButton)
+            cell.titleView.isShown = !widthStage.isTitleHidden
         } else if isPinned {
             cell.closeButton.isShown = false
             cell.faviconImageView.isShown = cell.faviconImageView.image != nil
@@ -1285,17 +1285,11 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func activePermissionIcon(for permissionType: PermissionType) -> NSImage {
-        switch permissionType {
-        case .camera:
-            return DesignSystemImages.Glyphs.Size16.permissionCameraSolid
-        case .microphone:
-            return DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
-        case .geolocation:
-            return DesignSystemImages.Glyphs.Size16.permissionsLocationSolid
-        case .popups, .externalScheme:
+        guard let solidIcon = permissionType.solidIcon else {
             assertionFailure("Unexpected permission type for active icon: \(permissionType)")
-            return DesignSystemImages.Glyphs.Size16.permissionCameraSolid
+            return permissionType.icon
         }
+        return solidIcon
     }
 
     private func updateSeparatorView() {

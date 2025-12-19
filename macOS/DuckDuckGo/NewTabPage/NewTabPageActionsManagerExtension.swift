@@ -24,7 +24,9 @@ import Common
 import History
 import NewTabPage
 import Persistence
+import PrivacyConfig
 import PrivacyStats
+import Subscription
 
 extension NewTabPageActionsManager {
 
@@ -54,7 +56,9 @@ extension NewTabPageActionsManager {
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
-        protectionsReportModel: NewTabPageProtectionsReportModel
+        subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
+        protectionsReportModel: NewTabPageProtectionsReportModel,
+        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
     ) {
         self.init(
             appearancePreferences: appearancePreferences,
@@ -78,7 +82,9 @@ extension NewTabPageActionsManager {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
-            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
         )
     }
 
@@ -105,7 +111,9 @@ extension NewTabPageActionsManager {
         windowControllersManager: WindowControllersManagerProtocol  & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
-        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
+        subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
+        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -179,7 +187,9 @@ extension NewTabPageActionsManager {
                     continueSetUpModel: HomePage.Models.ContinueSetUpModel(
                         dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager),
                         tabOpener: NewTabPageTabOpener(),
-                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager
+                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                        subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+                        persistor: homePageContinueSetUpModelPersistor
                     ),
                     appearancePreferences: appearancePreferences
                 )

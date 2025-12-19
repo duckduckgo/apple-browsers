@@ -17,10 +17,11 @@
 //
 
 import XCTest
-import BrowserServicesKit
 import Combine
 import DDGSync
 import Persistence
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SyncBookmarksAdapterTests: XCTestCase {

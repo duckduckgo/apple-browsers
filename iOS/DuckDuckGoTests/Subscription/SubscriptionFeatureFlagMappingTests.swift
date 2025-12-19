@@ -21,7 +21,7 @@ import XCTest
 @testable import Core
 @testable import DuckDuckGo
 @testable import Subscription
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 
 final class SubscriptionFeatureFlagMappingTests: XCTestCase {

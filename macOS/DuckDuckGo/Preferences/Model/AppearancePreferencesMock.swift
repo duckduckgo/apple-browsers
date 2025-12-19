@@ -17,8 +17,11 @@
 //
 
 #if DEBUG
+
 import PersistenceTestingUtils
 import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 extension AppearancePreferences {
     static let mock = AppearancePreferences(

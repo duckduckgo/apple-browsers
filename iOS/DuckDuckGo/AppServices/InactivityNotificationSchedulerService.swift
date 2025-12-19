@@ -20,7 +20,7 @@
 import UIKit
 import UserNotifications
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 
 final class InactivityNotificationSchedulerService {
     

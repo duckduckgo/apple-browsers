@@ -21,6 +21,8 @@ import Combine
 import ContentBlocking
 import Navigation
 import os.log
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import TrackerRadarKit
 import WebKit
@@ -240,7 +242,7 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
     @MainActor
     func testWhenNavigationSucceeds_eventsSent() throws {
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
 
@@ -288,7 +290,7 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
     @MainActor
     func testWhenNavigationRedirects_didFinishNotCalledForRedirectedNavigation() throws {
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
@@ -351,7 +353,7 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
     @MainActor
     func testWhenDeveloperRedirects_didFailNotCalledForRedirectedNavigation() throws {
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
@@ -423,7 +425,7 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
     @MainActor
     func testWhenNavigationFails_eventsSent() {
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
         schemeHandler.middleware = [{ request in
@@ -457,7 +459,7 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
     @MainActor
     func testOnBackForward_onBackForwardNavigationCalled() throws {
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
@@ -518,8 +520,8 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
 
     @MainActor
     func testOnLogicDidRequestRulesApplication_localContentRuleListIsInstalled() {
-        privacyConfiguration.isFeatureKeyEnabled = { feature, _ in
-            return feature == .contentBlocking
+        privacyConfiguration.isFeatureEnabledCheck = { feature, _ in
+            return feature == PrivacyFeature.contentBlocking
         }
         let userScriptInstalled = expectation(description: "userScriptInstalled")
         logic.onRulesChanged = { _ in
@@ -562,7 +564,7 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
 
     @MainActor
     func testOnNilRulesApplication_supplementaryTrackerDataIsCleared() {
-        privacyConfiguration.isFeatureKeyEnabled = { feature, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { feature, _ in
             return feature == .contentBlocking
         }
         let userScriptInstalled = expectation(description: "userScriptInstalled")
@@ -590,7 +592,7 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
 
     @MainActor
     func testOnRulesApplicationWithContentBlockingDisabled_localContentRuleListIsRemoved() {
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
         let userScriptInstalled = expectation(description: "userScriptInstalled")
@@ -622,7 +624,7 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
 
     @MainActor
     func testOnRulesApplicationWithNilVendor_localContentRuleListIsRemoved() {
-        privacyConfiguration.isFeatureKeyEnabled = { feature, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { feature, _ in
             return feature == .contentBlocking
         }
         let userScriptInstalled = expectation(description: "userScriptInstalled")

@@ -27,6 +27,7 @@ import History
 import HistoryView
 import os.log
 import PixelKit
+import PrivacyConfig
 import Subscription
 import SwiftUI
 import Utilities
@@ -321,14 +322,9 @@ extension AppDelegate {
             },
             onResize: { width, height in
                 guard let window = window else { return }
-                let currentFrame = window.frame
-                let newFrame = NSRect(
-                    x: currentFrame.origin.x,
-                    y: currentFrame.origin.y + (currentFrame.height - height), // Adjust Y to keep top position
-                    width: width,
-                    height: height
-                )
-                window.setFrame(newFrame, display: true, animate: true)
+                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
+                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+                window.setFrame(newFrame, display: true, animate: false)
             }
         )
 
@@ -374,14 +370,9 @@ extension AppDelegate {
             },
             onResize: { width, height in
                 guard let window = window else { return }
-                let currentFrame = window.frame
-                let newFrame = NSRect(
-                    x: currentFrame.origin.x,
-                    y: currentFrame.origin.y + (currentFrame.height - height), // Adjust Y to keep top position
-                    width: width,
-                    height: height
-                )
-                window.setFrame(newFrame, display: true, animate: true)
+                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
+                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+                window.setFrame(newFrame, display: true, animate: false)
             }
         )
 
@@ -576,7 +567,7 @@ extension AppDelegate {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         appearancePreferences.continueSetUpCardsClosed = false
         appearancePreferences.isContinueSetUpVisible = true
-        HomePage.Models.ContinueSetUpModel.Settings().clear()
+        homePageSetUpDependencies.clearAll()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 
@@ -676,10 +667,7 @@ extension AppDelegate {
 
     @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowAllFeatures.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowMakeDefault.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowImport.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowDuckPlayer.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowEmailProtection.rawValue)
+        homePageSetUpDependencies.clearAll()
     }
 
     @objc func resetOnboarding(_ sender: Any?) {
@@ -721,6 +709,11 @@ extension AppDelegate {
 
     @objc func setLaunchDayAMonthInThePast(_ sender: Any?) {
         UserDefaults.standard.set(Date.monthAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func resetQuitSurveyWasShown(_ sender: Any?) {
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.hasQuitAppBefore = false
     }
 
     @objc func resetTipKit(_ sender: Any?) {
@@ -1297,7 +1290,7 @@ extension MainViewController {
         NSApp.delegateTyped.appearancePreferences.isContinueSetUpCardsViewOutdated = false
         NSApp.delegateTyped.appearancePreferences.continueSetUpCardsClosed = false
         NSApp.delegateTyped.appearancePreferences.isContinueSetUpVisible = true
-        HomePage.Models.ContinueSetUpModel.Settings().clear()
+        NSApp.delegateTyped.homePageSetUpDependencies.clearAll()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 
@@ -1390,6 +1383,11 @@ extension MainViewController {
                       webViewSize: .zero)
 
         WindowsManager.openPopUpWindow(with: tab, origin: nil, contentSize: nil)
+    }
+
+    @objc func alwaysShowFirstTimeQuitSurvey(_ sender: Any?) {
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.alwaysShowQuitSurvey = !persistor.alwaysShowQuitSurvey
     }
 
     @objc func removeUserScripts(_ sender: Any?) {

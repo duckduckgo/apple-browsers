@@ -48,7 +48,11 @@ struct BookmarkDialogFolderManagementView: View {
                 Image(.addFolder)
             }
             .accessibilityIdentifier("bookmark.add.new.folder.button")
-            .buttonStyle(StandardButtonStyle())
+            .buttonStyle(
+                StandardButtonStyle(
+                    backgroundColor: Color(designSystemColor: .toneShadePrimary),
+                    backgroundPressedColor: Color(designSystemColor: .accentPrimary))
+            )
         }
     }
 }

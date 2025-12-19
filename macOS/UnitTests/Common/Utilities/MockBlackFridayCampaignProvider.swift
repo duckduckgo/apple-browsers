@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 final class MockBlackFridayCampaignProvider: BlackFridayCampaignProviding {
     var isCampaignEnabled: Bool = false

@@ -21,7 +21,7 @@ import SwiftUI
 import Persistence
 import Common
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 import SetDefaultBrowserCore
 import class UIKit.UIApplication
 

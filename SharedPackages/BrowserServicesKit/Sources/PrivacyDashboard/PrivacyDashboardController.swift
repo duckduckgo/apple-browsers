@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import Foundation
@@ -62,7 +61,12 @@ public protocol PrivacyDashboardControllerDelegate: AnyObject {
 
     public weak var delegate: PrivacyDashboardControllerDelegate?
 
+    /// Deprecated: Preserved for backwards compatibility. Please use the `style` property instead
     @Published public var theme: PrivacyDashboardTheme?
+
+    /// Sets the Theme + Appearance of the Privacy Dashboard
+    @Published public var style: PrivacyDashboardStyle?
+
     @Published public var allowedPermissions: [AllowedPermission] = []
     public var preferredLocale: String?
     public var dashboardHtmlName: String {
@@ -199,7 +203,6 @@ public protocol PrivacyDashboardControllerDelegate: AnyObject {
     func didRequestClose() {
         delegate?.privacyDashboardControllerDidRequestClose(self)
     }
-
 }
 
 // MARK: - WKNavigationDelegate
@@ -218,6 +221,7 @@ extension PrivacyDashboardController: WKNavigationDelegate {
         cancellables.removeAll()
 
         subscribeToTheme()
+        subscribeToStyle()
         subscribeToTrackerInfo()
         subscribeToConnectionUpgradedTo()
         subscribeToServerTrust()
@@ -233,6 +237,17 @@ extension PrivacyDashboardController: WKNavigationDelegate {
             .sink(receiveValue: { [weak self] themeName in
                 guard let self, let webView else { return }
                 script.setTheme(themeName, webView: webView)
+            })
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToStyle() {
+        $style
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] style in
+                guard let self, let webView, let style else { return }
+                script.setThemeStyle(style, webView: webView)
             })
             .store(in: &cancellables)
     }

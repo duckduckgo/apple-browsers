@@ -101,6 +101,7 @@ extension DataImportWideEventData {
 
     public enum StatusReason: String, Codable, CaseIterable {
         case partialData = "partial_data"
+        case documentPickerCancelled = "document_picker_cancelled"
         case timeout
     }
 

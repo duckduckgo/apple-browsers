@@ -24,7 +24,8 @@ protocol FaviconUserScriptDelegate: AnyObject {
     @MainActor
     func faviconUserScript(_ faviconUserScript: FaviconUserScript,
                            didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
-                           for documentUrl: URL) async
+                           for documentUrl: URL,
+                           in webView: WKWebView?)
 }
 
 final class FaviconUserScript: NSObject, Subfeature {
@@ -37,21 +38,6 @@ final class FaviconUserScript: NSObject, Subfeature {
     struct FaviconLink: Codable, Equatable {
         let href: URL
         let rel: String
-
-        /**
-         * Returns a new `FaviconLink` with `href` upgraded to HTTPS, or nil if upgrading failed.
-         *
-         * Given that we use `URLSession` for fetching favicons, we can't fetch HTTP URLs, hence
-         * upgrading to HTTPS.
-         *
-         * > `toHttps()` is safe for `data:` URLs.
-         */
-        func upgradedToHTTPS() -> Self? {
-            guard let httpsHref = href.toHttps() else {
-                return nil
-            }
-            return .init(href: httpsHref, rel: rel)
-        }
     }
 
     let messageOriginPolicy: MessageOriginPolicy = .all
@@ -75,14 +61,9 @@ final class FaviconUserScript: NSObject, Subfeature {
 
     @MainActor
     private func faviconFound(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let faviconsPayload: FaviconsFoundPayload = DecodableHelper.decode(from: params)
-        else {
-            return nil
-        }
+        guard let faviconsPayload: FaviconsFoundPayload = DecodableHelper.decode(from: params) else { return nil }
 
-        let faviconLinks = faviconsPayload.favicons.compactMap { $0.upgradedToHTTPS() }
-
-        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconLinks, for: faviconsPayload.documentUrl)
+        delegate?.faviconUserScript(self, didFindFaviconLinks: faviconsPayload.favicons, for: faviconsPayload.documentUrl, in: original.webView)
         return nil
     }
 }

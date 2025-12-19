@@ -1404,6 +1404,7 @@ public struct UserText {
     public static let settingsBrowserFeedback = NSLocalizedString("settings.browser.feedback", value: "Browser Feedback", comment: "Settings cell for Browser Feedback")
     public static let settingsSubscriptionFeedback = NSLocalizedString("settings.subscription.feedback", value: "DuckDuckGo Subscription", comment: "Settings cell for Subscription Feedback")
     public static let duckduckgoOnOtherPlatforms = NSLocalizedString("settings.duckduckgo.on.other.platforms", value: "DuckDuckGo on Other Platforms", comment: "Settings cell to link users to other products by DuckDuckGo")
+    public static let settingsWhatsNew = NSLocalizedString("settings.whats.new", value: "What’s New", comment: "Settings cell title to show users the What’s New prompt")
 
     // General Section
     public static let settingsSetDefault = NSLocalizedString("settings.general.default.browser", value: "Set as Default Browser", comment: "Settings screen cell text for setting the app as default browser")
@@ -1429,11 +1430,37 @@ public struct UserText {
     public static let settingsCookiePopups = NSLocalizedString("settings.cookie.popups", value: "Manage Cookie Pop-ups", comment: "Settings screen cell text for Cookie popups")
     public static let settingsUnprotectedSites = NSLocalizedString("settings.unprotected.sites", value: "Unprotected Sites", comment: "Settings screen cell text for Unprotected Sites")
     public static let settingsFireproofSites = NSLocalizedString("settings.fireproof.sites", value: "Fireproof Sites", comment: "Settings screen cell text for Fireproof Sites")
+    public static let settingsFireproofedSites = NSLocalizedString("settings.fireproofed.sites", value: "Fireproofed Sites", comment: "Settings screen cell text for Fireproofed Sites")
+    public static func settingsFireproofedSitesSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "settings.fireproofed.sites.subtitle", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
     public static let settingsClearData = NSLocalizedString("settings.clear.data", value: "Automatically Clear Data", comment: "Settings screen cell text for Automatically Clearing Data")
+    public static let settingsAutomaticDataClearing = NSLocalizedString("settings.automatic.data.clearing.title", value: "Automatic Data Clearing", comment: "Settings row title for automatic data clearing")
+    public static let settingsDataClearingDescription = NSLocalizedString("settings.data.clearing.description", value: "Deleting your data can help protect your privacy online. Use the Fire Button to clear data manually, or set up automatic clearing.", comment: "Data Clearing settings header description")
+    public static let settingsClearBrowsingData = NSLocalizedString("settings.clear.browsing.data", value: "Clear Browsing Data", comment: "Button to clear browsing data")
     public static let settingsAutoClearTabsAndData = NSLocalizedString("settings.autoclear.tabs.and.data", value: "Clear Tabs and Data", comment: "Autoclear action option to clear tabs and data")
-    public static let settingsAutoClearTabsAndDataWithAIChat = NSLocalizedString("settings.autoclear.tabs.and.data.with.aichat", value: "Clear Tabs, Data and Duck.ai Chats", comment: "Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled")
+    public static let settingsAutoClearTabsAndDataWithAIChat = NSLocalizedString("settings.autoclear.tabs.and.data.with.aichat", value: "Clear Tabs, Data, and Duck.ai Chats", comment: "Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled")
     public static let settingsClearAIChatHistory = NSLocalizedString("settings.clear.aichat.history.title", value: "Clear Duck.ai Chats", comment: "Settings screen cell text for clearing AI chat history")
     public static let settingsClearAIChatHistoryFooter = NSLocalizedString("settings.clear.aichat.history.footer", value: "Fire Button will also delete Duck.ai history, including pinned chats.", comment: "Settings screen footer text explaining that Fire Button also clears AI chat history")
+
+    // MARK: - Auto Clear Settings
+    public static let settingsAutoClearToggleFooter = NSLocalizedString("settings.autoclear.toggle.footer", value: "Data will be deleted upon restart of the app.", comment: "Footer text explaining when data will be cleared when auto clear is enabled")
+    public static let settingsAutoClearSectionHeader = NSLocalizedString("settings.autoclear.section.header", value: "Clear", comment: "Section header for the auto clear options")
+    public static let settingsAutoClearTabsTitle = NSLocalizedString("settings.autoclear.tabs.title", value: "Tabs", comment: "Title for the tabs option in auto clear settings")
+    public static let settingsAutoClearTabsSubtitle = NSLocalizedString("settings.autoclear.tabs.subtitle", value: "Close all open tabs", comment: "Subtitle explaining what the tabs option does in auto clear settings")
+    public static let settingsAutoClearCookiesTitle = NSLocalizedString("settings.autoclear.cookies.title", value: "Cookies and Site Data", comment: "Title for the cookies and site data option in auto clear settings")
+    public static let settingsAutoClearCookiesSubtitle = NSLocalizedString("settings.autoclear.cookies.subtitle", value: "Delete all site data, including visited sites. May sign you out of accounts.", comment: "Subtitle explaining what the cookies option does in auto clear settings")
+    public static let settingsAutoClearDuckAIChatsTitle = NSLocalizedString("settings.autoclear.duckai.chats.title", value: "Duck.ai Chats", comment: "Title for the Duck.ai chats option in auto clear settings")
+    public static let settingsAutoClearDuckAIChatsSubtitle = NSLocalizedString("settings.autoclear.duckai.chats.subtitle", value: "Delete all chats, including pinned chats", comment: "Subtitle explaining what the Duck.ai chats option does in auto clear settings")
+    public static let settingsAutoClearTimingSectionHeader = NSLocalizedString("settings.autoclear.timing.section.header", value: "Desired Timing", comment: "Section header for the timing options in auto clear settings")
+    public static let settingsAutoClearTimingAppExitOnly = NSLocalizedString("settings.autoclear.timing.app.exit.only", value: "App Exit Only", comment: "Timing option to clear data only on app exit")
+    public static let settingsAutoClearTimingAppExitInactive5Min = NSLocalizedString("settings.autoclear.timing.app.exit.inactive.5min", value: "App Exit, Inactive for 5 Minutes", comment: "Timing option to clear data on app exit or after 5 minutes of inactivity")
+    public static let settingsAutoClearTimingAppExitInactive15Min = NSLocalizedString("settings.autoclear.timing.app.exit.inactive.15min", value: "App Exit, Inactive for 15 Minutes", comment: "Timing option to clear data on app exit or after 15 minutes of inactivity")
+    public static let settingsAutoClearTimingAppExitInactive30Min = NSLocalizedString("settings.autoclear.timing.app.exit.inactive.30min", value: "App Exit, Inactive for 30 Minutes", comment: "Timing option to clear data on app exit or after 30 minutes of inactivity")
+    public static let settingsAutoClearTimingAppExitInactive1Hour = NSLocalizedString("settings.autoclear.timing.app.exit.inactive.1hour", value: "App Exit, Inactive for 1 Hour", comment: "Timing option to clear data on app exit or after 1 hour of inactivity")
+    public static let settingsAutoClearTimingFooter = NSLocalizedString("settings.autoclear.timing.footer", value: "App exit is defined by swiping the app to close it while inactivity is when the app is in the background.", comment: "Footer text explaining what app exit and inactivity mean for auto clear timing")
+
     public static let settingsAutolock = NSLocalizedString("settings.autolock", value: "Application Lock", comment: "Settings screen cell text for Application Lock")
     public static let settingsAutoLockDescription = NSLocalizedString("settings.autolock.description", value: "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.", comment: "Section footer Autolock description")
     public static let settingsDataClearingForgetAllFootnote = NSLocalizedString("settings.data.clear.forget.all.footnote", value: "Clears all tabs and data for any sites you haven't fireproofed.", comment: "Clear data button explanation")
@@ -1616,6 +1643,8 @@ public struct UserText {
     public static let subscriptionRemoveFromDevice = NSLocalizedString("subscription.remove.from.device.button", value: "Remove From This Device", comment: "Remove from this device button")
     public static let subscriptionManageTitle = NSLocalizedString("subscription.manage.title", value: "Subscription", comment: "Header for the subscription section")
     public static let subscriptionManagePlan = NSLocalizedString("subscription.manage.plan", value: "Manage Plan", comment: "Manage Plan header")
+    public static let subscriptionViewAllPlans = NSLocalizedString("subscription.view.all.plans", value: "View All Plans", comment: "View All Plans button to see available subscription tiers")
+    public static let subscriptionPlansTitle = NSLocalizedString("subscription.plans.title", value: "Subscription Plans", comment: "Navigation title for the subscription plans page")
     public static let subscriptionChangePlan = NSLocalizedString("subscription.change.plan", value: "Update Plan or Cancel", comment: "Change plan or cancel title")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
@@ -1827,6 +1856,10 @@ public struct UserText {
     public static let settingsEnableDuckAIFullModeTitle = NSLocalizedString("settings.aifeatures.full.mode.title", value: "Duck.ai Tabs Mode", comment: "Settings screen cell title for enabling Duck.ai as tabs")
     
     public static let settingsEnableDuckAIFullModeSubtitle = NSLocalizedString("settings.aifeatures.full.mode.subtitle", value: "Show new Duck.ai Chats as tabs in the browser", comment: "Settings screen cell subtitle for enabling Duck.ai as tabs")
+    
+    public static let settingsAutomaticPageContextTitle = NSLocalizedString("settings.aifeatures.automatic.context.title", value: "Automatically Send Context", comment: "Settings screen cell title for enabling automatic page context")
+    
+    public static let settingsAutomaticPageContextSubtitle = NSLocalizedString("settings.aifeatures.automatic.context.subtitle", value: "Automatically send page context to Duck.ai", comment: "Settings screen cell subtitle for enabling automatic page context")
 
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 
@@ -1880,6 +1913,9 @@ public struct UserText {
     public static let aiChatSettingsAllowFollowUpQuestionsDescription = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.description", value: "Show Duck.ai buttons and links in DuckDuckGo search results.", comment: "Description text explaining what the 'Ask Follow-up Questions' toggle does")
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
+
+    // MARK: - AI Chat Quick Actions
+    public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize this Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
 
     // MARK: - AI Features Picker Footer
     public static let settingsAIPickerFooterDescription = NSLocalizedString(
@@ -2181,5 +2217,24 @@ public struct UserText {
             static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.skip", value: "Skip", comment: "Button to continue the onboarding process.")
 
         }
+    }
+    
+    // MARK: - Fire Confirmation
+    
+    public static let fireConfirmationTitle = NSLocalizedString("fire.confirmation.title", value: "Choose What To Delete", comment: "Title for fire button confirmation screen")
+    public static let fireConfirmationTabsTitle = NSLocalizedString("fire.confirmation.tabs.title", value: "Tabs", comment: "Tabs option title in fire confirmation")
+    public static let fireConfirmationDataTitle = NSLocalizedString("fire.confirmation.data.title", value: "Cookies and Site Data", comment: "Cookies and site data option title in fire confirmation")
+    public static let fireConfirmationAIChatsTitle = NSLocalizedString("fire.confirmation.aichats.title", value: "Duck.ai Chats", comment: "AI Chats option title in fire confirmation")
+    public static let fireConfirmationDataSubtitleHistoryDisabled = NSLocalizedString("fire.confirmation.data.subtitle.historyDisabled", value: "May sign you out of accounts", comment: "Subtitle for cookies/site data when history is disabled")
+    public static let fireConfirmationAIChatsSubtitle = NSLocalizedString("fire.confirmation.aichats.subtitle", value: "Delete all chats", comment: "AI Chats option subtitle in fire confirmation")
+    
+    public static func fireConfirmationTabsSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "fire.confirmation.tabs.subtitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    
+    public static func fireConfirmationDataSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "fire.confirmation.data.subtitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
     }
 }

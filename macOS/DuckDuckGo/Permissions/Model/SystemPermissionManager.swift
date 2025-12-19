@@ -16,8 +16,12 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
+import Common
 import CoreLocation
+import UserNotifications
+import os.log
 
 /// Represents the authorization state for a system permission
 enum SystemPermissionAuthorizationState {
@@ -36,8 +40,11 @@ enum SystemPermissionAuthorizationState {
 /// Protocol for managing system-level permissions required before website permissions can be granted
 protocol SystemPermissionManagerProtocol: AnyObject {
 
-    /// Returns the current authorization state for the given permission type
-    func authorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState
+    /// Returns the current authorization state for the given permission type (async, always fresh)
+    func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState
+
+    /// Returns the cached authorization state for the given permission type (sync, may be briefly stale at app launch)
+    func cachedAuthorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState
 
     /// Returns true if system authorization is required for the given permission type
     func isAuthorizationRequired(for permissionType: PermissionType) -> Bool
@@ -55,20 +62,37 @@ protocol SystemPermissionManagerProtocol: AnyObject {
 final class SystemPermissionManager: SystemPermissionManagerProtocol {
 
     private let geolocationService: GeolocationServiceProtocol
+    private let notificationService: UserNotificationAuthorizationServicing
 
-    init(geolocationService: GeolocationServiceProtocol = GeolocationService.shared) {
+    init(geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
+         notificationService: UserNotificationAuthorizationServicing? = nil) {
         self.geolocationService = geolocationService
+        self.notificationService = notificationService ?? NSApp.delegateTyped.notificationService
     }
 
     // MARK: - Public Methods
 
-    /// Returns the current authorization state for the given permission type
-    func authorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
+    /// Returns the current authorization state for the given permission type (async, always fresh)
+    func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
         switch permissionType {
         case .geolocation:
             return geolocationAuthorizationState
+        case .notification:
+            return await notificationService.authorizationStatus.asSystemPermissionState
         case .camera, .microphone, .popups, .externalScheme:
-            return .authorized // These don't require system permission through our two-step flow
+            return .authorized
+        }
+    }
+
+    /// Returns the cached authorization state for the given permission type (sync, may be briefly stale at app launch)
+    func cachedAuthorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
+        switch permissionType {
+        case .geolocation:
+            return geolocationAuthorizationState
+        case .notification:
+            return notificationService.cachedAuthorizationStatus.asSystemPermissionState
+        case .camera, .microphone, .popups, .externalScheme:
+            return .authorized
         }
     }
 
@@ -77,6 +101,8 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         switch permissionType {
         case .geolocation:
             return isGeolocationAuthorizationRequired
+        case .notification:
+            return isNotificationAuthorizationRequired
         case .camera, .microphone, .popups, .externalScheme:
             return false // These don't require system permission through our two-step flow
         }
@@ -88,6 +114,17 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         switch permissionType {
         case .geolocation:
             return requestGeolocationAuthorization(completion: completion)
+        case .notification:
+            Task { @MainActor in
+                do {
+                    let granted = try await notificationService.requestAuthorization(options: [.alert, .sound])
+                    completion(granted ? .authorized : .denied)
+                } catch {
+                    Logger.general.error("SystemPermissionManager: Notification authorization failed - \(error.localizedDescription)")
+                    completion(.denied)
+                }
+            }
+            return nil
         case .camera, .microphone, .popups, .externalScheme:
             // These don't require system permission through our two-step flow
             completion(.authorized)
@@ -122,6 +159,15 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return true
         case .authorized, .denied, .restricted:
             return false
+        }
+    }
+
+    private var isNotificationAuthorizationRequired: Bool {
+        switch notificationService.cachedAuthorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            return false
+        default:
+            return true
         }
     }
 
@@ -164,4 +210,21 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
 /// Helper class to hold a cancellable reference for proper capture semantics in closures
 private final class CancellableHolder {
     var cancellable: AnyCancellable?
+}
+
+// MARK: - UNAuthorizationStatus Conversion
+
+private extension UNAuthorizationStatus {
+    var asSystemPermissionState: SystemPermissionAuthorizationState {
+        switch self {
+        case .authorized, .provisional, .ephemeral:
+            return .authorized
+        case .denied:
+            return .denied
+        case .notDetermined:
+            return .notDetermined
+        @unknown default:
+            return .notDetermined
+        }
+    }
 }

@@ -17,11 +17,11 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import DuckPlayer
 import Foundation
 import PixelKit
+import PrivacyConfig
 
 protocol DuckPlayerPreferencesPersistor {
     /// The persistor hadles raw Bool values but each one translates into a DuckPlayerMode:

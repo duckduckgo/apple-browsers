@@ -19,6 +19,8 @@
 import Bookmarks
 import PersistenceTestingUtils
 import PixelKitTestingUtilities
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

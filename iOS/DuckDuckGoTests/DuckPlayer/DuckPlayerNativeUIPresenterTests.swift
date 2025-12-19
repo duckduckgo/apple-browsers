@@ -23,7 +23,7 @@ import SwiftUI
 import UIKit
 import WebKit
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 
 @testable import DuckDuckGo
 

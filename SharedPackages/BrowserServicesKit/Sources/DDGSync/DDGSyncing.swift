@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import DDGSyncCrypto
 import Foundation
@@ -154,6 +153,35 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws
 
     /**
+     Rescopes the Main Token into given scope to allow data access for models/endpoints associated with that scope.
+     */
+    func mainTokenRescope(to scope: String) async throws -> String?
+
+    /**
+     Deletes AI Chat data up to the provided timestamp.
+
+     - Parameter until: Date (UTC) up to which server should delete AI Chats.
+     */
+    func deleteAIChats(until: Date) async throws
+
+    /**
+     Persists whether AI Chat History is enabled in the AI Chat frontend.
+
+     This value is intended for client apps to gate AI Chat server-side deletion behavior when mirroring local clears.
+     */
+    func setAIChatHistoryEnabled(_ enabled: Bool)
+
+    /**
+     Returns whether AI Chat History is enabled in the AI Chat frontend.
+     */
+    var isAIChatHistoryEnabled: Bool { get }
+
+    /**
+     Registers additional operations to be executed as part of a scheduled sync run.
+     */
+    func setCustomOperations(_ operations: [any SyncCustomOperation])
+
+    /**
      Disconnect this client from the sync service. Removes all local info, but leaves in places bookmarks, etc.
      */
     func disconnect() async throws
@@ -179,6 +207,36 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
      Deletes this account, but does not affect locally stored data.
      */
     func deleteAccount() async throws
+
+    /**
+     Batch encrypt given values with Sync master key.
+     */
+    func encryptAndBase64Encode(_ values: [String]) throws -> [String]
+
+    /**
+     Batch decrypt given values with Sync master key.
+     */
+    func base64DecodeAndDecrypt(_ values: [String]) throws -> [String]
+
+    /**
+     Batch encrypt given values with Sync master key.
+     
+     Input values are Base64URL (unpadded) encoded plaintext bytes.
+     Output values are Base64URL (unpadded) encoded ciphertext bytes.
+     
+     Encryption is performed using `ddgSyncEncrypt` from the Sync Crypto (`DDGSyncCrypto`) library.
+     */
+    func encryptAndBase64URLEncode(_ values: [String]) throws -> [String]
+
+    /**
+     Batch decrypt given values with Sync master key.
+     
+     Input values are Base64URL (unpadded) encoded ciphertext bytes.
+     Output values are Base64URL (unpadded) encoded plaintext bytes.
+     
+     Decryption is performed using `ddgSyncDecrypt` from the Sync Crypto (`DDGSyncCrypto`) library.
+    */
+    func base64URLDecodeAndDecrypt(_ values: [String]) throws -> [String]
 }
 
 public protocol DDGSyncingDebuggingSupport {
@@ -232,6 +290,20 @@ public protocol Crypting {
      * (or can't be retrieved from keychain).
      */
     func fetchSecretKey() throws -> Data
+
+    /**
+     * Encrypts `value` using provided `secretKey`.
+     *
+     * Throws an error if value cannot be encrypted.
+     */
+    func encrypt(_ value: String, using secretKey: Data) throws -> Data
+
+    /**
+     * Decrypts `value` using provided `secretKey`.
+     *
+     * Throws an error when decryption fails.
+     */
+    func decrypt(_ value: Data, using secretKey: Data) throws -> String
 
     /**
      * Encrypts `value` using provided `secretKey` and encodes it using Base64 encoding.

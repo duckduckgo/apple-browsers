@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Lottie
@@ -24,6 +23,7 @@ import Common
 import AIChat
 import UIComponents
 import PixelKit
+import PrivacyConfig
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
@@ -342,6 +342,8 @@ final class AddressBarViewController: NSViewController {
         if let searchModeToggleControl = addressBarButtonsViewController?.searchModeToggleControl {
             addressBarTextField.customToggleControl = searchModeToggleControl
         }
+
+        addressBarTextField.aiChatTogglePopoverCoordinator = addressBarButtonsViewController?.aiChatTogglePopoverCoordinator
     }
 
     override func viewWillDisappear() {
@@ -789,7 +791,11 @@ final class AddressBarViewController: NSViewController {
             addressBarTextField.hideSuggestionWindow()
             return
         }
+
         guard AppVersion.runType != .unitTests else { return }
+
+        addressBarTextField.refreshStyle()
+
         let navigationBarBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
@@ -834,7 +840,8 @@ final class AddressBarViewController: NSViewController {
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
         let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
 
-        let isToggleVisible = isAddressBarFocused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isOmnibarToggleFeatureEnabled = isAddressBarFocused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        let isToggleVisible = isOmnibarToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
         let textMargin: CGFloat = 20
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {

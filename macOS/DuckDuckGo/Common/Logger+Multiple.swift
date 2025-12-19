@@ -31,6 +31,7 @@ extension Logger {
     static var tabPreview = { Logger(subsystem: "Tab Preview", category: "") }()
     static var maliciousSiteProtection = { Logger(subsystem: "Malsite Protection", category: "") }()
     static var pinnedTabs = { Logger(subsystem: "PinnedTabs", category: "") }()
+    static var memory = { Logger(subsystem: "Memory", category: "") }()
 }
 
 /// Provide value debug description or ??? "defaultValue" - to be used for logging like:

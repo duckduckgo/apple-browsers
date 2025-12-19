@@ -32,20 +32,18 @@ class ImportPasswordsViaSyncStatusHandler {
         self.syncService = syncService
     }
 
-    func setImportViaSyncStartDateIfRequired() {
+    func setImportViaSyncStartDateIfRequired() async {
         guard syncService.authState != .inactive else {
             appSettings.autofillImportViaSyncStart = Date()
             return
         }
 
-        Task {
-            if await !hasSyncedDesktopDevice(syncService: syncService) {
-                appSettings.autofillImportViaSyncStart = Date()
-            }
+        if await !hasSyncedDesktopDevice(syncService: syncService) {
+            appSettings.autofillImportViaSyncStart = Date()
         }
     }
 
-    func checkSyncSuccessStatus() {
+    func checkSyncSuccessStatus() async {
         guard let importCheckStartDate = appSettings.autofillImportViaSyncStart else {
             return
         }
@@ -54,10 +52,8 @@ class ImportPasswordsViaSyncStatusHandler {
             guard syncService.authState != .inactive else {
                 return
             }
-            Task {
-                if await hasSyncedDesktopDevice(syncService: syncService) {
-                    clearSettingAndFirePixel(.autofillLoginsImportSuccess)
-                }
+            if await hasSyncedDesktopDevice(syncService: syncService) {
+                clearSettingAndFirePixel(.autofillLoginsImportSuccess)
             }
         } else {
             guard syncService.authState != .inactive else {
@@ -65,12 +61,10 @@ class ImportPasswordsViaSyncStatusHandler {
                 return
             }
 
-            Task {
-                if await hasSyncedDesktopDevice(syncService: syncService) {
-                    appSettings.clearAutofillImportViaSyncStart()
-                } else {
-                    clearSettingAndFirePixel(.autofillLoginsImportFailure)
-                }
+            if await hasSyncedDesktopDevice(syncService: syncService) {
+                appSettings.clearAutofillImportViaSyncStart()
+            } else {
+                clearSettingAndFirePixel(.autofillLoginsImportFailure)
             }
         }
     }

@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Combine
-import PixelKit
 import AIChat
 import BrowserServicesKit
+import Combine
+import PixelKit
 import PixelKitTestingUtilities
+import PrivacyConfig
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -766,6 +767,10 @@ class MockAIChatSidebarProvider: AIChatSidebarProviding {
     func restoreState(_ sidebarsByTab: AIChatSidebarsByTab) {
         cleanUp(for: [])
         self.sidebarsByTab = sidebarsByTab
+    }
+
+    func resetSidebar(for tabID: TabIdentifier) {
+        sidebarsByTab.removeValue(forKey: tabID)
     }
 }
 

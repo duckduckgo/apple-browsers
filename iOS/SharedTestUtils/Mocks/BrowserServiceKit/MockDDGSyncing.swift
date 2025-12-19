@@ -35,6 +35,23 @@ final class MockDDGSyncing: DDGSyncing {
         
     }
 
+    func mainTokenRescope(to scope: String) async throws -> String? {
+        nil
+    }
+
+    func deleteAIChats(until: Date) async throws {
+    }
+
+    func setAIChatHistoryEnabled(_ enabled: Bool) {
+    }
+
+    var isAIChatHistoryEnabled: Bool {
+        false
+    }
+
+    func setCustomOperations(_ operations: [any SyncCustomOperation]) {
+    }
+
     var registeredDevices = [
         RegisteredDevice(id: "1", name: "Device 1", type: "desktop"),
         RegisteredDevice(id: "2", name: "Device 2", type: "mobile"),
@@ -118,6 +135,22 @@ final class MockDDGSyncing: DDGSyncing {
     }
 
     func deleteAccount() async throws {
+    }
+
+    func encryptAndBase64Encode(_ values: [String]) throws -> [String] {
+        values
+    }
+
+    func base64DecodeAndDecrypt(_ values: [String]) throws -> [String] {
+        values
+    }
+
+    func encryptAndBase64URLEncode(_ values: [String]) throws -> [String] {
+        values
+    }
+
+    func base64URLDecodeAndDecrypt(_ values: [String]) throws -> [String] {
+        values
     }
 
     var serverEnvironment: ServerEnvironment = .production

@@ -157,6 +157,22 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User submits a prompt from the suggestion for duck.ai by pressing enter
     case aiChatSuggestionAIChatSubmittedKeyboard
 
+    // MARK: - Toggle popover pixels
+
+    /// Event Trigger: The toggle popover is shown to the user
+    case aiChatTogglePopoverShown
+
+    /// Event Trigger: User clicks the X button to dismiss the toggle popover
+    case aiChatTogglePopoverDismissButtonClicked
+
+    /// Event Trigger: User clicks the settings button in the toggle popover
+    case aiChatTogglePopoverCustomizeButtonClicked
+
+    case aiChatSyncScopedSyncTokenError(reason: String)
+    case aiChatSyncEncryptionError(reason: String)
+    case aiChatSyncDecryptionError(reason: String)
+    case aiChatSyncHistoryEnabledError(reason: String)
+
     // MARK: -
 
     var name: String {
@@ -241,6 +257,20 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_suggestion_aichat_submitted_mouse"
         case .aiChatSuggestionAIChatSubmittedKeyboard:
             return "aichat_suggestion_aichat_submitted_keyboard"
+        case .aiChatTogglePopoverShown:
+            return "aichat_toggle_popover_shown"
+        case .aiChatTogglePopoverDismissButtonClicked:
+            return "aichat_toggle_popover_dismiss_button_clicked"
+        case .aiChatTogglePopoverCustomizeButtonClicked:
+            return "aichat_toggle_popover_customize_button_clicked"
+        case .aiChatSyncScopedSyncTokenError:
+            return "aichat_sync_internal_scoped-sync-token-error"
+        case .aiChatSyncEncryptionError:
+            return "aichat_sync_internal_encryption-error"
+        case .aiChatSyncDecryptionError:
+            return "aichat_sync_internal_decryption-error"
+        case .aiChatSyncHistoryEnabledError:
+            return "aichat_sync_internal_history_enabled-error"
         }
     }
 
@@ -277,7 +307,10 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarAIChatSubmitPrompt,
                 .aiChatAddressBarAIChatSubmitURL,
                 .aiChatSuggestionAIChatSubmittedMouse,
-                .aiChatSuggestionAIChatSubmittedKeyboard:
+                .aiChatSuggestionAIChatSubmittedKeyboard,
+                .aiChatTogglePopoverShown,
+                .aiChatTogglePopoverDismissButtonClicked,
+                .aiChatTogglePopoverCustomizeButtonClicked:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -296,6 +329,11 @@ enum AIChatPixel: PixelKitEvent {
             return ["source": source.rawValue]
         case .aiChatPageContextAdded(let automaticEnabled), .aiChatPageContextRemoved(let automaticEnabled):
             return ["automaticEnabled": String(automaticEnabled)]
+        case .aiChatSyncScopedSyncTokenError(let reason),
+                .aiChatSyncEncryptionError(let reason),
+                .aiChatSyncDecryptionError(let reason),
+                .aiChatSyncHistoryEnabledError(let reason):
+            return ["reason": reason]
         }
     }
 
@@ -338,7 +376,14 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarAIChatSubmitPrompt,
                 .aiChatAddressBarAIChatSubmitURL,
                 .aiChatSuggestionAIChatSubmittedMouse,
-                .aiChatSuggestionAIChatSubmittedKeyboard:
+                .aiChatSuggestionAIChatSubmittedKeyboard,
+                .aiChatTogglePopoverShown,
+                .aiChatTogglePopoverDismissButtonClicked,
+                .aiChatTogglePopoverCustomizeButtonClicked,
+                .aiChatSyncScopedSyncTokenError,
+                .aiChatSyncEncryptionError,
+                .aiChatSyncDecryptionError,
+                .aiChatSyncHistoryEnabledError:
             return [.pixelSource]
         }
     }

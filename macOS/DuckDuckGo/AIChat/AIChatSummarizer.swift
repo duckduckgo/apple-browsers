@@ -80,22 +80,16 @@ final class AIChatSummarizer: AIChatSummarizing {
         let prompt = AIChatNativePrompt.summaryPrompt(request.text, url: request.websiteURL, title: request.websiteTitle)
         pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
 
-        // With settings improvements we use the sidebar flow regardless
-        if aiChatMenuConfig.shouldOpenAIChatInSidebar || aiChatMenuConfig.shouldShowSettingsImprovements {
-            if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
-                pixelFiring?.fire(
-                    AIChatPixel.aiChatSidebarOpened(
-                        source: .summarization,
-                        shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
-                        minutesSinceSidebarHidden: aiChatSidebarPresenter.sidebarHiddenAtForCurrentTab()?.minutesSinceNow()
-                    ),
-                    frequency: .dailyAndStandard
-                )
-            }
-            aiChatSidebarPresenter.presentSidebar(for: prompt)
-        } else {
-            AIChatPromptHandler.shared.setData(prompt)
-            aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+        if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSidebarOpened(
+                    source: .summarization,
+                    shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
+                    minutesSinceSidebarHidden: aiChatSidebarPresenter.sidebarHiddenAtForCurrentTab()?.minutesSinceNow()
+                ),
+                frequency: .dailyAndStandard
+            )
         }
+        aiChatSidebarPresenter.presentSidebar(for: prompt)
     }
 }

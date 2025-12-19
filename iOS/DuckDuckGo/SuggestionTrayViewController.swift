@@ -24,6 +24,7 @@ import Suggestions
 import Persistence
 import History
 import BrowserServicesKit
+import PrivacyConfig
 import UIComponents
 import AIChat
 

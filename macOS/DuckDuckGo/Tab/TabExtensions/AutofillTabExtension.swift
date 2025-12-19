@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Combine
 import Foundation
 import PixelKit
+import PrivacyConfig
 import SecureStorage
 import enum UserScript.UserScriptError
 

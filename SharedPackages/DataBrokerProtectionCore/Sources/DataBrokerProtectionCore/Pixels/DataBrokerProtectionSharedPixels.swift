@@ -435,19 +435,19 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.durationMinMs: String(durationMinMs),
                     Consts.durationMaxMs: String(durationMaxMs),
                     Consts.durationMedianMs: String(durationMedianMs),
-                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+                    Consts.isAuthenticated: isAuthenticated.description]
         case .weeklyReportStalledScans(let numTotal, let numStalled, let totalByBroker, let stalledByBroker, let isAuthenticated):
             return [Consts.numTotal: String(numTotal),
                     Consts.numStalled: String(numStalled),
                     Consts.totalByBroker: totalByBroker,
                     Consts.stalledByBroker: stalledByBroker,
-                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+                    Consts.isAuthenticated: isAuthenticated.description]
         case .weeklyReportStalledOptOuts(let numTotal, let numStalled, let totalByBroker, let stalledByBroker, let isAuthenticated):
             return [Consts.numTotal: String(numTotal),
                     Consts.numStalled: String(numStalled),
                     Consts.totalByBroker: totalByBroker,
                     Consts.stalledByBroker: stalledByBroker,
-                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+                    Consts.isAuthenticated: isAuthenticated.description]
         case .optOutJobAt7DaysConfirmed(let dataBroker),
                 .optOutJobAt7DaysUnconfirmed(let dataBroker),
                 .optOutJobAt14DaysConfirmed(let dataBroker),
@@ -458,14 +458,14 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutJobAt42DaysUnconfirmed(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
         case .dailyActiveUser(let isAuthenticated, let needBackgroundAppRefresh):
-            var params = [Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+            var params = [Consts.isAuthenticated: isAuthenticated.description]
             if let needBackgroundAppRefresh {
                 params[Consts.needBackgroundAppRefresh] = needBackgroundAppRefresh.description
             }
             return params
         case .weeklyActiveUser(let isAuthenticated),
                 .monthlyActiveUser(let isAuthenticated):
-            return [Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+            return [Consts.isAuthenticated: isAuthenticated.description]
         case .scanningEventNewMatch,
                 .scanningEventReAppearance,
                 .secureVaultInitError,

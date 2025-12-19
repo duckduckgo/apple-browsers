@@ -22,6 +22,7 @@ import Common
 import BrowserServicesKit
 import History
 import PixelKit
+import PrivacyConfig
 import VPN
 import Subscription
 import os.log

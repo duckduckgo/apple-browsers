@@ -17,12 +17,12 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
 import Lottie
 import os.log
+import PrivacyConfig
 import PrivacyDashboard
 import PixelKit
 import AppKitExtensions

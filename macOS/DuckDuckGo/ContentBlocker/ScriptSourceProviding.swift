@@ -26,6 +26,7 @@ import HistoryView
 import NewTabPage
 import TrackerRadarKit
 import PixelKit
+import PrivacyConfig
 import enum UserScript.UserScriptError
 
 protocol ScriptSourceProviding {

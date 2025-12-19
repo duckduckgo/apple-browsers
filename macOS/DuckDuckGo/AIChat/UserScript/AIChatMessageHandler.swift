@@ -17,9 +17,9 @@
 //
 
 import AIChat
-import BrowserServicesKit
-import UserScript
 import Common
+import PrivacyConfig
+import UserScript
 
 enum AIChatMessageType {
     case nativeConfigValues

@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import DDGSync
 import FeatureFlags
 import Foundation
 import Persistence
+import PrivacyConfig
 import os.log
 
 /// Coordinates server-side AI Chat deletion to mirror local clears (Fire/AutoClear).

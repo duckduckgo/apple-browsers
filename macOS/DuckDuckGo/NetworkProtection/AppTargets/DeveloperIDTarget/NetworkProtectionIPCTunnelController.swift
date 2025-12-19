@@ -23,7 +23,7 @@ import NetworkProtectionIPC
 import PixelKit
 import UDSHelper
 import os.log
-import BrowserServicesKit
+import PrivacyConfig
 import VPNAppState
 
 /// VPN tunnel controller through IPC.

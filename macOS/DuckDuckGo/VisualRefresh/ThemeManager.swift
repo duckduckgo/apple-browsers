@@ -20,7 +20,7 @@ import Foundation
 import Combine
 import AppKit
 import DesignResourcesKit
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 
 protocol ThemeManaging {

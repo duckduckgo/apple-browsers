@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Lottie
@@ -24,6 +23,7 @@ import Common
 import AIChat
 import UIComponents
 import PixelKit
+import PrivacyConfig
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)

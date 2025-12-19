@@ -23,6 +23,7 @@ import Common
 import Foundation
 import NewTabPage
 import PixelKit
+import PrivacyConfig
 import Subscription
 
 protocol ContinueSetUpModelTabOpening {

@@ -45,6 +45,7 @@ import os.log
 import Persistence
 import PixelExperimentKit
 import PixelKit
+import PrivacyConfig
 import PrivacyStats
 import RemoteMessaging
 import ServiceManagement

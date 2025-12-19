@@ -19,11 +19,13 @@
 import Foundation
 import WebKit
 import Combine
+import ContentBlocking
 import BrowserServicesKit
 import Common
 import Persistence
 import PixelKit
 import PixelExperimentKit
+import PrivacyConfig
 
 protocol ContentBlockingProtocol {
 

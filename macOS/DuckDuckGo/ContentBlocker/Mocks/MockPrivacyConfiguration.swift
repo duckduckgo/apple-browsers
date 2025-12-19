@@ -16,18 +16,18 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+#if DEBUG
+
 import Combine
 import Common
 import Foundation
-
-#if DEBUG
+import PrivacyConfig
 
 final class MockPrivacyConfiguration: PrivacyConfiguration {
 
     var isSubfeatureKeyEnabled: ((any PrivacySubfeature, AppVersionProvider) -> Bool)?
 
-    func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
+    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         isSubfeatureKeyEnabled?(subfeature, versionProvider) ?? false
     }
 
@@ -54,7 +54,7 @@ final class MockPrivacyConfiguration: PrivacyConfiguration {
         isEnabled(featureKey: featureKey, versionProvider: versionProvider, defaultValue: false)
     }
 
-    func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {
+    func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool {
         isFeatureKeyEnabled?(featureKey, versionProvider) ?? true
     }
 
@@ -84,7 +84,7 @@ final class MockPrivacyConfiguration: PrivacyConfiguration {
     func isInExceptionList(domain: String?, forFeature featureKey: PrivacyFeature) -> Bool { false }
     func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         featureSettings }
-    func settings(for subfeature: any BrowserServicesKit.PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
+    func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
         subfeatureSettings
     }
     func userEnabledProtection(forDomain: String) {}
@@ -98,11 +98,11 @@ extension DefaultInternalUserDecider {
 }
 
 final class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
-    var embeddedConfigData: BrowserServicesKit.PrivacyConfigurationManager.ConfigurationData {
+    var embeddedConfigData: PrivacyConfigurationManager.ConfigurationData {
         fatalError("not implemented")
     }
 
-    var fetchedConfigData: BrowserServicesKit.PrivacyConfigurationManager.ConfigurationData? {
+    var fetchedConfigData: PrivacyConfigurationManager.ConfigurationData? {
         fatalError("not implemented")
     }
 
@@ -110,7 +110,7 @@ final class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManag
         Data()
     }
 
-    func reload(etag: String?, data: Data?) -> BrowserServicesKit.PrivacyConfigurationManager.ReloadResult {
+    func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
         return .embedded
     }
 

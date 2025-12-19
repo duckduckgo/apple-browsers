@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
+#if DEBUG
+
 import BloomFilterWrapper
 import BrowserServicesKit
 import Combine
 import Common
 import Foundation
-
-#if DEBUG
+import PrivacyConfig
 
 final class ContentBlockingMock: NSObject, ContentBlockingProtocol, AdClickAttributionDependencies {
 

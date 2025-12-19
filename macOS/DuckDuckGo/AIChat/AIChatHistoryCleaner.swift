@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Foundation
 import Combine
 import PixelKit
+import PrivacyConfig
 import WebKit
 import UserScript
 import os.log

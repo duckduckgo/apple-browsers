@@ -24,6 +24,7 @@ import Common
 import SwiftUI
 import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 
 public extension Notification.Name {
     static let dbpDidClose = Notification.Name("com.duckduckgo.DBP.DBPDidClose")

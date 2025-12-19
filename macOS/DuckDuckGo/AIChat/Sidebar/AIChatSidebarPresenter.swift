@@ -18,7 +18,7 @@
 
 import AIChat
 import AppKit
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import PixelKit
 

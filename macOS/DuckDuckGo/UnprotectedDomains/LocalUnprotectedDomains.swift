@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
 import CoreData
 import Foundation
 import os.log
 import Persistence
+import PrivacyConfig
 
 typealias UnprotectedDomainsStore = CoreDataStore<UnprotectedDomainManagedObject>
 final class LocalUnprotectedDomains: DomainsProtectionStore {

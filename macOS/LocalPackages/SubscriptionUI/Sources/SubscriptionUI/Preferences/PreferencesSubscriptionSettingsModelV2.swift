@@ -24,6 +24,7 @@ import class Combine.AnyCancellable
 import BrowserServicesKit
 import os.log
 import Persistence
+import PrivacyConfig
 
 public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 

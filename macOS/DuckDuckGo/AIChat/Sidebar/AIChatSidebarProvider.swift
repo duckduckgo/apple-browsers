@@ -19,7 +19,7 @@
 import Combine
 import Foundation
 import FeatureFlags
-import BrowserServicesKit
+import PrivacyConfig
 
 typealias TabIdentifier = String
 typealias AIChatSidebarsByTab = [TabIdentifier: AIChatSidebar]

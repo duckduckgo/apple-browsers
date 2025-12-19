@@ -191,7 +191,7 @@ private extension WhatsNewCoordinator {
 
     func markMessageAsShown() async {
         guard let message = remoteMessage else {
-            Logger.modalPrompt.error("\(self.logPrefix) - What's New - Cannot mark message as shown - no current message ID")
+            Logger.modalPrompt.error("\(self.logPrefix) - What's New - Cannot mark message as shown - no current message")
             return
         }
 

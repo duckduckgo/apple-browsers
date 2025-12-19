@@ -29,7 +29,7 @@ public protocol AIChatNativeInputViewDelegate: AnyObject {
     func nativeInputViewDidTapSubmit(_ view: AIChatNativeInputView, text: String)
     func nativeInputViewDidTapVoice(_ view: AIChatNativeInputView)
     func nativeInputViewDidTapClear(_ view: AIChatNativeInputView)
-    func nativeInputViewDidTapAttach(_ view: AIChatNativeInputView)
+    func nativeInputViewDidTapAttachPageContent(_ view: AIChatNativeInputView)
     func nativeInputViewDidRemoveContextChip(_ view: AIChatNativeInputView)
 }
 
@@ -85,6 +85,12 @@ public final class AIChatNativeInputView: UIView {
 
     /// Whether a context chip is currently visible.
     public private(set) var isContextChipVisible = false
+
+    /// The title for the attach page content menu action.
+    public var attachMenuTitle: String = "Attach Page Content" {
+        didSet { updateAttachMenu(title: attachMenuTitle) }
+    }
+
     // MARK: - UI Components
 
     private lazy var mainContainer: UIView = {
@@ -155,7 +161,6 @@ public final class AIChatNativeInputView: UIView {
         button.setImage(DesignSystemImages.Glyphs.Size16.attach, for: .normal)
         button.tintColor = UIColor(designSystemColor: .textSecondary)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(attachButtonTapped), for: .touchUpInside)
         return button
     }()
 
@@ -314,6 +319,7 @@ private extension AIChatNativeInputView {
         submitButtonContainer.addSubview(submitButton)
 
         setupConstraints()
+        setupAttachMenu()
         updateButtonStates()
     }
 
@@ -427,8 +433,21 @@ private extension AIChatNativeInputView {
         }
     }
 
-    @objc func attachButtonTapped() {
-        delegate?.nativeInputViewDidTapAttach(self)
+    func setupAttachMenu() {
+        updateAttachMenu(title: attachMenuTitle)
+    }
+
+    func updateAttachMenu(title: String) {
+        let attachPageAction = UIAction(
+            title: title,
+            image: DesignSystemImages.Glyphs.Size16.findInPage
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.delegate?.nativeInputViewDidTapAttachPageContent(self)
+        }
+
+        attachButton.menu = UIMenu(children: [attachPageAction])
+        attachButton.showsMenuAsPrimaryAction = true
     }
 
     @objc func submitButtonTapped() {

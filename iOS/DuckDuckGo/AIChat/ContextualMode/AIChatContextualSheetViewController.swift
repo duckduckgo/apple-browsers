@@ -203,7 +203,28 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private func showContextualInput() {
         contextualInputViewController.delegate = self
+        contextualInputViewController.attachMenuTitle = UserText.aiChatAttachPageContent
         embedChildViewController(contextualInputViewController)
+
+        if settings.isAutomaticContextAttachmentEnabled {
+            attachPageContext()
+        }
+    }
+
+    private func attachPageContext() {
+        // For now, use placeholder data - actual page context integration comes in Part 6
+        let placeholderTitle = "Example Page Title"
+        let placeholderFavicon: UIImage? = nil
+
+        let chipView = AIChatContextChipView()
+        chipView.configure(title: placeholderTitle, favicon: placeholderFavicon)
+        chipView.subtitle = UserText.aiChatContextChipSubtitle
+        chipView.infoText = UserText.aiChatContextChipInfoFooter
+        chipView.onRemove = { [weak self] in
+            self?.contextualInputViewController.hideContextChip()
+        }
+
+        contextualInputViewController.showContextChip(chipView)
     }
 
     private func embedChildViewController(_ childVC: UIViewController) {
@@ -234,6 +255,10 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
+    func contextualInputViewControllerDidTapAttachPageContent(_ viewController: AIChatContextualInputViewController) {
+        attachPageContext()
+    }
+
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
         // Handle any cleanup when context chip is removed
     }

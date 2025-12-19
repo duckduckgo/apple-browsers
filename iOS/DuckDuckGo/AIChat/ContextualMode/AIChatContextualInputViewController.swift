@@ -27,7 +27,7 @@ protocol AIChatContextualInputViewControllerDelegate: AnyObject {
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String)
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction)
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController)
-    func contextualInputViewControllerDidTapAttach(_ viewController: AIChatContextualInputViewController)
+    func contextualInputViewControllerDidTapAttachPageContent(_ viewController: AIChatContextualInputViewController)
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController)
 }
 
@@ -108,6 +108,11 @@ final class AIChatContextualInputViewController: UIViewController {
 
     var isContextChipVisible: Bool {
         nativeInputViewController.isContextChipVisible
+    }
+
+    var attachMenuTitle: String {
+        get { nativeInputViewController.attachMenuTitle }
+        set { nativeInputViewController.attachMenuTitle = newValue }
     }
     func showContextChip(_ chipView: UIView, animated: Bool = true) {
         nativeInputViewController.showContextChip(chipView, animated: animated)
@@ -234,8 +239,10 @@ extension AIChatContextualInputViewController: AIChatNativeInputViewControllerDe
         delegate?.contextualInputViewControllerDidTapVoice(self)
     }
 
-    func nativeInputViewControllerDidTapAttach(_ viewController: AIChatNativeInputViewController) {
-        delegate?.contextualInputViewControllerDidTapAttach(self)
+    func nativeInputViewControllerDidTapAttachPageContent(_ viewController: AIChatNativeInputViewController) {
+        delegate?.contextualInputViewControllerDidTapAttachPageContent(self)
+    }
+
     func nativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatNativeInputViewController) {
         delegate?.contextualInputViewControllerDidRemoveContextChip(self)
     }

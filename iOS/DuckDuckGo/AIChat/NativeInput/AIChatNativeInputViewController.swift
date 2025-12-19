@@ -27,7 +27,7 @@ protocol AIChatNativeInputViewControllerDelegate: AnyObject {
     func nativeInputViewController(_ viewController: AIChatNativeInputViewController, didSubmitPrompt prompt: String)
     func nativeInputViewControllerDidTapVoice(_ viewController: AIChatNativeInputViewController)
     func nativeInputViewControllerDidTapClear(_ viewController: AIChatNativeInputViewController)
-    func nativeInputViewControllerDidTapAttach(_ viewController: AIChatNativeInputViewController)
+    func nativeInputViewControllerDidTapAttachPageContent(_ viewController: AIChatNativeInputViewController)
     func nativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatNativeInputViewController)
     func nativeInputViewController(_ viewController: AIChatNativeInputViewController, didChangeText text: String)
 }
@@ -69,6 +69,11 @@ final class AIChatNativeInputViewController: UIViewController {
 
     var isContextChipVisible: Bool {
         nativeInputView.isContextChipVisible
+    }
+
+    var attachMenuTitle: String {
+        get { nativeInputView.attachMenuTitle }
+        set { nativeInputView.attachMenuTitle = newValue }
     }
     // MARK: - Initialization
 
@@ -159,8 +164,10 @@ extension AIChatNativeInputViewController: AIChatNativeInputViewDelegate {
         delegate?.nativeInputViewControllerDidTapClear(self)
     }
 
-    func nativeInputViewDidTapAttach(_ view: AIChatNativeInputView) {
-        delegate?.nativeInputViewControllerDidTapAttach(self)
+    func nativeInputViewDidTapAttachPageContent(_ view: AIChatNativeInputView) {
+        delegate?.nativeInputViewControllerDidTapAttachPageContent(self)
+    }
+
     func nativeInputViewDidRemoveContextChip(_ view: AIChatNativeInputView) {
         delegate?.nativeInputViewControllerDidRemoveContextChip(self)
     }

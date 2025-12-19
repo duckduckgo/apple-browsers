@@ -1913,6 +1913,9 @@ public struct UserText {
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
 
+    // MARK: - AI Chat Quick Actions
+    public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize this Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
+
     // MARK: - AI Features Picker Footer
     public static let settingsAIPickerFooterDescription = NSLocalizedString(
         "settings.ai.new.picker.footer",

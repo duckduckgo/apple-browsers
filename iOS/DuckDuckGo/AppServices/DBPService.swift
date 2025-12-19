@@ -53,6 +53,12 @@ final class DBPService: NSObject {
             )
             let eventsHandler = BrokerProfileJobEventsHandler(userNotificationService: notificationService)
 
+            #if DEBUG
+            let isWebViewInspectable = true
+            #else
+            let isWebViewInspectable = AppUserDefaults().inspectableWebViewEnabled
+            #endif
+
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
@@ -75,8 +81,8 @@ final class DBPService: NSObject {
                     let view = UnifiedFeedbackRootView(viewModel: viewModel)
                     return view
                 },
-                eventsHandler: eventsHandler)
-
+                eventsHandler: eventsHandler,
+                isWebViewInspectable: isWebViewInspectable)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil

@@ -156,6 +156,8 @@ public final class DataBrokerProtectionIOSManager {
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
     private let wideEventSweeper: DBPWideEventSweeper?
     private let eventsHandler: EventMapping<JobEvent>
+    private let isWebViewInspectable: Bool
+
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: DatabaseConstants.directoryName,
@@ -208,7 +210,8 @@ public final class DataBrokerProtectionIOSManager {
          subscriptionManager: DataBrokerProtectionSubscriptionManaging,
          wideEvent: WideEventManaging?,
          eventsHandler: EventMapping<JobEvent>,
-         engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp)
+         engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp),
+         isWebViewInspectable: Bool = false
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -228,6 +231,7 @@ public final class DataBrokerProtectionIOSManager {
         self.subscriptionManager = subscriptionManager
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
         self.eventsHandler = eventsHandler
+        self.isWebViewInspectable = isWebViewInspectable
 
         self.queueManager.delegate = self
 
@@ -329,7 +333,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
         } catch {
             throw error
         }
+        
+        eventPixels.markInitialScansStarted()
         eventsHandler.fire(.profileSaved)
+
         await startImmediateScanOperations()
     }
 
@@ -350,6 +357,24 @@ extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
             do {
                 try await brokerUpdater?.checkForUpdates()
             }
+        }
+    }
+
+    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging) {
+
+        // Figure out if we've just finished initial scans, and send the appropriate pixel if necessary
+        if eventPixels.hasInitialScansTotalDurationPixelBeenSent() {
+            return
+        }
+
+        do {
+            let hasCompletedInitialScans = try database.haveAllScansRunAtLeastOnce()
+            if hasCompletedInitialScans {
+                let profile = try database.fetchProfile()
+                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0)
+            }
+        } catch {
+            Logger.dataBrokerProtection.error("Error when calculating if we should send the initial scans duration pixel, error: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
@@ -473,7 +498,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
                                                   contentScopeProperties: self.jobDependencies.contentScopeProperties,
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
                                                   openURLHandler: quickLinkOpenURLHandler,
-                                                  feedbackViewCreator: feedbackViewCreator)
+                                                  feedbackViewCreator: feedbackViewCreator,
+                                                  isWebViewInspectable: isWebViewInspectable)
     }
 }
 

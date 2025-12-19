@@ -91,6 +91,15 @@
       }
     },
     {
+      "identity" : "openssl-xcframework",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/OpenSSL-XCFramework",
+      "state" : {
+        "revision" : "263f0422b0b516838bc4f8cf5f4b5aac4df144c1",
+        "version" : "3.3.2000"
+      }
+    },
+    {
       "identity" : "privacy-dashboard",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
@@ -106,6 +115,15 @@
       "state" : {
         "revision" : "30a462bdb4398ea835a3585472229e0d74b36ba5",
         "version" : "3.0.0"
+      }
+    },
+    {
+      "identity" : "sparkle",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sparkle-project/Sparkle.git",
+      "state" : {
+        "revision" : "b456fd404954a9e13f55aa0c88cd5a40b8399638",
+        "version" : "2.6.3"
       }
     },
     {

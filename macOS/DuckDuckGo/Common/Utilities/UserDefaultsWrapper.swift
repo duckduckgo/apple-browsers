@@ -20,8 +20,7 @@ import AppKit
 import AppKitExtensions
 import Common
 import Foundation
-
-// typealias UserDefaultsWrapperKey = UserDefaults.Key
+import Persistence
 
 extension UserDefaults {
     /// The app group's shared UserDefaults
@@ -30,7 +29,7 @@ extension UserDefaults {
     static let appConfiguration = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))!
 
     @available(*, deprecated, message: "Use `@Storage protocol SettingsPrototocolName: KeyValueStoring {…}` instead" )
-    enum Key: String, CaseIterable {
+    enum Key: String, CaseIterable, StorageKeyDescribing {
 
         /// system setting defining window title double-click action
         case appleActionOnDoubleClick = "AppleActionOnDoubleClick"

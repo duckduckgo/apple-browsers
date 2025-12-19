@@ -149,7 +149,7 @@ public struct StorageKey<Value>: StorageKeyProtocol {
     }
 
     public init(
-        _ key: some StorageKeyDescribing,
+        _ key: any StorageKeyDescribing,
         migrateLegacyKey: String? = nil,
         assertionHandler: (_ message: String) -> Void = { message in
             assertionFailure(message)
@@ -306,8 +306,12 @@ public struct KeyedStorage<Keys: StoringKeys>: KeyedStoring, ThrowingKeyedStorin
     }
 
     public func removeValue<Value>(for keyPath: KeyPath<Keys, StorageKey<Value>>) {
-        let key = key(for: keyPath)
-        storage.removeObject(forKey: key)
+        let storageKey = storageKey(for: keyPath)
+        storage.removeObject(forKey: storageKey.rawValue)
+        // Also remove legacy key to ensure value is completely cleared
+        if let legacyKey = storageKey.migrateLegacyKey {
+            storage.removeObject(forKey: legacyKey)
+        }
     }
 
 }
@@ -356,8 +360,12 @@ public struct ThrowingKeyedStorage<Keys: StoringKeys>: ThrowingKeyedStoring {
     }
 
     public func removeValue<Value>(for keyPath: KeyPath<Keys, StorageKey<Value>>) throws {
-        let key = key(for: keyPath)
-        try storage.removeObject(forKey: key)
+        let storageKey = storageKey(for: keyPath)
+        try storage.removeObject(forKey: storageKey.rawValue)
+        // Also remove legacy key to ensure value is completely cleared
+        if let legacyKey = storageKey.migrateLegacyKey {
+            try storage.removeObject(forKey: legacyKey)
+        }
     }
 }
 
@@ -483,8 +491,12 @@ public final class ObservableKeyedStorage<Keys: StoringKeys>: ObservableKeyedSto
 
     public func removeValue<Value>(for keyPath: KeyPath<Keys, StorageKey<Value>>) {
         setupPublishersIfNeeded()
-        let key = key(for: keyPath)
-        storage.removeObject(forKey: key)
+        let storageKey = storageKey(for: keyPath)
+        storage.removeObject(forKey: storageKey.rawValue)
+        // Also remove legacy key to ensure value is completely cleared
+        if let legacyKey = storageKey.migrateLegacyKey {
+            storage.removeObject(forKey: legacyKey)
+        }
     }
 
     public func publisher<Value>(for keyPath: KeyPath<Keys, StorageKey<Value>>) -> AnyPublisher<Value?, Never> {
@@ -566,8 +578,12 @@ public final class ObservableThrowingKeyedStorage<Keys: StoringKeys>: Observable
 
     public func removeValue<Value>(for keyPath: KeyPath<Keys, StorageKey<Value>>) throws {
         setupPublishersIfNeeded()
-        let key = key(for: keyPath)
-        try storage.removeObject(forKey: key)
+        let storageKey = storageKey(for: keyPath)
+        try storage.removeObject(forKey: storageKey.rawValue)
+        // Also remove legacy key to ensure value is completely cleared
+        if let legacyKey = storageKey.migrateLegacyKey {
+            try storage.removeObject(forKey: legacyKey)
+        }
     }
 
     public func publisher<Value>(for keyPath: KeyPath<Keys, StorageKey<Value>>) -> AnyPublisher<Value?, Never> {
@@ -713,16 +729,6 @@ extension ThrowingKeyValueStoring {
     /// Get a strongly-typed value using a key path
     public func value<T>(for keyPath: KeyPath<Self, T>) throws -> T {
         return self[keyPath: keyPath]
-    }
-}
-
-// For value types (structs), provide mutation helper
-extension ThrowingKeyValueStoring {
-    /// Set a strongly-typed value using a writable key path (for value types)
-    /// Note: For reference types (classes), use property setters instead
-    public func setValue<T>(_ value: T, for keyPath: WritableKeyPath<Self, T>) throws {
-        var mutableSelf = self
-        mutableSelf[keyPath: keyPath] = value
     }
 }
 

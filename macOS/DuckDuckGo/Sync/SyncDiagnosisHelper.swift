@@ -24,8 +24,8 @@ import PixelKit
 struct SyncDiagnosisHelper {
 
     struct Settings: StoringKeys {
-        let syncManuallyDisabled = StorageKey<Bool>("com.duckduckgo.app.key.debug.SyncManuallyDisabled", assertionHandler: { _ in })
-        let syncWasDisabledUnexpectedlyPixelFired = StorageKey<Bool>("com.duckduckgo.app.key.debug.SyncWasDisabledUnexpectedlyPixelFired", assertionHandler: { _ in })
+        let syncManuallyDisabled = StorageKey<Bool>(.syncManuallyDisabled, assertionHandler: { _ in })
+        let syncWasDisabledUnexpectedlyPixelFired = StorageKey<Bool>(.syncWasDisabledUnexpectedlyPixelFired, assertionHandler: { _ in })
     }
 
     private enum Const {

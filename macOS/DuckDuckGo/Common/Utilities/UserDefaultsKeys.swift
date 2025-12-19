@@ -59,7 +59,7 @@ import Persistence
 ///     // Testing:
 ///     let myService = MyService(storage: InMemoryKeyValueStoring().keyedStoring(for: MySettings.self))
 ///     
-enum UserDefaultsKeys: String {
+enum UserDefaultsKeys: String, StorageKeyDescribing {
 
     // MARK: - AIChatDebugURLSettings
     case aiChatDebugURLSettings = "customURL"
@@ -71,6 +71,11 @@ enum UserDefaultsKeys: String {
     case fireDialogIncludeHistory = "fire-dialog_includeHistoryState"
     case fireDialogIncludeCookiesAndSiteData = "fire-dialog_includeCookiesAndSiteDataState"
     case fireDialogIncludeChatHistory = "fire-dialog_includeChatHistoryState"
+
+    // MARK: - Sync Diagnosis Settings
+
+    case syncManuallyDisabled = "com.duckduckgo.app.key.debug.SyncManuallyDisabled"
+    case syncWasDisabledUnexpectedlyPixelFired = "com.duckduckgo.app.key.debug.SyncWasDisabledUnexpectedlyPixelFired"
 
     // MARK: - Add more app-wide keys here as they are migrated from UserDefaultsWrapper
 
@@ -95,7 +100,7 @@ extension StorageKey {
             assertionFailure(message)
         }
     ) {
-        self.init(key.rawValue, migrateLegacyKey: migrateLegacyKey, assertionHandler: assertionHandler)
+        self.init(key as (any StorageKeyDescribing), migrateLegacyKey: migrateLegacyKey, assertionHandler: assertionHandler)
     }
 
     /// Initialize StorageKey from legacy UserDefaults.Key enum
@@ -109,6 +114,6 @@ extension StorageKey {
     ///
     @available(*, deprecated, message: "Define key constants in UserDefaultsKeys instead")
     init(_ key: UserDefaults.Key) {
-        self.init(key.rawValue, assertionHandler: { _ in })
+        self.init(key as any StorageKeyDescribing, assertionHandler: { _ in })
     }
 }

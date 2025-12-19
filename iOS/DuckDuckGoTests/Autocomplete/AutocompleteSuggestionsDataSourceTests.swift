@@ -23,7 +23,7 @@ import XCTest
 import Persistence
 import CoreData
 import Bookmarks
-import BrowserServicesKit
+import PrivacyConfig
 import Suggestions
 import History
 

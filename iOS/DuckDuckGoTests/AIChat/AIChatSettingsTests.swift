@@ -20,7 +20,7 @@
 import XCTest
 @testable import Core
 @testable import DuckDuckGo
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import AIChat
 import Persistence

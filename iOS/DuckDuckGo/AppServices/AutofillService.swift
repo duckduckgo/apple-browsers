@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Core
 import Common
 import Persistence
+import PrivacyConfig
 
 final class AutofillService {
 

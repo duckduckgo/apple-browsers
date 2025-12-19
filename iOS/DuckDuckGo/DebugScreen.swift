@@ -19,7 +19,7 @@
 
 import DDGSync
 import Persistence
-import BrowserServicesKit
+import PrivacyConfig
 import Core
 import SwiftUI
 import UIKit

@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
 import Sparkle
 import PixelKitTestingUtilities
 import PixelKit
+import PrivacyConfig
+import XCTest
 
 final class UpdateControllerTests: XCTestCase {
 

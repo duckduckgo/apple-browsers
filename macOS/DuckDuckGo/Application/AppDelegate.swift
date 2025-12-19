@@ -45,6 +45,7 @@ import os.log
 import Persistence
 import PixelExperimentKit
 import PixelKit
+import PrivacyConfig
 import PrivacyStats
 import RemoteMessaging
 import ServiceManagement
@@ -113,6 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
+    private(set) var syncAIChatsCleaner: SyncAIChatsCleaning?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
     private var screenLockedCancellable: AnyCancellable?
@@ -734,16 +736,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
-            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
             permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), featureFlagger: featureFlagger)
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
-            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
             permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), featureFlagger: featureFlagger)
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
-        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
         permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), featureFlagger: featureFlagger)
 #endif
         notificationService = UserNotificationAuthorizationService()
@@ -791,7 +793,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           fireproofDomains: fireproofDomains,
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
-                                          pixelFiring: PixelKit.shared)
+                                          pixelFiring: PixelKit.shared,
+                                          syncAIChatsCleaner: { Application.appDelegate.syncAIChatsCleaner })
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
@@ -1563,6 +1566,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             environment: environment
         )
+        let syncAIChatsCleaner = SyncAIChatsCleaner(sync: syncService,
+                                                    keyValueStore: keyValueStore,
+                                                    featureFlagger: featureFlagger)
+        syncService.setCustomOperations([AIChatDeleteOperation(cleaner: syncAIChatsCleaner)])
+
         syncService.initializeIfNeeded()
         syncDataProviders.setUpDatabaseCleaners(syncService: syncService)
 
@@ -1575,6 +1583,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         self.syncDataProviders = syncDataProviders
         self.syncService = syncService
+        self.syncAIChatsCleaner = syncAIChatsCleaner
 
         isSyncInProgressCancellable = syncService.isSyncInProgressPublisher
             .filter { $0 }
@@ -1711,7 +1720,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let autoClearHandler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
                                                 startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
-                                                stateRestorationManager: self.stateRestorationManager)
+                                                stateRestorationManager: self.stateRestorationManager,
+                                                syncAIChatsCleaner: syncAIChatsCleaner)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()

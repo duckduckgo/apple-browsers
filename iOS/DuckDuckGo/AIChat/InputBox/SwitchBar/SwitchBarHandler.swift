@@ -23,7 +23,7 @@ import Persistence
 import Core
 import UIKit
 import AIChat
-import BrowserServicesKit
+import PrivacyConfig
 import enum Common.DevicePlatform
 
 // MARK: - TextEntryMode Enum

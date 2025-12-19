@@ -28,6 +28,7 @@ import UserScript
 import WebKit
 import SERPSettings
 import Persistence
+import PrivacyConfig
 
 final class UserScripts: UserScriptsProvider {
 
@@ -73,10 +74,11 @@ final class UserScripts: UserScriptsProvider {
         do {
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
+                                                                scriptContext: .contentScope,
                                                                 privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,
-                                                                        isIsolated: true,
+                                                                        scriptContext: .contentScopeIsolated,
                                                                         privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
             if let error = error as? UserScriptError {
@@ -87,7 +89,7 @@ final class UserScripts: UserScriptsProvider {
         autoconsentUserScript = AutoconsentUserScript(config: sourceProvider.privacyConfigurationManager.privacyConfig)
 
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
-        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
+        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager, syncHandler: AIChatSyncHandler(sync: sourceProvider.sync), featureFlagger: featureFlagger)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: AIChatSettings(), featureFlagger: featureFlagger))

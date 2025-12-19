@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
-import XCTest
+import Combine
 import Configuration
+import PrivacyConfigTestsUtils
+import TrackerRadarKit
+import XCTest
 @testable import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
-import Combine
-import TrackerRadarKit
+@testable import PrivacyConfig
 
 final class ConfigurationManagerTests: XCTestCase {
     private var operationLog: OperationLog!

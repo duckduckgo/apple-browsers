@@ -28,12 +28,15 @@ public enum JobType {
     case all
 }
 
-public protocol BrokerProfileJobErrorDelegate: AnyObject {
+public protocol BrokerProfileJobStatusReportingDelegate: AnyObject {
     func dataBrokerOperationDidError(_ error: any Error,
                                      withBrokerURL brokerURL: String?,
                                      version: String?,
                                      stepType: StepType?,
                                      dataBrokerParent: String?)
+    func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
+                                                    version: String?,
+                                                    dataBrokerParent: String?)
 }
 
 public class BrokerProfileJob: Operation, @unchecked Sendable {
@@ -42,7 +45,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     private let jobType: JobType
     private let priorityDate: Date? // The date to filter and sort operations priorities
     private let showWebView: Bool
-    private(set) weak var errorDelegate: BrokerProfileJobErrorDelegate? // Internal read-only to enable mocking
+    private(set) weak var statusReportingDelegate: BrokerProfileJobStatusReportingDelegate? // Internal read-only to enable mocking
     private let jobDependencies: BrokerProfileJobDependencyProviding
 
     private let id = UUID()
@@ -57,14 +60,14 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
          jobType: JobType,
          priorityDate: Date? = nil,
          showWebView: Bool,
-         errorDelegate: BrokerProfileJobErrorDelegate,
+         statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
          jobDependencies: BrokerProfileJobDependencyProviding) {
 
         self.dataBrokerID = dataBrokerID
         self.priorityDate = priorityDate
         self.jobType = jobType
         self.showWebView = showWebView
-        self.errorDelegate = errorDelegate
+        self.statusReportingDelegate = statusReportingDelegate
         self.jobDependencies = jobDependencies
         super.init()
     }
@@ -199,6 +202,11 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 }
 
                 if executed {
+                    let dataBroker = brokerProfileQueriesData.first?.dataBroker
+                    statusReportingDelegate?.dataBrokerOperationDidCompleteSuccessfully(withBrokerURL: dataBroker?.url,
+                                                                                        version: dataBroker?.version,
+                                                                                        dataBrokerParent: dataBroker?.parent)
+
                     let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerJobs
                     Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
                     try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
@@ -216,11 +224,11 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                     }
                 }()
                 let dataBroker = brokerProfileQueriesData.first?.dataBroker
-                errorDelegate?.dataBrokerOperationDidError(error,
-                                                           withBrokerURL: dataBroker?.url,
-                                                           version: dataBroker?.version,
-                                                           stepType: stepType,
-                                                           dataBrokerParent: dataBroker?.parent)
+                statusReportingDelegate?.dataBrokerOperationDidError(error,
+                                                                     withBrokerURL: dataBroker?.url,
+                                                                     version: dataBroker?.version,
+                                                                     stepType: stepType,
+                                                                     dataBrokerParent: dataBroker?.parent)
             }
         }
     }

@@ -2977,12 +2977,55 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Απενεργοποιήστε για να αποτρέψετε το αυτόματο άνοιγμα συνδέσμων σε άλλες εγκατεστημένες εφαρμογές.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Διαγράψτε όλα τα δεδομένα των ιστοτόπων, συμπεριλαμβανομένων των ιστοτόπων που επισκεφτήκατε. Μπορεί να σας αποσυνδέσει από τους λογαριασμούς.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookie και δεδομένα ιστότοπου";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Διαγραφή όλων των συνομιλιών, συμπεριλαμβανομένων των καρφιτσωμένων συνομιλιών";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Συνομιλίες Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Διαγραφή";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Εκκαθάριση καρτελών και δεδομένων";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Εκκαθάριση καρτελών, δεδομένων και συνομιλιών Duck.ai";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Κλείσιμο όλων των ανοιχτών καρτελών";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Καρτέλες";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Έξοδος εφαρμογής, ανενεργή για 15 λεπτά";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Έξοδος εφαρμογής, ανενεργή για 1 ώρα";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Έξοδος εφαρμογής, ανενεργή για 30 λεπτά";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Έξοδος εφαρμογής, ανενεργή για 5 λεπτά";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Μόνο έξοδος εφαρμογής";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Η έξοδος από την εφαρμογή ορίζεται σύροντας την εφαρμογή για να κλείσει, ενώ είναι σε αδράνεια όταν η εφαρμογή βρίσκεται στο παρασκήνιο.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Επιθυμητός χρονισμός";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Τα δεδομένα θα διαγραφούν κατά την επανεκκίνηση της εφαρμογής.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Προτάσεις αναζήτησης";
 
@@ -3001,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Εάν έχει ενεργοποιηθεί το Touch ID, το Face ID ή ο κωδικός πρόσβασης συστήματος, θα σας ζητηθεί να ξεκλειδώσετε την εφαρμογή κατά το άνοιγμά της.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Αυτόματη εκκαθάριση δεδομένων";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Σχόλια για το πρόγραμμα περιήγησης";
 
@@ -3010,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Εκκαθάριση συνομιλιών Duck.ai";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Εκκαθάριση δεδομένων περιήγησης";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Αυτόματη απαλοιφή δεδομένων";
 
@@ -3037,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Διαγραφή δεδομένων";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Η διαγραφή των δεδομένων σας μπορεί να βοηθήσει στην προστασία του απορρήτου σας στο διαδίκτυο. Χρησιμοποιήστε το Fire Button για να διαγράψετε τα δεδομένα μη αυτόματα ή για να ρυθμίσετε την αυτόματη εκκαθάριση.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Προεπιλεγμένο πρόγραμμα περιήγησης";
 
@@ -3082,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Ασφαλείς ιστότοποι";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Ασφαλείς ιστότοποι";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Γενικά";
 
@@ -3336,6 +3387,9 @@
 
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Το πρόγραμμα περιήγησης DuckDuckGo παρέχει προστασίες παρακολούθησης, οι οποίες είναι πάντα ενεργές. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
+
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Τι νέο υπάρχει";
 
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Εμφανίζει αρχεία καταγραφής από το τελευταίο λεπτό, για να βοηθήσει στη διάγνωση προβλημάτων αμέσως μετά από μια ανανέωση.";

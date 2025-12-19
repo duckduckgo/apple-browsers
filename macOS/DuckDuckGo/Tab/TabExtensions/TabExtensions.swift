@@ -23,6 +23,7 @@ import ContentBlocking
 import Foundation
 import History
 import MaliciousSiteProtection
+import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
 import WebKit

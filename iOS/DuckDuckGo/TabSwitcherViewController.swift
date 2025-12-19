@@ -26,7 +26,7 @@ import Bookmarks
 import Persistence
 import os.log
 import SwiftUI
-import BrowserServicesKit
+import PrivacyConfig
 import AIChat
 import Combine
 
@@ -412,8 +412,8 @@ class TabSwitcherViewController: UIViewController {
         burn(sender: sender)
     }
 
-    func forgetAll() {
-        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self)
+    func forgetAll(_ options: FireOptions) {
+        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self, fireOptions: options)
     }
 
     func dismiss() {

@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import ContentScopeScripts
 import Foundation
 import MaliciousSiteProtection
 import Navigation
+import PrivacyConfig
 import SpecialErrorPages
 import WebKit
 

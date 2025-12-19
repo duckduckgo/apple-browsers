@@ -18,6 +18,7 @@
 
 import AppKit
 import BrowserServicesKit
+import PrivacyConfig
 import Foundation
 
 final class YandexDataImporter: ChromiumDataImporter {

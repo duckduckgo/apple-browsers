@@ -17,13 +17,13 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import SwiftUI
 import SwiftUIExtensions
 import Combine
 import DDGSync
 import VPN
 import AIChat
+import PrivacyConfig
 import Subscription
 
 final class PreferencesViewController: NSViewController {

@@ -21,9 +21,11 @@ import Foundation
 
 import XCTest
 import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import DuckDuckGo
 @testable import Core
-@testable import BrowserServicesKit
+import BrowserServicesKit
 @testable import Common
 @testable import PersistenceTestingUtils
 import Persistence

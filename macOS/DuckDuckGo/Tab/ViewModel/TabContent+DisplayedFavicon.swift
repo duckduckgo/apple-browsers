@@ -17,10 +17,10 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import DesignResourcesKitIcons
 import FeatureFlags
 import MaliciousSiteProtection
+import PrivacyConfig
 import WebKit
 
 extension TabContent {

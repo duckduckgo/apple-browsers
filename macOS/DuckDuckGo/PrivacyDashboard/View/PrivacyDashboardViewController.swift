@@ -19,7 +19,7 @@
 import Cocoa
 import WebKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import PrivacyDashboard
 import Common
 import PixelKit

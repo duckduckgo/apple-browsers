@@ -19,6 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 import Subscription
 import VPN
 
@@ -44,10 +45,8 @@ final class WideEventService {
         await sendAbandonedSubscriptionRestorePixels()
         await sendDelayedSubscriptionRestorePixels()
 
-        if featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement) {
-            await sendAbandonedVPNConnectionPixels()
-            await sendDelayedVPNConnectionPixels()
-        }
+        await sendAbandonedVPNConnectionPixels()
+        await sendDelayedVPNConnectionPixels()
 
         if featureFlagger.isFeatureOn(.dataImportWideEventMeasurement) {
             await sendAbandonedDatImportPixels()

@@ -21,7 +21,7 @@ import Subscription
 import SubscriptionUI
 import enum StoreKit.StoreKitError
 import PixelKit
-import BrowserServicesKit
+import PrivacyConfig
 
 @available(macOS 12.0, *)
 protocol SubscriptionAppStoreRestorer {

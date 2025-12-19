@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
 import History
 import HistoryView
+import Foundation
+import PrivacyConfig
 
 extension HistoryViewActionsManager {
 
@@ -34,7 +35,9 @@ extension HistoryViewActionsManager {
     ) {
         let dataProvider = HistoryViewDataProvider(
             historyDataSource: historyCoordinator,
-            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider, fire: fire),
+            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider,
+                                             fire: fire,
+                                             recordAIChatHistoryClearForSync: { Application.appDelegate.syncAIChatsCleaner?.recordLocalClear(date: Date()) }),
             featureFlagger: featureFlagger,
             tld: tld
         )

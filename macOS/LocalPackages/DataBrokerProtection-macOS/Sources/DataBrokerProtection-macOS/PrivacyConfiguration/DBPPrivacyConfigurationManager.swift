@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import PixelKit
+import PrivacyConfig
 import DataBrokerProtectionCore
 
 public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging {
@@ -73,7 +74,7 @@ public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging 
         updatesSubject.eraseToAnyPublisher()
     }
 
-    public var privacyConfig: BrowserServicesKit.PrivacyConfiguration {
+    public var privacyConfig: PrivacyConfiguration {
         guard let privacyConfigurationData = try? PrivacyConfigurationData(data: currentConfig) else {
             fatalError("Could not retrieve privacy configuration data")
         }

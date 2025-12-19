@@ -36,13 +36,12 @@ class FireConfirmationViewModel: ObservableObject {
     
     // MARK: - Public Variables
     
-    let onConfirm: () -> Void
+    let onConfirm: (FireOptions) -> Void
     let onCancel: () -> Void
     
     // MARK: - Private Variables
     private let tabsModel: TabsModelProtocol
     private let historyManager: HistoryManaging
-    private let tld: TLD
     private let fireproofing: Fireproofing
     private let aiChatSettings: AIChatSettingsProvider
     private let settingsStore: FireConfirmationSettingsStoring
@@ -75,21 +74,33 @@ class FireConfirmationViewModel: ObservableObject {
         aiChatSettings.isAIChatEnabled
     }
     
+    private var fireOptions: FireOptions {
+        var options: FireOptions = []
+        if clearTabs {
+            options.insert(.tabs)
+        }
+        if clearData {
+            options.insert(.data)
+        }
+        if clearAIChats {
+            options.insert(.aiChats)
+        }
+        return options
+    }
+    
     // MARK: - Initializer
     
     init(tabsModel: TabsModelProtocol,
          historyManager: HistoryManaging,
-         tld: TLD = AppDependencyProvider.shared.storageCache.tld,
          fireproofing: Fireproofing,
          aiChatSettings: AIChatSettingsProvider,
          keyValueFilesStore: ThrowingKeyValueStoring,
-         onConfirm: @escaping () -> Void,
+         onConfirm: @escaping (FireOptions) -> Void,
          onCancel: @escaping () -> Void) {
         self.onConfirm = onConfirm
         self.onCancel = onCancel
         self.tabsModel = tabsModel
         self.historyManager = historyManager
-        self.tld = tld
         self.fireproofing = fireproofing
         self.aiChatSettings = aiChatSettings
         self.settingsStore = FireConfirmationSettingsStore(keyValueFilesStore: keyValueFilesStore)
@@ -110,7 +121,7 @@ class FireConfirmationViewModel: ObservableObject {
             settingsStore.clearAIChats = clearAIChats
         }
         
-        onConfirm()
+        onConfirm(fireOptions)
     }
     
     func cancel() {

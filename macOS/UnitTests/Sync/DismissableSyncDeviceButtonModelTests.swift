@@ -16,14 +16,14 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
-@testable import DuckDuckGo_Privacy_Browser
 import DDGSync
 import FeatureFlags
 import Persistence
-import BrowserServicesKit
 import PersistenceTestingUtils
+import PrivacyConfig
+import XCTest
+@testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 final class DismissableSyncDeviceButtonModelTests: XCTestCase {

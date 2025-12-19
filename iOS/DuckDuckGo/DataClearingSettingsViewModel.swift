@@ -21,7 +21,7 @@ import Foundation
 import SwiftUI
 import Core
 import AIChat
-import BrowserServicesKit
+import PrivacyConfig
 
 @MainActor
 protocol DataClearingSettingsViewModelDelegate: AnyObject {
@@ -165,7 +165,8 @@ final class DataClearingSettingsViewModel: ObservableObject {
     }
     
     func presentFireConfirmation() {
-        Pixel.fire(pixel: .forgetAllPressedSettings)
+        DailyPixel.fireDailyAndCount(pixel: .forgetAllPressedSettings,
+                                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         delegate?.presentFireConfirmation()
     }
     

@@ -17,8 +17,8 @@
 //
 
 import Foundation
-import BrowserServicesKit
 import os.log
+import PrivacyConfig
 
 public protocol TrackerDataURLProviding {
     var trackerDataURL: URL? { get }

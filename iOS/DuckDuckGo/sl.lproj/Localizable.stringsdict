@@ -756,5 +756,25 @@ Blokiral sem jih!
 			<string>%1$d izbranih zavihkov</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d lokacija, izključena iz čiščenja</string>
+			<key>two</key>
+			<string>%1$d lokaciji, izključeni iz čiščenja</string>
+			<key>few</key>
+			<string>%1$d lokacije, izključene iz čiščenja</string>
+			<key>other</key>
+			<string>%1$d lokacij, izključenih iz čiščenja</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

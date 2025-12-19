@@ -18,11 +18,10 @@
 
 import XCTest
 import Combine
-import BrowserServicesKit
 import Persistence
+import PrivacyConfig
 import Common
 @testable import DDGSync
-@testable import BrowserServicesKitTestsUtils
 
 // MARK: - Remote Polling Mocks
 

@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 public class InternalUserStore: InternalUserStoring {
     public init() {

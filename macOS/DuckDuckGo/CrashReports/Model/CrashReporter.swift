@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
 import Crashes
 import Foundation
 import PixelKit
+import PrivacyConfig
 
 final class CrashReporter {
 

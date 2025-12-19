@@ -17,14 +17,16 @@
 //
 
 import FeatureFlags
-import XCTest
+import PrivacyConfig
 import SharedTestUtilities
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
 // MARK: - Mocks
 
 final class MockQuitSurveyPersistor: QuitSurveyPersistor {
+    var alwaysShowQuitSurvey: Bool = false
     var pendingReturnUserReasons: String?
     var hasQuitAppBefore: Bool = false
 }

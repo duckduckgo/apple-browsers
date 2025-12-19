@@ -22,6 +22,7 @@ import Subscription
 import UIKit
 import NotificationCenter
 import Core
+import DataBrokerProtection_iOS
 
 protocol NotificationServiceManaging: UNUserNotificationCenterDelegate {}
 
@@ -55,6 +56,10 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
             handleInactivityNotification(for: response)
         case let raw where NetworkProtectionNotificationIdentifier(rawValue: raw) != nil:
             handleVPNNotification()
+        case let raw where DataBrokerProtectionNotificationIdentifier(rawValue: raw) != nil:
+            if let identifier = DataBrokerProtectionNotificationIdentifier(rawValue: raw) {
+                handleDataBrokerProtectionNotification(identifier: identifier)
+            }
         default:
             break
         }
@@ -75,5 +80,25 @@ private extension NotificationServiceManager {
     @MainActor
     func handleVPNNotification() {
         mainCoordinator.presentNetworkProtectionStatusSettingsModal()
+    }
+
+    @MainActor
+    func handleDataBrokerProtectionNotification(identifier: DataBrokerProtectionNotificationIdentifier) {
+        let pixel: Pixel.Event
+        switch identifier {
+        case .firstScanComplete:
+            pixel = .dbpNotificationOpenedFirstScanComplete
+        case .firstFreemiumScanComplete:
+            pixel = .dbpNotificationOpenedFirstFreemiumScanComplete
+        case .firstProfileRemoved:
+            pixel = .dbpNotificationOpenedFirstRemoval
+        case .allInfoRemoved:
+            pixel = .dbpNotificationOpenedAllRecordsRemoved
+        case .oneWeekCheckIn:
+            pixel = .dbpNotificationOpened1WeekCheckIn
+        }
+        Pixel.fire(pixel: pixel)
+
+        mainCoordinator.presentDataBrokerProtectionDashboard()
     }
 }

@@ -21,6 +21,7 @@ import SwiftUI
 import Subscription
 import Common
 import BrowserServicesKit
+import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
 

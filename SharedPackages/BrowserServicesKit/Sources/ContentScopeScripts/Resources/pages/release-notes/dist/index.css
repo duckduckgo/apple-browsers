@@ -66,12 +66,7 @@ body {
   box-shadow: var(--button-shadow--disabled, var(--button-shadow));
   color: var(--button-text--disabled, var(--button-text));
   opacity: var(--button-opacity--disabled, var(--button-opacity));
-}
-[data-platform-name=macos] .Button_button:disabled:hover {
-  background: var(--button-bg--disabled, var(--button-bg));
-  box-shadow: var(--button-shadow--disabled, var(--button-shadow));
-  color: var(--button-text--disabled, var(--button-text));
-  opacity: var(--button-opacity--disabled, var(--button-opacity));
+  cursor: default;
 }
 [data-platform-name=macos] .Button_button:focus,
 [data-platform-name=macos] .Button_button:focus-visible {
@@ -79,14 +74,15 @@ body {
   box-shadow: var(--button-shadow--focus, var(--button-shadow));
   color: var(--button-text--focus, var(--button-text));
   opacity: var(--button-opacity--focus, var(--button-opacity));
+  outline: none;
 }
-[data-platform-name=macos] .Button_button:hover {
-  background: var(--button-bg);
+[data-platform-name=macos] .Button_button:hover:not(:disabled) {
+  background: var(--button-bg--hover, var(--button-bg));
   box-shadow: var(--button-shadow--hover, var(--button-shadow));
   color: var(--button-text--hover, var(--button-text));
   opacity: var(--button-opacity--hover, var(--button-opacity));
 }
-[data-platform-name=macos] .Button_button:active {
+[data-platform-name=macos] .Button_button:active:not(:disabled) {
   background: var(--button-bg--active, var(--button-bg));
   box-shadow: var(--button-shadow--active, var(--button-shadow));
   color: var(--button-text--active, var(--button-text));
@@ -102,7 +98,7 @@ body {
   padding: 0 var(--sp-6);
   text-align: center;
 }
-[data-platform-name=ios] .Button_button:active {
+[data-platform-name=ios] .Button_button:active:not(:disabled) {
   background: var(--button-bg--active, var(--button-bg));
   color: var(--button-text--active, var(--button-text));
 }
@@ -134,7 +130,7 @@ body:not([data-platform-name]) .Button_button {
   line-height: var(--sp-8);
   padding: 0 var(--sp-4);
 }
-body:not([data-platform-name]) .Button_button:hover {
+body:not([data-platform-name]) .Button_button:hover:not(:disabled) {
   background:
     linear-gradient(
       0deg,
@@ -142,7 +138,7 @@ body:not([data-platform-name]) .Button_button:hover {
       rgba(255, 255, 255, 0.16) 100%),
     #2749db;
 }
-body:not([data-platform-name]) .Button_button:active {
+body:not([data-platform-name]) .Button_button:active:not(:disabled) {
   background:
     linear-gradient(
       0deg,
@@ -152,44 +148,47 @@ body:not([data-platform-name]) .Button_button:active {
 }
 [data-platform-name=macos] {
   --macos-control-focused-shadow:
-    0 0 0 3px rgba(57, 105, 239, 0.55),
-    0 0 0 1px rgba(57, 105, 239, 0.55) inset,
-    0 0 1px 0 rgba(0, 0, 0, 0.05),
-    0 1px 1px 0 rgba(0, 0, 0, 0.1);
+    0 0 0 2.5px var(--ds-color-theme-accent-glow-primary, var(--ds-color-theme-default-light-accent-glow-primary)),
+    0 0 0 1px var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-light-accent-primary)) inset,
+    0 0 1px 0 var(--ds-color-theme-shadow-primary, var(--ds-color-theme-default-light-shadow-primary)),
+    0 1px 1px 0 var(--ds-color-theme-shadow-primary, var(--ds-color-theme-default-light-shadow-primary));
   --macos-control-standard-background-rest: var(--color-white);
   --macos-control-standard-background-rest--dark: rgba(255, 255, 255, 0.28);
   --macos-control-standard-background-pressed: #e7e7e7;
+  --macos-control-standard-background-pressed--dark: rgba(255, 255, 255, 0.4);
   --macos-control-standard-shadow:
     0 1px 0 0 rgba(255, 255, 255, 0.2) inset,
     0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
     0 0 0 1px rgba(0, 0, 0, 0.1),
     0 0 1px 0 rgba(0, 0, 0, 0.05),
     0 1px 1px 0 rgba(0, 0, 0, 0.2);
+  --macos-accent-color: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-light-accent-primary));
+  --macos-accent-color-secondary: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-light-accent-secondary));
+  --macos-accent-color-tertiary: var(--ds-color-theme-accent-tertiary, var(--ds-color-theme-default-light-accent-tertiary));
   --macos-control-accent-branded-background-rest:
     linear-gradient(
       0deg,
       rgba(255, 255, 255, 0) 0%,
       rgba(255, 255, 255, 0.16) 100%),
-    #2749DB;
-  --macos-control-accent-branded-background-pressed:
-    linear-gradient(
-      0deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.16) 100%),
-    #2140C0;
+    var(--macos-accent-color);
   --macos-control-accent-branded-background-hover:
     linear-gradient(
       0deg,
       rgba(255, 255, 255, 0) 0%,
       rgba(255, 255, 255, 0.16) 100%),
-    #2749DB;
-  --macos-control-accent-branded-background-disabled: var(--color-white);
+    var(--macos-accent-color-secondary);
+  --macos-control-accent-branded-background-pressed:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    var(--macos-accent-color-tertiary);
   --macos-control-accent-branded-background-focus:
     linear-gradient(
       0deg,
-      rgba(255, 255, 255, 0.00) 0%,
+      rgba(255, 255, 255, 0) 0%,
       rgba(255, 255, 255, 0.16) 100%),
-    #2749DB;
+    var(--macos-accent-color);
   --macos-control-accent-branded-shadow-rest:
     0 1px 0 0 rgba(255, 255, 255, 0) inset,
     0 1px 0 0 rgba(255, 255, 255, 0) inset,
@@ -215,6 +214,16 @@ body:not([data-platform-name]) .Button_button:active {
     0px 0px 1px 0px rgba(0, 0, 0, 0.05),
     0px 1px 1px 0px rgba(0, 0, 0, 0.20);
 }
+[data-theme=dark] [data-platform-name=macos] {
+  --macos-control-focused-shadow:
+    0 0 0 2.5px var(--ds-color-theme-accent-glow-primary, var(--ds-color-theme-default-dark-accent-glow-primary)),
+    0 0 0 1px var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-dark-accent-primary)) inset,
+    0 0 1px 0 var(--ds-color-theme-shadow-primary, var(--ds-color-theme-default-dark-shadow-primary)),
+    0 1px 1px 0 var(--ds-color-theme-shadow-primary, var(--ds-color-theme-default-dark-shadow-primary));
+  --macos-accent-color: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-dark-accent-primary));
+  --macos-accent-color-secondary: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-dark-accent-secondary));
+  --macos-accent-color-tertiary: var(--ds-color-theme-accent-tertiary, var(--ds-color-theme-default-dark-accent-tertiary));
+}
 [data-platform-name=macos] .Button_button.Button_standard {
   --button-bg: var(--macos-control-standard-background-rest);
   --button-text: var(--macos-text-primary);
@@ -230,26 +239,30 @@ body:not([data-platform-name]) .Button_button:active {
 [data-platform-name=macos] .Button_button.Button_accent,
 [data-platform-name=macos] .Button_button.Button_accentBrand {
   --button-bg: var(--macos-control-accent-branded-background-rest);
-  --button-text: var(--color-white);
+  --button-text: var(--ds-color-theme-accent-content-primary, var(--ds-color-theme-default-light-accent-content-primary));
   --button-shadow: var(--macos-control-accent-branded-shadow-rest);
   --button-opacity: 1;
   --button-bg--active: var(--macos-control-accent-branded-background-pressed);
-  --button-text--active: var(--color-white-at-80);
+  --button-text--active: color-mix(in srgb, var(--ds-color-theme-accent-content-primary, var(--ds-color-theme-default-light-accent-content-primary)) 80%, transparent);
   --button-shadow--active: var(--macos-control-accent-branded-shadow-pressed);
   --button-bg--disabled: var(--macos-control-standard-background-rest);
   --button-text--disabled: var(--macos-text-primary);
   --button-shadow--disabled: var(--macos-control-standard-shadow);
   --button-opacity--disabled: 0.4;
   --button-bg--focus: var(--macos-control-accent-branded-background-focus);
-  --button-text--focus: var(--color-white);
   --button-shadow--focus: var(--macos-control-focused-shadow);
-  --button-bg--hover: var(--macos-control-accent-branded-background-hover);
-  --button-text--hover: var(--color-white);
+  --button-bg--hover: var(--macos-control-accent-branded-background-rest);
   --button-shadow--hover: var(--macos-control-accent-branded-shadow-hover);
 }
 [data-theme=dark] :is([data-platform-name=macos] .Button_button).Button_standard {
   --button-bg: var(--macos-control-standard-background-rest--dark);
   --button-text: var(--color-white-at-84);
+  --button-bg--active: var(--macos-control-standard-background-pressed--dark);
+}
+[data-theme=dark] :is([data-platform-name=macos] .Button_button).Button_accent,
+[data-theme=dark] :is([data-platform-name=macos] .Button_button).Button_accentBrand {
+  --button-text: var(--ds-color-theme-accent-content-primary, var(--ds-color-theme-default-dark-accent-content-primary));
+  --button-text--active: color-mix(in srgb, var(--ds-color-theme-accent-content-primary, var(--ds-color-theme-default-dark-accent-content-primary)) 80%, transparent);
 }
 [data-platform-name=ios] .Button_button.Button_primary {
   --button-bg: var(--color-blue-50);
@@ -284,7 +297,7 @@ body:not([data-platform-name]) .Button_button:active {
   --button-text--disabled: var(--color-black-at-36);
 }
 [data-platform-name=windows] .Button_button {
-  --focus-ring: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 3px var(--color-black);
+  --focus-ring-color: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-light-accent-primary));
   border-radius: var(--border-radius-sm);
   height: var(--sp-8);
   border-width: 0;
@@ -292,72 +305,63 @@ body:not([data-platform-name]) .Button_button:active {
   padding-right: var(--sp-3);
 }
 [data-platform-name=windows] .Button_button:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 1px;
 }
 [data-platform-name=windows] .Button_button.Button_standard {
-  background-color: var(--color-black-at-6);
+  background-color: var(--ds-color-theme-control-fill-primary, var(--ds-color-theme-default-light-control-fill-primary));
+  color: var(--ds-color-theme-text-primary, var(--ds-color-theme-default-light-text-primary));
   border-width: 0;
 }
-[data-platform-name=windows] .Button_button.Button_standard:hover {
-  background-color: var(--color-black-at-9);
+[data-platform-name=windows] .Button_button.Button_standard:hover:not(:disabled) {
+  background-color: var(--ds-color-theme-control-fill-secondary, var(--ds-color-theme-default-light-control-fill-secondary));
   cursor: pointer;
 }
-[data-platform-name=windows] .Button_button.Button_standard:active {
-  background-color: var(--color-black-at-12);
+[data-platform-name=windows] .Button_button.Button_standard:active:not(:disabled) {
+  background-color: var(--ds-color-theme-control-fill-tertiary, var(--ds-color-theme-default-light-control-fill-tertiary));
 }
 [data-platform-name=windows] .Button_button.Button_standard:disabled {
-  color: var(--color-black-at-84);
-}
-[data-platform-name=windows] .Button_button.Button_standard:disabled:hover {
+  opacity: 0.8;
   cursor: not-allowed;
-  background-color: var(--color-white-at-6);
 }
 [data-platform-name=windows] .Button_button.Button_accent,
 [data-platform-name=windows] .Button_button.Button_accentBrand {
-  background-color: var(--ddg-color-primary);
-  color: var(--color-white);
+  background-color: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-light-accent-primary));
+  color: var(--ds-color-theme-accent-content-primary, var(--ds-color-theme-default-light-accent-content-primary));
 }
-:is([data-platform-name=windows] .Button_button.Button_accent, [data-platform-name=windows] .Button_button.Button_accentBrand):hover {
-  background-color: var(--color-blue-60);
+:is([data-platform-name=windows] .Button_button.Button_accent, [data-platform-name=windows] .Button_button.Button_accentBrand):hover:not(:disabled) {
+  background-color: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-light-accent-secondary));
 }
-:is([data-platform-name=windows] .Button_button.Button_accent, [data-platform-name=windows] .Button_button.Button_accentBrand):active {
-  background-color: var(--color-blue-70);
+:is([data-platform-name=windows] .Button_button.Button_accent, [data-platform-name=windows] .Button_button.Button_accentBrand):active:not(:disabled) {
+  background-color: var(--ds-color-theme-accent-tertiary, var(--ds-color-theme-default-light-accent-tertiary));
+}
+:is([data-platform-name=windows] .Button_button.Button_accent, [data-platform-name=windows] .Button_button.Button_accentBrand):disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
 }
 [data-theme=dark] :is([data-platform-name=windows] .Button_button) {
-  --focus-ring: 0px 0px 0px 1px var(--color-black), 0px 0px 0px 3px var(--color-white);
+  --focus-ring-color: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-dark-accent-primary));
 }
 [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard {
-  color: var(--color-white-at-84);
-  background-color: var(--color-white-at-12);
+  color: var(--ds-color-theme-text-primary, var(--ds-color-theme-default-dark-text-primary));
+  background-color: var(--ds-color-theme-control-fill-primary, var(--ds-color-theme-default-dark-control-fill-primary));
 }
-[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:hover {
-  background-color: var(--color-white-at-18);
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:hover:not(:disabled) {
+  background-color: var(--ds-color-theme-control-fill-secondary, var(--ds-color-theme-default-dark-control-fill-secondary));
 }
-[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:active {
-  background-color: var(--color-white-at-24);
-}
-[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:disabled {
-  color: var(--color-white-at-12);
-  opacity: 0.8;
-}
-[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:disabled:hover {
-  background-color: var(--color-white-at-12);
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:active:not(:disabled) {
+  background-color: var(--ds-color-theme-control-fill-tertiary, var(--ds-color-theme-default-dark-control-fill-tertiary));
 }
 [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent,
 [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand {
-  color: var(--color-black-at-84);
-  background-color: var(--color-blue-20);
+  color: var(--ds-color-theme-accent-content-primary, var(--ds-color-theme-default-dark-accent-content-primary));
+  background-color: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-dark-accent-primary));
 }
-:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):hover {
-  background-color: var(--color-blue-30);
+:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):hover:not(:disabled) {
+  background-color: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-dark-accent-secondary));
 }
-:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):active {
-  background-color: var(--color-blue-40);
-}
-:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):disabled {
-  background-color: var(--color-white-at-36);
-  color: var(--color-black-at-84);
+:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):active:not(:disabled) {
+  background-color: var(--ds-color-theme-accent-tertiary, var(--ds-color-theme-default-dark-accent-tertiary));
 }
 
 /* shared/components/Card/Card.module.css */
@@ -375,8 +379,11 @@ body:not([data-platform-name]) .Button_button:active {
 }
 
 /* shared/components/Text/Text.module.css */
-a {
-  color: var(--ddg-color-primary);
+.Text_root a {
+  color: var(--ds-color-theme-accent-text-primary, var(--ds-color-theme-default-light-accent-text-primary));
+}
+[data-theme=dark] :is(.Text_root a) {
+  color: var(--ds-color-theme-accent-text-primary, var(--ds-color-theme-default-dark-accent-text-primary));
 }
 .Text_title-1 {
   font-size: calc(22 * var(--px-in-rem));

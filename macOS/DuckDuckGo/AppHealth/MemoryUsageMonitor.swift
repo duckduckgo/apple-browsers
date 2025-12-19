@@ -17,10 +17,10 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Foundation
 import os.log
+import PrivacyConfig
 
 /// A monitor that periodically reports the memory usage of the current process.
 final class MemoryUsageMonitor: @unchecked Sendable {

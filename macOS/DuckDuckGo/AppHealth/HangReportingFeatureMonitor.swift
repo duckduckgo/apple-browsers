@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import FeatureFlags
 import Foundation
+import PrivacyConfig
 
 /// Monitors the hangReporting feature flag and notifies the Watchdog when it changes.
 ///

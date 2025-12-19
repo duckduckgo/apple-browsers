@@ -18,7 +18,7 @@
 
 import Cocoa
 import SwiftUI
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 
 final class PermissionAuthorizationPopover: NSPopover {

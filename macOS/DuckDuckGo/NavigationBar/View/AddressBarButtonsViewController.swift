@@ -17,12 +17,12 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
 import Lottie
 import os.log
+import PrivacyConfig
 import PrivacyDashboard
 import PixelKit
 import AppKitExtensions
@@ -234,7 +234,6 @@ final class AddressBarButtonsViewController: NSViewController {
     var textFieldValue: AddressBarTextField.Value? {
         didSet {
             updateButtons()
-            dismissTogglePopoverIfTyping()
         }
     }
     var isMouseOverNavigationBar = false {
@@ -476,6 +475,7 @@ final class AddressBarButtonsViewController: NSViewController {
         for case let .some(animationView) in [shieldDotAnimationView, shieldAnimationView] {
             animationView.stop()
         }
+        notificationAnimationView?.removeAnimation()
     }
 
     func showBadgeNotification(_ type: NavigationBarBadgeAnimationView.AnimationType) {
@@ -845,7 +845,10 @@ final class AddressBarButtonsViewController: NSViewController {
         case .browsing where tabViewModel.isShowingErrorPage:
             imageButton.image = .web
         case .browsing:
-            if let favicon = tabViewModel.favicon {
+            // When editing (address bar focused), show favicon if available
+            // When browsing (not editing), show globe for local HTTP sites
+            // Privacy dashboard button would be shown for non-local sites
+            if isTextFieldEditorFirstResponder, let favicon = tabViewModel.favicon {
                 imageButton.image = favicon
             } else {
                 imageButton.image = .web
@@ -1007,12 +1010,11 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let behavior = createAIChatLinkOpenBehavior(for: tab)
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar),
-           aiChatMenuConfig.shouldOpenAIChatInSidebar,
+        if aiChatMenuConfig.shouldOpenAIChatInSidebar,
            !isTextFieldEditorFirstResponder,
            case .url = tab.content,
            behavior == .currentTab {
-            // Toggle (open or close) the sidebar only when feature flag and setting option are enabled and:
+            // Toggle (open or close) the sidebar only when setting option is enabled and:
             // - address bar text field is not in focus
             // - the current tab is displaying a standard web page (not a special page),
             // - intended link open behavior is to use the current tab
@@ -1196,7 +1198,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonState() {
-        guard let tab = tabViewModel?.tab, featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        guard let tab = tabViewModel?.tab else { return }
         let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
         updateAIChatButtonStateForSidebar(isShowingSidebar)
     }
@@ -1264,7 +1266,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func shouldSkipShowingAnyAIChatButton() -> Bool {
         let isDuckAIURL = tabViewModel?.tab.url?.isDuckAIURL ?? false
-        return isInPopUpWindow || isDuckAIURL || !featureFlagger.isFeatureOn(.aiChatSidebar)
+        return isInPopUpWindow || isDuckAIURL
     }
 
     private func shouldShowAIChatButton() -> Bool {
@@ -1401,12 +1403,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @objc func hideAskAIChatButtonAction(_ sender: NSMenuItem) {
-        // With the improvement both buttons have separate setting, without both toggle same option.
-        if aiChatMenuConfig.shouldShowSettingsImprovements {
-            delegate?.addressBarButtonsViewControllerHideAskAIChatButtonClicked(self)
-        } else {
-            delegate?.addressBarButtonsViewControllerHideAIChatButtonClicked(self)
-        }
+        delegate?.addressBarButtonsViewControllerHideAskAIChatButtonClicked(self)
     }
 
     @objc func hideSearchModeToggleAction(_ sender: NSMenuItem) {
@@ -1430,11 +1427,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         leadingAIChatDivider.isHidden = aiChatButton.isHidden || bookmarkButton.isHidden
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            trailingAIChatDivider.isHidden = askAIChatButton.isHidden || cancelButton.isHidden
-        } else {
-            trailingAIChatDivider.isHidden = aiChatButton.isHidden || cancelButton.isHidden
-        }
+        trailingAIChatDivider.isHidden = askAIChatButton.isHidden || cancelButton.isHidden
     }
 
     private func configureAIChatButton() {
@@ -1451,7 +1444,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func configureAIChatButtonTooltip(isSidebarOpen: Bool? = nil) {
-        if let tab = tabViewModel?.tab, featureFlagger.isFeatureOn(.aiChatSidebar) {
+        if let tab = tabViewModel?.tab {
             let isSidebarOpen: Bool = isSidebarOpen ?? {
                 guard let tabID = tabViewModel?.tab.uuid else { return false }
                 return aiChatSidebarPresenter.isSidebarOpen(for: tabID)
@@ -1560,17 +1553,6 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func configureContextMenuForAIChatButtons(isSidebarOpen: Bool? = nil) {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else {
-
-            aiChatButton.menu = NSMenu {
-                NSMenuItem(title: UserText.aiChatAddressBarHideButton,
-                           action: #selector(hideAIChatButtonAction(_:)),
-                           keyEquivalent: "")
-            }
-
-            return
-        }
-
         aiChatButton.menu = createAIChatContextMenu(hideButtonAction: #selector(hideAIChatButtonAction(_:)), isSidebarOpen: isSidebarOpen)
         askAIChatButton.menu = createAIChatContextMenu(hideButtonAction: #selector(hideAskAIChatButtonAction(_:)), isSidebarOpen: isSidebarOpen)
     }
@@ -1581,12 +1563,7 @@ final class AddressBarButtonsViewController: NSViewController {
         cancelButton.position = .right
         askAIChatButton.position = .center
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            aiChatButton.position = .right
-        } else {
-            aiChatButton.position = cancelButton.isShown ? .center : .right
-        }
-
+        aiChatButton.position = .right
         bookmarkButton.position = aiChatButton.isShown ? .center : .right
     }
 
@@ -1738,11 +1715,7 @@ final class AddressBarButtonsViewController: NSViewController {
             aiChatButton.isHidden = true
             cancelButton.isShown = false
         } else {
-            if featureFlagger.isFeatureOn(.aiChatSidebar) {
-                cancelButton.isShown = isTextFieldEditorFirstResponder
-            } else {
-                cancelButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
-            }
+            cancelButton.isShown = isTextFieldEditorFirstResponder
         }
 
         updateImageButton()
@@ -1795,17 +1768,6 @@ final class AddressBarButtonsViewController: NSViewController {
                 isNewUser: AppDelegate.isNewUser,
                 userDidInteractWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle
             )
-        }
-    }
-
-    private func dismissTogglePopoverIfTyping() {
-        guard let value = textFieldValue, value.isUserTyped, !value.isEmpty else {
-            return
-        }
-        /// Defer dismissal to the next run loop cycle so the toggle collapse animation
-        /// can start first, then both animations run concurrently without interference
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.aiChatTogglePopoverCoordinator?.dismissPopover()
         }
     }
 

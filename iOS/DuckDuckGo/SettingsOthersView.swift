@@ -34,7 +34,7 @@ struct SettingsOthersView: View {
             if viewModel.shouldShowWhatsNew {
                 SettingsCellView(
                     label: UserText.settingsWhatsNew,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.rocket),
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.announce),
                     action: { viewModel.openWhatsNew() },
                     isButton: true
                 )

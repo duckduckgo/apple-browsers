@@ -318,12 +318,13 @@ final class FaviconManager: FaviconManagement {
     // MARK: - Private
 
     private func fallbackFaviconLinks(for documentUrl: URL) -> [FaviconUserScript.FaviconLink] {
+        guard let root = documentUrl.root else { return [] }
         var result = [FaviconUserScript.FaviconLink]()
         if [.https, .http].contains(documentUrl.navigationalScheme) {
-            result.append(FaviconUserScript.FaviconLink(href: documentUrl.appending("favicon.ico"), rel: "favicon.ico"))
-        }
-        if documentUrl.navigationalScheme == .http, let root = documentUrl.root?.toHttps() {
             result.append(FaviconUserScript.FaviconLink(href: root.appending("favicon.ico"), rel: "favicon.ico"))
+        }
+        if documentUrl.navigationalScheme == .http, let upgradedRoot = root.toHttps() {
+            result.append(FaviconUserScript.FaviconLink(href: upgradedRoot.appending("favicon.ico"), rel: "favicon.ico"))
         }
         return result
     }

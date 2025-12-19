@@ -379,7 +379,7 @@ def main():
                 lines.append(f"     Key: {key}")
 
     if missing_modified_keys:
-        lines.append("\n❌  Modified strings not updated in string files:")
+        lines.append("\n❌ Modified strings not updated in string files:")
         # Group keys by file_path
         keys_by_file: Dict[str, List[str]] = {}
         for item in missing_modified_keys:

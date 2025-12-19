@@ -51,27 +51,27 @@ final class FireExecutorTests: XCTestCase {
             willStartBurningFireContext = fireContext
         }
         
-        func willStartBurningTabs() {
+        func willStartBurningTabs(fireContext: FireContext) {
             willStartBurningTabsCalled = true
         }
         
-        func didFinishBurningTabs() {
+        func didFinishBurningTabs(fireContext: FireContext) {
             didFinishBurningTabsCalled = true
         }
         
-        func willStartBurningData() {
+        func willStartBurningData(fireContext: FireContext) {
             willStartBurningDataCalled = true
         }
         
-        func didFinishBurningData() {
+        func didFinishBurningData(fireContext: FireContext) {
             didFinishBurningDataCalled = true
         }
         
-        func willStartBurningAIHistory() {
+        func willStartBurningAIHistory(fireContext: FireContext) {
             willStartBurningAIHistoryCalled = true
         }
         
-        func didFinishBurningAIHistory() {
+        func didFinishBurningAIHistory(fireContext: FireContext) {
             didFinishBurningAIHistoryCalled = true
         }
         

@@ -3754,30 +3754,31 @@ extension MainViewController: FireExecutorDelegate {
         }
     }
     
-    func willStartBurningTabs() {
+    func willStartBurningTabs(fireContext: FireContext) {
         omniBar.endEditing()
         findInPageView?.done()
     }
     
-    func didFinishBurningTabs() {
+    func didFinishBurningTabs(fireContext: FireContext) {
+        guard fireContext == .manualFire else { return }
         refreshUIAfterClear()
     }
     
-    func willStartBurningData() {
+    func willStartBurningData(fireContext: FireContext) {
         self.clearInProgress = true
     }
     
-    func didFinishBurningData() {
+    func didFinishBurningData(fireContext: FireContext) {
         self.clearInProgress = false
         self.postClear?()
         self.postClear = nil
     }
     
-    func willStartBurningAIHistory() {
+    func willStartBurningAIHistory(fireContext: FireContext) {
         // no op
     }
     
-    func didFinishBurningAIHistory() {
+    func didFinishBurningAIHistory(fireContext: FireContext) {
         Task {
             await aiChatViewControllerManager.killSessionAndResetTimer()
         }

@@ -43,12 +43,12 @@ enum FireContext {
 
 protocol FireExecutorDelegate: AnyObject {
     func willStartBurning(fireContext: FireContext)
-    func willStartBurningTabs()
-    func didFinishBurningTabs()
-    func willStartBurningData()
-    func didFinishBurningData()
-    func willStartBurningAIHistory()
-    func didFinishBurningAIHistory()
+    func willStartBurningTabs(fireContext: FireContext)
+    func didFinishBurningTabs(fireContext: FireContext)
+    func willStartBurningData(fireContext: FireContext)
+    func didFinishBurningData(fireContext: FireContext)
+    func willStartBurningAIHistory(fireContext: FireContext)
+    func didFinishBurningAIHistory(fireContext: FireContext)
     func didFinishBurning(fireContext: FireContext)
 }
 
@@ -142,9 +142,9 @@ class FireExecutor: FireExecuting {
         
         delegate?.willStartBurning(fireContext: fireContext)
         if options.contains(.tabs) {
-            delegate?.willStartBurningTabs()
+            delegate?.willStartBurningTabs(fireContext: fireContext)
             burnTabs()
-            delegate?.didFinishBurningTabs()
+            delegate?.didFinishBurningTabs(fireContext: fireContext)
         }
         
         cancelOngoingDownloadsIfNeeded(options)
@@ -158,15 +158,15 @@ class FireExecutor: FireExecuting {
         
         let shouldBurnAIChats = options.contains(.aiChats) && shouldAllowAIChatsBurn
 
-        if shouldBurnData { delegate?.willStartBurningData() }
-        if shouldBurnAIChats { delegate?.willStartBurningAIHistory() }
+        if shouldBurnData { delegate?.willStartBurningData(fireContext: fireContext) }
+        if shouldBurnAIChats { delegate?.willStartBurningAIHistory(fireContext: fireContext) }
 
         async let dataTask: Void = shouldBurnData ? burnData(applicationState: applicationState) : ()
         async let aiTask: Void = shouldBurnAIChats ? burnAIHistory() : ()
         _ = await (dataTask, aiTask)
 
-        if shouldBurnData { delegate?.didFinishBurningData() }
-        if shouldBurnAIChats { delegate?.didFinishBurningAIHistory() }
+        if shouldBurnData { delegate?.didFinishBurningData(fireContext: fireContext) }
+        if shouldBurnAIChats { delegate?.didFinishBurningAIHistory(fireContext: fireContext) }
         delegate?.didFinishBurning(fireContext: fireContext)
         
         // Reset prepared state for next burn cycle

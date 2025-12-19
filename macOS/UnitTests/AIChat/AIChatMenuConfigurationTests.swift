@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import FeatureFlags
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

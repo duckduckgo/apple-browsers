@@ -241,9 +241,9 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
     // MARK: - Helper
 
-    private func makeSubfeatureEnabledCheck(for enabledSubfeatures: [PrivacyProSubfeature]) -> (any PrivacySubfeature) -> Bool {
-        return {
-            guard let subfeature = $0 as? PrivacyProSubfeature else { return false }
+    private func makeSubfeatureEnabledCheck(for enabledSubfeatures: [PrivacyProSubfeature]) -> (any PrivacySubfeature, AppVersionProvider) -> Bool {
+        return { privacySubfeature, _ in
+            guard let subfeature = privacySubfeature as? PrivacyProSubfeature else { return false }
             return enabledSubfeatures.contains(subfeature)
         }
     }

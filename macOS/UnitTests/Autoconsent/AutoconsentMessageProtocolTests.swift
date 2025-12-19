@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Common
 import History
 import HistoryView
+import PrivacyConfigTestsUtils
 import PersistenceTestingUtils
 import WebKit
 import XCTest

@@ -34,7 +34,7 @@ public class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
         .downloaded
     }
 
-    public init(privacyConfig: PrivacyConfiguration, internalUserDecider: InternalUserDecider) {
+    public init(privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration(), internalUserDecider: InternalUserDecider = MockInternalUserDecider()) {
         self.updatesPublisher = updatesSubject.eraseToAnyPublisher()
         self.privacyConfig = privacyConfig
         self.internalUserDecider = internalUserDecider

@@ -18,6 +18,8 @@
 
 import Combine
 import Foundation
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
 

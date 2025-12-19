@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import XCTest
 import AIChat
+import PrivacyConfig
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AIChatSidebarProviderTests: XCTestCase {

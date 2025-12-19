@@ -26,6 +26,7 @@ let package = Package(
         .library(name: "CxxCrashHandler", targets: ["CxxCrashHandler"]),
         .library(name: "ContentBlocking", targets: ["ContentBlocking"]),
         .library(name: "PrivacyConfig", targets: ["PrivacyConfig"]),
+        .library(name: "PrivacyConfigTestsUtils", targets: ["PrivacyConfigTestsUtils"]),
         .library(name: "PrivacyDashboard", targets: ["PrivacyDashboard"]),
         .library(name: "Configuration", targets: ["Configuration"]),
         .library(name: "Networking", targets: ["Networking"]),

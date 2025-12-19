@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
+import PrivacyConfig
 import SharedTestUtilities
 import XCTest
 

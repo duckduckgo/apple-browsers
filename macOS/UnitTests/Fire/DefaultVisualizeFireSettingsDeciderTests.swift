@@ -17,6 +17,7 @@
 //
 
 import Common
+import PrivacyConfig
 import SharedTestUtilities
 import XCTest
 

@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
 import History
 import HistoryView
 import Onboarding
+import PrivacyConfig
 import SharedTestUtilities
 import XCTest
 

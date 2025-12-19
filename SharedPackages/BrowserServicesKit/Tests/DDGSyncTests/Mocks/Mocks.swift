@@ -155,21 +155,6 @@ extension DefaultInternalUserDecider {
     }
 }
 
-class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
-    var currentConfig: Data = .init()
-    var updatesSubject = PassthroughSubject<Void, Never>()
-    let updatesPublisher: AnyPublisher<Void, Never>
-    var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
-    let internalUserDecider: InternalUserDecider = MockInternalUserDecider()
-    func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
-        .downloaded
-    }
-
-    init() {
-        updatesPublisher = updatesSubject.eraseToAnyPublisher()
-    }
-}
-
 class MockPrivacyConfiguration: PrivacyConfiguration {
 
     func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool { true }

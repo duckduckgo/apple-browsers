@@ -17,13 +17,14 @@
 //
 
 import AIChat
-import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
 import History
 import HistoryView
 import Onboarding
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import PrivacyDashboard
 import SharedTestUtilities
 import struct SwiftUI.AnyView

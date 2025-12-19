@@ -24,6 +24,7 @@ import Combine
 import Common
 import Foundation
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 final class ContentBlockingMock: NSObject, ContentBlockingProtocol, AdClickAttributionDependencies {
 

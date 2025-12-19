@@ -20,6 +20,8 @@ import BrowserServicesKit
 import Combine
 import NewTabPage
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
@@ -32,7 +34,7 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
     override func setUp() async throws {
         let privacyConfigManager = MockPrivacyConfigurationManager()
         let config = MockPrivacyConfiguration()
-        privacyConfigManager.mockPrivacyConfig = config
+        privacyConfigManager.privacyConfig = config
 
         let continueSetUpModel = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: CapturingDefaultBrowserProvider(),

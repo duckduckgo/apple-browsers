@@ -25,6 +25,7 @@ import WebKit
 import UserScript
 import PixelKit
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 enum DuckPlayerMode: Equatable, Codable {
     case enabled, alwaysAsk, disabled

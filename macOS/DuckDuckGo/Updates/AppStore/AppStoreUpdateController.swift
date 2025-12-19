@@ -23,7 +23,7 @@ import Combine
 import os.log
 import Common
 import AppKit
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 import PixelKit
 

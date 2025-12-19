@@ -192,7 +192,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         if let dbpDataManager {
             let profile = try? dbpDataManager.fetchProfile()
-            isCurrentPIRUser = hasPIREntitlement && profile != nil
+            isCurrentPIRUser = (isCurrentFreemiumDBPUser || hasPIREntitlement) && profile != nil
         } else {
             isCurrentPIRUser = false
         }

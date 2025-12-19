@@ -29,7 +29,7 @@ final class FaviconDownloader: NSObject {
     private var pendingDownloads: [WKDownload: DownloadTask] = [:]
     private nonisolated let privacyConfigurationManager: PrivacyConfigurationManaging
     private lazy var faviconURLSession = URLSession(configuration: .ephemeral)
-    
+
     nonisolated init(privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.privacyConfigurationManager = privacyConfigurationManager
         super.init()
@@ -41,11 +41,11 @@ final class FaviconDownloader: NSObject {
         }
         return try await downloadUsingWKDownload(from: url, using: webView)
     }
-    
+
     private func downloadUsingWKDownload(from url: URL, using webView: WKWebView?) async throws -> Data {
         // Use provided webView (to share session/cookies), or create a temporary one if needed
         let targetWebView = webView ?? createTemporaryWebView()
-        
+
         let download = await targetWebView.startDownload(using: URLRequest(url: url))
         return try await withCheckedThrowingContinuation { continuation in
             let task = DownloadTask(url: url, continuation: continuation)
@@ -53,7 +53,7 @@ final class FaviconDownloader: NSObject {
             download.delegate = self
         }
     }
-    
+
     private func createTemporaryWebView() -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
@@ -93,13 +93,13 @@ extension FaviconDownloader: WKDownloadDelegate {
         let tempDirectory = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         let fileName = UUID().uuidString
         let destinationURL = tempDirectory.appendingPathComponent(fileName)
-        
+
         // Store the destination URL so we can read the file later
         if var task = pendingDownloads[download] {
             task.destinationURL = destinationURL
             pendingDownloads[download] = task
         }
-        
+
         return destinationURL
     }
 
@@ -114,7 +114,7 @@ extension FaviconDownloader: WKDownloadDelegate {
         do {
             let data = try Data(contentsOf: destinationURL)
             task.continuation.resume(returning: data)
-            
+
             // Clean up the temporary file
             try? FileManager.default.removeItem(at: destinationURL)
         } catch {
@@ -130,12 +130,12 @@ extension FaviconDownloader: WKDownloadDelegate {
         }
 
         Logger.favicons.debug("FaviconDownloader: Download failed for \(task.url.absoluteString): \(error.localizedDescription)")
-        
+
         // Clean up temporary file if it exists
         if let destinationURL = task.destinationURL {
             try? FileManager.default.removeItem(at: destinationURL)
         }
-        
+
         task.continuation.resume(throwing: error)
     }
 }

@@ -175,7 +175,7 @@ final class FaviconManager: FaviconManagement {
 
     func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> Favicon? {
         await awaitFaviconsLoaded()
-        
+
         // If we have links from the page, try those first
         // Fetch favicons if needed
         var faviconLinksToFetch = await filteringAlreadyFetchedFaviconLinks(from: faviconLinks)
@@ -183,7 +183,7 @@ final class FaviconManager: FaviconManagement {
         if let favicon = await cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.map(\.href), for: documentUrl) {
             return favicon
         }
-        
+
         // If main links failed or were empty, try fallback
         let fallbackLinks = fallbackFaviconLinks(for: documentUrl)
         faviconLinksToFetch = await filteringAlreadyFetchedFaviconLinks(from: fallbackLinks)
@@ -321,7 +321,7 @@ final class FaviconManager: FaviconManagement {
         var result = [FaviconUserScript.FaviconLink]()
         if [.https, .http].contains(documentUrl.navigationalScheme) {
             result.append(FaviconUserScript.FaviconLink(href: documentUrl.appending("favicon.ico"), rel: "favicon.ico"))
-        } 
+        }
         if documentUrl.navigationalScheme == .http, let root = documentUrl.root?.toHttps() {
             result.append(FaviconUserScript.FaviconLink(href: root.appending("favicon.ico"), rel: "favicon.ico"))
         }
@@ -357,7 +357,7 @@ final class FaviconManager: FaviconManagement {
                 group.addTask {
                     do {
                         let data = try await faviconDownloader.download(from: faviconUrl, using: webView)
-                        
+
                         // Validate that we got actual image data
                         guard !data.isEmpty else {
                             throw URLError(.zeroByteResource, userInfo: [NSURLErrorKey: faviconUrl])

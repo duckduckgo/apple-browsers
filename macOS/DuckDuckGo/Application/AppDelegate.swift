@@ -897,7 +897,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger: self.featureFlagger,
                 configurationURLProvider: configurationURLProvider,
                 themeManager: themeManager,
-                dbpDataManager: DataBrokerProtectionManager.shared.dataManager
+                dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager }
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))

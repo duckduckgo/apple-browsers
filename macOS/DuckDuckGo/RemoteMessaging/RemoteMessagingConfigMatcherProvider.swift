@@ -227,8 +227,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isCurrentFreemiumPIRUser: isCurrentFreemiumDBPUser,
                                                        isCurrentPIRUser: isCurrentPIRUser,
                                                        dismissedDeprecatedMacRemoteMessageIds: deprecatedRemoteMessageStorage.dismissedMessageIDs(),
-                                                       enabledFeatureFlags: enabledFeatureFlags
-                                                      ),
+                                                       enabledFeatureFlags: enabledFeatureFlags),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

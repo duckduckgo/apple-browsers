@@ -240,9 +240,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
     case onboardingSearchExperience
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
-    case vpnConnectionWidePixelMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472842661
     case storeSerpSettings
 
@@ -312,7 +309,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpForegroundRunningWhenDashboardOpen,
              .syncCreditCards,
              .unifiedURLPredictor,
-             .vpnConnectionWidePixelMeasurement,
              .migrateKeychainAccessibility,
              .dataImportWideEventMeasurement,
              .browsingMenuSheetPresentation,
@@ -371,7 +367,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .fullDuckAIMode,
              .fadeOutOnToggle,
              .attributedMetrics,
-             .vpnConnectionWidePixelMeasurement,
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
              .standaloneMigration,
@@ -577,8 +572,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
-        case .vpnConnectionWidePixelMeasurement:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .onboardingSearchExperience:
             return .remoteReleasable(.subfeature(AIChatSubfeature.onboardingSearchExperience))
         case .storeSerpSettings:

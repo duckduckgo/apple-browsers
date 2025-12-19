@@ -390,7 +390,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - WideEvent
 
     private var wideEvent: WideEventManaging
-    private var isConnectionWideEventMeasurementEnabled: Bool = false
     private var connectionWideEventData: VPNConnectionWideEventData?
     private let connectionTunnelTimeoutInterval: TimeInterval = .minutes(15)
 
@@ -670,7 +669,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         let startupOptions = StartupOptions(options: options ?? [:])
         Logger.networkProtection.log("Starting tunnel with options: \(startupOptions.description, privacy: .public)")
-        isConnectionWideEventMeasurementEnabled = startupOptions.isConnectionWideEventMeasurementEnabled
         setupAndStartConnectionWideEvent(with: startupOptions.startupMethod)
 
         // Reset snooze if the VPN is restarting.
@@ -1894,7 +1892,6 @@ extension WireGuardAdapterError: LocalizedError, CustomDebugStringConvertible {
 extension PacketTunnelProvider {
 
     func setupAndStartConnectionWideEvent(with startupMethod: StartupOptions.StartupMethod) {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         completeAllPendingVPNConnectionPixels()
         // Already measured
         guard startupMethod != .manualByMainApp else { return }
@@ -1913,7 +1910,7 @@ extension PacketTunnelProvider {
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
-        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        guard let data = self.connectionWideEventData else { return }
         data.tunnelStartDuration?.complete()
         data.overallDuration?.complete()
         if let error {

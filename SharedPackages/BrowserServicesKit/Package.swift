@@ -270,6 +270,7 @@ let package = Package(
             resources: [
                 .process("Resources/contentScope.js"),
                 .process("Resources/contentScopeIsolated.js"),
+                .process("Resources/duckAiDataClearing.js"),
                 .copy("Resources/pages"),
             ],
             swiftSettings: [

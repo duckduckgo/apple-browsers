@@ -115,6 +115,7 @@ public final class HistoryCleaner: HistoryCleaning {
         let contentScope = try ContentScopeUserScript(
             privacyConfig,
             properties: contentScopeProperties,
+            scriptContext: .aiChatDataClearing,
             allowedNonisolatedFeatures: [aiChatDataClearing.featureName],
             privacyConfigurationJSONGenerator: nil
         )

@@ -1,5 +1,19 @@
 {
     // This file will define pixels sent by the native experiments framework
     "defaultSuffixes": [],
-    "activeExperiments": {}
+    "activeExperiments": {
+        "autoconsentHeuristicAction": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {
+                "popupHandled": {
+                    "description": "CPM detected a cookie popup within the conversion window",
+                    "enum": ["true"]
+                },
+                "breakageReportSent": {
+                    "description": "Breakage report is sent within the conversion window",
+                    "enum": ["true"]
+                }
+            }
+        }
+    }
 }

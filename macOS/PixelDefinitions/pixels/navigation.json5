@@ -89,6 +89,11 @@
                 "key": "all_resources_complete_ms",
                 "type": "integer",
                 "description": "Time in milliseconds from navigation start to all resources complete"
+            },
+            {
+                "key": "consentHeuristicEnabled",
+                "type": "integer",
+                "description": "Whether the user is in CPM heuristic experiment treatment group"
             }
         ]
     },

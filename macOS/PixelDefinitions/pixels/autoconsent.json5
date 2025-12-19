@@ -199,6 +199,11 @@
                 "key": "error_reload-loop",
                 "description": "Number of autoconsent error-reload-loop pixels fired.",
                 "type": "number"
+            },
+            {
+                "key": "consentHeuristicEnabled",
+                "description": "Whether the user is in CPM heuristic experiment treatment group",
+                "type": "number"
             }
         ]
     },

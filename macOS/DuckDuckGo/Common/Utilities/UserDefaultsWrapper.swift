@@ -287,6 +287,7 @@ extension UserDefaults {
 
 }
 
+@available(*, deprecated, message: "Use KeyedStoring pattern instead - see UserDefaultsKeys for migration")
 @propertyWrapper
 struct UserDefaultsWrapper<T> {
 

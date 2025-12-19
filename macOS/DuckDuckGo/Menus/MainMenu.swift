@@ -104,6 +104,7 @@ final class MainMenu: NSMenu {
     let contentScopeDebugStateMenuItem = NSMenuItem(title: "Content Scope Scripts Debug State", action: #selector(MainMenu.toggleContentScopeStateDebugSettingsAction))
     let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
     let toggleWatchdogCrashMenuItem = NSMenuItem(title: "Crash on timeout", action: #selector(MainViewController.toggleWatchdogCrash))
+    let alwaysShowFirstTimeQuitSurvey = NSMenuItem(title: "Always Show First-Time Quit Survey", action: #selector(MainViewController.alwaysShowFirstTimeQuitSurvey))
 
     // MARK: Help
 
@@ -128,6 +129,7 @@ final class MainMenu: NSMenu {
     private let appVersion: AppVersion
     private let configurationURLProvider: CustomConfigurationURLProviding
     private let contentScopePreferences: ContentScopePreferences
+    private let quitSurveyPersistor: QuitSurveyPersistor
 
     private lazy var webExtensionsMenuItem: NSMenuItem? = {
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
@@ -153,7 +155,8 @@ final class MainMenu: NSMenu {
          appVersion: AppVersion = .shared,
          isFireWindowDefault: Bool,
          configurationURLProvider: CustomConfigurationURLProviding,
-         contentScopePreferences: ContentScopePreferences) {
+         contentScopePreferences: ContentScopePreferences,
+         quitSurveyPersistor: QuitSurveyPersistor) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -166,6 +169,7 @@ final class MainMenu: NSMenu {
         self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, recentlyClosedCoordinator: recentlyClosedCoordinator, featureFlagger: featureFlagger)
         self.configurationURLProvider = configurationURLProvider
         self.contentScopePreferences = contentScopePreferences
+        self.quitSurveyPersistor = quitSurveyPersistor
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -512,6 +516,11 @@ final class MainMenu: NSMenu {
         updateShowToolbarsOnFullScreenMenuItem()
         updateWatchdogMenuItems()
         updateWebExtensionsMenuItem()
+        updateAlwaysShowFirstTimeQuitSurvey()
+    }
+
+    private func updateAlwaysShowFirstTimeQuitSurvey() {
+        alwaysShowFirstTimeQuitSurvey.state = quitSurveyPersistor.alwaysShowQuitSurvey ? .on : .off
     }
 
     private func updateWebExtensionsMenuItem() {
@@ -575,38 +584,12 @@ final class MainMenu: NSMenu {
     }
 
     var aiChatCancellable: AnyCancellable?
-    var privacyConfigCancellable: AnyCancellable?
-    var featureFlagCancellable: AnyCancellable?
     private func subscribeToAIChatPreferences(aiChatMenuConfig: AIChatMenuVisibilityConfigurable) {
         aiChatCancellable = aiChatMenuConfig.valuesChangedPublisher
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] in
                 self?.setupAIChatMenu()
             })
-
-        // Required to support toggle of .aiChatImprovements feature flag, to be removed after release
-        privacyConfigCancellable = privacyConfigurationManager.updatesPublisher
-            .receive(on: DispatchQueue.main)
-            .sink(receiveValue: { [weak self] in
-                guard let self else { return }
-
-                let isAIChatMenuHidden = self.aiChatMenu.isHidden
-                let shouldHideAIChatMenu = !aiChatMenuConfig.shouldDisplayApplicationMenuShortcut
-
-                if isAIChatMenuHidden != shouldHideAIChatMenu {
-                    self.setupAIChatMenu()
-                }
-            })
-
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        featureFlagCancellable = overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .aiChatImprovements }
-            .sink { [weak self] _ in
-                self?.setupAIChatMenu()
-            }
     }
 
     // Nested recursing functions cause body length
@@ -792,6 +775,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset Launch Date To Today", action: #selector(AppDelegate.resetLaunchDateToToday))
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
                 NSMenuItem(title: "Set Launch Date A Month In the Past", action: #selector(AppDelegate.setLaunchDayAMonthInThePast))
+                NSMenuItem(title: "Reset Quit Survey Was Shown", action: #selector(AppDelegate.resetQuitSurveyWasShown))
 
             }.withAccessibilityIdentifier("MainMenu.resetData")
             NSMenuItem(title: "UI Triggers") {
@@ -804,6 +788,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Show Save Credentials Popover", action: #selector(MainViewController.showSaveCredentialsPopover))
                 NSMenuItem(title: "Show Credentials Saved Popover", action: #selector(MainViewController.showCredentialsSavedPopover))
                 NSMenuItem(title: "Show Pop Up Window", action: #selector(MainViewController.showPopUpWindow))
+                alwaysShowFirstTimeQuitSurvey
             }
             NSMenuItem(title: "Remote Configuration") {
                 customConfigurationUrlMenuItem

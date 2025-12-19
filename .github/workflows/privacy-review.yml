@@ -23,4 +23,4 @@ jobs:
           team_name: 'Apple'
           trigger-phrase: 'Issue URL:'
           asana_pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          github_pat: ${{ secrets.GH_RO_PAT }}
+          github_pat: ${{ secrets.APPLE_GH_RO_PAT }}

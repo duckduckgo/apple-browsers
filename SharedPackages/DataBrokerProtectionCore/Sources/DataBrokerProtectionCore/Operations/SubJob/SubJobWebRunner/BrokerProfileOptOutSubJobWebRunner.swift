@@ -71,7 +71,11 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
     public let shouldRunNextStep: () -> Bool
-    public let clickAwaitTime: TimeInterval
+    public lazy var clickAwaitTime: TimeInterval = {
+        featureFlagger.isClickActionDelayReductionOptimizationOn ?
+        executionConfig.optimizedClickAwaitTimeForOptOut :
+        executionConfig.legacyClickAwaitTimeForOptOut
+    }()
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
@@ -88,7 +92,6 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 featureFlagger: DBPFeatureFlagging,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
-                clickAwaitTime: TimeInterval = 40,
                 stageCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
@@ -102,7 +105,6 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageCalculator
         self.shouldRunNextStep = shouldRunNextStep
-        self.clickAwaitTime = clickAwaitTime
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig

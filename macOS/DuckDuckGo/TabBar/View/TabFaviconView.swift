@@ -26,10 +26,6 @@ final class TabFaviconView: NSView {
     private let placeholderView = LetterView()
     private let spinnerView = SpinnerView()
 
-    var displaysImage: Bool {
-        imageView.image != nil
-    }
-
     var imageTintColor: NSColor? {
         get {
             imageView.contentTintColor

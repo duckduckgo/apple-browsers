@@ -2977,12 +2977,55 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Отключение этой функции не позволит ссылкам автоматически открываться в других приложениях.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Удалить все данные сайтов, включая историю посещений. Операция может сопровождаться выходом из учетных записей.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Куки-файлы и данные сайтов";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Удалить все чаты, включая закрепленные.";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Чаты Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Очистить";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Сбросить вкладки и данные";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Очистить вкладки, данные и чаты Duck.ai";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Закрыть все открытые вкладки.";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Вкладки";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "После выхода из приложения, через 15 минут бездействия";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "После выхода из приложения, через 1 час бездействия";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "После выхода из приложения, через 30 минут бездействия";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "После выхода из приложения, через 5 минут бездействия";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Только после выхода из приложения";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Под выходом из приложения подразумевается закрытие свайпом, а под бездействием — работа в фоновом режиме.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Предпочитаемое время";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Данные будут удалены при следующем запуске приложения.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Поисковые рекомендации";
 
@@ -3001,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Если в системе работает технология Touch ID, Face ID или код-пароль, при запуске вам придется разблокировать приложение.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Автоматическая очистка данных";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Отзыв о браузере";
 
@@ -3010,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Очистить чаты Duck.ai";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Стереть данные браузера";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Автоудаление данных";
 
@@ -3037,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Очистка данных";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Удаление данных способствует конфиденциальности онлайн. Данные можно стирать автоматически или вручную с помощью кнопки Fire Button.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузер по умолчанию";
 
@@ -3082,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Огнеупорные сайты";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Огнеупорные сайты";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Основные";
 
@@ -3336,6 +3387,9 @@
 
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Функции защиты от отслеживания в составе DuckDuckGo работают без остановки. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
+
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Что нового";
 
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Отображает журналы за последнюю минуту, помогая диагностировать проблемы сразу после обновления.";

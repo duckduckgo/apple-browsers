@@ -22,12 +22,17 @@ import Common
 import Gzip
 import os.log
 
+public protocol SyncCustomOperation {
+    func run() async throws
+}
+
 final class SyncOperation: Operation, @unchecked Sendable {
 
     let dataProviders: [DataProviding]
     let storage: SecureStoring
     let crypter: Crypting
     let requestMaker: SyncRequestMaking
+    private let customOperations: [any SyncCustomOperation]
 
     var didStart: (() -> Void)? {
         get {
@@ -72,12 +77,14 @@ final class SyncOperation: Operation, @unchecked Sendable {
         dataProviders: [DataProviding],
         storage: SecureStoring,
         crypter: Crypting,
-        requestMaker: SyncRequestMaking
+        requestMaker: SyncRequestMaking,
+        customOperations: [any SyncCustomOperation] = []
     ) {
         self.dataProviders = dataProviders
         self.storage = storage
         self.crypter = crypter
         self.requestMaker = requestMaker
+        self.customOperations = customOperations
     }
 
     override func start() {
@@ -111,6 +118,11 @@ final class SyncOperation: Operation, @unchecked Sendable {
                 }
 
                 try await sync(fetchOnly: false)
+
+                for customOperation in customOperations {
+                    try await customOperation.run()
+                }
+
                 didFinish?(nil)
             } catch is CancellationError {
                 didFinish?(nil)

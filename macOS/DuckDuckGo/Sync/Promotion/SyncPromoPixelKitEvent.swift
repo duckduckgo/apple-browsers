@@ -59,4 +59,5 @@ enum SyncDeviceButtonTouchpoint: String {
     case passwordsEmpty
     case dataImportStart
     case dataImportFinish
+    case aiChat
 }

@@ -52,7 +52,7 @@ final class SettingsViewModel: ObservableObject {
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let syncPausedStateManager: any SyncPausedStateManaging
     var emailManager: EmailManager { EmailManager() }
-    private let historyManager: HistoryManaging
+    private(set) var historyManager: HistoryManaging
     let subscriptionDataReporter: SubscriptionDataReporting?
     let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
@@ -70,6 +70,9 @@ final class SettingsViewModel: ObservableObject {
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     var browsingMenuSheetCapability: BrowsingMenuSheetCapable
+
+    // What's New Dependencies
+    private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -104,7 +107,6 @@ final class SettingsViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     // App Data State Notification Observer
-    private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
     private var appForegroundObserver: Any?
 
@@ -117,6 +119,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
+    var onRequestPresentFireConfirmation: ((_ onConfirm: @escaping (FireOptions) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
     @Published private(set) var state: SettingsState
@@ -153,10 +156,6 @@ final class SettingsViewModel: ObservableObject {
 
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
-    }
-
-    var isDuckAiDataClearingEnabled: Bool {
-        featureFlagger.isFeatureOn(.duckAiDataClearing)
     }
 
     var shouldShowHideAIGeneratedImagesSection: Bool {
@@ -236,24 +235,18 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
-    var fireButtonAnimationBinding: Binding<FireButtonAnimationType> {
-        Binding<FireButtonAnimationType>(
-            get: { self.state.fireButtonAnimation },
-            set: {
-                Pixel.fire(pixel: .settingsFireButtonSelectorPressed)
-                self.appSettings.currentFireButtonAnimation = $0
-                self.state.fireButtonAnimation = $0
-                NotificationCenter.default.post(name: AppUserDefaults.Notifications.currentFireButtonAnimationChange, object: self)
-                self.animator.animate {
-                    // no op
-                } onTransitionCompleted: {
-                    // no op
-                } completion: {
-                    // no op
-                }
-            }
+    
+    // MARK: - Child View Models
+    
+    @MainActor
+    private(set) lazy var dataClearingViewModel: DataClearingSettingsViewModel = {
+        DataClearingSettingsViewModel(
+            appSettings: appSettings,
+            aiChatSettings: aiChatSettings,
+            fireproofing: legacyViewProvider.fireproofing,
+            delegate: self
         )
-    }
+    }()
 
     // MARK: - Actions
 
@@ -659,7 +652,8 @@ final class SettingsViewModel: ObservableObject {
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         browsingMenuSheetCapability: BrowsingMenuSheetCapable
+         browsingMenuSheetCapability: BrowsingMenuSheetCapable,
+         whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
     ) {
 
         self.state = SettingsState.defaults
@@ -693,13 +687,13 @@ final class SettingsViewModel: ObservableObject {
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
         self.browsingMenuSheetCapability = browsingMenuSheetCapability
+        self.whatsNewCoordinator = whatsNewCoordinator
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
 
     deinit {
         subscriptionSignOutObserver = nil
-        appDataClearingObserver = nil
         textZoomObserver = nil
         if #available(iOS 18.2, *) {
             appForegroundObserver = nil
@@ -718,7 +712,6 @@ extension SettingsViewModel {
         self.state = SettingsState(
             appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
-            fireButtonAnimation: appSettings.currentFireButtonAnimation,
             textZoom: SettingsState.TextZoom(level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
@@ -728,7 +721,6 @@ extension SettingsViewModel {
             showMenuInSheet: browsingMenuSheetCapability.isEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
-            autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
             autoClearAIChatHistory: appSettings.autoClearAIChatHistory,
             applicationLock: privacyStore.authenticationEnabled,
             autocomplete: appSettings.autocomplete,
@@ -1032,7 +1024,6 @@ extension SettingsViewModel {
     @MainActor func dismissSettings() {
         onRequestDismissSettings?()
     }
-
 }
 
 // MARK: Legacy View Presentation
@@ -1280,14 +1271,6 @@ extension SettingsViewModel {
             }
         }
         
-        // Observe App Data clearing state
-        appDataClearingObserver = NotificationCenter.default.addObserver(forName: AppUserDefaults.Notifications.appDataClearingUpdated,
-                                                                         object: nil,
-                                                                         queue: .main) { [weak self] _ in
-            guard let settings = self?.appSettings else { return }
-            self?.state.autoclearDataEnabled = (AutoClearSettingsModel(settings: settings) != nil)
-        }
-        
         textZoomObserver = NotificationCenter.default.addObserver(forName: AppUserDefaults.Notifications.textZoomChange,
                                                                   object: nil,
                                                                   queue: .main, using: { [weak self] _ in
@@ -1305,8 +1288,8 @@ extension SettingsViewModel {
         }
     }
 
-    func forgetAll() {
-        autoClearActionDelegate?.performDataClearing()
+    func forgetAll(with options: FireOptions) {
+        autoClearActionDelegate?.performDataClearing(with: options)
     }
 
     func restoreAccountPurchase() async {
@@ -1516,4 +1499,48 @@ extension SettingsViewModel {
         urlOpener.open(URL.aiFeaturesLearnMore)
     }
 
+}
+
+@MainActor
+extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
+
+    func navigateToFireproofSites() {
+        presentLegacyView(.fireproofSites)
+    }
+
+    func navigateToAutoClearData() {
+        presentLegacyView(.autoclearData)
+    }
+
+    func presentFireConfirmation() {
+        onRequestPresentFireConfirmation?({ [weak self] options in
+            self?.forgetAll(with: options)
+        }, {
+            // Cancelled - no action needed
+        })
+    }
+}
+
+// MARK: - Settings + What's New
+
+extension SettingsViewModel {
+
+    @MainActor
+    var shouldShowWhatsNew: Bool {
+        featureFlagger.isFeatureOn(.showWhatsNewPromptOnDemand) && whatsNewCoordinator.canShowPromptOnDemand
+    }
+
+    @MainActor
+    func openWhatsNew() {
+        guard let viewController = whatsNewCoordinator.provideModalPrompt()?.viewController else {
+            assertionFailure("Prompt should not be nil")
+            return
+        }
+
+        Pixel.fire(pixel: .settingsWhatsNewOpen)
+        // Set Modal false to prevent caller to set fullScreen modal presentation style.
+        // Coordinator already sets the appropriate presentation style for iPhone and iPad.
+        presentViewController(viewController, modal: false)
+    }
+    
 }

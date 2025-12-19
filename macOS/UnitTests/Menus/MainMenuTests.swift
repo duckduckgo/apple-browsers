@@ -126,7 +126,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         sut.update()
@@ -156,7 +157,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         sut.update()
@@ -186,7 +188,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         sut.update()
@@ -218,7 +221,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         sut.update()
@@ -247,7 +251,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         sut.update()
@@ -276,7 +281,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
         let bookmarksMenu = try XCTUnwrap(sut.item(withTitle: UserText.bookmarks))
 
@@ -307,7 +313,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -340,7 +347,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -370,7 +378,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: isFireWindowDefault,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -394,7 +403,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -421,7 +431,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: isFireWindowDefault,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -445,7 +456,8 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -471,7 +483,6 @@ class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayTranslationMenuItem = false
     var shouldAutomaticallySendPageContext = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?
-    var shouldShowSettingsImprovements = false
 
     var valuesChangedPublisher: PassthroughSubject<Void, Never> {
         return PassthroughSubject<Void, Never>()

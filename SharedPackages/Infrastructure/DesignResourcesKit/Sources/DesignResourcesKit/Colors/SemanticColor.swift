@@ -121,6 +121,7 @@ public enum DesignSystemColor {
     case decorationPrimary
     case decorationSecondary
     case decorationTertiary
+    case decorationQuaternary
 
 }
 #endif

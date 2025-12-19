@@ -966,5 +966,75 @@
             },
             "dbpParentBroker"
         ]
+    },
+    "m_ios_dbp_notification_sent_first_scan_complete": {
+        "description": "Fires when the initial scan completion notification is sent.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_freemium_notification_sent_first_scan_complete": {
+        "description": "Fires when the initial freemium scan completion notification is sent.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_sent_first_removal": {
+        "description": "Fires when the first profile removal notification is sent.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_sent_all_records_removed": {
+        "description": "Fires when the all record removal notification is sent.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_scheduled_1_week_check_in": {
+        "description": "Fires when the one-week check-in notification is scheduled.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_opened_first_scan_complete": {
+        "description": "Fires when the user opens the initial scan completion notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_freemium_notification_opened_first_scan_complete": {
+        "description": "Fires when the user opens the initial freemium scan completion notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_opened_first_removal": {
+        "description": "Fires when the user opens the first profile removal notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_opened_all_records_removed": {
+        "description": "Fires when the user opens the all record removal notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_notification_opened_1_week_check_in": {
+        "description": "Fires when the user opens the one-week check-in notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

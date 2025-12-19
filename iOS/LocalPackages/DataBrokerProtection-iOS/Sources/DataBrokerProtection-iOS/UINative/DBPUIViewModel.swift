@@ -20,6 +20,7 @@
 import Foundation
 import Combine
 import WebKit
+import UIKit
 import BrowserServicesKit
 import Common
 import os.log
@@ -99,6 +100,12 @@ public final class DBPUIViewModel {
 
     func viewDidDisappear() {
         userEventsDelegate?.dashboardDidClose()
+    }
+
+    @MainActor
+    func sendBackgroundAppRefreshDidChange(into webView: WKWebView) async {
+        let needBackgroundAppRefresh = await self.needBackgroundAppRefresh()
+        communicationLayer?.sendBackgroundAppRefreshDidChange(needBackgroundAppRefresh: needBackgroundAppRefresh, into: webView)
     }
 }
 
@@ -226,5 +233,17 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
 
     public func applyVPNBypassSetting(_ bypass: Bool) async {
         // No op, we don't have a VPN bypass on iOS
+    }
+
+    @MainActor
+    public func needBackgroundAppRefresh() async -> Bool {
+        UIApplication.shared.backgroundRefreshStatus != .available && ProcessInfo.processInfo.isLowPowerModeEnabled == false
+    }
+
+    @MainActor
+    public func enableBackgroundAppRefresh() async {
+        guard let url = URL(string: UIApplication.openSettingsURLString),
+              UIApplication.shared.canOpenURL(url) else { return }
+        await UIApplication.shared.open(url)
     }
 }

@@ -31,10 +31,7 @@ extension Color {
     static let alertRed50 = Color(0xEB102D)
     static let alertRed60 = Color(0xCF0E28)
     static let alertRed70 = Color(0xC10D25)
-
-    // MARK: - Alert Yellow Backgrounds
-    static let alertYellowBackgroundLight = Color(0xFFF3BF)
-    static let alertYellowBackgroundDark = Color(0x4A3C1C)
+    static let alertRed80 = Color(0xAA1926)
 
     // MARK: - Alert Red OnLight & OnDark
     static let alertRedOnLight = alertRed50

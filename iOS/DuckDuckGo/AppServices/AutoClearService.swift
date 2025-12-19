@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Persistence
 
 protocol AutoClearServiceProtocol {
 
@@ -32,6 +33,7 @@ final class AutoClearService: AutoClearServiceProtocol {
     private let autoClear: AutoClearing
     private let overlayWindowManager: OverlayWindowManaging
     private let application: UIApplication
+    private let keyValueStore: ThrowingKeyValueStoring
 
     private(set) var autoClearTask: Task<Void, Never>?
 
@@ -41,10 +43,12 @@ final class AutoClearService: AutoClearServiceProtocol {
 
     init(autoClear: AutoClearing,
          overlayWindowManager: OverlayWindowManaging,
+         keyValueStore: ThrowingKeyValueStoring,
          application: UIApplication = UIApplication.shared) {
         self.autoClear = autoClear
         self.overlayWindowManager = overlayWindowManager
         self.application = application
+        self.keyValueStore = keyValueStore
 
         autoClearTask = Task {
             await autoClear.clearDataIfEnabled(launching: true, applicationState: .init(with: application.applicationState))
@@ -68,6 +72,8 @@ final class AutoClearService: AutoClearServiceProtocol {
     func suspend() {
         if autoClear.isClearingEnabled {
             overlayWindowManager.displayBlankSnapshotWindow(for: .autoClearing)
+            try? keyValueStore.set(Date().timeIntervalSince1970,
+                                   forKey: SyncAIChatsCleaner.Keys.autoClearBackgroundTimestamp)
         }
         autoClear.startClearingTimer(Date().timeIntervalSince1970)
     }

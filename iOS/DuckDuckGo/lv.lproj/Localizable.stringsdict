@@ -676,5 +676,23 @@ Es tos nobloķēju!
 			<string>%1$d atlasītās cilnes</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d vietas izslēgtas no tīrīšanas</string>
+			<key>one</key>
+			<string>%1$d vieta izslēgta no tīrīšanas</string>
+			<key>other</key>
+			<string>%1$d vietas izslēgtas no tīrīšanas</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

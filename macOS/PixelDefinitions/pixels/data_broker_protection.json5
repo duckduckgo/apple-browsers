@@ -816,5 +816,76 @@
             },
             "dbpParentBroker"
         ]
+    },
+    "m_mac_dbp_engagement_dau": {
+        "description": "Fired daily for active PIR users",
+        "owners": ["quanganhdo"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_mac_dbp_engagement_wau": {
+        "description": "Fired weekly for active PIR users",
+        "owners": ["quanganhdo"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_mac_dbp_engagement_mau": {
+        "description": "Fired monthly for active PIR users",
+        "owners": ["quanganhdo"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_mac_dbp_weekly_child-broker_orphaned-optouts": {
+        "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",
+        "owners": ["quanganhdo"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            {
+                "key": "child-parent-record-difference",
+                "description": "The difference in record count between child and parent broker",
+                "type": "number"
+            },
+            {
+                "key": "calculated-orphaned-records",
+                "description": "Number of calculated orphaned records",
+                "type": "number"
+            },
+            {
+                "key": "isAuthenticated",
+                "description": "Whether the user is authenticated",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
     }
 }

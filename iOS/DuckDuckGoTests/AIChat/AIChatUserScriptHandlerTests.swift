@@ -22,12 +22,13 @@ import XCTest
 @testable import DuckDuckGo
 import UserScript
 import WebKit
-import AIChat
+@testable import AIChat
 
 class AIChatUserScriptHandlerTests: XCTestCase {
     var aiChatUserScriptHandler: AIChatUserScriptHandler!
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockPayloadHandler: AIChatPayloadHandler!
+    var mockAIChatSyncHandler: MockAIChatSyncHandling!
     var mockAIChatFullModeFeature: MockAIChatFullModeFeatureProviding!
     private var mockUserDefaults: UserDefaults!
 
@@ -39,13 +40,14 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         super.setUp()
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         mockPayloadHandler = AIChatPayloadHandler()
+        mockAIChatSyncHandler = MockAIChatSyncHandling()
         mockAIChatFullModeFeature = MockAIChatFullModeFeatureProviding()
 
         mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
         mockUserDefaults.removePersistentDomain(forName: mockSuiteName)
 
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
-        aiChatUserScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalAIChatManager, aichatFullModeFeature: mockAIChatFullModeFeature)
+        aiChatUserScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalAIChatManager, syncHandler: mockAIChatSyncHandler, featureFlagger: mockFeatureFlagger, aichatFullModeFeature: mockAIChatFullModeFeature)
         aiChatUserScriptHandler.setPayloadHandler(mockPayloadHandler)
     }
 
@@ -53,6 +55,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         aiChatUserScriptHandler = nil
         mockFeatureFlagger = nil
         mockPayloadHandler = nil
+        mockAIChatSyncHandler = nil
         mockAIChatFullModeFeature = nil
         super.tearDown()
     }
@@ -162,4 +165,49 @@ struct MockUserScriptMessage: UserScriptMessage {
 /// Mock implementation of AIChatFullModeFeatureProviding for testing
 final class MockAIChatFullModeFeatureProviding: AIChatFullModeFeatureProviding {
     var isAvailable: Bool = false
+}
+
+/// Mock implementation of AIChatSyncHandling for testing
+final class MockAIChatSyncHandling: AIChatSyncHandling {
+
+    var syncTurnedOn = false
+
+    var syncStatus: AIChatSyncHandler.SyncStatus = AIChatSyncHandler.SyncStatus(syncAvailable: false,
+                                                                                userId: nil,
+                                                                                deviceId: nil,
+                                                                                deviceName: nil,
+                                                                                deviceType: nil)
+    var scopedToken: AIChatSyncHandler.SyncToken = AIChatSyncHandler.SyncToken(token: "token")
+    var encryptValue: (String) throws -> String = { "encrypted_\($0)" }
+    var decryptValue: (String) throws -> String = { $0.dropping(prefix: "encrypted_") }
+
+    private(set) var encryptCalls: [String] = []
+    private(set) var decryptCalls: [String] = []
+    private(set) var setAIChatHistoryEnabledCalls: [Bool] = []
+
+    func isSyncTurnedOn() -> Bool {
+        syncTurnedOn
+    }
+
+    func getSyncStatus(featureAvailable: Bool) throws -> AIChatSyncHandler.SyncStatus {
+        syncStatus
+    }
+
+    func getScopedToken() async throws -> AIChatSyncHandler.SyncToken {
+        scopedToken
+    }
+
+    func encrypt(_ string: String) throws -> AIChatSyncHandler.EncryptedData {
+        encryptCalls.append(string)
+        return AIChatSyncHandler.EncryptedData(encryptedData: try encryptValue(string))
+    }
+
+    func decrypt(_ string: String) throws -> AIChatSyncHandler.DecryptedData {
+        decryptCalls.append(string)
+        return AIChatSyncHandler.DecryptedData(decryptedData: try decryptValue(string))
+    }
+
+    func setAIChatHistoryEnabled(_ enabled: Bool) {
+        setAIChatHistoryEnabledCalls.append(enabled)
+    }
 }

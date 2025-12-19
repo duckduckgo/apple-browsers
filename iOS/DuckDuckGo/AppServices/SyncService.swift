@@ -27,6 +27,7 @@ final class SyncService {
 
     let syncDataProviders: SyncDataProviders
     let sync: DDGSync
+    let aiChatsCleaner: any SyncAIChatsCleaning
     let syncErrorHandler: SyncErrorHandler
     private let isSyncInProgressCancellable: AnyCancellable
     private var syncDidFinishCancellable: AnyCancellable?
@@ -77,6 +78,11 @@ final class SyncService {
             keyValueStore: keyValueStore,
             environment: environment
         )
+
+        aiChatsCleaner = SyncAIChatsCleaner(sync: sync,
+                                            keyValueStore: keyValueStore,
+                                            featureFlagger: AppDependencyProvider.shared.featureFlagger)
+        sync.setCustomOperations([AIChatDeleteOperation(cleaner: aiChatsCleaner)])
 
         isSyncInProgressCancellable = sync.isSyncInProgressPublisher
             .filter { $0 }

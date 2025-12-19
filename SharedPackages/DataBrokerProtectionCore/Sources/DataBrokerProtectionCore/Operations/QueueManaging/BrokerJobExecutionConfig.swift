@@ -26,11 +26,11 @@ public struct BrokerJobExecutionConfig {
 
         /// Maximum time allowed for a scan/opt-out job to complete
         #if os(iOS)
-        public static let defaultScanJobTimeout: TimeInterval = .minutes(5)
+        public static let defaultScanJobTimeout: TimeInterval = .minutes(3)
         public static let defaultOptOutJobTimeout: TimeInterval = .minutes(5)
         #else
-        public static let defaultScanJobTimeout: TimeInterval = .minutes(30)
-        public static let defaultOptOutJobTimeout: TimeInterval = .minutes(30)
+        public static let defaultScanJobTimeout: TimeInterval = .minutes(5)
+        public static let defaultOptOutJobTimeout: TimeInterval = .minutes(10)
         #endif
 
         /// Maximum time allowed for a CSS action to complete before timing out
@@ -42,6 +42,13 @@ public struct BrokerJobExecutionConfig {
         public static let defaultConcurrentJobsDifferentBrokers: Int = 2
         /// Number of concurrent jobs allowed during manual scans
         public static let defaultConcurrentJobsOnManualScans: Int = 6
+
+        /// Click await time when click delay optimization is enabled (delay before click) for opt-out step actions
+        public static let defaultOptimizedClickAwaitTimeForOptOut: TimeInterval = .seconds(3)
+        /// Click await time when click delay optimization is disabled (legacy delay after click) for opt-out step actions
+        public static let defaultLegacyClickAwaitTimeForOptOut: TimeInterval = .seconds(40)
+        /// Click await time for scan step actions
+        public static let defaultClickAwaitTimeForScan: TimeInterval = .seconds(0)
     }
 
     let intervalBetweenSameBrokerJobs: TimeInterval
@@ -49,6 +56,9 @@ public struct BrokerJobExecutionConfig {
     public let optOutJobTimeout: TimeInterval
     public let cssActionTimeout: TimeInterval
     public let cssActionCancellationCheckInterval: TimeInterval
+    public let optimizedClickAwaitTimeForOptOut: TimeInterval
+    public let legacyClickAwaitTimeForOptOut: TimeInterval
+    public let clickAwaitTimeForScan: TimeInterval
 
     private let concurrentJobsDifferentBrokers: Int
     // https://app.asana.com/0/481882893211075/1206981742767469/f
@@ -68,7 +78,10 @@ public struct BrokerJobExecutionConfig {
                 cssActionTimeout: TimeInterval = Constants.defaultCssActionTimeout,
                 cssActionCancellationCheckInterval: TimeInterval = Constants.defaultCssActionCancellationCheckInterval,
                 concurrentJobsDifferentBrokers: Int = Constants.defaultConcurrentJobsDifferentBrokers,
-                concurrentJobsOnManualScans: Int = Constants.defaultConcurrentJobsOnManualScans) {
+                concurrentJobsOnManualScans: Int = Constants.defaultConcurrentJobsOnManualScans,
+                optimizedClickAwaitTimeForOptOut: TimeInterval = Constants.defaultOptimizedClickAwaitTimeForOptOut,
+                legacyClickAwaitTimeForOptOut: TimeInterval = Constants.defaultLegacyClickAwaitTimeForOptOut,
+                clickAwaitTimeForScan: TimeInterval = Constants.defaultClickAwaitTimeForScan) {
         self.intervalBetweenSameBrokerJobs = intervalBetweenSameBrokerJobs
         self.scanJobTimeout = scanJobTimeout
         self.optOutJobTimeout = optOutJobTimeout
@@ -76,5 +89,8 @@ public struct BrokerJobExecutionConfig {
         self.cssActionCancellationCheckInterval = cssActionCancellationCheckInterval
         self.concurrentJobsDifferentBrokers = concurrentJobsDifferentBrokers
         self.concurrentJobsOnManualScans = concurrentJobsOnManualScans
+        self.optimizedClickAwaitTimeForOptOut = optimizedClickAwaitTimeForOptOut
+        self.legacyClickAwaitTimeForOptOut = legacyClickAwaitTimeForOptOut
+        self.clickAwaitTimeForScan = clickAwaitTimeForScan
     }
 }

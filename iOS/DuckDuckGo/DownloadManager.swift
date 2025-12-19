@@ -24,9 +24,44 @@ import WebKit
 import UniformTypeIdentifiers
 import os.log
 
+enum DownloadError: DDGError {
+    case failedToGenerateUniqueFilename(underlying: Error)
+    
+    var errorDomain: String { "com.duckduckgo.downloads" }
+        
+    var errorCode: Int {
+        switch self {
+        case .failedToGenerateUniqueFilename:
+            return 1
+        }
+    }
+    
+    var underlyingError: Error? {
+        switch self {
+        case .failedToGenerateUniqueFilename(underlying: let underlyingError):
+            return underlyingError
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .failedToGenerateUniqueFilename:
+            return "Failed to generate unique filename"
+        }
+    }
+    
+    /// Compares two DownloadError instances by their error type and underlying error.
+    public static func == (lhs: DownloadError, rhs: DownloadError) -> Bool {
+        switch (lhs, rhs) {
+        case (.failedToGenerateUniqueFilename(let lhsError), .failedToGenerateUniqueFilename(let rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
+        }
+    }
+}
+
 protocol DownloadManaging {
     var downloadList: Set<Download> { get }
-    var downloadsDirectoryFiles: [URL] { get }
+    var downloadsDirectoryFiles: [URL] { get throws }
     func cancelDownload(_ download: Download)
     func cancelAllDownloads()
     func markAllDownloadsSeen()
@@ -61,9 +96,9 @@ class DownloadManager: DownloadManaging {
                       suggestedFilename: String? = nil,
                       downloadSession: DownloadSession? = nil,
                       cookieStore: WKHTTPCookieStore? = nil,
-                      temporary: Bool? = nil) -> Download? {
+                      temporary: Bool? = nil) throws -> Download? {
 
-        guard let metaData = downloadMetaData(for: response, suggestedFilename: suggestedFilename),
+        guard let metaData = try downloadMetaData(for: response, suggestedFilename: suggestedFilename),
               let url = response.url
         else { return nil }
 
@@ -96,16 +131,16 @@ class DownloadManager: DownloadManaging {
                       suggestedFilename: String? = nil,
                       downloadSession: DownloadSession? = nil,
                       cookieStore: WKHTTPCookieStore? = nil,
-                      temporary: Bool? = nil) -> Download? {
-        makeDownload(response: navigationResponse.response,
-                     suggestedFilename: suggestedFilename,
-                     downloadSession: downloadSession,
-                     cookieStore: cookieStore,
-                     temporary: temporary)
+                      temporary: Bool? = nil) throws -> Download? {
+        try makeDownload(response: navigationResponse.response,
+                         suggestedFilename: suggestedFilename,
+                         downloadSession: downloadSession,
+                         cookieStore: cookieStore,
+                         temporary: temporary)
     }
 
-    func downloadMetaData(for response: URLResponse, suggestedFilename: String? = nil) -> DownloadMetadata? {
-        let filename = filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename,
+    func downloadMetaData(for response: URLResponse, suggestedFilename: String? = nil) throws -> DownloadMetadata? {
+        let filename = try filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename,
                                 mimeType: response.mimeType)
         return DownloadMetadata(response, filename: filename)
     }
@@ -155,9 +190,15 @@ class DownloadManager: DownloadManaging {
 
 extension DownloadManager {
 
-    private func convertToUniqueFilename(_ filename: String) -> String {
+    private func convertToUniqueFilename(_ filename: String) throws -> String {
         let downloadingFilenames = Set(downloadList.map { $0.filename })
-        let downloadedFilenames = Set(downloadsDirectoryFiles.map { $0.lastPathComponent })
+        let downloadedFilenames: Set<String>
+        do {
+            downloadedFilenames = Set(try downloadsDirectoryFiles.map { $0.lastPathComponent })
+        } catch {
+            Logger.general.error("Failed to generate unique filename: \(error.localizedDescription, privacy: .public)")
+            throw DownloadError.failedToGenerateUniqueFilename(underlying: error)
+        }
         let list = downloadingFilenames.union(downloadedFilenames)
 
         var fileExtension = downloadsDirectoryHandler.downloadsDirectory.appendingPathComponent(filename).pathExtension
@@ -176,9 +217,9 @@ extension DownloadManager {
         return newFilename
     }
 
-    private func filename(forSuggestedFilename suggestedFilename: String?, mimeType: String?) -> String {
+    private func filename(forSuggestedFilename suggestedFilename: String?, mimeType: String?) throws -> String {
         let filename = sanitizeFilename(suggestedFilename, mimeType: mimeType)
-        return convertToUniqueFilename(filename)
+        return try convertToUniqueFilename(filename)
     }
 
     private func sanitizeFilename(_ originalFilename: String?, mimeType: String?) -> String {
@@ -244,6 +285,10 @@ extension NSNotification.Name {
 
 
 extension DownloadManager {
-    var downloadsDirectoryFiles: [URL] { (try? downloadsDirectoryHandler.downloadsDirectoryFiles) ?? [] }
+    var downloadsDirectoryFiles: [URL] {
+        get throws {
+            try downloadsDirectoryHandler.downloadsDirectoryFiles
+        }
+    }
     var downloadsDirectory: URL { downloadsDirectoryHandler.downloadsDirectory }
 }

@@ -475,6 +475,7 @@ final class AddressBarButtonsViewController: NSViewController {
         for case let .some(animationView) in [shieldDotAnimationView, shieldAnimationView] {
             animationView.stop()
         }
+        notificationAnimationView?.removeAnimation()
     }
 
     func showBadgeNotification(_ type: NavigationBarBadgeAnimationView.AnimationType) {

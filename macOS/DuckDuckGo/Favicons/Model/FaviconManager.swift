@@ -110,6 +110,18 @@ final class FaviconManager: FaviconManagement {
         case inMemory
     }
 
+    private(set) var store: FaviconStoring
+
+    private let bookmarkManager: BookmarkManager
+    private let faviconDownloader: FaviconDownloader
+
+    @Published private var faviconsLoaded = false
+    var faviconsLoadedPublisher: Published<Bool>.Publisher { $faviconsLoaded }
+
+    var isCacheLoaded: Bool {
+        imageCache.loaded && referenceCache.loaded
+    }
+
     init(
         cacheType: CacheType,
         bookmarkManager: BookmarkManager,
@@ -134,14 +146,6 @@ final class FaviconManager: FaviconManagement {
         }
     }
 
-    private(set) var store: FaviconStoring
-
-    private let bookmarkManager: BookmarkManager
-    private let faviconDownloader: FaviconDownloader
-
-    @Published private var faviconsLoaded = false
-    var faviconsLoadedPublisher: Published<Bool>.Publisher { $faviconsLoaded }
-
     private func loadFavicons(_ fireproofDomains: FireproofDomains) async throws {
         try await imageCache.load()
         await imageCache.cleanOld(except: fireproofDomains, bookmarkManager: bookmarkManager)
@@ -150,9 +154,6 @@ final class FaviconManager: FaviconManagement {
         faviconsLoaded = true
     }
 
-    var isCacheLoaded: Bool {
-        imageCache.loaded && referenceCache.loaded
-    }
 
     @MainActor
     private func awaitFaviconsLoaded() async {
@@ -357,7 +358,11 @@ final class FaviconManager: FaviconManagement {
                 let faviconUrl = faviconLink.href
                 group.addTask {
                     do {
+                        try Task.checkCancellation()
+                        
                         let data = try await faviconDownloader.download(from: faviconUrl, using: webView)
+
+                        try Task.checkCancellation()
 
                         // Validate that we got actual image data
                         guard !data.isEmpty else {
@@ -382,6 +387,9 @@ final class FaviconManager: FaviconManagement {
             }
             var favicons = [Favicon]()
             for await result in group {
+                guard !Task.isCancelled else {
+                    return []
+                }
                 if let favicon = result {
                     favicons.append(favicon)
                 }

@@ -25,7 +25,7 @@ protocol FaviconUserScriptDelegate: AnyObject {
     func faviconUserScript(_ faviconUserScript: FaviconUserScript,
                            didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
                            for documentUrl: URL,
-                           in webView: WKWebView?) async
+                           in webView: WKWebView?)
 }
 
 final class FaviconUserScript: NSObject, Subfeature {
@@ -61,12 +61,9 @@ final class FaviconUserScript: NSObject, Subfeature {
 
     @MainActor
     private func faviconFound(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let faviconsPayload: FaviconsFoundPayload = DecodableHelper.decode(from: params)
-        else {
-            return nil
-        }
+        guard let faviconsPayload: FaviconsFoundPayload = DecodableHelper.decode(from: params) else { return nil }
 
-        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconsPayload.favicons, for: faviconsPayload.documentUrl, in: original.webView)
+        delegate?.faviconUserScript(self, didFindFaviconLinks: faviconsPayload.favicons, for: faviconsPayload.documentUrl, in: original.webView)
         return nil
     }
 }

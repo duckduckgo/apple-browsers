@@ -38,6 +38,11 @@ final class FaviconsTabExtension {
     private var cancellables = Set<AnyCancellable>()
     private weak var faviconUserScript: FaviconUserScript?
     private var content: Tab.TabContent?
+    private var faviconHandlingTask: Task<Void, Never>? {
+        willSet {
+            faviconHandlingTask?.cancel()
+        }
+    }
     @Published private(set) var favicon: NSImage?
 
     init(
@@ -79,18 +84,21 @@ final class FaviconsTabExtension {
             favicon = nil
         }
     }
+
+    deinit {
+        faviconHandlingTask?.cancel()
+    }
 }
 
 extension FaviconsTabExtension: FaviconUserScriptDelegate {
     @MainActor
-    func faviconUserScript(_ faviconUserScript: FaviconUserScript, didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink], for documentUrl: URL, in webView: WKWebView?) async {
-        guard documentUrl != .error,
-              documentUrl == content?.urlForWebView,
-              let favicon = await faviconManagement.handleFaviconLinks(faviconLinks, documentUrl: documentUrl, webView: webView)
-        else {
-            return
+    func faviconUserScript(_ faviconUserScript: FaviconUserScript, didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink], for documentUrl: URL, in webView: WKWebView?) {
+        guard documentUrl != .error, documentUrl == content?.urlForWebView else { return }
+        faviconHandlingTask = Task { [weak self, faviconManagement] in
+            if let favicon = await faviconManagement.handleFaviconLinks(faviconLinks, documentUrl: documentUrl, webView: webView) {
+                self?.favicon = favicon.image
+            }
         }
-        self.favicon = favicon.image
     }
 }
 

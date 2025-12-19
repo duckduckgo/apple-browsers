@@ -26,8 +26,17 @@ import WebKit
 @MainActor
 final class FaviconDownloader: NSObject {
 
-    private var pendingDownloads: [WKDownload: DownloadTask] = [:]
-    private nonisolated let privacyConfigurationManager: PrivacyConfigurationManaging
+    private struct FaviconDownloadTask {
+        let url: URL
+        let continuation: CheckedContinuation<Data, Error>
+        var destinationURL: URL?
+    }
+
+    /// Maximum allowed size for favicon downloads (1MB)
+    private static nonisolated let maxFaviconSize: Int64 = 1024 * 1024
+
+    private var pendingDownloads: [WKDownload: FaviconDownloadTask] = [:]
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private lazy var faviconURLSession = URLSession(configuration: .ephemeral)
 
     nonisolated init(privacyConfigurationManager: PrivacyConfigurationManaging) {
@@ -35,7 +44,10 @@ final class FaviconDownloader: NSObject {
         super.init()
     }
 
+    /// Downloads a favicon from the given URL using the provided webView (if available)
     func download(from url: URL, using webView: WKWebView?) async throws -> Data {
+        try Task.checkCancellation()
+        
         guard privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(MacOSBrowserConfigSubfeature.faviconWKDownload, defaultValue: true) else {
             return try await faviconURLSession.data(from: url).0
         }
@@ -47,10 +59,24 @@ final class FaviconDownloader: NSObject {
         let targetWebView = webView ?? createTemporaryWebView()
 
         let download = await targetWebView.startDownload(using: URLRequest(url: url))
-        return try await withCheckedThrowingContinuation { continuation in
-            let task = DownloadTask(url: url, continuation: continuation)
-            pendingDownloads[download] = task
-            download.delegate = self
+        
+        // Observe progress to cancel if download exceeds size limit
+        let progressObserver = download.progress.observe(\.completedUnitCount) { [weak self, weak download] progress, _ in
+            if progress.completedUnitCount > Self.maxFaviconSize, let self, let download {
+                Logger.favicons.debug("FaviconDownloader: Cancelling favicon download - \(progress.completedUnitCount) bytes exceeds limit of \(Self.maxFaviconSize) bytes")
+                self.cancel(download)
+            }
+        }
+        defer { withExtendedLifetime(progressObserver) {} }
+        
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                let task = FaviconDownloadTask(url: url, continuation: continuation)
+                pendingDownloads[download] = task
+                download.delegate = self
+            }
+        } onCancel: {
+            self.cancel(download)
         }
     }
 
@@ -62,10 +88,19 @@ final class FaviconDownloader: NSObject {
         return webView
     }
 
-    private struct DownloadTask {
-        let url: URL
-        let continuation: CheckedContinuation<Data, Error>
-        var destinationURL: URL?
+    nonisolated private func cancel(_ download: WKDownload) {
+        DispatchQueue.main.asyncOrNow {
+            let task = self.pendingDownloads.removeValue(forKey: download)
+            defer {
+                // continuation is always called after removing the FaviconDownloadTask from the store on MainActor.
+                // it should guarantee the continuation is only called once.
+                task?.continuation.resume(with: .failure(URLError(.cancelled)))
+            }
+            download.delegate = nil
+            download.cancel { _ in
+                try? task?.destinationURL.map(FileManager.default.removeItem(at:))
+            }
+        }
     }
 
     deinit {
@@ -73,9 +108,9 @@ final class FaviconDownloader: NSObject {
         self.pendingDownloads.removeAll()
 
         for (download, task) in pendingDownloads {
-            DispatchQueue.main.asyncOrNow { [destinationURL=task.destinationURL] in
+            DispatchQueue.main.asyncOrNow {
                 download.cancel { _ in
-                    try? destinationURL.map(FileManager.default.removeItem(at:))
+                    try? task.destinationURL.map(FileManager.default.removeItem(at:))
                 }
             }
             task.continuation.resume(with: .failure(URLError(.cancelled)))
@@ -98,11 +133,13 @@ extension FaviconDownloader: WKNavigationDelegate {
 
 extension FaviconDownloader: WKDownloadDelegate {
 
-    func download(
-        _ download: WKDownload,
-        decideDestinationUsing response: URLResponse,
-        suggestedFilename: String
-    ) async -> URL? {
+    func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
+        // Check size limit if Content-Length header is available
+        if response.expectedContentLength > 0 && response.expectedContentLength > Self.maxFaviconSize {
+            Logger.favicons.debug("FaviconDownloader: Rejecting favicon download - size \(response.expectedContentLength) exceeds limit of \(Self.maxFaviconSize) bytes")
+            return nil
+        }
+
         // Create a temporary file URL for the download
         let tempDirectory = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         let fileName = UUID().uuidString
@@ -131,6 +168,14 @@ extension FaviconDownloader: WKDownloadDelegate {
                 // Clean up the temporary file
                 try? FileManager.default.removeItem(at: destinationURL)
             }
+
+            // Check actual file size
+            let attributes = try FileManager.default.attributesOfItem(atPath: destinationURL.path)
+            if let fileSize = attributes[.size] as? Int64, fileSize > Self.maxFaviconSize {
+                Logger.favicons.debug("FaviconDownloader: Rejecting downloaded favicon - size \(fileSize) exceeds limit of \(Self.maxFaviconSize) bytes")
+                throw URLError(.dataLengthExceedsMaximum, userInfo: [NSURLErrorKey: task.url])
+            }
+
             let data = try Data(contentsOf: destinationURL)
             result = .success(data)
         } catch {

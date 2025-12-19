@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Common
 import Foundation
 import OSLog
+import PrivacyConfig
 import WebKit
 
 /// Downloads favicons using WKDownload to avoid App Transport Security restrictions on HTTP URLs

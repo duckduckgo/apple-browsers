@@ -45,38 +45,37 @@ struct InfoPanelView: View {
     let model: Model
 
     var body: some View {
-        Button(action: { model.onTap() }, label: {
-            HStack(spacing: Constants.contentSpacing) {
-                Image(uiImage: model.icon)
+        HStack(spacing: Constants.contentSpacing) {
+            Image(uiImage: model.icon)
+                .resizable()
+                .frame(width: Constants.iconSize, height: Constants.iconSize)
+                .accessibilityHidden(true)
+
+            (Text(model.title).fontWeight(.semibold) + Text(" " + model.subtitle))
+                .font(.system(.subheadline, design: .rounded))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .lineLimit(1)
+            Spacer()
+
+            Button(action: { model.onInfo() }, label: {
+                Image(uiImage: UIImage(resource: .infoIcon))
+                    .renderingMode(.template)
                     .resizable()
                     .frame(width: Constants.iconSize, height: Constants.iconSize)
-                    .accessibilityHidden(true)
-
-                (Text(model.title).fontWeight(.semibold) + Text(" " + model.subtitle))
-                    .font(.system(.subheadline, design: .rounded))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .lineLimit(1)
-                Spacer()
-
-                Button(action: { model.onInfo() }, label: {
-                    Image(uiImage: UIImage(resource: .infoIcon))
-                        .renderingMode(.template)
-                        .resizable()
-                        .frame(width: Constants.iconSize, height: Constants.iconSize)
-                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
-                        .padding(Constants.infoButtonPadding)
-                })
-                .accessibilityLabel(Text(UserText.tabSwitcherTrackerCountInfoA11y))
-            }
-            .padding(.horizontal, Constants.horizontalPadding)
-            .padding(.vertical, Constants.verticalPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous)
-                    .fill(model.backgroundColor)
-            )
-        })
-        .buttonStyle(.plain)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .padding(Constants.infoButtonPadding)
+            })
+            .accessibilityLabel(Text(UserText.tabSwitcherTrackerCountInfoA11y))
+        }
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.vertical, Constants.verticalPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture { model.onTap() }
+        .background(
+            RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous)
+                .fill(model.backgroundColor)
+        )
         .accessibilityElement(children: .combine)
     }
 }
@@ -124,7 +123,7 @@ struct InfoPanelView_Previews: PreviewProvider {
     static var previews: some View {
         InfoPanelView(
             model: .init(title: "396 trackers blocked",
-                         subtitle: "in last 7 days",
+                         subtitle: "in the last 7 days",
                          icon: UIImage(resource: .trackerShield),
                          accentColor: Color(designSystemColor: .accent),
                          backgroundColor: .green0,

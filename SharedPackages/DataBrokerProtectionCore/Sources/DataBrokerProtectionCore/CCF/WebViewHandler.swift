@@ -95,9 +95,13 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
             let navigationController = UINavigationController(rootViewController: viewController)
             viewController.title = "PIR Debug Mode"
 
-            window = UIWindow(frame: UIScreen.main.bounds)
-            window?.rootViewController = navigationController
-            window?.windowLevel = UIWindow.Level.alert
+            if let currentWindowScene = UIApplication.shared.connectedScenes.first as?  UIWindowScene {
+                window = UIWindow(windowScene: currentWindowScene)
+                window?.rootViewController = navigationController
+                window?.windowLevel = UIWindow.Level.alert
+            } else {
+                assertionFailure("Could not find window scene")
+            }
 #endif
 
         }

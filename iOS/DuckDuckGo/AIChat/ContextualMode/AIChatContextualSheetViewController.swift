@@ -49,6 +49,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let daxIconSize: CGFloat = 24
         static let titleSpacing: CGFloat = 8
         static let sheetCornerRadius: CGFloat = 24
+        static let contentTopPadding: CGFloat = 8
     }
 
     // MARK: - Properties
@@ -149,6 +150,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var contentContainerView: UIView = {
         let view = UIView()
         view.backgroundColor = .clear
+        view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -227,6 +229,10 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {
     }
 
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
+        contextualInputViewController(viewController, didSubmitPrompt: action.prompt)
+    }
+
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
     }
 
@@ -296,7 +302,7 @@ private extension AIChatContextualSheetViewController {
             closeButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             closeButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
 
-            contentContainerView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            contentContainerView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: Constants.contentTopPadding),
             contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),

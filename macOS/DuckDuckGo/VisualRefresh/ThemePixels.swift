@@ -20,7 +20,7 @@ import Foundation
 import PixelKit
 
 private enum ThemePixelName: String {
-    case themeNameDaily = "m_mac_theme_name_daily"
+    case themeNameDaily = "m_mac_theme_name"
 }
 
 enum ThemePixels: PixelKitEvent {

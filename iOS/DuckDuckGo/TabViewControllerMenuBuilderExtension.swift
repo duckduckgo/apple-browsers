@@ -328,14 +328,14 @@ extension TabViewController {
         
         if isFireproofed {
             return BrowsingMenuEntry.regular(name: UserText.disablePreservingLogins,
-                                             image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireSolid,
+                                             image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireproofSolid,
                                              action: { [weak self] in
                                                 self?.disableFireproofingForDomain(domain)
                                              })
         }
 
         return BrowsingMenuEntry.regular(name: UserText.enablePreservingLogins,
-                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireproofSolid : DesignSystemImages.Glyphs.Size24.fireproofSolid,
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireproofSolid : DesignSystemImages.Glyphs.Size24.fireproof,
                                          action: { [weak self] in
                                             self?.enableFireproofingForDomain(domain)
                                          })

@@ -124,9 +124,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Wide Event
 
-    private var isConnectionWideEventMeasurementEnabled: Bool {
-        featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
-    }
     private var connectionWideEventData: VPNConnectionWideEventData?
     private let connectionControllerTimeoutInterval: TimeInterval = .hours(24)
 
@@ -764,7 +761,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
         options[NetworkProtectionOptionKey.isAuthV2Enabled] = NSNumber(value: vpnAppState.isAuthV2Enabled)
-        options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] = NSNumber(value: isConnectionWideEventMeasurementEnabled)
         if !vpnAppState.isAuthV2Enabled {
             Logger.networkProtection.log("Using Auth V1")
             self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
@@ -981,7 +977,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 private extension NetworkProtectionTunnelController {
 
     func setupAndStartConnectionWideEvent() {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         completeAllPendingVPNConnectionPixels()
         let data = VPNConnectionWideEventData(
             extensionType: .unknown,
@@ -1016,20 +1011,18 @@ private extension NetworkProtectionTunnelController {
 
     func completeAtStepWithFailure(_ step: VPNConnectionWideEventData.Step, with error: Error, description: String? = nil
     ) {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         connectionWideEventData?[keyPath: step.errorPath] = .init(error: error, description: description)
         connectionWideEventData?[keyPath: step.durationPath]?.complete()
         completeAndCleanupConnectionWideEvent(with: error, description: description)
     }
 
     func completeAndCleanupAtStepWithPartialSuccess(_ step: VPNConnectionWideEventData.Step = .controllerStart) {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         connectionWideEventData?[keyPath: step.durationPath]?.complete()
         completeAndCleanupConnectionWideEvent(successReason: VPNConnectionWideEventData.StatusReason.partialData.rawValue)
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil, successReason: String? = nil) {
-        guard isConnectionWideEventMeasurementEnabled, let data = connectionWideEventData else { return }
+        guard let data = connectionWideEventData else { return }
         data.overallDuration?.complete()
         if let error {
             data.errorData = .init(error: error, description: description)

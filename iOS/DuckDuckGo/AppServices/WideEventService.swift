@@ -47,7 +47,6 @@ final class WideEventService {
     // Runs at app launch, and sends pixels which were abandoned during a flow, such as the user exiting the app during
     // the flow, or the app crashing.
     func sendAbandonedPixels(completion: @escaping () -> Void) {
-        let shouldSendVPNConnectionWidePixel = featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
         let shouldSendDataImportWideEvent = featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
         
         sendQueue.async { [weak self] in
@@ -57,9 +56,8 @@ final class WideEventService {
                 await self.sendAbandonedSubscriptionRestorePixels()
 
                 await self.sendAbandonedSubscriptionPurchasePixels()
-                if shouldSendVPNConnectionWidePixel {
-                    await self.sendAbandonedVPNConnectionPixels()
-                }
+                
+                await self.sendAbandonedVPNConnectionPixels()
                 
                 if shouldSendDataImportWideEvent {
                     await self.sendAbandonedDatImportPixels()
@@ -74,7 +72,6 @@ final class WideEventService {
 
     // Sends pixels which are currently incomplete but may complete later.
     func sendDelayedPixels(completion: @escaping () -> Void) {
-        let shouldSendVPNConnectionWidePixel = featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
         let shouldSendDataImportWideEvent = featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
 
         sendQueue.async { [weak self] in
@@ -84,9 +81,9 @@ final class WideEventService {
                 await self.sendDelayedSubscriptionRestorePixels()
 
                 await self.sendDelayedSubscriptionPurchasePixels()
-                if shouldSendVPNConnectionWidePixel {
-                    await self.sendDelayedVPNConnectionPixels()
-                }
+                
+                await self.sendDelayedVPNConnectionPixels()
+                
                 if shouldSendDataImportWideEvent {
                     await self.sendDelayedDataImportPixels()
                 }

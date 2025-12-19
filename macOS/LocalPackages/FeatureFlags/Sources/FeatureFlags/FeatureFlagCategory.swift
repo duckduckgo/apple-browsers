@@ -81,7 +81,6 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .dbp
         case .paidAIChat,
                 .supportsAlternateStripePaymentFlow,
-                .vpnConnectionWidePixelMeasurement,
                 .blackFridayCampaign,
                 .tierMessagingEnabled,
                 .allowProTierPurchase:

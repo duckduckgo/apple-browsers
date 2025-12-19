@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import DesignResourcesKitIcons
 import UIKit
 
@@ -57,6 +58,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     weak var delegate: AIChatContextualSheetViewControllerDelegate?
 
     private let voiceSearchHelper: VoiceSearchHelperProtocol
+    private let settings: AIChatSettingsProvider
     private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
 
     // MARK: - UI Components
@@ -157,8 +159,9 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, settings: AIChatSettingsProvider) {
         self.voiceSearchHelper = voiceSearchHelper
+        self.settings = settings
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -255,6 +258,13 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: .AIChat)
+        voiceSearchController.delegate = self
+        voiceSearchController.modalTransitionStyle = .crossDissolve
+        voiceSearchController.modalPresentationStyle = .overFullScreen
+        present(voiceSearchController, animated: true)
+    }
+
     func contextualInputViewControllerDidTapAttachPageContent(_ viewController: AIChatContextualInputViewController) {
         attachPageContext()
     }
@@ -262,8 +272,17 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
         // Handle any cleanup when context chip is removed
     }
+}
 
-    func contextualInputViewControllerDidTapAttach(_ viewController: AIChatContextualInputViewController) {
+// MARK: - VoiceSearchViewControllerDelegate
+
+extension AIChatContextualSheetViewController: VoiceSearchViewControllerDelegate {
+
+    func voiceSearchViewController(_ viewController: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
+        viewController.dismiss(animated: true)
+        if let query, !query.isEmpty {
+            contextualInputViewController.setText(query, notifyDelegate: true)
+        }
     }
 }
 

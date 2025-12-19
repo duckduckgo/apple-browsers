@@ -75,6 +75,11 @@ final class AIChatNativeInputViewController: UIViewController {
         get { nativeInputView.attachMenuTitle }
         set { nativeInputView.attachMenuTitle = newValue }
     }
+
+    func setText(_ text: String, notifyDelegate: Bool = true) {
+        nativeInputView.setText(text, notifyDelegate: notifyDelegate)
+    }
+
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol) {

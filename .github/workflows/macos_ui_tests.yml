@@ -184,6 +184,7 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v4
       with:
+        submodules: recursive
         ref: ${{ inputs.branch || github.sha }}
 
     - name: Install screenresolution

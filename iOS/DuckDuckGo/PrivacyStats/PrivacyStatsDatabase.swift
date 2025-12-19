@@ -33,13 +33,24 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
     }
 
     func initializeDatabase() -> CoreDataDatabase {
-        database.loadStore { _, error in
-            guard error == nil else {
+        let semaphore = DispatchSemaphore(value: 0)
+        database.loadStore { context, error in
+            if let error {
                 // Keep silent in production; debug builds will assert.
-                assertionFailure("Could not create Privacy Stats database stack: \(error?.localizedDescription ?? "unknown error")")
-                return
+                assertionFailure("Could not create Privacy Stats database stack: \(error.localizedDescription)")
+                print("[PrivacyStats] ERROR loading store: \(error.localizedDescription)")
+            } else {
+                print("[PrivacyStats] Store loaded successfully, context: \(String(describing: context))")
             }
+            semaphore.signal()
         }
+        semaphore.wait()
+
+        // Debug: Check if the database file exists
+        let dbPath = Self.defaultLocation.appendingPathComponent("PrivacyStats.sqlite")
+        print("[PrivacyStats] Database path: \(dbPath.path)")
+        print("[PrivacyStats] Database file exists: \(FileManager.default.fileExists(atPath: dbPath.path))")
+
         return database
     }
 

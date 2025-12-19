@@ -112,7 +112,8 @@ import Combine
                                     keyValueStore: try! MockKeyValueFileStore(),
                                     daxDialogsManager: DummyDaxDialogsManager(),
                                     aiChatSettings: MockAIChatSettingsProvider(),
-                                    productSurfaceTelemetry: MockProductSurfaceTelemetry()
+                                    productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+                                    privacyStats: MockPrivacyStats()
         )
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,
@@ -153,7 +154,8 @@ import Combine
             mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
-            productSurfaceTelemetry: MockProductSurfaceTelemetry()
+            productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+            privacyStats: MockPrivacyStats()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

@@ -24,6 +24,7 @@ protocol PrivacyStatsProviding {
     func recordBlockedTracker(_ name: String) async
     func fetchPrivacyStatsTotalCount() async -> Int64
     func clearPrivacyStats() async
+    func handleAppTermination() async
 }
 
 extension PrivacyStats: PrivacyStatsProviding { }

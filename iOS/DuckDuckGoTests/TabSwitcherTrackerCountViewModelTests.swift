@@ -7,6 +7,7 @@
 
 import XCTest
 @testable import DuckDuckGo
+@testable import Core
 
 @MainActor
 final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
@@ -15,10 +16,12 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         var total: Int64 = 0
         var recordCalls: [String] = []
         var clearCallCount = 0
+        var handleAppTerminationCallCount = 0
 
         func recordBlockedTracker(_ name: String) async { recordCalls.append(name) }
         func fetchPrivacyStatsTotalCount() async -> Int64 { total }
         func clearPrivacyStats() async { clearCallCount += 1 }
+        func handleAppTermination() async { handleAppTerminationCallCount += 1 }
     }
 
     final class MockTabSwitcherSettings: TabSwitcherSettings {
@@ -31,10 +34,23 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         let settings = MockTabSwitcherSettings()
         settings.showTrackerCountInTabSwitcher = false
         let stats = MockPrivacyStats()
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
 
-        viewModel.refresh()
-        await Task.yield()
+        await viewModel.refreshAsync()
+
+        XCTAssertFalse(viewModel.state.isVisible)
+    }
+
+    func testRefreshHiddenWhenFeatureFlagDisabled() async {
+        let settings = MockTabSwitcherSettings()
+        settings.showTrackerCountInTabSwitcher = true
+        let stats = MockPrivacyStats()
+        stats.total = 5
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
+
+        await viewModel.refreshAsync()
 
         XCTAssertFalse(viewModel.state.isVisible)
     }
@@ -43,10 +59,10 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         let settings = MockTabSwitcherSettings()
         let stats = MockPrivacyStats()
         stats.total = 0
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
 
-        viewModel.refresh()
-        await Task.yield()
+        await viewModel.refreshAsync()
 
         XCTAssertFalse(viewModel.state.isVisible)
     }
@@ -55,10 +71,10 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         let settings = MockTabSwitcherSettings()
         let stats = MockPrivacyStats()
         stats.total = 5
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
 
-        viewModel.refresh()
-        await Task.yield()
+        await viewModel.refreshAsync()
 
         XCTAssertTrue(viewModel.state.isVisible)
         XCTAssertTrue(viewModel.state.title.contains("5"))
@@ -68,7 +84,8 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         let settings = MockTabSwitcherSettings()
         settings.showTrackerCountInTabSwitcher = true
         let stats = MockPrivacyStats()
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
 
         viewModel.hide()
 

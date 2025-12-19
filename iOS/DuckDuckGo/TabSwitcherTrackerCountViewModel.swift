@@ -19,6 +19,8 @@
 
 import Foundation
 import Combine
+import BrowserServicesKit
+import Core
 
 @MainActor
 final class TabSwitcherTrackerCountViewModel: ObservableObject {
@@ -35,31 +37,70 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
 
     private var settings: TabSwitcherSettings
     private let privacyStats: PrivacyStatsProviding
+    private let featureFlagger: FeatureFlagger
+    private var refreshTask: Task<Void, Never>?
 
-    init(settings: TabSwitcherSettings, privacyStats: PrivacyStatsProviding) {
+    init(settings: TabSwitcherSettings, privacyStats: PrivacyStatsProviding, featureFlagger: FeatureFlagger) {
         self.settings = settings
         self.privacyStats = privacyStats
+        self.featureFlagger = featureFlagger
     }
 
     func refresh() {
-        guard settings.showTrackerCountInTabSwitcher else {
+        guard featureFlagger.isFeatureOn(.tabSwitcherTrackerCount),
+              settings.showTrackerCountInTabSwitcher else {
+            refreshTask?.cancel()
+            refreshTask = nil
             state = .hidden
             return
         }
 
-        Task { [weak self] in
+        refreshTask?.cancel()
+        refreshTask = Task { [weak self] in
             guard let self else { return }
             let count = await privacyStats.fetchPrivacyStatsTotalCount()
+            print("[PrivacyStats] Fetched tracker count: \(count)")
+
+            guard !Task.isCancelled else { return }
+
             guard count > 0 else {
+                print("[PrivacyStats] Count is 0, hiding banner")
                 self.state = .hidden
                 return
             }
 
             let title = String(format: UserText.tabSwitcherTrackerCountTitle, count)
+            print("[PrivacyStats] Showing banner with title: \(title)")
             self.state = State(isVisible: true,
                                title: title,
                                subtitle: UserText.tabSwitcherTrackerCountSubtitle)
         }
+    }
+
+    @discardableResult
+    func refreshAsync() async -> State {
+        guard featureFlagger.isFeatureOn(.tabSwitcherTrackerCount),
+              settings.showTrackerCountInTabSwitcher else {
+            refreshTask?.cancel()
+            refreshTask = nil
+            state = .hidden
+            return state
+        }
+
+        refreshTask?.cancel()
+        let count = await privacyStats.fetchPrivacyStatsTotalCount()
+
+        guard count > 0 else {
+            state = .hidden
+            return state
+        }
+
+        let title = String(format: UserText.tabSwitcherTrackerCountTitle, count)
+        let newState = State(isVisible: true,
+                             title: title,
+                             subtitle: UserText.tabSwitcherTrackerCountSubtitle)
+        state = newState
+        return newState
     }
 
     func hide() {

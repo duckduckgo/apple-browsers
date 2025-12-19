@@ -1957,6 +1957,7 @@
 		F14E491F1E391CE900DC037C /* URLExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14E491E1E391CE900DC037C /* URLExtensionTests.swift */; };
 		F15D43201E706CC500BF2CDC /* AutocompleteViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15D431F1E706CC500BF2CDC /* AutocompleteViewController.swift */; };
 		F1617C131E572E0300DEDCAF /* TabSwitcherViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1617C121E572E0300DEDCAF /* TabSwitcherViewController.swift */; };
+		AA2000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift */; };
 		F1617C151E57336D00DEDCAF /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1617C141E57336D00DEDCAF /* TabManager.swift */; };
 		F1617C191E573EA800DEDCAF /* TabSwitcherDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1617C181E573EA800DEDCAF /* TabSwitcherDelegate.swift */; };
 		F16393FF1ECCB9CC00DDD653 /* FileLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16393FE1ECCB9CC00DDD653 /* FileLoader.swift */; };
@@ -4356,6 +4357,7 @@
 		F159BDA31F0BDB5A00B4A01D /* TabViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabViewController.swift; sourceTree = "<group>"; };
 		F15D431F1E706CC500BF2CDC /* AutocompleteViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutocompleteViewController.swift; sourceTree = "<group>"; };
 		F1617C121E572E0300DEDCAF /* TabSwitcherViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabSwitcherViewController.swift; sourceTree = "<group>"; };
+		AA1000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherTrackerInfoHeaderView.swift; sourceTree = "<group>"; };
 		F1617C141E57336D00DEDCAF /* TabManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
 		F1617C181E573EA800DEDCAF /* TabSwitcherDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabSwitcherDelegate.swift; sourceTree = "<group>"; };
 		F16393F41ECCA85900DDD653 /* DomainsProtectionUserDefaultsStoreTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DomainsProtectionUserDefaultsStoreTests.swift; sourceTree = "<group>"; };
@@ -4446,7 +4448,7 @@
 		AA1000020000000000000002 /* PrivacyStatsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrivacyStats/PrivacyStatsProviding.swift"; sourceTree = "<group>"; };
 		AA1000030000000000000003 /* PrivacyStatsDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrivacyStats/PrivacyStatsDatabase.swift"; sourceTree = "<group>"; };
 		AA1000040000000000000004 /* TabSwitcherTrackerCountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherTrackerCountViewModel.swift; sourceTree = "<group>"; };
-		AA1000050000000000000005 /* TabSwitcherTrackerCountViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOS/DuckDuckGoTests/TabSwitcherTrackerCountViewModelTests.swift; sourceTree = SOURCE_ROOT; };
+		AA1000050000000000000005 /* TabSwitcherTrackerCountViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherTrackerCountViewModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -9092,6 +9094,7 @@
 				6FF9AD3E2CE63DC200C5A406 /* TabSwitcherOpenDailyPixel.swift */,
 				984D035B24AE15CD0066CFB8 /* TabSwitcherSettings.swift */,
 				F1617C121E572E0300DEDCAF /* TabSwitcherViewController.swift */,
+				AA1000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift */,
 				85F2FFCE2211F8E5006BB258 /* TabSwitcherViewController+KeyCommands.swift */,
 				856F28D62D3EC5FA00A88211 /* TabSwitcherViewController+MultiSelect.swift */,
 				984D035924ACCC7D0066CFB8 /* TabViewCell.swift */,
@@ -9185,6 +9188,7 @@
 				F13B4BFA1F18E3D900814661 /* TabsModelPersistenceTests.swift */,
 				F13B4BF81F18CA0600814661 /* TabsModelTests.swift */,
 				F189AED61F18F6DE001EBAE1 /* TabTests.swift */,
+				AA1000050000000000000005 /* TabSwitcherTrackerCountViewModelTests.swift */,
 				D625AAEA2BBEEFC900BC189A /* TabURLInterceptorTests.swift */,
 			);
 			name = Tabs;
@@ -11157,6 +11161,7 @@
 				31D2D2A42D40F98800549D12 /* WidgetSourceType.swift in Sources */,
 				F4D7221026F29A70007D6193 /* BookmarkDetailsCell.swift in Sources */,
 				F1617C131E572E0300DEDCAF /* TabSwitcherViewController.swift in Sources */,
+				AA2000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift in Sources */,
 				AA2000010000000000000001 /* InfoPanelView.swift in Sources */,
 				AA2000020000000000000002 /* PrivacyStatsProviding.swift in Sources */,
 				AA2000030000000000000003 /* PrivacyStatsDatabase.swift in Sources */,

@@ -57,6 +57,7 @@ final class MainCoordinator {
     private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
+    private let privacyStats: PrivacyStatsProviding
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -112,7 +113,7 @@ final class MainCoordinator {
             featureFlagger: featureFlagger,
             onboardingSearchExperienceProvider: OnboardingSearchExperience()
         )
-        let privacyStats: PrivacyStatsProviding = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
+        self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,
@@ -254,6 +255,9 @@ final class MainCoordinator {
 
     func onBackground() {
         resetAppStartTime()
+        Task {
+            await privacyStats.handleAppTermination()
+        }
     }
 
     private func resetAppStartTime() {

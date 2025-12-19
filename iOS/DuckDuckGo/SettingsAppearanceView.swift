@@ -108,7 +108,9 @@ struct SettingsAppearanceView: View {
 
             showFullSiteAddressSetting()
 
-            showTrackerCountSetting()
+            if viewModel.isTabSwitcherTrackerCountEnabled {
+                showTrackerCountSetting()
+            }
 
             showReloadButtonSetting()
 

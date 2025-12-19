@@ -274,6 +274,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
     case dataImportWideEventMeasurement
+
+    /// Shows tracker count banner in Tab Switcher and related settings item
+    case tabSwitcherTrackerCount
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -356,7 +359,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canPromoteAutofillExtensionInPasswordManagement,
              .granularFireButtonOptions,
              .fullDuckAIModeExperimentalSetting,
-             .dataImportWideEventMeasurement:
+             .dataImportWideEventMeasurement,
+             .tabSwitcherTrackerCount:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -571,6 +575,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIModeExperimentalSetting))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
+        case .tabSwitcherTrackerCount:
+            return .disabled
         }
     }
 }

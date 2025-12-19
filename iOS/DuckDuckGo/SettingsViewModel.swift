@@ -164,6 +164,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }
 
+    var isTabSwitcherTrackerCountEnabled: Bool {
+        featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
+    }
+
     var isBlackFridayCampaignEnabled: Bool {
         blackFridayCampaignProvider.isCampaignEnabled
     }

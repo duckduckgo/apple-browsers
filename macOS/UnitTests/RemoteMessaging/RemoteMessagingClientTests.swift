@@ -17,16 +17,17 @@
 //
 
 import Bookmarks
+import BrowserServicesKitTestsUtils
 import Foundation
-import Persistence
-import RemoteMessaging
 import Freemium
+import Persistence
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import RemoteMessaging
+import RemoteMessagingTestsUtils
+import SubscriptionTestingUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-import SubscriptionTestingUtilities
-import RemoteMessagingTestsUtils
-import BrowserServicesKit
-import BrowserServicesKitTestsUtils
 @testable import Subscription
 
 struct MockRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {

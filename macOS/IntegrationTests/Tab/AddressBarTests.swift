@@ -24,6 +24,7 @@ import MaliciousSiteProtection
 import OHHTTPStubs
 import OHHTTPStubsSwift
 import os.log
+import PrivacyConfigTestsUtils
 import PrivacyDashboard
 import SharedTestUtilities
 import SpecialErrorPages
@@ -73,7 +74,7 @@ class AddressBarTests: XCTestCase {
         contentBlockingMock = ContentBlockingMock()
         privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
 

@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import BrowserServicesKit
 
 @MainActor
 public protocol SyncConnectionControllerDelegate: AnyObject {

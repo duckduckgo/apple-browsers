@@ -23,6 +23,7 @@ import UserScript
 import Common
 import os.log
 import DataBrokerProtectionCore
+import PrivacyConfig
 
 struct DebugScanReturnValue {
     let brokerURL: String

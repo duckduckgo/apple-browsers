@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import XCTest
 
 @testable import BrokenSitePrompt

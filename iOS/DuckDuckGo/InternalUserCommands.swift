@@ -20,7 +20,7 @@
 import Core
 import UIKit
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 /// Used to specify custom commands executed through Favorite shortcuts from Home Screen or overlay
 

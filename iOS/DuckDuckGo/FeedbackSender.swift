@@ -67,7 +67,9 @@ struct FeedbackSubmitter: FeedbackSender {
                                 url: String?,
                                 comment: String,
                                 model: Feedback.Model? = nil) {
-
+#if DEBUG || REVIEW
+        Logger.general.debug("FeedbackSender: Skipping feedback submission in DEBUG / REVIEW build")
+#else
         let normalizedUrlString: String
         if let urlString = url, let normalizedURL = URL(string: urlString)?.normalized() {
             normalizedUrlString = normalizedURL.absoluteString
@@ -100,6 +102,7 @@ struct FeedbackSubmitter: FeedbackSender {
                 Logger.general.debug("Feedback response successful")
             }
         }
+#endif
     }
     
     public func firePositiveSentimentPixel() {

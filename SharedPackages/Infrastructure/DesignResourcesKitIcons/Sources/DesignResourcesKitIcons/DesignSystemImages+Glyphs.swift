@@ -96,6 +96,7 @@ public extension DesignSystemImages {
             public static var arrowCircleDownLeft: DesignSystemImage { .init(resource: .arrowCircleDownLeft16) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft16) }
             public static var arrowDown: DesignSystemImage { .init(resource: .arrowDown16) }
+            public static var arrowDownRight: DesignSystemImage { .init(resource: .arrowDownRight16) }
             public static var arrowUp: DesignSystemImage { .init(resource: .arrowUp16) }
             public static var arrowLeft: DesignSystemImage { .init(resource: .arrowLeft16) }
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight16) }

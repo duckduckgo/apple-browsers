@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
+import PrivacyConfig
 
 /// This class provides unified interface for app version and prerelease labels.
 ///

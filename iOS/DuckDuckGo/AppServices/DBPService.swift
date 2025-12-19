@@ -46,6 +46,19 @@ final class DBPService: NSObject {
         let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
 
         if let pixelKit = PixelKit.shared {
+            let notificationPixelHandler = DataBrokerProtectionNotificationPixelHandler(pixelKit: pixelKit)
+            let notificationService = DefaultDataBrokerProtectionUserNotificationService(
+                authenticationManager: authManager,
+                pixelHandler: notificationPixelHandler
+            )
+            let eventsHandler = BrokerProfileJobEventsHandler(userNotificationService: notificationService)
+
+            #if DEBUG
+            let isWebViewInspectable = true
+            #else
+            let isWebViewInspectable = AppUserDefaults().inspectableWebViewEnabled
+            #endif
+
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
@@ -67,8 +80,9 @@ final class DBPService: NSObject {
                         source: .pir)
                     let view = UnifiedFeedbackRootView(viewModel: viewModel)
                     return view
-                })
-
+                },
+                eventsHandler: eventsHandler,
+                isWebViewInspectable: isWebViewInspectable)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -105,6 +119,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
+    }
+
+    var isClickActionDelayReductionOptimizationOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
     }
 
     init(appDependencies: DependencyProvider) {

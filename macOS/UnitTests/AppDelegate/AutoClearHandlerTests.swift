@@ -18,6 +18,8 @@
 
 import Combine
 import Foundation
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
 
@@ -69,7 +71,8 @@ class AutoClearHandlerTests: XCTestCase {
         handler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
                                    startupPreferences: startupPreferences,
                                    fireViewModel: fireViewModel,
-                                   stateRestorationManager: appStateRestorationManager)
+                                   stateRestorationManager: appStateRestorationManager,
+                                   syncAIChatsCleaner: nil)
     }
 
     override func tearDown() {

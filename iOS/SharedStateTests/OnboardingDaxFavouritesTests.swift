@@ -81,6 +81,7 @@ import Combine
         let mockConfigManager = MockPrivacyConfigurationManager()
 
         let mockScriptDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: AppSettingsMock(),
+                                                                              sync: MockDDGSyncing(),
                                                                               privacyConfigurationManager: mockConfigManager,
                                                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
                                                                               fireproofing: fireproofing,
@@ -115,10 +116,20 @@ import Combine
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     voiceSearchHelper: MockVoiceSearchHelper()
         )
+        let fireExecutor = FireExecutor(tabManager: tabManager,
+                                        websiteDataManager: mockWebsiteDataManager,
+                                        daxDialogsManager: DummyDaxDialogsManager(),
+                                        syncService: syncService,
+                                        bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
+                                        fireproofing: fireproofing,
+                                        textZoomCoordinator: textZoomCoordinator,
+                                        historyManager: historyManager,
+                                        featureFlagger: featureFlagger,
+                                        privacyConfigurationManager: mockConfigManager,
+                                        appSettings: AppSettingsMock())
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,
             bookmarksDatabase: db,
-            bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
             historyManager: historyManager,
             homePageConfiguration: homePageConfiguration,
             syncService: syncService,
@@ -153,8 +164,11 @@ import Combine
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+            fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
-            productSurfaceTelemetry: MockProductSurfaceTelemetry()
+            syncAiChatsCleaner: MockSyncAIChatsCleaning(),
+            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

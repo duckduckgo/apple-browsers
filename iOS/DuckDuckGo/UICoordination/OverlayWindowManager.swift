@@ -18,7 +18,7 @@
 //
 
 import UIKit
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol OverlayWindowManaging {
 

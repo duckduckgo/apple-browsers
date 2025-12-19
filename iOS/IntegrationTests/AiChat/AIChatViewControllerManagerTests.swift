@@ -502,6 +502,7 @@ private final class MockAIChatViewControllerManagerDelegate: AIChatViewControlle
     var loadedURL: URL?
     var downloadFileName: String?
     var didReceiveOpenSettingsRequest: Bool = false
+    var didReceiveOpenSyncSettingsRequest: Bool = false
     var submittedQuery: String?
 
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
@@ -514,6 +515,10 @@ private final class MockAIChatViewControllerManagerDelegate: AIChatViewControlle
 
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
         didReceiveOpenSettingsRequest = true
+    }
+
+    func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager) {
+        didReceiveOpenSyncSettingsRequest = true
     }
 
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {

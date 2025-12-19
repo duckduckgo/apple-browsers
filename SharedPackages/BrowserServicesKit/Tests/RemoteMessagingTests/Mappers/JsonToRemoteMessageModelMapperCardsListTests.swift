@@ -351,7 +351,11 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
             ("VisualDesignUpdate", .visualDesignUpdate),
             ("ImageAI", .imageAI),
             ("Radar", .radar),
+            ("RadarCheckGreen", .radarCheckGreen),
+            ("RadarCheckPurple", .radarCheckPurple),
             ("KeyImport", .keyImport),
+            ("PIR", .pir),
+            ("Subscription", .subscription),
             (nil, nil)
           ] as [(String?, RemotePlaceholder?)]
     )

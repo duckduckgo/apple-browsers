@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Common
 import Foundation
+import PrivacyConfig
 import WebKit
 
 public protocol UserAgentManaging {

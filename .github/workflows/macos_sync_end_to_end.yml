@@ -125,6 +125,18 @@ jobs:
       with:
         xcode-version: ${{ matrix.xcode-version }}
 
+    - name: Configure system logging
+      working-directory: SharedPackages/BrowserServicesKit
+      run: |
+        sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+        sudo killall logd || true
+
+    - name: Start log stream in background
+      working-directory: macOS
+      run: |
+        log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
+        echo $! > log_stream.pid
+
     - name: Create test account for Sync and return the recovery code
       uses: duckduckgo/sync_crypto/action@main
       id: sync-recovery-code
@@ -132,6 +144,7 @@ jobs:
         debug: true
 
     - name: Build Sync e2e tests
+      working-directory: macOS
       run: |
         set -o pipefail && xcodebuild build-for-testing \
           -scheme "macOS Sync End-to-End UI Tests CI" \
@@ -142,6 +155,7 @@ jobs:
         | xcbeautify
 
     - name: Extract and Copy app to /DerivedData
+      working-directory: macOS
       run: |
         cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
 
@@ -159,6 +173,7 @@ jobs:
 
     - name: Run UI Tests
       id: run-ui-tests
+      working-directory: macOS
       env:
         CODE: ${{ steps.sync-recovery-code.outputs.recovery-code }}
       run: |
@@ -182,8 +197,29 @@ jobs:
           -skipMacroValidation \
           -test-iterations 2 \
           -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
+
+    - name: Stop log stream
+      if: always()
+      working-directory: macOS
+      run: |
+        if [ -f log_stream.pid ]; then
+          kill $(cat log_stream.pid) || true
+        fi
+
+    - name: Check for test failures
+      id: check-failures
+      if: always()
+      working-directory: macOS
+      run: |
+        if grep -Eq 'XCTAssert.*failed|Test Case.*failed|Testing failed:' ui-tests.log; then
+          echo "had_failures=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Detected test failures in the log (may have passed on retry)"
+        else
+          echo "had_failures=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: Report job duration
       if: success() || (always() && steps.run-ui-tests.outcome == 'failure')
@@ -197,6 +233,7 @@ jobs:
 
     - name: Prepare test report
       if: always()
+      working-directory: macOS
       run: |
         xcbeautify --report junit --report-path . --junit-report-filename ui-tests.xml < ui-tests.log
 
@@ -208,15 +245,52 @@ jobs:
         report_paths: macOS/ui-tests.xml
         check_retries: true
 
+    - name: Upload xcresult files (passed on retry)
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      with:
+        name: "xcresult-${{ matrix.runner }}"
+        path: "macOS/DerivedData/Logs/Test/*.xcresult"
+        retention-days: 1
+
+    - name: Upload app console log (passed on retry)
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      with:
+        name: "app-console-${{ matrix.runner }}-macos${{ matrix.os-version }}"
+        path: "macOS/app-console.log"
+        if-no-files-found: warn
+        retention-days: 1
+
+    - name: Organize logs for upload
+      if: failure() || cancelled()
+      working-directory: macOS
+      run: |
+        echo "Current working directory: $(pwd)"
+
+        # Create staging directory with timestamp and OS version
+        timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+        archive_name="BuildLogs ${{ matrix.runner }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        echo "Creating archive directory: $archive_name"
+        mkdir -p "$archive_name"
+
+        # locate and copy all files, flattening the structure with verbose output
+        cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
+        cp "ui-tests.log" "$archive_name/" || echo "No ui-tests.log found"
+        cp "ui-tests.xml" "$archive_name/" || echo "No ui-tests.xml found"
+        cp "app-console.log" "$archive_name/" || echo "No app-console.log found"
+        find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
+        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/" || echo "No DiagnosticReports found"
+
+        # Store archive name for upload step
+        echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
+
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
       with:
-        name: "BuildLogs ${{ matrix.runner }}"
-        path: |
-          macOS/xcodebuild.log
-          macOS/DerivedData/Logs/Test/*.xcresult
-          ~/Library/Logs/DiagnosticReports/*
+        name: "${{ env.ARCHIVE_NAME }}"
+        path: "macOS/${{ env.ARCHIVE_NAME }}"
         retention-days: 7
 
   notify-failure:

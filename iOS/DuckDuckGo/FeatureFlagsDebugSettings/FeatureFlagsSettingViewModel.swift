@@ -19,7 +19,7 @@
 
 import Foundation
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import Core
 import ContentScopeScripts
 

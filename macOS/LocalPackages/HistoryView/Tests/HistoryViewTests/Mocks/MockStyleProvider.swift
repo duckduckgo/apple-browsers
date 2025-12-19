@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import HistoryView
+import Common
 import Combine
+import HistoryView
 
-final class MockStyleProvider: StyleProviding {
+final class MockStyleProvider: ScriptStyleProviding {
 
     @Published var themeAppearance: String = "system"
     @Published var themeName: String = "default"

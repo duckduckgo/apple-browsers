@@ -25,6 +25,7 @@ struct PermissionAuthorizationQueryInfo {
     var wasShownOnce: Bool = false
     var shouldShowAlwaysAllowCheckbox: Bool = false
     var shouldShowCancelInsteadOfDeny: Bool = false
+    var isSystemPermissionDisabled: Bool = false
 }
 typealias PermissionAuthorizationQueryOutput = (granted: Bool, remember: Bool?)
 
@@ -46,6 +47,10 @@ extension PermissionAuthorizationQuery {
     var shouldShowCancelInsteadOfDeny: Bool {
         get { parameters.shouldShowCancelInsteadOfDeny }
         set { parameters.shouldShowCancelInsteadOfDeny = newValue }
+    }
+    var isSystemPermissionDisabled: Bool {
+        get { parameters.isSystemPermissionDisabled }
+        set { parameters.isSystemPermissionDisabled = newValue }
     }
 
     convenience init(domain: String, url: URL?, permissions: [PermissionType], decisionHandler: @escaping (CallbackResult) -> Void) {

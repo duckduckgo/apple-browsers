@@ -17,7 +17,7 @@
 //
 
 import AppLauncher
-import BrowserServicesKit
+import PrivacyConfig
 import Cocoa
 import Combine
 import Common

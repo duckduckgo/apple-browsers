@@ -20,7 +20,7 @@
 import Foundation
 import Persistence
 import SetDefaultBrowserUI
-import BrowserServicesKit
+import PrivacyConfig
 import enum Common.DevicePlatform
 import AIChat
 import RemoteMessaging
@@ -40,7 +40,8 @@ enum ModalPromptCoordinationFactory {
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
         let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider(presenter: dependency.winBackOfferPresenter, coordinator: dependency.winBackOfferCoordinator)
         let whatsNewModalPromptProvider = WhatsNewCoordinator(
-            remoteMessageStore: dependency.remoteMessagingStore,
+            displayContext: .scheduled,
+            repository: dependency.whatsNewRepository,
             remoteMessageActionHandler: dependency.remoteMessagingActionHandler,
             isIPad: isIPad,
             pixelReporter: dependency.remoteMessagingPixelReporter,
@@ -102,7 +103,7 @@ extension ModalPromptCoordinationFactory {
         let keyValueFileStoreService: ThrowingKeyValueStoring
         let privacyConfigurationManager: PrivacyConfigurationManaging
         let featureFlagger: FeatureFlagger
-        let remoteMessagingStore: RemoteMessagingStoring
+        let whatsNewRepository: WhatsNewMessageRepository
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting
         let appSettings: AppSettings

@@ -43,6 +43,10 @@ public final class DistributedNavigationDelegate: NSObject {
         }
     }
 
+    /// Gater for createWebView callbacks to ensure they are ordered behind any in-flight `decidePolicyForNavigationAction` evaluation.
+    @MainActor
+    private let createWebViewCallbackGater = CreateWebViewCallbackGater()
+
     /// ongoing Main Frame navigation (after `navigationDidStart` event received)
     @MainActor
     private var startedNavigation: Navigation? {
@@ -96,6 +100,13 @@ public final class DistributedNavigationDelegate: NSObject {
         dispatchPrecondition(condition: .onQueue(.main))
 
         responders.setResponders(refs.compactMap { $0 })
+    }
+
+    /// Dispatches a callback so it runs only after all NavigationActions that were executing at the moment of dispatch
+    /// finish their `decidePolicyForNavigationAction` responder-chain processing.
+    @MainActor
+    public func dispatchCreateWebView(_ callback: @escaping @MainActor @Sendable () -> Void) {
+        createWebViewCallbackGater.dispatchCreateWebView(callback)
     }
 
 }
@@ -312,6 +323,12 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         // extract WKNavigationAction mapped to NavigationAction from the Navigation or make new for non-main-frame Navigation Actions
         let navigationAction = navigation?.navigationAction
             ?? NavigationAction(webView: webView, navigationAction: wkNavigationAction, currentHistoryItemIdentity: currentHistoryItemIdentity, redirectHistory: nil, mainFrameNavigation: startedNavigation)
+        createWebViewCallbackGater.beginExecutingNavigationAction(identifier: navigationAction.identifier)
+        let webKitDecisionHandler = decisionHandler
+        let decisionHandler = { [createWebViewCallbackGater] (policy: WKNavigationActionPolicy, preferences: WKWebpagePreferences) in
+            webKitDecisionHandler(policy, preferences)
+            createWebViewCallbackGater.endExecutingNavigationAction(identifier: navigationAction.identifier)
+        }
         // associate NavigationAction with WKNavigationAction object
         wkNavigationAction.navigationAction = navigationAction
 

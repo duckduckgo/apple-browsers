@@ -178,9 +178,9 @@ enum NewTabPagePixel: PixelKitEvent {
         case .omnibarHidden: return "new-tab-page_omnibar_hidden"
         case .omnibarShown: return "new-tab-page_omnibar_shown"
         case .newTabPageLoadingTime: return "new-tab-page_loading_time"
-        case .nextStepsCardClicked: return "new-tab-page_next-steps_clicked"
-        case .nextStepsCardDismissed: return "new-tab-page_next-steps_dismissed"
-        case .nextStepsCardShown: return "new-tab-page_next-steps_shown"
+        case .nextStepsCardClicked(let card): return "new-tab-page_next-steps_\(card)_clicked"
+        case .nextStepsCardDismissed(let card): return "new-tab-page_next-steps_\(card)_dismissed"
+        case .nextStepsCardShown(let card): return "new-tab-page_next-steps_\(card)_shown"
         }
     }
 
@@ -213,12 +213,11 @@ enum NewTabPagePixel: PixelKitEvent {
                 .searchSubmitted,
                 .promptSubmitted,
                 .omnibarHidden,
-                .omnibarShown:
+                .omnibarShown,
+                .nextStepsCardClicked,
+                .nextStepsCardDismissed,
+                .nextStepsCardShown:
             return nil
-        case .nextStepsCardClicked(let card),
-                .nextStepsCardDismissed(let card),
-                .nextStepsCardShown(let card):
-            return ["key": card]
         }
     }
 

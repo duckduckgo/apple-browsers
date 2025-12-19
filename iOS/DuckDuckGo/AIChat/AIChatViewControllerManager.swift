@@ -21,6 +21,7 @@ import UserScript
 import AIChat
 import Foundation
 import BrowserServicesKit
+import PrivacyConfig
 import WebKit
 import Core
 import SwiftUI
@@ -30,6 +31,7 @@ protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String)
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager)
+    func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String)
 }
 
@@ -442,6 +444,11 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
             }
         case .closeAIChat:
             chatViewController?.dismiss(animated: true)
+        case .sendToSyncSettings, .sendToSetupSync:
+            chatViewController?.dismiss(animated: true) { [weak self] in
+                guard let self = self else { return }
+                self.delegate?.aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(self)
+            }
         default:
             break
         }

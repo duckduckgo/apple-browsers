@@ -216,16 +216,22 @@ extension SharedColorPaletteDefinition {
             return surfaceDecorationTertiary
 
         /// Text Colors
+        case .textLink:
+            return DynamicColor(lightHex: 0x3969EF, darkHex: 0x7295F6)
         case .textPrimary:
             return textPrimary
         case .textSecondary:
             return textSecondary
+        case .textSuccess:
+            return DynamicColor(lightColor: .green60, darkColor: .green30)
         case .textTertiary:
             return textTertiary
 
         /// Tone Colors
         case .toneShadePrimary:
             return toneShadePrimary
+        case .toneTintPrimary:
+            return FigmaColorPalette.toneTintPrimary
 
         /// Permission Center
         case .permissionCenterBackground:

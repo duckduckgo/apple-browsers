@@ -21,7 +21,7 @@ import Subscription
 import struct Combine.AnyPublisher
 import enum Combine.Publishers
 import FeatureFlags
-import BrowserServicesKit
+import PrivacyConfig
 import os.log
 
 public final class PreferencesPurchaseSubscriptionModel: ObservableObject {

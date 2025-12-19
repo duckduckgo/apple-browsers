@@ -28,6 +28,7 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import PrivacyConfig
 import FeatureFlags
 
 // This is to avoid exposing all the dependancies outside of the DBP package
@@ -386,11 +387,34 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
         }
     }
 
+    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging) {
+        // Figure out if we've just finished initial scans, and send the appropriate pixel if necessary
+
+        let database = jobDependencies.database
+        let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
+        if eventPixels.hasInitialScansTotalDurationPixelBeenSent() {
+            return
+        }
+
+        do {
+            let hasCompletedInitialScans = try database.haveAllScansRunAtLeastOnce()
+            if hasCompletedInitialScans {
+                let profile = try database.fetchProfile()
+                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0)
+            }
+        } catch {
+            Logger.dataBrokerProtection.error("Error when calculating if we should send the initial scans duration pixel, error: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+    }
+
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
     public func profileSaved() async {
-        let backgroundAgentInitialScanStartTime = Date()
+        let database = jobDependencies.database
+        let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
+        eventPixels.markInitialScansStarted()
 
         eventsHandler.fire(.profileSaved)
         await fireMonitoringPixels()
@@ -428,8 +452,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
                 self.eventsHandler.fire(.firstScanCompletedAndMatchesFound)
             }
 
-            fireImmediateScansCompletionPixel(startTime: backgroundAgentInitialScanStartTime)
-
             self.startScheduledOperations(completion: nil)
         }
     }
@@ -465,17 +487,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
                 self.pixelHandler.fire(.ipcServerAppLaunchedScheduledScansFinishedWithoutError)
             }
         }, completion: nil)
-    }
-
-    private func fireImmediateScansCompletionPixel(startTime: Date) {
-        do {
-            let profileQueries = try dataManager.profileQueriesCount()
-            let durationSinceStart = Date().timeIntervalSince(startTime) * 1000
-            self.sharedPixelsHandler.fire(.initialScanTotalDuration(duration: durationSinceStart.rounded(.towardZero),
-                                                                    profileQueries: profileQueries))
-        } catch {
-            Logger.dataBrokerProtection.log("Initial Scans Error when trying to fetch the profile to get the profile queries")
-        }
     }
 }
 

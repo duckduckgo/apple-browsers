@@ -77,8 +77,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "92c9c3970ddc6062fa2952e05098fdaea499ab6a",
-        "version" : "9.5.0"
+        "revision" : "0f8925a4fc8f2b98df6bc7294b49fc4c1561bf16",
+        "version" : "9.7.0"
       }
     },
     {
@@ -122,8 +122,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "f70225981241859eb4aa1a18a75531d26637c8cc",
-        "version" : "1.4.0"
+        "revision" : "810496cf121e525d660cd0ea89a758740476b85f",
+        "version" : "1.5.1"
       }
     },
     {
@@ -167,8 +167,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-numerics.git",
       "state" : {
-        "revision" : "bbadd4b853a33fd78c4ae977d17bb2af15eb3f2a",
-        "version" : "1.1.0"
+        "revision" : "0c0290ff6b24942dadb83a929ffaaa1481df04a2",
+        "version" : "1.1.1"
       }
     },
     {
@@ -176,8 +176,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-snapshot-testing",
       "state" : {
-        "revision" : "b2d4cb30735f4fbc3a01963a9c658336dd21e9ba",
-        "version" : "1.18.1"
+        "revision" : "a8b7c5e0ed33d8ab8887d1654d9b59f2cbad529b",
+        "version" : "1.18.7"
       }
     },
     {

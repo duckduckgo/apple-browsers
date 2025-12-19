@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import DesignResourcesKitIcons
 import FeatureFlags
 import MaliciousSiteProtection
 import Navigation
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import Subscription
 import WebKit

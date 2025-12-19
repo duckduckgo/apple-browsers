@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
 import History
 import os.log
-import AIChat
+import PrivacyConfig
 
 @MainActor
 protocol WindowControllersManagerProtocol: AnyObject {

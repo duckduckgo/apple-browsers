@@ -17,15 +17,17 @@
 //
 
 import Bookmarks
+import BrowserServicesKit
 import Combine
+import FeatureFlags
 import Persistence
-@testable import SyncUI_macOS
 import XCTest
 import PersistenceTestingUtils
-@testable import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import DDGSync
 @testable import DuckDuckGo_Privacy_Browser
-import FeatureFlags
+@testable import SyncUI_macOS
 
 private final class MockUserAuthenticator: UserAuthenticating {
     func authenticateUser(reason: DuckDuckGo_Privacy_Browser.DeviceAuthenticator.AuthenticationReason) async -> DeviceAuthenticationResult {

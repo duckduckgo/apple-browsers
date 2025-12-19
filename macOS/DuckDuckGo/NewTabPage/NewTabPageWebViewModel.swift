@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import NewTabPage
 import PixelKit
+import PrivacyConfig
 import WebKit
 
 /**

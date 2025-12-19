@@ -1356,6 +1356,14 @@
 		37E794922EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E794882EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivity.swift */; };
 		37E794932EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E7948A2EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityProvider.swift */; };
 		37E794942EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E794892EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityManager.swift */; };
+		37EACB042EF4C3B6002C06F9 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 37EACB032EF4C3B6002C06F9 /* PrivacyConfig */; };
+		37EACB062EF4C3BD002C06F9 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 37EACB052EF4C3BD002C06F9 /* PrivacyConfig */; };
+		37EACB0B2EF53969002C06F9 /* PrivacyConfigTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 37EACB0A2EF53969002C06F9 /* PrivacyConfigTestsUtils */; };
+		37EACB102EF53F4C002C06F9 /* PrivacyConfigTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 37EACB0F2EF53F4C002C06F9 /* PrivacyConfigTestsUtils */; };
+		37EACB122EF53F5B002C06F9 /* PrivacyConfigTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 37EACB112EF53F5B002C06F9 /* PrivacyConfigTestsUtils */; };
+		37EACB142EF53F62002C06F9 /* PrivacyConfigTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 37EACB132EF53F62002C06F9 /* PrivacyConfigTestsUtils */; };
+		37EACB162EF54224002C06F9 /* PrivacyConfigTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 37EACB152EF54224002C06F9 /* PrivacyConfigTestsUtils */; };
+		37EACB182EF5422C002C06F9 /* PrivacyConfigTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 37EACB172EF5422C002C06F9 /* PrivacyConfigTestsUtils */; };
 		37EC314C2D8C02C00026C348 /* FaviconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EC314B2D8C02BC0026C348 /* FaviconTests.swift */; };
 		37EC314D2D8C02C00026C348 /* FaviconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EC314B2D8C02BC0026C348 /* FaviconTests.swift */; };
 		37EC31502D8C19270026C348 /* CapturingFaviconImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EC314F2D8C19190026C348 /* CapturingFaviconImageCache.swift */; };
@@ -2412,6 +2420,8 @@
 		84A37DF02DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */; };
 		84A72AA72DB276A20092A4B4 /* LinkOpenBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */; };
 		84A72AA82DB276A20092A4B4 /* LinkOpenBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */; };
+		84A74E1D2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A74E1C2EF5383B006A5B61 /* FaviconDownloader.swift */; };
+		84A74E1E2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A74E1C2EF5383B006A5B61 /* FaviconDownloader.swift */; };
 		84AA551A2E3256BA009FCC70 /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 84AA55192E3256BA009FCC70 /* Common */; };
 		84AECC512DFBFADC00438ACC /* AutoClearHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AECC502DFBFADC00438ACC /* AutoClearHandlerTests.swift */; };
 		84AECC522DFBFADC00438ACC /* AutoClearHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AECC502DFBFADC00438ACC /* AutoClearHandlerTests.swift */; };
@@ -5364,6 +5374,7 @@
 		84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDragPreviewProvider.swift; sourceTree = "<group>"; };
 		84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDragPreviewProviderTests.swift; sourceTree = "<group>"; };
 		84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkOpenBehavior.swift; sourceTree = "<group>"; };
+		84A74E1C2EF5383B006A5B61 /* FaviconDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconDownloader.swift; sourceTree = "<group>"; };
 		84AECC4E2DFBF75700438ACC /* CommonObjCExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = CommonObjCExtensions; sourceTree = "<group>"; };
 		84AECC4F2DFBF76400438ACC /* LetsMove */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = LetsMove; sourceTree = "<group>"; };
 		84AECC502DFBFADC00438ACC /* AutoClearHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearHandlerTests.swift; sourceTree = "<group>"; };
@@ -6397,12 +6408,14 @@
 				9FF521482BAA909C00B9819B /* Lottie in Frameworks */,
 				9DB9800C2D96AD2F00B174B3 /* DataBrokerProtectionCore in Frameworks */,
 				7B7614392D79F85D00BC6293 /* VPNAppState in Frameworks */,
+				37EACB062EF4C3BD002C06F9 /* PrivacyConfig in Frameworks */,
 				4B9EE3522D76C9EB00DDC75C /* Navigation in Frameworks */,
 				4B9EE34E2D76C9B900DDC75C /* History in Frameworks */,
 				374EFDED2D01A1DE00B30939 /* Utilities in Frameworks */,
 				9DC70B1A2AA1FA5B005A844B /* LoginItems in Frameworks */,
 				4B9EE3642D76CA9700DDC75C /* Suggestions in Frameworks */,
 				37EE81432D00DBCC0068034A /* WebKitExtensions in Frameworks */,
+				37EACB182EF5422C002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
 				4B9EE3602D76CA7900DDC75C /* SpecialErrorPages in Frameworks */,
 				31D49A3B2DC294A200262F26 /* UIComponents in Frameworks */,
 				F1D43AF52B98E48900BAB743 /* BareBonesBrowserKit in Frameworks */,
@@ -6467,6 +6480,7 @@
 				F124E0E92D6E122F0035C7BA /* PersistenceTestingUtils in Frameworks */,
 				3706FE89293F661700E42796 /* OHHTTPStubsSwift in Frameworks */,
 				9F33033A2E8E605A00D6F0C9 /* RemoteMessagingTestsUtils in Frameworks */,
+				37EACB122EF53F5B002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6489,6 +6503,7 @@
 				F124E0EB2D6E123A0035C7BA /* NetworkingTestingUtils in Frameworks */,
 				845F570B2E97BFF900C7F78A /* SharedTestUtilities in Frameworks */,
 				84B49F0D2CB10F0900FF08BB /* OHHTTPStubs in Frameworks */,
+				37EACB142EF53F62002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6518,6 +6533,7 @@
 				B6AE39F329374AEC00C37AA4 /* OHHTTPStubs in Frameworks */,
 				845F57032E97BFE600C7F78A /* SharedTestUtilities in Frameworks */,
 				B6AE39F529374AEC00C37AA4 /* OHHTTPStubsSwift in Frameworks */,
+				37EACB102EF53F4C002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6725,6 +6741,8 @@
 				4B9EE3182D76C80800DDC75C /* BrowserServicesKit in Frameworks */,
 				4B9EE31C2D76C81600DDC75C /* Configuration in Frameworks */,
 				BB7D100C2DE0D9430027222A /* DesignResourcesKitIcons in Frameworks */,
+				37EACB162EF54224002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
+				37EACB042EF4C3B6002C06F9 /* PrivacyConfig in Frameworks */,
 				4B9EE3222D76C83900DDC75C /* DuckPlayer in Frameworks */,
 				379230942D38527E0019E130 /* HistoryView in Frameworks */,
 				B6F7128129F681EB00594A45 /* QuickLookUI.framework in Frameworks */,
@@ -6805,6 +6823,7 @@
 				F124E0DF2D6E12190035C7BA /* PersistenceTestingUtils in Frameworks */,
 				9F0F46A02E865AFE00A9FC4D /* RemoteMessagingTestsUtils in Frameworks */,
 				B6DA44192616C13800DD1EC2 /* OHHTTPStubsSwift in Frameworks */,
+				37EACB0B2EF53969002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -10139,15 +10158,16 @@
 		AA5FA698275F90CD00DCE9C9 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				AAA0CC562539EBC90079BC96 /* FaviconUserScript.swift */,
+				AA5FA699275F91C700DCE9C9 /* Favicon.swift */,
+				84A74E1C2EF5383B006A5B61 /* FaviconDownloader.swift */,
+				AA6197C5276B3168008396F0 /* FaviconHostReference.swift */,
+				AA5FA696275F90C400DCE9C9 /* FaviconImageCache.swift */,
 				AA512D1324D99D9800230283 /* FaviconManager.swift */,
 				37F09AD22DDE433000643A1B /* FaviconManagerMock.swift */,
-				AAEF6BC7276A081C0024DCF4 /* FaviconSelector.swift */,
-				AA5FA696275F90C400DCE9C9 /* FaviconImageCache.swift */,
 				AA222CB82760F74E00321475 /* FaviconReferenceCache.swift */,
-				AA6197C5276B3168008396F0 /* FaviconHostReference.swift */,
+				AAEF6BC7276A081C0024DCF4 /* FaviconSelector.swift */,
 				AA6197C3276B314D008396F0 /* FaviconUrlReference.swift */,
-				AA5FA699275F91C700DCE9C9 /* Favicon.swift */,
+				AAA0CC562539EBC90079BC96 /* FaviconUserScript.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -12289,6 +12309,8 @@
 				F1E720B42E9D586700654B4E /* AttributedMetric */,
 				BBD9C39A2E9D73880060A6E8 /* SERPSettings */,
 				1E5F7A242EBB78F600928A06 /* AutoconsentStats */,
+				37EACB052EF4C3BD002C06F9 /* PrivacyConfig */,
+				37EACB172EF5422C002C06F9 /* PrivacyConfigTestsUtils */,
 			);
 			productName = DuckDuckGo;
 			productReference = 3706FD05293F65D500E42796 /* DuckDuckGo App Store.app */;
@@ -12330,6 +12352,7 @@
 				F158DE052E9E9DF100628DD0 /* ContentBlocking */,
 				CC55B2352E82BD160032E8BD /* BrowserServicesKitTestsUtils */,
 				9F3303392E8E605A00D6F0C9 /* RemoteMessagingTestsUtils */,
+				37EACB112EF53F5B002C06F9 /* PrivacyConfigTestsUtils */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 3706FE99293F661700E42796 /* Unit Tests App Store.xctest */;
@@ -12367,6 +12390,7 @@
 				F158DE072E9E9DF700628DD0 /* ContentBlocking */,
 				CC55B23C2E82BF4D0032E8BD /* BrowserServicesKitTestsUtils */,
 				9F33033B2E8E606400D6F0C9 /* RemoteMessagingTestsUtils */,
+				37EACB132EF53F62002C06F9 /* PrivacyConfigTestsUtils */,
 			);
 			productName = "Integration Tests";
 			productReference = 3706FEB2293F662100E42796 /* Integration Tests App Store.xctest */;
@@ -12422,6 +12446,7 @@
 				F158DE032E9E995F00628DD0 /* ContentBlocking */,
 				CC55B23A2E82BF430032E8BD /* BrowserServicesKitTestsUtils */,
 				9F0F46A12E865BEC00A9FC4D /* RemoteMessagingTestsUtils */,
+				37EACB0F2EF53F4C002C06F9 /* PrivacyConfigTestsUtils */,
 			);
 			productName = "Integration Tests";
 			productReference = 4B1AD89D25FC27E200261379 /* Integration Tests.xctest */;
@@ -12832,6 +12857,8 @@
 				F1E720B22E9D585E00654B4E /* AttributedMetric */,
 				BBD9C3982E9D737B0060A6E8 /* SERPSettings */,
 				1E54E8E72EB3A33F00EB24CD /* AutoconsentStats */,
+				37EACB032EF4C3B6002C06F9 /* PrivacyConfig */,
+				37EACB152EF54224002C06F9 /* PrivacyConfigTestsUtils */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -12873,6 +12900,7 @@
 				F158DE012E9E992C00628DD0 /* ContentBlocking */,
 				CC55B2332E82BD0D0032E8BD /* BrowserServicesKitTestsUtils */,
 				9F0F469F2E865AFE00A9FC4D /* RemoteMessagingTestsUtils */,
+				37EACB0A2EF53969002C06F9 /* PrivacyConfigTestsUtils */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = AA585D90248FD31400E9A3E2 /* Unit Tests.xctest */;
@@ -14586,6 +14614,7 @@
 				3706FBEE293F65D500E42796 /* MainView.swift in Sources */,
 				3706FBEF293F65D500E42796 /* EmailUrlExtensions.swift in Sources */,
 				3706FBF0293F65D500E42796 /* PasswordManagementItemModel.swift in Sources */,
+				84A74E1E2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */,
 				37AA00AC2E1D3D4200844427 /* AIChatSummarizer.swift in Sources */,
 				3706FBF2293F65D500E42796 /* FindInPageModel.swift in Sources */,
 				1D9A4E5B2B43213B00F449E2 /* TabSnapshotExtension.swift in Sources */,
@@ -16762,6 +16791,7 @@
 				B693955426F04BEC0015B914 /* ColorView.swift in Sources */,
 				AA5C1DD3285A217F0089850C /* RecentlyClosedCacheItem.swift in Sources */,
 				B6BBF17427475B15004F850E /* PopupBlockedPopover.swift in Sources */,
+				84A74E1D2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */,
 				EE28685D2EAFC3E000AB597F /* LegacyDataImportSummaryViewModel.swift in Sources */,
 				EE28685E2EAFC3E000AB597F /* LegacyDataImportViewModel.swift in Sources */,
 				8589063A267BCD8E00D23B0D /* SaveCredentialsPopover.swift in Sources */,
@@ -18952,6 +18982,38 @@
 		37DF37062CF38B9F005ED34B /* PrivacyStats */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = PrivacyStats;
+		};
+		37EACB032EF4C3B6002C06F9 /* PrivacyConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfig;
+		};
+		37EACB052EF4C3BD002C06F9 /* PrivacyConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfig;
+		};
+		37EACB0A2EF53969002C06F9 /* PrivacyConfigTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfigTestsUtils;
+		};
+		37EACB0F2EF53F4C002C06F9 /* PrivacyConfigTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfigTestsUtils;
+		};
+		37EACB112EF53F5B002C06F9 /* PrivacyConfigTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfigTestsUtils;
+		};
+		37EACB132EF53F62002C06F9 /* PrivacyConfigTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfigTestsUtils;
+		};
+		37EACB152EF54224002C06F9 /* PrivacyConfigTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfigTestsUtils;
+		};
+		37EACB172EF5422C002C06F9 /* PrivacyConfigTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfigTestsUtils;
 		};
 		37EE81402D00DBC40068034A /* WebKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;

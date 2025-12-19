@@ -19,7 +19,7 @@
 
 import Foundation
 import Common
-import BrowserServicesKit
+import PrivacyConfig
 import SpecialErrorPages
 import Core
 

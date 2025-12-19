@@ -18,7 +18,7 @@
 //
 
 import XCTest
-@testable import BrowserServicesKit
+import PrivacyConfig
 @testable import Core
 @testable import DDGSync
 @testable import DuckDuckGo

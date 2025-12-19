@@ -20,7 +20,7 @@
 import Foundation
 import Configuration
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 
 struct AppConfigurationURLProvider: ConfigurationURLProviding {
 

@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Common
-import BrowserServicesKit
+import Foundation
+import PrivacyConfig
 
 /// A protocol that defines the requirements for handling DuckPlayer contingency scenarios.
 /// >Tech Design: https://app.asana.com/0/481882893211075/1207926753747908/f

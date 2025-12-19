@@ -44,7 +44,7 @@ let package = Package(
 
         // MARK: - Platform Specific Targets
         .target(
-            name: "UIKitExtensions",
+            name: "UIKitExtensions"
         ),
         .target(
             name: "UIKitExtensionsProxy",

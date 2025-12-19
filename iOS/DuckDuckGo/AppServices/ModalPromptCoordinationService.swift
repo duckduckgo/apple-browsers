@@ -19,7 +19,7 @@
 
 import UIKit
 import Persistence
-import protocol BrowserServicesKit.PrivacyConfigurationManaging
+import protocol PrivacyConfig.PrivacyConfigurationManaging
 
 // MARK: - Modal Prompt Presenter
 

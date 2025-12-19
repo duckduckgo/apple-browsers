@@ -121,25 +121,23 @@ extension Preferences {
                         }
                     }
 
-                    if model.shouldShowOpenAIChatInSidebarToggle {
-                        ToggleMenuItem(UserText.aiChatOpenSidebarWhenViewingWebsitesToggle,
-                                       isOn: $model.openAIChatInSidebar)
-                        .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
-                        .onChange(of: model.openAIChatInSidebar) { _ in
-                            PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
-                                          frequency: .uniqueByName,
-                                          includeAppVersionParameter: true)
-                        }
-                        .disabled(!model.showShortcutInAddressBar)
-                        .padding(.leading, 19)
+                    ToggleMenuItem(UserText.aiChatOpenSidebarWhenViewingWebsitesToggle,
+                                   isOn: $model.openAIChatInSidebar)
+                    .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
+                    .onChange(of: model.openAIChatInSidebar) { _ in
+                        PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
+                                      frequency: .uniqueByName,
+                                      includeAppVersionParameter: true)
+                    }
+                    .disabled(!model.showShortcutInAddressBar)
+                    .padding(.leading, 19)
 
-                        if model.shouldShowPageContextToggle {
-                            ToggleMenuItem("Automatically send page context to the sidebar",
-                                           isOn: $model.shouldAutomaticallySendPageContext)
-                            .accessibilityIdentifier("Preferences.AIChat.shouldAutomaticallySendPageContextToggle")
-                            .disabled(!model.showShortcutInAddressBar || !model.openAIChatInSidebar)
-                            .padding(.leading, 19)
-                        }
+                    if model.shouldShowPageContextToggle {
+                        ToggleMenuItem("Automatically send page context to the sidebar",
+                                       isOn: $model.shouldAutomaticallySendPageContext)
+                        .accessibilityIdentifier("Preferences.AIChat.shouldAutomaticallySendPageContextToggle")
+                        .disabled(!model.showShortcutInAddressBar || !model.openAIChatInSidebar)
+                        .padding(.leading, 19)
                     }
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)

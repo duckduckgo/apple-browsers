@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
 import SyncUI_macOS
-import BrowserServicesKit
+import PrivacyConfig
 import PixelKit
 import Subscription
 import SubscriptionUI

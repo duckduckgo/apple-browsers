@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Common
+import ContentBlocking
 import Foundation
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import TrackerRadarKit
 import WebKit
 import XCTest
-import BrowserServicesKit
-import TrackerRadarKit
-import ContentBlocking
-import Common
 
 final class MockNavigationDelegate: NSObject, WKNavigationDelegate {
 
@@ -96,18 +98,6 @@ final class MockSurrogatesUserScriptDelegate: NSObject, SurrogatesUserScriptDele
                               withSurrogate host: String) {
         detectedSurrogates.insert(tracker)
         onSurrogateDetected?(tracker, host)
-    }
-}
-
-final class MockDomainsProtectionStore: DomainsProtectionStore {
-    var unprotectedDomains = Set<String>()
-
-    func disableProtection(forDomain domain: String) {
-        unprotectedDomains.insert(domain)
-    }
-
-    func enableProtection(forDomain domain: String) {
-        unprotectedDomains.remove(domain)
     }
 }
 

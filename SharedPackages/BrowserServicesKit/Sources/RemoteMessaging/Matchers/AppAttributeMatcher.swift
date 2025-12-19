@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
 import BrowserServicesKit
+import Common
+import Foundation
 
 #if os(iOS)
 public typealias AppAttributeMatcher = MobileAppAttributeMatcher

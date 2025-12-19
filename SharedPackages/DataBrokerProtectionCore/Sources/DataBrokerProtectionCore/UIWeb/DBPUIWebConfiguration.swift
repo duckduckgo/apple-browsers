@@ -19,6 +19,7 @@
 import Foundation
 import WebKit
 import BrowserServicesKit
+import PrivacyConfig
 import UserScript
 
 public final class DBPUIUserContentController: WKUserContentController {
@@ -62,7 +63,11 @@ public final class DBPUIUserScript: UserScriptsProvider {
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
          vpnBypassService: VPNBypassServiceProvider?) throws {
         self.webUISettings = webUISettings
-        contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig, properties: prefs, isIsolated: false, privacyConfigurationJSONGenerator: nil)
+        contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig,
+                                                                    properties: prefs,
+                                                                    scriptContext: .contentScope,
+                                                                    allowedNonisolatedFeatures: ["dbpuiCommunication"],
+                                                                    privacyConfigurationJSONGenerator: nil)
         contentScopeUserScriptIsolated.messageNames = ["dbpui"]
         dbpUICommunicationLayer = DBPUICommunicationLayer(webURLSettings: webUISettings,
                                                           vpnBypassService: vpnBypassService,

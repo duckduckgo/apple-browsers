@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 
 public protocol DefaultBrowserAndDockPromptInactiveUserFeatureFlagProvider {

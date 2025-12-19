@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760000
@@ -103,9 +103,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617269950
     case paidAIChat
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717945014
-    case aiChatSidebar
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615582950
     case aiChatPageContext
@@ -210,9 +207,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
-    case vpnConnectionWidePixelMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721557461
     case showHideAIGeneratedImagesSection
 
@@ -300,7 +294,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .fireDialogIndividualSitesLink,
                 .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
-                .vpnConnectionWidePixelMeasurement,
                 .allowPopupsForCurrentPage,
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
@@ -348,7 +341,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
                 .hangReporting,
-				.aiChatSidebar,
                 .aiChatPageContext,
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
@@ -379,7 +371,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewExperience,
                 .tabProgressIndicator,
                 .attributedMetrics,
-                .vpnConnectionWidePixelMeasurement,
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
                 .blackFridayCampaign,
@@ -471,8 +462,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .paidAIChat:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
-        case .aiChatSidebar:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .aiChatKeepSession:
@@ -537,8 +526,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabProgressIndicator))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
-        case .vpnConnectionWidePixelMeasurement:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .showHideAIGeneratedImagesSection:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:

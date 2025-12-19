@@ -17,12 +17,12 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Common
 import Foundation
 import History
 import HistoryView
 import PixelKit
+import PrivacyConfig
 
 protocol HistoryDeleting: AnyObject {
     func delete(_ visits: [Visit]) async

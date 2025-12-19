@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Common
 import NewTabPage
 import PixelKit
+import PrivacyConfigTestsUtils
 import SubscriptionTestingUtilities
 
 @testable import Subscription
@@ -55,7 +56,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         duckPlayerPreferences = DuckPlayerPreferencesPersistorMock()
         privacyConfigManager = MockPrivacyConfigurationManager()
         let config = MockPrivacyConfiguration()
-        privacyConfigManager.mockPrivacyConfig = config
+        privacyConfigManager.privacyConfig = config
         dockCustomizer = DockCustomizerMock()
         subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
         homePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting()
@@ -583,7 +584,7 @@ extension HomePage.Models.ContinueSetUpModel {
             "networkProtection": "disabled"
         ] as! [String: String]
         let manager = MockPrivacyConfigurationManager()
-        manager.mockPrivacyConfig = privacyConfig
+        manager.privacyConfig = privacyConfig
 
         return HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: defaultBrowserProvider,

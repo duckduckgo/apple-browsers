@@ -26,6 +26,7 @@ import Core
 import DDGSync
 import PrivacyDashboard
 import Persistence
+import PrivacyConfig
 import os.log
 
 class AutofillLoginListViewModel: ObservableObject {

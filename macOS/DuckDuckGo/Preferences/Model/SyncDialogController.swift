@@ -26,7 +26,7 @@ import SwiftUI
 import Navigation
 import PixelKit
 import os.log
-import BrowserServicesKit
+import PrivacyConfig
 import AttributedMetric
 
 /// Protocol for handling sync settings view interactions and device management.

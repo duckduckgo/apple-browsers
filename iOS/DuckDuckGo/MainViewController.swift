@@ -47,6 +47,7 @@ import PixelKit
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import UserScript
+import PrivacyConfig
 
 class MainViewController: UIViewController {
 
@@ -3800,12 +3801,20 @@ extension MainViewController: FireExecutorDelegate {
     }
 
     func willStartBurningAIHistory() {
-        // no op
+        if autoClearInProgress {
+            syncAIChatsCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+        } else {
+            syncAIChatsCleaner.recordLocalClear(date: Date())
+        }
     }
 
     func didFinishBurningAIHistory() {
         Task {
             await aiChatViewControllerManager.killSessionAndResetTimer()
+        }
+
+        if syncService.authState != .inactive {
+            syncService.scheduler.requestSyncImmediately()
         }
     }
 }

@@ -20,7 +20,7 @@
 import Foundation
 import UIKit
 import SwiftUI
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 import Core
 import AIChat

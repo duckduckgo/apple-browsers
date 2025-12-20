@@ -22,7 +22,7 @@ import UserScript
 import Combine
 import Core
 import Subscription
-import BrowserServicesKit
+import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
 

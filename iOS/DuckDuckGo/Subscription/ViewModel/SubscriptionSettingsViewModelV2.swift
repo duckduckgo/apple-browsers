@@ -23,7 +23,7 @@ import StoreKit
 import Subscription
 import Core
 import os.log
-import BrowserServicesKit
+import PrivacyConfig
 import Networking
 import Persistence
 

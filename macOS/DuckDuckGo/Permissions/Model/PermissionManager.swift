@@ -17,11 +17,11 @@
 //
 
 import Foundation
-import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
 import os.log
+import PrivacyConfig
 
 protocol PermissionManagerProtocol: AnyObject {
 

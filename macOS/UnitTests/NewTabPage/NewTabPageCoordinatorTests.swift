@@ -17,7 +17,6 @@
 //
 
 import AutoconsentStats
-import BrowserServicesKit
 import Combine
 import Common
 import History
@@ -25,6 +24,8 @@ import HistoryView
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import PrivacyStats
 import SharedTestUtilities
 import XCTest

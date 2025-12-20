@@ -30,6 +30,7 @@ public class BrokerProfileJobEventsHandler: EventMapping<JobEvent> {
         super.init { event, _, _, _ in
             switch event {
             case .profileSaved:
+                userNotificationService.resetFirstScanCompletedNotificationState()
                 userNotificationService.requestNotificationPermission()
             case .firstScanCompleted:
                 userNotificationService.sendFirstScanCompletedNotification()

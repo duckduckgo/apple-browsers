@@ -20,6 +20,7 @@ import BrowserServicesKit
 import FeatureFlags
 import PixelKit
 import PixelKitTestingUtilities
+import PrivacyConfig
 import SharedTestUtilities
 import XCTest
 

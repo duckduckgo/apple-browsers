@@ -22,6 +22,7 @@ import Cocoa
 import Combine
 import Common
 import PixelKit
+import PrivacyConfig
 import SecureStorage
 import WebKit
 import enum UserScript.UserScriptError

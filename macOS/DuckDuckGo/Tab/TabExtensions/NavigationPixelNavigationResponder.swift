@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import FeatureFlags
 import Foundation
 import Navigation
 import PixelKit
+import PrivacyConfig
 import WebKit
 
 extension Navigation {

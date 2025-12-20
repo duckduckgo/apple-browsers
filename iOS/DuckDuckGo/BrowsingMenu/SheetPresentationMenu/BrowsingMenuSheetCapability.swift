@@ -17,10 +17,10 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
-import Persistence
-import Foundation
 import Core
+import Foundation
+import Persistence
+import PrivacyConfig
 
 protocol BrowsingMenuSheetCapable {
     var isAvailable: Bool { get }

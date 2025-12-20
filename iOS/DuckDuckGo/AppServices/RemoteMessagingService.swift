@@ -23,6 +23,7 @@ import Configuration
 import RemoteMessaging
 import Core
 import Persistence
+import PrivacyConfig
 import BackgroundTasks
 import DDGSync
 

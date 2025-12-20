@@ -17,6 +17,8 @@
 //
 
 import Persistence
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import SwiftUI
 import XCTest

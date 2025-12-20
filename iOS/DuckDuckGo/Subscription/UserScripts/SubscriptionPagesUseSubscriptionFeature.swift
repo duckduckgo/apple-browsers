@@ -28,6 +28,7 @@ import Core
 import os.log
 import Networking
 import PixelKit
+import PrivacyConfig
 
 struct SubscriptionPagesUseSubscriptionFeatureConstants {
     static let featureName = "useSubscription"

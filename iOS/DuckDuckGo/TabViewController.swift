@@ -46,6 +46,7 @@ import WKAbstractions
 import SERPSettings
 import AIChat
 import PixelKit
+import PrivacyConfig
 
 class TabViewController: UIViewController {
 

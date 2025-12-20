@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
 import BrowserServicesKit
 import FeatureFlags
+import PrivacyConfig
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class PasswordManagementItemListModelTests: XCTestCase {

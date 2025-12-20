@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
+import AIChat
+import FeatureFlags
 import Foundation
 import PixelKit
-import BrowserServicesKit
-import FeatureFlags
-import AIChat
+import PrivacyConfig
 
 final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
 

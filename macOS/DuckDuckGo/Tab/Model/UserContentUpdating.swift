@@ -22,6 +22,7 @@ import Common
 import BrowserServicesKit
 import History
 import NewTabPage
+import PrivacyConfig
 import UserScript
 import Configuration
 

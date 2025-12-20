@@ -18,6 +18,7 @@
 
 import AppKit
 import BrowserServicesKit
+import PrivacyConfig
 
 final class AutofillLoginImportState: AutofillLoginImportStateProvider, AutofillLoginImportStateStoring {
     private enum Key {

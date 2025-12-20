@@ -16,13 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
-import PixelKitTestingUtilities
-import SubscriptionTestingUtilities
 import Common
-import BrowserServicesKit
+import Foundation
 import PixelKit
+import PixelKitTestingUtilities
+import PrivacyConfig
+import SubscriptionTestingUtilities
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription

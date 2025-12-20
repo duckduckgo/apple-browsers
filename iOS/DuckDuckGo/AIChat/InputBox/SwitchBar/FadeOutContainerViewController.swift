@@ -19,7 +19,7 @@
 
 import UIKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol FadeOutContainerViewControllerDelegate: AnyObject {
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode)

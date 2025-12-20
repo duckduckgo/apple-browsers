@@ -28,6 +28,7 @@ import Subscription
 import os.log
 import AIChat
 import Combine
+import PrivacyConfig
 
 protocol TabManaging {
     var count: Int { get }

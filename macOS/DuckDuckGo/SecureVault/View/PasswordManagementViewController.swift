@@ -25,6 +25,7 @@ import Foundation
 import SecureStorage
 import SwiftUI
 import PixelKit
+import PrivacyConfig
 import os.log
 
 protocol PasswordManagementDelegate: AnyObject {

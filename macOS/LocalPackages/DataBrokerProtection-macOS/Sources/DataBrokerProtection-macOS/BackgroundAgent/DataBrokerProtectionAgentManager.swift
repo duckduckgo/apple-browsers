@@ -28,6 +28,7 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import PrivacyConfig
 import FeatureFlags
 
 // This is to avoid exposing all the dependancies outside of the DBP package

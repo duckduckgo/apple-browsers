@@ -18,8 +18,8 @@
 
 import AIChat
 import AppKit
-import BrowserServicesKit
 import Combine
+import PrivacyConfig
 
 protocol AIChatMenuVisibilityConfigurable {
 

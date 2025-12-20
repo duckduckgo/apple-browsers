@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
 import Foundation
 import Persistence
+import PrivacyConfig
 
 struct ProductionDependencies: SyncDependencies {
 

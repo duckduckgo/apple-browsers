@@ -25,6 +25,7 @@ import History
 import NewTabPage
 import Persistence
 import PixelKit
+import PrivacyConfig
 import PrivacyStats
 import AutoconsentStats
 import Suggestions

@@ -17,6 +17,7 @@
 //
 import Foundation
 import WebKit
+import PrivacyConfig
 import BrowserServicesKit
 import UserScript
 import os.log
@@ -75,7 +76,7 @@ final class DataBrokerUserScript: UserScriptsProvider {
     init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig, shouldContinueActionHandler: @escaping () -> Bool) throws {
         contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig.withDataBrokerProtectionFeatureOverride,
                                                                     properties: prefs,
-                                                                    isIsolated: true,
+                                                                    scriptContext: .contentScopeIsolated,
                                                                     privacyConfigurationJSONGenerator: nil)
         dataBrokerFeature = DataBrokerProtectionFeature(delegate: delegate, executionConfig: executionConfig, shouldContinueActionHandler: shouldContinueActionHandler)
         dataBrokerFeature.broker = contentScopeUserScriptIsolated.broker

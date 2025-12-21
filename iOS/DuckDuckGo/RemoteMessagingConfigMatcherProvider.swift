@@ -105,7 +105,13 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let shouldShowWinBackOfferUrgencyMessage = winBackOfferService.shouldShowUrgencyMessage
-        let isCurrentPIRUser = (await dbpRunPrerequisitesDelegate?.validateRunPrerequisites()) ?? false
+        let isCurrentPIRUser: Bool
+
+        if featureFlagger.isFeatureOn(.personalInformationRemoval) {
+            isCurrentPIRUser = (await dbpRunPrerequisitesDelegate?.validateRunPrerequisites()) ?? false
+        } else {
+            isCurrentPIRUser = false
+        }
 
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 

@@ -185,14 +185,14 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let isCurrentFreemiumDBPUser = !subscriptionManager.isUserAuthenticated && freemiumDBPUserStateManager.didActivate
-
         let hasPIREntitlement = (try? await subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false
+
         let dbpDataManager = dbpDataManagerProvider?()
         let isCurrentPIRUser: Bool
 
-        if let dbpDataManager {
+        if (isCurrentFreemiumDBPUser || hasPIREntitlement), let dbpDataManager {
             let profile = try? dbpDataManager.fetchProfile()
-            isCurrentPIRUser = (isCurrentFreemiumDBPUser || hasPIREntitlement) && profile != nil
+            isCurrentPIRUser = profile != nil
         } else {
             isCurrentPIRUser = false
         }

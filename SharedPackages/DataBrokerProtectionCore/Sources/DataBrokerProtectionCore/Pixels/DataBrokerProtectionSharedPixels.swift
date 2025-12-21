@@ -89,6 +89,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let numStalled = "num_stalled"
         public static let totalByBroker = "total_by_broker"
         public static let stalledByBroker = "stalled_by_broker"
+        public static let needBackgroundAppRefresh = "need_background_app_refresh"
         public static let jsFile = "jsFile"
         public static let dataBrokerJsonFileKey = "data_broker_json_file"
         public static let removedAtParamKey = "removed_at"
@@ -142,7 +143,7 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double, parent: String)
 
     // KPIs - engagement
-    case dailyActiveUser(isAuthenticated: Bool)
+    case dailyActiveUser(isAuthenticated: Bool, needBackgroundAppRefresh: Bool?)
     case weeklyActiveUser(isAuthenticated: Bool)
     case monthlyActiveUser(isAuthenticated: Bool)
 
@@ -446,19 +447,19 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.durationMinMs: String(durationMinMs),
                     Consts.durationMaxMs: String(durationMaxMs),
                     Consts.durationMedianMs: String(durationMedianMs),
-                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+                    Consts.isAuthenticated: isAuthenticated.description]
         case .weeklyReportStalledScans(let numTotal, let numStalled, let totalByBroker, let stalledByBroker, let isAuthenticated):
             return [Consts.numTotal: String(numTotal),
                     Consts.numStalled: String(numStalled),
                     Consts.totalByBroker: totalByBroker,
                     Consts.stalledByBroker: stalledByBroker,
-                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+                    Consts.isAuthenticated: isAuthenticated.description]
         case .weeklyReportStalledOptOuts(let numTotal, let numStalled, let totalByBroker, let stalledByBroker, let isAuthenticated):
             return [Consts.numTotal: String(numTotal),
                     Consts.numStalled: String(numStalled),
                     Consts.totalByBroker: totalByBroker,
                     Consts.stalledByBroker: stalledByBroker,
-                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+                    Consts.isAuthenticated: isAuthenticated.description]
         case .optOutJobAt7DaysConfirmed(let dataBroker),
                 .optOutJobAt7DaysUnconfirmed(let dataBroker),
                 .optOutJobAt14DaysConfirmed(let dataBroker),
@@ -468,10 +469,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutJobAt42DaysConfirmed(let dataBroker),
                 .optOutJobAt42DaysUnconfirmed(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
-        case .dailyActiveUser(let isAuthenticated),
-                .weeklyActiveUser(let isAuthenticated),
+        case .dailyActiveUser(let isAuthenticated, let needBackgroundAppRefresh):
+            var params = [Consts.isAuthenticated: isAuthenticated.description]
+            if let needBackgroundAppRefresh {
+                params[Consts.needBackgroundAppRefresh] = needBackgroundAppRefresh.description
+            }
+            return params
+        case .weeklyActiveUser(let isAuthenticated),
                 .monthlyActiveUser(let isAuthenticated):
-            return [Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+            return [Consts.isAuthenticated: isAuthenticated.description]
         case .scanningEventNewMatch,
                 .scanningEventReAppearance,
                 .secureVaultInitError,

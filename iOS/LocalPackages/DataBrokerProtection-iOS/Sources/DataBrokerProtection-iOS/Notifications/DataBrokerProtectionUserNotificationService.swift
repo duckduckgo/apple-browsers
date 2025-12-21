@@ -29,6 +29,7 @@ public protocol DataBrokerProtectionUserNotificationService {
     func sendFirstRemovedNotificationIfPossible()
     func sendAllInfoRemovedNotificationIfPossible()
     func scheduleCheckInNotificationIfPossible()
+    func resetFirstScanCompletedNotificationState()
 }
 
 public class DefaultDataBrokerProtectionUserNotificationService: DataBrokerProtectionUserNotificationService {
@@ -57,13 +58,16 @@ public class DefaultDataBrokerProtectionUserNotificationService: DataBrokerProte
     }
 
     public func sendFirstScanCompletedNotification() {
-        Task {
-            if await !authenticationManager.isUserAuthenticated {
-                sendNotification(.firstFreemiumScanComplete)
-                pixelHandler.fire(.notificationSentFirstFreemiumScanComplete)
-            } else {
-                sendNotification(.firstScanComplete)
-                pixelHandler.fire(.notificationSentFirstScanComplete)
+        if userDefaults[.didSendFirstScanCompletedNotification] != true {
+            Task {
+                if await !authenticationManager.isUserAuthenticated {
+                    sendNotification(.firstFreemiumScanComplete)
+                    pixelHandler.fire(.notificationSentFirstFreemiumScanComplete)
+                } else {
+                    sendNotification(.firstScanComplete)
+                    pixelHandler.fire(.notificationSentFirstScanComplete)
+                }
+                userDefaults[.didSendFirstScanCompletedNotification] = true
             }
         }
     }
@@ -90,6 +94,10 @@ public class DefaultDataBrokerProtectionUserNotificationService: DataBrokerProte
             userDefaults[.didSendCheckedInNotification] = true
             pixelHandler.fire(.notificationScheduled1WeekCheckIn)
         }
+    }
+
+    public func resetFirstScanCompletedNotificationState() {
+        userDefaults[.didSendFirstScanCompletedNotification] = false
     }
 
     // MARK: - Private Methods
@@ -140,6 +148,7 @@ public class DefaultDataBrokerProtectionUserNotificationService: DataBrokerProte
 
 private extension UserDefaults {
     enum Key: String {
+        case didSendFirstScanCompletedNotification
         case didSendFirstRemovedNotification
         case didSendAllInfoRemovedNotification
         case didSendCheckedInNotification

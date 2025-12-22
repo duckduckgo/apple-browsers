@@ -17,7 +17,6 @@
 //
 
 import PixelKit
-import FeatureFlags
 
 enum AutoconsentPixel: PixelKitEvent {
 
@@ -104,19 +103,10 @@ enum AutoconsentPixel: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
-        case let .summary(events): {
-            var params = Dictionary(uniqueKeysWithValues: AutoconsentPixel.summaryPixels.map { pixel in
-                (pixel.key, "\(events[pixel.key] ?? 0)")
+        case let .summary(events):
+            Dictionary(uniqueKeysWithValues: AutoconsentPixel.summaryPixels.map { pixel in
+            (pixel.key, "\(events[pixel.key] ?? 0)")
             })
-            if let cohort = Application.appDelegate.featureFlagger.resolveCohort(for: FeatureFlag.autoconsentHeuristicAction) as? FeatureFlag.AutoconsentHeuristicActionCohort {
-                if cohort == .treatment {
-                    params["consentHeuristicEnabled"] = "1"
-                } else {
-                    params["consentHeuristicEnabled"] = "0"
-                }
-            }
-            return params
-        }()
         case let .usageStats(stats): {
             var params = stats
             // Added as a requirement from the privacy triage
@@ -124,17 +114,7 @@ enum AutoconsentPixel: PixelKitEvent {
             params["petal"] = "true"
             return params
         }()
-        default: {
-            var params: [String: String] = [:]
-            if let cohort = Application.appDelegate.featureFlagger.resolveCohort(for: FeatureFlag.autoconsentHeuristicAction) as? FeatureFlag.AutoconsentHeuristicActionCohort {
-                if cohort == .treatment {
-                    params["consentHeuristicEnabled"] = "1"
-                } else {
-                    params["consentHeuristicEnabled"] = "0"
-                }
-            }
-            return params
-        }()
+        default: [:]
         }
     }
 

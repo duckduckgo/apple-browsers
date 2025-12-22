@@ -637,11 +637,16 @@ extension AutoconsentUserScript {
     }
 
     func firePixel(pixel: AutoconsentPixel) {
+        var additionalParams: [String: String] = [:]
+        if let enabled = consentHeuristicEnabled {
+            additionalParams["consentHeuristicEnabled"] = enabled ? "1" : "0"
+        }
+
         if management.pixelCounter.isEmpty {
             // Fire a summary pixel, containing counters of all other pixels, 2 minutes after
             // the first event is received.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 60*2) {
-                PixelKit.fire(AutoconsentPixel.summary(events: self.management.pixelCounter), frequency: .standard)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 60*2) { [additionalParams] in
+                PixelKit.fire(AutoconsentPixel.summary(events: self.management.pixelCounter), frequency: .standard, withAdditionalParameters: additionalParams)
                 self.management.pixelCounter = [:]
                 self.management.detectedByPatternsCache.removeAll()
                 self.management.detectedByBothCache.removeAll()
@@ -652,7 +657,7 @@ extension AutoconsentUserScript {
         management.pixelCounter[pixel.key, default: 0] += 1
 
         // fire daily pixel if needed
-        PixelKit.fire(pixel, frequency: .daily)
+        PixelKit.fire(pixel, frequency: .daily, withAdditionalParameters: additionalParams)
     }
 
     // MARK: - Reload Loop Detection

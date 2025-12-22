@@ -446,9 +446,15 @@ extension AutoconsentUserScript {
         Logger.autoconsent.debug("Cookie popup found: \(String(describing: messageData))")
         firePixel(pixel: .popupFound)
 
+        // measure: at least one popup handled within X days
         PixelKit.fireExperimentPixel(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...1, value: "true")
         PixelKit.fireExperimentPixel(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...5, value: "true")
         PixelKit.fireExperimentPixel(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...10, value: "true")
+        // measure: at least N popups handled within 10 days
+        PixelKit.fireExperimentPixelIfThresholdReached(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...10, threshold: 10)
+        PixelKit.fireExperimentPixelIfThresholdReached(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...10, threshold: 5)
+        PixelKit.fireExperimentPixelIfThresholdReached(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...5, threshold: 10)
+        PixelKit.fireExperimentPixelIfThresholdReached(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...5, threshold: 5)
 
         // Check for reload loop
         detectReloadLoop(cmpName: messageData.cmp)

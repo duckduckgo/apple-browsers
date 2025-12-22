@@ -32,7 +32,7 @@ final class UserAgentConfigurationTests {
     let store = MockKeyValueStore()
 
     @Test
-    func testFirstLaunchExtractsAndSetsAndCachesDefaultUserAgent() async {
+    func testFirstLaunchExtractsAndSetsAndCachesDefaultUserAgent() async throws {
         let osProvider = MockOSVersionProvider(osVersionMajorMinorPatch: "18.0.1")
 
         let config = UserAgentConfiguration(
@@ -51,7 +51,8 @@ final class UserAgentConfigurationTests {
         #expect(uaManager.extractAndSetDefaultUserAgentCallCount == 1)
         #expect(uaManager.extractedAndSetDefaultUserAgent == "mock-UA")
 
-        let decoded = try? PropertyListDecoder().decode(CachedUserAgent.self, from: store.store["default_user_agent"]!)
+        let encodedData = try #require(store.store["default_user_agent"] as? Data)
+        let decoded = try? PropertyListDecoder().decode(CachedUserAgent.self, from: encodedData)
         #expect(decoded?.userAgent == "mock-UA")
         #expect(decoded?.osVersion == "18.0.1")
     }

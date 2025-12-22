@@ -131,9 +131,7 @@ class FireExecutor: FireExecuting {
     func burn(options: FireOptions,
               applicationState: DataStoreWarmup.ApplicationState = .unknown,
               fireContext: FireContext) async {
-        if delegate == nil {
-            assertionFailure("Delegate should be not be nil. This leads to unexpected behavior.")
-        }
+        assert(delegate != nil, "Delegate should not be nil. This leads to unexpected behavior.")
         
         // Ensure prepare() was called
         if !isPrepared {

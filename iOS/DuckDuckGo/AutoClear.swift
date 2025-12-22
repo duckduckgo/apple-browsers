@@ -20,7 +20,7 @@
 import Foundation
 import UIKit
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol AutoClearing {
 

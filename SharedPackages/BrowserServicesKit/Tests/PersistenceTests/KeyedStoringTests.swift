@@ -2406,11 +2406,19 @@ final class KeyedStoringTests {
         // Then - values are migrated from legacy keys
         #expect(name == "Alice")
         #expect(age == 25)
-
+        
         // And - legacy dotted keys are removed after migration
         #expect(defaults.string(forKey: "com.app.legacy.username") == nil)
         #expect(defaults.integer(forKey: "com.app.legacy.age") == 0) // UserDefaults returns 0 for missing Int
         #expect(defaults.object(forKey: "com.app.legacy.age") == nil) // Verify it's actually gone
+        
+        // And - values are written to new keys during migration
+        #expect(defaults.string(forKey: "userName") == "Alice")
+        #expect(defaults.integer(forKey: "userAge") == 25)
+        
+        // And - subsequent reads work from new keys
+        #expect(storage.username == "Alice")
+        #expect(storage.userAge == 25)
     }
 
     @Test("Legacy key migration prefers new key over legacy key")
@@ -2473,20 +2481,16 @@ final class KeyedStoringTests {
 
         // Then - value is returned from legacy dotted key
         #expect(firstRead == "MigrateMe")
-
+        
         // And - legacy dotted key is removed after first read
         #expect(defaults.string(forKey: "com.app.legacy.username") == nil)
-
-        // But - subsequent reads return nil (value not persisted to new key)
-        let secondRead = storage.username
-        #expect(secondRead == nil)
-
-        // To complete migration, application must write value back:
-        storage.username = firstRead
-
-        // Now - value is in new key and persists
+        
+        // And - value is written to new key during migration
         #expect(defaults.string(forKey: "userName") == "MigrateMe")
-        #expect(storage.username == "MigrateMe")
+        
+        // And - subsequent reads return the migrated value from new key
+        let secondRead = storage.username
+        #expect(secondRead == "MigrateMe")
     }
 
     @Test("Legacy key migration works with observable storage")
@@ -2511,9 +2515,15 @@ final class KeyedStoringTests {
         // Then - initial value comes from legacy dotted key
         #expect(receivedValues.count == 1)
         #expect(receivedValues[0] == "LegacyUser")
-
+        
         // And - legacy dotted key is removed after initial read
         #expect(defaults.string(forKey: "com.app.legacy.username") == nil)
+        
+        // And - value is written to new key during migration
+        #expect(defaults.string(forKey: "userName") == "LegacyUser")
+        
+        // And - subsequent reads work from new key
+        #expect(storage.username == "LegacyUser")
     }
 
     // MARK: - Dot Assertion Tests

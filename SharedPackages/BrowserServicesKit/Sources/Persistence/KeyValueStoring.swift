@@ -379,8 +379,16 @@ public struct KeyedStorage<Keys: StoringKeys>: KeyedStoring, ThrowingKeyedStorin
         // Try legacy key if available
         if let legacyKey = storageKey.migrateLegacyKey,
            let value: Value = try? decodeValue(from: storage.object(forKey: legacyKey)) {
-            // Remove legacy key after migration
-            storage.removeObject(forKey: legacyKey)
+            // Migrate: write to new key, then remove legacy key
+            do {
+                guard let encodedValue = try encodeValue(value) else {
+                    throw KeyValueStoringError.invalidValue(value)
+                }
+                storage.set(encodedValue, forKey: storageKey.rawValue)
+                storage.removeObject(forKey: legacyKey)
+            } catch {
+                assertionFailure("Failed to encode migrated value \(String(describing: value)) for key '\(storageKey.rawValue)': \(error)")
+            }
             return value
         }
 
@@ -440,8 +448,16 @@ public struct ThrowingKeyedStorage<Keys: StoringKeys>: ThrowingKeyedStoring {
         // Try legacy key if available
         if let legacyKey = storageKey.migrateLegacyKey,
            let value: Value = try decodeValue(from: try storage.object(forKey: legacyKey)) {
-            // Remove legacy key after migration
-            try storage.removeObject(forKey: legacyKey)
+            // Migrate: write to new key, then remove legacy key
+            do {
+                guard let encodedValue = try encodeValue(value) else {
+                    throw KeyValueStoringError.invalidValue(value)
+                }
+                try storage.set(encodedValue, forKey: storageKey.rawValue)
+                try? storage.removeObject(forKey: legacyKey)
+            } catch {
+                assertionFailure("Failed to encode migrated value \(String(describing: value)) for key '\(storageKey.rawValue)': \(error)")
+            }
             return value
         }
 
@@ -573,8 +589,16 @@ public final class ObservableKeyedStorage<Keys: StoringKeys>: ObservableKeyedSto
         // Try legacy key if available
         if let legacyKey = storageKey.migrateLegacyKey,
            let value: Value = try? decodeValue(from: storage.object(forKey: legacyKey)) {
-            // Remove legacy key after migration
-            storage.removeObject(forKey: legacyKey)
+            // Migrate: write to new key, then remove legacy key
+            do {
+                guard let encodedValue = try encodeValue(value) else {
+                    throw KeyValueStoringError.invalidValue(value)
+                }
+                storage.set(encodedValue, forKey: storageKey.rawValue)
+                storage.removeObject(forKey: legacyKey)
+            } catch {
+                assertionFailure("Failed to encode migrated value \(String(describing: value)) for key '\(storageKey.rawValue)': \(error)")
+            }
             return value
         }
 
@@ -675,8 +699,16 @@ public final class ObservableThrowingKeyedStorage<Keys: StoringKeys>: Observable
         // Try legacy key if available
         if let legacyKey = storageKey.migrateLegacyKey,
            let value: Value = try decodeValue(from: try storage.object(forKey: legacyKey)) {
-            // Remove legacy key after migration
-            try storage.removeObject(forKey: legacyKey)
+            // Migrate: write to new key, then remove legacy key
+            do {
+                guard let encodedValue = try encodeValue(value) else {
+                    throw KeyValueStoringError.invalidValue(value)
+                }
+                try storage.set(encodedValue, forKey: storageKey.rawValue)
+                try? storage.removeObject(forKey: legacyKey)
+            } catch {
+                assertionFailure("Failed to encode migrated value \(String(describing: value)) for key '\(storageKey.rawValue)': \(error)")
+            }
             return value
         }
 

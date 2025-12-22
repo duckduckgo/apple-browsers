@@ -38,7 +38,7 @@ struct FireOptions: OptionSet {
 enum FireContext {
     case manualFire              // User pressed Fire Button
     case autoClearOnLaunch       // Auto-clear during app launch
-    case autoClearWhileActive    // Auto-clear while app is running (time-based)
+    case autoClearOnForeground   // Auto-clear after period of inactivity when returning to foreground
 }
 
 protocol FireExecutorDelegate: AnyObject {

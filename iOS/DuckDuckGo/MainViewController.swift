@@ -3748,7 +3748,7 @@ extension MainViewController: FireExecutorDelegate {
             return
         case .autoClearOnLaunch:
             autoClearInProgress = true
-        case .autoClearWhileActive:
+        case .autoClearOnForeground:
             autoClearInProgress = true
             clearNavigationStack()
         }
@@ -3791,7 +3791,7 @@ extension MainViewController: FireExecutorDelegate {
         case .autoClearOnLaunch:
             autoClearInProgress = false
             autoClearShouldRefreshUIAfterClear = true
-        case .autoClearWhileActive:
+        case .autoClearOnForeground:
             autoClearInProgress = false
             if autoClearShouldRefreshUIAfterClear {
                 refreshUIAfterClear()

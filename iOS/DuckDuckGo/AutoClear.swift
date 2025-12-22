@@ -58,7 +58,7 @@ final class AutoClear: AutoClearing {
         if shouldInjectAIChatsFireOption(into: options) {
             options.insert(.aiChats)
         }
-        let fireContext: FireContext = launching ? .autoClearOnLaunch : .autoClearWhileActive
+        let fireContext: FireContext = launching ? .autoClearOnLaunch : .autoClearOnForeground
         await worker.burn(options: options, applicationState: applicationState, fireContext: fireContext)
     }
 

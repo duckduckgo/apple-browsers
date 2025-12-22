@@ -115,7 +115,7 @@ class AutoClearTests: XCTestCase {
         // Then
         XCTAssertEqual(mockFireExecutor.burnCallCount, 1)
         XCTAssertEqual(mockFireExecutor.burnApplicationState, .active)
-        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearWhileActive)
+        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnForeground)
     }
     
     func testClearDataIfEnabledWithLaunchingUsesAutoClearOnLaunchContext() async {
@@ -156,7 +156,7 @@ class AutoClearTests: XCTestCase {
 
         // Then
         XCTAssertEqual(mockFireExecutor.burnCallCount, 1)
-        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearWhileActive)
+        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnForeground)
     }
 
 }

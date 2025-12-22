@@ -44,6 +44,7 @@ enum TestKeys: String, StorageKeyDescribing {
     case injectionTestValue
     case injectionTestCount
     case throwingTestValue
+    case testString
     case userName = "testUserName"
     case userAge = "testUserAge"
     case isActive = "testIsActive"
@@ -150,9 +151,9 @@ public final class ServiceWithStorage {
 }
 
 public final class ServiceWithThrowingStorage {
-    let storage: ObservableThrowingKeyedStorage<ThrowingInjectionKeys>
+    let storage: any ObservableThrowingKeyedStoring<ThrowingInjectionKeys>
 
-    init(storage: ObservableThrowingKeyedStorage<ThrowingInjectionKeys>) {
+    init(storage: any ObservableThrowingKeyedStoring<ThrowingInjectionKeys>) {
         self.storage = storage
     }
 }
@@ -492,7 +493,7 @@ final class KeyedStoringTests {
     @Test("MockKeyValueStore works with KeyedStoring")
     func mockKeyValueStoreWithKeyedStoring() {
         let mockStore = MockKeyValueStore()
-        let storage: any KeyedStoring<AppSettingsKeys> = KeyedStorage(storage: mockStore)
+        let storage: any KeyedStoring<AppSettingsKeys> = mockStore.keyedStoring()
 
         // Test that storage works with mock store
         storage.isFirstLaunch = true
@@ -507,7 +508,7 @@ final class KeyedStoringTests {
     @Test("Nested protocol works with MockKeyValueStore")
     func nestedProtocolWorksWithMockKeyValueStore() {
         let mockStore = MockKeyValueStore()
-        let storage: any KeyedStoring<NestedKeys> = KeyedStorage(storage: mockStore)
+        let storage: any KeyedStoring<NestedKeys> = mockStore.keyedStoring()
 
         // When - use nested storage
         storage.nestedValue = "test"
@@ -716,7 +717,7 @@ final class KeyedStoringTests {
 
     @Test("Date type supports read and write")
     func dateTypeReadWrite() {
-        let storage = defaults.keyedStoring(for: DateKeys.self)
+        let storage: any KeyedStoring<DateKeys> = defaults.keyedStoring()
         let testDate = Date(timeIntervalSince1970: 1_700_000_000) // 2023-11-14
 
         // Given - date value set
@@ -729,7 +730,7 @@ final class KeyedStoringTests {
 
     @Test("Date type handles nil values")
     func dateTypeNilValue() {
-        let storage = defaults.keyedStoring(for: DateKeys.self)
+        let storage: any KeyedStoring<DateKeys> = defaults.keyedStoring()
 
         // Given - no date set (Note: Date?? requires flatMap for comparison)
         #expect(storage.optionalDate.flatMap { $0 } == nil)
@@ -750,7 +751,7 @@ final class KeyedStoringTests {
 
     @Test("Date type publisher emits changes")
     func dateTypePublisherEmitsChanges() {
-        let storage = defaults.observableKeyedStoring(for: DateKeys.self)
+        let storage: any ObservableKeyedStoring<DateKeys> = defaults.observableKeyedStoring()
         var cancellables = Set<AnyCancellable>()
         var receivedDates: [Date?] = []
 
@@ -778,7 +779,7 @@ final class KeyedStoringTests {
     @Test("Date type with observable objectWillChange")
     @MainActor
     func dateTypeObservableObjectWillChange() {
-        let storage = defaults.observableKeyedStoring(for: DateKeys.self)
+        let storage: any ObservableKeyedStoring<DateKeys> = defaults.observableKeyedStoring()
         var cancellables = Set<AnyCancellable>()
         var changeCount = 0
 
@@ -802,7 +803,7 @@ final class KeyedStoringTests {
 
     @Test("Multiple Date properties work independently")
     func multipleDatePropertiesIndependent() {
-        let storage = defaults.keyedStoring(for: DateKeys.self)
+        let storage: any KeyedStoring<DateKeys> = defaults.keyedStoring()
 
         let date1 = Date(timeIntervalSince1970: 1_500_000_000)
         let date2 = Date(timeIntervalSince1970: 1_600_000_000)
@@ -832,11 +833,11 @@ final class KeyedStoringTests {
         let testDate = Date(timeIntervalSince1970: 1_700_000_000)
 
         // Given - date set in first instance
-        let storage1 = defaults.keyedStoring(for: DateKeys.self)
+        let storage1: any KeyedStoring<DateKeys> = defaults.keyedStoring()
         storage1.lastModified = testDate
 
         // When - new instance created
-        let storage2 = defaults.keyedStoring(for: DateKeys.self)
+        let storage2: any KeyedStoring<DateKeys> = defaults.keyedStoring()
 
         // Then - date is still accessible
         #expect(storage2.lastModified == testDate)
@@ -844,7 +845,7 @@ final class KeyedStoringTests {
 
     @Test("Date type with very recent dates")
     func dateTypeVeryRecentDates() {
-        let storage = defaults.keyedStoring(for: DateKeys.self)
+        let storage: any KeyedStoring<DateKeys> = defaults.keyedStoring()
         let now = Date()
         let future = Date(timeIntervalSinceNow: 86400) // Tomorrow
 
@@ -861,7 +862,7 @@ final class KeyedStoringTests {
 
     @Test("Enum-based keys work with String values")
     func enumBasedKeysStringValues() {
-        let storage = defaults.keyedStoring(for: EnumBasedKeys.self)
+        let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
 
         // Given - value set via enum key
         storage.userName = "Alice"
@@ -874,7 +875,7 @@ final class KeyedStoringTests {
 
     @Test("Enum-based keys work with Int values")
     func enumBasedKeysIntValues() {
-        let storage = defaults.keyedStoring(for: EnumBasedKeys.self)
+        let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
 
         // Given - Int value set
         storage.userAge = 25
@@ -886,7 +887,7 @@ final class KeyedStoringTests {
 
     @Test("Enum-based keys work with Bool values")
     func enumBasedKeysBoolValues() {
-        let storage = defaults.keyedStoring(for: EnumBasedKeys.self)
+        let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
 
         // Given - Bool value set
         storage.isActive = true
@@ -898,7 +899,7 @@ final class KeyedStoringTests {
 
     @Test("Enum-based keys work with Date values")
     func enumBasedKeysDateValues() {
-        let storage = defaults.keyedStoring(for: EnumBasedKeys.self)
+        let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
         let testDate = Date(timeIntervalSince1970: 1_700_000_000)
 
         // Given - Date value set
@@ -911,7 +912,7 @@ final class KeyedStoringTests {
 
     @Test("Enum-based keys work with InMemoryKeyValueStore")
     func enumBasedKeysWithInMemoryStore() {
-        let storage = InMemoryKeyValueStore().keyedStoring(for: EnumBasedKeys.self)
+        let storage: any KeyedStoring<EnumBasedKeys> = InMemoryKeyValueStore().keyedStoring()
 
         // Given - multiple values set
         storage.userName = "Bob"
@@ -927,7 +928,7 @@ final class KeyedStoringTests {
     @Test("Enum-based keys work with observable storage")
     @MainActor
     func enumBasedKeysWithObservableStorage() {
-        let storage = defaults.observableKeyedStoring(for: EnumBasedKeys.self)
+        let storage: any ObservableKeyedStoring<EnumBasedKeys> = defaults.observableKeyedStoring()
         var cancellables = Set<AnyCancellable>()
         var receivedNames: [String?] = []
 
@@ -949,7 +950,7 @@ final class KeyedStoringTests {
 
     @Test("Enum-based keys prevent typos via type safety")
     func enumBasedKeysTypeSafety() {
-        let storage = defaults.keyedStoring(for: EnumBasedKeys.self)
+        let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
 
         // Given - value set via enum (compile-time safe)
         storage.userName = "Eve"
@@ -964,7 +965,7 @@ final class KeyedStoringTests {
 
     @Test("Enum-based keys with nil values")
     func enumBasedKeysNilValues() {
-        let storage = defaults.keyedStoring(for: EnumBasedKeys.self)
+        let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
 
         // Given - value set then removed
         storage.userName = "Frank"
@@ -1531,6 +1532,236 @@ final class KeyedStoringTests {
         #expect(receivedValues == [false])
     }
 
+    @Test("InMemoryKeyValueStore publisher emits initial value on subscription")
+    @MainActor
+    func inMemoryKeyValueStorePublisherEmitsInitialValue() {
+        struct MockStoreKeys: StoringKeys {
+            let testValue = StorageKey<String>(TestKeys.testString)
+        }
+
+        let mockStore = InMemoryKeyValueStore()
+        let storage: any ObservableKeyedStoring<MockStoreKeys> = mockStore.observableKeyedStoring()
+        var receivedValues: [String?] = []
+
+        // Given - value exists before subscription
+        storage.testValue = "initialValue"
+
+        // When - subscribe to publisher
+        storage.publisher(for: \.testValue).sink { value in
+            receivedValues.append(value)
+        }.store(in: &cancellables)
+
+        // Then - receives initial value immediately
+        #expect(receivedValues == ["initialValue"])
+
+        // When - change value
+        storage.testValue = "newValue"
+
+        // Then - receives new value
+        #expect(receivedValues == ["initialValue", "newValue"])
+    }
+
+    @Test("UserDefaults publisher with dotted legacy key emits initial value on subscription")
+    @MainActor
+    func userDefaultsPublisherWithDottedLegacyKeyEmitsInitialValue() {
+        struct LegacyDottedKeys: StoringKeys {
+            // New key without dots, legacy key with dots
+            let userName = StorageKey<String>(
+                TestKeys.newUserName,  // Raw value is "userName"
+                migrateLegacyKey: "com.example.legacy.userName",
+                assertionHandler: { _ in }
+            )
+        }
+
+        let suiteName = "test-dotted-\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: suiteName)!
+        defer { testDefaults.removePersistentDomain(forName: suiteName) }
+
+        let storage: any ObservableKeyedStoring<LegacyDottedKeys> = testDefaults.observableKeyedStoring()
+        var receivedValues: [String?] = []
+
+        // Given - value stored under legacy dotted key
+        testDefaults.set("LegacyValue", forKey: "com.example.legacy.userName")
+
+        // When - subscribe to publisher
+        storage.publisher(for: \.userName).sink { value in
+            receivedValues.append(value)
+        }.store(in: &cancellables)
+
+        // Then - receives initial value immediately (read from legacy key)
+        #expect(receivedValues == ["LegacyValue"])
+
+        // And - legacy key is removed after first read
+        #expect(testDefaults.string(forKey: "com.example.legacy.userName") == nil)
+
+        // When - change value (writes to new key)
+        storage.userName = "NewValue"
+
+        // Then - receives new value
+        #expect(receivedValues == ["LegacyValue", "NewValue"])
+
+        // And - new value is in new key
+        #expect(testDefaults.string(forKey: "userName") == "NewValue")
+    }
+
+    @Test("Publisher emits initial nil value on subscription")
+    @MainActor
+    func publisherEmitsInitialNilValueOnSubscription() {
+        let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
+        var receivedValues: [Bool?] = []
+
+        // Given - no value exists (nil)
+        #expect(storage.isFirstLaunch == nil)
+
+        // When - subscribe to publisher
+        storage.publisher(for: \.isFirstLaunch).sink { value in
+            receivedValues.append(value)
+        }.store(in: &cancellables)
+
+        // Then - receives nil immediately
+        #expect(receivedValues.count == 1)
+        #expect(receivedValues[0] == nil)
+
+        // When - set a value
+        storage.isFirstLaunch = true
+
+        // Then - receives the new value
+        #expect(receivedValues == [nil, true])
+    }
+
+    @Test("Publisher observes value removal")
+    @MainActor
+    func publisherObservesValueRemoval() {
+        let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
+        var receivedValues: [Double?] = []
+
+        // Given - value exists before subscription
+        storage.refreshInterval = 30.0
+
+        // When - subscribe to publisher
+        storage.publisher(for: \.refreshInterval).sink { value in
+            receivedValues.append(value)
+        }.store(in: &cancellables)
+
+        // Then - receives initial value
+        #expect(receivedValues == [30.0])
+
+        // When - remove value (set to nil)
+        storage.refreshInterval = nil
+
+        // Then - receives nil
+        #expect(receivedValues == [30.0, nil])
+
+        // When - set new value after removal
+        storage.refreshInterval = 60.0
+
+        // Then - receives new value
+        #expect(receivedValues == [30.0, nil, 60.0])
+    }
+
+    @Test("InMemoryKeyValueStore publisher emits initial nil value")
+    @MainActor
+    func inMemoryKeyValueStorePublisherEmitsInitialNilValue() {
+        struct MockStoreKeys: StoringKeys {
+            let testValue = StorageKey<String>(TestKeys.testString)
+        }
+
+        let mockStore = InMemoryKeyValueStore()
+        let storage: any ObservableKeyedStoring<MockStoreKeys> = mockStore.observableKeyedStoring()
+        var receivedValues: [String?] = []
+
+        // Given - no value exists (nil)
+        #expect(storage.testValue == nil)
+
+        // When - subscribe to publisher
+        storage.publisher(for: \.testValue).sink { value in
+            receivedValues.append(value)
+        }.store(in: &cancellables)
+
+        // Then - receives nil immediately
+        #expect(receivedValues.count == 1)
+        #expect(receivedValues[0] == nil)
+
+        // When - set a value
+        storage.testValue = "nowExists"
+
+        // Then - receives the new value
+        #expect(receivedValues == [nil, "nowExists"])
+    }
+
+    @Test("InMemoryKeyValueStore publisher observes value removal")
+    @MainActor
+    func inMemoryKeyValueStorePublisherObservesValueRemoval() {
+        struct MockStoreKeys: StoringKeys {
+            let testValue = StorageKey<Int>(TestKeys.injectionTestCount)
+        }
+
+        let mockStore = InMemoryKeyValueStore()
+        let storage: any ObservableKeyedStoring<MockStoreKeys> = mockStore.observableKeyedStoring()
+        var receivedValues: [Int?] = []
+
+        // Given - value exists before subscription
+        storage.testValue = 42
+
+        // When - subscribe to publisher
+        storage.publisher(for: \.testValue).sink { value in
+            receivedValues.append(value)
+        }.store(in: &cancellables)
+
+        // Then - receives initial value
+        #expect(receivedValues == [42])
+
+        // When - remove value (set to nil)
+        storage.testValue = nil
+
+        // Then - receives nil
+        #expect(receivedValues == [42, nil])
+
+        // When - set new value after removal
+        storage.testValue = 100
+
+        // Then - receives new value
+        #expect(receivedValues == [42, nil, 100])
+    }
+
+    @Test("UserDefaults with dotted key publisher observes value removal")
+    @MainActor
+    func userDefaultsWithDottedKeyPublisherObservesValueRemoval() {
+        let suiteName = "test-dotted-removal-\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: suiteName)!
+        defer { testDefaults.removePersistentDomain(forName: suiteName) }
+
+        let dottedKey = "com.example.dotted.removal"
+        var receivedCount = 0
+        var lastReceivedValue: String?
+
+        // Given - value exists
+        testDefaults.set("initialValue", forKey: dottedKey)
+
+        // When - subscribe to dotted key publisher (uses NotificationCenter)
+        testDefaults.updatesPublisher(forKey: dottedKey).sink { _ in
+            receivedCount += 1
+            lastReceivedValue = testDefaults.string(forKey: dottedKey)
+        }.store(in: &cancellables)
+
+        // Then - no emission on subscription
+        #expect(receivedCount == 0)
+
+        // When - remove value
+        testDefaults.removeObject(forKey: dottedKey)
+
+        // Then - emits once for removal
+        #expect(receivedCount == 1)
+        #expect(lastReceivedValue == nil)
+
+        // When - set value again after removal
+        testDefaults.set("afterRemoval", forKey: dottedKey)
+
+        // Then - emits again
+        #expect(receivedCount == 2)
+        #expect(lastReceivedValue == "afterRemoval")
+    }
+
     @Test("Removing persistent domain while observing does not crash")
     func removingPersistentDomainWhileObservingDoesNotCrash() {
         let tempSuiteName = "test-removal-\(UUID().uuidString)"
@@ -1556,7 +1787,7 @@ final class KeyedStoringTests {
 
     @Test("ThrowingValue getter returns value")
     func throwingValueGetterReturnsValue() throws {
-        let storage: ThrowingKeyedStorage<ThrowingKeys> = ThrowingKeyedStorage(storage: defaults)
+        let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
         // Given - value exists
         defaults.set(42, forKey: "throwingValue")
@@ -1570,7 +1801,7 @@ final class KeyedStoringTests {
 
     @Test("ThrowingValue getter returns nil for missing value")
     func throwingValueGetterReturnsNilForMissingValue() throws {
-        let storage: ThrowingKeyedStorage<ThrowingKeys> = ThrowingKeyedStorage(storage: defaults)
+        let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
         // Given - no value exists
         defaults.removeObject(forKey: "throwingValue")
@@ -1584,7 +1815,7 @@ final class KeyedStoringTests {
 
     @Test("ThrowingValue setter sets value")
     func throwingValueSetterSetsValue() throws {
-        let storage: ThrowingKeyedStorage<ThrowingKeys> = ThrowingKeyedStorage(storage: defaults)
+        let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
         // When - set value
         try storage.set(100, for: \.throwingValue)
@@ -1596,7 +1827,7 @@ final class KeyedStoringTests {
 
     @Test("ThrowingValue setter sets nil")
     func throwingValueSetterSetsNil() throws {
-        let storage: ThrowingKeyedStorage<ThrowingKeys> = ThrowingKeyedStorage(storage: defaults)
+        let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
         // Given - value exists
         defaults.set(42, forKey: "throwingValue")
@@ -1612,7 +1843,7 @@ final class KeyedStoringTests {
     @Test("ThrowingValue with mock store that throws on get")
     func throwingValueWithMockStoreThatThrowsOnGet() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
-        let storage: ThrowingKeyedStorage<ThrowingKeys> = ThrowingKeyedStorage(storage: mockStore)
+        let storage: any ThrowingKeyedStoring<ThrowingKeys> = mockStore.throwingKeyedStoring()
         mockStore.throwOnRead = NSError(domain: "test", code: 1)
 
         // Given - mock store throws on get
@@ -1629,7 +1860,7 @@ final class KeyedStoringTests {
     @Test("ThrowingValue with mock store that throws on set")
     func throwingValueWithMockStoreThatThrowsOnSet() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
-        let storage: ThrowingKeyedStorage<ThrowingKeys> = ThrowingKeyedStorage(storage: mockStore)
+        let storage: any ThrowingKeyedStoring<ThrowingKeys> = mockStore.throwingKeyedStoring()
         mockStore.throwOnSet = NSError(domain: "test", code: 2)
 
         // Given - mock store throws on set
@@ -1645,7 +1876,7 @@ final class KeyedStoringTests {
 
     @Test("ThrowingValue can set then get same value")
     func throwingValueCanSetThenGetSameValue() throws {
-        let storage: ThrowingKeyedStorage<ThrowingKeys> = ThrowingKeyedStorage(storage: defaults)
+        let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
         // When - set and get
         try storage.set(999, for: \.throwingValue)
@@ -1657,7 +1888,7 @@ final class KeyedStoringTests {
 
     @Test("ThrowingValue with String type")
     func throwingValueWithStringType() throws {
-        let storage: ThrowingKeyedStorage<ThrowingKeys> = ThrowingKeyedStorage(storage: defaults)
+        let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
         // When - set string value
         try storage.set("test", for: \.throwingName)
@@ -1669,7 +1900,7 @@ final class KeyedStoringTests {
 
     @Test("ThrowingValue multiple properties are independent")
     func throwingValueMultiplePropertiesAreIndependent() throws {
-        let storage: ThrowingKeyedStorage<ThrowingKeys> = ThrowingKeyedStorage(storage: defaults)
+        let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
         // When - set both properties
         try storage.set(42, for: \.throwingValue)
@@ -1692,7 +1923,7 @@ final class KeyedStoringTests {
     @Test("ObservableThrowingKeyValueStoring getter returns value")
     func observableThrowingValueGetterReturnsValue() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        let storage: ObservableThrowingKeyedStorage<ThrowingObservableKeys> = ObservableThrowingKeyedStorage(storage: mockStore)
+        let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
 
         // Given - value exists
         mockStore.underlyingDict["observableThrowingValue"] = 42
@@ -1707,7 +1938,7 @@ final class KeyedStoringTests {
     @Test("ObservableThrowingKeyValueStoring setter sets value")
     func observableThrowingValueSetterSetsValue() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        let storage: ObservableThrowingKeyedStorage<ThrowingObservableKeys> = ObservableThrowingKeyedStorage(storage: mockStore)
+        let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
 
         // When - set value
         try storage.set(100, for: \.observableThrowingValue)
@@ -1721,7 +1952,7 @@ final class KeyedStoringTests {
     @MainActor
     func observableThrowingValueObjectWillChangeFires() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        let storage: ObservableThrowingKeyedStorage<ThrowingObservableKeys> = ObservableThrowingKeyedStorage(storage: mockStore)
+        let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
         var changeCount = 0
 
         // Given - subscribe to objectWillChange
@@ -1740,7 +1971,7 @@ final class KeyedStoringTests {
     @MainActor
     func observableThrowingValueObjectWillChangeFiresOnRemoval() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        let storage: ObservableThrowingKeyedStorage<ThrowingObservableKeys> = ObservableThrowingKeyedStorage(storage: mockStore)
+        let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
         var changeCount = 0
 
         // Given - value exists and subscribed
@@ -1761,7 +1992,7 @@ final class KeyedStoringTests {
     @MainActor
     func observableThrowingValueObjectWillChangeFiresForAnyKey() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        let storage: ObservableThrowingKeyedStorage<ThrowingObservableKeys> = ObservableThrowingKeyedStorage(storage: mockStore)
+        let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
         var changeCount = 0
 
         // Given - subscribe to objectWillChange
@@ -1780,7 +2011,7 @@ final class KeyedStoringTests {
     @Test("ObservableThrowingKeyValueStoring doesn't fire when get throws")
     func observableThrowingValueDoesntFireWhenGetThrows() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        let storage: ObservableThrowingKeyedStorage<ThrowingObservableKeys> = ObservableThrowingKeyedStorage(storage: mockStore)
+        let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
         mockStore.throwOnRead = NSError(domain: "test", code: 1)
         var changeCount = 0
 
@@ -1803,7 +2034,7 @@ final class KeyedStoringTests {
     @Test("ObservableThrowingKeyValueStoring doesn't fire when set throws")
     func observableThrowingValueDoesntFireWhenSetThrows() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        let storage: ObservableThrowingKeyedStorage<ThrowingObservableKeys> = ObservableThrowingKeyedStorage(storage: mockStore)
+        let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
         mockStore.throwOnSet = NSError(domain: "test", code: 2)
         var changeCount = 0
 
@@ -1826,7 +2057,7 @@ final class KeyedStoringTests {
     @Test("ObservableThrowingKeyValueStoring updatesPublisher emits on change")
     func observableThrowingValueUpdatesPublisherEmitsOnChange() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        let storage: ObservableThrowingKeyedStorage<ThrowingObservableKeys> = ObservableThrowingKeyedStorage(storage: mockStore)
+        let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
         var emissionCount = 0
 
         // Given - subscribe to updatesPublisher  
@@ -1845,7 +2076,7 @@ final class KeyedStoringTests {
     @MainActor
     func observableThrowingValueMultipleSubscribers() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        let storage: ObservableThrowingKeyedStorage<ThrowingObservableKeys> = ObservableThrowingKeyedStorage(storage: mockStore)
+        let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
         var subscriber1Count = 0
         var subscriber2Count = 0
         var subscriber3Count = 0
@@ -1875,9 +2106,9 @@ final class KeyedStoringTests {
     @Test("ThrowingValue works with different mock stores")
     func throwingValueWorksWithDifferentMockStores() throws {
         let throwingStore = InMemoryThrowingKeyValueStore()
-        let throwingStorage: ThrowingKeyedStorage<ThrowingKeys> = ThrowingKeyedStorage(storage: throwingStore)
+        let throwingStorage: any ThrowingKeyedStoring<ThrowingKeys> = throwingStore.throwingKeyedStoring()
         let observableStore = InMemoryObservableThrowingKeyValueStore()
-        let observableStorage: ObservableThrowingKeyedStorage<ThrowingObservableKeys> = ObservableThrowingKeyedStorage(storage: observableStore)
+        let observableStorage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = observableStore.observableThrowingKeyedStoring()
 
         // When - set values in both
         try throwingStorage.set(42, for: \.throwingValue)
@@ -1945,7 +2176,7 @@ final class KeyedStoringTests {
         let fileStore = AppFileStore()
 
         // When - use via storage wrapper
-        let storage: any KeyedStoring<InjectionTestKeys> = KeyedStorage(storage: fileStore)
+        let storage: any KeyedStoring<InjectionTestKeys> = fileStore.keyedStoring()
         storage.injectionTestValue = "file-backed"
         storage.injectionTestCount = 100
 
@@ -1958,7 +2189,7 @@ final class KeyedStoringTests {
     func customFileStoreCanBeInjectedIntoServices() {
         // Given - service with file store
         let fileStore = AppFileStore()
-        let storage: any ObservableKeyedStoring<InjectionTestKeys> = ObservableKeyedStorage(storage: fileStore)
+        let storage: any ObservableKeyedStoring<InjectionTestKeys> = fileStore.observableKeyedStoring()
         let service = ServiceWithStorage(storage: storage)
 
         // When - use through service
@@ -1976,7 +2207,7 @@ final class KeyedStoringTests {
         defer { appDefaults.removePersistentDomain(forName: suiteName) }
 
         // When - inject throwing storage wrapper into service
-        let storage: ObservableThrowingKeyedStorage<ThrowingInjectionKeys> = ObservableThrowingKeyedStorage(storage: appDefaults)
+        let storage: any ObservableThrowingKeyedStoring<ThrowingInjectionKeys> = appDefaults.observableThrowingKeyedStoring()
         let service = ServiceWithThrowingStorage(storage: storage)
 
         // Then - throwing operations work
@@ -2158,15 +2389,15 @@ final class KeyedStoringTests {
     @Test("Legacy key migration reads from old key when new key is empty")
     func legacyKeyMigrationReadsFromOldKey() {
         struct LegacyKeys: StoringKeys {
-            let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "username")
-            let userAge = StorageKey<Int>(TestKeys.newUserAge, migrateLegacyKey: "age")
+            let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "com.app.legacy.username")
+            let userAge = StorageKey<Int>(TestKeys.newUserAge, migrateLegacyKey: "com.app.legacy.age")
         }
 
-        // Given - data stored under legacy keys
-        defaults.set("Alice", forKey: "username")
-        defaults.set(25, forKey: "age")
+        // Given - data stored under legacy dotted keys
+        defaults.set("Alice", forKey: "com.app.legacy.username")
+        defaults.set(25, forKey: "com.app.legacy.age")
 
-        let storage = defaults.keyedStoring(for: LegacyKeys.self)
+        let storage: any KeyedStoring<LegacyKeys> = defaults.keyedStoring()
 
         // When - reading through new API
         let name = storage.username
@@ -2175,58 +2406,100 @@ final class KeyedStoringTests {
         // Then - values are migrated from legacy keys
         #expect(name == "Alice")
         #expect(age == 25)
+
+        // And - legacy dotted keys are removed after migration
+        #expect(defaults.string(forKey: "com.app.legacy.username") == nil)
+        #expect(defaults.integer(forKey: "com.app.legacy.age") == 0) // UserDefaults returns 0 for missing Int
+        #expect(defaults.object(forKey: "com.app.legacy.age") == nil) // Verify it's actually gone
     }
 
     @Test("Legacy key migration prefers new key over legacy key")
     func legacyKeyMigrationPrefersNewKey() {
         struct LegacyKeys: StoringKeys {
-            let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "username")
+            let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "com.app.legacy.username")
         }
 
         // Given - data stored under BOTH keys
-        defaults.set("LegacyValue", forKey: "username")
+        defaults.set("LegacyValue", forKey: "com.app.legacy.username")
         defaults.set("NewValue", forKey: "userName")
 
-        let storage = defaults.keyedStoring(for: LegacyKeys.self)
+        let storage: any KeyedStoring<LegacyKeys> = defaults.keyedStoring()
 
         // When - reading through API
         let name = storage.username
 
         // Then - new key takes precedence
         #expect(name == "NewValue")
+
+        // And - legacy dotted key is NOT removed (because new key exists)
+        #expect(defaults.string(forKey: "com.app.legacy.username") == "LegacyValue")
     }
 
     @Test("Legacy key migration works with setting new values")
     func legacyKeyMigrationWritesToNewKey() {
         struct LegacyKeys: StoringKeys {
-            let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "username")
+            let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "com.app.legacy.username")
         }
 
-        // Given - data stored under legacy key
-        defaults.set("OldValue", forKey: "username")
+        // Given - data stored under legacy dotted key
+        defaults.set("OldValue", forKey: "com.app.legacy.username")
 
-        let storage = defaults.keyedStoring(for: LegacyKeys.self)
+        let storage: any KeyedStoring<LegacyKeys> = defaults.keyedStoring()
 
         // When - writing new value
         storage.username = "UpdatedValue"
 
-        // Then - new value is written to NEW key, not legacy
+        // Then - new value is written to NEW key (no dots), not legacy
         #expect(defaults.string(forKey: "userName") == "UpdatedValue")
-        // Legacy key remains unchanged
-        #expect(defaults.string(forKey: "username") == "OldValue")
+        // Legacy dotted key remains unchanged when only writing (not reading first)
+        #expect(defaults.string(forKey: "com.app.legacy.username") == "OldValue")
+    }
+
+    @Test("Legacy key is removed after first read")
+    func legacyKeyRemovedAfterFirstRead() {
+        struct LegacyKeys: StoringKeys {
+            let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "com.app.legacy.username")
+        }
+
+        // Given - data stored under legacy dotted key only
+        defaults.set("MigrateMe", forKey: "com.app.legacy.username")
+        #expect(defaults.string(forKey: "userName") == nil) // New key empty
+        #expect(defaults.string(forKey: "com.app.legacy.username") == "MigrateMe") // Legacy dotted key has value
+
+        let storage: any KeyedStoring<LegacyKeys> = defaults.keyedStoring()
+
+        // When - reading value for the first time
+        let firstRead = storage.username
+
+        // Then - value is returned from legacy dotted key
+        #expect(firstRead == "MigrateMe")
+
+        // And - legacy dotted key is removed after first read
+        #expect(defaults.string(forKey: "com.app.legacy.username") == nil)
+
+        // But - subsequent reads return nil (value not persisted to new key)
+        let secondRead = storage.username
+        #expect(secondRead == nil)
+
+        // To complete migration, application must write value back:
+        storage.username = firstRead
+
+        // Now - value is in new key and persists
+        #expect(defaults.string(forKey: "userName") == "MigrateMe")
+        #expect(storage.username == "MigrateMe")
     }
 
     @Test("Legacy key migration works with observable storage")
     @MainActor
     func legacyKeyMigrationWithObservableStorage() {
         struct LegacyKeys: StoringKeys {
-            let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "username")
+            let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "com.app.legacy.username")
         }
 
-        // Given - data stored under legacy key
-        defaults.set("LegacyUser", forKey: "username")
+        // Given - data stored under legacy dotted key
+        defaults.set("LegacyUser", forKey: "com.app.legacy.username")
 
-        let storage = defaults.observableKeyedStoring(for: LegacyKeys.self)
+        let storage: any ObservableKeyedStoring<LegacyKeys> = defaults.observableKeyedStoring()
         var cancellables = Set<AnyCancellable>()
         var receivedValues: [String?] = []
 
@@ -2235,9 +2508,12 @@ final class KeyedStoringTests {
             receivedValues.append(value)
         }.store(in: &cancellables)
 
-        // Then - initial value comes from legacy key
+        // Then - initial value comes from legacy dotted key
         #expect(receivedValues.count == 1)
         #expect(receivedValues[0] == "LegacyUser")
+
+        // And - legacy dotted key is removed after initial read
+        #expect(defaults.string(forKey: "com.app.legacy.username") == nil)
     }
 
     // MARK: - Dot Assertion Tests
@@ -2290,7 +2566,7 @@ final class KeyedStoringTests {
         struct LegacyMigrationKeys: StoringKeys {
             let testValue = StorageKey<String>(TestKeys.newValue, migrateLegacyKey: "old.value.with.dots")
         }
-        let storage = defaults.keyedStoring(for: LegacyMigrationKeys.self)
+        let storage: any KeyedStoring<LegacyMigrationKeys> = defaults.keyedStoring()
 
         // Then - migration works with dots in legacy key
         #expect(storage.testValue == "legacy-value")

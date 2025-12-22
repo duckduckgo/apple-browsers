@@ -1,7 +1,7 @@
 //
 //  InMemoryKeyValueStore.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -65,18 +65,6 @@ open class InMemoryKeyValueStore: ObservableKeyValueStoring {
 extension InMemoryKeyValueStore: DictionaryRepresentable {
     public func dictionaryRepresentation() -> [String: Any] {
         return store as [String: Any]
-    }
-}
-
-// MARK: - KeyedStoring Convenience
-
-extension InMemoryKeyValueStore {
-    public func keyedStoring<Keys: StoringKeys>(for keysType: Keys.Type = Keys.self) -> some KeyedStoring<Keys> {
-        return KeyedStorage(storage: self)
-    }
-
-    public func observableKeyedStoring<Keys: StoringKeys>(for keysType: Keys.Type = Keys.self) -> some ObservableKeyedStoring<Keys> {
-        return ObservableKeyedStorage(storage: self)
     }
 }
 

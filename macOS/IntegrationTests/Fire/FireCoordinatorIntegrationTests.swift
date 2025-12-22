@@ -3226,7 +3226,7 @@ func MockFireDialogViewSettings(
     lastIncludeCookiesAndSiteDataState: Bool? = nil,
     lastIncludeChatHistoryState: Bool? = nil
 ) -> any KeyedStoring<FireDialogViewSettings> {
-    let storage = InMemoryKeyValueStore().keyedStoring(for: FireDialogViewSettings.self)
+    let storage: KeyedStoring<FireDialogViewSettings> = InMemoryKeyValueStore().keyedStoring()
 
     storage.lastSelectedClearingOption = lastSelectedClearingOption
     storage.lastIncludeTabsAndWindowsState = lastIncludeTabsAndWindowsState

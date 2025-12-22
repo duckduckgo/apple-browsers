@@ -22,7 +22,7 @@ import Persistence
 /// Central repository for UserDefaults key string constants used throughout the macOS app.
 ///
 /// Define raw key strings here, then reference them in StoringKeys structs in feature files.
-/// For legacy UserDefaults.Key usage, see UserDefaultsWrapper (deprecated).
+/// For legacy UserDefaultsWrapper keys use `StorageKey(.legacyKeyName)` (deprecated).
 ///
 /// Usage:
 ///     // Define new key String as in a suitable domain, e.g. `UserDefaultsKeys`:
@@ -47,7 +47,7 @@ import Persistence
 ///         private let storage: any KeyedStoring<MySettings>
 ///         
 ///         init(storage: (any KeyedStoring<MySettings>)? = nil) {
-///             self.storage = storage ?? UserDefaults.standard.keyedStoring()
+///             self.storage = if let storage { storage } else { UserDefaults.standard.keyedStoring() }
 ///         }
 ///         
 ///         func updateSettings() {
@@ -57,7 +57,7 @@ import Persistence
 ///     }
 /// 
 ///     // Testing:
-///     let myService = MyService(storage: InMemoryKeyValueStoring().keyedStoring(for: MySettings.self))
+///     let myService = MyService(storage: InMemoryKeyValueStoring().keyedStoring())
 ///     
 enum UserDefaultsKeys: String, StorageKeyDescribing {
 

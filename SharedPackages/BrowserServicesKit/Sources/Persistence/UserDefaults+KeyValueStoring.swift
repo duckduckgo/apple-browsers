@@ -1,7 +1,7 @@
 //
 //  UserDefaults+KeyValueStoring.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,13 +24,11 @@ extension UserDefaults: KeyValueStoring { }
 extension UserDefaults: @retroactive ObservableObject, ObservableKeyValueStoring, ObservableThrowingKeyValueStoring {
     /// Creates a publisher that observes a UserDefaults key using KVO
     ///
-    /// - Parameter key: The UserDefaults key to observe (must not contain dots for proper KVO observation)
+    /// - Parameter key: The UserDefaults key to observe
     /// - Returns: A publisher that emits Void when the value changes after subscription
     ///
-    /// - Note: This assertion only applies to keys being observed. Legacy keys used for migration
-    ///   in property getters/setters are not observed and can contain dots.
-    ///   The `@Key` macro validates this at compile-time to prevent such issues.
-    ///   The publisher only emits on changes after subscription, not the current value on subscription.
+    /// - Note: The publisher only emits on changes after subscription, not the current value on subscription.
+    /// - Note: Dotted keys are supported and with fall back to NotificationCenter-based `UserDefaults.didChangeNotification` observation.
     public func updatesPublisher(forKey key: String) -> AnyPublisher<Void, Never> {
         if !key.contains(".") {
             let publisher: UserDefaultsObservingPublisher<Void> = UserDefaultsObservingPublisher<Void>(observed: self, keyPath: key, options: [])

@@ -42,21 +42,23 @@ struct WarnBeforeQuitView: View {
                     .rotationEffect(.degrees(-90))
                     .animation(.linear(duration: 0.05), value: viewModel.progress)
 
-                // ⌘Q text
-                Text(verbatim: "⌘Q")
+                // Shortcut text (⌘Q or ⌘W)
+                Text(verbatim: viewModel.action.shortcutText)
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundColor(.white)
             }
 
             // Text content
             VStack(alignment: .leading, spacing: 4) {
-                Text(UserText.confirmQuitAction)
+                Text(viewModel.action.actionText)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
 
-                Text(UserText.confirmQuitSubtitle)
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.8))
+                if let subtitle = viewModel.action.subtitleText {
+                    Text(subtitle)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.8))
+                }
             }
 
             Spacer()

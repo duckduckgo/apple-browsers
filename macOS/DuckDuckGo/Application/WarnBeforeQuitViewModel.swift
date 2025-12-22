@@ -20,13 +20,44 @@ import AppKit
 import Combine
 import Foundation
 
+enum ConfirmationAction {
+    case quit
+    case close
+
+    var shortcutText: String {
+        switch self {
+        case .quit: return "⌘Q"
+        case .close: return "⌘W"
+        }
+    }
+
+    var actionText: String {
+        switch self {
+        case .quit: return UserText.confirmQuitAction
+        case .close: return UserText.confirmCloseAction
+        }
+    }
+
+    var subtitleText: String? {
+        switch self {
+        case .quit: return UserText.confirmQuitSubtitle
+        case .close: return nil
+        }
+    }
+}
+
 @MainActor
 final class WarnBeforeQuitViewModel: ObservableObject {
 
     @Published private(set) var progress: CGFloat = 0
+    let action: ConfirmationAction
 
     var onDontAskAgain: (() -> Void)?
     var onHoverChange: ((Bool) -> Void)?
+
+    init(action: ConfirmationAction = .quit) {
+        self.action = action
+    }
 
     func updateProgress(_ newProgress: CGFloat) {
         progress = min(1.0, max(0, newProgress))

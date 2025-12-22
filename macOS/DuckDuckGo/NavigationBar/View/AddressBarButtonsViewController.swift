@@ -400,6 +400,9 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyDashboardButton.setAccessibilityTitle(UserText.privacyDashboardButton)
         privacyDashboardButton.toolTip = UserText.privacyDashboardTooltip
 
+        permissionCenterButton.sendAction(on: .leftMouseDown)
+        permissionCenterButton.setAccessibilityIdentifier("AddressBarButtonsViewController.permissionCenterButton")
+
         bookmarkButton.sendAction(on: .leftMouseDown)
         bookmarkButton.setAccessibilityIdentifier("AddressBarButtonsViewController.bookmarkButton")
         // bookmarkButton.accessibilityTitle is set in `updateBookmarkButtonImage`

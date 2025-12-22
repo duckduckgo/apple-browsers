@@ -897,7 +897,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
                 featureFlagger: self.featureFlagger,
                 configurationURLProvider: configurationURLProvider,
-                themeManager: themeManager
+                themeManager: themeManager,
+                dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager }
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
@@ -1283,6 +1284,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyFireWindowConfigurationPixels()
 
         fireAutoconsentDailyPixel()
+        fireThemeDailyPixel()
 
         initializeSync()
 
@@ -1341,6 +1343,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let dailyStats = await autoconsentStats.fetchAutoconsentDailyUsagePack().asPixelParameters()
             PixelKit.fire(AutoconsentPixel.usageStats(stats: dailyStats), frequency: .daily)
         }
+    }
+
+    private func fireThemeDailyPixel() {
+        guard featureFlagger.isFeatureOn(.themes) else { return }
+        PixelKit.fire(ThemePixels.themeNameDaily(themeName: themeManager.theme.name), frequency: .daily)
     }
 
     private func initializeSync() {

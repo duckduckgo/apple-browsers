@@ -36,6 +36,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
     private var coordinator: FireCoordinator!
     private var window: MockWindow!
     private var fire: FireMock!
+    private var mockSettings: InMemoryKeyValueStore!
 
     // Options returned from the mocked Fire dialog's onConfirm
     private var dialogConfirmedOptions: FireDialogResult = .init(clearingOption: .allData,
@@ -58,6 +59,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         XCTAssertTrue(Set(fireproofDomains).intersects(allCookieDomains))
         XCTAssertNotEqual(Set(fireproofDomains).intersection(allCookieDomains).count, fireproofDomains.count)
 
+        mockSettings = InMemoryKeyValueStore()
         fire = FireMock()
         coordinator = makeCoordinator(with: fire)
         window = MockWindow()
@@ -70,6 +72,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         coordinator = nil
         mockHistoryProvider = nil
         mockFireproofDomains = nil
+        mockSettings = nil
     }
 
     // MARK: - History (All)
@@ -116,7 +119,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeTabsAndWindows: true,
                                        includeCookiesAndSiteData: true,
                                        includeChatHistory: false)
-        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window)
+        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = response { XCTAssertTrue(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         let call = try XCTUnwrap(fire.burnAllCalls.onlyValue)
         XCTAssertEqual(call.isBurnOnExit, false)
@@ -164,7 +167,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeTabsAndWindows: true,
                                        includeCookiesAndSiteData: true,
                                        includeChatHistory: true)
-        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window)
+        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = response { XCTAssertTrue(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         let call = try XCTUnwrap(fire.burnAllCalls.onlyValue)
         XCTAssertEqual(call.isBurnOnExit, false)
@@ -214,7 +217,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeChatHistory: false,
                                        isToday: false)
 
-        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window)
+        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = response { XCTAssertFalse(opts.includeHistory); XCTAssertFalse(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, customURLToOpen, close) = call.entity {
@@ -270,7 +273,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
-        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window)
+        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = response { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, customURLToOpen, close) = call.entity {
@@ -340,7 +343,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedCookieDomains: window1Domains,  // Only domains from Window 1
                                        selectedVisits: nil,
                                        isToday: false)
-        let responseCloseTrue = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window)
+        let responseCloseTrue = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = responseCloseTrue { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: responseCloseTrue))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .window(windowController, selectedDomains, close) = call.entity {
@@ -410,7 +413,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedCookieDomains: window1Domains,  // Only domains from Window 1
                                        selectedVisits: nil,
                                        isToday: false)
-        let responseCloseFalse = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window)
+        let responseCloseFalse = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = responseCloseFalse { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: responseCloseFalse))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .window(windowController, selectedDomains, close) = call.entity {
@@ -470,7 +473,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedCookieDomains: nil,
                                        selectedVisits: cookieVisits,
                                        isToday: false)
-        let responseVisitsCookies = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["cook.ie"])), in: window, scopeVisits: cookieVisits)
+        let responseVisitsCookies = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["cook.ie"])), in: window, scopeVisits: cookieVisits, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = responseVisitsCookies { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: responseVisitsCookies))") }
         let call = try XCTUnwrap(fire.burnVisitsCalls.onlyValue)
         let visitOnly = try XCTUnwrap(call.visits.onlyValue)
@@ -525,7 +528,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: testVisits,
                                        isToday: false)
 
-        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["test.com"])), in: window, scopeVisits: testVisits)
+        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["test.com"])), in: window, scopeVisits: testVisits, settings: mockSettings.keyedStoring())
 
         let call = try XCTUnwrap(fire.burnVisitsCalls.onlyValue)
         let visitOnly = try XCTUnwrap(call.visits.onlyValue)
@@ -593,7 +596,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedCookieDomains: ["x.com"],
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: true)
-        let responseToday = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.today)), in: window)
+        let responseToday = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.today)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = responseToday { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: responseToday))") }
 
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
@@ -649,7 +652,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: nil,
                                        isToday: true)
 
-        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.today)), in: window)
+        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.today)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = response { XCTAssertTrue(opts.includeTabsAndWindows); XCTAssertFalse(opts.includeHistory) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, _, close) = call.entity {
@@ -719,7 +722,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: true)
 
-        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.today)), in: window)
+        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.today)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = response { XCTAssertFalse(opts.includeTabsAndWindows); XCTAssertTrue(opts.includeHistory) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, _, close) = call.entity {
@@ -788,7 +791,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: closeVisits,
                                        isToday: true)
 
-        let responseMenuToday = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.today)), in: window)
+        let responseMenuToday = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.today)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = responseMenuToday { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: responseMenuToday))") }
 
         let call = try XCTUnwrap(fire.burnVisitsCalls.onlyValue)
@@ -870,7 +873,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: nil,
                                        isToday: false)
 
-        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.yesterday)), in: window)
+        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.yesterday)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = response { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
 
         // Validate visits burning for yesterday scope - should only burn yesterday visits
@@ -948,7 +951,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: [],  // Empty to force burnEntity path, not burnVisits
                                        isToday: false)
 
-        let response = await coordinator.presentFireDialog(mode: .historyView(query: .dateFilter(date)), in: window)
+        let response = await coordinator.presentFireDialog(mode: .historyView(query: .dateFilter(date)), in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = response { XCTAssertTrue(opts.includeHistory); XCTAssertFalse(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, _, _, close) = call.entity {
@@ -1017,7 +1020,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: false)
 
-        _ = await coordinator.presentFireDialog(mode: .historyView(query: .dateFilter(date)), in: window)
+        _ = await coordinator.presentFireDialog(mode: .historyView(query: .dateFilter(date)), in: window, settings: mockSettings.keyedStoring())
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, _, close) = call.entity {
             XCTAssertEqual(selectedDomains, Set(expectedDomains))
@@ -1087,7 +1090,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
-        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["figma.com"])), in: window, scopeVisits: figmaVisits)
+        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["figma.com"])), in: window, scopeVisits: figmaVisits, settings: mockSettings.keyedStoring())
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, _, close) = call.entity {
             XCTAssertEqual(selectedDomains, ["figma.com"])
@@ -1155,7 +1158,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: false)
 
-        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["example.com"])), in: window)
+        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["example.com"])), in: window, settings: mockSettings.keyedStoring())
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, _, close) = call.entity {
             XCTAssertEqual(selectedDomains, Set(exampleDomains))
@@ -1222,7 +1225,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedCookieDomains: nil,
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: false)
-        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["a.com"])), in: window, scopeVisits: aVisits)
+        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["a.com"])), in: window, scopeVisits: aVisits, settings: mockSettings.keyedStoring())
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, _, close) = call.entity {
             XCTAssertEqual(selectedDomains, Set(aDomains))
@@ -1290,7 +1293,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: false)
 
-        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["a.com", "b.com"])), in: window, scopeVisits: abVisits)
+        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["a.com", "b.com"])), in: window, scopeVisits: abVisits, settings: mockSettings.keyedStoring())
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, _, close) = call.entity {
             XCTAssertEqual(selectedDomains, Set(["a.com", "b.com"]))
@@ -1360,7 +1363,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: nil,
                                        isToday: false)
 
-        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["a.com", "b.com"])), in: window)
+        _ = await coordinator.presentFireDialog(mode: .historyView(query: .domainFilter(["a.com", "b.com"])), in: window, settings: mockSettings.keyedStoring())
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, _, close) = call.entity {
             XCTAssertEqual(selectedDomains, Set(["a.com", "b.com"]))
@@ -1426,7 +1429,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedCookieDomains: currentTabDomains,  // Only domain from current tab
                                        selectedVisits: nil,
                                        isToday: false)
-        let response = await coordinator.presentFireDialog(mode: .fireButton, in: window)
+        let response = await coordinator.presentFireDialog(mode: .fireButton, in: window, settings: mockSettings.keyedStoring())
         if case .burn(let opts?) = response { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .tab(tabViewModel, selectedDomains, parent, close) = call.entity {

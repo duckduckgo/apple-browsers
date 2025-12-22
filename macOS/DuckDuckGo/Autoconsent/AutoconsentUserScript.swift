@@ -51,6 +51,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private var topUrl: URL?
     private let preferences: CookiePopupProtectionPreferences
     private let management: AutoconsentManagement
+    private let featureFlagger: FeatureFlagger
 
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
@@ -70,7 +71,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
 
     init(config: PrivacyConfiguration,
          management: AutoconsentManagement,
-         preferences: CookiePopupProtectionPreferences
+         preferences: CookiePopupProtectionPreferences,
+         featureFlagger: FeatureFlagger
     ) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
@@ -84,6 +86,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.config = config
         self.management = management
         self.preferences = preferences
+        self.featureFlagger = featureFlagger
     }
 
     func userContentController(_ userContentController: WKUserContentController,
@@ -277,14 +280,7 @@ extension AutoconsentUserScript {
 
     @MainActor
     func isHeuristicActionEnabled() -> Bool? {
-        // Uncomment to ship the experiment
-        if !config.isSubfeatureEnabled(AutoconsentSubfeature.heuristicAction) {
-            Logger.autoconsent.debug("heuristic action disabled by remote config")
-            return false
-        } else {
-            Logger.autoconsent.debug("heuristic action enabled by remote config")
-        }
-        if let cohort = Application.appDelegate.featureFlagger.resolveCohort(for: FeatureFlag.autoconsentHeuristicAction) as? FeatureFlag.AutoconsentHeuristicActionCohort {
+        if let cohort = featureFlagger.resolveCohort(for: FeatureFlag.autoconsentHeuristicAction) as? FeatureFlag.AutoconsentHeuristicActionCohort {
             Logger.autoconsent.debug("heuristic action cohort: \(String(describing: cohort))")
             return cohort == .treatment
         } else {

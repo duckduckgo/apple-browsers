@@ -20,7 +20,7 @@ import AppKit
 
 final class RoundedSelectionRowView: NSTableRowView {
 
-    private var palette: ColorPalette {
+    private var palette: ThemeColors {
         NSApp.delegateTyped.themeManager.theme.palette
     }
 

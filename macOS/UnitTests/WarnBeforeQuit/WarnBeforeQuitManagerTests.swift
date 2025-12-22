@@ -1259,12 +1259,11 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
     private func createMouseEvent(
         type: NSEvent.EventType,
-        location: NSPoint = .zero,
         modifierFlags: NSEvent.ModifierFlags = []
     ) -> NSEvent {
         NSEvent.mouseEvent(
             with: type,
-            location: location,
+            location: NSPoint(x: 0, y: 100), // away from menu bar
             modifierFlags: modifierFlags,
             timestamp: 0,
             windowNumber: 0,

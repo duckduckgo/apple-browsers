@@ -25,12 +25,15 @@ import Persistence
 open class InMemoryKeyValueStore: ObservableKeyValueStoring {
 
     public var store = [String: Any?]()
-    public var objectWillChange = PassthroughSubject<String?, Never>()
+    public var objectWillChange = ObservableObjectPublisher()
+
+    // Internal subject for key-specific change notifications
+    private var keyChanges = PassthroughSubject<String?, Never>()
 
     public init() { }
 
     public func updatesPublisher(forKey key: String) -> AnyPublisher<Void, Never> {
-        objectWillChange.compactMap { change -> Void? in
+        keyChanges.compactMap { change -> Void? in
             guard change == nil /* all */ || change == key else { return nil }
             return ()
         }.eraseToAnyPublisher()
@@ -42,17 +45,20 @@ open class InMemoryKeyValueStore: ObservableKeyValueStoring {
 
     public func set(_ value: Any?, forKey key: String) {
         store[key] = value
-        objectWillChange.send(key)
+        objectWillChange.send()
+        keyChanges.send(key)
     }
 
     public func removeObject(forKey key: String) {
         store[key] = nil
-        objectWillChange.send(key)
+        objectWillChange.send()
+        keyChanges.send(key)
     }
 
     public func clearAll() {
         store.removeAll()
-        objectWillChange.send(nil)
+        objectWillChange.send()
+        keyChanges.send(nil)
     }
 }
 

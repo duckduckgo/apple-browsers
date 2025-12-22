@@ -53,7 +53,10 @@ open class InMemoryObservableThrowingKeyValueStore: ObservableThrowingKeyValueSt
         set { throwOnRemove = newValue ? MockError.removeError : nil }
     }
 
-    public var objectWillChange = PassthroughSubject<String?, Never>()
+    public var objectWillChange = ObservableObjectPublisher()
+
+    // Internal subject for key-specific change notifications
+    private var keyChanges = PassthroughSubject<String?, Never>()
 
     public enum MockError: Error, Equatable {
         case getError
@@ -71,7 +74,7 @@ open class InMemoryObservableThrowingKeyValueStore: ObservableThrowingKeyValueSt
     }
 
     public func updatesPublisher(forKey key: String) -> AnyPublisher<Void, Never> {
-        objectWillChange.compactMap { change -> Void? in
+        keyChanges.compactMap { change -> Void? in
             guard change == nil /* all */ || change == key else { return nil }
             return ()
         }.eraseToAnyPublisher()
@@ -89,7 +92,8 @@ open class InMemoryObservableThrowingKeyValueStore: ObservableThrowingKeyValueSt
             throw throwOnSet
         }
         underlyingDict[key] = value
-        objectWillChange.send(key)
+        objectWillChange.send()
+        keyChanges.send(key)
     }
 
     public func removeObject(forKey key: String) throws {
@@ -97,7 +101,8 @@ open class InMemoryObservableThrowingKeyValueStore: ObservableThrowingKeyValueSt
             throw throwOnRemove
         }
         underlyingDict.removeValue(forKey: key)
-        objectWillChange.send(key)
+        objectWillChange.send()
+        keyChanges.send(key)
     }
 }
 

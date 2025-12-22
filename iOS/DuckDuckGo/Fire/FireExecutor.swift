@@ -82,7 +82,7 @@ class FireExecutor: FireExecuting {
     private var burnInProgress = false
     private var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
     private let aiChatHistoryCleaner: HistoryCleaning
-    private var isPrepared = false
+    private var preparedOptions: FireOptions = []
     
     // MARK: - Init
     
@@ -121,10 +121,11 @@ class FireExecutor: FireExecuting {
     // MARK: - Public Functions
     @MainActor
     func prepare(for options: FireOptions) {
-        if options.contains(.tabs) {
+        // Only prepare tabs if requested and not already prepared
+        if options.contains(.tabs) && !preparedOptions.contains(.tabs) {
             prepareForBurningTabs()
         }
-        isPrepared = true
+        preparedOptions.formUnion(options)
     }
     
     @MainActor
@@ -133,9 +134,10 @@ class FireExecutor: FireExecuting {
               fireContext: FireContext) async {
         assert(delegate != nil, "Delegate should not be nil. This leads to unexpected behavior.")
         
-        // Ensure prepare() was called
-        if !isPrepared {
-            prepare(for: options)
+        // Ensure all requested options are prepared
+        let unpreparedOptions = options.subtracting(preparedOptions)
+        if !unpreparedOptions.isEmpty {
+            prepare(for: unpreparedOptions)
         }
         
         delegate?.willStartBurning(fireContext: fireContext)
@@ -168,7 +170,7 @@ class FireExecutor: FireExecuting {
         delegate?.didFinishBurning(fireContext: fireContext)
         
         // Reset prepared state for next burn cycle
-        isPrepared = false
+        preparedOptions = []
     }
     
     // MARK: - Clearing Downloads

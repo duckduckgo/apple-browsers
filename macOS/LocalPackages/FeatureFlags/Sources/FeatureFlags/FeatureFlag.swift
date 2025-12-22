@@ -272,13 +272,13 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Autoconsent heuristic action experiment
     /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
-    case autoconsentHeuristicAction
+    case heuristicAction
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the autoconsent heuristic action experiment
-    public enum AutoconsentHeuristicActionCohort: String, FeatureFlagCohortDescribing {
+    public enum HeuristicActionCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -312,8 +312,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
-        case .autoconsentHeuristicAction:
-            return AutoconsentHeuristicActionCohort.self
+        case .heuristicAction:
+            return HeuristicActionCohort.self
         default:
             return nil
         }
@@ -390,7 +390,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
                 .aiChatSync,
-                .autoconsentHeuristicAction:
+                .heuristicAction:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -563,7 +563,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .aiChatSync:
             return .disabled
-        case .autoconsentHeuristicAction:
+        case .heuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         }
     }

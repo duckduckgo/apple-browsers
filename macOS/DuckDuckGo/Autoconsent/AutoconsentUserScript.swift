@@ -280,7 +280,7 @@ extension AutoconsentUserScript {
 
     @MainActor
     func isHeuristicActionEnabled() -> Bool? {
-        if let cohort = featureFlagger.resolveCohort(for: FeatureFlag.autoconsentHeuristicAction) as? FeatureFlag.AutoconsentHeuristicActionCohort {
+        if let cohort = featureFlagger.resolveCohort(for: FeatureFlag.heuristicAction) as? FeatureFlag.HeuristicActionCohort {
             Logger.autoconsent.debug("heuristic action cohort: \(String(describing: cohort))")
             return cohort == .treatment
         } else {
@@ -443,14 +443,14 @@ extension AutoconsentUserScript {
         firePixel(pixel: .popupFound)
 
         // measure: at least one popup handled within X days
-        PixelKit.fireExperimentPixel(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...1, value: "true")
-        PixelKit.fireExperimentPixel(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...5, value: "true")
-        PixelKit.fireExperimentPixel(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...10, value: "true")
+        PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...1, value: "true")
+        PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...5, value: "true")
+        PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...10, value: "true")
         // measure: at least N popups handled within 10 days
-        PixelKit.fireExperimentPixelIfThresholdReached(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...10, threshold: 10)
-        PixelKit.fireExperimentPixelIfThresholdReached(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...10, threshold: 5)
-        PixelKit.fireExperimentPixelIfThresholdReached(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...5, threshold: 10)
-        PixelKit.fireExperimentPixelIfThresholdReached(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...5, threshold: 5)
+        PixelKit.fireExperimentPixelIfThresholdReached(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...10, threshold: 10)
+        PixelKit.fireExperimentPixelIfThresholdReached(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...10, threshold: 5)
+        PixelKit.fireExperimentPixelIfThresholdReached(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...5, threshold: 10)
+        PixelKit.fireExperimentPixelIfThresholdReached(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...5, threshold: 5)
 
         // Check for reload loop
         detectReloadLoop(cmpName: messageData.cmp)

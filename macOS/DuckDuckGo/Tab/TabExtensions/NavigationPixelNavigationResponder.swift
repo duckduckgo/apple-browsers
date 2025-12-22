@@ -222,7 +222,7 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
 
         // Pass CPM heuristic experiment cohort
         var additionalParams: [String: String] = [:]
-        if let cohort = featureFlagger.resolveCohort(for: FeatureFlag.autoconsentHeuristicAction) as? FeatureFlag.AutoconsentHeuristicActionCohort {
+        if let cohort = featureFlagger.resolveCohort(for: FeatureFlag.heuristicAction) as? FeatureFlag.HeuristicActionCohort {
             additionalParams["consentHeuristicEnabled"] = cohort == .treatment ? "1" : "0"
         }
 

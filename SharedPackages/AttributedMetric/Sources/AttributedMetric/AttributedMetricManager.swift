@@ -20,7 +20,7 @@
 import Foundation
 import PixelKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import os.log
 
 /// macOS: `SystemDefaultBrowserProvider`

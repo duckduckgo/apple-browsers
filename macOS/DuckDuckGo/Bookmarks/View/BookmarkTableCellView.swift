@@ -51,7 +51,7 @@ final class BookmarkTableCellView: NSTableCellView {
     }
 
     private var theme: ThemeStyleProviding
-    private var palette: ColorPalette {
+    private var palette: ThemeColors {
         theme.palette
     }
 

@@ -48,7 +48,7 @@ protocol ColorsProviding {
 }
 
 final class NewColorsProviding: ColorsProviding {
-    private let palette: ColorPalette
+    private let palette: ThemeColors
 
     var navigationBackgroundColor: NSColor { palette.surfacePrimary }
     var baseBackgroundColor: NSColor { palette.surfaceBackdrop }
@@ -76,7 +76,7 @@ final class NewColorsProviding: ColorsProviding {
     var bannerBackgroundColor: NSColor { palette.surfacePrimary }
     var popoverBackgroundColor: NSColor { palette.surfaceSecondary }
 
-    init(palette: ColorPalette) {
+    init(palette: ThemeColors) {
         self.palette = palette
     }
 }

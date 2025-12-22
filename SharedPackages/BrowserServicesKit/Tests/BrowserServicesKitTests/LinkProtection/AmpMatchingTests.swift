@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
 import os.log
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import XCTest
 @testable import TrackerRadarKit
 @testable import BrowserServicesKit
 

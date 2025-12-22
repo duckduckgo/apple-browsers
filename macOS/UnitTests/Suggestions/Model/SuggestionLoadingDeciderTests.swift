@@ -17,6 +17,7 @@
 //
 
 import Testing
+import PrivacyConfig
 @testable import DuckDuckGo_Privacy_Browser
 
 struct SuggestionLoadingDeciderTests {

@@ -19,9 +19,9 @@
 import SwiftUI
 import Common
 import Combine
-import BrowserServicesKit
 import FeatureFlags
 import PixelKit
+import PrivacyConfig
 
 final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 

@@ -23,6 +23,7 @@ import DataBrokerProtection_macOS
 import Foundation
 import Freemium
 import os.log
+import PrivacyConfig
 import Subscription
 
 protocol DataBrokerProtectionFeatureGatekeeper {

@@ -24,8 +24,10 @@ import Foundation
 import BrowserServicesKit
 import Persistence
 import PixelKit
+import PrivacyConfig
 import RemoteMessaging
 import Subscription
+import DataBrokerProtection_macOS
 
 protocol RemoteMessagingStoreProviding {
     func makeRemoteMessagingStore(database: CoreDataDatabase, availabilityProvider: RemoteMessagingAvailabilityProviding) -> RemoteMessagingStoring
@@ -78,7 +80,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger,
         configurationURLProvider: ConfigurationURLProviding,
-        themeManager: ThemeManaging
+        themeManager: ThemeManaging,
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             database: database,
@@ -89,7 +92,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             internalUserDecider: internalUserDecider,
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
-            themeManager: themeManager
+            themeManager: themeManager,
+            dbpDataManagerProvider: dbpDataManagerProvider
         )
         self.init(
             remoteMessagingDatabase: remoteMessagingDatabase,

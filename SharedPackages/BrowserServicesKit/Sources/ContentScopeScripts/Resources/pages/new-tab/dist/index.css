@@ -3678,6 +3678,24 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   background: var(--color-white-at-9);
 }
 
+/* pages/new-tab/app/components/NewBadge.module.css */
+.NewBadge_badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  height: 16px;
+  padding: 0 8px;
+  background-color: #F9BE1A;
+  border-radius: 4px;
+  font-family: var(--theme-font-family, system-ui);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--color-black-at-96);
+  letter-spacing: -0.015em;
+  flex-shrink: 0;
+}
+
 /* pages/new-tab/app/components/Tooltip/Tooltip.module.css */
 .Tooltip_tooltipContainer {
   position: relative;

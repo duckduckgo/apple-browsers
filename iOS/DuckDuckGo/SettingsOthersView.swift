@@ -30,6 +30,16 @@ struct SettingsOthersView: View {
 
     var body: some View {
         Section {
+            // What's New
+            if viewModel.shouldShowWhatsNew {
+                SettingsCellView(
+                    label: UserText.settingsWhatsNew,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.announce),
+                    action: { viewModel.openWhatsNew() },
+                    isButton: true
+                )
+            }
+
             // About
             NavigationLink(destination: AboutView().environmentObject(viewModel)) {
 #if (ALPHA && !DEBUG)

@@ -70,7 +70,8 @@ struct BrokerProfileOptOutSubJob {
                                                               database: dependencies.database,
                                                               pixelHandler: dependencies.pixelHandler,
                                                               vpnConnectionState: vpnConnectionState,
-                                                              vpnBypassStatus: vpnBypassStatus)
+                                                              vpnBypassStatus: vpnBypassStatus,
+                                                              featureFlagger: dependencies.featureFlagger)
 
         // Set up a defer block to report opt-out job completion regardless of its success:
         defer {
@@ -203,7 +204,8 @@ struct BrokerProfileOptOutSubJob {
                                              database: DataBrokerProtectionRepository,
                                              pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                              vpnConnectionState: String,
-                                             vpnBypassStatus: String) -> StageDurationContext {
+                                             vpnBypassStatus: String,
+                                             featureFlagger: DBPFeatureFlagging) -> StageDurationContext {
         // 5. Set up dependencies used to report the status of the opt-out job:
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
@@ -211,7 +213,8 @@ struct BrokerProfileOptOutSubJob {
             handler: pixelHandler,
             parentURL: brokerProfileQueryData.dataBroker.parent,
             vpnConnectionState: vpnConnectionState,
-            vpnBypassStatus: vpnBypassStatus
+            vpnBypassStatus: vpnBypassStatus,
+            featureFlagger: featureFlagger
         )
 
         // 6. Record the start of the opt-out job:

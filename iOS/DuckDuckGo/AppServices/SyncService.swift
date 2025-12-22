@@ -21,7 +21,7 @@ import Core
 import DDGSync
 import Persistence
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 
 final class SyncService {
 

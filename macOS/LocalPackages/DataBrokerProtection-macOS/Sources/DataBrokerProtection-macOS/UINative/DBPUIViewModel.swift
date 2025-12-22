@@ -22,6 +22,7 @@ import WebKit
 import BrowserServicesKit
 import Common
 import os.log
+import PrivacyConfig
 import DataBrokerProtectionCore
 import enum UserScript.UserScriptError
 

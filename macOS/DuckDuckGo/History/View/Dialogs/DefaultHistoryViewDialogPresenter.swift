@@ -17,12 +17,12 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Foundation
 import History
 import SwiftUI
 import HistoryView
 import PixelKit
+import PrivacyConfig
 
 protocol HistoryViewDialogPresenting: AnyObject {
     @MainActor

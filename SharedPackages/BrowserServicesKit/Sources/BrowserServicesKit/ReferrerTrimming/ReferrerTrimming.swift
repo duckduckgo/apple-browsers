@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import WebKit
-import TrackerRadarKit
 import Common
+import Foundation
+import PrivacyConfig
+import TrackerRadarKit
+import WebKit
 
 public class ReferrerTrimming {
 

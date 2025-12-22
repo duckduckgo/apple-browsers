@@ -19,7 +19,7 @@
 import AppKit
 import SwiftUI
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import PixelKit
 import Subscription
 

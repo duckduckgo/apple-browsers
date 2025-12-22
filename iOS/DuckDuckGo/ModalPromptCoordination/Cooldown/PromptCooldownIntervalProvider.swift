@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 /// A type providing the cooldown interval, in hours, between prompt presentations.
 protocol PromptCooldownIntervalProviding {

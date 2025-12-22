@@ -20,10 +20,10 @@ import Navigation
 import Foundation
 import Combine
 import WebKit
-import BrowserServicesKit
 import AutoconsentStats
 import Common
 import os.log
+import PrivacyConfig
 
 protocol AutoconsentUserScriptProvider {
     var autoconsentUserScript: UserScriptWithAutoconsent { get }

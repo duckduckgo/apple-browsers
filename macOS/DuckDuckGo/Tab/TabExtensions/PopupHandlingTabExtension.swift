@@ -17,13 +17,13 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Common
 import ContentBlocking
 import FeatureFlags
 import Navigation
 import OSLog
+import PrivacyConfig
 import TrackerRadarKit
 import WebKit
 

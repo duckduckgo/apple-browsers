@@ -19,7 +19,7 @@
 
 import UserScript
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import RemoteMessaging
 import AIChat
 import OSLog

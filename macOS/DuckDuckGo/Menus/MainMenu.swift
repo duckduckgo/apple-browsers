@@ -27,6 +27,7 @@ import SwiftUI
 import WebKit
 import Configuration
 import VPN
+import PrivacyConfig
 import Subscription
 import SubscriptionUI
 import Utilities

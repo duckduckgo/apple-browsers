@@ -24,7 +24,7 @@ import Subscription
 import Core
 import VPN
 import StoreKit
-import BrowserServicesKit
+import PrivacyConfig
 import Networking
 
 final class SubscriptionDebugViewController: UITableViewController {

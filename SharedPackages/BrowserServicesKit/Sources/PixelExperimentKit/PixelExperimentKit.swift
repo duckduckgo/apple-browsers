@@ -17,7 +17,7 @@
 //
 
 import PixelKit
-import BrowserServicesKit
+import PrivacyConfig
 import Foundation
 
 public typealias ConversionWindow = ClosedRange<Int>

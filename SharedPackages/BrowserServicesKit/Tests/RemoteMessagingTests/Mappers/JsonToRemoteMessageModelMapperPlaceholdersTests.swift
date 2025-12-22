@@ -22,13 +22,37 @@ import RemoteMessagingTestsUtils
 
 @Suite("RMF - Mapping - Placeholders")
 struct JsonToRemoteMessageModelMapperPlaceholdersTests {
+    private static let placeholderMappings: [(RemoteMessageResponse.JsonPlaceholder, RemotePlaceholder)] = [
+        (.announce, .announce),
+        (.ddgAnnounce, .ddgAnnounce),
+        (.criticalUpdate, .criticalUpdate),
+        (.appUpdate, .appUpdate),
+        (.macComputer, .macComputer),
+        (.newForMacAndWindows, .newForMacAndWindows),
+        (.privacyShield, .subscription),
+        (.aiChat, .aiChat),
+        (.visualDesignUpdate, .visualDesignUpdate),
+        (.imageAI, .imageAI),
+        (.radar, .radar),
+        (.radarCheckGreen, .radarCheckGreen),
+        (.radarCheckPurple, .radarCheckPurple),
+        (.keyImport, .keyImport),
+        (.mobileCustomization, .mobileCustomization),
+        (.pir, .pir),
+        (.subscription, .subscription),
+    ]
+
+    @Test("Check Placeholder Mapping Coverage")
+    func placeholderMappingIsExhaustive() {
+        let mappedKeys = Set(Self.placeholderMappings.map { $0.0 })
+        let allKeys = Set(RemoteMessageResponse.JsonPlaceholder.allCases)
+
+        #expect(mappedKeys == allKeys)
+    }
 
     @Test(
         "Check Placeholders Are Mapped Correctly",
-        arguments: zip(
-            RemoteMessageResponse.JsonPlaceholder.allCases,
-            RemotePlaceholder.allCases
-        )
+        arguments: Self.placeholderMappings
     )
     func placeholderAPIModelIsMappedCorrectly(apiValue: RemoteMessageResponse.JsonPlaceholder, expectedDomainValue: RemotePlaceholder) {
         // WHEN
@@ -61,7 +85,7 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
             ("5", .appUpdate),
             ("6", .macComputer),
             ("7", .newForMacAndWindows),
-            ("8", .privacyShield),
+            ("8", .subscription),
             ("9", .aiChat),
             ("10", .visualDesignUpdate),
             ("11", .imageAI),
@@ -98,7 +122,7 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
             ("5", .appUpdate),
             ("6", .macComputer),
             ("7", .newForMacAndWindows),
-            ("8", .privacyShield),
+            ("8", .subscription),
             ("9", .aiChat),
             ("10", .visualDesignUpdate),
             ("11", .imageAI),

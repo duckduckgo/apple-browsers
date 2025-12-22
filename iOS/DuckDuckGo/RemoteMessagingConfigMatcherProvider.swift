@@ -21,12 +21,14 @@ import Common
 import Core
 import Foundation
 import BrowserServicesKit
+import PrivacyConfig
 import Persistence
 import Bookmarks
 import RemoteMessaging
 import VPN
 import Subscription
 import DDGSync
+import DataBrokerProtection_iOS
 
 extension DefaultVPNActivationDateStore: VPNActivationDateProviding {}
 
@@ -40,7 +42,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         themeManager: ThemeManaging = ThemeManager.shared,
         syncService: DDGSyncing,
-        winBackOfferService: WinBackOfferService
+        winBackOfferService: WinBackOfferService,
+        dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -50,6 +53,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.themeManager = themeManager
         self.syncService = syncService
         self.winBackOfferService = winBackOfferService
+        self.dbpRunPrerequisitesDelegate = dbpRunPrerequisitesDelegate
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -60,6 +64,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let themeManager: ThemeManaging
     let syncService: DDGSyncing
     let winBackOfferService: WinBackOfferService
+    let dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -100,6 +105,13 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let shouldShowWinBackOfferUrgencyMessage = winBackOfferService.shouldShowUrgencyMessage
+        let isCurrentPIRUser: Bool
+
+        if featureFlagger.isFeatureOn(.personalInformationRemoval) {
+            isCurrentPIRUser = (await dbpRunPrerequisitesDelegate?.validateRunPrerequisites()) ?? false
+        } else {
+            isCurrentPIRUser = false
+        }
 
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
@@ -165,7 +177,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        shownMessageIds: shownMessageIds,
                                                        enabledFeatureFlags: enabledFeatureFlags,
                                                        isSyncEnabled: isSyncEnabled,
-                                                       shouldShowWinBackOfferUrgencyMessage: shouldShowWinBackOfferUrgencyMessage),
+                                                       shouldShowWinBackOfferUrgencyMessage: shouldShowWinBackOfferUrgencyMessage,
+                                                       isCurrentPIRUser: isCurrentPIRUser),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

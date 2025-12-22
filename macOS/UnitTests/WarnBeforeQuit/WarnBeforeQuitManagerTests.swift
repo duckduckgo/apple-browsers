@@ -36,9 +36,9 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
     var now: Date!
     var stateTask: Task<Void, Never>?
 
-    nonisolated(unsafe) private var _collectedStates: [QuitConfirmationState] = []
+    nonisolated(unsafe) private var _collectedStates: [WarnBeforeQuitManager.State] = []
     nonisolated(unsafe) private var collectedStatesLock: NSLock!
-    nonisolated var collectedStates: [QuitConfirmationState] {
+    nonisolated var collectedStates: [WarnBeforeQuitManager.State] {
         get {
             collectedStatesLock.withLock { return _collectedStates }
         }
@@ -307,6 +307,17 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         let expectations2 = setupExpectationsForStateChanges(1, manager: manager)
 
+        // Set up monitor to verify Escape is NOT passed through (consumed)
+        var escapeReceived = false
+        var monitor: Any?
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.keyCode == 53 { // Escape key
+                escapeReceived = true
+            }
+            return event
+        }
+        defer { monitor.map(NSEvent.removeMonitor) }
+
         // Post Escape keydown
         let escapeEvent = createKeyEvent(type: .keyDown, character: "\u{1B}", keyCode: 53)
         Logger.tests.debug("\(self.name): NSApp.postEvent \(escapeEvent) time: \(self.now)")
@@ -317,7 +328,10 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
-        // Then
+        // Verify Escape was NOT passed through
+        XCTAssertFalse(escapeReceived, "Escape should be consumed, not passed through")
+
+        // Then - should cancel and Escape was consumed (not passed through)
         XCTAssertEqual(decision, .cancel)
         XCTAssertEqual(collectedStates, [
             .holding(startTime: startTime, targetTime: targetTime),
@@ -1035,18 +1049,76 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         ])
     }
 
+    func testOtherKeyPressDuringWait() async throws {
+        // Given
+        let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        // Mock timer to prevent automatic expiry (event will cancel instead)
+        let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer = { _, _ in
+            return Timer()
+        }
+
+        let qKeyUpEvent = createKeyEvent(type: .keyUp, character: "q", modifierFlags: .command)
+        let eventReceiver = makeEventReceiver(events: [
+            (event: qKeyUpEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
+        ])
+
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+
+        let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
+
+        // When - start termination flow
+        let query = manager.shouldTerminate(isAsync: false)
+
+        guard case .async(let task) = query else {
+            XCTFail("Expected async query")
+            return
+        }
+
+        // Wait for .holding and .waitingForSecondPress states
+        await fulfillment(of: expectations1, timeout: Constants.expectationTimeout)
+
+        let expectations2 = setupExpectationsForStateChanges(1, manager: manager)
+
+        // Set up monitor to verify event was passed through
+        let eventPassedThroughExpectation = expectation(description: "Other key passed through")
+        var monitor: Any?
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.characters == "a" {
+                eventPassedThroughExpectation.fulfill()
+            }
+            return nil
+        }
+        defer { monitor.map(NSEvent.removeMonitor) }
+
+        // Post unrelated key (should cancel but pass through)
+        let otherKey = createKeyEvent(type: .keyDown, character: "a", modifierFlags: [])
+        TestRunHelper.allowAppSendUserEvents = true
+        NSApp.postEvent(otherKey, atStart: true)
+
+        // Wait for completion and pass-through
+        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
+        await fulfillment(of: expectations2 + [eventPassedThroughExpectation], timeout: Constants.expectationTimeout)
+
+        // Then - should cancel (not quit) and event was passed through
+        XCTAssertEqual(decision, .cancel)
+        XCTAssertEqual(collectedStates, [
+            .holding(startTime: startTime, targetTime: targetTime),
+            .waitingForSecondPress(hideUntil: hideUntilAfterEarlyRelease),
+            .completed(shouldQuit: false)
+        ])
+    }
+
     // MARK: - Event Reposting Tests
 
     func testOtherEventsRepostedDuringHold() async throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
 
-        // Event receiver that returns an unrelated key event, then advances time to complete
+        // Event receiver that returns an unrelated key event - should cancel
         let otherKeyEvent = createKeyEvent(type: .keyDown, character: "a", modifierFlags: [])
-        let totalDuration = WarnBeforeQuitManager.Constants.requiredHoldDuration + WarnBeforeQuitManager.Constants.animationBufferDuration
         let eventReceiver = makeEventReceiver(events: [
-            (event: otherKeyEvent, timeAdvance: 0), // First call returns 'a' key
-            (event: nil, timeAdvance: totalDuration + Constants.earlyReleaseTimeAdvance) // Second call advances to deadline
+            (event: otherKeyEvent, timeAdvance: 0) // First call returns 'a' key - should cancel
         ])
 
         let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver))
@@ -1056,18 +1128,18 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         let query = manager.shouldTerminate(isAsync: false)
 
-        // Then - should complete hold (other event was reposted)
+        // Then - should cancel (other key pressed during hold)
         guard case .sync(let decision) = query else {
             XCTFail("Expected sync decision")
             return
         }
-        XCTAssertEqual(decision, .next)
+        XCTAssertEqual(decision, .cancel)
 
         await fulfillment(of: expectations, timeout: Constants.expectationTimeout)
 
         XCTAssertEqual(collectedStates, [
             .holding(startTime: startTime, targetTime: targetTime),
-            .completed(shouldQuit: true)
+            .completed(shouldQuit: false)
         ])
     }
 

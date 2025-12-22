@@ -23,15 +23,6 @@ import OSLog
 import SwiftUI
 import QuartzCore
 
-// MARK: - State Machine
-
-enum QuitConfirmationState: Equatable {
-    case idle
-    case holding(startTime: TimeInterval, targetTime: TimeInterval)
-    case waitingForSecondPress(hideUntil: TimeInterval)
-    case completed(shouldQuit: Bool)
-}
-
 /// Manages the "Warn Before Quitting" feature that prevents accidental app termination.
 ///
 /// Business logic layer that emits state changes via AsyncStream.
@@ -66,26 +57,29 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     private let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer
 
     // State machine
-    private let stateSubject: AsyncStream<QuitConfirmationState>.Continuation
-    private let stateStreamStorage: AsyncStream<QuitConfirmationState>
 
-    // to be moved to settings
-    @UserDefaultsWrapper(key: .warnBeforeQuitting, defaultValue: true)
-    private var warnBeforeQuitting: Bool
-
-    nonisolated var stateStream: AsyncStream<QuitConfirmationState> {
-        stateStreamStorage
+    enum State: Equatable {
+        case idle
+        case holding(startTime: TimeInterval, targetTime: TimeInterval)
+        case waitingForSecondPress(hideUntil: TimeInterval)
+        case completed(shouldQuit: Bool)
     }
 
-    private var currentState: QuitConfirmationState = .idle {
+    private var currentState: State = .idle {
         didSet {
             Logger.general.debug("WarnBeforeQuitManager: State changed to \(String(describing: self.currentState))")
             stateSubject.yield(currentState)
         }
     }
 
-    // Callback to signal "Don't Ask Again" was clicked
-    private var onDontAskAgain: (() -> Void)?
+    private let stateSubject: AsyncStream<State>.Continuation
+    private let stateStreamStorage: AsyncStream<State>
+    nonisolated var stateStream: AsyncStream<State> {
+        stateStreamStorage
+    }
+
+    // Callback to check if the warning is enabled
+    private let isWarningEnabled: () -> Bool
 
     // Callback when hover state changes - restarts timer with appropriate duration
     private var onHoverChange: ((Bool) -> Void)?
@@ -95,14 +89,16 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     // MARK: - Initialization
 
     init?(currentEvent: NSEvent,
+          isWarningEnabled: @escaping () -> Bool,
           now: @escaping () -> Date = Date.init,
           eventReceiver: ((NSEvent.EventTypeMask, Date, RunLoop.Mode, Bool) -> NSEvent?)? = nil,
           timerFactory: ((TimeInterval, @escaping () -> Void) -> Timer)? = nil) {
         // Validate this is a keyDown event with modifier and valid character
         guard currentEvent.type == .keyDown,
               let keyEquivalent = currentEvent.keyEquivalent, !keyEquivalent.modifierMask.isEmpty else { return nil }
-
+        Logger.general.debug("WarnBeforeQuitManager.init currentEvent: \(currentEvent)")
         self.shortcutKeyEquivalent = keyEquivalent
+        self.isWarningEnabled = isWarningEnabled
         self.now = now
         self.eventReceiver = eventReceiver ?? MainActor.assumeMainThread { NSApp.nextEvent }
         self.timerFactory = timerFactory ?? { interval, block in
@@ -111,21 +107,14 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             return timer
         }
         // Create state AsyncStream for external observation
-        (stateStreamStorage, stateSubject) = AsyncStream<QuitConfirmationState>.makeStream(of: QuitConfirmationState.self, bufferingPolicy: .bufferingNewest(3))
+        (stateStreamStorage, stateSubject) = AsyncStream<State>.makeStream(of: State.self, bufferingPolicy: .bufferingNewest(3))
     }
 
     deinit {
         stateSubject.finish()
     }
 
-    // MARK: - Public Interface
-
-    /// Disables the warning and allows immediate quit
-    func disableWarning() {
-        Logger.general.debug("WarnBeforeQuitManager: disableWarning called")
-        warnBeforeQuitting = false
-        onDontAskAgain?()
-    }
+    // MARK: - Public
 
     /// Called when mouse hover state changes over the overlay
     /// - Parameter isHovering: true if mouse entered, false if exited
@@ -137,19 +126,21 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     // MARK: - ApplicationTerminationDecider
 
     func shouldTerminate(isAsync: Bool) -> TerminationQuery {
-        let warnBeforeQuitting = warnBeforeQuitting
-        Logger.general.debug("WarnBeforeQuitManager: shouldTerminate(isAsync: \(isAsync), enabled: \(warnBeforeQuitting))")
+        let warningEnabled = isWarningEnabled()
+        Logger.general.debug("WarnBeforeQuitManager: shouldTerminate(isAsync: \(isAsync), enabled: \(warningEnabled))")
 
         // Don't show confirmation if another decider already delayed termination or feature is disabled
-        guard !isAsync, warnBeforeQuitting, currentState == .idle else {
+        guard !isAsync, warningEnabled, currentState == .idle else {
             assert(currentState == .idle, "shouldTerminate should only be called when currentState is .idle, but currentState is \(currentState)")
             return .sync(.next)
         }
 
-        // Show confirmation and wait for hold completion or release
-        if trackEventsForHoldingPhase() {
-            // Held long enough or "Don't Show Again" clicked
-            return .sync(.next)
+        // Show confirmation and wait synchronously for hold completion or release
+        switch trackEventsForHoldingPhase() {
+        case .completed(let shouldQuit):
+            currentState = .completed(shouldQuit: shouldQuit)
+            return .sync(shouldQuit ? .next : .cancel)
+        case .waitingForSecondPress: break
         }
 
         // Shortcut released early - wait for second press asynchronously
@@ -168,9 +159,13 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     // MARK: - Private
 
+    private enum HoldingPhaseResult {
+        case completed(shouldQuit: Bool)
+        case waitingForSecondPress
+    }
     /// Waits synchronously for user to either hold Cmd+[Q|W] long enough or release it early.
     /// - Returns: `true` if held long enough or "Don't Show Again" clicked, `false` if released early
-    private func trackEventsForHoldingPhase() -> Bool {
+    private func trackEventsForHoldingPhase() -> HoldingPhaseResult {
         // Start hold timer - UI will show overlay with progress
         let startTime = now().timeIntervalSinceReferenceDate
         currentState = .holding(startTime: startTime, targetTime: startTime + Constants.requiredHoldDuration)
@@ -181,29 +176,37 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         // Wait for either key release or hold duration completion
         while now() < deadline {
             // Check if warning was disabled during the loop
-            guard warnBeforeQuitting else {
+            guard isWarningEnabled() else {
                 Logger.general.debug("WarnBeforeQuitManager: Warning disabled during hold, exiting loop")
-                currentState = .completed(shouldQuit: true)
-                return true
+                return .completed(shouldQuit: true)
             }
 
-            guard let event = eventReceiver([.keyUp, .flagsChanged], deadline, .eventTracking, true) else {
+            guard let event = eventReceiver([.keyUp, .keyDown, .flagsChanged], deadline, .eventTracking, true) else {
                 // If no event, we reached the deadline - hold completed
                 Logger.general.debug("WarnBeforeQuitManager: Hold completed by deadline")
-                currentState = .completed(shouldQuit: true)
-                return true
+                return .completed(shouldQuit: true)
             }
 
             switch event.type {
             case .flagsChanged where event.modifierFlags.deviceIndependent.intersection(keyEquivalent.modifierMask) != keyEquivalent.modifierMask:
                 // Modifier key was released - need to wait for second press
                 Logger.general.debug("WarnBeforeQuitManager: Modifier released")
-                return false
+                return .waitingForSecondPress
+
+            case .keyDown where event.keyEquivalent == shortcutKeyEquivalent:
+                Logger.general.debug("WarnBeforeQuitManager: consuming consequent keyDown for \(event)")
+                continue
+
+            case .keyDown:
+                // Other key pressed during hold - cancel and pass through
+                Logger.general.debug("WarnBeforeQuitManager: Other key pressed during hold, canceling")
+                NSApp.postEvent(event, atStart: true)
+                return .completed(shouldQuit: false)
 
             case .keyUp where event.charactersIgnoringModifiers == keyEquivalent.charCode:
                 // Shortcut key was released - need to wait for second press
                 Logger.general.debug("WarnBeforeQuitManager: Key '\(keyEquivalent.charCode)' released")
-                return false
+                return .waitingForSecondPress
 
             default:
                 // Repost other events to keep app responsive
@@ -212,8 +215,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         }
 
         // Loop ended, deadline reached - hold completed
-        currentState = .completed(shouldQuit: true)
-        return true
+        return .completed(shouldQuit: true)
     }
 
     private func waitForSecondPress() async -> Bool {
@@ -228,24 +230,25 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
         return await withTaskCancellationHandler {
             await withCheckedContinuation { [shortcutKeyEquivalent] continuation in
-                var eventMonitor: Any?
                 var timer: Timer?
                 var resumed = false
 
-                func resume(with value: Bool) {
+                func resume(with shouldQuitDecision: Bool) {
                     guard !resumed else { return }
                     resumed = true
-                    Logger.general.debug("WarnBeforeQuitManager: Resuming with \(value)")
 
-                    eventMonitor.map(NSEvent.removeMonitor)
+                    // If warning was just disabled (e.g., by clicking "Don't Ask Again"), allow quitting
+                    let shouldQuit = shouldQuitDecision || !isWarningEnabled()
+                    Logger.general.debug("WarnBeforeQuitManager: Resuming with shouldQuit=\(shouldQuit)\(!shouldQuitDecision && shouldQuit ? " (warning disabled)" : "")")
+
                     timer?.invalidate()
                     cancellationState.onCancel = nil
                     MainActor.assumeMainThread {
-                        onDontAskAgain = nil
                         onHoverChange = nil
+                        (NSApp as? Application)?.eventInterceptor = nil
                     }
 
-                    continuation.resume(returning: value)
+                    continuation.resume(returning: shouldQuit)
                 }
 
                 // Set up cancellation handler
@@ -265,12 +268,6 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                     }
                 }
 
-                // Set callback for "Don't Ask Again" clicked during wait
-                onDontAskAgain = {
-                    Logger.general.debug("WarnBeforeQuitManager: Don't Ask Again clicked")
-                    resume(with: true)
-                }
-
                 // Set callback for mouse hover state change - restarts timer with extended duration if hovering
                 onHoverChange = { isHovering in
                     if isHovering {
@@ -279,8 +276,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                     }
                 }
 
-                // Install event monitor for the shortcut, Escape, and clicks
-                eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .rightMouseDown]) { event in
+                // Install event interceptor hook for the shortcut, Escape, and clicks
+                (NSApp as? Application)?.eventInterceptor = { event in
+                    Logger.general.debug("WarnBeforeQuitManager: Received event \(event)")
                     switch event.type {
                     case .keyDown where event.keyEquivalent == .escape:
                         Logger.general.debug("WarnBeforeQuitManager: Escape pressed")
@@ -292,17 +290,22 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                         resume(with: true)
                         return nil // Consume event
 
-                    case .leftMouseDown, .rightMouseDown:
-                        Logger.general.debug("WarnBeforeQuitManager: \(event.type == .leftMouseDown ? "Left" : "Right") mouse down")
-                        // Give it some time for the click to be processed first if it's a "Don't Ask Again" click (in `onDontAskAgain`),
-                        // otherwise cancel the hold and quit the app
+                    case .keyDown:
+                        Logger.general.debug("WarnBeforeQuitManager: Other key pressed, canceling")
+                        resume(with: false)
+                        return event // Pass through for normal function
+
+                    case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+                        Logger.general.debug("WarnBeforeQuitManager: \(event.type == .leftMouseDown ? "Left" : event.type == .rightMouseDown ? "Right" : "Other") mouse down")
+                        // Give it some time for the click to be processed first (e.g., "Don't Ask Again" button click)
+                        // The resume function will check if warning was disabled and adjust accordingly
                         DispatchQueue.main.async {
                             resume(with: false)
                         }
                         return event // Let click be processed by the system
 
                     default:
-                        return event
+                        return event // Pass through all other events
                     }
                 }
 

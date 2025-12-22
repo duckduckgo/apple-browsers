@@ -24,7 +24,7 @@ struct WarnBeforeQuitView: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            // Circular progress indicator with ⌘Q
+            // Circular progress indicator
             ZStack {
                 // Background circle
                 Circle()

@@ -29,7 +29,7 @@ final class OverlayPresenter {
     // MARK: - Properties
 
     private(set) var overlayWindow: NSWindow?
-    private let viewModel = WarnBeforeQuitViewModel()
+    private let viewModel: WarnBeforeQuitViewModel
     private var observationTask: Task<Void, Never>?
     private var progressTask: Task<Void, Never>?
 
@@ -37,16 +37,18 @@ final class OverlayPresenter {
 
     // MARK: - Initialization
 
-    init(onDontAskAgain: @escaping () -> Void,
+    init(action: ConfirmationAction = .quit,
+         onDontAskAgain: @escaping () -> Void,
          onHoverChange: @escaping (Bool) -> Void,
          windowProvider: @MainActor @escaping () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow }) {
+        self.viewModel = WarnBeforeQuitViewModel(action: action)
         self.windowProvider = windowProvider
         self.viewModel.onDontAskAgain = onDontAskAgain
         self.viewModel.onHoverChange = onHoverChange
     }
 
     /// Subscribes to the manager's state stream. Keeps the presenter alive as long as the stream is active.
-    func subscribe(to stateStream: AsyncStream<QuitConfirmationState>) {
+    func subscribe(to stateStream: AsyncStream<WarnBeforeQuitManager.State>) {
         observationTask = Task { @MainActor in
             for await state in stateStream {
                 self.handle(state: state)
@@ -61,7 +63,7 @@ final class OverlayPresenter {
 
     // MARK: - Private
 
-    private func handle(state: QuitConfirmationState) {
+    private func handle(state: WarnBeforeQuitManager.State) {
         switch state {
         case .idle:
             break

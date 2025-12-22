@@ -98,7 +98,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
 
         // When
-        let manager = WarnBeforeQuitManager(currentEvent: event)
+        let manager = WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue })
 
         // Then
         XCTAssertNotNil(manager)
@@ -109,7 +109,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let event = createKeyEvent(type: .keyUp, character: "q", modifierFlags: .command)
 
         // When
-        let manager = WarnBeforeQuitManager(currentEvent: event)
+        let manager = WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue })
 
         // Then
         XCTAssertNil(manager)
@@ -120,7 +120,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let event = createKeyEvent(type: .keyDown, character: "q")
 
         // When
-        let manager = WarnBeforeQuitManager(currentEvent: event)
+        let manager = WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue })
 
         // Then
         XCTAssertNil(manager)
@@ -131,7 +131,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let event = createKeyEvent(type: .keyDown, character: "w", modifierFlags: .command)
 
         // When
-        let manager = WarnBeforeQuitManager(currentEvent: event)
+        let manager = WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue })
 
         // Then
         XCTAssertNotNil(manager)
@@ -143,7 +143,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: flagsWithDeviceDependent)
 
         // When
-        let manager = WarnBeforeQuitManager(currentEvent: event)
+        let manager = WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue })
 
         // Then - Manager should be created and filter to only device-independent flags
         XCTAssertNotNil(manager, "Manager should successfully filter device-dependent flags")
@@ -161,7 +161,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: nil, timeAdvance: totalDuration + Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
 
         // When
         let expectations = setupExpectationsForStateChanges(2, manager: manager)
@@ -196,7 +196,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
 
         let expectations = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -240,7 +240,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -290,7 +290,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -361,7 +361,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -402,7 +402,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
     func testShouldTerminateReturnsNextWhenAsync() throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }))
 
         // When
         let query = manager.shouldTerminate(isAsync: true)
@@ -420,18 +420,15 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
     func testShouldTerminateReturnsNextWhenWarningDisabled() throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }))
 
         // Verify initial state
         XCTAssertTrue(warnBeforeQuittingDefaults.wrappedValue)
 
-        // When - disable warning
-        manager.disableWarning()
+        // When - disable warning by setting preference
+        warnBeforeQuittingDefaults.wrappedValue = false
 
-        // Then - UserDefaults should be updated
-        XCTAssertFalse(warnBeforeQuittingDefaults.wrappedValue)
-
-        // And subsequent calls return .sync(.next) immediately
+        // Then - subsequent calls return .sync(.next) immediately
         let query = manager.shouldTerminate(isAsync: false)
         guard case .sync(let decision) = query else {
             XCTFail("Expected sync decision")
@@ -448,22 +445,22 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         var manager: WarnBeforeQuitManager!
         var expectations: [XCTestExpectation]!
 
-        // Event receiver that waits for .holding on call 1, calls disableWarning() on call 2
+        // Event receiver that waits for .holding on call 1, disables preference on call 2
         let eventReceiver = makeEventReceiver(events: [
             (event: dummyEvent, timeAdvance: 0),  // First call
-            (event: dummyEvent, timeAdvance: 0),  // Second call - triggers disableWarning()
+            (event: dummyEvent, timeAdvance: 0),  // Second call - triggers preference disable
             (event: dummyEvent, timeAdvance: 0)   // Third call - guard check will trigger "Warning disabled" path
         ]) { [weak self] callCount in
             if let self, callCount == 1 {
                 // Wait for .holding state to be collected
                 wait(for: expectations, timeout: Constants.expectationTimeout)
             } else if callCount == 2 {
-                // Second call: disable warning to break loop on next iteration
-                manager!.disableWarning()
+                // Second call: disable warning preference to break loop on next iteration
+                self!.warnBeforeQuittingDefaults.wrappedValue = false
             }
         }
 
-        manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver))
+        manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
         // Receive .holding state
         expectations = setupExpectationsForStateChanges(1, manager: manager)
 
@@ -485,7 +482,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Then - UserDefaults should be updated
         XCTAssertFalse(warnBeforeQuittingDefaults.wrappedValue)
 
-        // And should complete with .sync(.next) - loop broke due to disableWarning()
+        // And should complete with .sync(.next) - loop broke due to preference disabled
         guard case .sync(let decision) = query else {
             XCTFail("Expected sync decision")
             return
@@ -522,7 +519,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             return nil
         }
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
 
         // When
         let expectations = setupExpectationsForStateChanges(2, manager: manager)
@@ -559,6 +556,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         let manager = try XCTUnwrap(WarnBeforeQuitManager(
             currentEvent: event,
+            isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue },
             now: { self.now },
             eventReceiver: eventReceiver,
             timerFactory: timerFactory
@@ -581,18 +579,20 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         let expectations2 = setupExpectationsForStateChanges(1, manager: manager)
 
-        // Disable warning during async wait
-        // This calls onDontAskAgain callback which resumes with true
-        manager.disableWarning()
+        // Disable warning during async wait by setting preference
+        warnBeforeQuittingDefaults.wrappedValue = false
 
-        // Then - UserDefaults should be updated
-        XCTAssertFalse(warnBeforeQuittingDefaults.wrappedValue)
+        // Post a mouse click to trigger the async check in the event handler
+        // The DispatchQueue.main.async will check isWarningEnabled() and resume with true
+        let mouseClick = createMouseEvent(type: .leftMouseDown)
+        TestRunHelper.allowAppSendUserEvents = true
+        NSApp.postEvent(mouseClick, atStart: true)
 
         // Wait for completion
         let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
-        // disableWarning() calls onDontAskAgain callback, which resumes with true (quit allowed)
+        // Clicking after disabling preference makes resume() return true (quit allowed)
         XCTAssertEqual(decision, .next)
         XCTAssertEqual(collectedStates, [
             .holding(startTime: startTime, targetTime: targetTime),
@@ -604,7 +604,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
     func testShouldTerminateAfterDisabled() async throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }))
 
         // Start state collection to verify no states are emitted
         _ = setupExpectationsForStateChanges(0, manager: manager)
@@ -612,13 +612,10 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Verify initial state
         XCTAssertTrue(warnBeforeQuittingDefaults.wrappedValue)
 
-        // When - disable warning
-        manager.disableWarning()
+        // When - disable warning by setting preference
+        warnBeforeQuittingDefaults.wrappedValue = false
 
-        // Then - UserDefaults should be updated
-        XCTAssertFalse(warnBeforeQuittingDefaults.wrappedValue)
-
-        // And subsequent calls return .sync(.next) immediately
+        // Then - subsequent calls return .sync(.next) immediately
         let query = manager.shouldTerminate(isAsync: false)
         guard case .sync(let decision) = query else {
             XCTFail("Expected sync decision after disabling")
@@ -640,7 +637,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         ])
 
         // Use REAL timer to verify cancellation behavior
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -675,7 +672,6 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Verify callbacks don't crash after completion
         manager.setMouseHovering(true)
         manager.setMouseHovering(false)
-        manager.disableWarning()
     }
 
     // MARK: - Hover State Tests
@@ -683,7 +679,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
     func testHoverBeforeWaitPhaseStoresStateInternally() throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }))
 
         // When - hover called before entering wait phase (no callback set)
         // Then - should store state internally without crashing
@@ -716,7 +712,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             return Timer() // Don't fire, we'll cancel the Task manually
         }
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
 
         // Receive .holding state
         expectations = setupExpectationsForStateChanges(1, manager: manager)
@@ -773,7 +769,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
 
         // Set up state collection for first call's states (only expecting 2 states, not 3)
         let expectations = setupExpectationsForStateChanges(2, manager: manager)
@@ -838,7 +834,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -916,7 +912,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: qKeyUpEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -967,7 +963,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -1015,7 +1011,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -1063,7 +1059,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: qKeyUpEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -1121,7 +1117,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: otherKeyEvent, timeAdvance: 0) // First call returns 'a' key - should cancel
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
 
         // When
         let expectations = setupExpectationsForStateChanges(2, manager: manager)

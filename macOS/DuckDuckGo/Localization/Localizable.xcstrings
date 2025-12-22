@@ -15643,6 +15643,54 @@
             "state" : "new",
             "value" : "Hold or press again to close"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenir la touche enfoncée ou appuyer à nouveau pour fermer"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Schließen gedrückt halten oder erneut drücken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przytrzymaj lub naciśnij ponownie, żeby zamknąć"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado o pulsa de nuevo para cerrar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживайте или нажмите снова, чтобы закрыть"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingedrukt houden of nogmaals indrukken om te sluiten"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prime sem soltar ou prime novamente para fechar"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuto o premi di nuovo per chiudere"
+          }
         }
       }
     },
@@ -15654,6 +15702,54 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Don‘t Show Again"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne plus afficher"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht erneut anzeigen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie pokazuj więcej"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No volver a mostrar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не показывать снова"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet meer weergeven"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não mostrar novamente"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non mostrare più"
           }
         }
       }
@@ -15667,6 +15763,54 @@
             "state" : "new",
             "value" : "Hold or press again to exit fullscreen"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenir la touche enfoncée ou appuyer à nouveau pour quitter le mode plein écran"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halten oder erneut drücken, um den Vollbildmodus zu verlassen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przytrzymaj lub naciśnij ponownie, aby wyjść z trybu pełnoekranowego"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado o pulsa de nuevo para salir de pantalla completa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживайте или нажмите снова, чтобы выйти из полноэкранного режима"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd ingedrukt of druk nogmaals om de volledige schermweergave te verlaten"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prime sem soltar ou prime novamente para sair do ecrã completo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuto o premi di nuovo per uscire dalla modalità a schermo intero"
+          }
         }
       }
     },
@@ -15679,6 +15823,54 @@
             "state" : "new",
             "value" : "Hold or press again to quit"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenir la touche enfoncée ou appuyer à nouveau pour quitter"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Beenden gedrückt halten oder erneut drücken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przytrzymaj lub naciśnij ponownie, aby zakończyć"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado o presiona de nuevo para salir"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживайте или нажмите снова, чтобы выйти"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd ingedrukt of druk opnieuw om af te sluiten"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prime sem soltar ou prime novamente para sair"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuto o premi di nuovo per uscire"
+          }
         }
       }
     },
@@ -15690,6 +15882,54 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Tabs will be saved for next time."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les onglets seront sauvegardés pour la prochaine fois."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Tabs werden für das nächste Mal gespeichert."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karty zostaną zapisane na następny raz."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las pestañas se guardarán para la próxima vez."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладки будут сохранены для следующего раза."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen worden opgeslagen voor de volgende keer."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os separadores serão guardados para a próxima ocasião."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le schede verranno salvate per la prossima volta."
           }
         }
       }
@@ -85297,6 +85537,54 @@
             "state" : "new",
             "value" : "Show confirmation before closing pinned tabs with ⌘W"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher une confirmation avant de fermer les onglets épinglés avec ⌘W"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vor dem Schließen angehefteter Tabs mit ⌘W eine Bestätigung anzeigen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż potwierdzenie przed zamknięciem przypiętych kart za pomocą ⌘W"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar confirmación antes de cerrar pestañas ancladas con ⌘W"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать подтверждение перед закрытием закрепленных вкладок с помощью ⌘W"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toon een bevestiging voordat je vastgezette tabbladen sluit met ⌘W"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar confirmação antes de fechar separadores afixados com ⌘W"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra una conferma prima di chiudere le schede fissate con ⌘W"
+          }
         }
       }
     },
@@ -85308,6 +85596,54 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Show confirmation before quitting with ⌘Q"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher une confirmation avant de quitter avec ⌘Q"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vor dem Beenden mit ⌘Q eine Bestätigung anzeigen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż potwierdzenie przed zakończeniem za pomocą ⌘Q"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar confirmación antes de salir con ⌘Q"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запрашивать подтверждение перед закрытием при нажатии ⌘Q"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevestiging tonen voordat je afsluit met ⌘Q"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar confirmação antes de sair com ⌘Q"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra conferma prima di uscire con ⌘Q"
           }
         }
       }
@@ -85800,6 +86136,54 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "On Quit"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À la fermeture"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Beenden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przy zakończeniu"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al salir"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "При закрытии"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bij afsluiten"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobre a saída"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando esci"
           }
         }
       }

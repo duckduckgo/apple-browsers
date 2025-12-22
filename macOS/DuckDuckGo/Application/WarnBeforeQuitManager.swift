@@ -233,6 +233,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 var timer: Timer?
                 var resumed = false
 
+                @MainActor
                 func resume(with shouldQuitDecision: Bool) {
                     guard !resumed else { return }
                     resumed = true
@@ -243,18 +244,18 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
                     timer?.invalidate()
                     cancellationState.onCancel = nil
-                    MainActor.assumeMainThread {
-                        onHoverChange = nil
-                        (NSApp as? Application)?.eventInterceptor = nil
-                    }
+                    onHoverChange = nil
+                    (NSApp as? Application)?.eventInterceptor = nil
 
                     continuation.resume(returning: shouldQuit)
                 }
 
                 // Set up cancellation handler
                 cancellationState.onCancel = {
-                    Logger.general.debug("WarnBeforeQuitManager: Cancellation handler invoked, cleaning up")
-                    resume(with: false)
+                    DispatchQueue.main.asyncOrNow {
+                        Logger.general.debug("WarnBeforeQuitManager: Cancellation handler invoked, cleaning up")
+                        resume(with: false)
+                    }
                 }
 
                 @MainActor

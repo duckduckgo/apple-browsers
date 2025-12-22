@@ -63,8 +63,9 @@ open class InMemoryThrowingKeyValueStore: ThrowingKeyValueStoring {
     }
 
     /// Initializer that throws an error immediately - useful for testing initialization failures
-    public init(throwOnInit error: Error, underlyingDict: [String: Any] = [:]) throws {
-        throw error
+    public init(throwOnInit error: Error?, underlyingDict: [String: Any] = [:]) throws {
+        self.underlyingDict = underlyingDict
+        try error.map { throw $0 }
     }
 
     public func object(forKey defaultName: String) throws -> Any? {

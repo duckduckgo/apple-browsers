@@ -30,10 +30,14 @@ import Combine
 
 final class FindInPageViewController: NSViewController {
 
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
+
     weak var delegate: FindInPageDelegate?
 
     @Published var model: FindInPageModel?
 
+    @IBOutlet weak var backgroundView: ColorView!
     @IBOutlet weak var closeButton: NSButton!
     @IBOutlet weak var textField: NSTextField!
     @IBOutlet weak var focusRingView: FocusRingView!
@@ -50,7 +54,7 @@ final class FindInPageViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        focusRingView.strokedBackgroundColor = .findInPageFocusedBackground
+
         textField.placeholderString = UserText.findInPageTextFieldPlaceholder
         textField.delegate = self
 
@@ -65,14 +69,19 @@ final class FindInPageViewController: NSViewController {
         textField.setAccessibilityRole(.textField)
         statusField.setAccessibilityIdentifier("FindInPageController.statusField")
         statusField.setAccessibilityRole(.textField)
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
+        super.viewWillAppear()
         subscribeToModel()
         subscribeToFirstResponder()
     }
 
     override func viewWillDisappear() {
+        super.viewWillDisappear()
         modelCancellables.removeAll()
         cancellables.removeAll()
     }
@@ -196,4 +205,12 @@ extension FindInPageViewController: NSTextFieldDelegate {
         model?.find(textField.stringValue)
     }
 
+}
+
+extension FindInPageViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundView.backgroundColor = theme.palette.surfaceSecondary
+        focusRingView.applyThemeStyle(theme: theme)
+    }
 }

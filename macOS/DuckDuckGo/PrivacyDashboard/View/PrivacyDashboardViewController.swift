@@ -78,9 +78,9 @@ final class PrivacyDashboardViewController: NSViewController {
         case .reportBrokenSiteSent: domainEvent = .brokenSiteReportSent
         }
         if let parameters {
-            PixelKit.fire(NonStandardEvent(domainEvent), withAdditionalParameters: parameters)
+            PixelKit.fire(domainEvent, withAdditionalParameters: parameters, doNotEnforcePrefix: true)
         } else {
-            PixelKit.fire(NonStandardEvent(domainEvent))
+            PixelKit.fire(domainEvent, doNotEnforcePrefix: true)
         }
     }
 
@@ -108,9 +108,10 @@ final class PrivacyDashboardViewController: NSViewController {
 
         brokenSiteReporter = {
             BrokenSiteReporter(pixelHandler: { parameters in
-                PixelKit.fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
+                PixelKit.fire(NonStandardPixel.brokenSiteReport,
                               withAdditionalParameters: parameters,
-                              allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
+                              allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters,
+                              doNotEnforcePrefix: true)
             }, keyValueStoring: UserDefaults.standard)
         }()
         super.init(nibName: nil, bundle: nil)
@@ -222,10 +223,10 @@ final class PrivacyDashboardViewController: NSViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         if state.isProtected && configuration.isUserUnprotected(domain: domain) {
             configuration.userEnabledProtection(forDomain: domain)
-            PixelKit.fire(NonStandardEvent(GeneralPixel.dashboardProtectionAllowlistRemove(triggerOrigin: state.eventOrigin.screen.rawValue)))
+            PixelKit.fire(GeneralPixel.dashboardProtectionAllowlistRemove(triggerOrigin: state.eventOrigin.screen.rawValue), doNotEnforcePrefix: true)
         } else {
             configuration.userDisabledProtection(forDomain: domain)
-            PixelKit.fire(NonStandardEvent(GeneralPixel.dashboardProtectionAllowlistAdd(triggerOrigin: state.eventOrigin.screen.rawValue)))
+            PixelKit.fire(GeneralPixel.dashboardProtectionAllowlistAdd(triggerOrigin: state.eventOrigin.screen.rawValue), doNotEnforcePrefix: true)
             let tdsEtag = contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 PixelKit.fire(GeneralPixel.debugBreakageExperiment, frequency: .uniqueByName, withAdditionalParameters: parameters)

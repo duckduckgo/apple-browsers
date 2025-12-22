@@ -26,24 +26,27 @@ import PixelKitTestingUtilities
 class WebsiteBreakageReportTests: XCTestCase {
 
     func testReportBrokenSitePixel() {
-        fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
+        fire(NonStandardPixel.brokenSiteReport,
              frequency: .standard,
+             doNotEnforcePrefix: true,
              and: .expect(pixelName: "epbf_macos_desktop"),
              file: #filePath,
              line: #line)
     }
 
     func testReportBrokenSiteShownPixel() {
-        fire(NonStandardEvent(NonStandardPixel.brokenSiteReportShown),
+        fire(NonStandardPixel.brokenSiteReportShown,
              frequency: .standard,
+             doNotEnforcePrefix: true,
              and: .expect(pixelName: "m_report-broken-site_shown"),
              file: #filePath,
              line: #line)
     }
 
     func testReportBrokenSiteSentPixel() {
-        fire(NonStandardEvent(NonStandardPixel.brokenSiteReportSent),
+        fire(NonStandardPixel.brokenSiteReportSent,
              frequency: .standard,
+             doNotEnforcePrefix: true,
              and: .expect(pixelName: "m_report-broken-site_sent"),
              file: #filePath,
              line: #line)

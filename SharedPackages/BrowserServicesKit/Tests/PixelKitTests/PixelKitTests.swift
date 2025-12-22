@@ -120,16 +120,6 @@ final class PixelKitTests: XCTestCase {
         pixelKit.fire(TestEventV2.testEvent)
     }
 
-    func testNonStandardEvent() {
-        func testReportBrokenSitePixel() {
-            fire(NonStandardEvent(TestEventV2.testEvent),
-                 frequency: .standard,
-                 and: .expect(pixelName: TestEventV2.testEvent.name),
-                 file: #filePath,
-                 line: #line)
-        }
-    }
-
     func testDebugEventPrefixed() {
         let appVersion = "1.0.5"
         let headers = ["a": "2", "b": "3", "c": "2000"]

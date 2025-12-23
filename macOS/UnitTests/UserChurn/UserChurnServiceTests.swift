@@ -32,7 +32,7 @@ final class MockPixelFiring: PixelFiring {
         firedPixels.append((event: event, frequency: frequency, additionalParameters: nil))
     }
 
-    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, withAdditionalParameters: [String : String]) {
+    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, withAdditionalParameters: [String: String]) {
         firedPixels.append((event: event, frequency: frequency, additionalParameters: withAdditionalParameters))
     }
 }

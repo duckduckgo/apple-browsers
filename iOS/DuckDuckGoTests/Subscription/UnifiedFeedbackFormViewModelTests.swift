@@ -22,6 +22,7 @@ import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 import Foundation
+import Networking
 
 struct UnifiedFeedbackFormViewModelTests {
 
@@ -31,14 +32,16 @@ struct UnifiedFeedbackFormViewModelTests {
     }
 
     private func makeViewModel(
-        subscriptionFeatures: [Entitlement.ProductName] = [],
+        subscriptionFeatures: [SubscriptionEntitlement] = [],
         isPaidAIChatFeatureEnabled: Bool = false,
         isProTierPurchaseEnabled: Bool = false,
         source: UnifiedFeedbackFormViewModel.Source = .unknown,
         feedbackSender: MockFeedbackSender = MockFeedbackSender()
     ) -> UnifiedFeedbackFormViewModel {
+        let subscriptionManger = SubscriptionManagerMockV2()
+        subscriptionManger.resultFeatures = subscriptionFeatures
         let viewModel = UnifiedFeedbackFormViewModel(
-            subscriptionManager: SubscriptionManagerMockV2(),
+            subscriptionManager: subscriptionManger,
             vpnMetadataCollector: MockUnifiedMetadataCollector(),
             dbpMetadataCollector: MockUnifiedMetadataCollector(),
             defaultMetadatCollector: MockUnifiedMetadataCollector(),

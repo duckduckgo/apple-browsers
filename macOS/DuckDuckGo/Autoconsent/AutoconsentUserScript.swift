@@ -536,7 +536,11 @@ extension AutoconsentUserScript {
             consentRule: messageData.cmp,
             consentHeuristicEnabled: consentHeuristicEnabled
         )
-        firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
+        if messageData.cmp == "HEURISTIC" {
+            firePixel(pixel: .doneHeuristic)
+        } else {
+            firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
+        }
 
         popupManagedSubject.send(messageData)
 

@@ -25,6 +25,7 @@ import Common
 import PixelKit
 import PixelExperimentKit
 import os.log
+import FeatureFlags
 
 protocol PrivacyDashboardViewControllerSizeDelegate: AnyObject {
 
@@ -229,6 +230,9 @@ final class PrivacyDashboardViewController: NSViewController {
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 PixelKit.fire(GeneralPixel.debugBreakageExperiment, frequency: .uniqueByName, withAdditionalParameters: parameters)
             }
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "privacyToggleUsed", conversionWindowDays: 0...1, value: "true")
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "privacyToggleUsed", conversionWindowDays: 0...5, value: "true")
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "privacyToggleUsed", conversionWindowDays: 0...10, value: "true")
         }
 
         let completionToken = contentBlocking.contentBlockingManager.scheduleCompilation()
@@ -333,6 +337,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
             } catch {
                 Logger.general.error("Failed to generate or send the broken site report: \(error.localizedDescription)")
             }
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "breakageReportSent", conversionWindowDays: 0...10, value: "true")
         }
     }
 
@@ -351,6 +356,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
             } catch {
                 Logger.general.error("Failed to generate or send the broken site report: \(error.localizedDescription)")
             }
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "breakageReportSent", conversionWindowDays: 0...10, value: "true")
         }
     }
 

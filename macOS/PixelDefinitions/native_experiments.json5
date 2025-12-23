@@ -1,5 +1,27 @@
 {
     // This file will define pixels sent by the native experiments framework
     "defaultSuffixes": [],
-    "activeExperiments": {}
+    "activeExperiments": {
+        "heuristicAction": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {
+                "popupHandled": {
+                    "description": "CPM detected a cookie popup within the conversion window",
+                    "enum": ["true"]
+                },
+                "popupHandledMilestone": {
+                    "description": "At least N popups handled within the first one or two weeks window",
+                    "enum": ["10", "5"]
+                },
+                "breakageReportSent": {
+                    "description": "Breakage report is sent within the conversion window",
+                    "enum": ["true"]
+                },
+                "privacyToggleUsed": {
+                    "description": "Privacy toggle is used to manage cookie consent",
+                    "enum": ["true"]
+                }
+            }
+        }
+    }
 }

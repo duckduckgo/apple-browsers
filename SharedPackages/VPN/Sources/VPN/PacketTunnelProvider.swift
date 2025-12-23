@@ -291,16 +291,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private var keyStore: NetworkProtectionKeyStore
 
     public let tokenHandlerProvider: () -> any SubscriptionTokenHandling
-    @objc
-    public static var isUsingAuthV2: Bool {
-        get {
-            UserDefaults.standard.bool(forKey: #keyPath(isUsingAuthV2))
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: #keyPath(isUsingAuthV2))
-        }
-    }
-
     private func resetRegistrationKey() {
         Logger.networkProtectionKeyManagement.log("Resetting the current registration key")
         keyStore.resetCurrentKeyPair()

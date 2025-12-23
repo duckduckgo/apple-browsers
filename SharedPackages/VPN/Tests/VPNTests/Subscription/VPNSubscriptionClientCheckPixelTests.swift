@@ -28,14 +28,12 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
 #if os(macOS)
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             trigger: .appStartup
         )
         XCTAssertEqual(pixel.namePrefix, "m_mac_vpn_subs_client_check_")
 #elseif os(iOS)
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             trigger: .appStartup
         )
         XCTAssertEqual(pixel.namePrefix, "m_vpn_subs_client_check_")
@@ -46,7 +44,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
     func testNamePrefix_deviceWake() {
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             trigger: .deviceWake
         )
         XCTAssertEqual(pixel.namePrefix, "m_mac_vpn_subs_client_check_on_wake_")
@@ -55,7 +52,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
     func testNamePrefix_appForegrounded() {
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             trigger: .appForegrounded
         )
         XCTAssertEqual(pixel.namePrefix, "m_vpn_subs_client_check_on_foreground_")
@@ -67,7 +63,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
     func testPixelName_vpnFeatureEnabled() {
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             trigger: .appStartup
         )
         XCTAssertEqual(pixel.name, "vpn_feature_enabled")
@@ -76,7 +71,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
     func testPixelName_vpnFeatureDisabled() {
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
             isSubscriptionActive: false,
-            isAuthV2Enabled: true,
             trigger: .appStartup
         )
         XCTAssertEqual(pixel.name, "vpn_feature_disabled")
@@ -86,7 +80,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         let error = NSError(domain: "TestError", code: 1, userInfo: nil)
         let pixel = VPNSubscriptionClientCheckPixel.failed(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             trigger: .appStartup,
             error: error
         )
@@ -98,7 +91,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
     func testParameters_activeSubscriptionAuthV2() {
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             trigger: .appStartup
         )
 
@@ -111,7 +103,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
     func testParameters_activeSubscriptionAuthV1() {
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: false,
             trigger: .appStartup
         )
 
@@ -124,7 +115,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
     func testParameters_inactiveSubscription() {
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
             isSubscriptionActive: false,
-            isAuthV2Enabled: true,
             trigger: .appStartup
         )
 
@@ -137,7 +127,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
     func testParameters_nilSubscription() {
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: nil,
-            isAuthV2Enabled: true,
             trigger: .appStartup
         )
 
@@ -151,7 +140,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         let error = NSError(domain: "TestError", code: 1, userInfo: nil)
         let pixel = VPNSubscriptionClientCheckPixel.failed(
             isSubscriptionActive: true,
-            isAuthV2Enabled: false,
             trigger: .appStartup,
             error: error
         )
@@ -167,14 +155,12 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
     func testError_successfulPixels() {
         let enabledPixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             trigger: .appStartup
         )
         XCTAssertNil(enabledPixel.error)
 
         let disabledPixel = VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
             isSubscriptionActive: false,
-            isAuthV2Enabled: true,
             trigger: .appStartup
         )
         XCTAssertNil(disabledPixel.error)
@@ -184,7 +170,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         let testError = NSError(domain: "TestDomain", code: 42, userInfo: [NSLocalizedDescriptionKey: "Test error"])
         let pixel = VPNSubscriptionClientCheckPixel.failed(
             isSubscriptionActive: nil,
-            isAuthV2Enabled: true,
             trigger: .appStartup,
             error: testError
         )
@@ -206,7 +191,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
 
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             trigger: .appStartup
         )
 
@@ -219,7 +203,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         let error = NSError(domain: "NetworkError", code: 500, userInfo: nil)
         let pixel = VPNSubscriptionClientCheckPixel.failed(
             isSubscriptionActive: nil,
-            isAuthV2Enabled: false,
             trigger: .deviceWake,
             error: error
         )
@@ -254,7 +237,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         for (isActive, isAuthV2) in combinations {
             let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
                 isSubscriptionActive: isActive,
-                isAuthV2Enabled: isAuthV2,
                 trigger: .appStartup
             )
 

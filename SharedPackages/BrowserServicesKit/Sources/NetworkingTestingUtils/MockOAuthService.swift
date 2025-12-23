@@ -91,17 +91,7 @@ public final class MockOAuthService: OAuthService {
             throw logoutError
         }
     }
-
-    public var exchangeTokenResponse: Result<Networking.AuthorisationCode, Error>?
-    public func exchangeToken(accessTokenV1: String, authSessionID: String) async throws -> Networking.AuthorisationCode {
-        switch exchangeTokenResponse! {
-        case .success(let result):
-            return result
-        case .failure(let error):
-            throw error
-        }
-    }
-
+    
     public var getJWTSignersResponse: Result<JWTKit.JWTSigners, Error>?
     public func getJWTSigners() async throws -> JWTKit.JWTSigners {
         switch getJWTSignersResponse! {

@@ -404,6 +404,7 @@ public enum AutoconsentSubfeature: String, PrivacySubfeature {
 
     case onByDefault
     case filterlist
+    case heuristicAction
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {

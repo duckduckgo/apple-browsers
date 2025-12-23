@@ -120,7 +120,7 @@ final class BrokenSiteReportingTests: XCTestCase {
                                       jsPerformance: nil,
                                       userRefreshCount: 0,
                                       variant: "",
-                                      cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true, consentReloadLoop: nil, consentRule: "test-cmp"),
+                                      cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true, consentReloadLoop: nil, consentRule: "test-cmp", consentHeuristicEnabled: nil),
                                       debugFlags: "",
                                       privacyExperiments: "",
                                       isPirEnabled: nil)

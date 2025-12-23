@@ -3906,6 +3906,7 @@
 		EE3ED86E2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3ED86D2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift */; };
 		EE3ED86F2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3ED86D2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift */; };
 		EE42CBCC2BC8004700AD411C /* PermissionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE42CBCB2BC8004700AD411C /* PermissionsTests.swift */; };
+		1DE28D612EEB4A7E00C07F15 /* NewPermissionViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE28D602EEB4A7E00C07F15 /* NewPermissionViewTests.swift */; };
 		EE4624E42E69DB53001CD9E6 /* FeatureFlagger+Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4624E32E69DB49001CD9E6 /* FeatureFlagger+Sync.swift */; };
 		EE4624E52E69DB53001CD9E6 /* FeatureFlagger+Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4624E32E69DB49001CD9E6 /* FeatureFlagger+Sync.swift */; };
 		EE4E15FC2EBCB98A006D1C2D /* NewReportFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4E15FB2EBCB983006D1C2D /* NewReportFeedbackView.swift */; };
@@ -6298,6 +6299,7 @@
 		EE34245D2BA0853900173B1B /* VPNUninstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUninstaller.swift; sourceTree = "<group>"; };
 		EE3ED86D2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissableSyncDeviceButtonModel.swift; sourceTree = "<group>"; };
 		EE42CBCB2BC8004700AD411C /* PermissionsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsTests.swift; sourceTree = "<group>"; };
+		1DE28D602EEB4A7E00C07F15 /* NewPermissionViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewPermissionViewTests.swift; sourceTree = "<group>"; };
 		EE4624E32E69DB49001CD9E6 /* FeatureFlagger+Sync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FeatureFlagger+Sync.swift"; sourceTree = "<group>"; };
 		EE4E15FB2EBCB983006D1C2D /* NewReportFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewReportFeedbackView.swift; sourceTree = "<group>"; };
 		EE54F7B22BBFEA48006218DB /* BookmarksAndFavoritesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksAndFavoritesTests.swift; sourceTree = "<group>"; };
@@ -8964,6 +8966,7 @@
 				8449054A2E55BBD60054F4FD /* NavigationProtectionUITests.swift */,
 				56A054522C2592CE007D8FAB /* OnboardingUITests.swift */,
 				EE42CBCB2BC8004700AD411C /* PermissionsTests.swift */,
+				1DE28D602EEB4A7E00C07F15 /* NewPermissionViewTests.swift */,
 				BB4339DA2C7F9606005D7ED7 /* PinnedTabsTests.swift */,
 				8409BD732ED878B200E39FA7 /* PopupHandlingUITests.swift */,
 				842FE38A2E0C28EF00E4F9E4 /* PrintingTests.swift */,
@@ -15781,6 +15784,7 @@
 				844905412E54A3540054F4FD /* AddressBarUITests.swift in Sources */,
 				844905452E54ADD40054F4FD /* AutoconsentUITests.swift in Sources */,
 				EE42CBCC2BC8004700AD411C /* PermissionsTests.swift in Sources */,
+				1DE28D612EEB4A7E00C07F15 /* NewPermissionViewTests.swift in Sources */,
 				844905432E54A3600054F4FD /* AddressBarSpoofingUITests.swift in Sources */,
 				844905492E55A9740054F4FD /* SearchNonexistentDomainUITests.swift in Sources */,
 				7B4CE8E726F02135009134B1 /* TabBarTests.swift in Sources */,

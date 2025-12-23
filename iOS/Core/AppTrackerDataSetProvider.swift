@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 final public class AppTrackerDataSetProvider: EmbeddedDataProvider {
 

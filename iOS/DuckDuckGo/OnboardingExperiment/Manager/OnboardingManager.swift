@@ -20,6 +20,7 @@
 import AVKit
 import BrowserServicesKit
 import Core
+import PrivacyConfig
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
     case notSet

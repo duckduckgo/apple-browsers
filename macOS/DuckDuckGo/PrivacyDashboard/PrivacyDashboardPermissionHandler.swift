@@ -20,7 +20,7 @@ import Foundation
 import Combine
 import FeatureFlags
 import PrivacyDashboard
-import BrowserServicesKit
+import PrivacyConfig
 import AppKit
 
 typealias PrivacyDashboardPermissionAuthorizationState = [(permission: PermissionType, state: PermissionAuthorizationState)]
@@ -85,7 +85,6 @@ final class PrivacyDashboardPermissionHandler {
 
         let authorizationState: PrivacyDashboardPermissionAuthorizationState
         authorizationState = permissionManager.persistedPermissionTypes.union(usedPermissions.keys)
-            .filter { $0 != .notification }
             .compactMap { permissionType in
                 guard permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
                         || usedPermissions[permissionType] != nil

@@ -19,7 +19,7 @@
 
 import Foundation
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 
 class PrivacyConfigurationMock: PrivacyConfiguration {
 
@@ -48,11 +48,11 @@ class PrivacyConfigurationMock: PrivacyConfiguration {
         return isEnabled(featureKey: featureKey, versionProvider: versionProvider, defaultValue: false)
     }
 
-    func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {
+    func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool {
         return enabledFeaturesForVersions[featureKey]?.contains(versionProvider.appVersion() ?? "") ?? false
     }
 
-    func stateFor(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
+    func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
         if isEnabled(featureKey: featureKey, versionProvider: versionProvider) {
             return .enabled
         }
@@ -60,11 +60,11 @@ class PrivacyConfigurationMock: PrivacyConfiguration {
     }
 
     var enabledSubfeaturesForVersions: [String: Set<String>] = [:]
-    func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
+    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         return enabledSubfeaturesForVersions[subfeature.rawValue]?.contains(versionProvider.appVersion() ?? "") ?? false
     }
 
-    func stateFor(_ subfeature: any PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
+    func stateFor(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {
         if isSubfeatureEnabled(subfeature, versionProvider: versionProvider, randomizer: randomizer, defaultValue: false) {
             return .enabled
         }
@@ -103,7 +103,7 @@ class PrivacyConfigurationMock: PrivacyConfiguration {
     }
     
     var subfeatureSettings: [String: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] = [:]
-    func settings(for subfeature: any BrowserServicesKit.PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
+    func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
         return subfeatureSettings[subfeature.rawValue] ?? ""
     }
 
@@ -124,11 +124,11 @@ class PrivacyConfigurationMock: PrivacyConfiguration {
 
 class PrivacyConfigurationManagerMock: PrivacyConfigurationManaging {
 
-    var embeddedConfigData: BrowserServicesKit.PrivacyConfigurationManager.ConfigurationData {
+    var embeddedConfigData: PrivacyConfigurationManager.ConfigurationData {
         fatalError("not implemented")
     }
 
-    var fetchedConfigData: BrowserServicesKit.PrivacyConfigurationManager.ConfigurationData? {
+    var fetchedConfigData: PrivacyConfigurationManager.ConfigurationData? {
         fatalError("not implemented")
     }
 

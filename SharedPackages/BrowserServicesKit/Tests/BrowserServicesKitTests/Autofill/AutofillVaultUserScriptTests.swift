@@ -28,6 +28,11 @@ class AutofillVaultUserScriptTests: XCTestCase {
 
     lazy var hostProvider: UserScriptHostProvider = SecurityOriginHostProvider()
 
+    override class func setUp() {
+        super.setUp()
+        WKFrameInfo.swizzleDealloc()
+    }
+
     lazy var userScript: AutofillUserScript = {
         let embeddedConfig =
         """

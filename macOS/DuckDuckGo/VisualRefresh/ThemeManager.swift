@@ -20,10 +20,13 @@ import Foundation
 import Combine
 import AppKit
 import DesignResourcesKit
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 
 protocol ThemeManaging {
+    var effectiveAppearance: ThemeAppearance { get }
+    var effectiveAppearancePublisher: Published<ThemeAppearance>.Publisher { get }
+
     var theme: ThemeStyleProviding { get }
     var themePublisher: Published<any ThemeStyleProviding>.Publisher { get }
 }
@@ -32,6 +35,16 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
     private var appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
+
+    /// Effective Appearance is expected to only be either `.light` or `.dark`.
+    /// This allows us to address a FE shortcoming, where `.system` is not supported
+    ///
+    @Published private(set) var effectiveAppearance: ThemeAppearance
+
+    var effectiveAppearancePublisher: Published<ThemeAppearance>.Publisher {
+        $effectiveAppearance
+    }
+
     @Published private(set) var theme: ThemeStyleProviding {
         didSet {
             switchDesignSystemPalette(to: theme.name.designColorPalette)
@@ -42,14 +55,19 @@ final class ThemeManager: ObservableObject, ThemeManaging {
         $theme
     }
 
+    @Published private(set) var designColorPalette: DesignResourcesKit.ColorPalette
+
     init(appearancePreferences: AppearancePreferences, internalUserDecider: InternalUserDecider, featureFlagger: FeatureFlagger) {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
         self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
+        self.effectiveAppearance = NSApp.effectiveAppearance.effectiveThemeAppearance
+        self.designColorPalette = appearancePreferences.themeName.designColorPalette
 
         switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
         subscribeToInternalUserChanges(internalUserDecider: internalUserDecider)
+        subscribeToSystemAppearance()
     }
 
     private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
@@ -70,6 +88,15 @@ final class ThemeManager: ObservableObject, ThemeManaging {
             }
             .store(in: &cancellables)
     }
+
+    private func subscribeToSystemAppearance() {
+        NSApp.publisher(for: \.effectiveAppearance)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] appearance in
+                self?.effectiveAppearance = appearance.effectiveThemeAppearance
+            }
+            .store(in: &cancellables)
+    }
 }
 
 private extension ThemeManager {
@@ -80,8 +107,10 @@ private extension ThemeManager {
     }
 
     /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
+    /// We're also keeping a reference to the active `designColorPalette`, so that it's Observable in SwiftUI
     func switchDesignSystemPalette(to palette: DesignResourcesKit.ColorPalette) {
         DesignSystemPalette.current = palette
+        designColorPalette = palette
     }
 
     /// Non Internal Users should only see the `.default` theme

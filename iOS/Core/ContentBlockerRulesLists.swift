@@ -18,6 +18,7 @@
 //
 
 import BrowserServicesKit
+import PrivacyConfig
 
 public final class ContentBlockerRulesLists: DefaultContentBlockerRulesListsSource {
 

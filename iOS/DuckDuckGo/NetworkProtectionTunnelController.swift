@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import Common
 import Core
@@ -147,10 +147,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                     return "noAuthToken"
                 }
         }
-    }
-    
-    private var isConnectionWideEventMeasurementEnabled: Bool {
-        featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
     }
 
     // MARK: - Initializers
@@ -320,7 +316,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         options["activationAttemptId"] = UUID().uuidString as NSString
-        options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] = NSNumber(value: isConnectionWideEventMeasurementEnabled)
 
         
         do {
@@ -521,7 +516,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 private extension NetworkProtectionTunnelController {
     
     func setupAndStartConnectionWideEvent() {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         let data = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
@@ -547,7 +541,7 @@ private extension NetworkProtectionTunnelController {
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
-        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        guard let data = self.connectionWideEventData else { return }
         data.overallDuration?.complete()
         if let error {
             data.errorData = .init(error: error, description: description)

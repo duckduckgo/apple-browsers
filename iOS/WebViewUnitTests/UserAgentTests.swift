@@ -17,34 +17,12 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import WebKit
 import XCTest
 
 @testable import Core
-
-class MockEmbeddedDataProvider: EmbeddedDataProvider {
-    var embeddedDataEtag: String
-
-    var embeddedData: Data
-
-    init(data: Data, etag: String) {
-        embeddedData = data
-        embeddedDataEtag = etag
-    }
-}
-
-class MockDomainsProtectionStore: DomainsProtectionStore {
-    var unprotectedDomains = Set<String>()
-
-    func disableProtection(forDomain domain: String) {
-        unprotectedDomains.remove(domain)
-    }
-
-    func enableProtection(forDomain domain: String) {
-        unprotectedDomains.insert(domain)
-    }
-}
 
 final class UserAgentTests: XCTestCase {
     

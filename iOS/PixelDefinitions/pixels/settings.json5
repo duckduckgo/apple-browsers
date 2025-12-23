@@ -12,5 +12,12 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_settings_whats-new_open": {
+        "description": "Fires when the user opens What's New prompt from settings",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

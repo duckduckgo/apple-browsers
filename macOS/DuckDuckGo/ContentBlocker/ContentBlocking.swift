@@ -19,11 +19,13 @@
 import Foundation
 import WebKit
 import Combine
+import ContentBlocking
 import BrowserServicesKit
 import Common
 import Persistence
 import PixelKit
 import PixelExperimentKit
+import PrivacyConfig
 
 protocol ContentBlockingProtocol {
 
@@ -71,6 +73,7 @@ final class AppContentBlocking {
         contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
         onboardingNavigationDelegate: OnboardingNavigating,
         appearancePreferences: AppearancePreferences,
+        themeManager: ThemeManaging,
         startupPreferences: StartupPreferences,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
@@ -98,6 +101,7 @@ final class AppContentBlocking {
             contentScopeExperimentsManager: contentScopeExperimentsManager(),
             onboardingNavigationDelegate: onboardingNavigationDelegate,
             appearancePreferences: appearancePreferences,
+            themeManager: themeManager,
             startupPreferences: startupPreferences,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
@@ -122,6 +126,7 @@ final class AppContentBlocking {
         contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
         onboardingNavigationDelegate: OnboardingNavigating,
         appearancePreferences: AppearancePreferences,
+        themeManager: ThemeManaging,
         startupPreferences: StartupPreferences,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
@@ -164,6 +169,7 @@ final class AppContentBlocking {
                                                   featureFlagger: featureFlagger,
                                                   onboardingNavigationDelegate: onboardingNavigationDelegate,
                                                   appearancePreferences: appearancePreferences,
+                                                  themeManager: themeManager,
                                                   startupPreferences: startupPreferences,
                                                   windowControllersManager: windowControllersManager,
                                                   bookmarkManager: bookmarkManager,

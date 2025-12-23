@@ -25,6 +25,7 @@ import Foundation
 import SecureStorage
 import SwiftUI
 import PixelKit
+import PrivacyConfig
 import os.log
 
 protocol PasswordManagementDelegate: AnyObject {
@@ -409,7 +410,7 @@ final class PasswordManagementViewController: NSViewController {
     @IBAction func onSyncClicked(_ sender: Any) {
         self.dismiss()
         let source = SyncDeviceButtonTouchpoint.passwordsEmpty
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
         DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
     }
 
@@ -843,7 +844,7 @@ final class PasswordManagementViewController: NSViewController {
     var syncPromoSelectionCancellable: AnyCancellable?
 
     private func createListView() {
-        let listModel = PasswordManagementItemListModel(passwordManagerCoordinator: self.passwordManagerCoordinator, syncPromoManager: self.syncPromoManager, onItemSelected: { [weak self] previousValue, newValue in
+        let listModel = PasswordManagementItemListModel(passwordManagerCoordinator: self.passwordManagerCoordinator, syncPromoManager: self.syncPromoManager, featureFlagger: Application.appDelegate.featureFlagger, onItemSelected: { [weak self] previousValue, newValue in
             guard let newValue = newValue,
                   let id = newValue.secureVaultID,
                   let window = self?.view.window else {

@@ -18,8 +18,9 @@
 //
 
 import Foundation
-import Core
 import BrowserServicesKit
+import Core
+import PrivacyConfig
 import Onboarding
 import PixelKit
 import PixelExperimentKit

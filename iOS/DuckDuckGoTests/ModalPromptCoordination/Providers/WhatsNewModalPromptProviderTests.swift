@@ -32,10 +32,11 @@ final class WhatsNewCoordinatorTests {
     func whenScheduledMessageExistsThenModalConfigurationIsReturned() {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage()
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
@@ -47,18 +48,22 @@ final class WhatsNewCoordinatorTests {
 
         // THEN
         #expect(configuration != nil)
-        #expect(mockStore.fetchScheduledRemoteMessageCalls == 1)
-        #expect(mockStore.capturedSurfaces == .modal)
+        #expect(mockRepository.didCallFetchScheduledMessage)
+        #expect(!mockRepository.didCallFetchLastShownMessage)
     }
 
-    @Test("Check View Controller Sets Page Sheet Presentation Style On iPhone")
-    func whenIsIPadFalseThenViewControllerUsesPageSheetPresentationStyle() {
+    @Test(
+        "Check View Controller Sets Page Sheet Presentation Style On iPhone",
+        arguments: [.scheduled, .onDemand] as [WhatsNewCoordinator.DisplayContext]
+    )
+    func whenIsIPadFalseThenViewControllerUsesPageSheetPresentationStyle(displayContext: WhatsNewCoordinator.DisplayContext) {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage()
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: displayContext,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
@@ -75,14 +80,18 @@ final class WhatsNewCoordinatorTests {
         #expect(configuration?.viewController is WhatsNewViewController)
     }
 
-    @Test("Check View Controller Sets Form Sheet Presentation Style On iPad")
-    func whenIsIPadTrueThenViewControllerUsesFormSheetPresentationStyle() {
+    @Test(
+        "Check View Controller Sets Form Sheet Presentation Style On iPad",
+        arguments: [.scheduled, .onDemand] as [WhatsNewCoordinator.DisplayContext]
+    )
+    func whenIsIPadTrueThenViewControllerUsesFormSheetPresentationStyle(displayContext: WhatsNewCoordinator.DisplayContext) {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage()
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: displayContext,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: true,
             pixelReporter: MockRemoteMessagingPixelReporter(),
@@ -102,10 +111,11 @@ final class WhatsNewCoordinatorTests {
     @Test("Check No Modal Is Provided When No Scheduled Message")
     func whenNoScheduledMessageThenNilIsReturned() {
         // GIVEN
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: nil)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
@@ -117,11 +127,15 @@ final class WhatsNewCoordinatorTests {
 
         // THEN
         #expect(configuration == nil)
-        #expect(mockStore.fetchScheduledRemoteMessageCalls == 1)
+        #expect(mockRepository.didCallFetchScheduledMessage)
+        #expect(!mockRepository.didCallFetchLastShownMessage)
     }
 
-    @Test("Check No Modal Is Provided When Message Has Wrong Content Type")
-    func whenMessageIsNotCardsListThenNilIsReturned() {
+    @Test(
+        "Check No Modal Is Provided When Message Has Wrong Content Type",
+        arguments: [.scheduled, .onDemand] as [WhatsNewCoordinator.DisplayContext]
+    )
+    func whenMessageIsNotCardsListThenNilIsReturned(displayContext: WhatsNewCoordinator.DisplayContext) {
         // GIVEN
         let message = RemoteMessageModel(
             id: "test-message-id",
@@ -131,10 +145,11 @@ final class WhatsNewCoordinatorTests {
             exclusionRules: [],
             isMetricsEnabled: true
         )
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: displayContext,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
@@ -152,10 +167,11 @@ final class WhatsNewCoordinatorTests {
     func whenModalIsPresentedThenUpdateRemoteMessageWithCorrectIdIsCalled() async {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "specific-message-id")
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
@@ -169,32 +185,7 @@ final class WhatsNewCoordinatorTests {
         // THEN - verify the correct message ID was used
         // Yield to let the unstructured Task execute (mock is sync, completes instantly)
         await Task.yield()
-        #expect(mockStore.updateRemoteMessageCalls == 1)
-        #expect(mockStore.shownRemoteMessagesIDs.contains("specific-message-id"))
-    }
-
-    @Test("Check Message Is Marked Dismissed When Modal Is Presented")
-    func whenModalIsPresentedThenDismissMessageIsCalled() async {
-        // GIVEN
-        let message = RemoteMessageModel.makeCardsListMessage(id: "specific-message-id")
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
-        let mockHandler = MockRemoteMessagingActionHandler()
-        let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler,
-            isIPad: false,
-            pixelReporter: MockRemoteMessagingPixelReporter(),
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
-        )
-        _ = coordinator.provideModalPrompt()
-
-        // WHEN
-        coordinator.didPresentModal()
-
-        // THEN - verify the correct message ID was used
-        // Yield to let the unstructured Task execute (mock is sync, completes instantly)
-        await Task.yield()
-        #expect(mockStore.dismissRemoteMessageCalls == 1)
+        #expect(mockRepository.didCallMarkMessageShown)
     }
 
 }
@@ -203,16 +194,20 @@ final class WhatsNewCoordinatorTests {
 @Suite("Modal Prompt Coordination - What's New Coordinator Action Handling")
 struct WhatsNewCoordinatorActionHandlingTests {
 
-    @Test("Check Present Embedded Web View Pushes View Controller")
-    func whenPresentEmbeddedWebViewThenViewControllerIsPushed() async throws {
+    @Test(
+        "Check Present Embedded Web View Pushes View Controller",
+        arguments: [.scheduled, .onDemand] as [WhatsNewCoordinator.DisplayContext]
+    )
+    func whenPresentEmbeddedWebViewThenViewControllerIsPushed(_ context: WhatsNewCoordinator.DisplayContext) async throws {
         // GIVEN
         let testURL = URL(string: "https://example.com/help")!
         let message = RemoteMessageModel.makeCardsListMessage()
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
 
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
@@ -241,16 +236,21 @@ struct WhatsNewCoordinatorActionHandlingTests {
             .navigation(value: .duckAISettings),
             .appStore,
             .dismiss
-        ] as [RemoteAction]
+        ] as [RemoteAction],
+        [
+            .scheduled,
+            .onDemand
+        ] as [WhatsNewCoordinator.DisplayContext]
     )
-    func handleActionAlwaysPassesWithinCurrentContextPresentationStyle(action: RemoteAction) async throws {
+    func handleActionAlwaysPassesWithinCurrentContextPresentationStyle(action: RemoteAction, displayContext: WhatsNewCoordinator.DisplayContext) async throws {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage()
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
 
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: displayContext,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
@@ -278,14 +278,15 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     func whenMessageAppearsCallbackInvokedThenMessageAppearedPixelFires() {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
         let mockMapper = MockWhatsNewDisplayModelMapper()
         mockMapper.displayModelToReturn = .mock
 
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: mockPixelReporter,
@@ -306,14 +307,15 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     func whenMessageShownForFirstTimeThenHasAlreadySeenMessageIsFalse() {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
         let mockMapper = MockWhatsNewDisplayModelMapper()
         mockMapper.displayModelToReturn = .mock
 
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: mockPixelReporter,
@@ -333,14 +335,15 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     func whenMessageShownAgainThenHasAlreadySeenMessageIsTrue() {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message, shownRemoteMessagesIDs: ["test-message"])
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message, hasShownMessage: true)
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
         let mockMapper = MockWhatsNewDisplayModelMapper()
         mockMapper.displayModelToReturn = .mock
 
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: mockPixelReporter,
@@ -362,14 +365,15 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     func whenPrimaryActionDismissCallbackInvokedThenPrimaryActionClickedPixelFires() async {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
         let mockMapper = MockWhatsNewDisplayModelMapper()
         mockMapper.displayModelToReturn = .mock
 
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: mockPixelReporter,
@@ -392,14 +396,15 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     func whenItemAppearsCallbackInvokedThenCardShownPixelFires() {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
         let mockMapper = MockWhatsNewDisplayModelMapper()
         mockMapper.displayModelToReturn = .mock
 
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: mockPixelReporter,
@@ -421,14 +426,15 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     func whenItemActionCallbackInvokedThenCardClickedPixelFiresAndActionHandled() async {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
         let mockMapper = MockWhatsNewDisplayModelMapper()
         mockMapper.displayModelToReturn = .mock
 
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: mockPixelReporter,
@@ -454,14 +460,15 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     func whenPrimaryActionCallbackInvokedThenDismissPixelFiresWithPrimaryActionType() {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
         let mockMapper = MockWhatsNewDisplayModelMapper()
         mockMapper.displayModelToReturn = .mock
 
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: mockPixelReporter,
@@ -483,12 +490,13 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     func whenModalPulledDownThenDismissPixelFiresWithPullDownType() throws {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
-        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
 
         let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
+            displayContext: .scheduled,
+            repository: mockRepository,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: mockPixelReporter,
@@ -503,6 +511,158 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         #expect(mockPixelReporter.didCallMeasureRemoteMessageDismissed)
         #expect(mockPixelReporter.capturedDismissedMessage?.id == "test-message")
         #expect(mockPixelReporter.capturedDismissType == .pullDown)
+    }
+
+}
+
+@MainActor
+@Suite("Modal Prompt Coordination - What's New Coordinator - On-Demand Display Context")
+final class WhatsNewCoordinatorOnDemandTests {
+
+    @Test("Check Provide Modal Prompt Fetches From Last Shown Message For onDemand Context")
+    func whenOnDemandContextThenFetchesFromLastShownMessage() {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "last-shown-message")
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let coordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: mockRepository,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: nil,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+        )
+
+        // WHEN
+        let configuration = coordinator.provideModalPrompt()
+
+        // THEN
+        #expect(configuration != nil)
+        #expect(mockRepository.didCallFetchLastShownMessage)
+        #expect(!mockRepository.didCallFetchScheduledMessage)
+    }
+
+    @Test("Check Provide Modal Prompt Returns Nil When No Last Shown Message Message Exists")
+    func whenOnDemandContextAndNoLastShownMessageThenReturnsNil() {
+        // GIVEN
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let coordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: mockRepository,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: nil,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+        )
+
+        // WHEN
+        let configuration = coordinator.provideModalPrompt()
+
+        // THEN
+        #expect(configuration == nil)
+        #expect(mockRepository.didCallFetchLastShownMessage)
+        #expect(!mockRepository.didCallFetchScheduledMessage)
+    }
+
+    @Test("Check Provide Modal Prompt Returns Configuration When Last Shown Message Exists")
+    func whenOnDemandContextAndLastShownMessageExistsThenReturnsConfiguration() {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "stored-message")
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let coordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: mockRepository,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: nil,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+        )
+
+        // WHEN
+        let configuration = coordinator.provideModalPrompt()
+
+        // THEN
+        #expect(configuration != nil)
+        #expect(configuration?.viewController is WhatsNewViewController)
+        #expect(mockRepository.didCallFetchLastShownMessage)
+    }
+
+    @Test("Check Message Is Not Marked As Shown For onDemand Context")
+    func whenOnDemandContextThenDidPresentModalDoesNotMarkAsShown() async {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "on-demand-message")
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let coordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: mockRepository,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: nil,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+        )
+        _ = coordinator.provideModalPrompt()
+
+        // WHEN
+        coordinator.didPresentModal()
+
+        // THEN - Yield to ensure Task would execute if scheduled
+        await Task.yield()
+        #expect(!mockRepository.didCallMarkMessageShown)
+    }
+
+}
+
+@MainActor
+@Suite("Modal Prompt Coordination - What's New Coordinator - OnDemandModalPromptProvider Protocol")
+final class WhatsNewCoordinatorOnDemandProtocolTests {
+
+    @Test("Check Can Show Prompt On Demand Returns True When Fetch Last Shown Message Returns Message")
+    func whenLastShownMessageExistsThenCanShowPromptOnDemandIsTrue() {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "available-message")
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let coordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: mockRepository,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: nil,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+        )
+
+        // WHEN
+        let canShow = coordinator.canShowPromptOnDemand
+
+        // THEN
+        #expect(canShow == true)
+        #expect(mockRepository.didCallFetchLastShownMessage)
+    }
+
+    @Test("Check Can Show Prompt On Demand Returns False When Fetch Last Shown Message Returns Nil")
+    func whenNoLastShownMessageThenCanShowPromptOnDemandIsFalse() {
+        // GIVEN
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let coordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: mockRepository,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: nil,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+        )
+
+        // WHEN
+        let canShow = coordinator.canShowPromptOnDemand
+
+        // THEN
+        #expect(canShow == false)
+        #expect(mockRepository.didCallFetchLastShownMessage)
     }
 
 }

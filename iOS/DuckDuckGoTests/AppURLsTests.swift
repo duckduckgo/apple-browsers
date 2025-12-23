@@ -19,7 +19,8 @@
 
 import XCTest
 
-@testable import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import Core
 
 final class AppURLsTests: XCTestCase {

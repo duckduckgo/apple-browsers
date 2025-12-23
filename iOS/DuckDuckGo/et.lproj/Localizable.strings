@@ -2968,18 +2968,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Aadressiriba asukoht";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentaalne brauseri menüü";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ava lingid seotud rakendustes";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Keela, et takistada linkide automaatset avanemist teistes installitud rakendustes.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Kustuta kõik saidi andmed, sealhulgas külastatud saidid. Võib sind kontodelt välja logida.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Küpsised ja saidi andmed";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Kustuta kõik vestlused, sh kinnitatud vestlused";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai vestlused";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Tühjenda";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Kustuta vahekaardid ja andmed";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Kustuta vahekaardid, andmed ja Duck.ai vestlused";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Sule kõik avatud vahekaardid";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Vahelehed";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Rakendusest väljumisel, 15-minutilise passiivsuse järel";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Rakendusest väljumisel, 1-tunnise passiivsuse järel";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Rakendusest väljumisel, 30-minutilise passiivsuse järel";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Rakendusest väljumisel, 5-minutilise passiivsuse järel";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Ainult rakendusest väljumisel";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Rakendusest väljumise määratlemiseks pühi rakendust selle sulgemiseks tegevusetuse ajal, kui rakendus on taustal.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Soovitud ajastus";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Andmed kustutatakse rakenduse taaskäivitamisel.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Otsingusoovitused";
 
@@ -2998,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Kui on lubatud Touch ID, Face ID või süsteemi pääsukood, palutakse selle avamisel rakendus avada.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automaatne andmete kustutamine";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Brauseri tagasiside";
 
@@ -3007,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Tühjenda Duck.ai vestlused";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Kustuta sirvimisandmed";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Kustuta andmed automaatselt";
 
@@ -3034,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Andmete kustutamine";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Andmete kustutamine aitab kaitsta sinu privaatsust veebis. Andmete käsitsi kustutamiseks kasuta nuppu Fire Button või seadista automaatne kustutamine.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Vaikebrauser";
 
@@ -3079,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Tulekindlad veebisaidid";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Tulekindlad saidid";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Üldine";
 
@@ -3333,6 +3387,9 @@
 
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo brauser pakub jälgimiskaitseid, mis on alati aktiivsed. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
+
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Mida on uut";
 
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Näitab viimase minuti logisid, et aidata diagnoosida probleeme kohe pärast värskendamist.";

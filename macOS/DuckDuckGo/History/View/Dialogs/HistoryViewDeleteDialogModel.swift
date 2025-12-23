@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
 import Persistence
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol HistoryViewDeleteDialogSettingsPersisting: AnyObject {
     var shouldBurnHistoryWhenDeleting: Bool { get set }

@@ -23,6 +23,7 @@ import DDGSync
 import Foundation
 import Persistence
 import PixelKit
+import PrivacyConfig
 import SyncDataProviders
 
 final class SyncDataProvidersSource: DataProvidersSource {

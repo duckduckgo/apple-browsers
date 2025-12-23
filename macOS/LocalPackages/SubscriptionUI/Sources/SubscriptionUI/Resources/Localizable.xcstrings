@@ -1979,6 +1979,18 @@
         }
       }
     },
+    "subscription.preferences.button.view.all.plans" : {
+      "comment" : "Button for viewing all available subscription plans",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "View All Plans"
+          }
+        }
+      }
+    },
     "subscription.preferences.button.view.plans" : {
       "comment" : "Button for viewing subscription plans on expired subscription",
       "extractionState" : "extracted_with_value",

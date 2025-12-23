@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import protocol BrowserServicesKit.FeatureFlagger
+import protocol PrivacyConfig.FeatureFlagger
 import class UIKit.UIApplication
 import SystemSettingsPiPTutorial
 

@@ -17,11 +17,11 @@
 //
 
 import AIChat
-import BrowserServicesKit
 import Combine
 import Common
 import Foundation
 import os.log
+import PrivacyConfig
 import Suggestions
 
 /// Represents the sections in the suggestion list

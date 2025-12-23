@@ -24,7 +24,7 @@ import XCTest
 import SubscriptionTestingUtilities
 import Common
 import WebKit
-import BrowserServicesKit
+import PrivacyConfig
 import OHHTTPStubs
 import OHHTTPStubsSwift
 import os.log

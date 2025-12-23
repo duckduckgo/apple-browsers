@@ -17,10 +17,11 @@
 //
 
 import Combine
+import PixelKitTestingUtilities
+import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
 import XCTest
-import PixelKitTestingUtilities
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import SubscriptionUI

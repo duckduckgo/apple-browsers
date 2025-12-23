@@ -475,7 +475,7 @@
                BlueprintIdentifier = "FoundationExtensionsTests"
                BuildableName = "FoundationExtensionsTests"
                BlueprintName = "FoundationExtensionsTests"
-               ReferencedContainer = "container:../SharedPackages/SystemFrameworksExtensions">
+               ReferencedContainer = "container:../SharedPackages/Infrastructure/SystemFrameworksExtensions">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -486,6 +486,16 @@
                BuildableName = "SERPSettingsTests"
                BlueprintName = "SERPSettingsTests"
                ReferencedContainer = "container:../SharedPackages/SERPSettings">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AttributedMetricTests"
+               BuildableName = "AttributedMetricTests"
+               BlueprintName = "AttributedMetricTests"
+               ReferencedContainer = "container:../SharedPackages/AttributedMetric">
             </BuildableReference>
          </TestableReference>
       </Testables>

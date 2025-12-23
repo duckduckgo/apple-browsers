@@ -52,26 +52,26 @@ extension AutofillCredentialsImportManager: AutofillPasswordImportDelegate {
     }
 
     public func autofillUserScriptDidRequestPasswordImportFlow(_ completion: @escaping () -> Void) {
-        PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowStarted.withoutMacPrefix)
+        PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowStarted, doNotEnforcePrefix: true)
         presentationDelegate?.autofillDidRequestCredentialsImportFlow(
             onFinished: {
-                PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowEnded.withoutMacPrefix)
+                PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowEnded, doNotEnforcePrefix: true)
                 completion()
             },
             onCancelled: {
-                PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowCancelled.withoutMacPrefix)
+                PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowCancelled, doNotEnforcePrefix: true)
                 completion()
             }
         )
     }
 
     public func autofillUserScriptDidFinishImportWithImportedCredentialForCurrentDomain() {
-        PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowHadCredentials.withoutMacPrefix)
+        PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowHadCredentials, doNotEnforcePrefix: true)
     }
 
     public func autofillUserScriptDidRequestPermanentCredentialsImportPromptDismissal() {
         loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed = true
-        PixelKit.fire(AutofillPixelKitEvent.importCredentialsPromptNeverAgainClicked.withoutMacPrefix)
+        PixelKit.fire(AutofillPixelKitEvent.importCredentialsPromptNeverAgainClicked, doNotEnforcePrefix: true)
     }
 
     public func autofillUserScriptShouldDisplayOverlay(_ serializedInputContext: String, for domain: String) -> Bool {

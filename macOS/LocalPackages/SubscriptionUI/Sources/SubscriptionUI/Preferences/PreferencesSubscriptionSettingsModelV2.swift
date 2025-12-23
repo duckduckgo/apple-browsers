@@ -24,6 +24,7 @@ import class Combine.AnyCancellable
 import BrowserServicesKit
 import os.log
 import Persistence
+import PrivacyConfig
 
 public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
@@ -32,6 +33,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     @Published private var hasActiveTrialOffer: Bool = false
     @Published private(set) var subscriptionTier: TierName?
     private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
+    private var isSubscriptionActive: Bool = false
 
     /// Returns the tier badge variant to display, or nil if badge should not be shown
     /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
@@ -42,6 +44,15 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         case .plus: return .plus
         case .pro: return .pro
         }
+    }
+
+    /// Returns true if "View All Plans" option should be shown
+    /// Requirements:
+    /// - Subscription is active
+    /// - Pro tier purchase feature flag is enabled OR user has Pro tier subscription
+    var shouldShowViewAllPlans: Bool {
+        guard isSubscriptionActive else { return false }
+        return isProTierPurchaseEnabled() || subscriptionTier == .pro
     }
 
     @Published var email: String?
@@ -180,6 +191,64 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
         case presentSheet(ManageSubscriptionSheet)
         case navigateToManageSubscription(() -> Void)
         case showInternalSubscriptionAlert
+    }
+
+    enum ViewAllPlansAction {
+        case navigateToPlans(() -> Void)
+        case navigateToManageSubscription(() -> Void)
+        case presentSheet(ManageSubscriptionSheet)
+        case showInternalSubscriptionAlert
+    }
+
+    /// Returns the appropriate action for "View All Plans" based on:
+    /// - Subscription platform: where the subscription was purchased
+    /// - Current app platform: App Store version vs Stripe (Sparkling) version
+    @MainActor
+    func viewAllPlansAction() -> ViewAllPlansAction {
+        guard let subscriptionPlatform = subscriptionPlatform else {
+            assertionFailure("Missing or unknown subscriptionPlatform")
+            return .navigateToPlans { }
+        }
+
+        switch subscriptionPlatform {
+        case .apple:
+            if currentPurchasePlatform == .appStore {
+                // Apple subscription on App Store app → show plans page
+                return .navigateToPlans { [weak self] in
+                    self?.userEventHandler(.openURL(.plans))
+                }
+            } else {
+                // Apple subscription on Stripe app → show Apple dialog with instructions
+                return .presentSheet(.apple)
+            }
+        case .stripe:
+            if currentPurchasePlatform == .stripe {
+                // Stripe subscription on Stripe app → show plans page
+                return .navigateToPlans { [weak self] in
+                    self?.userEventHandler(.openURL(.plans))
+                }
+            } else {
+                // Stripe subscription on App Store app → redirect to Stripe portal
+                return .navigateToManageSubscription { [weak self] in
+                    self?.openStripeCustomerPortal()
+                }
+            }
+        case .google:
+            return .presentSheet(.google)
+        case .unknown:
+            return .showInternalSubscriptionAlert
+        }
+    }
+
+    private func openStripeCustomerPortal() {
+        Task {
+            do {
+                let url = try await subscriptionManager.getCustomerPortalURL()
+                userEventHandler(.openCustomerPortalURL(url))
+            } catch {
+                Logger.general.log("Error getting customer portal URL: \(error, privacy: .public)")
+            }
+        }
     }
 
     @MainActor
@@ -334,6 +403,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
                 subscriptionStatus = subscription.status
                 hasActiveTrialOffer = subscription.hasActiveTrialOffer
                 subscriptionTier = subscription.tier
+                isSubscriptionActive = subscription.isActive
             }
         } catch {
             Logger.subscription.error("Error getting subscription: \(error, privacy: .public)")

@@ -36,10 +36,6 @@ enum SyncPromoPixelKitEvent: PixelKitEvent {
         nil
     }
 
-    var withoutMacPrefix: NonStandardEvent {
-        NonStandardEvent(self)
-    }
-
     var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .syncPromoDisplayed,
@@ -59,4 +55,5 @@ enum SyncDeviceButtonTouchpoint: String {
     case passwordsEmpty
     case dataImportStart
     case dataImportFinish
+    case aiChat
 }

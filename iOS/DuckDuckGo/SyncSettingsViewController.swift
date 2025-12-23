@@ -24,7 +24,7 @@ import SyncUI_iOS
 import DDGSync
 import Common
 import os.log
-import BrowserServicesKit
+import PrivacyConfig
 import AttributedMetric
 
 @MainActor

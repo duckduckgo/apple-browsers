@@ -22,6 +22,7 @@ import Common
 import BrowserServicesKit
 import History
 import NewTabPage
+import PrivacyConfig
 import UserScript
 import Configuration
 
@@ -88,6 +89,7 @@ final class UserContentUpdating {
          featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
          appearancePreferences: AppearancePreferences,
+         themeManager: ThemeManaging,
          startupPreferences: StartupPreferences,
          windowControllersManager: WindowControllersManagerProtocol,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
@@ -127,6 +129,7 @@ final class UserContentUpdating {
                                                       featureFlagger: featureFlagger,
                                                       onboardingNavigationDelegate: onboardingNavigationDelegate,
                                                       appearancePreferences: appearancePreferences,
+                                                      themeManager: themeManager,
                                                       startupPreferences: startupPreferences,
                                                       windowControllersManager: windowControllersManager,
                                                       bookmarkManager: bookmarkManager,

@@ -34,6 +34,20 @@
                ReferencedContainer = "container:DuckDuckGo-iOS.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AttributedMetricTests"
+               BuildableName = "AttributedMetricTests"
+               BlueprintName = "AttributedMetricTests"
+               ReferencedContainer = "container:../SharedPackages/AttributedMetric">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -196,7 +210,7 @@
                BlueprintIdentifier = "FoundationExtensionsTests"
                BuildableName = "FoundationExtensionsTests"
                BlueprintName = "FoundationExtensionsTests"
-               ReferencedContainer = "container:../SharedPackages/SystemFrameworksExtensions">
+               ReferencedContainer = "container:../SharedPackages/Infrastructure/SystemFrameworksExtensions">
             </BuildableReference>
          </TestableReference>
       </Testables>

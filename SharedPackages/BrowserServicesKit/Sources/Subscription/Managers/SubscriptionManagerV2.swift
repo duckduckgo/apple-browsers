@@ -77,8 +77,6 @@ public enum SubscriptionManagerError: DDGError {
 
 public enum SubscriptionPixelType: Equatable {
     case invalidRefreshToken
-    case migrationSucceeded
-    case migrationFailed(Error)
     case subscriptionIsActive
     case getTokensError(AuthTokensCachePolicy, Error)
     case invalidRefreshTokenSignedOut
@@ -87,11 +85,9 @@ public enum SubscriptionPixelType: Equatable {
     public static func == (lhs: SubscriptionPixelType, rhs: SubscriptionPixelType) -> Bool {
         switch (lhs, rhs) {
         case (.invalidRefreshToken, .invalidRefreshToken),
-            (.migrationSucceeded, .migrationSucceeded),
             (.subscriptionIsActive, .subscriptionIsActive),
             (.invalidRefreshTokenSignedOut, .invalidRefreshTokenSignedOut),
             (.invalidRefreshTokenRecovered, .invalidRefreshTokenRecovered),
-            (.migrationFailed, .migrationFailed),
             (.getTokensError, .getTokensError):
             return true
         default:

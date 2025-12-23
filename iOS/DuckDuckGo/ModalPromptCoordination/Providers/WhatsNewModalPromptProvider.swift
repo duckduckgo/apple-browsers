@@ -24,10 +24,18 @@ import RemoteMessaging
 
 @MainActor
 final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
-    private let remoteMessageStore: RemoteMessagingStoring
+    enum DisplayContext: Equatable {
+        // Shown via modal prompt coordination schedule when a remote message is delivered.
+        case scheduled
+        // Shown when user opened the prompt on-demand.
+        case onDemand
+    }
+
+    private let displayContext: DisplayContext
+    private let repository: WhatsNewMessageRepository
     private let remoteMessageActionHandler: RemoteMessagingActionHandling
     private let isIPad: Bool
-    private let pixelReporter: RemoteMessagingPixelReporting
+    private let pixelReporter: RemoteMessagingPixelReporting?
     private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private let displayModelMapper: WhatsNewDisplayModelMapping
 
@@ -36,14 +44,16 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
     private var remoteMessage: RemoteMessageModel?
 
     init(
-        remoteMessageStore: RemoteMessagingStoring,
+        displayContext: DisplayContext,
+        repository: WhatsNewMessageRepository,
         remoteMessageActionHandler: RemoteMessagingActionHandling,
         isIPad: Bool,
-        pixelReporter: RemoteMessagingPixelReporting,
+        pixelReporter: RemoteMessagingPixelReporting?,
         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
         displayModelMapper: WhatsNewDisplayModelMapping = WhatsNewDisplayModelMapper()
     ) {
-        self.remoteMessageStore = remoteMessageStore
+        self.displayContext = displayContext
+        self.repository = repository
         self.remoteMessageActionHandler = remoteMessageActionHandler
         self.isIPad = isIPad
         self.pixelReporter = pixelReporter
@@ -54,13 +64,21 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
     // MARK: - ModalPromptProvider
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
-        guard let message = remoteMessageStore.fetchScheduledRemoteMessage(surfaces: .modal) else {
-            Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - No scheduled remote modal message")
+        let message: RemoteMessageModel?
+        switch displayContext {
+        case .scheduled:
+            message = repository.fetchScheduledMessage()
+        case .onDemand:
+            message = repository.fetchLastShownMessage()
+        }
+
+        guard let message else {
+            Logger.modalPrompt.info("\(self.logPrefix) - What's New - No message for context: \(self.displayContext.debugDescription)")
             return nil
         }
 
         guard let viewController = makeViewController(message: message) else {
-            Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Could not render message \(message.id, privacy: .public)")
+            Logger.modalPrompt.info("\(self.logPrefix) - What's New - Could not render message \(message.id, privacy: .public)")
             return nil
         }
         self.navigationController = viewController
@@ -68,7 +86,7 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         // Store the message ID to mark it as shown later
         self.remoteMessage = message
 
-        Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Providing modal for message: \(message.id, privacy: .public)")
+        Logger.modalPrompt.info("\(self.logPrefix) - What's New - Providing modal for message: \(message.id, privacy: .public)")
 
         return ModalPromptConfiguration(
             viewController: viewController,
@@ -77,7 +95,10 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
     }
 
     func didPresentModal() {
-        Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Did present modal")
+        // Only mark as shown for modal prompt context
+        guard displayContext == .scheduled else { return }
+
+        Logger.modalPrompt.info("\(self.logPrefix) - What's New - Did present modal")
         Task {
             await markMessageAsShown()
         }
@@ -120,6 +141,15 @@ extension WhatsNewCoordinator: UIAdaptivePresentationControllerDelegate {
 
 private extension WhatsNewCoordinator {
 
+    var logPrefix: String {
+        switch displayContext {
+        case .scheduled:
+            return "[Modal Prompt Coordination]"
+        case .onDemand:
+            return "[What's New On Demand]"
+        }
+    }
+
     func makeViewController(message: RemoteMessageModel) -> WhatsNewViewController? {
 
         func makeDisplayModel(for message: RemoteMessageModel) -> RemoteMessagingUI.CardsListDisplayModel? {
@@ -160,20 +190,19 @@ private extension WhatsNewCoordinator {
     }
 
     func markMessageAsShown() async {
-        guard let messageId = remoteMessage?.id else {
-            Logger.modalPrompt.error("[Modal Prompt Coordination] - What's New - Cannot mark message as shown - no current message ID")
+        guard let message = remoteMessage else {
+            Logger.modalPrompt.error("\(self.logPrefix) - What's New - Cannot mark message as shown - no current message")
             return
         }
 
         // Mark message seen (needed to send the right pixel. E.g. first vs subsequent time)
-        await remoteMessageStore.updateRemoteMessage(withID: messageId, asShown: true)
         // Mark the messages "seen" and avoid showing it again
-        await remoteMessageStore.dismissRemoteMessage(withID: messageId)
-        Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Marked message as shown: \(messageId, privacy: .public)")
+        await repository.markMessageAsShown(message)
+        Logger.modalPrompt.info("\(self.logPrefix) - What's New - Marked message as shown: \(message.id, privacy: .public)")
     }
 
     func dismiss(source: DismissSource) {
-        Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Dismissed From source: \(source.debugDescription, privacy: .public)")
+        Logger.modalPrompt.info("\(self.logPrefix) - What's New - Dismissed From source: \(source.debugDescription, privacy: .public)")
         navigationController?.dismiss(animated: true)
         measureMessageDismissed(source: source)
     }
@@ -199,8 +228,8 @@ private extension WhatsNewCoordinator {
             return
         }
 
-        let hasAlreadySeenMessage = remoteMessageStore.hasShownRemoteMessage(withID: remoteMessage.id)
-        pixelReporter.measureRemoteMessageAppeared(remoteMessage, hasAlreadySeenMessage: hasAlreadySeenMessage)
+        let hasAlreadySeenMessage = repository.hasShownMessage(withID: remoteMessage.id)
+        pixelReporter?.measureRemoteMessageAppeared(remoteMessage, hasAlreadySeenMessage: hasAlreadySeenMessage)
     }
 
     func measureMessageDismissed(source: DismissSource) {
@@ -211,11 +240,11 @@ private extension WhatsNewCoordinator {
 
         switch source {
         case .closeButton:
-            pixelReporter.measureRemoteMessageDismissed(message, dismissType: .closeButton)
+            pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .closeButton)
         case .pullDown:
-            pixelReporter.measureRemoteMessageDismissed(message, dismissType: .pullDown)
+            pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .pullDown)
         case .mainAction:
-            pixelReporter.measureRemoteMessageDismissed(message, dismissType: .primaryAction)
+            pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .primaryAction)
         }
     }
 
@@ -225,7 +254,7 @@ private extension WhatsNewCoordinator {
             return
         }
         
-        pixelReporter.measureRemoteMessagePrimaryActionClicked(remoteMessage)
+        pixelReporter?.measureRemoteMessagePrimaryActionClicked(remoteMessage)
     }
 
     func measureCardShown(cardId: String) {
@@ -234,7 +263,7 @@ private extension WhatsNewCoordinator {
             return
         }
 
-        pixelReporter.measureRemoteMessageCardShown(remoteMessage, cardId: cardId)
+        pixelReporter?.measureRemoteMessageCardShown(remoteMessage, cardId: cardId)
     }
 
     func measureCardTapped(cardId: String) {
@@ -243,7 +272,7 @@ private extension WhatsNewCoordinator {
             return
         }
 
-        pixelReporter.measureRemoteMessageCardClicked(remoteMessage, cardId: cardId)
+        pixelReporter?.measureRemoteMessageCardClicked(remoteMessage, cardId: cardId)
     }
 
     func measureSheetShown(result: Bool) {
@@ -251,10 +280,25 @@ private extension WhatsNewCoordinator {
             assertionFailure("What's New - Cannot measure sheet shown - no current message")
             return
         }
-        pixelReporter.measureRemoteMessageSheetShown(remoteMessage, sheetResult: result)
+        pixelReporter?.measureRemoteMessageSheetShown(remoteMessage, sheetResult: result)
     }
 
 }
+
+// MARK: - DisplayContext + CustomDebugStringConvertible
+
+extension WhatsNewCoordinator.DisplayContext: CustomDebugStringConvertible {
+
+    var debugDescription: String {
+        switch self {
+        case .scheduled: "Prompt Coordination"
+        case .onDemand: "On Demand"
+        }
+    }
+
+}
+
+// MARK: - WhatsNewCoordinator + DismissSource
 
 private extension WhatsNewCoordinator {
 
@@ -270,6 +314,16 @@ private extension WhatsNewCoordinator {
             case .pullDown: "Pull Down"
             }
         }
+    }
+
+}
+
+// MARK: - WhatsNewCoordinator + On Demand Prompt
+
+extension WhatsNewCoordinator: OnDemandModalPromptProvider {
+
+    var canShowPromptOnDemand: Bool {
+        repository.fetchLastShownMessage() != nil
     }
 
 }

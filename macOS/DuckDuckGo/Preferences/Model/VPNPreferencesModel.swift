@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Foundation
 import VPN
@@ -25,6 +24,7 @@ import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import PixelKit
+import PrivacyConfig
 import VPNAppState
 
 final class VPNPreferencesModel: ObservableObject {
@@ -170,6 +170,10 @@ final class VPNPreferencesModel: ObservableObject {
         subscribeToShowInBrowserToolbarSettingsChanges()
         subscribeToLocationSettingChanges()
         subscribeToDNSSettingsChanges()
+    }
+
+    deinit {
+        cancellables.removeAll()
     }
 
     private func subscribeToAppRoutingRulesChanges() {

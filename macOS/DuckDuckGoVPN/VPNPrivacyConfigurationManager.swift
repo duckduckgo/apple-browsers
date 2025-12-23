@@ -17,10 +17,10 @@
 //
 
 import Foundation
-import BrowserServicesKit
 import Combine
 import Common
 import PixelKit
+import PrivacyConfig
 
 public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging {
 
@@ -77,7 +77,7 @@ public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging 
         updatesSubject.eraseToAnyPublisher()
     }
 
-    public var privacyConfig: BrowserServicesKit.PrivacyConfiguration {
+    public var privacyConfig: PrivacyConfiguration {
         guard let privacyConfigurationData = try? PrivacyConfigurationData(data: currentConfig) else {
             fatalError("Could not retrieve privacy configuration data")
         }

@@ -54,7 +54,7 @@ final class BrokerProfileJobTests: XCTestCase {
     // MARK: - Lifecycle Tests
 
     func testWhenFetchingBrokerProfileQueryDataFails_ThenJobCompletesWithNoOutput() async {
-        let delegate = MockBrokerProfileJobErrorDelegate()
+        let delegate = MockBrokerProfileJobStatusReportingDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = database
@@ -64,7 +64,7 @@ final class BrokerProfileJobTests: XCTestCase {
         let job = BrokerProfileJob(dataBrokerID: 1,
                                    jobType: .all,
                                    showWebView: false,
-                                   errorDelegate: delegate,
+                                   statusReportingDelegate: delegate,
                                    jobDependencies: mockDependencies)
 
         let expectation = XCTestExpectation(description: "Job should finish")
@@ -82,7 +82,7 @@ final class BrokerProfileJobTests: XCTestCase {
     }
 
     func testWhenScanDataIsPresent_ThenScanEventsAreCreated() async {
-        let delegate = MockBrokerProfileJobErrorDelegate()
+        let delegate = MockBrokerProfileJobStatusReportingDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = database
@@ -94,7 +94,7 @@ final class BrokerProfileJobTests: XCTestCase {
         let job = BrokerProfileJob(dataBrokerID: 1,
                                    jobType: .all,
                                    showWebView: false,
-                                   errorDelegate: delegate,
+                                   statusReportingDelegate: delegate,
                                    jobDependencies: mockDependencies)
 
         let expectation = XCTestExpectation(description: "Job should finish")
@@ -113,7 +113,7 @@ final class BrokerProfileJobTests: XCTestCase {
     }
 
     func testWhenOptOutDataIsPresent_ThenOptOutEventsAreCreated() async {
-        let delegate = MockBrokerProfileJobErrorDelegate()
+        let delegate = MockBrokerProfileJobStatusReportingDelegate()
         let database = MockDatabase()
         let mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = database
@@ -152,7 +152,7 @@ final class BrokerProfileJobTests: XCTestCase {
         let job = BrokerProfileJob(dataBrokerID: 1,
                                    jobType: .all,
                                    showWebView: false,
-                                   errorDelegate: delegate,
+                                   statusReportingDelegate: delegate,
                                    jobDependencies: mockDependencies)
 
         let expectation = XCTestExpectation(description: "Job should finish")

@@ -19,6 +19,8 @@
 import Combine
 import PersistenceTestingUtils
 import PixelKitTestingUtilities
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
 

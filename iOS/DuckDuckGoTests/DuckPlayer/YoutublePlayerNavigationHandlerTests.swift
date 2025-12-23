@@ -20,7 +20,7 @@
 import XCTest
 import WebKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import Core
 
 @testable import DuckDuckGo

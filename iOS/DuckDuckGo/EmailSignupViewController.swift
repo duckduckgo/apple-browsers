@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Common
 import Core
 import Networking
+import PrivacyConfig
 import UserScript
 import WebKit
 import DesignResourcesKit

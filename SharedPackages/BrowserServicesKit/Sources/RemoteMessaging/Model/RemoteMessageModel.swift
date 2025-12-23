@@ -133,8 +133,10 @@ public struct RemoteMessageSurfaceType: OptionSet, Codable, Hashable, Equatable 
     public static let modal = RemoteMessageSurfaceType(rawValue: 1 << 1)
     /// Used to show a remote message in a dedicated tab.
     public static let dedicatedTab = RemoteMessageSurfaceType(rawValue: 1 << 2)
+    /// Used to show a remote message in the tab bar of the browser.
+    public static let tabBar = RemoteMessageSurfaceType(rawValue: 1 << 3)
 
-    public static let allCases: RemoteMessageSurfaceType = [.newTabPage, .modal, .dedicatedTab]
+    public static let allCases: RemoteMessageSurfaceType = [.newTabPage, .modal, .dedicatedTab, .tabBar]
 }
 
 public enum RemoteMessageModelType: Codable, Equatable {
@@ -227,7 +229,11 @@ public enum RemotePlaceholder: String, Codable, CaseIterable {
     case aiChat = "RemoteDuckAi"
     case visualDesignUpdate = "RemoteVisualDesignUpdate"
     case imageAI = "RemoteImageAI"
-    case radar = "RemoteRadar"
+    case radar = "RemoteMessageRadar"
+    case radarCheckGreen = "RemoteRadar"
+    case radarCheckPurple = "RemoteMessageRadarCheck"
     case keyImport = "RemoteKeyImport"
     case mobileCustomization = "RemoteMobileCustomization"
+    case pir = "RemoteMessagePIR"
+    case subscription = "RemoteMessageSubscription"
 }

@@ -28,6 +28,7 @@ import Common
 import Combine
 import os.log
 import PixelKit
+import PrivacyConfig
 import Core
 import enum UserScript.UserScriptError
 
@@ -436,20 +437,25 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         )
         
         // Create database
-        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
-            directoryName: DatabaseConstants.directoryName,
-            fileName: DatabaseConstants.fileName,
-            appGroupIdentifier: nil
-        )
+        let fakeBroker = DataBrokerDebugFlagFakeBroker()
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
-        let database: DataBrokerProtectionRepository
+
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler!)
+
+        let vault: DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>
         do {
-            let vault = try vaultFactory.makeVault(reporter: nil)
-            // swiftlint:disable:next force_cast
-            database = vault as! DataBrokerProtectionRepository
+            vault = try vaultFactory.makeVault(reporter: reporter)
         } catch {
-            fatalError("Failed to create database: \(error)")
+            fatalError("Failed to make secure storage vault")
         }
+
+        let localBrokerService = LocalBrokerJSONService(resources: FileResources(runTypeProvider: dbpSettings),
+                                                        vault: vault,
+                                                        pixelHandler: pixelHandler!,
+                                                        runTypeProvider: dbpSettings)
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: pixelHandler!, vault: vault, localBrokerService: localBrokerService)
         
         self.emailConfirmationDataService = EmailConfirmationDataService(
             database: database,

@@ -23,6 +23,7 @@ import PixelKit
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import AttributedMetricTestsUtils
+import PrivacyConfig
 
 final class AttributedMetricManagerTests: XCTestCase {
 

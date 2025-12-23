@@ -569,6 +569,7 @@
 		802A826F2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802A826C2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift */; };
 		80437D692EFACF2D00D3E896 /* AutoClearSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80437D682EFACF2D00D3E896 /* AutoClearSettingsViewModel.swift */; };
 		80437D6B2EFACF4500D3E896 /* AutoClearSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80437D6A2EFACF4500D3E896 /* AutoClearSettingsView.swift */; };
+		80437D6D2EFB3BDA00D3E896 /* AutoClearSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80437D6C2EFB3BD600D3E896 /* AutoClearSettingsViewModelTests.swift */; };
 		805674FB2EEF790700152470 /* SettingsDataClearingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805674FA2EEF790700152470 /* SettingsDataClearingView.swift */; };
 		805674FF2EEFA0A500152470 /* DataClearingSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805674FD2EEFA0A500152470 /* DataClearingSettingsViewModel.swift */; };
 		8065741D2ED917410001497A /* FireExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8065741C2ED917350001497A /* FireExecutor.swift */; };
@@ -2734,6 +2735,7 @@
 		802A826D2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsListDataSourceTests.swift; sourceTree = "<group>"; };
 		80437D682EFACF2D00D3E896 /* AutoClearSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearSettingsViewModel.swift; sourceTree = "<group>"; };
 		80437D6A2EFACF4500D3E896 /* AutoClearSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearSettingsView.swift; sourceTree = "<group>"; };
+		80437D6C2EFB3BD600D3E896 /* AutoClearSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearSettingsViewModelTests.swift; sourceTree = "<group>"; };
 		805674FA2EEF790700152470 /* SettingsDataClearingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDataClearingView.swift; sourceTree = "<group>"; };
 		805674FD2EEFA0A500152470 /* DataClearingSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingSettingsViewModel.swift; sourceTree = "<group>"; };
 		8065741C2ED917350001497A /* FireExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireExecutor.swift; sourceTree = "<group>"; };
@@ -6137,6 +6139,7 @@
 		8097AA582EE652CF00E995F9 /* Fire */ = {
 			isa = PBXGroup;
 			children = (
+				80437D6C2EFB3BD600D3E896 /* AutoClearSettingsViewModelTests.swift */,
 				80E8D5D22EEA655900820EB0 /* FireExecutorTests.swift */,
 				80DD839E2EF0FEF400DAB108 /* DataClearingSettingsViewModelTests.swift */,
 				8097AA592EE652DC00E995F9 /* FireConfirmationViewModelTests.swift */,
@@ -12198,6 +12201,7 @@
 				9F23B8062C2BE22700950875 /* OnboardingIntroViewModelTests.swift in Sources */,
 				85C298562E9699C200C35DD0 /* SERPSettingsViewPageTests.swift in Sources */,
 				85D2187424BF25CD004373D2 /* FaviconsTests.swift in Sources */,
+				80437D6D2EFB3BDA00D3E896 /* AutoClearSettingsViewModelTests.swift in Sources */,
 				56A0FE0D2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 				9F254ACB2CF5CDC60063B308 /* SpecialErrorPageNavigationHandlerTests.swift in Sources */,
 				98E564372DE8B6BF00E6E75F /* PrivacyConfigurationManagerMock.swift in Sources */,

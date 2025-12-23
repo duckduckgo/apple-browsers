@@ -292,6 +292,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
     case showWhatsNewPromptOnDemand
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
+    case enhancedDataClearingSettings
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -385,7 +388,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .appRatingPrompt,
              .contextualDuckAIMode,
              .aiChatSync,
-             .showWhatsNewPromptOnDemand:
+             .showWhatsNewPromptOnDemand,
+             .enhancedDataClearingSettings:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -612,6 +616,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .showWhatsNewPromptOnDemand:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
+        case .enhancedDataClearingSettings:
+            return .disabled
         }
     }
 }

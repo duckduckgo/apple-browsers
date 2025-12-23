@@ -261,4 +261,3 @@ final class OnboardingSearchExperienceSettingsResolverTests: XCTestCase {
         XCTAssertNil(sut.deferredValue)
     }
 }
-

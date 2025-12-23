@@ -67,7 +67,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Subscriptions
 
-    private let accessTokenStorage: SubscriptionTokenKeychainStorage
     private let subscriptionManagerV2: any SubscriptionManagerV2
 
     // MARK: - Extensions Support
@@ -181,7 +180,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          defaults: UserDefaults,
          wideEvent: WideEventManaging,
          notificationCenter: NotificationCenter = .default,
-         accessTokenStorage: SubscriptionTokenKeychainStorage,
          subscriptionManagerV2: any SubscriptionManagerV2,
          vpnAppState: VPNAppState) {
 
@@ -192,7 +190,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.settings = settings
         self.defaults = defaults
         self.wideEvent = wideEvent
-        self.accessTokenStorage = accessTokenStorage
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.vpnAppState = vpnAppState
         subscribeToSettingsChanges()
@@ -920,21 +917,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         let errorMessage: ExtensionMessageString? = try await session.sendProviderMessage(message)
         if let errorMessage {
             throw TunnelFailureError(errorDescription: errorMessage.value)
-        }
-    }
-
-    private func fetchAuthToken() throws -> NSString? {
-        do {
-            guard let accessToken = try accessTokenStorage.getAccessToken() else {
-                Logger.networkProtection.error("🔴 TunnelController found no token")
-                throw StartError.noAuthToken
-            }
-
-            Logger.networkProtection.log("🟢 TunnelController found token")
-            return Self.adaptAccessTokenForVPN(accessToken) as NSString
-        } catch {
-            Logger.networkProtection.fault("🔴 TunnelController failed to fetch token: \(error.localizedDescription)")
-            throw StartError.failedToFetchAuthToken(error)
         }
     }
 

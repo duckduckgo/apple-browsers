@@ -40,10 +40,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     var internalUserDecider: MockInternalUserDecider!
     var defaultBrowserProvider: DefaultBrowserProviderMock!
     var dockCustomizer: DockCustomizerMock!
-
-    var storePurchaseManager: StorePurchaseManager!
-
-    var subscriptionManager: SubscriptionManagerMock!
+    var subscriptionManager: SubscriptionManagerMockV2!
 
     private var mockFreemiumDBPPresenter: MockFreemiumDBPPresenter! = .init()
     private var mockFreemiumDBPFeature: MockFreemiumDBPFeature!
@@ -68,19 +65,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         dockCustomizer = DockCustomizerMock()
         dockCustomizer.addToDock()
         defaultBrowserProvider.isDefault = true
-
-        storePurchaseManager = StorePurchaseManagerMock()
         mockFeatureFlagger = MockFeatureFlagger()
-
-        subscriptionManager = SubscriptionManagerMock(accountManager: AccountManagerMock(),
-                                                      subscriptionEndpointService: SubscriptionEndpointServiceMock(),
-                                                      authEndpointService: AuthEndpointServiceMock(),
-                                                      storePurchaseManager: storePurchaseManager,
-                                                      currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
-                                                                                                  purchasePlatform: .appStore),
-                                                      hasAppStoreProductsAvailable: false,
-                                                      subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
-
+        subscriptionManager = SubscriptionManagerMockV2()
         mockFreemiumDBPFeature = MockFreemiumDBPFeature()
 
         mockNotificationCenter = MockNotificationCenter()
@@ -107,7 +93,6 @@ final class MoreOptionsMenuTests: XCTestCase {
         mockNotificationCenter = nil
         mockPixelHandler = nil
         networkProtectionVisibilityMock = nil
-        storePurchaseManager = nil
         mockWinBackOfferVisibilityManager = nil
     }
 
@@ -166,8 +151,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     // MARK: - Subscription & Freemium
 
     private func mockAuthentication() {
-        subscriptionManager.accountManager.storeAuthToken(token: "")
-        subscriptionManager.accountManager.storeAccount(token: "", email: "", externalID: "")
+        subscriptionManager.resultTokenContainer = nil
     }
 
     @MainActor
@@ -177,7 +161,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         setupMoreOptionsMenu()
 
-        XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
         XCTAssertFalse(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
     }
 
@@ -188,7 +172,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         setupMoreOptionsMenu()
 
-        XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
         XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
     }
 
@@ -199,7 +183,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         setupMoreOptionsMenu()
 
-        XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
         XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
     }
 
@@ -211,7 +195,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         setupMoreOptionsMenu()
 
-        XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
         XCTAssertTrue(subscriptionManager.hasAppStoreProductsAvailable)
 
         XCTAssertEqual(moreOptionsMenu.items[0].title, UserText.sendFeedback)
@@ -258,7 +242,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         setupMoreOptionsMenu()
 
-        XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
         XCTAssertTrue(subscriptionManager.hasAppStoreProductsAvailable)
 
         XCTAssertEqual(moreOptionsMenu.items[0].title, UserText.sendFeedback)
@@ -361,7 +345,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     func testWhenUserIsAuthenticatedWithPaidAIChatFeatureAndFeatureFlagEnabledThenPaidAIChatItemAppearsInSubscriptionSubmenu() async throws {
         // Given
         mockAuthentication()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        subscriptionManager.resultFeatures = [.paidAIChat]
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
@@ -381,7 +365,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     func testWhenUserIsAuthenticatedWithPaidAIChatFeatureButFeatureFlagDisabledThenPaidAIChatItemDoesNotAppear() async throws {
         // Given
         mockAuthentication()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        subscriptionManager.resultFeatures = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
@@ -400,7 +384,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     func testWhenUserIsAuthenticatedWithoutPaidAIChatFeatureThenPaidAIChatItemDoesNotAppear() async throws {
         // Given
         mockAuthentication()
-        subscriptionManager.subscriptionFeatures = []
+        subscriptionManager.resultFeatures = []
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
@@ -420,7 +404,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     func testWhenClickingPaidAIChatItemThenActionDelegateIsCalled() async throws {
         // Given
         mockAuthentication()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        subscriptionManager.resultFeatures = [.paidAIChat]
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
         moreOptionsMenu.actionDelegate = capturingActionDelegate

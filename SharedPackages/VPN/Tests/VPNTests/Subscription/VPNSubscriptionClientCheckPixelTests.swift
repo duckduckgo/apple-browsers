@@ -100,18 +100,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         XCTAssertEqual(parameters?["authVersion"], "v2")
     }
 
-    func testParameters_activeSubscriptionAuthV1() {
-        let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
-            isSubscriptionActive: true,
-            trigger: .appStartup
-        )
-
-        let parameters = pixel.parameters
-        XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "true")
-        XCTAssertEqual(parameters?["authVersion"], "v1")
-    }
-
     func testParameters_inactiveSubscription() {
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
             isSubscriptionActive: false,
@@ -147,7 +135,7 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         let parameters = pixel.parameters
         XCTAssertNotNil(parameters)
         XCTAssertEqual(parameters?["isSubscriptionActive"], "true")
-        XCTAssertEqual(parameters?["authVersion"], "v1")
+        XCTAssertEqual(parameters?["authVersion"], "v2")
     }
 
     // MARK: - Error Handling Tests
@@ -223,31 +211,4 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         XCTAssertEqual(fullName, "m_vpn_subs_client_check_on_foreground_failed")
     }
 #endif
-
-    // MARK: - Edge Cases
-
-    func testParameters_allCombinations() {
-        let combinations: [(Bool?, Bool)] = [
-            (true, true), (true, false),
-            (false, true), (false, false),
-            (nil, true), (nil, false)
-        ]
-
-        for (isActive, isAuthV2) in combinations {
-            let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
-                isSubscriptionActive: isActive,
-                trigger: .appStartup
-            )
-
-            let parameters = pixel.parameters
-            XCTAssertNotNil(parameters, "Parameters should never be nil")
-            XCTAssertNotNil(parameters?["isSubscriptionActive"], "isSubscriptionActive should always be present")
-            XCTAssertNotNil(parameters?["authVersion"], "authVersion should always be present")
-
-            // Verify specific values
-            let expectedSubscriptionValue = isActive != nil ? String(isActive!) : "no_subscription"
-            XCTAssertEqual(parameters?["isSubscriptionActive"], expectedSubscriptionValue)
-            XCTAssertEqual(parameters?["authVersion"], isAuthV2 ? "v2" : "v1")
-        }
-    }
 }

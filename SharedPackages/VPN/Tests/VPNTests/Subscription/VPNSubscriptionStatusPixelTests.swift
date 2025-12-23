@@ -100,19 +100,6 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
         XCTAssertEqual(parameters?["notificationObjectClass"], "TestSourceObject")
     }
 
-    func testParameters_activeSubscriptionAuthV1() {
-        let pixel = VPNSubscriptionStatusPixel.signedIn(
-            isSubscriptionActive: true,
-            sourceObject: nil
-        )
-
-        let parameters = pixel.parameters
-        XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "true")
-        XCTAssertEqual(parameters?["authVersion"], "v1")
-        XCTAssertEqual(parameters?["notificationObjectClass"], "nil")
-    }
-
     func testParameters_inactiveSubscription() {
         let sourceObject = AnotherTestObject()
         let pixel = VPNSubscriptionStatusPixel.vpnFeatureDisabled(

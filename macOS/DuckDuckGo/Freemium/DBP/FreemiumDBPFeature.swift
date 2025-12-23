@@ -208,9 +208,7 @@ private extension DefaultFreemiumDBPFeature {
         var isUSStoreFront = false
         if #available(macOS 12.0, *) {
             // Check both subscription manager types for compatibility
-            if let subscriptionManagerV1 = subscriptionManager as? SubscriptionManager {
-                isUSStoreFront = subscriptionManagerV1.storePurchaseManager().currentStorefrontRegion == .usa
-            } else if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2 {
+            if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2 {
                 isUSStoreFront = subscriptionManagerV2.storePurchaseManager().currentStorefrontRegion == .usa
             }
         }

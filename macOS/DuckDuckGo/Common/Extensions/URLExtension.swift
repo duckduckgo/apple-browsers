@@ -425,6 +425,9 @@ extension URL {
 
     // MARK: - Base URLs (Internal User Configurable)
 
+    /// Shared debug settings instance for runtime URL overrides.
+    private static let debugSettings = BaseURLDebugSettings()
+
     /// Determines if environment variable URL overrides are allowed.
     ///
     /// Overrides are permitted only for:
@@ -440,80 +443,66 @@ extension URL {
     ///
     /// To use a custom base URL for testing:
     ///
-    /// 1. **UI Tests**: Set `launchEnvironment` in your test:
+    /// 1. **Debug Menu** (Runtime): Use Debug > Base URL Configuration in the menu bar
+    ///
+    /// 2. **UI Tests**: Set `launchEnvironment` in your test:
     ///    ```swift
     ///    app.launchEnvironment = ["BASE_URL": "http://localhost:8080"]
     ///    app.launch()
     ///    ```
     ///
-    /// 2. **Internal Users**: Set the environment variable before launching:
+    /// 3. **Internal Users**: Set the environment variable before launching:
     ///    ```bash
     ///    BASE_URL=http://localhost:8080 open DuckDuckGo.app
     ///    ```
     ///
-    /// 3. **Xcode Scheme**: Edit scheme > Run > Arguments > Environment Variables
+    /// 4. **Xcode Scheme**: Edit scheme > Run > Arguments > Environment Variables
     ///
-    private static var isOverrideAllowed: Bool = {
+    private static var isOverrideAllowed: Bool {
         let isTestMode = [.uiTests, .integrationTests, .uiTestsOnboarding].contains(AppVersion.runType)
         let isCI = ProcessInfo.processInfo.environment["CI"] != nil
         return isTestMode || isCI || UserDefaults.appConfiguration.isInternalUser
-    }()
+    }
 
     /// Base URL for DuckDuckGo (overridable by internal users, CI, or UI tests only).
     ///
     /// For external users in production, this always returns `https://duckduckgo.com`.
-    /// For internal users or test environments, this can be overridden via the `BASE_URL`
-    /// environment variable to point to a local server or dev instance.
-    private static let base: String = {
+    /// For internal users or test environments, this can be overridden via:
+    /// - The Debug menu (runtime)
+    /// - The `BASE_URL` environment variable (launch time)
+    private static var base: String {
         guard isOverrideAllowed else {
             return "https://duckduckgo.com"
         }
 
-        let envValue = ProcessInfo.processInfo.environment["BASE_URL", default: "https://duckduckgo.com"]
-
-        if envValue != "https://duckduckgo.com" {
-            Logger.general.info("Internal/Test mode: Using BASE_URL: \(envValue)")
-        }
-
-        return envValue
-    }()
+        return debugSettings.effectiveBaseURL
+    }
 
     /// Base URL for Duck.ai (overridable by internal users, CI, or UI tests only).
     ///
     /// For external users in production, this always returns `https://duck.ai`.
-    /// For internal users or test environments, this can be overridden via the `DUCKAI_BASE_URL`
-    /// environment variable.
-    private static let duckAiBase: String = {
+    /// For internal users or test environments, this can be overridden via:
+    /// - The Debug menu (runtime)
+    /// - The `DUCKAI_BASE_URL` environment variable (launch time)
+    private static var duckAiBase: String {
         guard isOverrideAllowed else {
             return "https://duck.ai"
         }
 
-        let envValue = ProcessInfo.processInfo.environment["DUCKAI_BASE_URL", default: "https://duck.ai"]
-
-        if envValue != "https://duck.ai" {
-            Logger.general.info("Internal/Test mode: Using DUCKAI_BASE_URL: \(envValue)")
-        }
-
-        return envValue
-    }()
+        return debugSettings.effectiveDuckAIBaseURL
+    }
 
     /// Base URL for help pages (overridable by internal users, CI, or UI tests only).
     ///
     /// When `BASE_URL` is overridden, help pages also use the same base to enable
     /// testing with local servers that serve both main and help page content.
-    private static let helpBase: String = {
+    private static var helpBase: String {
         guard isOverrideAllowed else {
             return "https://help.duckduckgo.com"
         }
 
-        // If BASE_URL is overridden, use the same base for help pages
-        let baseEnv = ProcessInfo.processInfo.environment["BASE_URL"]
-        if let baseEnv, baseEnv != "https://duckduckgo.com" {
-            return baseEnv
-        }
-
-        return "https://help.duckduckgo.com"
-    }()
+        return debugSettings.effectiveHelpBaseURL
+    }
 
     // MARK: - DuckDuckGo
 

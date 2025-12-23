@@ -66,4 +66,3 @@ final class OnboardingSearchExperienceSettingsResolver {
         return true
     }
 }
-

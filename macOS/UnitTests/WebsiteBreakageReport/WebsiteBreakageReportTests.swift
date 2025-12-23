@@ -133,7 +133,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             vpnOn: false,
             jsPerformance: nil,
             userRefreshCount: 0,
-            cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true, consentReloadLoop: true, consentRule: "test-cmp"),
+            cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true, consentReloadLoop: true, consentRule: "test-cmp", consentHeuristicEnabled: true),
             debugFlags: "",
             privacyExperiments: "",
             isPirEnabled: true,
@@ -163,6 +163,7 @@ class WebsiteBreakageReportTests: XCTestCase {
         XCTAssertEqual(queryItems[valueFor: "consentOptoutFailed"], "1")
         XCTAssertEqual(queryItems[valueFor: "consentSelftestFailed"], "1")
         XCTAssertEqual(queryItems[valueFor: "consentReloadLoop"], "1")
+        XCTAssertEqual(queryItems[valueFor: "consentHeuristicEnabled"], "1")
         XCTAssertEqual(queryItems[valueFor: "consentRule"], "test-cmp")
         XCTAssertEqual(queryItems[valueFor: "isPirEnabled"], "true")
     }

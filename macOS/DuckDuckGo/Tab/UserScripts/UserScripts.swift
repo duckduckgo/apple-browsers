@@ -118,7 +118,8 @@ final class UserScripts: UserScriptsProvider {
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             management: sourceProvider.autoconsentManagement,
-            preferences: sourceProvider.cookiePopupProtectionPreferences
+            preferences: sourceProvider.cookiePopupProtectionPreferences,
+            featureFlagger: sourceProvider.featureFlagger
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"

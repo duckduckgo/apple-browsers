@@ -124,6 +124,7 @@ private struct TimingOptionRow: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundColor(Color(designSystemColor: .accent))
+                        .accessibilityHidden(true)
                 }
             }
             .padding(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
@@ -132,5 +133,7 @@ private struct TimingOptionRow: View {
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
         .listRowBackground(Color(designSystemColor: .surface))
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

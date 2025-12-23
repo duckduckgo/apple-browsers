@@ -1510,7 +1510,18 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
     }
 
     func navigateToAutoClearData() {
-        presentLegacyView(.autoclearData)
+        if featureFlagger.isFeatureOn(.enhancedDataClearingSettings) {
+            let viewModel = AutoClearSettingsViewModel(
+                appSettings: appSettings,
+                aiChatSettings: aiChatSettings
+            )
+            let view = AutoClearSettingsView(viewModel: viewModel)
+                .environmentObject(self)
+            let hostingController = UIHostingController(rootView: view)
+            pushViewController(hostingController)
+        } else {
+            presentLegacyView(.autoclearData)
+        }
     }
 
     func presentFireConfirmation() {

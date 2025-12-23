@@ -757,27 +757,17 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     private func prepareStartupOptions() async throws -> [String: NSObject] {
+        Logger.networkProtection.log("Preparing startup options")
         var options = [String: NSObject]()
-
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
-        options[NetworkProtectionOptionKey.isAuthV2Enabled] = NSNumber(value: vpnAppState.isAuthV2Enabled)
-        if !vpnAppState.isAuthV2Enabled {
-            Logger.networkProtection.log("Using Auth V1")
-            self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
-            let authToken = try fetchAuthToken()
-            options[NetworkProtectionOptionKey.authToken] = authToken
-            self.connectionWideEventData?.oauthDuration?.complete()
-        } else {
-            Logger.networkProtection.log("Using Auth V2")
-            self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
-            let tokenContainer = try await fetchTokenContainer()
-            options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
+        self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
+        let tokenContainer = try await fetchTokenContainer()
+        options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
 
-            // It’s important to force refresh the token here to immediately branch the token used by the main app from the one sent to the system extension.
-            // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-            try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
-            self.connectionWideEventData?.oauthDuration?.complete()
-        }
+        // It’s important to force refresh the token here to immediately branch the token used by the main app from the one sent to the system extension.
+        // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
+        try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
+        self.connectionWideEventData?.oauthDuration?.complete()
 
         // Encode entire VPN settings as one unit
         let settingsSnapshot = VPNSettingsSnapshot(from: settings)
@@ -837,9 +827,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     @MainActor
     func restart() async {
-        guard vpnAppState.isAuthV2Enabled,
-            let internalManager else {
-
+        guard let internalManager else {
             // This is a temporary thing because we know this method works well
             // in case we need to roll back auth v2
             await stop(disableOnDemand: false)

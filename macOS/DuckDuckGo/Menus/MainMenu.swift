@@ -883,7 +883,6 @@ final class MainMenu: NSMenu {
                                   subscriptionManagerV1: Application.appDelegate.subscriptionManagerV1,
                                   subscriptionManagerV2: Application.appDelegate.subscriptionManagerV2,
                                   subscriptionUserDefaults: subscriptionUserDefaults,
-                                  isAuthV2Enabled: Application.appDelegate.isUsingAuthV2,
                                   wideEvent: Application.appDelegate.wideEvent)
 
             NSMenuItem(title: "TipKit") {

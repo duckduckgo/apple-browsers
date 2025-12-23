@@ -91,7 +91,7 @@ public final class MockOAuthService: OAuthService {
             throw logoutError
         }
     }
-    
+
     public var getJWTSignersResponse: Result<JWTKit.JWTSigners, Error>?
     public func getJWTSigners() async throws -> JWTKit.JWTSigners {
         switch getJWTSignersResponse! {

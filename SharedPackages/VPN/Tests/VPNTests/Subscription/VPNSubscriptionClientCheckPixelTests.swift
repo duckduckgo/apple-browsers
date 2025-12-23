@@ -215,7 +215,6 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         let error = NSError(domain: "NetworkError", code: 500, userInfo: nil)
         let pixel = VPNSubscriptionClientCheckPixel.failed(
             isSubscriptionActive: nil,
-            isAuthV2Enabled: false,
             trigger: .appForegrounded,
             error: error
         )

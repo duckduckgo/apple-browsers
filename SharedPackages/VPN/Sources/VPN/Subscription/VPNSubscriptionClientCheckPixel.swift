@@ -21,9 +21,9 @@ import Subscription
 
 public enum VPNSubscriptionClientCheckPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     case vpnFeatureEnabled(isSubscriptionActive: Bool?,
-                    trigger: Trigger)
+                           trigger: Trigger)
     case vpnFeatureDisabled(isSubscriptionActive: Bool?,
-                     trigger: Trigger)
+                            trigger: Trigger)
     case failed(isSubscriptionActive: Bool?,
                 trigger: Trigger,
                 error: Error)

@@ -69,7 +69,7 @@ public extension SubscriptionAuthV1toV2Bridge {
     }
 }
 
-//extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
+// extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 //
 //    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
 //        try await currentSubscriptionFeatures().contains(feature)
@@ -131,7 +131,7 @@ public extension SubscriptionAuthV1toV2Bridge {
 //        guard #available(macOS 12.0, *) else { return false }
 //        return storePurchaseManager().isUserEligibleForFreeTrial()
 //    }
-//}
+// }
 
 extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 

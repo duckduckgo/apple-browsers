@@ -94,7 +94,7 @@ public class MockOAuthClient: OAuthClient {
             throw failure
         }
     }
-    
+
     public var logoutError: Error?
     public func logout() async throws {
         if let logoutError {

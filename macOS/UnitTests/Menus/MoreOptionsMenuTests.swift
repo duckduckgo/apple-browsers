@@ -141,7 +141,6 @@ final class MoreOptionsMenuTests: XCTestCase {
                                             featureFlagger: mockFeatureFlagger
                                           ),
                                           isFireWindowDefault: isFireWindowDefault,
-                                          isUsingAuthV2: true,
                                           freeTrialBadgePersistor: freeTrialBadgePersistor,
                                           winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager)
 

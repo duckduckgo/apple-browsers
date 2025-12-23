@@ -71,7 +71,7 @@ final class SettingsViewModel: ObservableObject {
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     var browsingMenuSheetCapability: BrowsingMenuSheetCapable
-    private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
+    private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
@@ -623,15 +623,6 @@ final class SettingsViewModel: ObservableObject {
         aiChatSettings.isAIChatEnabled
     }
 
-    /// Returns true when the onboarding search experience feature is active and the user's choice
-    /// should be shown in settings while activation remains deferred (until Dax Dialogs complete).
-    private var shouldUseDeferredOnboardingSearchExperience: Bool {
-        featureFlagger.isFeatureOn(.onboardingSearchExperience) &&
-        onboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding &&
-        !onboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings &&
-        !legacyViewProvider.daxDialogsManager.hasSeenOnboarding
-    }
-
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
@@ -664,7 +655,7 @@ final class SettingsViewModel: ObservableObject {
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          browsingMenuSheetCapability: BrowsingMenuSheetCapable,
-         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience(),
+         onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
     ) {
 
@@ -699,7 +690,11 @@ final class SettingsViewModel: ObservableObject {
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
         self.browsingMenuSheetCapability = browsingMenuSheetCapability
-        self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
+        self.onboardingSearchExperienceSettingsResolver = onboardingSearchExperienceSettingsResolver ?? OnboardingSearchExperienceSettingsResolver(
+            featureFlagger: AppDependencyProvider.shared.featureFlagger,
+            onboardingProvider: OnboardingSearchExperience(),
+            daxDialogsStatusProvider: legacyViewProvider.daxDialogsManager
+        )
         self.whatsNewCoordinator = whatsNewCoordinator
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
@@ -1458,16 +1453,13 @@ extension SettingsViewModel {
     var aiChatSearchInputEnabledBinding: Binding<Bool> {
         Binding<Bool>(
             get: {
-                if self.shouldUseDeferredOnboardingSearchExperience {
-                    return self.onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding
-                }
-                return self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+                self.onboardingSearchExperienceSettingsResolver.deferredValue ?? self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
             },
             set: { newValue in
-                if self.shouldUseDeferredOnboardingSearchExperience {
-                    guard newValue != self.onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding else { return }
-                    self.objectWillChange.send()
-                    self.onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: newValue)
+                if self.onboardingSearchExperienceSettingsResolver.shouldUseDeferredOnboardingChoice {
+                    if self.onboardingSearchExperienceSettingsResolver.storeIfDeferred(newValue) {
+                        self.objectWillChange.send()
+                    }
                 } else {
                     guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
                     self.objectWillChange.send()

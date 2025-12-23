@@ -58,7 +58,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     // MARK: - Elements Visibility
     
     var newUIEnabled: Bool {
-        featureFlagger.isFeatureOn(.granularFireButtonOptions)
+        featureFlagger.isFeatureOn(.enhancedDataClearingSettings)
     }
     
     var useImprovedPicker: Bool {

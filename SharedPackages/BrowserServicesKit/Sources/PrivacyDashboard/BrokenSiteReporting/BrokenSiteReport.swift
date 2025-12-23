@@ -275,6 +275,7 @@ public struct BrokenSiteReport {
             "consentOptoutFailed": boolToStringValue(cookieConsentInfo?.optoutFailed),
             "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed),
             "consentReloadLoop": boolToStringValue(cookieConsentInfo?.consentReloadLoop),
+            "consentHeuristicEnabled": boolToStringValue(cookieConsentInfo?.consentHeuristicEnabled),
             "consentRule": cookieConsentInfo?.consentRule ?? "",
             "debugFlags": debugFlags,
             "contentScopeExperiments": privacyExperiments

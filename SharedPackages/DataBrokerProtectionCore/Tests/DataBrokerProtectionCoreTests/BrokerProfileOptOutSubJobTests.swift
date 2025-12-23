@@ -172,7 +172,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
             database: mockDatabase,
             pixelHandler: pixelHandler,
             vpnConnectionState: "connected",
-            vpnBypassStatus: "enabled"
+            vpnBypassStatus: "enabled",
+            featureFlagger: MockDBPFeatureFlagger()
         )
 
         XCTAssertEqual(context.stageDurationCalculator.dataBrokerURL, brokerData.dataBroker.url)
@@ -214,7 +215,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: MockDataBrokerProtectionPixelsHandler(),
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status")
+                                                                     vpnBypassStatus: "status",
+                                                                     featureFlagger: MockDBPFeatureFlagger())
 
         let runner = sut.makeOptOutRunner(
             brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
@@ -275,7 +277,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status")
+                                                                     vpnBypassStatus: "status",
+                                                                     featureFlagger: MockDBPFeatureFlagger())
         calculator.setLastAction(ClickAction(id: "action", actionType: .click))
         let identifiers = makeFixtureIdentifiers()
         let brokerData = makeFixtureBrokerProfileQueryData()
@@ -308,7 +311,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status")
+                                                                     vpnBypassStatus: "status",
+                                                                     featureFlagger: MockDBPFeatureFlagger())
         let identifiers = makeFixtureIdentifiers()
         let brokerData = makeFixtureBrokerProfileQueryData()
         let database = MockDatabase()
@@ -342,7 +346,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status")
+                                                                     vpnBypassStatus: "status",
+                                                                     featureFlagger: MockDBPFeatureFlagger())
         let identifiers = makeFixtureIdentifiers()
         let brokerData = makeFixtureBrokerProfileQueryData()
         let failingDatabase = MockDatabase()
@@ -365,7 +370,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status")
+                                                                     vpnBypassStatus: "status",
+                                                                     featureFlagger: MockDBPFeatureFlagger())
         let identifiers = makeFixtureIdentifiers()
         let brokerData = makeFixtureBrokerProfileQueryData()
         mockDatabase.addHistoryEventError = MockDatabase.MockError.saveFailed
@@ -584,7 +590,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         } catch {
             if let lastPixelFired = mockPixelHandler.lastFiredEvent {
                 switch lastPixelFired {
-                case .optOutFailure(_, _, _, _, _, _, let tries, _, _, _, _, _):
+                case .optOutFailure(_, _, _, _, _, _, let tries, _, _, _, _, _, _):
                     XCTAssertEqual(tries, 3)
                 default: XCTFail("We should be firing the opt-out submit-success pixel last")
                 }

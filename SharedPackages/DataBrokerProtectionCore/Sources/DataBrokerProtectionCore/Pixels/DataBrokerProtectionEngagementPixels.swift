@@ -105,14 +105,16 @@ public final class DataBrokerProtectionEngagementPixels {
         self.repository = repository
     }
 
-    public func fireEngagementPixel(isAuthenticated: Bool, currentDate: Date = Date()) {
+    public func fireEngagementPixel(isAuthenticated: Bool,
+                                    currentDate: Date = Date(),
+                                    needBackgroundAppRefresh: Bool? = nil) {
         guard (try? database.fetchProfile()) != nil else {
             Logger.dataBrokerProtection.log("No profile. We do not fire any pixel because we do not consider it an engaged user.")
             return
         }
 
         if shouldWeFireDailyPixel(date: currentDate) {
-            handler.fire(.dailyActiveUser(isAuthenticated: isAuthenticated))
+            handler.fire(.dailyActiveUser(isAuthenticated: isAuthenticated, needBackgroundAppRefresh: needBackgroundAppRefresh))
             repository.markDailyPixelSent()
         }
 

@@ -33,9 +33,9 @@ final class AutoClearSettingsViewModel: ObservableObject {
     // MARK: - Published State
     
     @Published private(set) var autoClearEnabled: Bool = false
-    @Published private(set) var clearTabs: Bool = true
-    @Published private(set) var clearCookies: Bool = true
-    @Published private(set) var clearDuckAIChats: Bool = true
+    @Published private(set) var clearTabs: Bool = false
+    @Published private(set) var clearCookies: Bool = false
+    @Published private(set) var clearDuckAIChats: Bool = false
     @Published private(set) var selectedTiming: AutoClearSettingsModel.Timing = .termination
     
     // MARK: - Computed Properties
@@ -146,12 +146,6 @@ final class AutoClearSettingsViewModel: ObservableObject {
             clearCookies = action.contains(.data)
             clearDuckAIChats = action.contains(.aiChats)
             selectedTiming = appSettings.autoClearTiming
-        } else {
-            // Set defaults when disabled
-            clearTabs = true
-            clearCookies = true
-            clearDuckAIChats = false
-            selectedTiming = .termination
         }
     }
     

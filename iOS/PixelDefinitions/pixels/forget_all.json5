@@ -55,9 +55,24 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            {"key": "tabs", "description": "Whether tabs clearing is enabled (true/false)"},
-            {"key": "data", "description": "Whether data clearing is enabled (true/false)"},
-            {"key": "chats", "description": "Whether Duck.ai chats clearing is enabled (true/false)"}
+            {
+                "key": "tabs",
+                "description": "Whether tabs clearing is enabled",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "data",
+                "description": "Whether data clearing is enabled",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "chats",
+                "description": "Whether Duck.ai chats clearing is enabled",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
         ]
     }
 }

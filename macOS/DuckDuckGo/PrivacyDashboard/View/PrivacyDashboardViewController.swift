@@ -385,17 +385,18 @@ extension PrivacyDashboardViewController {
         return webVitalsResult
     }
 
-    private func calculateExpandedWebVitals(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> PerformanceMetrics? {
-        var expandedWebVitalsResult: PerformanceMetrics?
+    private func collectBreakageReportData(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> BreakageReportData? {
+        var breakageReportData: BreakageReportData?
         if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            expandedWebVitalsResult = await withCheckedContinuation({ continuation in
+            breakageReportData = await withCheckedContinuation({ continuation in
                 guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-                breakageReportingSubfeature.notifyHandler { result in
+                breakageReportingSubfeature.notifyHandler { metrics, detectorData in
+                    let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
                     continuation.resume(returning: result)
                 }
             })
         }
-        return expandedWebVitalsResult
+        return breakageReportData
     }
 
     private func isPirEnabledAndUserHasProfile() async -> Bool {
@@ -428,8 +429,9 @@ extension PrivacyDashboardViewController {
 
         let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, privacyConfig: configuration)
 
-        let expandedWebVitals = await calculateExpandedWebVitals(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
-        let privacyAwareWebVitals = expandedWebVitals?.privacyAwareMetrics()
+        let breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
+        let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
+        let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
 
         var errors: [Error]?
         var statusCodes: [Int]?
@@ -468,7 +470,8 @@ extension PrivacyDashboardViewController {
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
                                                isPirEnabled: isPirEnabled,
-                                               pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming)
+                                               pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming,
+                                               detectorMetrics: detectorMetrics)
         return websiteBreakage
     }
 }

@@ -182,12 +182,16 @@ final class AutoClearSettingsViewModel: ObservableObject {
     
     func onViewDismiss() {
         guard appSettings.autoClearAction != initialOptions else { return }
-        
+
+        let effectiveTabs = autoClearEnabled && clearTabs
+        let effectiveData = autoClearEnabled && clearCookies
+        let effectiveChats = autoClearEnabled && clearDuckAIChats && showDuckAIChatsToggle
+
         Pixel.fire(pixel: .settingsAutomaticDataClearingOptionsUpdated,
                    withAdditionalParameters: [
-                       "tabs": String(clearTabs),
-                       "data": String(clearCookies),
-                       "chats": String(clearDuckAIChats)
+                       "tabs": String(effectiveTabs),
+                       "data": String(effectiveData),
+                       "chats": String(effectiveChats)
                    ])
     }
 }

@@ -116,4 +116,3 @@ private extension UserDefaults {
         set { set(newValue, forKey: key.rawValue) }
     }
 }
-

@@ -19,7 +19,7 @@
 import Foundation
 import AppKit
 
-class SearchField: NSSearchField {
+final class SearchField: NSSearchField {
 
     override class var cellClass: AnyClass? {
         get {

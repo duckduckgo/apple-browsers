@@ -56,9 +56,6 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         return isProTierPurchaseEnabled() || subscriptionTier == .pro
     }
 
-    @Published var email: String?
-    var hasEmail: Bool { !(email?.isEmpty ?? true) }
-
     /// Returns true if "Upgrade" option should be shown
     /// Requirements:
     /// - Subscription is active

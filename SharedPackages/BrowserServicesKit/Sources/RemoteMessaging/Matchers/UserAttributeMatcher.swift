@@ -37,6 +37,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
     private let isWidgetInstalled: Bool
     private let isSyncEnabled: Bool
     private let shouldShowWinBackOfferUrgencyMessage: Bool
+    private let isCurrentPIRUser: Bool
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
@@ -64,11 +65,13 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 shownMessageIds: [String],
                 enabledFeatureFlags: [String],
                 isSyncEnabled: Bool,
-                shouldShowWinBackOfferUrgencyMessage: Bool
+                shouldShowWinBackOfferUrgencyMessage: Bool,
+                isCurrentPIRUser: Bool = false
     ) {
         self.isWidgetInstalled = isWidgetInstalled
         self.isSyncEnabled = isSyncEnabled
         self.shouldShowWinBackOfferUrgencyMessage = shouldShowWinBackOfferUrgencyMessage
+        self.isCurrentPIRUser = isCurrentPIRUser
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
@@ -104,6 +107,8 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: isSyncEnabled)
         case let matchingAttribute as WinBackOfferUrgencyMatchingAttribute:
             return matchingAttribute.evaluate(for: shouldShowWinBackOfferUrgencyMessage)
+        case let matchingAttribute as PIRCurrentUserMatchingAttribute:
+            return matchingAttribute.evaluate(for: isCurrentPIRUser)
         default:
             return commonUserAttributeMatcher.evaluate(matchingAttribute: matchingAttribute)
         }
@@ -115,6 +120,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
     private let pinnedTabsCount: Int
     private let hasCustomHomePage: Bool
     private let isCurrentFreemiumPIRUser: Bool
+    private let isCurrentPIRUser: Bool
     private let dismissedDeprecatedMacRemoteMessageIds: [String]
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
@@ -143,12 +149,14 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
                 isDuckPlayerOnboarded: Bool,
                 isDuckPlayerEnabled: Bool,
                 isCurrentFreemiumPIRUser: Bool,
+                isCurrentPIRUser: Bool = false,
                 dismissedDeprecatedMacRemoteMessageIds: [String],
                 enabledFeatureFlags: [String]
     ) {
         self.pinnedTabsCount = pinnedTabsCount
         self.hasCustomHomePage = hasCustomHomePage
         self.isCurrentFreemiumPIRUser = isCurrentFreemiumPIRUser
+        self.isCurrentPIRUser = isCurrentPIRUser
         self.dismissedDeprecatedMacRemoteMessageIds = dismissedDeprecatedMacRemoteMessageIds
 
         commonUserAttributeMatcher = .init(
@@ -185,6 +193,8 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: hasCustomHomePage)
         case let matchingAttribute as FreemiumPIRCurrentUserMatchingAttribute:
             return matchingAttribute.evaluate(for: isCurrentFreemiumPIRUser)
+        case let matchingAttribute as PIRCurrentUserMatchingAttribute:
+            return matchingAttribute.evaluate(for: isCurrentPIRUser)
         case let matchingAttribute as InteractedWithDeprecatedMacRemoteMessageMatchingAttribute:
             if dismissedDeprecatedMacRemoteMessageIds.contains(where: { messageId in
                 StringArrayMatchingAttribute(matchingAttribute.value).matches(value: messageId) == .match

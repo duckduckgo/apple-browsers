@@ -222,7 +222,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenAutoClearActionIsNotEmptyThenAccessibilityLabelIsOn() {
         // Given
-        mockAppSettings.autoClearAction = .clearData
+        mockAppSettings.autoClearAction = .data
 
         // When
         let viewModel = makeViewModel()

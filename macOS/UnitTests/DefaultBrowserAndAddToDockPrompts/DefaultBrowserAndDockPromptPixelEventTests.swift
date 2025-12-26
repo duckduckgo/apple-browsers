@@ -201,7 +201,11 @@ final class DefaultBrowserAndDockPromptPixelEventTests: XCTestCase {
 
         // THEN
         for (event, context) in pixels {
-            verifyThat(event, frequency: context.frequency, meets: context.expectation, file: #file, line: #line)
+            verifyThat(event,
+                       frequency: context.frequency,
+                       meets: context.expectation,
+                       file: #file,
+                       line: #line)
         }
     }
 

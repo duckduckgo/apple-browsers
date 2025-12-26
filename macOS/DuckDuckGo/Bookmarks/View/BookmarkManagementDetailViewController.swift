@@ -64,7 +64,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             self?.onImport()
         }, onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }))
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -404,7 +404,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             self?.onImport()
         }, onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         })
         emptyStateHostingView.isHidden = false

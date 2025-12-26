@@ -20,8 +20,9 @@ import BrowserServicesKit
 import Common
 import History
 import HistoryView
-import PrivacyConfigTestsUtils
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import WebKit
 import XCTest
 
@@ -41,7 +42,8 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         userScript = AutoconsentUserScript(
             config: MockPrivacyConfiguration(),
             management: AutoconsentManagement(),
-            preferences: preferences
+            preferences: preferences,
+            featureFlagger: MockFeatureFlagger()
         )
     }
 

@@ -532,6 +532,12 @@
                 "description": "Whether the user is authenticated",
                 "type": "string",
                 "enum": ["true", "false"]
+            },
+            {
+                "key": "need_background_app_refresh",
+                "description": "Whether Background App Refresh is required for DBP on this device.",
+                "type": "string",
+                "enum": ["true", "false"]
             }
         ]
     },

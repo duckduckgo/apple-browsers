@@ -62,6 +62,7 @@ final class SearchField: NSSearchField {
 final class SearchFieldCell: NSSearchFieldCell {
 
     private var searchField: SearchField {
+        // swiftlint:disable:next force_cast
         controlView as! SearchField
     }
 

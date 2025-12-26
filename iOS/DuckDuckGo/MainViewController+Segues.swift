@@ -251,6 +251,14 @@ extension MainViewController {
         }, deepLinkTarget: .netP)
     }
 
+    func segueToDataBrokerProtection() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .dbp)
+        }, deepLinkTarget: .dbp)
+    }
+
     func segueToDebugSettings() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
@@ -352,6 +360,13 @@ extension MainViewController {
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
                                                         featureFlagger: featureFlagger)
+        let whatsNewCoordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: whatsNewRepository,
+            remoteMessageActionHandler: remoteMessagingActionHandler,
+            isIPad: UIDevice.current.userInterfaceIdiom == .pad,
+            pixelReporter: nil,
+            userScriptsDependencies: userScriptsDependencies)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   isAuthV2Enabled: isAuthV2Enabled,
@@ -378,7 +393,8 @@ extension MainViewController {
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
-                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore))
+                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore),
+                                                  whatsNewCoordinator: whatsNewCoordinator)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)

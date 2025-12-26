@@ -24,6 +24,7 @@ import Common
 import History
 import NewTabPage
 import Persistence
+import PrivacyConfig
 import PrivacyStats
 import Subscription
 

@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrowserServicesKit
+import Foundation
+import PrivacyConfig
 
 extension ContentScopeFeatureToggles {
 

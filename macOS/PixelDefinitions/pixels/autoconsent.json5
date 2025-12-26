@@ -49,6 +49,13 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_mac_autoconsent_done_heuristic_daily": {
+        "description": "Fires when autoconsent on-device heuristic successfully dismisses a popup.",
+        "owners": ["muodov"],
+        "triggers": ["page_load"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_mac_autoconsent_animation-shown_daily": {
         "description": "Fires when the autoconsent URLbar \"Consent Managed\" animation is shown.",
         "owners": ["sammacbeth"],
@@ -156,6 +163,11 @@
                 "type": "number"
             },
             {
+                "key": "done_heuristic",
+                "description": "Number of autoconsent done-heuristic pixels fired.",
+                "type": "number"
+            },
+            {
                 "key": "animation-shown",
                 "description": "Number of autoconsent animation-shown pixels fired.",
                 "type": "number"
@@ -198,6 +210,11 @@
             {
                 "key": "error_reload-loop",
                 "description": "Number of autoconsent error-reload-loop pixels fired.",
+                "type": "number"
+            },
+            {
+                "key": "consentHeuristicEnabled",
+                "description": "Whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
             }
         ]

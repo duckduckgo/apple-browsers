@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import Testing
-import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
 struct DefaultBrowserAndDockPromptFeatureFlaggerTests {

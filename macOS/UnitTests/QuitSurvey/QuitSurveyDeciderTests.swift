@@ -17,8 +17,9 @@
 //
 
 import FeatureFlags
-import XCTest
+import PrivacyConfig
 import SharedTestUtilities
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 

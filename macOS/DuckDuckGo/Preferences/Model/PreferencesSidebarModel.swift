@@ -27,6 +27,7 @@ import NetworkProtectionIPC
 import LoginItems
 import PixelKit
 import PreferencesUI_macOS
+import PrivacyConfig
 import SubscriptionUI
 
 protocol AIFeaturesStatusProviding: AnyObject {

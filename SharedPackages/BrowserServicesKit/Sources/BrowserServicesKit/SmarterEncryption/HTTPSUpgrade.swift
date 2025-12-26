@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
+import BloomFilterWrapper
 import Common
 import Foundation
-import BloomFilterWrapper
 import os.log
+import PrivacyConfig
 
 public enum HTTPSUpgradeError: Error {
     case badUrl

@@ -21,7 +21,8 @@ import XCTest
 @testable import DuckDuckGo
 @testable import Core
 import WebKit
-import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 final class AutoconsentMessageProtocolTests: XCTestCase {
 

@@ -3388,6 +3388,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "O navegador DuckDuckGo fornece proteções contra rastreamento, que estão sempre ativas. [Sabe mais](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Novidades";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Apresenta os registos do último minuto para ajudar a diagnosticar problemas imediatamente após uma atualização.";
 

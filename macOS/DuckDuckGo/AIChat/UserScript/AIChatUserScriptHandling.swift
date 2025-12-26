@@ -24,7 +24,7 @@ import Foundation
 import PixelKit
 import UserScript
 import OSLog
-import BrowserServicesKit
+import PrivacyConfig
 import DDGSync
 
 protocol AIChatMetricReportingHandling {

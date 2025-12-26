@@ -1290,7 +1290,12 @@
     });
     output.featureSettings = parseFeatureSettings(data, enabledFeatures);
     output.bundledConfig = data;
+    output.messagingContextName = output.messagingContextName || "contentScopeScripts";
     return output;
+  }
+  function getLoadArgs(processedConfig) {
+    const { platform, site, bundledConfig, messagingConfig, messageSecret: messageSecret2, messagingContextName, currentCohorts } = processedConfig;
+    return { platform, site, bundledConfig, messagingConfig, messageSecret: messageSecret2, messagingContextName, currentCohorts };
   }
   function computeEnabledFeatures(data, topLevelHostname, platformVersion, platformSpecificFeatures2 = []) {
     const remoteFeatureNames = Object.keys(data.features);
@@ -1388,7 +1393,7 @@
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "duckAiDataClearing", "pageContext"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -1399,6 +1404,7 @@
       "messageBridge",
       "favicon"
     ],
+    "apple-ai-clear": ["duckAiDataClearing"],
     android: [...baseFeatures, "webCompat", "webInterferenceDetection", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
     "android-autofill-import": ["autofillImport"],
@@ -4060,7 +4066,8 @@
        *   assets?: import('./content-feature.js').AssetConfig | undefined,
        *   site: import('./content-feature.js').Site,
        *   messagingConfig?: import('@duckduckgo/messaging').MessagingConfig,
-       *   currentCohorts?: [{feature: string, cohort: string, subfeature: string}],
+       *   messagingContextName: string,
+       *   currentCohorts?: Array<{feature: string, cohort: string, subfeature: string}>,
        * } | null}
        */
       __privateAdd(this, _args);
@@ -4555,9 +4562,9 @@
      * @return {MessagingContext}
      */
     _createMessagingContext() {
-      const contextName = this.injectName === "apple-isolated" ? "contentScopeScriptsIsolated" : "contentScopeScripts";
+      if (!this.args) throw new Error("messaging requires args to be set");
       return new MessagingContext({
-        context: contextName,
+        context: this.args.messagingContextName,
         env: this.isDebug ? "development" : "production",
         featureName: this.name
       });
@@ -9381,90 +9388,6 @@ ul.messages {
     }
   };
 
-  // src/features/duck-ai-data-clearing.js
-  init_define_import_meta_trackerLookup();
-  var DuckAiDataClearing = class extends ContentFeature {
-    init() {
-      this.messaging.subscribe("duckAiClearData", (_2) => this.clearData());
-      this.notify("duckAiClearDataReady");
-    }
-    async clearData() {
-      let lastError = null;
-      const localStorageKeys = this.getFeatureSetting("chatsLocalStorageKeys");
-      for (const localStorageKey of localStorageKeys) {
-        try {
-          this.clearSavedAIChats(localStorageKey);
-        } catch (error) {
-          lastError = error;
-          this.log.error("Error clearing saved chats:", error);
-        }
-      }
-      const indexDbNameObjectStoreNamePairs = this.getFeatureSetting("chatImagesIndexDbNameObjectStoreNamePairs");
-      for (const [indexDbName, objectStoreName] of indexDbNameObjectStoreNamePairs) {
-        try {
-          await this.clearChatImagesStore(indexDbName, objectStoreName);
-        } catch (error) {
-          lastError = error;
-          this.log.error("Error clearing saved chat images:", error);
-        }
-      }
-      if (lastError === null) {
-        this.notify("duckAiClearDataCompleted");
-      } else {
-        this.notify("duckAiClearDataFailed", {
-          error: lastError?.message
-        });
-      }
-    }
-    clearSavedAIChats(localStorageKey) {
-      this.log.info(`Clearing '${localStorageKey}'`);
-      window.localStorage.removeItem(localStorageKey);
-    }
-    clearChatImagesStore(indexDbName, objectStoreName) {
-      this.log.info(`Clearing '${indexDbName}' object store`);
-      return new Promise((resolve, reject) => {
-        const request = window.indexedDB.open(indexDbName);
-        request.onerror = (event) => {
-          this.log.error("Error opening IndexedDB:", event);
-          reject(event);
-        };
-        request.onsuccess = (_2) => {
-          const db = request.result;
-          if (!db) {
-            this.log.error("IndexedDB onsuccess but no db result");
-            reject(new Error("No DB result"));
-            return;
-          }
-          if (!db.objectStoreNames.contains(objectStoreName)) {
-            this.log.info(`'${objectStoreName}' object store does not exist, nothing to clear`);
-            db.close();
-            resolve(null);
-            return;
-          }
-          try {
-            const transaction = db.transaction([objectStoreName], "readwrite");
-            const objectStore = transaction.objectStore(objectStoreName);
-            const clearRequest = objectStore.clear();
-            clearRequest.onsuccess = () => {
-              db.close();
-              resolve(null);
-            };
-            clearRequest.onerror = (err) => {
-              this.log.error("Error clearing object store:", err);
-              db.close();
-              reject(err);
-            };
-          } catch (err) {
-            this.log.error("Exception during IndexedDB clearing:", err);
-            db.close();
-            reject(err);
-          }
-        };
-      });
-    }
-  };
-  var duck_ai_data_clearing_default = DuckAiDataClearing;
-
   // src/features/page-context.js
   init_define_import_meta_trackerLookup();
 
@@ -10012,7 +9935,6 @@ ${iframeContent}
     ddg_feature_exceptionHandler: ExceptionHandler,
     ddg_feature_apiManipulation: ApiManipulation,
     ddg_feature_webInterferenceDetection: WebInterferenceDetection,
-    ddg_feature_duckAiDataClearing: duck_ai_data_clearing_default,
     ddg_feature_pageContext: PageContext
   };
 
@@ -10149,24 +10071,12 @@ ${iframeContent}
     const userUnprotectedDomains = $USER_UNPROTECTED_DOMAINS$;
     const userPreferences = $USER_PREFERENCES$;
     const processedConfig = processConfig(config, userUnprotectedDomains, userPreferences, platformSpecificFeatures);
-    const handlerNames = [];
-    if (false) {
-      handlerNames.push("contentScopeScriptsIsolated");
-    } else {
-      handlerNames.push("contentScopeScripts");
-    }
     processedConfig.messagingConfig = new WebkitMessagingConfig({
-      webkitMessageHandlerNames: handlerNames,
+      webkitMessageHandlerNames: [processedConfig.messagingContextName],
       secret: "",
       hasModernWebkitAPI: true
     });
-    load({
-      platform: processedConfig.platform,
-      site: processedConfig.site,
-      bundledConfig: processedConfig.bundledConfig,
-      messagingConfig: processedConfig.messagingConfig,
-      messageSecret: processedConfig.messageSecret
-    });
+    load(getLoadArgs(processedConfig));
     init(processedConfig);
   }
   initCode();

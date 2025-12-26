@@ -21,7 +21,7 @@ import Foundation
 import Core
 import CoreData
 import os.log
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol AppRatingPromptStorage {
     

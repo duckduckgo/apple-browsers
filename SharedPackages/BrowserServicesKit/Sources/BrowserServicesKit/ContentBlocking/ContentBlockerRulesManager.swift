@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import WebKit
-import TrackerRadarKit
 import Combine
 import Common
+import ContentBlocking
+import Foundation
 import os.log
+import TrackerRadarKit
+import WebKit
 
 public protocol CompiledRuleListsSource {
 

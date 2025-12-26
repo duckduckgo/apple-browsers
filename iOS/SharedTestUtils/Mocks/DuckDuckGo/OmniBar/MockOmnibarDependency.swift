@@ -19,7 +19,7 @@
 
 import AIChat
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import PersistenceTestingUtils
 import UIKit
 @testable import DuckDuckGo

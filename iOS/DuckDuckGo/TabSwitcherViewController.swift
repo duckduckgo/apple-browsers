@@ -26,7 +26,7 @@ import Bookmarks
 import Persistence
 import os.log
 import SwiftUI
-import BrowserServicesKit
+import PrivacyConfig
 import AIChat
 import Combine
 

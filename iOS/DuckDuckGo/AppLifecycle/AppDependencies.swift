@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 
 struct AppDependencies {
 

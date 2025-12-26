@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import UIKit
 
 // MARK: - Delegate Protocol
@@ -24,6 +25,7 @@ import UIKit
 /// Delegate protocol for handling user interactions with the contextual input view controller.
 protocol AIChatContextualInputViewControllerDelegate: AnyObject {
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String)
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction)
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController)
     func contextualInputViewControllerDidTapAttach(_ viewController: AIChatContextualInputViewController)
 }
@@ -37,6 +39,8 @@ final class AIChatContextualInputViewController: UIViewController {
 
     private enum Constants {
         static let horizontalPadding: CGFloat = 20
+        static let quickActionsBottomSpacing: CGFloat = 12
+        static let keyboardSpacing: CGFloat = 20
     }
 
     // MARK: - Properties
@@ -46,13 +50,23 @@ final class AIChatContextualInputViewController: UIViewController {
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var nativeInputViewController = AIChatNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
 
-    private lazy var quickActionsContainer: UIView = {
-        let view = UIView()
+    private lazy var quickActionsScrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        return scrollView
+    }()
+
+    private lazy var quickActionsView: AIChatQuickActionsView<AIChatContextualQuickAction> = {
+        let view = AIChatQuickActionsView<AIChatContextualQuickAction>()
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.setContentCompressionResistancePriority(.required, for: .vertical)
         return view
     }()
 
-    private var bottomConstraint: NSLayoutConstraint?
+    private var safeAreaBottomConstraint: NSLayoutConstraint?
+    private var keyboardBottomConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
 
@@ -65,24 +79,18 @@ final class AIChatContextualInputViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         configureNativeInput()
-        registerForKeyboardNotifications()
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        bottomConstraint?.constant = 0
-        view.setNeedsLayout()
-        view.layoutIfNeeded()
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+        configureQuickActions()
+        setupKeyboardObservers()
     }
 
     // MARK: - Public Methods
@@ -104,50 +112,32 @@ private extension AIChatContextualInputViewController {
 
     func setupUI() {
         view.backgroundColor = .clear
-        view.addSubview(quickActionsContainer)
+
+        view.addSubview(quickActionsScrollView)
+        quickActionsScrollView.addSubview(quickActionsView)
         embedNativeInputViewController()
 
-        bottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        bottomConstraint?.priority = .defaultHigh
-
-        let topConstraint = nativeInputViewController.view.topAnchor.constraint(greaterThanOrEqualTo: view.topAnchor)
-        topConstraint.priority = .required
-
         NSLayoutConstraint.activate([
-            quickActionsContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            quickActionsContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
-            quickActionsContainer.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor),
-            quickActionsContainer.heightAnchor.constraint(equalToConstant: 0),
+            quickActionsScrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            quickActionsScrollView.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
 
+            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
+            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
+            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
+            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
+            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
+            quickActionsView.heightAnchor.constraint(greaterThanOrEqualTo: quickActionsScrollView.frameLayoutGuide.heightAnchor),
+
+            nativeInputViewController.view.topAnchor.constraint(greaterThanOrEqualTo: quickActionsView.bottomAnchor, constant: Constants.quickActionsBottomSpacing),
             nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
             nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
-            topConstraint,
-            bottomConstraint!,
+            nativeInputViewController.view.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor),
         ])
-    }
 
-    func registerForKeyboardNotifications() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillChangeFrame(_:)),
-            name: UIResponder.keyboardWillChangeFrameNotification,
-            object: nil
-        )
-    }
-
-    @objc func keyboardWillChangeFrame(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let endFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
-              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval,
-              let curve = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else { return }
-
-        let keyboardFrameInView = view.convert(endFrame, from: nil)
-        let overlap = max(0, view.bounds.maxY - keyboardFrameInView.minY)
-        bottomConstraint?.constant = -overlap
-
-        UIView.animate(withDuration: duration, delay: 0, options: UIView.AnimationOptions(rawValue: curve << 16)) {
-            self.view.layoutIfNeeded()
-        }
+        safeAreaBottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        safeAreaBottomConstraint?.isActive = true
     }
 
     func embedNativeInputViewController() {
@@ -160,6 +150,63 @@ private extension AIChatContextualInputViewController {
     func configureNativeInput() {
         nativeInputViewController.delegate = self
         nativeInputViewController.placeholder = UserText.searchInputFieldPlaceholderDuckAI
+    }
+
+    func configureQuickActions() {
+        quickActionsView.onActionSelected = { [weak self] action in
+            guard let self else { return }
+            delegate?.contextualInputViewController(self, didSelectQuickAction: action)
+        }
+        quickActionsView.configure(with: [.summarize])
+    }
+
+    func scrollQuickActionsToBottom() {
+        view.layoutIfNeeded()
+        let bottomOffset = CGPoint(
+            x: 0,
+            y: max(0, quickActionsScrollView.contentSize.height - quickActionsScrollView.bounds.height)
+        )
+        quickActionsScrollView.setContentOffset(bottomOffset, animated: false)
+    }
+
+    func setupKeyboardObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    // Note: UIKeyboardLayoutGuide has known issues on first appearance in sheets.
+    // The layout frame isn't properly initialized until after the view has appeared.
+    // We use a safe area constraint initially, then switch to keyboard layout guide when the keyboard appears.
+    //
+    // Related references:
+    // - https://useyourloaf.com/blog/keyboard-layout-guide/
+    // - https://developer.apple.com/forums/thread/746826
+
+    @objc func keyboardWillShow(_ notification: Notification) {
+        if keyboardBottomConstraint == nil {
+            safeAreaBottomConstraint?.isActive = false
+            keyboardBottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(
+                equalTo: view.keyboardLayoutGuide.topAnchor,
+                constant: -Constants.keyboardSpacing
+            )
+            keyboardBottomConstraint?.isActive = true
+        } else {
+            keyboardBottomConstraint?.constant = -Constants.keyboardSpacing
+        }
+    }
+
+    @objc func keyboardWillHide(_ notification: Notification) {
+        keyboardBottomConstraint?.constant = 0
     }
 }
 
@@ -180,5 +227,6 @@ extension AIChatContextualInputViewController: AIChatNativeInputViewControllerDe
     }
 
     func nativeInputViewController(_ viewController: AIChatNativeInputViewController, didChangeText text: String) {
+        scrollQuickActionsToBottom()
     }
 }

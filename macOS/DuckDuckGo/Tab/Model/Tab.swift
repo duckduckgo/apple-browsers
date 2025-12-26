@@ -28,6 +28,7 @@ import Onboarding
 import os.log
 import PageRefreshMonitor
 import PixelKit
+import PrivacyConfig
 import SpecialErrorPages
 import UserScript
 import WebKit
@@ -81,6 +82,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
     let featureFlagger: FeatureFlagger
+    private let privacyFeatures: AnyPrivacyFeatures
     private let fireproofDomains: FireproofDomains
     let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
@@ -168,7 +170,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             faviconManager = FaviconManager(
                 cacheType: .inMemory,
                 bookmarkManager: NSApp.delegateTyped.bookmarkManager,
-                fireproofDomains: fireproofDomains)
+                fireproofDomains: fireproofDomains,
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager)
         }
 
         self.init(id: id,
@@ -281,6 +284,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.navigationDelegate = DistributedNavigationDelegate(isPerformanceReportingEnabled: featureFlagger.isFeatureOn(.webKitPerformanceReporting))
         self.statisticsLoader = statisticsLoader
         self.internalUserDecider = internalUserDecider
+        self.privacyFeatures = privacyFeatures
         self.title = title
         self.favicon = favicon
         self.parentTab = parentTab
@@ -500,6 +504,15 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func disableLongDecisionMakingChecks() {}
     func enableLongDecisionMakingChecks() {}
 #endif
+
+    /// Ensures `WKUIDelegate` createWebView callbacks are ordered behind any in-flight `decidePolicyForNavigationAction` evaluation.
+    @MainActor
+    func dispatchCreateWebView(_ callback: @Sendable @escaping @MainActor () -> Void) { navigationDelegate.dispatchCreateWebView(callback) }
+    var isCreateWebViewGatingFailsafeEnabled: Bool {
+        privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(
+            PopupBlockingSubfeature.createWebViewGatingFailsafe,
+            defaultValue: true)
+    }
 
     // MARK: - Event Publishers
 

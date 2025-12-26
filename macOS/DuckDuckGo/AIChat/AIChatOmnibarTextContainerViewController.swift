@@ -308,6 +308,13 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.insertNewlineIgnoringFieldEditor(nil)
     }
 
+    func insertNewlineIfHasContent(addressBarText: String) {
+        guard !addressBarText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+        insertNewline()
+    }
+
     func updateScrollingBehavior(maxHeight: CGFloat) {
         let desiredHeight = calculateDesiredPanelHeight()
         let effectiveMaxHeight = min(maxHeight, Constants.maximumPanelHeight)

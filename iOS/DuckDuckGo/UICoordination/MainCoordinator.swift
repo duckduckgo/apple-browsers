@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import BrowserServicesKit
+import PrivacyConfig
 import Subscription
 import Persistence
 import DDGSync
@@ -84,7 +85,8 @@ final class MainCoordinator {
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         sharedSecureVault: (any AutofillSecureVault)? = nil
+         whatsNewRepository: WhatsNewMessageRepository,
+         sharedSecureVault: (any AutofillSecureVault)? = nil,
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -189,7 +191,8 @@ final class MainCoordinator {
                                         productSurfaceTelemetry: productSurfaceTelemetry,
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
-                                        syncAiChatsCleaner: syncService.aiChatsCleaner)
+                                        syncAiChatsCleaner: syncService.aiChatsCleaner,
+                                        whatsNewRepository: whatsNewRepository)
     }
 
     func start() {
@@ -248,6 +251,10 @@ final class MainCoordinator {
 
     func presentNetworkProtectionStatusSettingsModal() {
         controller.presentNetworkProtectionStatusSettingsModal()
+    }
+
+    func presentDataBrokerProtectionDashboard() {
+        controller.presentDataBrokerProtectionDashboard()
     }
 
     func presentModalPromptIfNeeded() {

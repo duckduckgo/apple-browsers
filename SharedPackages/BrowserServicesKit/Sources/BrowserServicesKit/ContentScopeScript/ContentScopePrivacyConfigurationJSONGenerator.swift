@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import Foundation
 
 /// A protocol that defines an interface for generating a JSON representation of a the privacy configuration file.

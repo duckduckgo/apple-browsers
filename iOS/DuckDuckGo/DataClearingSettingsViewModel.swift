@@ -21,7 +21,7 @@ import Foundation
 import SwiftUI
 import Core
 import AIChat
-import BrowserServicesKit
+import PrivacyConfig
 
 @MainActor
 protocol DataClearingSettingsViewModelDelegate: AnyObject {

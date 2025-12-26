@@ -19,7 +19,7 @@
 
 import AIChat
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 import UIKit
 

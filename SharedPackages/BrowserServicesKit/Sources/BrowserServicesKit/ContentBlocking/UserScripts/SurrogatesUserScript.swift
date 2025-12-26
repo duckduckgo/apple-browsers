@@ -18,6 +18,7 @@
 
 import Common
 import ContentBlocking
+import PrivacyConfig
 import TrackerRadarKit
 import UserScript
 @preconcurrency import WebKit

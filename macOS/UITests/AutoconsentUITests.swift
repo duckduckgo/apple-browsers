@@ -71,6 +71,39 @@ class AutoconsentUITests: UITestCase {
         app.typeKey(.escape, modifierFlags: [])
     }
 
+    // Re-enable when experiment is shipped to 100%
+    func disabled_testAutoconsent_PrivacyTestPages_HeuristicModeWorks() throws {
+        // Navigate to DuckDuckGo's privacy test pages for autoconsent
+        let testURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/heuristic.html")!
+        addressBarTextField.pasteURL(testURL, pressingEnter: true)
+
+        // Wait for autoconsent test page to load with specific content
+        let webView = app.webViews.firstMatch
+        let autoconsentPageContent = webView.staticTexts.containing(\.value, containing: "Tests for heuristic mode").firstMatch
+        XCTAssertTrue(autoconsentPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Autoconsent test page should load with 'Tests for heuristic mode' text")
+
+        // Verify autoconsent automatically clicked the first button - should show "Reject was clicked!"
+        let clickedButton = webView.buttons.containing(\.title, containing: "Reject was clicked!").firstMatch
+        XCTAssertTrue(clickedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Autoconsent should have automatically clicked the first button, changing it to 'Reject was clicked!'")
+
+        // Check privacy dashboard for autoconsent status
+        let privacyButton = app.buttons.matching(identifier: "AddressBarButtonsViewController.privacyDashboardButton").firstMatch
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available")
+
+        privacyButton.click()
+
+        // Wait for privacy dashboard to open
+        let privacyDashboard = app.popovers.firstMatch
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
+
+        // Look for "Cookies Managed" in the privacy dashboard (for button clicking test)
+        let cookiesManagedInfo = privacyDashboard.groups.containing(.button, identifier: "Cookies Managed").firstMatch
+        XCTAssertTrue(cookiesManagedInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show 'Cookies Managed' for autoconsent button clicking")
+
+        // Close privacy dashboard
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
     func testAutoconsent_CookieBannerHiding_BannersAreHidden() throws {
         // Navigate to test page with cookie banner
         let bannerTestURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/banner.html")!

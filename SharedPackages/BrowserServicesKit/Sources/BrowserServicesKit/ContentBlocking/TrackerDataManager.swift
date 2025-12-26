@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import TrackerRadarKit
 import Common
+import ContentBlocking
+import Foundation
+import PrivacyConfig
+import TrackerRadarKit
 
 public protocol TrackerDataProvider {
 

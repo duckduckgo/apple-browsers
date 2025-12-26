@@ -31,6 +31,7 @@ import RemoteMessaging
 import PageRefreshMonitor
 import PixelKit
 import PixelExperimentKit
+import PrivacyConfig
 import Networking
 import Configuration
 import Network

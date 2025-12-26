@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import UIKit
+import UIKitExtensions
 import WebKit
 import WidgetKit
 import Combine
@@ -47,6 +47,7 @@ import PixelKit
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import UserScript
+import PrivacyConfig
 
 class MainViewController: UIViewController {
 
@@ -99,10 +100,11 @@ class MainViewController: UIViewController {
 
     let homePageConfiguration: HomePageConfiguration
     let remoteMessagingActionHandler: RemoteMessagingActionHandling
+    let whatsNewRepository: WhatsNewMessageRepository
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
-    let fireExecutor: FireExecutor
+    var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
@@ -189,7 +191,6 @@ class MainViewController: UIViewController {
 
     var postClear: (() -> Void)?
     var clearInProgress = false
-    var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
 
     required init?(coder: NSCoder) {
         fatalError("Use init?(code:")
@@ -298,10 +299,11 @@ class MainViewController: UIViewController {
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         productSurfaceTelemetry: ProductSurfaceTelemetry,
-        fireExecutor: FireExecutor,
+        fireExecutor: FireExecuting,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
-        syncAiChatsCleaner: SyncAIChatsCleaning
+        syncAiChatsCleaner: SyncAIChatsCleaning,
+        whatsNewRepository: WhatsNewMessageRepository
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -352,6 +354,7 @@ class MainViewController: UIViewController {
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
         self.syncAIChatsCleaner = syncAiChatsCleaner
+        self.whatsNewRepository = whatsNewRepository
 
         super.init(nibName: nil, bundle: nil)
         
@@ -725,6 +728,10 @@ class MainViewController: UIViewController {
                 segueToDuckDuckGoSubscription()
             }
         }
+    }
+
+    func presentDataBrokerProtectionDashboard() {
+        segueToDataBrokerProtection()
     }
 
     private func registerForKeyboardNotifications() {
@@ -3576,7 +3583,8 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
         Task {
-            await self.forgetTabs()
+            let options = FireOptions.tabs
+            await fireExecutor.burn(options: options, applicationState: .unknown, fireContext: .manualFire)
             tabSwitcher.dismiss()
         }
     }
@@ -3645,7 +3653,9 @@ extension MainViewController: GestureToolbarButtonDelegate {
     
 }
 
-extension MainViewController: AutoClearWorker {
+// MARK: - Fire Button Logic
+
+extension MainViewController {
 
     func clearNavigationStack() {
         dismissOmniBar()
@@ -3657,55 +3667,6 @@ extension MainViewController: AutoClearWorker {
         }
     }
 
-    func forgetTabs() async {
-        let options: FireOptions = .tabs
-        await fireExecutor.burn(options: options)
-    }
-
-    func refreshUIAfterClear() {
-        showBars()
-        attachHomeScreen()
-        tabsBarController?.refresh(tabsModel: tabManager.model)
-
-        if !autoClearInProgress {
-            // We don't need to refresh tabs if autoclear is in progress as nothing has happened yet
-            swipeTabsCoordinator?.refresh(tabsModel: tabManager.model)
-        }
-    }
-
-    @MainActor
-    func willStartClearing(_: AutoClear) {
-        autoClearInProgress = true
-    }
-
-    @MainActor
-    func autoClearDidFinishClearing(_: AutoClear, isLaunching: Bool) {
-        autoClearInProgress = false
-        if autoClearShouldRefreshUIAfterClear && isLaunching == false {
-            refreshUIAfterClear()
-        }
-
-        autoClearShouldRefreshUIAfterClear = true
-    }
-
-    @MainActor
-    func forgetData() async {
-        var options: FireOptions = .data
-        if appSettings.autoClearAIChatHistory {
-            options.insert(.aiChats)
-        }
-        await fireExecutor.burn(options: options)
-    }
-
-    @MainActor
-    func forgetData(applicationState: DataStoreWarmup.ApplicationState) async {
-        var options: FireOptions = .data
-        if appSettings.autoClearAIChatHistory {
-            options.insert(.aiChats)
-        }
-        await fireExecutor.burn(options: options, applicationState: applicationState)
-    }
-
     func forgetAllWithAnimation(options: FireOptions,
                                 transitionCompletion: (() -> Void)? = nil,
                                 showNextDaxDialog: Bool = false) {
@@ -3713,11 +3674,11 @@ extension MainViewController: AutoClearWorker {
         Pixel.fire(pixel: .forgetAllExecuted)
         DailyPixel.fire(pixel: .forgetAllExecutedDaily)
         productSurfaceTelemetry.dataClearingUsed()
-
+        
         fireExecutor.prepare(for: options)
         
         fireButtonAnimator.animate {
-            await self.fireExecutor.burn(options: options)
+            await self.fireExecutor.burn(options: options, applicationState: .unknown, fireContext: .manualFire)
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: {
@@ -3741,6 +3702,17 @@ extension MainViewController: AutoClearWorker {
             }
 
             self.daxDialogsManager.clearedBrowserData()
+        }
+    }
+    
+    private func refreshUIAfterClear() {
+        showBars()
+        attachHomeScreen()
+        tabsBarController?.refresh(tabsModel: tabManager.model)
+
+        if !autoClearInProgress {
+            // We don't need to refresh tabs if autoclear is in progress as nothing has happened yet
+            swipeTabsCoordinator?.refresh(tabsModel: tabManager.model)
         }
     }
     
@@ -3773,32 +3745,70 @@ extension MainViewController: AutoClearWorker {
 }
 
 extension MainViewController: FireExecutorDelegate {
-    func willStartBurningTabs() {
+    
+    func willStartBurning(fireContext: FireContext) {
+        switch fireContext {
+        case .manualFire:
+            return
+        case .autoClearOnLaunch:
+            autoClearInProgress = true
+        case .autoClearOnForeground:
+            autoClearInProgress = true
+            clearNavigationStack()
+        }
+    }
+    
+    func willStartBurningTabs(fireContext: FireContext) {
         omniBar.endEditing()
         findInPageView?.done()
     }
-
-    func didFinishBurningTabs() {
+    
+    func didFinishBurningTabs(fireContext: FireContext) {
+        guard fireContext == .manualFire else { return }
         refreshUIAfterClear()
     }
-
-    func willStartBurningData() {
+    
+    func willStartBurningData(fireContext: FireContext) {
         self.clearInProgress = true
     }
-
-    func didFinishBurningData() {
+    
+    func didFinishBurningData(fireContext: FireContext) {
         self.clearInProgress = false
         self.postClear?()
         self.postClear = nil
     }
 
-    func willStartBurningAIHistory() {
-        // no op
+    func willStartBurningAIHistory(fireContext: FireContext) {
+        if autoClearInProgress {
+            syncAIChatsCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+        } else {
+            syncAIChatsCleaner.recordLocalClear(date: Date())
+        }
     }
-
-    func didFinishBurningAIHistory() {
+    
+    func didFinishBurningAIHistory(fireContext: FireContext) {
         Task {
             await aiChatViewControllerManager.killSessionAndResetTimer()
+        }
+
+        if syncService.authState != .inactive {
+            syncService.scheduler.requestSyncImmediately()
+        }
+    }
+    
+    func didFinishBurning(fireContext: FireContext) {
+        switch fireContext {
+        case .manualFire:
+            return
+        case .autoClearOnLaunch:
+            autoClearInProgress = false
+            autoClearShouldRefreshUIAfterClear = true
+        case .autoClearOnForeground:
+            autoClearInProgress = false
+            if autoClearShouldRefreshUIAfterClear {
+                refreshUIAfterClear()
+            }
+            autoClearShouldRefreshUIAfterClear = true
         }
     }
 }
@@ -4118,7 +4128,7 @@ extension MainViewController: MessageNavigationDelegate {
             assertionFailure("Not implemented yet.")
         case .withinCurrentContext:
             let dataImportVC = makeDataImportViewController(source: .whatsNew)
-            guard let viewController = presentedViewController else {
+            guard let viewController = topMostPresentedViewController() else {
                 assertionFailure("No ViewController presented.")
                 return
             }

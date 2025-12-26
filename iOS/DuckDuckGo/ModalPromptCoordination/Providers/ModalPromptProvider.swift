@@ -55,3 +55,12 @@ extension ModalPromptProvider {
     func didPresentModal() {}
 
 }
+
+/// A protocol for modal prompts that can be shown on-demand by the user.
+/// (e.g., via modal prompt coordination) and can be re-accessed later by the user when needed.
+@MainActor
+protocol OnDemandModalPromptProvider {
+    /// Indicates whether the prompt can be shown on-demand.
+    /// - Returns: `true` if the prompt can be shown on-demand; `false` otherwise.
+    var canShowPromptOnDemand: Bool { get }
+}

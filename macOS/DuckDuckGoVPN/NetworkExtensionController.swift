@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import Foundation
 import NetworkExtension
 import VPN

@@ -27,6 +27,7 @@ import History
 import HistoryView
 import os.log
 import PixelKit
+import PrivacyConfig
 import Subscription
 import SwiftUI
 import Utilities

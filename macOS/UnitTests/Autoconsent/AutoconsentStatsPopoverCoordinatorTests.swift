@@ -23,6 +23,8 @@ import Common
 import FeatureFlags
 import PersistenceTestingUtils
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

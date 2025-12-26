@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import Subscription
-import SubscriptionTestingUtilities
 import Common
-import BrowserServicesKit
+import PrivacyConfig
+import SubscriptionTestingUtilities
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Subscription
 
 final class SubscriptionRedirectManagerTests: XCTestCase {
 

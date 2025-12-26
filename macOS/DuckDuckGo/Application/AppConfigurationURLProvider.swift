@@ -18,8 +18,8 @@
 
 import Configuration
 import Foundation
-import BrowserServicesKit
 import os.log
+import PrivacyConfig
 
 struct AppConfigurationURLProvider: ConfigurationURLProviding {
 

@@ -20,7 +20,7 @@ import Foundation
 import Combine
 import AppKit
 import DesignResourcesKit
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 
 protocol ThemeManaging {
@@ -55,11 +55,14 @@ final class ThemeManager: ObservableObject, ThemeManaging {
         $theme
     }
 
+    @Published private(set) var designColorPalette: DesignResourcesKit.ColorPalette
+
     init(appearancePreferences: AppearancePreferences, internalUserDecider: InternalUserDecider, featureFlagger: FeatureFlagger) {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
         self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
         self.effectiveAppearance = NSApp.effectiveAppearance.effectiveThemeAppearance
+        self.designColorPalette = appearancePreferences.themeName.designColorPalette
 
         switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
@@ -104,8 +107,10 @@ private extension ThemeManager {
     }
 
     /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
+    /// We're also keeping a reference to the active `designColorPalette`, so that it's Observable in SwiftUI
     func switchDesignSystemPalette(to palette: DesignResourcesKit.ColorPalette) {
         DesignSystemPalette.current = palette
+        designColorPalette = palette
     }
 
     /// Non Internal Users should only see the `.default` theme

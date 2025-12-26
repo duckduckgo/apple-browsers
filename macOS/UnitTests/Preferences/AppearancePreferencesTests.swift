@@ -19,6 +19,8 @@
 import Bookmarks
 import PersistenceTestingUtils
 import PixelKitTestingUtilities
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -272,10 +274,10 @@ final class AppearancePreferencesTests: XCTestCase {
         model.themeAppearance = ThemeAppearance.systemDefault
 
         pixelFiringMock.expectedFireCalls = [
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
-            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
+            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
+            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
+            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
+            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard)
         ]
 
         pixelFiringMock.verifyExpectations()

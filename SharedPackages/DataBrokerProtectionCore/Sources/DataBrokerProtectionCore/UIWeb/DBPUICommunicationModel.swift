@@ -595,3 +595,12 @@ struct DBPUIRemoveOptOutFromDashboardResult: DBPUISendableMessage {
         self.error = error
     }
 }
+
+/// Message sent when background app refresh availability changes (iOS only)
+public struct DBPUIBackgroundAppRefreshDidChange: DBPUISendableMessage {
+    public let needBackgroundAppRefresh: Bool
+
+    public init(needBackgroundAppRefresh: Bool) {
+        self.needBackgroundAppRefresh = needBackgroundAppRefresh
+    }
+}

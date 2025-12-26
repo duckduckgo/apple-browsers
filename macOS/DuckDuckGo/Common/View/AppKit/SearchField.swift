@@ -59,7 +59,7 @@ final class SearchField: NSSearchField {
     }
 }
 
-class SearchFieldCell: NSSearchFieldCell {
+final class SearchFieldCell: NSSearchFieldCell {
 
     private var searchField: SearchField {
         controlView as! SearchField

@@ -45,7 +45,7 @@ final class PrivacyDashboardViewController: NSViewController {
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let contentBlocking: ContentBlockingProtocol
 
-    private let themeManager: ThemeManaging
+    private let scriptStyleProvider: ScriptStyleProviding
     private var cancellables = Set<AnyCancellable>()
 
     public let rulesUpdateObserver: ContentBlockingRulesUpdateObserver
@@ -101,7 +101,7 @@ final class PrivacyDashboardViewController: NSViewController {
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
 
-        self.themeManager = themeManager
+        self.scriptStyleProvider = ScriptStyleProvider(themeManager: themeManager)
         self.contentBlocking = contentBlocking
         // swiftlint:disable:next force_cast
         self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
@@ -244,18 +244,7 @@ final class PrivacyDashboardViewController: NSViewController {
 private extension PrivacyDashboardViewController {
 
     private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .removeDuplicates { old, new in
-                old.name == new.name
-            }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshDashboardStyle()
-            }
-            .store(in: &cancellables)
-
-        themeManager.effectiveAppearancePublisher
-            .removeDuplicates()
+        scriptStyleProvider.themeStylePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshDashboardStyle()
@@ -264,7 +253,7 @@ private extension PrivacyDashboardViewController {
     }
 
     private func refreshDashboardStyle() {
-        let style = PrivacyDashboardStyle(themeName: themeManager.theme.name, appearance: themeManager.effectiveAppearance)
+        let style = PrivacyDashboardStyle(theme: scriptStyleProvider.themeAppearance, themeVariant: scriptStyleProvider.themeName)
         privacyDashboardController.style = style
     }
 }

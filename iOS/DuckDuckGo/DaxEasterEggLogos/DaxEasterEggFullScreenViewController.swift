@@ -68,6 +68,7 @@ class DaxEasterEggFullScreenViewController: UIViewController {
 
     private let imageView = UIImageView()
     private let closeButton = UIButton(type: .system)
+    private let titleLabel = UILabel()
     private let setAsLogoButton = UIButton(type: .system)
 
     private let imageURL: URL?
@@ -76,7 +77,6 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     private weak var sourceViewController: OmniBarViewController?
     private let logoStore: DaxEasterEggLogoStoring
     private let featureFlagger: FeatureFlagger
-    private let searchQuery: String?
     private var actualImageSize: CGSize?
 
     init(imageURL: URL?,
@@ -85,15 +85,13 @@ class DaxEasterEggFullScreenViewController: UIViewController {
          sourceImage: UIImage? = nil,
          sourceViewController: OmniBarViewController? = nil,
          logoStore: DaxEasterEggLogoStoring,
-         featureFlagger: FeatureFlagger,
-         searchQuery: String? = nil) {
+         featureFlagger: FeatureFlagger) {
         self.imageURL = imageURL
         self.sourceFrame = sourceFrame
         self.sourceImage = sourceImage ?? placeholderImage
         self.sourceViewController = sourceViewController
         self.logoStore = logoStore
         self.featureFlagger = featureFlagger
-        self.searchQuery = searchQuery
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         transitioningDelegate = self
@@ -113,18 +111,21 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.75)
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.88)
         imageView.contentMode = .scaleAspectFit
-        
+
         setupCloseButton()
+        setupTitleLabel()
         setupSetAsLogoButton()
 
         view.addSubview(imageView)
         view.addSubview(closeButton)
+        view.addSubview(titleLabel)
         view.addSubview(setAsLogoButton)
 
         imageView.translatesAutoresizingMaskIntoConstraints = true
         closeButton.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
         setAsLogoButton.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
@@ -132,6 +133,11 @@ class DaxEasterEggFullScreenViewController: UIViewController {
             closeButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
             closeButton.widthAnchor.constraint(equalToConstant: 44),
             closeButton.heightAnchor.constraint(equalToConstant: 44),
+
+            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 80),
+            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
 
             setAsLogoButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             setAsLogoButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -40)
@@ -146,9 +152,23 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         closeButton.addTarget(self, action: #selector(dismissViewController), for: .touchUpInside)
     }
 
+    private func setupTitleLabel() {
+        titleLabel.text = UserText.daxEasterEggFoundTitle
+        titleLabel.font = UIFont.boldAppFont(ofSize: 20)
+        titleLabel.textColor = .white
+        titleLabel.textAlignment = .center
+        titleLabel.numberOfLines = 1
+        titleLabel.layer.shadowColor = UIColor.black.cgColor
+        titleLabel.layer.shadowOffset = CGSize(width: 0, height: 1)
+        titleLabel.layer.shadowOpacity = 0.5
+        titleLabel.layer.shadowRadius = 2
+        titleLabel.alpha = 0
+    }
+
     private func setupSetAsLogoButton() {
         guard featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo), imageURL != nil else {
             setAsLogoButton.isHidden = true
+            titleLabel.isHidden = true
             return
         }
         updateSetAsLogoButtonTitle()
@@ -158,6 +178,7 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         setAsLogoButton.layer.cornerRadius = 12
         setAsLogoButton.contentEdgeInsets = UIEdgeInsets(top: 16, left: 24, bottom: 16, right: 24)
         setAsLogoButton.addTarget(self, action: #selector(setAsLogoButtonTapped), for: .touchUpInside)
+        setAsLogoButton.alpha = 0
     }
 
     private var isCurrentLogoStored: Bool {
@@ -169,10 +190,8 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         let title: String
         if isCurrentLogoStored {
             title = UserText.daxEasterEggResetToDefault
-        } else if let query = searchQuery, !query.isEmpty {
-            title = String(format: UserText.daxEasterEggSetAsNamedLogo, query.capitalized)
         } else {
-            title = UserText.daxEasterEggSetAsSearchIcon
+            title = UserText.daxEasterEggSwitchToThisLogo
         }
         setAsLogoButton.setTitle(title, for: .normal)
     }
@@ -181,11 +200,12 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         if isCurrentLogoStored {
             logoStore.clearLogo()
             Pixel.fire(pixel: .daxEasterEggLogoResetToDefault)
+            updateSetAsLogoButtonTitle()
         } else if let urlString = imageURL?.absoluteString {
             logoStore.setLogo(url: urlString)
             Pixel.fire(pixel: .daxEasterEggLogoSetAsPermanent)
+            dismiss(animated: true)
         }
-        updateSetAsLogoButtonTitle()
     }
     
     override func viewDidLayoutSubviews() {
@@ -221,6 +241,12 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     /// Called by transition animator when animation completes to load high-res image.
     func transitionDidComplete() {
         imageView.alpha = 1
+
+        UIView.animate(withDuration: 0.25) {
+            self.titleLabel.alpha = 1
+            self.setAsLogoButton.alpha = 1
+        }
+
         if let imageURL = imageURL {
             imageView.kf.setImage(with: imageURL, placeholder: sourceImage) { [weak self] result in
                 if case .success(let value) = result {

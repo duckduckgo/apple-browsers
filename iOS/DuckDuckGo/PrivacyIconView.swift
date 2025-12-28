@@ -46,7 +46,7 @@ enum PrivacyIcon {
 /// Delegate for handling privacy icon interactions.
 protocol PrivacyIconViewDelegate: AnyObject {
     /// Called when user taps a Dax Easter Egg logo for full-screen presentation.
-    func privacyIconViewDidTapDaxLogo(_ view: PrivacyIconView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect, searchQuery: String?)
+    func privacyIconViewDidTapDaxLogo(_ view: PrivacyIconView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect)
 }
 
 class PrivacyIconView: UIView {
@@ -58,7 +58,6 @@ class PrivacyIconView: UIView {
 
     private(set) var icon: PrivacyIcon = .shield
     private(set) var daxLogoURL: URL?
-    private(set) var daxLogoSearchQuery: String?
     weak var delegate: PrivacyIconViewDelegate?
 
     override init(frame: CGRect) {
@@ -171,14 +170,13 @@ class PrivacyIconView: UIView {
         updateAccessibilityLabels(for: newIcon)
     }
     
-    func setDaxEasterEggLogoURL(_ url: URL?, searchQuery: String? = nil, completion: (() -> Void)? = nil) {
+    func setDaxEasterEggLogoURL(_ url: URL?, completion: (() -> Void)? = nil) {
         let oldURL = daxLogoURL
 
         // Exit early if URL hasn't changed
         guard oldURL != url else { return }
 
         daxLogoURL = url
-        daxLogoSearchQuery = searchQuery
 
         if icon == .daxLogo {
             // Only animate when switching logo types (dynamic ↔ default)
@@ -231,7 +229,7 @@ class PrivacyIconView: UIView {
         if icon == .daxLogo && !staticImageView.isHidden && daxLogoURL != nil {
             let currentImage = staticImageView.image
             let sourceFrame = staticImageView.convert(staticImageView.bounds, to: nil)
-            delegate?.privacyIconViewDidTapDaxLogo(self, logoURL: daxLogoURL, currentImage: currentImage, sourceFrame: sourceFrame, searchQuery: daxLogoSearchQuery)
+            delegate?.privacyIconViewDidTapDaxLogo(self, logoURL: daxLogoURL, currentImage: currentImage, sourceFrame: sourceFrame)
         }
     }
 
@@ -314,12 +312,46 @@ class PrivacyIconView: UIView {
 
     private func animatePopEffect() {
         let baseTransform = staticImageView.transform
-        let popScale: CGFloat = 1.15
-        let poppedTransform = baseTransform.scaledBy(x: popScale, y: popScale)
+        let angle: CGFloat = .pi / 10  // ~18 degrees
 
-        staticImageView.transform = poppedTransform
-        UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0, options: []) {
-            self.staticImageView.transform = baseTransform
+        UIView.animateKeyframes(withDuration: 0.6, delay: 0, options: []) {
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.15) {
+                self.staticImageView.transform = baseTransform.rotated(by: angle)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.15, relativeDuration: 0.15) {
+                self.staticImageView.transform = baseTransform.rotated(by: -angle)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.15) {
+                self.staticImageView.transform = baseTransform.rotated(by: angle)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.45, relativeDuration: 0.15) {
+                self.staticImageView.transform = baseTransform.rotated(by: -angle)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.6, relativeDuration: 0.2) {
+                self.staticImageView.transform = baseTransform.rotated(by: angle * 0.4)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.8, relativeDuration: 0.2) {
+                self.staticImageView.transform = baseTransform
+            }
+        }
+    }
+
+    func animateSavedEffect() {
+        let ringView = UIView()
+        ringView.backgroundColor = .clear
+        ringView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
+        ringView.layer.borderWidth = 2
+        ringView.layer.cornerRadius = 12
+        ringView.frame = CGRect(x: 0, y: 0, width: 24, height: 24)
+        ringView.center = CGPoint(x: bounds.midX, y: bounds.midY)
+        ringView.alpha = 1
+        addSubview(ringView)
+
+        UIView.animate(withDuration: 0.4, delay: 0, options: [.curveEaseOut]) {
+            ringView.transform = CGAffineTransform(scaleX: 1.8, y: 1.8)
+            ringView.alpha = 0
+        } completion: { _ in
+            ringView.removeFromSuperview()
         }
     }
 

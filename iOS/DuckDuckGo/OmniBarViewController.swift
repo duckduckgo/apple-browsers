@@ -477,10 +477,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.customIconView.isHidden = true
     }
     
-    func setDaxEasterEggLogoURL(_ logoURL: String?, searchQuery: String?) {
+    func setDaxEasterEggLogoURL(_ logoURL: String?) {
         let url = logoURL.flatMap { URL(string: $0) }
 
-        barView.privacyInfoContainer.privacyIcon.setDaxEasterEggLogoURL(url, searchQuery: searchQuery) {
+        barView.privacyInfoContainer.privacyIcon.setDaxEasterEggLogoURL(url) {
             if url != nil {
                 DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoDisplayed)
             }
@@ -952,7 +952,7 @@ extension OmniBarViewController {
 // MARK: - PrivacyInfoContainerViewDelegate
 
 extension OmniBarViewController: PrivacyInfoContainerViewDelegate {
-    func privacyInfoContainerViewDidTapDaxLogo(_ view: PrivacyInfoContainerView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect, searchQuery: String?) {
+    func privacyInfoContainerViewDidTapDaxLogo(_ view: PrivacyInfoContainerView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect) {
         DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoTapped)
 
         dependencies.daxEasterEggPresenter.presentFullScreen(
@@ -960,8 +960,7 @@ extension OmniBarViewController: PrivacyInfoContainerViewDelegate {
             logoURL: logoURL,
             currentImage: currentImage,
             sourceFrame: sourceFrame,
-            sourceViewController: self,
-            searchQuery: searchQuery
+            sourceViewController: self
         )
     }
 }

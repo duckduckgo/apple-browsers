@@ -22,15 +22,15 @@ import AppKit
 
 final class MockThemeManager: ThemeManaging {
 
-    @Published var effectiveAppearance: ThemeAppearance = .dark
+    @Published var appearance: ThemeAppearance = .dark
     @Published var theme: ThemeStyleProviding = ThemeStyle.buildThemeStyle(themeName: .default, featureFlagger: NSApp.delegateTyped.featureFlagger)
+
+    var appearancePublisher: Published<ThemeAppearance>.Publisher {
+        $appearance
+    }
 
     var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
-    }
-
-    var effectiveAppearancePublisher: Published<ThemeAppearance>.Publisher {
-        $effectiveAppearance
     }
 }
 #endif

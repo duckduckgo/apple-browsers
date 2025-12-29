@@ -45,7 +45,7 @@ final class PrivacyDashboardViewController: NSViewController {
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let contentBlocking: ContentBlockingProtocol
 
-    private let themeManager: ThemeManaging
+    private let scriptStyleProvider: ScriptStyleProviding
     private var cancellables = Set<AnyCancellable>()
 
     public let rulesUpdateObserver: ContentBlockingRulesUpdateObserver
@@ -101,7 +101,7 @@ final class PrivacyDashboardViewController: NSViewController {
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
 
-        self.themeManager = themeManager
+        self.scriptStyleProvider = ScriptStyleProvider(themeManager: themeManager)
         self.contentBlocking = contentBlocking
         // swiftlint:disable:next force_cast
         self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
@@ -244,18 +244,7 @@ final class PrivacyDashboardViewController: NSViewController {
 private extension PrivacyDashboardViewController {
 
     private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .removeDuplicates { old, new in
-                old.name == new.name
-            }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshDashboardStyle()
-            }
-            .store(in: &cancellables)
-
-        themeManager.effectiveAppearancePublisher
-            .removeDuplicates()
+        scriptStyleProvider.themeStylePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshDashboardStyle()
@@ -264,7 +253,7 @@ private extension PrivacyDashboardViewController {
     }
 
     private func refreshDashboardStyle() {
-        let style = PrivacyDashboardStyle(themeName: themeManager.theme.name, appearance: themeManager.effectiveAppearance)
+        let style = PrivacyDashboardStyle(theme: scriptStyleProvider.themeAppearance, themeVariant: scriptStyleProvider.themeName)
         privacyDashboardController.style = style
     }
 }
@@ -385,17 +374,18 @@ extension PrivacyDashboardViewController {
         return webVitalsResult
     }
 
-    private func calculateExpandedWebVitals(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> PerformanceMetrics? {
-        var expandedWebVitalsResult: PerformanceMetrics?
+    private func collectBreakageReportData(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> BreakageReportData? {
+        var breakageReportData: BreakageReportData?
         if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            expandedWebVitalsResult = await withCheckedContinuation({ continuation in
+            breakageReportData = await withCheckedContinuation({ continuation in
                 guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-                breakageReportingSubfeature.notifyHandler { result in
+                breakageReportingSubfeature.notifyHandler { metrics, detectorData in
+                    let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
                     continuation.resume(returning: result)
                 }
             })
         }
-        return expandedWebVitalsResult
+        return breakageReportData
     }
 
     private func isPirEnabledAndUserHasProfile() async -> Bool {
@@ -428,8 +418,9 @@ extension PrivacyDashboardViewController {
 
         let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, privacyConfig: configuration)
 
-        let expandedWebVitals = await calculateExpandedWebVitals(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
-        let privacyAwareWebVitals = expandedWebVitals?.privacyAwareMetrics()
+        let breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
+        let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
+        let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
 
         var errors: [Error]?
         var statusCodes: [Int]?
@@ -468,7 +459,8 @@ extension PrivacyDashboardViewController {
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
                                                isPirEnabled: isPirEnabled,
-                                               pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming)
+                                               pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming,
+                                               detectorMetrics: detectorMetrics)
         return websiteBreakage
     }
 }

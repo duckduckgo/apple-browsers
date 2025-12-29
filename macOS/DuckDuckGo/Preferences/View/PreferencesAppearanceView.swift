@@ -102,7 +102,8 @@ extension Preferences {
                     .font(.system(size: 13))
                     .foregroundColor(.primary)
             }
-            .frame(width: 139, height: 32)
+            .frame(height: 32)
+            .frame(minWidth: 100, maxWidth: 139)
         }
     }
 
@@ -118,7 +119,7 @@ extension Preferences {
                     ThemeAppearanceViewV2(appearance: appearance)
                 )
             }
-            .frame(height: 32)
+            .frame(minWidth: 200, maxWidth: 420, idealHeight: 32)
         }
     }
 
@@ -126,13 +127,17 @@ extension Preferences {
     //
     struct ThemeView: View {
 
-        // MARK: - Constants
-        private let outerSize: CGFloat = 42
-        private let outerCornerRadius: CGFloat = 8
-        private let innerSize = CGSize(width: 40, height: 31)
-        private let innerCornerRadius: CGFloat = 7
-        private let knobSize = CGSize(width: 28, height: 8)
+        // MARK: - Constants / Radius
         private let knobRadius: CGFloat = 7
+        private let innerCornerRadius: CGFloat = 7
+        private let outerCornerRadius: CGFloat = 8
+
+        // MARK: - Constants / Heights
+        private let outerSize: CGFloat = 42
+        private let innerHeight: CGFloat = 31
+        private let innerTopHeight: CGFloat = 10
+        private let innerBottomHeight: CGFloat = 21
+        private let knobHeight: CGFloat = 8
 
         // MARK: - Properties
         private let themeColors: ThemeColors
@@ -148,21 +153,20 @@ extension Preferences {
                 // Background
                 RoundedRectangle(cornerRadius: outerCornerRadius)
                     .fill(Color(themeColors.surfaceBackdrop))
-                    .frame(width: outerSize, height: outerSize)
                     .overlay(
                         RoundedRectangle(cornerRadius: outerCornerRadius)
                         .stroke(Color(themeColors.surfaceDecorationPrimary), lineWidth: 1)
-                        .frame(width: outerSize, height: outerSize)
                     )
 
                 // Inner Top
                 RoundedRectangle(cornerRadius: innerCornerRadius)
                     .fill(Color(themeColors.surfacePrimary))
-                    .frame(width: innerSize.width, height: innerSize.height)
+                    .frame(height: innerHeight)
+                    .padding([.leading, .trailing], 1)
                     .mask(
                         VStack {
                             Rectangle()
-                                .frame(height: 10)
+                                .frame(height: innerTopHeight)
                             Color.clear
                         }
                     )
@@ -171,12 +175,13 @@ extension Preferences {
                 // Inner Bottom
                 RoundedRectangle(cornerRadius: innerCornerRadius)
                     .fill(Color(themeColors.surfaceTertiary))
-                    .frame(width: innerSize.width, height: innerSize.height)
+                    .padding([.leading, .trailing], 1)
+                    .frame(height: innerHeight)
                     .mask(
                         VStack {
                             Color.clear
                             Rectangle()
-                                .frame(height: 21)
+                                .frame(height: innerBottomHeight)
                         }
                     )
                     .padding(.bottom, 1)
@@ -184,9 +189,11 @@ extension Preferences {
                 // Knob
                 RoundedRectangle(cornerRadius: knobRadius)
                     .fill(Color(themeColors.accentPrimary))
-                    .frame(width: knobSize.width, height: knobSize.height)
+                    .frame(height: knobHeight)
+                    .padding([.leading, .trailing], 7)
                     .padding(.bottom, 6)
             }
+            .frame(minWidth: 32, maxWidth: outerSize, minHeight: outerSize, maxHeight: outerSize)
         }
     }
 

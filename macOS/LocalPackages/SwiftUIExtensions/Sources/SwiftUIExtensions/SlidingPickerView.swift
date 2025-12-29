@@ -92,7 +92,7 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
                     RoundedRectangle(cornerRadius: settings.cornerRadius)
                         .stroke(settings.borderColor)
                 )
-                .frame(width: contentSize.width)
+                .frame(maxWidth: contentSize.width)
 
             // Slider
             RoundedRectangle(cornerRadius: settings.cornerRadius)
@@ -103,7 +103,8 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
                         .stroke(settings.selectionBorderColor, lineWidth: settings.sliderLineWidth)
                 )
                 .offset(x: highlightOffset)
-                .frame(width: highlightSize.width, height: highlightSize.height)
+                .frame(height: highlightSize.height)
+                .frame(maxWidth: highlightSize.width)
                 .animation(sliderAnimation, value: highlightOffset)
 
             // Content

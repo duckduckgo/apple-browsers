@@ -119,7 +119,7 @@ extension Preferences {
                     ThemeAppearanceViewV2(appearance: appearance)
                 )
             }
-            .frame(minWidth: 200, maxWidth: 420, idealHeight: 32)
+            .frame(height: 32)
         }
     }
 

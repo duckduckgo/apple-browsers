@@ -26,14 +26,14 @@ import SubscriptionTestingUtilities
 
 final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
     var sut: HomePageSubscriptionCardVisibilityManager!
-    var subscriptionManager: SubscriptionManagerMockV2!
+    var subscriptionManager: SubscriptionManagerMock!
     var persistor: MockHomePageSubscriptionCardPersisting!
     var cancellable: AnyCancellable!
 
     override func setUp() {
         super.setUp()
-        subscriptionManager = SubscriptionManagerMockV2()
-        subscriptionManager.returnSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
+        subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
         persistor = MockHomePageSubscriptionCardPersisting()
     }
 
@@ -60,7 +60,7 @@ final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
             activeOffers: [],
             tier: nil
         )
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
 
         sut = HomePageSubscriptionCardVisibilityManager(subscriptionManager: subscriptionManager, persistor: persistor)
 
@@ -88,7 +88,7 @@ final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
             activeOffers: [],
             tier: nil
         )
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
 
         sut = HomePageSubscriptionCardVisibilityManager(subscriptionManager: subscriptionManager, persistor: persistor)
 

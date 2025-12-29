@@ -141,7 +141,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     var isPaidAIChatEnabled: Bool {
-        featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManagerV2
+        featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManager
     }
 
     /// Updates the user's eligibility for a free trial based on subscription manager checks.
@@ -160,8 +160,8 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         switch currentPurchasePlatform {
         case .appStore:
             if #available(macOS 12.0, *) {
-                if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManager {
-                    region = subscriptionManagerV2.storePurchaseManager().currentStorefrontRegion
+                if let subscriptionManager = subscriptionManager as? SubscriptionManager {
+                    region = subscriptionManager.storePurchaseManager().currentStorefrontRegion
                 }
             }
         case .stripe:

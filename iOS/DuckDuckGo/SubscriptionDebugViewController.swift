@@ -33,7 +33,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
 
-    private var subscriptionManagerV2: SubscriptionManager {
+    private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
     }
     private var featureFlagger: FeatureFlagger {
@@ -132,7 +132,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     var serviceEnvironment: SubscriptionEnvironment.ServiceEnvironment {
-        return subscriptionManagerV2.currentEnvironment.serviceEnvironment
+        return subscriptionManager.currentEnvironment.serviceEnvironment
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -405,18 +405,18 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func clearAuthData() {
         Task {
-            await subscriptionManagerV2.signOut(notifyUI: true)
+            await subscriptionManager.signOut(notifyUI: true)
             showAlert(title: "Data cleared!")
         }
     }
 
     private func showAccountDetails() {
         Task {
-            let tokenContainer = try? await subscriptionManagerV2.getTokenContainer(policy: .local)
+            let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .local)
             let authenticated = tokenContainer != nil
             let title = authenticated ? "Authenticated" : "Not Authenticated"
             let message = authenticated ?
-            ["Service Environment: \(subscriptionManagerV2.currentEnvironment.serviceEnvironment)",
+            ["Service Environment: \(subscriptionManager.currentEnvironment.serviceEnvironment)",
              "AuthToken: \(tokenContainer?.accessToken ?? "")",
              "Email: \(tokenContainer?.decodedAccessToken.email ?? "")"].joined(separator: "\n") : nil
             DispatchQueue.main.async {
@@ -456,7 +456,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func syncAppleIDAccount() {
         Task {
             do {
-                try await subscriptionManagerV2.storePurchaseManager().syncAppleIDAccount()
+                try await subscriptionManager.storePurchaseManager().syncAppleIDAccount()
             } catch {
                 showAlert(title: "Error syncing!", message: error.localizedDescription)
                 return
@@ -469,7 +469,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func validateToken() {
         Task {
             do {
-                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
                 showAlert(title: "Token details", message: "\(tokenContainer.debugDescription)")
             } catch OAuthClientError.missingTokenContainer {
                 showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
@@ -482,7 +482,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func getSubscriptionDetails() {
         Task {
             do {
-                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .remoteFirst)
+                let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
                 showAlert(title: "Subscription info", message: subscription.debugDescription)
             } catch {
                 showAlert(title: "Subscription info", message: "\(error)")
@@ -493,7 +493,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func checkEntitlements() {
         Task {
             do {
-                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
                 let entitlementsDescription = tokenContainer.decodedAccessToken.subscriptionEntitlements.map { entitlement in
                     return entitlement.rawValue
                 }.joined(separator: "\n")
@@ -508,7 +508,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func setEnvironment(_ environment: SubscriptionEnvironment.ServiceEnvironment) async {
 
-        let currentSubscriptionEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        let currentSubscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var newSubscriptionEnvironment = SubscriptionEnvironment.default
         newSubscriptionEnvironment.serviceEnvironment = environment
 
@@ -516,7 +516,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             await AppDependencyProvider.shared.subscriptionManager.signOut(notifyUI: true)
 
             // Save Subscription environment
-            DefaultSubscriptionManagerV2.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
+            DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
 
             // The VPN environment is forced to match the subscription environment
             let settings = AppDependencyProvider.shared.vpnSettings
@@ -532,14 +532,14 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func setCustomBaseSubscriptionURL(_ url: URL?) {
 
-        let currentSubscriptionEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        let currentSubscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
 
         if currentSubscriptionEnvironment.customBaseSubscriptionURL != url {
             var newSubscriptionEnvironment = currentSubscriptionEnvironment
             newSubscriptionEnvironment.customBaseSubscriptionURL = url
 
             // Save Subscription environment
-            DefaultSubscriptionManagerV2.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
+            DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
         }
     }
 

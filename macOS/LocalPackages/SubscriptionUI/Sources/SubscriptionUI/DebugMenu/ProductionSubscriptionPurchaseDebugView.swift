@@ -249,8 +249,8 @@ final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     func loadAvailableProducts() async {
         isLoadingProducts = true
 
-        guard let defaultManager = subscriptionManager.storePurchaseManager() as? DefaultStorePurchaseManagerV2 else {
-            Logger.subscription.error("[ProductionSubscriptionDebug] Could not cast to DefaultStorePurchaseManagerV2")
+        guard let defaultManager = subscriptionManager.storePurchaseManager() as? DefaultStorePurchaseManager else {
+            Logger.subscription.error("[ProductionSubscriptionDebug] Could not cast to DefaultStorePurchaseManager")
             isLoadingProducts = false
             return
         }

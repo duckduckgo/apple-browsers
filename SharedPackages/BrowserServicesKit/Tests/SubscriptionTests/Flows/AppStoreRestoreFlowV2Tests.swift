@@ -25,15 +25,15 @@ import NetworkingTestingUtils
 @available(macOS 12.0, iOS 15.0, *)
 final class AppStoreRestoreFlowV2Tests: XCTestCase {
 
-    private var sut: DefaultAppStoreRestoreFlowV2!
-    private var subscriptionManagerMock: SubscriptionManagerMockV2!
-    private var storePurchaseManagerMock: StorePurchaseManagerMockV2!
+    private var sut: DefaultAppStoreRestoreFlow!
+    private var subscriptionManagerMock: SubscriptionManagerMock!
+    private var storePurchaseManagerMock: StorePurchaseManagerMock!
 
     override func setUp() {
         super.setUp()
-        subscriptionManagerMock = SubscriptionManagerMockV2()
-        storePurchaseManagerMock = StorePurchaseManagerMockV2()
-        sut = DefaultAppStoreRestoreFlowV2(
+        subscriptionManagerMock = SubscriptionManagerMock()
+        storePurchaseManagerMock = StorePurchaseManagerMock()
+        sut = DefaultAppStoreRestoreFlow(
             subscriptionManager: subscriptionManagerMock,
             storePurchaseManager: storePurchaseManagerMock
         )
@@ -64,7 +64,7 @@ final class AppStoreRestoreFlowV2Tests: XCTestCase {
 
     func test_restoreAccountFromPastPurchase_withExpiredSubscription_returnsSubscriptionExpiredError() async {
         storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.expiredSubscription
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.expiredSubscription)
 
         let result = await sut.restoreAccountFromPastPurchase()
 
@@ -94,7 +94,7 @@ final class AppStoreRestoreFlowV2Tests: XCTestCase {
 
     func test_restoreAccountFromPastPurchase_withActiveSubscription_returnsSuccess() async {
         storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
 
         let result = await sut.restoreAccountFromPastPurchase()
 

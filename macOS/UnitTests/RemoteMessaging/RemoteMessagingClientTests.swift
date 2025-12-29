@@ -64,7 +64,7 @@ final class RemoteMessagingClientTests: XCTestCase {
     var remoteMessagingDatabaseLocation: URL!
     var bookmarksDatabase: CoreDataDatabase!
     var bookmarksDatabaseLocation: URL!
-    var subscriptionManager: SubscriptionManagerMockV2!
+    var subscriptionManager: SubscriptionManagerMock!
 
     override func setUpWithError() throws {
         setUpRemoteMessagingDatabase()
@@ -73,7 +73,7 @@ final class RemoteMessagingClientTests: XCTestCase {
         availabilityProvider = MockRemoteMessagingAvailabilityProvider()
         surfacesProvider = MockRemoteMessageSurfacesProvider()
         storeProvider = MockRemoteMessagingStoreProvider()
-        subscriptionManager = SubscriptionManagerMockV2()
+        subscriptionManager = SubscriptionManagerMock()
     }
 
     override func tearDownWithError() throws {
@@ -189,7 +189,7 @@ final class RemoteMessagingClientTests: XCTestCase {
             activeOffers: [],
             tier: nil
         )
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
         availabilityProvider.isRemoteMessagingAvailable = true
         makeClient(configFetcher: .init(config: .smallMessage))
         let store = try XCTUnwrap(client.store)

@@ -29,22 +29,22 @@ class SubscriptionManagerV2Tests: XCTestCase {
         static let tld = TLD()
     }
 
-    var subscriptionManager: DefaultSubscriptionManagerV2!
+    var subscriptionManager: DefaultSubscriptionManager!
     var mockOAuthClient: MockOAuthClient!
-    var mockSubscriptionEndpointService: SubscriptionEndpointServiceMockV2!
-    var mockStorePurchaseManager: StorePurchaseManagerMockV2!
-    var mockAppStoreRestoreFlowV2: AppStoreRestoreFlowMockV2!
+    var mockSubscriptionEndpointService: SubscriptionEndpointServiceMock!
+    var mockStorePurchaseManager: StorePurchaseManagerMock!
+    var mockAppStoreRestoreFlowV2: AppStoreRestoreFlowMock!
     var overrideTokenResponseInRecoveryHandler: Result<Networking.TokenContainer, Error>?
 
     override func setUp() {
         super.setUp()
 
         mockOAuthClient = MockOAuthClient()
-        mockSubscriptionEndpointService = SubscriptionEndpointServiceMockV2()
-        mockStorePurchaseManager = StorePurchaseManagerMockV2()
-        mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMockV2()
+        mockSubscriptionEndpointService = SubscriptionEndpointServiceMock()
+        mockStorePurchaseManager = StorePurchaseManagerMock()
+        mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMock()
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        subscriptionManager = DefaultSubscriptionManagerV2(
+        subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
@@ -147,7 +147,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
     func testURLGeneration_ForSubscriptionTypes() {
         let environment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        subscriptionManager = DefaultSubscriptionManagerV2(
+        subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
@@ -186,13 +186,13 @@ class SubscriptionManagerV2Tests: XCTestCase {
         let userDefaults = UserDefaults(suiteName: userDefaultsSuiteName)!
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
 
-        var loadedEnvironment = DefaultSubscriptionManagerV2.loadEnvironmentFrom(userDefaults: userDefaults)
+        var loadedEnvironment = DefaultSubscriptionManager.loadEnvironmentFrom(userDefaults: userDefaults)
         XCTAssertNil(loadedEnvironment)
 
         // When
-        DefaultSubscriptionManagerV2.save(subscriptionEnvironment: subscriptionEnvironment,
+        DefaultSubscriptionManager.save(subscriptionEnvironment: subscriptionEnvironment,
                                           userDefaults: userDefaults)
-        loadedEnvironment = DefaultSubscriptionManagerV2.loadEnvironmentFrom(userDefaults: userDefaults)
+        loadedEnvironment = DefaultSubscriptionManager.loadEnvironmentFrom(userDefaults: userDefaults)
 
         // Then
         XCTAssertEqual(loadedEnvironment?.serviceEnvironment, subscriptionEnvironment.serviceEnvironment)
@@ -205,7 +205,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         // Given
         let productionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        let productionSubscriptionManager = DefaultSubscriptionManagerV2(
+        let productionSubscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
@@ -225,7 +225,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         // Given
         let stagingEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        let stagingSubscriptionManager = DefaultSubscriptionManagerV2(
+        let stagingSubscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
@@ -297,7 +297,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockStorePurchaseManager.isEligibleForFreeTrialResult = false
         let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        let sut = DefaultSubscriptionManagerV2(
+        let sut = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
@@ -318,7 +318,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockStorePurchaseManager.isEligibleForFreeTrialResult = true
         let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        let sut = DefaultSubscriptionManagerV2(
+        let sut = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
@@ -339,7 +339,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockStorePurchaseManager.isEligibleForFreeTrialResult = false
         let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        let sut = DefaultSubscriptionManagerV2(
+        let sut = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,

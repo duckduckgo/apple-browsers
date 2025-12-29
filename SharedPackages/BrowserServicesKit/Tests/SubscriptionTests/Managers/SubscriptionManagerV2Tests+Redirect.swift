@@ -53,7 +53,7 @@ extension SubscriptionManagerV2Tests {
 
         let stagingEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        let stagingSubscriptionManager = DefaultSubscriptionManagerV2(
+        let stagingSubscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,

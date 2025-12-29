@@ -1,5 +1,5 @@
 //
-//  StripePurchaseFlowV2.swift
+//  StripePurchaseFlow.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -83,23 +83,23 @@ public enum StripePurchaseFlowError: DDGError {
     }
 }
 
-public protocol StripePurchaseFlowV2 {
+public protocol StripePurchaseFlow {
     typealias PrepareResult = (purchaseUpdate: PurchaseUpdate, accountCreationDuration: WideEvent.MeasuredInterval?)
 
-    func subscriptionOptions() async -> Result<SubscriptionOptionsV2, StripePurchaseFlowError>
+    func subscriptionOptions() async -> Result<SubscriptionOptions, StripePurchaseFlowError>
     func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StripePurchaseFlowError>
     func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError>
     func completeSubscriptionPurchase() async
 }
 
-public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
+public final class DefaultStripePurchaseFlow: StripePurchaseFlow {
     private let subscriptionManager: any SubscriptionManager
 
     public init(subscriptionManager: any SubscriptionManager) {
         self.subscriptionManager = subscriptionManager
     }
 
-    public func subscriptionOptions() async -> Result<SubscriptionOptionsV2, StripePurchaseFlowError> {
+    public func subscriptionOptions() async -> Result<SubscriptionOptions, StripePurchaseFlowError> {
         Logger.subscriptionStripePurchaseFlow.log("Getting subscription options for Stripe")
 
         guard let products = try? await subscriptionManager.getProducts(),
@@ -114,27 +114,27 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         formatter.numberStyle = .currency
         formatter.locale = Locale(identifier: "en_US@currency=\(currency)")
 
-        let options: [SubscriptionOptionV2] = products.map {
+        let options: [SubscriptionOption] = products.map {
 
             var displayPrice = "\($0.price) \($0.currency)"
             if let price = Float($0.price), let formattedPrice = formatter.string(from: price as NSNumber) {
                  displayPrice = formattedPrice
             }
             let cost = SubscriptionOptionCost(displayPrice: displayPrice, recurrence: $0.billingPeriod.lowercased())
-            return SubscriptionOptionV2(id: $0.productId, cost: cost)
+            return SubscriptionOption(id: $0.productId, cost: cost)
         }
 
         let features: [SubscriptionEntitlement] = [.networkProtection,
                                                    .dataBrokerProtection,
                                                    .identityTheftRestoration,
                                                    .paidAIChat]
-        return .success(SubscriptionOptionsV2(platform: SubscriptionPlatformName.stripe,
+        return .success(SubscriptionOptions(platform: SubscriptionPlatformName.stripe,
                                               options: options,
                                               availableEntitlements: features))
     }
 
     public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StripePurchaseFlowError> {
-        Logger.subscriptionStripePurchaseFlow.log("[StripePurchaseFlowV2] Getting subscription tier options for Stripe (includeProTier: \(includeProTier))")
+        Logger.subscriptionStripePurchaseFlow.log("Getting subscription tier options for Stripe (includeProTier: \(includeProTier))")
 
         // For now we always send the us product and the FE decides what to show based on the IP address
         // This will change when will introduce Stripe internationally
@@ -144,12 +144,12 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         do {
             productsResponse = try await subscriptionManager.getTierProducts(region: regionParameter, platform: SubscriptionPlatformName.stripe.rawValue)
         } catch {
-            Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] API call failed: \(String(describing: error), privacy: .public)")
+            Logger.subscriptionStripePurchaseFlow.error("API call failed: \(String(describing: error), privacy: .public)")
             return .failure(.tieredProductsApiCallFailed(error))
         }
 
         guard !productsResponse.products.isEmpty else {
-            Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] API returned empty products")
+            Logger.subscriptionStripePurchaseFlow.error("API returned empty products")
             return .failure(.tieredProductsEmptyProductsFromAPI)
         }
 
@@ -159,7 +159,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         : productsResponse.products.filter { $0.tier != .pro }
 
         guard !filteredProducts.isEmpty else {
-            Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] No products available after filtering")
+            Logger.subscriptionStripePurchaseFlow.error("No products available after filtering")
             return .failure(.tieredProductsEmptyAfterFiltering)
         }
 
@@ -167,23 +167,23 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
 
         for product in filteredProducts {
             guard let tier = createTier(from: product) else {
-                Logger.subscriptionStripePurchaseFlow.warning("[StripePurchaseFlowV2] Failed to create tier for \(product.tier.rawValue)")
+                Logger.subscriptionStripePurchaseFlow.warning("Failed to create tier for \(product.tier.rawValue)")
                 continue
             }
             tiers.append(tier)
         }
 
         guard !tiers.isEmpty else {
-            Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] No tiers created")
+            Logger.subscriptionStripePurchaseFlow.error("No tiers created")
             return .failure(.tieredProductsTierCreationFailed)
         }
 
-        Logger.subscriptionStripePurchaseFlow.log("[StripePurchaseFlowV2] Tiers products created \(tiers.count)")
+        Logger.subscriptionStripePurchaseFlow.log("Tiers products created \(tiers.count)")
         return .success(SubscriptionTierOptions(platform: .stripe, products: tiers))
     }
 
     private func createTier(from product: TierProduct) -> SubscriptionTier? {
-        var options: [SubscriptionOptionV2] = []
+        var options: [SubscriptionOption] = []
 
         for billingCycle in product.billingCycles {
             // Format price for display using user's locale
@@ -200,7 +200,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
                 recurrence: billingCycle.period.lowercased()
             )
 
-            let option = SubscriptionOptionV2(
+            let option = SubscriptionOption(
                 id: billingCycle.productId,
                 cost: cost,
                 offer: nil  // Stripe free trials info are stored in the FE

@@ -24,7 +24,7 @@ import SubscriptionTestingUtilities
 
 final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
 
-    private var storage: SubscriptionTokenKeychainStorageV2!
+    private var storage: SubscriptionTokenKeychainStorage!
     private var mockKeychain: KeychainOperationsMock!
     private var errorEvents: [(AccountKeychainAccessType, AccountKeychainAccessError)] = []
     private let errorEventsQueue = DispatchQueue(label: "test.error.events", attributes: .concurrent)
@@ -41,9 +41,9 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
 
         mockKeychain = KeychainOperationsMock()
         let keychainManager = KeychainManager(keychainOperations: mockKeychain,
-                                              attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+                                              attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: .dataProtection(.unspecified)),
                                               pixelHandler: MockPixelHandler())
-        storage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+        storage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
                                                      userDefaults: testUserDefaults,
                                                      errorEventsHandler: { [weak self] type, error in
             self?.errorEventsQueue.async(flags: .barrier) {
@@ -237,18 +237,18 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         let userDefaults2 = UserDefaults(suiteName: "SubscriptionTokenKeychainStorageV2Tests-\(UUID().uuidString)")!
         let userDefaults3 = UserDefaults(suiteName: "SubscriptionTokenKeychainStorageV2Tests-\(UUID().uuidString)")!
 
-        let storage1 = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain1,
-                                                                                           attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+        let storage1 = SubscriptionTokenKeychainStorage(keychainManager: KeychainManager(keychainOperations: mockKeychain1,
+                                                                                           attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: .dataProtection(.unspecified)),
                                                                                            pixelHandler: MockPixelHandler()),
                                                           userDefaults: userDefaults1,
                                                           errorEventsHandler: { _, _ in })
-        let storage2 = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain2,
-                                                                                           attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+        let storage2 = SubscriptionTokenKeychainStorage(keychainManager: KeychainManager(keychainOperations: mockKeychain2,
+                                                                                           attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: .dataProtection(.unspecified)),
                                                                                            pixelHandler: MockPixelHandler()),
                                                           userDefaults: userDefaults2,
                                                           errorEventsHandler: { _, _ in })
-        let storage3 = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain3,
-                                                                                           attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+        let storage3 = SubscriptionTokenKeychainStorage(keychainManager: KeychainManager(keychainOperations: mockKeychain3,
+                                                                                           attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: .dataProtection(.unspecified)),
                                                                                            pixelHandler: MockPixelHandler()),
                                                           userDefaults: userDefaults3,
                                                           errorEventsHandler: { _, _ in })
@@ -456,8 +456,8 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
 
         let errorHandlingUserDefaults = UserDefaults(suiteName: "SubscriptionTokenKeychainStorageV2Tests-\(UUID().uuidString)")!
 
-        let storage = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain,
-                                                                                          attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+        let storage = SubscriptionTokenKeychainStorage(keychainManager: KeychainManager(keychainOperations: mockKeychain,
+                                                                                          attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: .dataProtection(.unspecified)),
                                                                                           pixelHandler: MockPixelHandler()),
                                                          userDefaults: errorHandlingUserDefaults,
                                                          errorEventsHandler: { _, _ in

@@ -25,12 +25,12 @@ import Subscription
 final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
 
     var subscriptionManager: DataBrokerProtectionSubscriptionManager!
-    var mockSubscriptionManager: SubscriptionManagerMockV2!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var mockRunTypeProvider: MockAppRunTypeProvider!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        mockSubscriptionManager = SubscriptionManagerMockV2()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
         mockRunTypeProvider = MockAppRunTypeProvider()
         subscriptionManager = DataBrokerProtectionSubscriptionManager(

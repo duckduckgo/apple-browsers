@@ -1,5 +1,5 @@
 //
-//  StorePurchaseManagerMockV2.swift
+//  StorePurchaseManagerMock.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Combine
 import Foundation
 import Subscription
 
-public final class StorePurchaseManagerMockV2: StorePurchaseManagerV2 {
+public final class StorePurchaseManagerMock: StorePurchaseManager {
 
     public var purchasedProductIDs: [String] = []
     public var purchaseQueue: [String] = []
@@ -31,7 +31,7 @@ public final class StorePurchaseManagerMockV2: StorePurchaseManagerV2 {
     }
     public var currentStorefrontRegion: SubscriptionRegion = .usa
 
-    public var subscriptionOptionsResult: SubscriptionOptionsV2?
+    public var subscriptionOptionsResult: SubscriptionOptions?
     public var subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StoreError>?
     public var subscriptionTierOptionsIncludeProTierCalled: Bool?
 
@@ -50,7 +50,7 @@ public final class StorePurchaseManagerMockV2: StorePurchaseManagerV2 {
 
     public init() { }
 
-    public func subscriptionOptions() async -> SubscriptionOptionsV2? {
+    public func subscriptionOptions() async -> SubscriptionOptions? {
         subscriptionOptionsResult
     }
 

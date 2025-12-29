@@ -34,9 +34,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     private var regionOverrideItem: NSMenuItem?
 
     var currentViewController: () -> NSViewController?
-
     let subscriptionManager: any SubscriptionManager
-    let subscriptionManagerV2: (any SubscriptionManager)!
     let subscriptionUserDefaults: UserDefaults
     let wideEvent: WideEventManaging
 
@@ -50,7 +48,6 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                 currentViewController: @escaping () -> NSViewController?,
                 openSubscriptionTab: @escaping (URL) -> Void,
                 subscriptionManager: any SubscriptionManager,
-                subscriptionManagerV2: (any SubscriptionManager)?,
                 subscriptionUserDefaults: UserDefaults,
                 wideEvent: WideEventManaging) {
         self.currentEnvironment = currentEnvironment
@@ -60,7 +57,6 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         self.currentViewController = currentViewController
         self.openSubscriptionTab = openSubscriptionTab
         self.subscriptionManager = subscriptionManager
-        self.subscriptionManagerV2 = subscriptionManagerV2
         self.subscriptionUserDefaults = subscriptionUserDefaults
         self.wideEvent = wideEvent
         super.init(title: "Subscription", action: nil, keyEquivalent: "")
@@ -240,11 +236,11 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     @objc
     func showAccountDetails() {
         Task {
-            let title = subscriptionManagerV2.isUserAuthenticated ? "Authenticated" : "Not Authenticated"
-            let tokenContainer = try? await subscriptionManagerV2.getTokenContainer(policy: .local)
-            let message = subscriptionManagerV2.isUserAuthenticated ? ["External ID: \(tokenContainer?.decodedAccessToken.externalID ?? "")",
+            let title = subscriptionManager.isUserAuthenticated ? "Authenticated" : "Not Authenticated"
+            let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .local)
+            let message = subscriptionManager.isUserAuthenticated ? ["External ID: \(tokenContainer?.decodedAccessToken.externalID ?? "")",
                                                                      "\(tokenContainer!.debugDescription)",
-                                                                     "Email: \(subscriptionManagerV2.userEmail ?? "")"].joined(separator: "\n") : nil
+                                                                     "Email: \(subscriptionManager.userEmail ?? "")"].joined(separator: "\n") : nil
             showAlert(title: title, message: message)
         }
     }
@@ -253,7 +249,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     func validateToken() {
         Task {
             do {
-                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .local)
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .local)
                 showAlert(title: "Valid token", message: tokenContainer.debugDescription)
             } catch {
                 showAlert(title: "Validate token", message: "\(error)")
@@ -266,12 +262,12 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         Task {
             do {
                 let productNames = Entitlement.ProductName.allCases
-                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
                 var descriptions: [String] = []
 
                 for productName in productNames {
                     let featureEnabledDescription: String = await {
-                        guard let isFeatureEnabled = try? await subscriptionManagerV2.isFeatureEnabled(productName) else {
+                        guard let isFeatureEnabled = try? await subscriptionManager.isFeatureEnabled(productName) else {
                             return "error"
                         }
 
@@ -292,7 +288,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     func getSubscriptionDetails() {
         Task {
             do {
-                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .remoteFirst)
+                let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
                 showAlert(title: "Subscription info", message: subscription.debugDescription)
             } catch {
                 showAlert(title: "Subscription info", message: "\(error)")
@@ -304,20 +300,20 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     @objc
     func syncAppleIDAccount() {
         Task { @MainActor in
-            try? await subscriptionManagerV2.storePurchaseManager().syncAppleIDAccount()
+            try? await subscriptionManager.storePurchaseManager().syncAppleIDAccount()
         }
     }
 
     @IBAction func showPurchaseView(_ sender: Any?) {
         if #available(macOS 12.0, *) {
-            let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                                   storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
-            let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                                     storePurchaseManager: subscriptionManagerV2.storePurchaseManager(),
+            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager())
+            let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
+                                                                     storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                      appStoreRestoreFlow: appStoreRestoreFlow,
                                                                      wideEvent: wideEvent)
             // swiftlint:disable:next force_cast
-            let vc = DebugPurchaseViewControllerV2(storePurchaseManager: subscriptionManagerV2.storePurchaseManager() as! DefaultStorePurchaseManagerV2,
+            let vc = DebugPurchaseViewControllerV2(storePurchaseManager: subscriptionManager.storePurchaseManager() as! DefaultStorePurchaseManager,
                                                    appStorePurchaseFlow: appStorePurchaseFlow)
             currentViewController()?.presentAsSheet(vc)
         }
@@ -446,7 +442,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
         if #available(macOS 12.0, *) {
             Task {
-                await subscriptionManagerV2.storePurchaseManager().updateAvailableProducts()
+                await subscriptionManager.storePurchaseManager().updateAvailableProducts()
             }
         }
     }
@@ -457,8 +453,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     func restorePurchases(_ sender: Any?) {
         if #available(macOS 12.0, *) {
             Task {
-                let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                                       storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
+                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                       storePurchaseManager: subscriptionManager.storePurchaseManager())
                 await appStoreRestoreFlow.restoreAccountFromPastPurchase()
             }
         }
@@ -467,7 +463,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     @objc
     func showBuyProductionSubscriptions(_ sender: Any?) {
         if #available(macOS 12.0, *) {
-            let viewController = ProductionSubscriptionPurchaseViewController(subscriptionManager: subscriptionManagerV2)
+            let viewController = ProductionSubscriptionPurchaseViewController(subscriptionManager: subscriptionManager)
             viewController.title = "Buy Available Subscriptions"
             currentViewController()?.presentAsSheet(viewController)
         }

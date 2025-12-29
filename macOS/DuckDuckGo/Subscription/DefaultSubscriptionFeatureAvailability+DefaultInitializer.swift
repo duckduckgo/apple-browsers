@@ -26,7 +26,7 @@ extension DefaultSubscriptionFeatureAvailability {
     convenience init() {
         self.init(
             privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-            purchasePlatform: Application.appDelegate.subscriptionManagerV2.currentEnvironment.purchasePlatform,
+            purchasePlatform: Application.appDelegate.subscriptionManager.currentEnvironment.purchasePlatform,
             featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: Application.appDelegate.featureFlagger)
         )
     }

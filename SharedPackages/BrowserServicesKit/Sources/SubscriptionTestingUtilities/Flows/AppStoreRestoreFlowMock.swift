@@ -1,5 +1,5 @@
 //
-//  AppStoreRestoreFlowMockV2.swift
+//  AppStoreRestoreFlowMock.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,15 +19,15 @@
 import Foundation
 import Subscription
 
-public final class AppStoreRestoreFlowMockV2: AppStoreRestoreFlowV2 {
+public final class AppStoreRestoreFlowMock: AppStoreRestoreFlow {
 
-    public var restoreAccountFromPastPurchaseResult: Result<String, AppStoreRestoreFlowErrorV2>!
+    public var restoreAccountFromPastPurchaseResult: Result<String, AppStoreRestoreFlowError>!
     public var restoreAccountFromPastPurchaseCalled: Bool = false
     public var restoreSubscriptionAfterExpiredRefreshTokenHandler: (() async throws -> Void)?
 
     public init() { }
 
-    @discardableResult public func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowErrorV2> {
+    @discardableResult public func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError> {
         restoreAccountFromPastPurchaseCalled = true
         return restoreAccountFromPastPurchaseResult
     }

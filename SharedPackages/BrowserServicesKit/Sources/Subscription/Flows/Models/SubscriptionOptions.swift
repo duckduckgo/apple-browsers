@@ -1,5 +1,5 @@
 //
-//  SubscriptionOptionsV2.swift
+//  SubscriptionOptions.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,17 +19,17 @@
 import Foundation
 import Networking
 
-public struct SubscriptionOptionsV2: Encodable, Equatable {
+public struct SubscriptionOptions: Encodable, Equatable {
     struct Feature: Encodable, Equatable {
         let name: SubscriptionEntitlement
     }
 
     let platform: SubscriptionPlatformName
-    let options: [SubscriptionOptionV2]
+    let options: [SubscriptionOption]
     /// The available features in the subscription based on the country and feature flags. Not based on user entitlements
-    let features: [SubscriptionOptionsV2.Feature]
+    let features: [SubscriptionOptions.Feature]
 
-    public init(platform: SubscriptionPlatformName, options: [SubscriptionOptionV2], availableEntitlements: [SubscriptionEntitlement]) {
+    public init(platform: SubscriptionPlatformName, options: [SubscriptionOption], availableEntitlements: [SubscriptionEntitlement]) {
         self.platform = platform
         self.options = options
         self.features = availableEntitlements.map({ entitlement in
@@ -37,7 +37,7 @@ public struct SubscriptionOptionsV2: Encodable, Equatable {
         })
     }
 
-    public static var empty: SubscriptionOptionsV2 {
+    public static var empty: SubscriptionOptions {
         let features: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
         let platform: SubscriptionPlatformName
 #if os(iOS)
@@ -45,11 +45,11 @@ public struct SubscriptionOptionsV2: Encodable, Equatable {
 #else
         platform = .macos
 #endif
-        return SubscriptionOptionsV2(platform: platform, options: [], availableEntitlements: features)
+        return SubscriptionOptions(platform: platform, options: [], availableEntitlements: features)
     }
 
     public func withoutPurchaseOptions() -> Self {
-        SubscriptionOptionsV2(platform: platform, options: [], availableEntitlements: features.map({ feature in
+        SubscriptionOptions(platform: platform, options: [], availableEntitlements: features.map({ feature in
             feature.name
         }))
     }
@@ -61,7 +61,7 @@ public enum SubscriptionPlatformName: String, Encodable {
     case stripe
 }
 
-public struct SubscriptionOptionV2: Encodable, Equatable {
+public struct SubscriptionOption: Encodable, Equatable {
     let id: String
     let cost: SubscriptionOptionCost
     let offer: SubscriptionOptionOffer?

@@ -21,7 +21,7 @@ import Common
 import Networking
 import os.log
 
-extension DefaultSubscriptionManagerV2: SubscriptionTokenHandling {
+extension DefaultSubscriptionManager: SubscriptionTokenHandling {
 
     public func getToken() async throws -> String {
         return try await getTokenContainer(policy: .localValid).accessToken

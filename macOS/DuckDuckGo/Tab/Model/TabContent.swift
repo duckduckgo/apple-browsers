@@ -148,7 +148,7 @@ extension TabContent {
                 return .aiChat(url)
             }
 
-            let subscriptionManager = Application.appDelegate.subscriptionManagerV2
+            let subscriptionManager = Application.appDelegate.subscriptionManager
             let environment = subscriptionManager.currentEnvironment.serviceEnvironment
             let subscriptionBaseURL = subscriptionManager.url(for: .baseURL)
             let identityTheftRestorationURL = subscriptionManager.url(for: .identityTheftRestoration)

@@ -1,5 +1,5 @@
 //
-//  SubscriptionFeatureMappingCacheMockV2.swift
+//  SubscriptionFeatureMappingCacheMock.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Foundation
 import Subscription
 import Networking
 
-public final class SubscriptionFeatureMappingCacheMockV2: SubscriptionFeatureMappingCacheV2 {
+public final class SubscriptionFeatureMappingCacheMock: SubscriptionFeatureMappingCache {
 
     public var didCallSubscriptionFeatures = false
     public var lastCalledSubscriptionId: String?

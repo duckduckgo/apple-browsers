@@ -1,5 +1,5 @@
 //
-//  DefaultSubscriptionEndpointServiceV2+SubscriptionFeatureMappingCacheV2.swift
+//  DefaultSubscriptionEndpointService+SubscriptionFeatureMappingCache.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Foundation
 import Networking
 import os.log
 
-extension DefaultSubscriptionEndpointServiceV2: SubscriptionFeatureMappingCacheV2 {
+extension DefaultSubscriptionEndpointService: SubscriptionFeatureMappingCache {
 
     public func subscriptionFeatures(for subscriptionIdentifier: String) async -> [Networking.SubscriptionEntitlement] {
         do {

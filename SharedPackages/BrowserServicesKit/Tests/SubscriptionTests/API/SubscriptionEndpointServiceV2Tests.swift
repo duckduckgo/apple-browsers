@@ -25,7 +25,7 @@ import Common
 
 final class SubscriptionEndpointServiceV2Tests: XCTestCase {
     private var apiService: MockAPIService!
-    private var endpointService: DefaultSubscriptionEndpointServiceV2!
+    private var endpointService: DefaultSubscriptionEndpointService!
     private let baseURL = SubscriptionEnvironment.ServiceEnvironment.staging.url
     private let disposableCache = UserDefaultsCache<DuckDuckGoSubscription>(key: UserDefaultsCacheKeyKest.subscriptionTest,
                                                                             settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
@@ -39,7 +39,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .millisecondsSince1970
         apiService = MockAPIService()
-        endpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
+        endpointService = DefaultSubscriptionEndpointService(apiService: apiService,
                                                                baseURL: baseURL,
                                                                subscriptionCache: disposableCache)
     }
@@ -180,7 +180,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
     func testConfirmPurchaseReturnsCorrectResponse() async throws {
         let date = Date(timeIntervalSince1970: 123456789)
-        let confirmResponse = ConfirmPurchaseResponseV2(
+        let confirmResponse = ConfirmPurchaseResponse(
             email: "user@example.com",
             subscription: DuckDuckGoSubscription(
                 productId: "prod123",

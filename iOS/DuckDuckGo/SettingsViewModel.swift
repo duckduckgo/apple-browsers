@@ -1288,7 +1288,7 @@ extension SettingsViewModel {
     func restoreAccountPurchaseV2() async {
         DispatchQueue.main.async { self.state.subscription.isRestoring = true }
 
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager())
         let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
         switch result {

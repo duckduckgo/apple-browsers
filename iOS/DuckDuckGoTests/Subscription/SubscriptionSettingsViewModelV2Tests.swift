@@ -29,14 +29,14 @@ import Persistence
 final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
 
     var sut: SubscriptionSettingsViewModelV2!
-    var mockSubscriptionManager: SubscriptionManagerMockV2!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var cancellables = Set<AnyCancellable>()
     var isProTierPurchaseEnabled: Bool = false
     var mockFeatureFlagger: MockFeatureFlagger!
 
     override func setUp() {
         super.setUp()
-        mockSubscriptionManager = SubscriptionManagerMockV2()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.resultURL = URL(string: "https://example.com")!
         mockFeatureFlagger = MockFeatureFlagger()
         cancellables = Set<AnyCancellable>()

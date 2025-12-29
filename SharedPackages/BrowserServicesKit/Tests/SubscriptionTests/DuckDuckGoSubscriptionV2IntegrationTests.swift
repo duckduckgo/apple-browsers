@@ -28,11 +28,11 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
 
     var apiService: MockAPIService!
     var tokenStorage: MockTokenStorage!
-    var subscriptionManager: DefaultSubscriptionManagerV2!
-    var appStorePurchaseFlow: DefaultAppStorePurchaseFlowV2!
-    var appStoreRestoreFlow: DefaultAppStoreRestoreFlowV2!
-    var stripePurchaseFlow: DefaultStripePurchaseFlowV2!
-    var storePurchaseManager: StorePurchaseManagerMockV2!
+    var subscriptionManager: DefaultSubscriptionManager!
+    var appStorePurchaseFlow: DefaultAppStorePurchaseFlow!
+    var appStoreRestoreFlow: DefaultAppStoreRestoreFlow!
+    var stripePurchaseFlow: DefaultStripePurchaseFlow!
+    var storePurchaseManager: StorePurchaseManagerMock!
     var subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags>!
     var wideEvent: WideEventMock!
 
@@ -51,26 +51,26 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
                                             refreshEventMapping: nil)
-        storePurchaseManager = StorePurchaseManagerMockV2()
-        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
+        storePurchaseManager = StorePurchaseManagerMock()
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiService,
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
         subscriptionFeatureFlagger = FeatureFlaggerMapping<SubscriptionFeatureFlags>(mapping: { $0.defaultState })
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
+        subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                            oAuthClient: authClient,
                                                            userDefaults: userDefaults,
                                                            subscriptionEndpointService: subscriptionEndpointService,
                                                            subscriptionEnvironment: subscriptionEnvironment,
                                                            pixelHandler: MockPixelHandler())
 
-        appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
+        appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                            storePurchaseManager: storePurchaseManager)
         wideEvent = WideEventMock()
-        appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
+        appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
                                                              storePurchaseManager: storePurchaseManager,
                                                              appStoreRestoreFlow: appStoreRestoreFlow,
                                                              wideEvent: wideEvent)
-        stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
+        stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
     }
 
     override func tearDownWithError() throws {

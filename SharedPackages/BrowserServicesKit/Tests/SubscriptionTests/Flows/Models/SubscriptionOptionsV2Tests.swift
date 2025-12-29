@@ -26,11 +26,11 @@ final class SubscriptionOptionsV2Tests: XCTestCase {
     func testEncoding() throws {
         let monthlySubscriptionOffer = SubscriptionOptionOffer(type: .freeTrial, id: "1", durationInDays: 7, isUserEligible: true)
         let yearlySubscriptionOffer = SubscriptionOptionOffer(type: .freeTrial, id: "2", durationInDays: 7, isUserEligible: true)
-        let subscriptionOptions = SubscriptionOptionsV2(platform: .macos,
+        let subscriptionOptions = SubscriptionOptions(platform: .macos,
                                                       options: [
-                                                        SubscriptionOptionV2(id: "1",
+                                                        SubscriptionOption(id: "1",
                                                                            cost: SubscriptionOptionCost(displayPrice: "9 USD", recurrence: "monthly"), offer: monthlySubscriptionOffer),
-                                                        SubscriptionOptionV2(id: "2",
+                                                        SubscriptionOption(id: "2",
                                                                            cost: SubscriptionOptionCost(displayPrice: "99 USD", recurrence: "yearly"), offer: yearlySubscriptionOffer)
                                                       ],
                                                       availableEntitlements: [
@@ -111,7 +111,7 @@ final class SubscriptionOptionsV2Tests: XCTestCase {
     }
 
     func testEmptySubscriptionOptions() throws {
-        let empty = SubscriptionOptionsV2.empty
+        let empty = SubscriptionOptions.empty
 
         let platform: SubscriptionPlatformName
 #if os(iOS)

@@ -141,7 +141,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     func getProducts() async throws -> [GetProductsItem]
     func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
 
-    @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManagerV2
+    @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
 
     /// Subscription feature related URL that matches current environment
     func url(for type: SubscriptionURL) -> URL
@@ -241,11 +241,11 @@ extension SubscriptionManager {
 // MARK: -  Default implementation
 
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
-public final class DefaultSubscriptionManagerV2: SubscriptionManager {
+public final class DefaultSubscriptionManager: SubscriptionManager {
 
     var oAuthClient: any OAuthClient
-    private let _storePurchaseManager: StorePurchaseManagerV2?
-    private let subscriptionEndpointService: SubscriptionEndpointServiceV2
+    private let _storePurchaseManager: StorePurchaseManager?
+    private let subscriptionEndpointService: SubscriptionEndpointService
     private let pixelHandler: SubscriptionPixelHandling
     public var tokenRecoveryHandler: TokenRecoveryHandler?
     public let currentEnvironment: SubscriptionEnvironment
@@ -256,10 +256,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManager {
     private let wideEvent: WideEventManaging?
     private let isAuthV2WideEventEnabled: () -> Bool
 
-    public init(storePurchaseManager: StorePurchaseManagerV2? = nil,
+    public init(storePurchaseManager: StorePurchaseManager? = nil,
                 oAuthClient: any OAuthClient,
                 userDefaults: UserDefaults,
-                subscriptionEndpointService: SubscriptionEndpointServiceV2,
+                subscriptionEndpointService: SubscriptionEndpointService,
                 subscriptionEnvironment: SubscriptionEnvironment,
                 pixelHandler: SubscriptionPixelHandling,
                 tokenRecoveryHandler: TokenRecoveryHandler? = nil,
@@ -301,7 +301,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManager {
     public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { hasAppStoreProductsAvailableSubject.eraseToAnyPublisher() }
 
     @available(macOS 12.0, iOS 15.0, *)
-    public func storePurchaseManager() -> StorePurchaseManagerV2 {
+    public func storePurchaseManager() -> StorePurchaseManager {
         return _storePurchaseManager!
     }
 
@@ -730,7 +730,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManager {
 
 }
 
-extension DefaultSubscriptionManagerV2: SubscriptionTokenProvider {
+extension DefaultSubscriptionManager: SubscriptionTokenProvider {
     public func getAccessToken() async throws -> String {
         try await getTokenContainer(policy: .localValid).accessToken
     }

@@ -26,12 +26,12 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
 
     private var sut: OnboardingSubscriptionPromotionHelping!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mockSubscriptionManager: SubscriptionManagerMockV2!
+    private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockPixelFiring: PixelFiringMock!
 
     override func setUpWithError() throws {
         mockFeatureFlagger = MockFeatureFlagger()
-        mockSubscriptionManager = SubscriptionManagerMockV2()
+        mockSubscriptionManager = SubscriptionManagerMock()
         
         sut = OnboardingSubscriptionPromotionHelper(
             featureFlagger: mockFeatureFlagger,

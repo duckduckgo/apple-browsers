@@ -33,8 +33,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     private var sut: SubscriptionPagesUseSubscriptionFeatureV2!
 
-    private var mockStorePurchaseManager: StorePurchaseManagerMockV2!
-    private var subscriptionManagerV2: SubscriptionManagerMockV2!
+    private var mockStorePurchaseManager: StorePurchaseManagerMock!
+    private var subscriptionManager: SubscriptionManagerMock!
     private var subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling!
     private var mockUIHandler: SubscriptionUIHandlerMock!
     private var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
@@ -46,11 +46,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var broker: UserScriptMessageBroker!
 
     private struct Constants {
-        static let subscriptionOptions = SubscriptionOptionsV2(platform: SubscriptionPlatformName.macos,
+        static let subscriptionOptions = SubscriptionOptions(platform: SubscriptionPlatformName.macos,
                                                              options: [
-                                                                SubscriptionOptionV2(id: "1",
+                                                                SubscriptionOption(id: "1",
                                                                                    cost: SubscriptionOptionCost(displayPrice: "9 USD", recurrence: "monthly")),
-                                                                SubscriptionOptionV2(id: "2",
+                                                                SubscriptionOption(id: "2",
                                                                                    cost: SubscriptionOptionCost(displayPrice: "99 USD", recurrence: "yearly"))
                                                              ],
                                                                availableEntitlements: [.networkProtection, .dataBrokerProtection, .identityTheftRestoration])
@@ -61,12 +61,12 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     @MainActor
     override func setUpWithError() throws {
         broker = UserScriptMessageBroker(context: "testBroker")
-        mockStorePurchaseManager = StorePurchaseManagerMockV2()
-        subscriptionManagerV2 = SubscriptionManagerMockV2()
-        subscriptionManagerV2.resultStorePurchaseManager = mockStorePurchaseManager
-        subscriptionManagerV2.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
+        mockStorePurchaseManager = StorePurchaseManagerMock()
+        subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+        subscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
         subscriptionSuccessPixelHandler = SubscriptionAttributionPixelHandler()
-        let mockStripePurchaseFlowV2 = StripePurchaseFlowMockV2(subscriptionOptionsResult: .failure(.noProductsFound), prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
+        let mockStripePurchaseFlowV2 = StripePurchaseFlowMock(subscriptionOptionsResult: .failure(.noProductsFound), prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
         mockUIHandler = SubscriptionUIHandlerMock { _ in }
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,
                                                                                   usesUnifiedFeedbackForm: false)
@@ -76,7 +76,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockWideEvent = WideEventMock()
         mockEventReporter = MockSubscriptionEventReporter()
 
-        sut = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
+        sut = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                         subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
                                                         stripePurchaseFlow: mockStripePurchaseFlowV2,
                                                         uiHandler: mockUIHandler,
@@ -99,7 +99,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockUIHandler = nil
         mockWideEvent = nil
         mockEventReporter = nil
-        subscriptionManagerV2 = nil
+        subscriptionManager = nil
         subscriptionSuccessPixelHandler = nil
         sut = nil
         broker = nil
@@ -390,7 +390,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let webView = MockURLWebView(url: originURL)
         let message = MockWKScriptMessage(name: "subscriptionSelected", body: [:], webView: webView)
 
-        subscriptionManagerV2.resultURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        subscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscriptions")!
         mockStorePurchaseManager.isEligibleForFreeTrialResult = true
         mockUIHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
 
@@ -418,7 +418,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                     tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
-                        SubscriptionOptionV2(id: "1",
+                        SubscriptionOption(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
                                            offer: nil)
                     ]
@@ -457,7 +457,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                     tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
-                        SubscriptionOptionV2(id: "1",
+                        SubscriptionOption(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
                                            offer: nil)
                     ]
@@ -494,7 +494,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                     tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
-                        SubscriptionOptionV2(id: "1",
+                        SubscriptionOption(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
                                            offer: nil)
                     ]
@@ -551,7 +551,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                     tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
-                        SubscriptionOptionV2(id: "stripe-monthly-plus",
+                        SubscriptionOption(id: "stripe-monthly-plus",
                                            cost: SubscriptionOptionCost(displayPrice: "9.99 USD", recurrence: "monthly"),
                                            offer: nil)
                     ]
@@ -559,14 +559,14 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
 
-        let mockStripePurchaseFlow = StripePurchaseFlowMockV2(
+        let mockStripePurchaseFlow = StripePurchaseFlowMock(
             subscriptionOptionsResult: .success(.empty),
             prepareSubscriptionPurchaseResult: .failure(.noProductsFound),
             subscriptionTierOptionsResult: .success(expectedTierOptions)
         )
 
         // Set environment to use Stripe
-        let stripeSubscriptionManager = SubscriptionManagerMockV2()
+        let stripeSubscriptionManager = SubscriptionManagerMock()
         stripeSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
         stripeSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
         stripeSubscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
@@ -612,7 +612,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                     tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
-                        SubscriptionOptionV2(id: "stripe-monthly-plus",
+                        SubscriptionOption(id: "stripe-monthly-plus",
                                            cost: SubscriptionOptionCost(displayPrice: "9.99 USD", recurrence: "monthly"),
                                            offer: nil)
                     ]
@@ -620,14 +620,14 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
 
-        let mockStripePurchaseFlow = StripePurchaseFlowMockV2(
+        let mockStripePurchaseFlow = StripePurchaseFlowMock(
             subscriptionOptionsResult: .success(.empty),
             prepareSubscriptionPurchaseResult: .failure(.noProductsFound),
             subscriptionTierOptionsResult: .success(expectedTierOptions)
         )
 
         // Set environment to use Stripe
-        let stripeSubscriptionManager = SubscriptionManagerMockV2()
+        let stripeSubscriptionManager = SubscriptionManagerMock()
         stripeSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
         stripeSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
         stripeSubscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!

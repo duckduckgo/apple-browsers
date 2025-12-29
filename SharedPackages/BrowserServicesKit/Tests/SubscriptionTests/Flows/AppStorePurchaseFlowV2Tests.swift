@@ -26,19 +26,19 @@ import PixelKitTestingUtilities
 @available(macOS 12.0, iOS 15.0, *)
 final class AppStorePurchaseFlowV2Tests: XCTestCase {
 
-    private var sut: DefaultAppStorePurchaseFlowV2!
-    private var subscriptionManagerMock: SubscriptionManagerMockV2!
-    private var storePurchaseManagerMock: StorePurchaseManagerMockV2!
-    private var appStoreRestoreFlowMock: AppStoreRestoreFlowMockV2!
+    private var sut: DefaultAppStorePurchaseFlow!
+    private var subscriptionManagerMock: SubscriptionManagerMock!
+    private var storePurchaseManagerMock: StorePurchaseManagerMock!
+    private var appStoreRestoreFlowMock: AppStoreRestoreFlowMock!
     private var wideEventMock: WideEventMock!
 
     override func setUp() {
         super.setUp()
-        subscriptionManagerMock = SubscriptionManagerMockV2()
-        storePurchaseManagerMock = StorePurchaseManagerMockV2()
-        appStoreRestoreFlowMock = AppStoreRestoreFlowMockV2()
+        subscriptionManagerMock = SubscriptionManagerMock()
+        storePurchaseManagerMock = StorePurchaseManagerMock()
+        appStoreRestoreFlowMock = AppStoreRestoreFlowMock()
         wideEventMock = WideEventMock()
-        sut = DefaultAppStorePurchaseFlowV2(
+        sut = DefaultAppStorePurchaseFlow(
             subscriptionManager: subscriptionManagerMock,
             storePurchaseManager: storePurchaseManagerMock,
             appStoreRestoreFlow: appStoreRestoreFlowMock,
@@ -72,7 +72,7 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
     }
 
     func test_purchaseSubscription_withNoProductsFound_returnsError() async {
-        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.missingAccountOrTransactions)
+        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowError.missingAccountOrTransactions)
 
         let result = await sut.purchaseSubscription(with: "testSubscriptionID")
 
@@ -91,7 +91,7 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
     }
 
     func test_purchaseSubscription_successfulPurchase_returnsTransactionJWS() async {
-        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.missingAccountOrTransactions)
+        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowError.missingAccountOrTransactions)
         subscriptionManagerMock.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         storePurchaseManagerMock.purchaseSubscriptionResult = .success("transactionJWS")
 
@@ -107,10 +107,10 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
     }
 
     func test_purchaseSubscription_purchaseCancelledByUser_returnsCancelledError() async {
-        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.missingAccountOrTransactions)
+        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowError.missingAccountOrTransactions)
         storePurchaseManagerMock.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseCancelledByUser)
         subscriptionManagerMock.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
 
         let result = await sut.purchaseSubscription(with: "testSubscriptionID")
 
@@ -123,11 +123,11 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
     }
 
     func test_purchaseSubscription_purchaseFailed_returnsPurchaseFailedError() async {
-        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.missingAccountOrTransactions)
+        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowError.missingAccountOrTransactions)
         let underlyingError = NSError(domain: "test", code: 1)
         storePurchaseManagerMock.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseFailed(underlyingError))
         subscriptionManagerMock.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
 
         let result = await sut.purchaseSubscription(with: "testSubscriptionID")
 
@@ -143,8 +143,9 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
 
     func test_completeSubscriptionPurchase_withActiveSubscription_returnsSuccess() async {
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.appleSubscription
-        subscriptionManagerMock.confirmPurchaseResponse = .success(subscriptionManagerMock.resultSubscription!)
+        let subscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(subscription)
+        subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
 
         let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
 
@@ -153,8 +154,9 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
 
     func test_completeSubscriptionPurchase_withMissingEntitlements_returnsMissingEntitlementsError() async {
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.appleSubscription
-        subscriptionManagerMock.confirmPurchaseResponse = .success(subscriptionManagerMock.resultSubscription!)
+        let subscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(subscription)
+        subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
 
         let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
 
@@ -163,16 +165,17 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
 
     func test_completeSubscriptionPurchase_withExpiredSubscription_returnsPurchaseFailedError() async {
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.expiredSubscription
-        subscriptionManagerMock.confirmPurchaseResponse = .success(subscriptionManagerMock.resultSubscription!)
+        let expiredSubscription = SubscriptionMockFactory.expiredSubscription
+        subscriptionManagerMock.resultSubscription = .success(expiredSubscription)
+        subscriptionManagerMock.confirmPurchaseResponse = .success(expiredSubscription)
 
         let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
 
-        XCTAssertEqual(result, .failure(.purchaseFailed(AppStoreRestoreFlowErrorV2.subscriptionExpired)))
+        XCTAssertEqual(result, .failure(.purchaseFailed(AppStoreRestoreFlowError.subscriptionExpired)))
     }
 
     func test_completeSubscriptionPurchase_withConfirmPurchaseError_returnsPurchaseFailedError() async {
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         subscriptionManagerMock.confirmPurchaseResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.badRequest))
 
@@ -202,15 +205,15 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         static let transactionJWS = "dGhpcyBpcyBub3QgYSByZWFsIEFw(...)cCBTdG9yZSB0cmFuc2FjdGlvbiBKV1M="
     }
 
-     var mockSubscriptionManager: SubscriptionManagerMockV2!
-     var mockStorePurchaseManager: StorePurchaseManagerMockV2!
+     var mockSubscriptionManager: SubscriptionManagerMock!
+     var mockStorePurchaseManager: StorePurchaseManagerMock!
      var mockAppStoreRestoreFlow: AppStoreRestoreFlowMockV2!
 
     var appStorePurchaseFlow: AppStorePurchaseFlowV2!
 
     override func setUpWithError() throws {
-        mockSubscriptionManager = SubscriptionManagerMockV2()
-        mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockStorePurchaseManager = StorePurchaseManagerMock()
         mockAppStoreRestoreFlow = AppStoreRestoreFlowMockV2()
 
         appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: mockSubscriptionManager,
@@ -401,7 +404,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         // Given
         accountManager.accessToken = Constants.accessToken
         subscriptionService.confirmPurchaseResult = .success(
-            ConfirmPurchaseResponseV2(
+            ConfirmPurchaseResponse(
                 email: nil,
                 entitlements: [],
                 subscription: SubscriptionMockFactory.subscription
@@ -439,7 +442,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         // Given
         accountManager.accessToken = Constants.accessToken
         subscriptionService.confirmPurchaseResult = .success(
-            ConfirmPurchaseResponseV2(
+            ConfirmPurchaseResponse(
                 email: nil,
                 entitlements: [],
                 subscription: SubscriptionMockFactory.subscription

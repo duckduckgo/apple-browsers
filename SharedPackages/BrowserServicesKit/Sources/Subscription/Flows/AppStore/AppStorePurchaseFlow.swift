@@ -1,5 +1,5 @@
 //
-//  AppStorePurchaseFlowV2.swift
+//  AppStorePurchaseFlow.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -90,7 +90,7 @@ public enum AppStorePurchaseFlowError: DDGError {
 }
 
 @available(macOS 12.0, iOS 15.0, *)
-public protocol AppStorePurchaseFlowV2 {
+public protocol AppStorePurchaseFlow {
     typealias TransactionJWS = String
     typealias PurchaseResult = (transactionJWS: TransactionJWS, accountCreationDuration: WideEvent.MeasuredInterval?)
 
@@ -106,17 +106,17 @@ public protocol AppStorePurchaseFlowV2 {
 }
 
 @available(macOS 12.0, iOS 15.0, *)
-public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
+public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
     private let subscriptionManager: any SubscriptionManager
-    private let storePurchaseManager: any StorePurchaseManagerV2
-    private let appStoreRestoreFlow: any AppStoreRestoreFlowV2
+    private let storePurchaseManager: any StorePurchaseManager
+    private let appStoreRestoreFlow: any AppStoreRestoreFlow
 
     // Wide Event
     private let wideEvent: WideEventManaging
 
     public init(subscriptionManager: any SubscriptionManager,
-                storePurchaseManager: any StorePurchaseManagerV2,
-                appStoreRestoreFlow: any AppStoreRestoreFlowV2,
+                storePurchaseManager: any StorePurchaseManager,
+                appStoreRestoreFlow: any AppStoreRestoreFlow,
                 wideEvent: WideEventManaging
     ) {
         self.subscriptionManager = subscriptionManager
@@ -213,7 +213,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
                 }
             } else {
                 Logger.subscriptionAppStorePurchaseFlow.error("Subscription expired")
-                return .failure(.purchaseFailed(AppStoreRestoreFlowErrorV2.subscriptionExpired))
+                return .failure(.purchaseFailed(AppStoreRestoreFlowError.subscriptionExpired))
             }
         } catch {
             Logger.subscriptionAppStorePurchaseFlow.error("Purchase Failed: \(error)")

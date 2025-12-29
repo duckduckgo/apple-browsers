@@ -32,8 +32,8 @@ import Networking
 final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     
     var sut: DefaultSubscriptionPagesUseSubscriptionFeatureV2!
-    var mockSubscriptionManager: SubscriptionManagerMockV2!
-    var mockStripePurchaseFlow: StripePurchaseFlowMockV2!
+    var mockSubscriptionManager: SubscriptionManagerMock!
+    var mockStripePurchaseFlow: StripePurchaseFlowMock!
     var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     var mockNotificationCenter: NotificationCenter!
     var mockWideEvent: WideEventMock!
@@ -44,8 +44,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        mockSubscriptionManager = SubscriptionManagerMockV2()
-        mockStripePurchaseFlow = StripePurchaseFlowMockV2(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success((purchaseUpdate: .completed, accountCreationDuration: nil)))
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockStripePurchaseFlow = StripePurchaseFlowMock(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success((purchaseUpdate: .completed, accountCreationDuration: nil)))
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
         mockNotificationCenter = NotificationCenter()
         mockWideEvent = WideEventMock()
@@ -56,8 +56,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: "",
-            appStorePurchaseFlow: AppStorePurchaseFlowMockV2(),
-            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            appStorePurchaseFlow: AppStorePurchaseFlowMock(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent,
@@ -229,7 +229,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                     tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
-                        SubscriptionOptionV2(id: "1",
+                        SubscriptionOption(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
                                            offer: nil)
                     ]
@@ -237,7 +237,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
         
-        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        let mockStorePurchaseManager = StorePurchaseManagerMock()
         mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
@@ -270,7 +270,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                     tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
-                        SubscriptionOptionV2(id: "1",
+                        SubscriptionOption(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
                                            offer: nil)
                     ]
@@ -278,7 +278,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
         
-        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        let mockStorePurchaseManager = StorePurchaseManagerMock()
         mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
@@ -309,7 +309,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                     tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
-                        SubscriptionOptionV2(id: "1",
+                        SubscriptionOption(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
                                            offer: nil)
                     ]
@@ -317,7 +317,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
         
-        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        let mockStorePurchaseManager = StorePurchaseManagerMock()
         mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
@@ -338,7 +338,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     func testGetSubscriptionTierOptions_WhenNoOptionsAvailable_ReturnsEmpty() async throws {
         // Given
-        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        let mockStorePurchaseManager = StorePurchaseManagerMock()
         mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
@@ -369,7 +369,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                 )
             ]
         )
-        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        let mockStorePurchaseManager = StorePurchaseManagerMock()
         mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
@@ -392,7 +392,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                 )
             ]
         )
-        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        let mockStorePurchaseManager = StorePurchaseManagerMock()
         mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
@@ -406,7 +406,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixel() async throws {
         // Given
-        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        let mockStorePurchaseManager = StorePurchaseManagerMock()
         mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
@@ -436,7 +436,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                 )
             ]
         )
-        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        let mockStorePurchaseManager = StorePurchaseManagerMock()
         mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithProTier)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
@@ -459,7 +459,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                 )
             ]
         )
-        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        let mockStorePurchaseManager = StorePurchaseManagerMock()
         mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithoutProTier)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
@@ -476,11 +476,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let webView = MockURLWebView(url: originURL)
         let message = MockWKScriptMessage(name: "subscriptionSelected", body: "", webView: webView)
 
-        let storeManager = StorePurchaseManagerMockV2()
+        let storeManager = StorePurchaseManagerMock()
         storeManager.isEligibleForFreeTrialResult = true
         mockSubscriptionManager.resultStorePurchaseManager = storeManager
 
-        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
         purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
 
@@ -489,7 +489,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
@@ -521,10 +521,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let webView = MockURLWebView(url: originURL)
         let message = MockWKScriptMessage(name: "subscriptionSelected", body: "", webView: webView)
 
-        let storeManager = StorePurchaseManagerMockV2()
+        let storeManager = StorePurchaseManagerMock()
         mockSubscriptionManager.resultStorePurchaseManager = storeManager
 
-        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
 
         let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
@@ -532,7 +532,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
@@ -552,10 +552,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let webView = MockURLWebView(url: urlOrigin)
         let message = MockWKScriptMessage(name: "subscriptionSelected", body: "", webView: webView)
 
-        let storeManager = StorePurchaseManagerMockV2()
+        let storeManager = StorePurchaseManagerMock()
         mockSubscriptionManager.resultStorePurchaseManager = storeManager
 
-        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
 
         let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
@@ -563,7 +563,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent

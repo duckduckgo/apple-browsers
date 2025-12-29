@@ -1,5 +1,5 @@
 //
-//  StorePurchaseManagerV2.swift
+//  StorePurchaseManager.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -148,13 +148,13 @@ public enum StorePurchaseManagerError: DDGError {
     }
 }
 
-public protocol StorePurchaseManagerV2 {
+public protocol StorePurchaseManager {
     typealias TransactionJWS = String
 
     /// Returns the available subscription options that DON'T include Free Trial periods.
     /// - Returns: A `SubscriptionOptions` object containing the available subscription plans and pricing,
     ///           or `nil` if no options are available or cannot be fetched.
-    func subscriptionOptions() async -> SubscriptionOptionsV2?
+    func subscriptionOptions() async -> SubscriptionOptions?
 
     /// Returns the available subscription tier options.
     /// - Returns: A `Result<SubscriptionTierOptions, StoreError>` where `.success` contains the available subscription tier plans and pricing,
@@ -178,16 +178,16 @@ public protocol StorePurchaseManagerV2 {
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
     func isUserEligibleForFreeTrial() -> Bool
 
-    @MainActor func purchaseSubscription(with identifier: String, externalID: String) async -> Result<StorePurchaseManagerV2.TransactionJWS, StorePurchaseManagerError>
+    @MainActor func purchaseSubscription(with identifier: String, externalID: String) async -> Result<StorePurchaseManager.TransactionJWS, StorePurchaseManagerError>
 }
 
 @available(macOS 12.0, iOS 15.0, *) typealias Transaction = StoreKit.Transaction
 
 @available(macOS 12.0, iOS 15.0, *)
-public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchaseManagerV2 {
+public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseManager {
 
     private let storeSubscriptionConfiguration: any StoreSubscriptionConfiguration
-    private let subscriptionFeatureMappingCache: any SubscriptionFeatureMappingCacheV2
+    private let subscriptionFeatureMappingCache: any SubscriptionFeatureMappingCache
     private let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags>?
 
     @Published public private(set) var availableProducts: [any SubscriptionProduct] = []
@@ -210,7 +210,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
     private var storefrontChanges: Task<Void, Never>?
     private var productFetcher: ProductFetching
 
-    public init(subscriptionFeatureMappingCache: any SubscriptionFeatureMappingCacheV2,
+    public init(subscriptionFeatureMappingCache: any SubscriptionFeatureMappingCache,
                 subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags>? = nil,
                 productFetcher: ProductFetching = DefaultProductFetcher()) {
         self.storeSubscriptionConfiguration = DefaultStoreSubscriptionConfiguration()
@@ -261,7 +261,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         return nonProTierProducts
     }
 
-    public func subscriptionOptions() async -> SubscriptionOptionsV2? {
+    public func subscriptionOptions() async -> SubscriptionOptions? {
         let products = await getAvailableProducts(includeProTier: false)
         let ids = products.map(\.self.id)
         Logger.subscriptionStorePurchaseManager.debug("Returning SubscriptionOptions for products: \(ids)")
@@ -382,7 +382,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
 
     private func createTier(from products: [any SubscriptionProduct], tierName: TierName, features: [TierFeature]) async -> SubscriptionTier? {
         // Create options for available products (monthly and/or yearly)
-        var options: [SubscriptionOptionV2] = []
+        var options: [SubscriptionOption] = []
 
         for product in products {
             Logger.subscription.debug("[AppStorePurchaseFlow] Product: \(product.id)")
@@ -402,7 +402,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         )
     }
 
-    private func createOption(from product: any SubscriptionProduct) async -> SubscriptionOptionV2 {
+    private func createOption(from product: any SubscriptionProduct) async -> SubscriptionOption {
         let cost = SubscriptionOptionCost(
             displayPrice: product.displayPrice,
             recurrence: product.isMonthly ? "monthly" : "yearly"
@@ -421,7 +421,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
             )
         }
 
-        return SubscriptionOptionV2(
+        return SubscriptionOption(
             id: product.id,
             cost: cost,
             offer: offer
@@ -546,7 +546,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         }
     }
 
-    private func subscriptionOptions(for products: [any SubscriptionProduct]) async -> SubscriptionOptionsV2? {
+    private func subscriptionOptions(for products: [any SubscriptionProduct]) async -> SubscriptionOptions? {
         Logger.subscription.info("[AppStorePurchaseFlow] subscriptionOptions")
         let monthly = products.first(where: { $0.isMonthly })
         let yearly = products.first(where: { $0.isYearly })
@@ -563,10 +563,10 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
 #endif
         }()
 
-        let options: [SubscriptionOptionV2] = await [.init(from: monthly, withRecurrence: "monthly"),
+        let options: [SubscriptionOption] = await [.init(from: monthly, withRecurrence: "monthly"),
                                                    .init(from: yearly, withRecurrence: "yearly")]
         let features: [SubscriptionEntitlement] = await subscriptionFeatureMappingCache.subscriptionFeatures(for: monthly.id)
-        return SubscriptionOptionsV2(platform: platform,
+        return SubscriptionOptions(platform: platform,
                                    options: options,
                                    availableEntitlements: features)
     }
@@ -633,7 +633,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
 }
 
 @available(macOS 12.0, iOS 15.0, *)
-private extension SubscriptionOptionV2 {
+private extension SubscriptionOption {
 
     init(from product: any SubscriptionProduct, withRecurrence recurrence: String) async {
         var offer: SubscriptionOptionOffer?

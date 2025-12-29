@@ -1,5 +1,5 @@
 //
-//  SubscriptionEndpointServiceV2.swift
+//  SubscriptionEndpointService.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -33,12 +33,12 @@ public struct GetCustomerPortalURLResponse: Codable, Equatable {
     public let customerPortalUrl: String
 }
 
-public struct ConfirmPurchaseResponseV2: Codable, Equatable {
+public struct ConfirmPurchaseResponse: Codable, Equatable {
     public let email: String?
     public let subscription: DuckDuckGoSubscription
 }
 
-public struct GetSubscriptionFeaturesResponseV2: Decodable {
+public struct GetSubscriptionFeaturesResponse: Decodable {
     public let features: [SubscriptionEntitlement]
 }
 
@@ -109,7 +109,7 @@ public enum SubscriptionCachePolicy {
     }
 }
 
-public protocol SubscriptionEndpointServiceV2 {
+public protocol SubscriptionEndpointService {
     func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws
     func getSubscription(accessToken: String?, cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription
     func getCachedSubscription() -> DuckDuckGoSubscription?
@@ -122,7 +122,7 @@ public protocol SubscriptionEndpointServiceV2 {
     ///   - platform: Optional platform filter ("apple", "stripe")
     /// - Returns: A response containing products with tier and entitlement information
     func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
-    func getSubscriptionFeatures(for subscriptionID: String) async throws -> GetSubscriptionFeaturesResponseV2
+    func getSubscriptionFeatures(for subscriptionID: String) async throws -> GetSubscriptionFeaturesResponse
 
     /// Fetches subscription features for multiple SKUs in a single API call.
     /// This uses the new /api/v2/features endpoint that returns features with tier information.
@@ -141,10 +141,10 @@ public protocol SubscriptionEndpointServiceV2 {
     ///   - signature: A string representing the purchase signature.
     ///   - additionalParams: An optional dictionary of additional parameters to include in the request.
     /// - Returns: A `ConfirmPurchaseResponse` object on success
-    func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> ConfirmPurchaseResponseV2
+    func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> ConfirmPurchaseResponse
 }
 
-extension SubscriptionEndpointServiceV2 {
+extension SubscriptionEndpointService {
 
     public func getSubscription(accessToken: String) async throws -> DuckDuckGoSubscription {
         try await getSubscription(accessToken: accessToken, cachePolicy: SubscriptionCachePolicy.cacheFirst)
@@ -152,7 +152,7 @@ extension SubscriptionEndpointServiceV2 {
 }
 
 /// Communicates with our backend
-public struct DefaultSubscriptionEndpointServiceV2: SubscriptionEndpointServiceV2 {
+public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
 
     private let apiService: APIService
     private let baseURL: URL
@@ -340,7 +340,7 @@ New: \(subscription.debugDescription, privacy: .public)
 
     // MARK: -
 
-    public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> ConfirmPurchaseResponseV2 {
+    public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> ConfirmPurchaseResponse {
         guard let request = SubscriptionRequest.confirmPurchase(baseURL: baseURL,
                                                                 accessToken: accessToken,
                                                                 signature: signature,
@@ -357,7 +357,7 @@ New: \(subscription.debugDescription, privacy: .public)
         }
     }
 
-    public func getSubscriptionFeatures(for subscriptionID: String) async throws -> GetSubscriptionFeaturesResponseV2 {
+    public func getSubscriptionFeatures(for subscriptionID: String) async throws -> GetSubscriptionFeaturesResponse {
         guard let request = SubscriptionRequest.subscriptionFeatures(baseURL: baseURL, subscriptionID: subscriptionID) else {
             throw SubscriptionEndpointServiceError.invalidRequest
         }

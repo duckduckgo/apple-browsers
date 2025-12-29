@@ -33,7 +33,7 @@ protocol SubscriptionAppStoreRestorer {
 struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     private let subscriptionManager: SubscriptionManager
     private let subscriptionErrorReporter: SubscriptionEventReporter
-    private let appStoreRestoreFlow: AppStoreRestoreFlowV2
+    private let appStoreRestoreFlow: AppStoreRestoreFlow
     private let featureFlagger: FeatureFlagger
 
     // Wide Event
@@ -44,7 +44,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
 
     public init(subscriptionManager: SubscriptionManager,
                 subscriptionErrorReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
-                appStoreRestoreFlow: AppStoreRestoreFlowV2,
+                appStoreRestoreFlow: AppStoreRestoreFlow,
                 uiHandler: SubscriptionUIHandling,
                 subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData? = nil,
                 featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,

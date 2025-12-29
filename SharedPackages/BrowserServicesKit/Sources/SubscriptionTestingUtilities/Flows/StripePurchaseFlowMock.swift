@@ -1,5 +1,5 @@
 //
-//  StripePurchaseFlowMockV2.swift
+//  StripePurchaseFlowMock.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,13 +19,13 @@
 import Foundation
 import Subscription
 
-public final class StripePurchaseFlowMockV2: StripePurchaseFlowV2 {
-    public var subscriptionOptionsResult: Result<SubscriptionOptionsV2, StripePurchaseFlowError>
+public final class StripePurchaseFlowMock: StripePurchaseFlow {
+    public var subscriptionOptionsResult: Result<SubscriptionOptions, StripePurchaseFlowError>
     public var subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StripePurchaseFlowError>?
     public var prepareSubscriptionPurchaseResult: Result<PrepareResult, StripePurchaseFlowError>
     public var subscriptionTierOptionsIncludeProTierCalled: Bool?
 
-    public init(subscriptionOptionsResult: Result<SubscriptionOptionsV2, StripePurchaseFlowError>,
+    public init(subscriptionOptionsResult: Result<SubscriptionOptions, StripePurchaseFlowError>,
                 prepareSubscriptionPurchaseResult: Result<PrepareResult, StripePurchaseFlowError>,
                 subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StripePurchaseFlowError>? = nil) {
         self.subscriptionOptionsResult = subscriptionOptionsResult
@@ -33,7 +33,7 @@ public final class StripePurchaseFlowMockV2: StripePurchaseFlowV2 {
         self.subscriptionTierOptionsResult = subscriptionTierOptionsResult
     }
 
-    public func subscriptionOptions() async -> Result<SubscriptionOptionsV2, StripePurchaseFlowError> {
+    public func subscriptionOptions() async -> Result<SubscriptionOptions, StripePurchaseFlowError> {
         subscriptionOptionsResult
     }
 

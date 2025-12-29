@@ -64,7 +64,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
     let subscriptionManager: SubscriptionManager
     var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
-    let stripePurchaseFlow: any StripePurchaseFlowV2
+    let stripePurchaseFlow: any StripePurchaseFlow
     let subscriptionEventReporter: SubscriptionEventReporter
     let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling
     let uiHandler: SubscriptionUIHandling
@@ -84,7 +84,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
     public init(subscriptionManager: SubscriptionManager,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
-                stripePurchaseFlow: StripePurchaseFlowV2,
+                stripePurchaseFlow: StripePurchaseFlow,
                 uiHandler: SubscriptionUIHandling,
                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
@@ -223,7 +223,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 
     func getSubscriptionOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        var subscriptionOptions: SubscriptionOptionsV2?
+        var subscriptionOptions: SubscriptionOptions?
 
         switch subscriptionPlatform {
         case .appStore:
@@ -242,7 +242,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionOptions.withoutPurchaseOptions() }
             return subscriptionOptions
         } else {
-            return SubscriptionOptionsV2.empty
+            return SubscriptionOptions.empty
         }
     }
 
@@ -334,9 +334,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
                 // 5: No existing subscription was found, so proceed with the remaining purchase flow
                 let purchaseTransactionJWS: String
-                let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
+                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
-                let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
+                let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
                                                                          storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
                                                                          wideEvent: wideEvent)
@@ -693,7 +693,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             if #available(macOS 12.0, *) {
                 restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
                 wideEvent.startFlow(restorePrePurcahseBackgroundWideEventData)
-                let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
+                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
                 let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
                 switch result {
@@ -733,7 +733,7 @@ extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHan
     func subscriptionAccessActionRestorePurchases(message: WKScriptMessage) {
         if #available(macOS 12.0, *) {
             Task { @MainActor in
-                let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
+                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
                 let subscriptionRestoreAppleOfferPageWideEventData = SubscriptionRestoreWideEventData(
                     restorePlatform: .appleAccount,

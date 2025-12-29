@@ -1,5 +1,5 @@
 //
-//  SubscriptionFeatureMappingCacheV2.swift
+//  SubscriptionFeatureMappingCache.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Foundation
 import os.log
 import Networking
 
-public protocol SubscriptionFeatureMappingCacheV2 {
+public protocol SubscriptionFeatureMappingCache {
     func subscriptionFeatures(for subscriptionIdentifier: String) async -> [SubscriptionEntitlement]
     func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async throws -> [String: [TierFeature]]
 }

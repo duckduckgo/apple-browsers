@@ -29,7 +29,7 @@ import PersistenceTestingUtils
 final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
 
     var sut: PreferencesSubscriptionSettingsModelV2!
-    var mockSubscriptionManager: SubscriptionManagerMockV2!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var mockKeyValueStore: MockThrowingKeyValueStore!
     var mockWinBackOfferManager: MockWinBackOfferVisibilityManager!
     var mockBlackFridayCampaignProvider: MockBlackFridayCampaignProvider!
@@ -41,7 +41,7 @@ final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        mockSubscriptionManager = SubscriptionManagerMockV2()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockKeyValueStore = MockThrowingKeyValueStore()
         mockWinBackOfferManager = MockWinBackOfferVisibilityManager()
         mockBlackFridayCampaignProvider = MockBlackFridayCampaignProvider()

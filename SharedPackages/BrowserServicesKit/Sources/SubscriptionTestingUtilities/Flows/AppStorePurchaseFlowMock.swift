@@ -1,5 +1,5 @@
 //
-//  AppStorePurchaseFlowMockV2.swift
+//  AppStorePurchaseFlowMock.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import Foundation
 import Subscription
 
-public final class AppStorePurchaseFlowMockV2: AppStorePurchaseFlowV2 {
+public final class AppStorePurchaseFlowMock: AppStorePurchaseFlow {
     public var purchaseSubscriptionResult: Result<PurchaseResult, AppStorePurchaseFlowError>?
     public var completeSubscriptionPurchaseResult: Result<PurchaseUpdate, AppStorePurchaseFlowError>?
 

@@ -96,7 +96,7 @@ final class PreferencesViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         let prefRootView = Preferences.RootViewV2(model: model,
-                                                  subscriptionManager: Application.appDelegate.subscriptionManagerV2,
+                                                  subscriptionManager: Application.appDelegate.subscriptionManager,
                                                   subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
                                                   featureFlagger: featureFlagger,
                                                   aiChatURLSettings: aiChatRemoteSettings,

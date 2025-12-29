@@ -39,7 +39,7 @@ public final class DataBrokerProtectionManager {
     private lazy var freemiumDBPFirstProfileSavedNotifier: FreemiumDBPFirstProfileSavedNotifier = {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let freemiumDBPFirstProfileSavedNotifier = FreemiumDBPFirstProfileSavedNotifier(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                                                                        authenticationStateProvider: Application.appDelegate.subscriptionManagerV2)
+                                                                                        authenticationStateProvider: Application.appDelegate.subscriptionManager)
         return freemiumDBPFirstProfileSavedNotifier
     }()
 
@@ -117,7 +117,7 @@ public final class DataBrokerProtectionManager {
 
     private init() {
         self.authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
-            subscriptionManager: Application.appDelegate.subscriptionManagerV2)
+            subscriptionManager: Application.appDelegate.subscriptionManager)
         self.vpnBypassService = VPNBypassService()
     }
 

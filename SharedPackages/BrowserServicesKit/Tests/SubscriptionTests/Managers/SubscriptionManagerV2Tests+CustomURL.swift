@@ -32,7 +32,7 @@ extension SubscriptionManagerV2Tests {
                                                               purchasePlatform: .appStore,
                                                               customBaseSubscriptionURL: customBaseSubscriptionURL)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        let subscriptionManager = DefaultSubscriptionManagerV2(
+        let subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
@@ -58,7 +58,7 @@ extension SubscriptionManagerV2Tests {
                                                               purchasePlatform: .appStore,
                                                               customBaseSubscriptionURL: customBaseSubscriptionURL)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
-        let subscriptionManager = DefaultSubscriptionManagerV2(
+        let subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,
@@ -82,7 +82,7 @@ extension SubscriptionManagerV2Tests {
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
                                                               purchasePlatform: .appStore)
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        let subscriptionManager = DefaultSubscriptionManagerV2(
+        let subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             userDefaults: userDefaults,

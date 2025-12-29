@@ -1,5 +1,5 @@
 //
-//  SubscriptionManagerMockV2.swift
+//  SubscriptionManagerMock.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import Common
 @testable import Subscription
 import NetworkingTestingUtils
 
-public final class SubscriptionManagerMockV2: SubscriptionManager {
+public final class SubscriptionManagerMock: SubscriptionManager {
 
     public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> = .init(Just(false))
 
@@ -48,19 +48,22 @@ public final class SubscriptionManagerMockV2: SubscriptionManager {
 
     public func refreshCachedSubscription(completion: @escaping (Bool) -> Void) {}
 
-    public var resultSubscription: DuckDuckGoSubscription?
-
+    public var resultSubscription: Result<DuckDuckGoSubscription, Error>?
     public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription? {
-        guard let resultSubscription else {
-            throw OAuthClientError.missingTokenContainer
+        switch resultSubscription {
+        case .success(let success):
+            return success
+        case .failure(let failure):
+            throw failure
+        case nil:
+            throw SubscriptionEndpointServiceError.noData
         }
-        return resultSubscription
     }
 
     public var hasAppStoreProductsAvailable: Bool = true
 
-    public var resultStorePurchaseManager: (any StorePurchaseManagerV2)?
-    public func storePurchaseManager() -> any StorePurchaseManagerV2 {
+    public var resultStorePurchaseManager: (any StorePurchaseManager)?
+    public func storePurchaseManager() -> any StorePurchaseManager {
         return resultStorePurchaseManager!
     }
 
@@ -110,15 +113,6 @@ public final class SubscriptionManagerMockV2: SubscriptionManager {
         }
     }
 
-    public var resultExchangeTokenContainer: Networking.TokenContainer?
-    public func exchange(tokenV1: String) async throws -> Networking.TokenContainer {
-        guard let resultExchangeTokenContainer else {
-           throw OAuthClientError.missingTokenContainer
-        }
-        resultTokenContainer = resultExchangeTokenContainer
-        return resultExchangeTokenContainer
-    }
-
     public func signOut(notifyUI: Bool, userInitiated: Bool) {
         resultTokenContainer = nil
     }
@@ -151,10 +145,14 @@ public final class SubscriptionManagerMockV2: SubscriptionManager {
     }
 
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
-        guard let resultSubscription else {
+        switch resultSubscription {
+        case .success(let success):
+            return success
+        case .failure(let failure):
+            throw failure
+        case nil:
             throw SubscriptionEndpointServiceError.noData
         }
-        return resultSubscription
     }
 
     public var productsResponse: Result<[GetProductsItem], Error>?
@@ -196,6 +194,10 @@ public final class SubscriptionManagerMockV2: SubscriptionManager {
 
     public func isFeatureEnabled(_ feature: Entitlement.ProductName) async -> Bool {
         resultFeatures.contains { $0 == feature.subscriptionEntitlement }
+    }
+
+    public func isFeatureIncludedInSubscription(_ feature: Networking.SubscriptionEntitlement) async throws -> Bool {
+        resultFeatures.contains(feature)
     }
 
     // MARK: - Subscription Token Provider

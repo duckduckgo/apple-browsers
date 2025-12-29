@@ -39,7 +39,7 @@ enum WinBackOfferFactory {
         )
 #else
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             winbackOfferStore: WinbackOfferStore(keyValueStore: keyValueFilesStore),
             winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
         )

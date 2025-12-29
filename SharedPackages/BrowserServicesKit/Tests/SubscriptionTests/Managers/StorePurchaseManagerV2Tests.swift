@@ -25,16 +25,16 @@ import Networking
 
 final class StorePurchaseManagerV2Tests: XCTestCase {
 
-    private var sut: DefaultStorePurchaseManagerV2!
-    private var mockCache: SubscriptionFeatureMappingCacheMockV2!
+    private var sut: DefaultStorePurchaseManager!
+    private var mockCache: SubscriptionFeatureMappingCacheMock!
     private var mockProductFetcher: MockProductFetcher!
     private var mockFeatureFlagger: MockFeatureFlagger!
 
     override func setUpWithError() throws {
-        mockCache = SubscriptionFeatureMappingCacheMockV2()
+        mockCache = SubscriptionFeatureMappingCacheMock()
         mockProductFetcher = MockProductFetcher()
         mockFeatureFlagger = MockFeatureFlagger()
-        sut = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: mockCache,
+        sut = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: mockCache,
                                           subscriptionFeatureFlagger: mockFeatureFlagger,
                                           productFetcher: mockProductFetcher)
     }

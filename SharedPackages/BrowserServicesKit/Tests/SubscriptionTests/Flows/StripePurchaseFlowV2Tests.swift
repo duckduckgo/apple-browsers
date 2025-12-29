@@ -28,12 +28,12 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         static let email = "dax@duck.com"
     }
 
-    var subscriptionManager: SubscriptionManagerMockV2!
-    var stripePurchaseFlow: StripePurchaseFlowV2!
+    var subscriptionManager: SubscriptionManagerMock!
+    var stripePurchaseFlow: StripePurchaseFlow!
 
     override func setUpWithError() throws {
-        subscriptionManager = SubscriptionManagerMockV2()
-        stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
+        subscriptionManager = SubscriptionManagerMock()
+        stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
     }
 
     override func tearDownWithError() throws {

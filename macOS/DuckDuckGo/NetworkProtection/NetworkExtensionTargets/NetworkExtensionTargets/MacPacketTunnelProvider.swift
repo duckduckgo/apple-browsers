@@ -407,7 +407,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
     // MARK: - Initialization
 
-    let subscriptionManagerV2: DefaultSubscriptionManagerV2
+    let subscriptionManager: DefaultSubscriptionManager
     let tokenStorageV2: NetworkProtectionKeychainTokenStoreV2
 
     @MainActor @objc public init() {
@@ -478,10 +478,10 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                             authService: authService,
                                             refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: { true }))
 
-        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
+        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
         let pixelHandler = SubscriptionPixelHandler(source: .systemExtension)
-        let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
+        let subscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
                                                                subscriptionEndpointService: subscriptionEndpointServiceV2,
                                                                subscriptionEnvironment: subscriptionEnvironment,
@@ -503,7 +503,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         }
 
         self.tokenStorageV2 = tokenStoreV2
-        self.subscriptionManagerV2 = subscriptionManager
+        self.subscriptionManager = subscriptionManager
 
         let tokenHandlerProvider: () -> any SubscriptionTokenHandling = {
             Logger.networkProtection.debug("tokenHandlerProvider")

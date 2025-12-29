@@ -30,14 +30,14 @@ final class WideEventServiceTests: XCTestCase {
 
     private var wideEventMock: WideEventMock!
     private var featureFlagger: MockFeatureFlagger!
-    private var subscriptionManager: SubscriptionManagerMockV2!
+    private var subscriptionManager: SubscriptionManagerMock!
     private var service: WideEventService!
 
     override func setUp() {
         super.setUp()
         wideEventMock = WideEventMock()
         featureFlagger = MockFeatureFlagger()
-        subscriptionManager = SubscriptionManagerMockV2()
+        subscriptionManager = SubscriptionManagerMock()
         service = WideEventService(wideEvent: wideEventMock, featureFlagger: featureFlagger, subscriptionManager: subscriptionManager)
     }
     

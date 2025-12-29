@@ -29,9 +29,9 @@ struct SubscriptionNavigationCoordinatorTests {
 
     // MARK: - Test Setup
 
-    private func createCoordinator() -> (SubscriptionNavigationCoordinator, MockSubscriptionTabsShowing, SubscriptionManagerMockV2) {
+    private func createCoordinator() -> (SubscriptionNavigationCoordinator, MockSubscriptionTabsShowing, SubscriptionManagerMock) {
         let mockTabShower = MockSubscriptionTabsShowing()
-        let mockSubscriptionManager = SubscriptionManagerMockV2()
+        let mockSubscriptionManager = SubscriptionManagerMock()
         let coordinator = SubscriptionNavigationCoordinator(
             tabShower: mockTabShower,
             subscriptionManager: mockSubscriptionManager

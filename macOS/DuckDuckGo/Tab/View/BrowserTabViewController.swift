@@ -153,7 +153,7 @@ final class BrowserTabViewController: NSViewController {
          aboutPreferences: AboutPreferences,
          accessibilityPreferences: AccessibilityPreferences,
          duckPlayer: DuckPlayer,
-         subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManagerV2,
+         subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManager,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
     ) {

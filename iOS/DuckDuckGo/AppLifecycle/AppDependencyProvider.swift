@@ -131,14 +131,14 @@ final class AppDependencyProvider: DependencyProvider {
         // Configure Subscription
         let pixelHandler = SubscriptionPixelHandler(source: .mainApp)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-        let subscriptionEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var tokenHandler: any SubscriptionTokenHandling
         var accessTokenProvider: () async -> String?
         var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
-        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let tokenStorageV2 = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
                                                                 userDefaults: subscriptionUserDefaults) { accessType, error in
 
             let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
@@ -171,7 +171,7 @@ final class AppDependencyProvider: DependencyProvider {
         Logger.subscription.debug("Configuring Subscription")
 
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
-        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
@@ -194,9 +194,9 @@ final class AppDependencyProvider: DependencyProvider {
                                                                         subscriptionEnvironment: subscriptionEnvironment,
                                                                         subscriptionUserDefaults: subscriptionUserDefaults)
 
-        let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
+        let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                  subscriptionFeatureFlagger: subscriptionFeatureFlagger)
-        let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
+        let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
                                                                subscriptionEndpointService: subscriptionEndpointService,
@@ -206,7 +206,7 @@ final class AppDependencyProvider: DependencyProvider {
             ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
         })
 
-        let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: storePurchaseManager)
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager, storePurchaseManager: storePurchaseManager)
         subscriptionManager.tokenRecoveryHandler = {
             try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
         }

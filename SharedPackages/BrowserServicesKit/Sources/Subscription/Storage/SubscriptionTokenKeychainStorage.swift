@@ -1,5 +1,5 @@
 //
-//  SubscriptionTokenKeychainStorageV2.swift
+//  SubscriptionTokenKeychainStorage.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -33,7 +33,7 @@ public enum KeychainErrorAuthVersion: String {
     case v2
 }
 
-public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
+public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
 
     private let errorEventsHandler: (AccountKeychainAccessType, AccountKeychainAccessError) -> Void
     private let keychainManager: any KeychainManaging

@@ -1,5 +1,5 @@
 //
-//  AppStoreRestoreFlowV2.swift
+//  AppStoreRestoreFlow.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -22,7 +22,7 @@ import os.log
 import Networking
 import Common
 
-public enum AppStoreRestoreFlowErrorV2: DDGError {
+public enum AppStoreRestoreFlowError: DDGError {
     case missingAccountOrTransactions
     case pastTransactionAuthenticationError
     case failedToObtainAccessToken
@@ -56,24 +56,24 @@ public enum AppStoreRestoreFlowErrorV2: DDGError {
 }
 
 @available(macOS 12.0, iOS 15.0, *)
-public protocol AppStoreRestoreFlowV2 {
-    @discardableResult func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowErrorV2>
+public protocol AppStoreRestoreFlow {
+    @discardableResult func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError>
     func restoreSubscriptionAfterExpiredRefreshToken() async throws
 }
 
 @available(macOS 12.0, iOS 15.0, *)
-public final class DefaultAppStoreRestoreFlowV2: AppStoreRestoreFlowV2 {
+public final class DefaultAppStoreRestoreFlow: AppStoreRestoreFlow {
     private let subscriptionManager: any SubscriptionManager
-    private let storePurchaseManager: any StorePurchaseManagerV2
+    private let storePurchaseManager: any StorePurchaseManager
 
     public init(subscriptionManager: any SubscriptionManager,
-                storePurchaseManager: any StorePurchaseManagerV2) {
+                storePurchaseManager: any StorePurchaseManager) {
         self.subscriptionManager = subscriptionManager
         self.storePurchaseManager = storePurchaseManager
     }
 
     @discardableResult
-    public func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowErrorV2> {
+    public func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError> {
         Logger.subscriptionAppStoreRestoreFlow.log("Restoring account from past purchase")
 
         // Clear subscription Cache
@@ -108,7 +108,7 @@ public final class DefaultAppStoreRestoreFlowV2: AppStoreRestoreFlowV2 {
 
         guard let lastTransactionJWSRepresentation = await storePurchaseManager.mostRecentTransaction() else {
             Logger.subscriptionAppStoreRestoreFlow.error("Missing last transaction")
-            throw AppStoreRestoreFlowErrorV2.missingAccountOrTransactions
+            throw AppStoreRestoreFlowError.missingAccountOrTransactions
         }
 
         _ = try await subscriptionManager.getSubscriptionFrom(lastTransactionJWSRepresentation: lastTransactionJWSRepresentation)

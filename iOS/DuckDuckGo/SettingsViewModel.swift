@@ -76,7 +76,7 @@ final class SettingsViewModel: ObservableObject {
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
 
     // Subscription Dependencies
-    let subscriptionManager: (any SubscriptionManagerV2)?
+    let subscriptionManager: any SubscriptionManagerV2
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var subscriptionSignOutObserver: Any?
     var duckPlayerContingencyHandler: DuckPlayerContingencyHandler {
@@ -622,7 +622,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
-         subscriptionManager: (any SubscriptionManagerV2)?,
+         subscriptionManager: any SubscriptionManagerV2,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          deepLink: SettingsDeepLinkSection? = nil,
@@ -1226,10 +1226,7 @@ extension SettingsViewModel {
             }
 
             updatedSubscription.entitlements = currentEntitlements
-
-            // This requires follow-up work:
-            // https://app.asana.com/1/137249556945/task/1210799126744217
-            updatedSubscription.subscriptionFeatures = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
+            updatedSubscription.subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures()
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.debug("No subscription data available")
             updatedSubscription.hasSubscription = false
@@ -1289,16 +1286,10 @@ extension SettingsViewModel {
     }
 
     func restoreAccountPurchaseV2() async {
-
-        guard let subscriptionManagerV2 else {
-            assertionFailure("Missing dependency: subscriptionManagerV2")
-            return
-        }
-
         DispatchQueue.main.async { self.state.subscription.isRestoring = true }
 
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                             storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
+                                                             storePurchaseManager: subscriptionManager.storePurchaseManager())
         let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
         switch result {
         case .success:
@@ -1337,7 +1328,7 @@ extension SettingsViewModel {
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
     private func isUserEligibleForTrialOffer() async -> Bool {
-        return subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
+        return subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
     }
 
 }

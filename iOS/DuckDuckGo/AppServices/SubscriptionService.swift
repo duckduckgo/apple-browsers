@@ -40,7 +40,7 @@ final class SubscriptionService {
                     featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
                 )
         Task {
-            await subscriptionManagerV2?.loadInitialData()
+            await subscriptionManagerV2.loadInitialData()
         }
     }
 

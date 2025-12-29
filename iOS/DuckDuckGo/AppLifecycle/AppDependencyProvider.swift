@@ -59,11 +59,7 @@ protocol DependencyProvider {
     var vpnSettings: VPNSettings { get }
     var persistentPixel: PersistentPixelFiring { get }
     var wideEvent: WideEventManaging { get }
-
-    // Subscription
-    var subscriptionManagerV2: (any SubscriptionManagerV2)? { get }
-
-    // DBP
+    var subscriptionManagerV2: any SubscriptionManagerV2 { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
 }
 
@@ -90,7 +86,7 @@ final class AppDependencyProvider: DependencyProvider {
     let pageRefreshMonitor = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern)
 
     // Subscription
-    var subscriptionManagerV2: (any SubscriptionManagerV2)?
+    var subscriptionManagerV2: any SubscriptionManagerV2
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility

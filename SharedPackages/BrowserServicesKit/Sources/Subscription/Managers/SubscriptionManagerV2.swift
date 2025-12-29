@@ -175,8 +175,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// - Parameter forceRefresh: ignore subscription and token cache and re-download everything
     /// - Returns: An Array of SubscriptionFeature where each feature is enabled or disabled based on the user entitlements
     func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement]
-    func currentSubscriptionFeatures() async throws -> [SubscriptionEntitlement]
-    
+    func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName]
+
     /// Whether a feature is included in the Subscription.
     /// This allows us to know if a feature is included in the current subscription.
     func isFeatureIncludedInSubscription(_ feature: SubscriptionEntitlement) async throws -> Bool
@@ -217,8 +217,24 @@ extension SubscriptionManagerV2 {
         await signOut(notifyUI: notifyUI, userInitiated: false)
     }
 
-    public func currentSubscriptionFeatures() async throws -> [SubscriptionEntitlement] {
-        try await currentSubscriptionFeatures(forceRefresh: false)
+//    public func currentSubscriptionFeatures() async throws -> [SubscriptionEntitlement] {
+//        try await currentSubscriptionFeatures(forceRefresh: false)
+//    }
+
+    /// Checks whether the user is eligible to purchase the subscription, regardless of purchase platform.
+    public var isSubscriptionPurchaseEligible: Bool {
+        switch currentEnvironment.purchasePlatform {
+        case .appStore:
+            return hasAppStoreProductsAvailable
+        case .stripe:
+            return true
+        }
+    }
+
+    public func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName] {
+        try await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
+            subscriptionFeatureV2.entitlement.product
+        }
     }
 }
 

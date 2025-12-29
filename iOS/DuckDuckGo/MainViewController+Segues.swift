@@ -369,7 +369,6 @@ extension MainViewController {
             userScriptsDependencies: userScriptsDependencies)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
-                                                  subscriptionManagerV2: AppDependencyProvider.shared.subscriptionManagerV2,
                                                   subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
                                                   subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                   voiceSearchHelper: voiceSearchHelper,

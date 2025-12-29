@@ -164,11 +164,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     
     func loadExistingExternalID() async {
         isLoadingExternalID = true
-        guard let manager = AppDependencyProvider.shared.subscriptionManagerV2 else {
-            Logger.subscription.error("[ProductionSubscriptionDebug] Subscription manager not available")
-            isLoadingExternalID = false
-            return
-        }
+        let manager = AppDependencyProvider.shared.subscriptionManagerV2
         do {
             // Try to get existing external ID from authenticated account
             let tokenContainer = try await manager.getTokenContainer(policy: .local)
@@ -183,11 +179,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     }
     
     func loadPurchasedProductIDs() async {
-        guard let manager = AppDependencyProvider.shared.subscriptionManagerV2 else {
-            Logger.subscription.error("[ProductionSubscriptionDebug] Subscription manager not available")
-            return
-        }
-        
+        let manager = AppDependencyProvider.shared.subscriptionManagerV2
         let productIDs = manager.storePurchaseManager().purchasedProductIDs
         purchasedProductIDs = productIDs
         Logger.subscription.info("[ProductionSubscriptionDebug] Found \(productIDs.count) purchased product(s): \(productIDs)")
@@ -195,12 +187,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     
     func loadAvailableProducts() async {
         isLoadingProducts = true
-        guard let manager = AppDependencyProvider.shared.subscriptionManagerV2 else {
-            Logger.subscription.error("[ProductionSubscriptionDebug] Subscription manager not available")
-            isLoadingProducts = false
-            return
-        }
-        
+        let manager = AppDependencyProvider.shared.subscriptionManagerV2
         // Cast to DefaultStorePurchaseManagerV2 to access availableProducts
         guard let defaultManager = manager.storePurchaseManager() as? DefaultStorePurchaseManagerV2 else {
             Logger.subscription.error("[ProductionSubscriptionDebug] Could not cast to DefaultStorePurchaseManagerV2")
@@ -248,11 +235,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         Logger.subscription.info("[ProductionSubscriptionDebug] Using external ID: \(externalID) (new: \(isNewAccount))")
         
         // Direct purchase bypassing AppStorePurchaseFlow
-        guard let manager = AppDependencyProvider.shared.subscriptionManagerV2 else {
-            Logger.subscription.error("[ProductionSubscriptionDebug] Subscription manager not available")
-            isLoading = false
-            return
-        }
+        let manager = AppDependencyProvider.shared.subscriptionManagerV2
         let result = await manager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
 
         switch result {

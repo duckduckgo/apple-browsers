@@ -40,26 +40,10 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     var currentStorefrontRegion: SubscriptionRegion? { get }
 }
 
-//public extension SubscriptionAuthV1toV2Bridge {
-//
-//    /// Checks whether the user is eligible to purchase the subscription, regardless of purchase platform.
-//    var isSubscriptionPurchaseEligible: Bool {
-//        switch currentEnvironment.purchasePlatform {
-//        case .appStore:
-//            return hasAppStoreProductsAvailable
-//        case .stripe:
-//            return true
-//        }
-//    }
-//}
 
 extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 
-    public func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName] {
-        try await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
-            subscriptionFeatureV2.entitlement.product
-        }
-    }
+    
 
 //    public var email: String? { userEmail }
 

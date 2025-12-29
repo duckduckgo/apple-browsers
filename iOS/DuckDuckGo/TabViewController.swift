@@ -1497,7 +1497,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func performHTTPAuthentication(protectionSpace: URLProtectionSpace,
-                                        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+                                   completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         if let urlProvidedBasicAuthCredential,
            urlProvidedBasicAuthCredential.url.matches(protectionSpace) {
 

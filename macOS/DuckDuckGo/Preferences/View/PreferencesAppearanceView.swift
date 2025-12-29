@@ -132,8 +132,10 @@ extension Preferences {
         private let innerCornerRadius: CGFloat = 7
         private let outerCornerRadius: CGFloat = 8
 
-        // MARK: - Constants / Heights
-        private let outerSize: CGFloat = 42
+        // MARK: - Constants / Size
+        private let outerMinWidth: CGFloat = 32
+        private let outerMaxWidth: CGFloat = 42
+        private let outerHeight: CGFloat = 42
         private let innerHeight: CGFloat = 31
         private let innerTopHeight: CGFloat = 10
         private let innerBottomHeight: CGFloat = 21
@@ -193,7 +195,8 @@ extension Preferences {
                     .padding([.leading, .trailing], 7)
                     .padding(.bottom, 6)
             }
-            .frame(minWidth: 32, maxWidth: outerSize, minHeight: outerSize, maxHeight: outerSize)
+            .frame(height: outerHeight)
+            .frame(minWidth: outerMinWidth, maxWidth: outerMaxWidth)
         }
     }
 

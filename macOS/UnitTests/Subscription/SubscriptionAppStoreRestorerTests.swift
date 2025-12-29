@@ -69,6 +69,8 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
 
         storePurchaseManager = StorePurchaseManagerMockV2()
         subscriptionManager = SubscriptionManagerMockV2()
+        subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
+                                                                         purchasePlatform: .appStore)
         subscriptionManager.resultStorePurchaseManager = storePurchaseManager
         subscriptionManager.resultURL = Constants.purchaseURL
 
@@ -182,11 +184,18 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
                                           .didShowAlert(.subscriptionNotFound),
                                           .didShowTab(.subscription(Constants.purchaseURL))])
 
-        let expectedPixels = Set([SubscriptionPixel.subscriptionRestorePurchaseStoreFailureNotFound.name + "_d",
-                                  SubscriptionPixel.subscriptionRestorePurchaseStoreFailureNotFound.name + "_c",
-                                  SubscriptionPixel.subscriptionOfferScreenImpression.name])
-
+        let expectedPixels = Set([SubscriptionPixel.subscriptionOfferScreenImpression.name])
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
+
+        XCTAssertTrue(subscriptionEventReporter.reportedActivationErrors.contains(where: { error in
+            switch error {
+            case SubscriptionError.restoreFailedDueToNoSubscription:
+                return true
+            default:
+                return false
+            }
+        }))
+
         XCTAssertTrue(assertNoOtherSubscriptionPixelsExcept(expectedPixels), "Unexpected Subscription pixels fired")
     }
 
@@ -204,11 +213,17 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
                                           .didShowAlert(.subscriptionNotFound),
                                           .didShowTab(.subscription(Constants.purchaseURL))])
 
-        let expectedPixels = Set([SubscriptionPixel.subscriptionRestorePurchaseStoreFailureOther.name + "_d",
-                                  SubscriptionPixel.subscriptionRestorePurchaseStoreFailureOther.name + "_c",
-                                  SubscriptionPixel.subscriptionOfferScreenImpression.name])
+        let expectedPixels = Set([SubscriptionPixel.subscriptionOfferScreenImpression.name])
 
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
+        XCTAssertTrue(subscriptionEventReporter.reportedActivationErrors.contains(where: { error in
+            switch error {
+            case SubscriptionError.otherRestoreError:
+                return true
+            default:
+                return false
+            }
+        }))
         XCTAssertTrue(assertNoOtherSubscriptionPixelsExcept(expectedPixels), "Unexpected Subscription pixels fired")
     }
 
@@ -224,12 +239,14 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         XCTAssertEqual(uiEventsHappened, [.didPresentProgressViewController,
                                           .didDismissProgressViewController,
                                           .didShowAlert(.somethingWentWrong)])
-
-        let expectedPixels = Set([SubscriptionPixel.subscriptionRestorePurchaseStoreFailureOther.name + "_d",
-                                  SubscriptionPixel.subscriptionRestorePurchaseStoreFailureOther.name + "_c"])
-
-        XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
-        XCTAssertTrue(assertNoOtherSubscriptionPixelsExcept(expectedPixels), "Unexpected Subscription pixels fired")
+        XCTAssertTrue(subscriptionEventReporter.reportedActivationErrors.contains(where: { error in
+            switch error {
+            case SubscriptionError.otherRestoreError:
+                return true
+            default:
+                return false
+            }
+        }))
     }
 
     func testRestoreAppStoreSubscriptionWhenRestoreFailsDueToFailedToFetchAccountDetails() async throws {
@@ -244,12 +261,14 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         XCTAssertEqual(uiEventsHappened, [.didPresentProgressViewController,
                                           .didDismissProgressViewController,
                                           .didShowAlert(.somethingWentWrong)])
-
-        let expectedPixels = Set([SubscriptionPixel.subscriptionRestorePurchaseStoreFailureOther.name + "_d",
-                                  SubscriptionPixel.subscriptionRestorePurchaseStoreFailureOther.name + "_c"])
-
-        XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
-        XCTAssertTrue(assertNoOtherSubscriptionPixelsExcept(expectedPixels), "Unexpected Subscription pixels fired")
+        XCTAssertTrue(subscriptionEventReporter.reportedActivationErrors.contains(where: { error in
+            switch error {
+            case SubscriptionError.otherRestoreError:
+                return true
+            default:
+                return false
+            }
+        }))
     }
 
     func testRestoreAppStoreSubscriptionWhenRestoreFailsDueToFailedToFetchSubscriptionDetails() async throws {
@@ -264,12 +283,14 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         XCTAssertEqual(uiEventsHappened, [.didPresentProgressViewController,
                                           .didDismissProgressViewController,
                                           .didShowAlert(.somethingWentWrong)])
-
-        let expectedPixels = Set([SubscriptionPixel.subscriptionRestorePurchaseStoreFailureOther.name + "_d",
-                                  SubscriptionPixel.subscriptionRestorePurchaseStoreFailureOther.name + "_c"])
-
-        XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
-        XCTAssertTrue(assertNoOtherSubscriptionPixelsExcept(expectedPixels), "Unexpected Subscription pixels fired")
+        XCTAssertTrue(subscriptionEventReporter.reportedActivationErrors.contains(where: { error in
+            switch error {
+            case SubscriptionError.otherRestoreError:
+                return true
+            default:
+                return false
+            }
+        }))
     }
 
     func testRestoreAppStoreSubscriptionWhenRestoreFailsDueToSubscriptionBeingExpired() async throws {
@@ -286,10 +307,15 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
                                           .didShowAlert(.subscriptionInactive),
                                           .didShowTab(.subscription(Constants.purchaseURL))])
 
-        let expectedPixels = Set([SubscriptionPixel.subscriptionRestorePurchaseStoreFailureNotFound.name + "_d",
-                                  SubscriptionPixel.subscriptionRestorePurchaseStoreFailureNotFound.name + "_c",
-                                  SubscriptionPixel.subscriptionOfferScreenImpression.name])
-
+        let expectedPixels = Set([SubscriptionPixel.subscriptionOfferScreenImpression.name])
+        XCTAssertTrue(subscriptionEventReporter.reportedActivationErrors.contains(where: { error in
+            switch error {
+            case SubscriptionError.restoreFailedDueToExpiredSubscription:
+                return true
+            default:
+                return false
+            }
+        }))
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
         XCTAssertTrue(assertNoOtherSubscriptionPixelsExcept(expectedPixels), "Unexpected Subscription pixels fired")
     }

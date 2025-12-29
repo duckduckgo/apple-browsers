@@ -76,7 +76,7 @@ final class SettingsViewModel: ObservableObject {
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
 
     // Subscription Dependencies
-    let subscriptionManager: any SubscriptionManagerV2
+    let subscriptionManager: any SubscriptionManager
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var subscriptionSignOutObserver: Any?
     var duckPlayerContingencyHandler: DuckPlayerContingencyHandler {
@@ -622,7 +622,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
-         subscriptionManager: any SubscriptionManagerV2,
+         subscriptionManager: any SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          deepLink: SettingsDeepLinkSection? = nil,

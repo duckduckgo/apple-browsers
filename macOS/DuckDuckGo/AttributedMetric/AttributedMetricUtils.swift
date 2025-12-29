@@ -51,7 +51,7 @@ struct DefaultAttributedMetricSettingsProvider: AttributedMetricSettingsProvidin
 
 struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
 
-    let subscriptionManager: SubscriptionManagerV2
+    let subscriptionManager: SubscriptionManager
 
     func isFreeTrial() async -> Bool {
         (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).hasActiveTrialOffer) ?? false

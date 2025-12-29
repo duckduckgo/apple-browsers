@@ -57,7 +57,7 @@ final class PreferencesViewController: NSViewController {
         aboutPreferences: AboutPreferences,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
-        subscriptionManager: any SubscriptionManagerV2,
+        subscriptionManager: any SubscriptionManager,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel

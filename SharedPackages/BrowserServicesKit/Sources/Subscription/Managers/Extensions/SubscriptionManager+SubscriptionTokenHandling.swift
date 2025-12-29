@@ -1,5 +1,5 @@
 //
-//  SubscriptionManagerV2+SubscriptionTokenHandling.swift
+//  SubscriptionManager+SubscriptionTokenHandling.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

@@ -29,7 +29,7 @@ enum SubscriptionContainerViewFactory {
 
     static func makeSubscribeFlowV2(redirectURLComponents: URLComponents?,
                                     navigationCoordinator: SubscriptionNavigationCoordinator,
-                                    subscriptionManager: SubscriptionManagerV2,
+                                    subscriptionManager: SubscriptionManager,
                                     subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
                                     subscriptionDataReporter: SubscriptionDataReporting?,
                                     userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -76,7 +76,7 @@ enum SubscriptionContainerViewFactory {
 
 
     static func makeRestoreFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
-                                  subscriptionManager: SubscriptionManagerV2,
+                                  subscriptionManager: SubscriptionManager,
                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
                                   userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                                   internalUserDecider: InternalUserDecider,
@@ -108,7 +108,7 @@ enum SubscriptionContainerViewFactory {
 
     static func makePlansFlowV2(redirectURLComponents: URLComponents?,
                                 navigationCoordinator: SubscriptionNavigationCoordinator,
-                                subscriptionManager: SubscriptionManagerV2,
+                                subscriptionManager: SubscriptionManager,
                                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
                                 userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                                 internalUserDecider: InternalUserDecider,
@@ -156,7 +156,7 @@ enum SubscriptionContainerViewFactory {
     }
 
     static func makeEmailFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
-                                subscriptionManager: SubscriptionManagerV2,
+                                subscriptionManager: SubscriptionManager,
                                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
                                 userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                                 internalUserDecider: InternalUserDecider,

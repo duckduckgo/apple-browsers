@@ -74,7 +74,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
 
     /// Manages user subscriptions and authentication state.
-    private let subscriptionManager: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
 
     /// Manages the user's state within the Freemium DBP system.
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -106,7 +106,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     ///   - featureDisabler: Optional feature disabler. If not provided, the default `DataBrokerProtectionFeatureDisabler` is used lazily.
     ///   - userDefaults: UserDefaults instance for storing preferences, defaulting to `.dbp`.
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
-         subscriptionManager: any SubscriptionManagerV2,
+         subscriptionManager: any SubscriptionManager,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          notificationCenter: NotificationCenter = .default,
          featureDisabler: DataBrokerProtectionFeatureDisabling? = nil,
@@ -261,7 +261,7 @@ private extension PrivacyConfigurationManaging {
 }
 
 /// Extension to provide computed properties for subscription manager platform and purchase logic.
-private extension SubscriptionManagerV2 {
+private extension SubscriptionManager {
 
     /// `true` if the subscription platform is App Store.
     var platformIsAppStore: Bool {

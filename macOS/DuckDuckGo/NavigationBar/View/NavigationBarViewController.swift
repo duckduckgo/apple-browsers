@@ -120,7 +120,7 @@ final class NavigationBarViewController: NSViewController {
     private let permissionManager: PermissionManagerProtocol
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
 
-    private var subscriptionManager: SubscriptionManagerV2 {
+    private var subscriptionManager: SubscriptionManager {
         Application.appDelegate.subscriptionManagerV2
     }
 

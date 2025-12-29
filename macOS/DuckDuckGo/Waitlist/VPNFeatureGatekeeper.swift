@@ -39,11 +39,11 @@ struct DefaultVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     private static var subscriptionAuthTokenPrefix: String { "ddg:" }
     private let vpnUninstaller: VPNUninstalling
     private let defaults: UserDefaults
-    private let subscriptionManager: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
 
     init(vpnUninstaller: VPNUninstalling = VPNUninstaller(),
          defaults: UserDefaults = .netP,
-         subscriptionManager: any SubscriptionManagerV2) {
+         subscriptionManager: any SubscriptionManager) {
         self.vpnUninstaller = vpnUninstaller
         self.defaults = defaults
         self.subscriptionManager = subscriptionManager

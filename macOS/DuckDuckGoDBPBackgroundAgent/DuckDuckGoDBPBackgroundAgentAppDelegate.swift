@@ -87,7 +87,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private var cancellables = Set<AnyCancellable>()
     private var statusBarMenu: StatusBarMenu?
-    private let subscriptionManager: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
     private var manager: DataBrokerProtectionAgentManager?
 
     override init() {

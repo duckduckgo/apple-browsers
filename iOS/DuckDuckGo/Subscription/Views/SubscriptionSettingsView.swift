@@ -336,7 +336,7 @@ struct SubscriptionSettingsViewV2: View {
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
                 navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -356,7 +356,7 @@ struct SubscriptionSettingsViewV2: View {
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
                 navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -378,7 +378,7 @@ struct SubscriptionSettingsViewV2: View {
             EmptyView()
         }.hidden()
 
-        NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
+        NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(), dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
                                                                                                     isProTierPurchaseEnabled: { settingsViewModel.subscriptionFeatureAvailability.isProTierPurchaseEnabled },
@@ -391,7 +391,7 @@ struct SubscriptionSettingsViewV2: View {
             destination: SubscriptionContainerViewFactory.makePlansFlowV2(
                 redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue),
                 navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,

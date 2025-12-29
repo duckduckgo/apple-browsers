@@ -37,7 +37,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     private static var vpnLogger = VPNLogger()
     private static let persistentPixel: PersistentPixelFiring = PersistentPixel()
     private var cancellables = Set<AnyCancellable>()
-    private let subscriptionManager: (any SubscriptionManagerV2)?
+    private let subscriptionManager: (any SubscriptionManager)?
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
     private let wideEvent: WideEventManaging = WideEvent()

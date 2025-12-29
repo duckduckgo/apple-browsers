@@ -31,7 +31,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
     let restore: SubscriptionRestoreViewModel
     let email: SubscriptionEmailViewModel
 
-    init(subscriptionManager: SubscriptionManagerV2,
+    init(subscriptionManager: SubscriptionManager,
          redirectPurchaseURL: URL? = nil,
          flowType: SubscriptionFlowType = .firstPurchase,
          isInternalUser: Bool = false,

@@ -48,7 +48,7 @@ struct SettingsSubscriptionView: View {
     
     var subscriptionRestoreViewV2: some View {
         SubscriptionContainerViewFactory.makeRestoreFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                           subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
+                                                           subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                                                            userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -64,7 +64,7 @@ struct SettingsSubscriptionView: View {
     }
 
     var currentStorefrontRegion: SubscriptionRegion {
-        return AppDependencyProvider.shared.subscriptionManagerV2.currentStorefrontRegion ?? .usa
+        return AppDependencyProvider.shared.subscriptionManager.currentStorefrontRegion ?? .usa
     }
     
     private var winBackURLComponents: URLComponents? {
@@ -333,7 +333,7 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal) {
             let hasITREntitlement = userEntitlements.contains(.identityTheftRestoration) || userEntitlements.contains(.identityTheftRestorationGlobal)
 
-            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
+            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                  userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                                                  isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)
             NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: model)), isActive: $isShowingITP) {

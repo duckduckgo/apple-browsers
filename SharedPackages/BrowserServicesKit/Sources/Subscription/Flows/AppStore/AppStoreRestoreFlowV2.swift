@@ -63,10 +63,10 @@ public protocol AppStoreRestoreFlowV2 {
 
 @available(macOS 12.0, iOS 15.0, *)
 public final class DefaultAppStoreRestoreFlowV2: AppStoreRestoreFlowV2 {
-    private let subscriptionManager: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
     private let storePurchaseManager: any StorePurchaseManagerV2
 
-    public init(subscriptionManager: any SubscriptionManagerV2,
+    public init(subscriptionManager: any SubscriptionManager,
                 storePurchaseManager: any StorePurchaseManagerV2) {
         self.subscriptionManager = subscriptionManager
         self.storePurchaseManager = storePurchaseManager

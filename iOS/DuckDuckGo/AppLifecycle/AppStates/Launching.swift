@@ -131,7 +131,7 @@ struct Launching: LaunchingHandling {
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
         )
 
         // Service to display the Default Browser prompt.

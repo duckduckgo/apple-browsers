@@ -23,7 +23,7 @@ import Common
 @testable import Subscription
 import NetworkingTestingUtils
 
-public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
+public final class SubscriptionManagerMockV2: SubscriptionManager {
 
     public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> = .init(Just(false))
 

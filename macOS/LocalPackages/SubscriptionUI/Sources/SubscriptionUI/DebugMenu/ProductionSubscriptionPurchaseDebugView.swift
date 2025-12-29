@@ -25,7 +25,7 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
     @StateObject private var viewModel: ProductionSubscriptionPurchaseViewModel
     let dismissAction: () -> Void
 
-    public init(subscriptionManager: SubscriptionManagerV2, dismissAction: @escaping () -> Void) {
+    public init(subscriptionManager: SubscriptionManager, dismissAction: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: ProductionSubscriptionPurchaseViewModel(subscriptionManager: subscriptionManager))
         self.dismissAction = dismissAction
     }
@@ -180,13 +180,13 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
 @available(macOS 12.0, *)
 public final class ProductionSubscriptionPurchaseViewController: NSViewController {
 
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
 
     public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    public init(subscriptionManager: SubscriptionManagerV2) {
+    public init(subscriptionManager: SubscriptionManager) {
         self.subscriptionManager = subscriptionManager
         super.init(nibName: nil, bundle: nil)
     }
@@ -219,9 +219,9 @@ final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     @Published var availableSubscriptions: [String] = []
     @Published var isLoadingProducts = true
 
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
 
-    init(subscriptionManager: SubscriptionManagerV2) {
+    init(subscriptionManager: SubscriptionManager) {
         self.subscriptionManager = subscriptionManager
     }
 

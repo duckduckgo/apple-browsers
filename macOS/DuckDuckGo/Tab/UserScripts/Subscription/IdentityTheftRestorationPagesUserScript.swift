@@ -76,7 +76,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
     }
 
     weak var broker: UserScriptMessageBroker?
-    private let subscriptionManager: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
 
     let featureName = "useIdentityTheftRestoration"
@@ -84,7 +84,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
         HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .baseURL)) ?? .exact(hostname: OriginDomains.duckduckgo)
     ])
 
-    init(subscriptionManager: any SubscriptionManagerV2,
+    init(subscriptionManager: any SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability

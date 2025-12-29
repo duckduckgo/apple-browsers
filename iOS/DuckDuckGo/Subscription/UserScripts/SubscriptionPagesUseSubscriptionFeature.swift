@@ -138,7 +138,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
 final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
     private let appStorePurchaseFlow: AppStorePurchaseFlowV2
     private let appStoreRestoreFlow: AppStoreRestoreFlowV2
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
@@ -149,7 +149,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private var wideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
 
-    init(subscriptionManager: SubscriptionManagerV2,
+    init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionAttributionOrigin: String?,
          appStorePurchaseFlow: AppStorePurchaseFlowV2,

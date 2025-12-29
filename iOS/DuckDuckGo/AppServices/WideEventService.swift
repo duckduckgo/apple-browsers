@@ -27,7 +27,7 @@ import VPN
 final class WideEventService {
     private let wideEvent: WideEventManaging
     private let featureFlagger: FeatureFlagger
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
     private let activationTimeoutInterval: TimeInterval = .hours(4)
     private let restoreTimeoutInterval: TimeInterval = .minutes(15)
     private let vpnConnectionTimeoutInterval: TimeInterval = .minutes(15)
@@ -35,7 +35,7 @@ final class WideEventService {
 
     private let sendQueue = DispatchQueue(label: "com.duckduckgo.wide-pixel.send-queue", qos: .utility)
 
-    init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionManager: SubscriptionManagerV2) {
+    init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionManager: SubscriptionManager) {
         self.wideEvent = wideEvent
         self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager

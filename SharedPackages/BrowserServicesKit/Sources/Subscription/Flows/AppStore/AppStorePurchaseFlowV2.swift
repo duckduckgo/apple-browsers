@@ -107,14 +107,14 @@ public protocol AppStorePurchaseFlowV2 {
 
 @available(macOS 12.0, iOS 15.0, *)
 public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
-    private let subscriptionManager: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
     private let storePurchaseManager: any StorePurchaseManagerV2
     private let appStoreRestoreFlow: any AppStoreRestoreFlowV2
 
     // Wide Event
     private let wideEvent: WideEventManaging
 
-    public init(subscriptionManager: any SubscriptionManagerV2,
+    public init(subscriptionManager: any SubscriptionManager,
                 storePurchaseManager: any StorePurchaseManagerV2,
                 appStoreRestoreFlow: any AppStoreRestoreFlowV2,
                 wideEvent: WideEventManaging

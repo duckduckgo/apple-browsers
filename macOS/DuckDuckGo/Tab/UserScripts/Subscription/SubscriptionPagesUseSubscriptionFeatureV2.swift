@@ -62,7 +62,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .baseURL)) ?? .exact(hostname: OriginDomains.duckduckgo)
     ])
 
-    let subscriptionManager: SubscriptionManagerV2
+    let subscriptionManager: SubscriptionManager
     var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
     let stripePurchaseFlow: any StripePurchaseFlowV2
     let subscriptionEventReporter: SubscriptionEventReporter
@@ -82,7 +82,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     private var restoreEmailOfferPageWideEventData: SubscriptionRestoreWideEventData?
     private var restoreEmailAppSettingsWideEventData: SubscriptionRestoreWideEventData?
 
-    public init(subscriptionManager: SubscriptionManagerV2,
+    public init(subscriptionManager: SubscriptionManager,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
                 stripePurchaseFlow: StripePurchaseFlowV2,
                 uiHandler: SubscriptionUIHandling,

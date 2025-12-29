@@ -56,7 +56,7 @@ enum Preferences {
         var paidAIChatModel: PreferencesPaidAIChatModel?
         var identityTheftRestorationModel: PreferencesIdentityTheftRestorationModel?
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV2?
-        let subscriptionManager: SubscriptionManagerV2
+        let subscriptionManager: SubscriptionManager
         let subscriptionUIHandler: SubscriptionUIHandling
         let featureFlagger: FeatureFlagger
         let showTab: @MainActor (Tab.TabContent) -> Void
@@ -71,7 +71,7 @@ enum Preferences {
 
         init(
             model: PreferencesSidebarModel,
-            subscriptionManager: SubscriptionManagerV2,
+            subscriptionManager: SubscriptionManager,
             subscriptionUIHandler: SubscriptionUIHandling,
             featureFlagger: FeatureFlagger,
             aiChatURLSettings: AIChatRemoteSettingsProvider,

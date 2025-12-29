@@ -56,7 +56,7 @@ struct SettingsOthersView: View {
 
             // Share Feedback
             if viewModel.enablesUnifiedFeedbackForm {
-                let formViewModel = UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
+                let formViewModel = UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                  vpnMetadataCollector: DefaultVPNMetadataCollector(),
                                                                  dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                  isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },

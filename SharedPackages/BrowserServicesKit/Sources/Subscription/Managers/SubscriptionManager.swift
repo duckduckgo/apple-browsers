@@ -1,5 +1,5 @@
 //
-//  SubscriptionManagerV2.swift
+//  SubscriptionManager.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -109,7 +109,7 @@ public protocol SubscriptionPixelHandling {
     func handle(pixel: KeychainManager.Pixel)
 }
 
-public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
+public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
 
     // Environment
     static func loadEnvironmentFrom(userDefaults: UserDefaults) -> SubscriptionEnvironment?
@@ -211,7 +211,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
 
 // MARK: -  Utilities
 
-extension SubscriptionManagerV2 {
+extension SubscriptionManager {
 
     public func signOut(notifyUI: Bool) async {
         await signOut(notifyUI: notifyUI, userInitiated: false)
@@ -241,7 +241,7 @@ extension SubscriptionManagerV2 {
 // MARK: -  Default implementation
 
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
-public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
+public final class DefaultSubscriptionManagerV2: SubscriptionManager {
 
     var oAuthClient: any OAuthClient
     private let _storePurchaseManager: StorePurchaseManagerV2?

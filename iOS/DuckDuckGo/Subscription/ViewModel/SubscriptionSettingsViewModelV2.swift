@@ -29,7 +29,7 @@ import Persistence
 
 final class SubscriptionSettingsViewModelV2: ObservableObject {
 
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
     private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private var signOutObserver: Any?
     private let featureFlagger: FeatureFlagger
@@ -122,7 +122,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     private let keyValueStorage: KeyValueStoring
     private let bannerDismissedKey = "SubscriptionSettingsV2BannerDismissed"
 
-    init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2,
+    init(subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {

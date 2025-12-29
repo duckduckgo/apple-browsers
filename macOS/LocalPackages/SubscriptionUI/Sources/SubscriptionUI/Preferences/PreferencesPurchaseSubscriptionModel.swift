@@ -80,7 +80,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         }
     }
 
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
     private let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
     private let featureFlagger: FeatureFlagger
@@ -93,7 +93,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
              openWinBackOfferLandingPage
     }
 
-    public init(subscriptionManager: SubscriptionManagerV2,
+    public init(subscriptionManager: SubscriptionManager,
                 featureFlagger: FeatureFlagger,
                 winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
                 userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,
@@ -160,7 +160,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         switch currentPurchasePlatform {
         case .appStore:
             if #available(macOS 12.0, *) {
-                if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2 {
+                if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManager {
                     region = subscriptionManagerV2.storePurchaseManager().currentStorefrontRegion
                 }
             }

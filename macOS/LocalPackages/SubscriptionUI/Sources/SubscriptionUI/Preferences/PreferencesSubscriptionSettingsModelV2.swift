@@ -80,7 +80,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
     private let keyValueStore: ThrowingKeyValueStoring
     private let rebrandingDismissedKey = "hasDismissedSubscriptionRebrandingMessage"
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
@@ -108,7 +108,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     }
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
-                subscriptionManager: SubscriptionManagerV2,
+                subscriptionManager: SubscriptionManager,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
                 keyValueStore: ThrowingKeyValueStoring,
                 winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,

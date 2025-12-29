@@ -35,12 +35,12 @@ protocol VPNUpsellPopoverPresenter {
 final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, PopoverPresenter {
 
     private var popover: VPNUpsellPopover?
-    private let subscriptionManager: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
     private let pixelHandler: (SubscriptionPixel) -> Void
 
-    init(subscriptionManager: any SubscriptionManagerV2,
+    init(subscriptionManager: any SubscriptionManager,
          featureFlagger: FeatureFlagger,
          vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
          pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {

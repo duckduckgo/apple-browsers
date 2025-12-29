@@ -28,7 +28,7 @@ import WKAbstractions
 final class SubscriptionService {
 
     let subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability
-    private let subscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2
+    private let subscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManager
     private var cancellables: Set<AnyCancellable> = []
 
     init(application: UIApplication = UIApplication.shared,

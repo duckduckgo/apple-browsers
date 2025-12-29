@@ -562,7 +562,7 @@ class TabViewController: UIViewController {
         self.daxDialogsManager = daxDialogsManager
         self.sharedSecureVault = sharedSecureVault
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
-            return AppDependencyProvider.shared.subscriptionManagerV2.isSubscriptionPurchaseEligible
+            return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
         
         self.aiChatSettings = aiChatSettings

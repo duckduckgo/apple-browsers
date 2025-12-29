@@ -107,13 +107,13 @@ protocol VPNMetadataCollector {
 final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     private let statusObserver: ConnectionStatusObserver
     private let serverInfoObserver: ConnectionServerInfoObserver
-    private let subscriptionManager: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
     private let settings: VPNSettings
     private let defaults: UserDefaults
 
     init(statusObserver: ConnectionStatusObserver,
          serverInfoObserver: ConnectionServerInfoObserver,
-         subscriptionManager: any SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2,
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          settings: VPNSettings = .init(defaults: .networkProtectionGroupDefaults),
          defaults: UserDefaults = .networkProtectionGroupDefaults) {
         self.statusObserver = statusObserver

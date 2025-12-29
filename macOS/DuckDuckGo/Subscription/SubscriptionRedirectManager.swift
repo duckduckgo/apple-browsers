@@ -28,12 +28,12 @@ protocol SubscriptionRedirectManaging: AnyObject {
 
 final class SubscriptionRedirectManager: SubscriptionRedirectManaging {
 
-    private let subscriptionManager: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
     private let baseURL: URL
     private let tld: TLD
     private let featureFlagger: FeatureFlagger
 
-    init(subscriptionManager: any SubscriptionManagerV2,
+    init(subscriptionManager: any SubscriptionManager,
          baseURL: URL,
          tld: TLD = Application.appDelegate.tld,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {

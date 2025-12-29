@@ -78,7 +78,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let statisticsStore = StatisticsUserDefaults()
         let featureDiscovery = DefaultFeatureDiscovery()
         let variantManager = DefaultVariantManager()
-        let subscriptionManager = AppDependencyProvider.shared.subscriptionManagerV2
+        let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
         let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
         let isSubscriptionEligibleUser = subscriptionManager.isSubscriptionPurchaseEligible
 

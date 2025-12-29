@@ -35,8 +35,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
     var currentViewController: () -> NSViewController?
 
-    let subscriptionManager: any SubscriptionManagerV2
-    let subscriptionManagerV2: (any SubscriptionManagerV2)!
+    let subscriptionManager: any SubscriptionManager
+    let subscriptionManagerV2: (any SubscriptionManager)!
     let subscriptionUserDefaults: UserDefaults
     let wideEvent: WideEventManaging
 
@@ -49,8 +49,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                 updateCustomBaseSubscriptionURL: @escaping (URL?) -> Void,
                 currentViewController: @escaping () -> NSViewController?,
                 openSubscriptionTab: @escaping (URL) -> Void,
-                subscriptionManager: any SubscriptionManagerV2,
-                subscriptionManagerV2: (any SubscriptionManagerV2)?,
+                subscriptionManager: any SubscriptionManager,
+                subscriptionManagerV2: (any SubscriptionManager)?,
                 subscriptionUserDefaults: UserDefaults,
                 wideEvent: WideEventManaging) {
         self.currentEnvironment = currentEnvironment

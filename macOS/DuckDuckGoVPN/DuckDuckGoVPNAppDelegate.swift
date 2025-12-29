@@ -40,7 +40,7 @@ import VPNAppState
 @objc(Application)
 final class DuckDuckGoVPNApplication: NSApplication {
 
-    public var subscriptionManagerV2: any SubscriptionManagerV2
+    public var subscriptionManagerV2: any SubscriptionManager
     private let _delegate: DuckDuckGoVPNAppDelegate // swiftlint:disable:this weak_delegate
 
     override init() {
@@ -119,7 +119,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     private static let recentThreshold: TimeInterval = 5.0
 
     private let appLauncher = AppLauncher()
-    private let subscriptionManagerV2: any SubscriptionManagerV2
+    private let subscriptionManagerV2: any SubscriptionManager
 
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
@@ -138,7 +138,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     private let wideEventVPNAppStorageSuiteName: String = "com.duckduckgo.vpn.wideEvent"
     private lazy var wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: UserDefaults(suiteName: wideEventVPNAppStorageSuiteName) ?? .standard))
 
-    public init(subscriptionManagerV2: any SubscriptionManagerV2,
+    public init(subscriptionManagerV2: any SubscriptionManager,
                 subscriptionEnvironment: SubscriptionEnvironment) {
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.tunnelSettings = VPNSettings(defaults: .netP)

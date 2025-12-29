@@ -33,14 +33,14 @@ final class SubscriptionDebugViewController: UITableViewController {
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
 
-    private var subscriptionManagerV2: SubscriptionManagerV2 {
-        AppDependencyProvider.shared.subscriptionManagerV2
+    private var subscriptionManagerV2: SubscriptionManager {
+        AppDependencyProvider.shared.subscriptionManager
     }
     private var featureFlagger: FeatureFlagger {
         AppDependencyProvider.shared.featureFlagger
     }
     var currentEnvironment: SubscriptionEnvironment {
-        AppDependencyProvider.shared.subscriptionManagerV2.currentEnvironment
+        AppDependencyProvider.shared.subscriptionManager.currentEnvironment
     }
 
     init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting) {
@@ -513,7 +513,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         newSubscriptionEnvironment.serviceEnvironment = environment
 
         if newSubscriptionEnvironment.serviceEnvironment != currentSubscriptionEnvironment.serviceEnvironment {
-            await AppDependencyProvider.shared.subscriptionManagerV2.signOut(notifyUI: true)
+            await AppDependencyProvider.shared.subscriptionManager.signOut(notifyUI: true)
 
             // Save Subscription environment
             DefaultSubscriptionManagerV2.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)

@@ -28,7 +28,7 @@ import PixelKit
 
 final class SubscriptionEmailViewModel: ObservableObject {
     
-    private let subscriptionManager: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let userScript: SubscriptionPagesUserScript
@@ -95,7 +95,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
          userScript: SubscriptionPagesUserScript,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
-         subscriptionManager: any SubscriptionManagerV2,
+         subscriptionManager: any SubscriptionManager,
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,

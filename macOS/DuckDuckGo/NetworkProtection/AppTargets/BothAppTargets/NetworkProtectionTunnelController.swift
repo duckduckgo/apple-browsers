@@ -67,7 +67,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Subscriptions
 
-    private let subscriptionManagerV2: any SubscriptionManagerV2
+    private let subscriptionManagerV2: any SubscriptionManager
 
     // MARK: - Extensions Support
 
@@ -180,7 +180,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          defaults: UserDefaults,
          wideEvent: WideEventManaging,
          notificationCenter: NotificationCenter = .default,
-         subscriptionManagerV2: any SubscriptionManagerV2,
+         subscriptionManagerV2: any SubscriptionManager,
          vpnAppState: VPNAppState) {
 
         self.availableExtensions = availableExtensions

@@ -24,12 +24,12 @@ import XCTest
 
 final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
-    var subscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var subscriptionManager: SubscriptionManagerMockV2!
     var handler: SubscriptionUserScriptHandler!
     var mockNavigationDelegate: MockNavigationDelegate!
 
     override func setUp() async throws {
-        subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        subscriptionManager = SubscriptionManagerMockV2()
         mockNavigationDelegate = await MockNavigationDelegate()
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,

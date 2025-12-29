@@ -57,7 +57,7 @@ final class PreferencesViewController: NSViewController {
         aboutPreferences: AboutPreferences,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManagerV2,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -96,7 +96,7 @@ final class PreferencesViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         let prefRootView = Preferences.RootViewV2(model: model,
-                                                  subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
+                                                  subscriptionManager: Application.appDelegate.subscriptionManagerV2,
                                                   subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
                                                   featureFlagger: featureFlagger,
                                                   aiChatURLSettings: aiChatRemoteSettings,

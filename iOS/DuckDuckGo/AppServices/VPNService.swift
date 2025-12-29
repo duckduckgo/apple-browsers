@@ -33,10 +33,10 @@ final class VPNService: NSObject {
     private let notificationServiceManager: NotificationServiceManaging
 
     private let mainCoordinator: MainCoordinator
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManagerV2
     private let application: UIApplication
     init(mainCoordinator: MainCoordinator,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2,
          application: UIApplication = UIApplication.shared,
          notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
          notificationServiceManager: NotificationServiceManaging,

@@ -26,13 +26,13 @@ import SubscriptionTestingUtilities
 
 final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
     var sut: HomePageSubscriptionCardVisibilityManager!
-    var subscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var subscriptionManager: SubscriptionManagerMockV2!
     var persistor: MockHomePageSubscriptionCardPersisting!
     var cancellable: AnyCancellable!
 
     override func setUp() {
         super.setUp()
-        subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        subscriptionManager = SubscriptionManagerMockV2()
         subscriptionManager.returnSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
         persistor = MockHomePageSubscriptionCardPersisting()
     }

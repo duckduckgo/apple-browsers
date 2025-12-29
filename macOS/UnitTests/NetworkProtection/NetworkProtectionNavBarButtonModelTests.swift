@@ -30,13 +30,13 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
 
     var sut: NetworkProtectionNavBarButtonModel!
     fileprivate var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMockV2!
     var cancellable: AnyCancellable?
 
     override func setUp() {
         super.setUp()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMockV2()
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
     }
 

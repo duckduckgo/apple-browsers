@@ -30,7 +30,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     private var sut: FreemiumDBPFeature!
     private var mockPrivacyConfigurationManager: MockPrivacyConfigurationManaging!
 
-    private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    private var mockSubscriptionManager: SubscriptionManagerMockV2!
     private var mockFreemiumDBPUserStateManagerManager: MockFreemiumDBPUserStateManager!
     private var mockFeatureDisabler: MockFeatureDisabler!
     private var mockStorePurchaseManager: StorePurchaseManagerMockV2!
@@ -43,7 +43,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockPrivacyConfigurationManager = MockPrivacyConfigurationManaging()
         let currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
                                                          purchasePlatform: .appStore)
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMockV2()
         mockSubscriptionManager.currentEnvironment = currentEnvironment
         mockStorePurchaseManager = StorePurchaseManagerMockV2()
         mockFreemiumDBPUserStateManagerManager = MockFreemiumDBPUserStateManager()

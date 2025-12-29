@@ -25,7 +25,7 @@ final class HomePageSetUpDependencies {
     let subscriptionCardPersistor: HomePageSubscriptionCardPersisting
     let continueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
 
-    init(subscriptionManager: SubscriptionAuthV1toV2Bridge, keyValueStore: ThrowingKeyValueStoring, legacyKeyValueStore: KeyValueStoring) {
+    init(subscriptionManager: SubscriptionManagerV2, keyValueStore: ThrowingKeyValueStoring, legacyKeyValueStore: KeyValueStoring) {
         self.subscriptionCardPersistor = HomePageSubscriptionCardPersistor(keyValueStore: keyValueStore)
         self.subscriptionCardVisibilityManager = HomePageSubscriptionCardVisibilityManager(
             subscriptionManager: subscriptionManager,

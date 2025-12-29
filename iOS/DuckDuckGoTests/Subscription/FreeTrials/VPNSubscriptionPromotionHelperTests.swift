@@ -28,7 +28,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
 
     private var sut: VPNSubscriptionPromotionHelping!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    private var mocksubscriptionManager: SubscriptionManagerV2Mock!
     private var mockKeyValueStore: MockKeyValueStore!
     private var mockFreeTrialBadgePersistor: FreeTrialBadgePersisting!
     private var mockPixelFiring: PixelFiringMock!
@@ -36,7 +36,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
 
     override func setUpWithError() throws {
         mockFeatureFlagger = MockFeatureFlagger()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMockV2()
         mockKeyValueStore = MockKeyValueStore()
         mockFreeTrialBadgePersistor = FreeTrialBadgePersistor(keyValueStore: mockKeyValueStore)
         sut = VPNSubscriptionPromotionHelper(featureFlagger: mockFeatureFlagger,

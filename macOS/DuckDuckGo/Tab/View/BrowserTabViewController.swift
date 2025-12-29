@@ -99,7 +99,7 @@ final class BrowserTabViewController: NSViewController {
     private let aboutPreferences: AboutPreferences
     private let accessibilityPreferences: AccessibilityPreferences
     private let duckPlayer: DuckPlayer
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManagerV2
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
     private let tld: TLD
@@ -153,7 +153,7 @@ final class BrowserTabViewController: NSViewController {
          aboutPreferences: AboutPreferences,
          accessibilityPreferences: AccessibilityPreferences,
          duckPlayer: DuckPlayer,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManagerV2 = NSApp.delegateTyped.subscriptionManagerV2,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
     ) {

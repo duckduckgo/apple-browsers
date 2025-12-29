@@ -77,7 +77,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
         remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider(),
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManagerV2,
         featureFlagger: FeatureFlagger,
         configurationURLProvider: ConfigurationURLProviding,
         themeManager: ThemeManaging,

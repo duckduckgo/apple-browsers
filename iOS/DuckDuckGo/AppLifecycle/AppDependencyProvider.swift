@@ -61,7 +61,6 @@ protocol DependencyProvider {
     var wideEvent: WideEventManaging { get }
 
     // Subscription
-    var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge { get }
     var subscriptionManagerV2: (any SubscriptionManagerV2)? { get }
 
     // DBP
@@ -91,7 +90,6 @@ final class AppDependencyProvider: DependencyProvider {
     let pageRefreshMonitor = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern)
 
     // Subscription
-    let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     var subscriptionManagerV2: (any SubscriptionManagerV2)?
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
@@ -224,7 +222,6 @@ final class AppDependencyProvider: DependencyProvider {
         }()
         tokenHandler = subscriptionManager
         authenticationStateProvider = subscriptionManager
-        subscriptionAuthV1toV2Bridge = subscriptionManager
 
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionKeychainTokenStore = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)

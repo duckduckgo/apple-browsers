@@ -27,13 +27,13 @@ import PixelKit
 import os.log
 
 final class VPNSubscriptionEventsHandler {
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManagerV2
     private let tunnelController: TunnelController
     private let vpnUninstaller: VPNUninstalling
     private let userDefaults: UserDefaults
     private var cancellables = Set<AnyCancellable>()
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    init(subscriptionManager: any SubscriptionManagerV2,
          tunnelController: TunnelController,
          vpnUninstaller: VPNUninstalling,
          userDefaults: UserDefaults = .netP) {

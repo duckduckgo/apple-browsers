@@ -241,7 +241,7 @@ class MainViewController: UIViewController {
     private let syncAIChatsCleaner: SyncAIChatsCleaning
 
     private var duckPlayerEntryPointVisible = false
-    private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+    private var subscriptionManager = AppDependencyProvider.shared.subscriptionManagerV2
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
 
@@ -2184,7 +2184,7 @@ class MainViewController: UIViewController {
     @objc
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManagerV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
@@ -2292,7 +2292,7 @@ class MainViewController: UIViewController {
     @objc
     private func onNetworkProtectionAccountSignOut(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManagerV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(

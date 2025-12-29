@@ -149,7 +149,7 @@ struct SettingsRootView: View {
     @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
         SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
                                                              navigationCoordinator: subscriptionNavigationCoordinator,
-                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
                                                              subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                              subscriptionDataReporter: viewModel.subscriptionDataReporter,
                                                              userScriptsDependencies: viewModel.userScriptsDependencies,
@@ -161,7 +161,7 @@ struct SettingsRootView: View {
 
     @ViewBuilder func emailFlowNavigationDestination() -> some View {
         SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
                                                          subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                          userScriptsDependencies: viewModel.userScriptsDependencies,
                                                          internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -212,7 +212,7 @@ struct SettingsRootView: View {
                 SubscriptionPIRMoveToDesktopView()
             }
         case .itr:
-            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2,
                                                  userScriptsDependencies: viewModel.userScriptsDependencies,
                                                  isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)
             SubscriptionITPView(viewModel: model)

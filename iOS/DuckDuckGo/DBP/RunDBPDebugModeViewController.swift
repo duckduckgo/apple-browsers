@@ -412,7 +412,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         let appDependencies = AppDependencyProvider.shared
         self.featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
-            subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: appDependencies.subscriptionManagerV2,
             runTypeProvider: appDependencies.dbpSettings
         )
         

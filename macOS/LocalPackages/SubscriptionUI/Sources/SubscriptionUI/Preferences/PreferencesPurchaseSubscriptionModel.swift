@@ -80,7 +80,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         }
     }
 
-    private let subscriptionManager: SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: SubscriptionManagerV2
     private let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
     private let featureFlagger: FeatureFlagger
@@ -93,7 +93,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
              openWinBackOfferLandingPage
     }
 
-    public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
+    public init(subscriptionManager: SubscriptionManagerV2,
                 featureFlagger: FeatureFlagger,
                 winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
                 userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,

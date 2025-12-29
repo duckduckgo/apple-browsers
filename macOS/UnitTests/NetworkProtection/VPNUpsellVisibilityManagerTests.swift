@@ -28,7 +28,7 @@ import Subscription
 final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     var sut: VPNUpsellVisibilityManager!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMockV2!
     var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     fileprivate var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
     var firedPixels: [SubscriptionPixel] = []
@@ -37,7 +37,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMockV2()
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()

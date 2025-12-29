@@ -61,7 +61,7 @@ final class SubscriptionITPViewModel: ObservableObject {
 
     private let webViewSettings: AsyncHeadlessWebViewSettings
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    init(subscriptionManager: any SubscriptionManagerV2,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          isInternalUser: Bool = false) {
         self.userScriptsDependencies = userScriptsDependencies

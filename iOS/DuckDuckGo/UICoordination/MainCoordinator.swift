@@ -52,7 +52,7 @@ final class MainCoordinator {
     private(set) var tabManager: TabManager
     private(set) var interactionStateSource: TabInteractionStateSource?
 
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManagerV2
     private let featureFlagger: FeatureFlagger
     private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
@@ -72,7 +72,7 @@ final class MainCoordinator {
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          aiChatSettings: AIChatSettings,
          fireproofing: Fireproofing,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
          didFinishLaunchingStartTime: CFAbsoluteTime?,

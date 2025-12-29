@@ -64,7 +64,7 @@ final class RemoteMessagingClientTests: XCTestCase {
     var remoteMessagingDatabaseLocation: URL!
     var bookmarksDatabase: CoreDataDatabase!
     var bookmarksDatabaseLocation: URL!
-    var subscriptionAuthV1toV2Bridge: SubscriptionAuthV1toV2BridgeMock!
+    var subscriptionManager: SubscriptionManagerMockV2!
 
     override func setUpWithError() throws {
         setUpRemoteMessagingDatabase()
@@ -73,7 +73,7 @@ final class RemoteMessagingClientTests: XCTestCase {
         availabilityProvider = MockRemoteMessagingAvailabilityProvider()
         surfacesProvider = MockRemoteMessageSurfacesProvider()
         storeProvider = MockRemoteMessagingStoreProvider()
-        subscriptionAuthV1toV2Bridge = SubscriptionAuthV1toV2BridgeMock()
+        subscriptionManager = SubscriptionManagerMockV2()
     }
 
     override func tearDownWithError() throws {
@@ -82,7 +82,7 @@ final class RemoteMessagingClientTests: XCTestCase {
         availabilityProvider = nil
         surfacesProvider = nil
         client = nil
-        subscriptionAuthV1toV2Bridge = nil
+        subscriptionManager = nil
     }
 
     private func setUpRemoteMessagingDatabase() {
@@ -140,7 +140,7 @@ final class RemoteMessagingClientTests: XCTestCase {
                 statisticsStore: MockStatisticsStore(),
                 featureDiscovery: MockFeatureDiscovery(),
                 variantManager: MockVariantManager(),
-                subscriptionManager: subscriptionAuthV1toV2Bridge,
+                subscriptionManager: subscriptionManager,
                 featureFlagger: MockFeatureFlagger(),
                 themeManager: MockThemeManager()
             ),
@@ -189,7 +189,7 @@ final class RemoteMessagingClientTests: XCTestCase {
             activeOffers: [],
             tier: nil
         )
-        subscriptionAuthV1toV2Bridge.returnSubscription = .success(subscription)
+        subscriptionManager.returnSubscription = .success(subscription)
         availabilityProvider.isRemoteMessagingAvailable = true
         makeClient(configFetcher: .init(config: .smallMessage))
         let store = try XCTUnwrap(client.store)

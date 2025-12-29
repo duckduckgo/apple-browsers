@@ -49,8 +49,8 @@ final class UnifiedFeedbackFormViewController: NSViewController {
          source: UnifiedFeedbackSource = .default,
          featureFlagger: FeatureFlagger) {
         self.feedbackSender = feedbackSender
-        self.viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                      vpnMetadataCollector: DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
+        self.viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: Application.appDelegate.subscriptionManagerV2,
+                                                      vpnMetadataCollector: DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionManagerV2),
                                                       dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                       feedbackSender: feedbackSender,
                                                       featureFlagger: featureFlagger,

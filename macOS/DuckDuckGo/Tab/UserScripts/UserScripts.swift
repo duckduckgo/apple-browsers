@@ -84,7 +84,7 @@ final class UserScripts: UserScriptsProvider {
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
-            subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: NSApp.delegateTyped.subscriptionManagerV2,
             featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
@@ -218,10 +218,7 @@ final class UserScripts: UserScriptsProvider {
         }
 
         var delegate: Subfeature
-        guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
-            assertionFailure("subscriptionManager is not available")
-            return
-        }
+        let subscriptionManager = Application.appDelegate.subscriptionManagerV2
         let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
         delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                              stripePurchaseFlow: stripePurchaseFlow,
@@ -232,7 +229,7 @@ final class UserScripts: UserScriptsProvider {
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
 
-        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionManagerV2)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }

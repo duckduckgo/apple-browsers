@@ -35,7 +35,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
     var currentViewController: () -> NSViewController?
 
-    let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManagerV2
     let subscriptionManagerV2: (any SubscriptionManagerV2)!
     let subscriptionUserDefaults: UserDefaults
     let wideEvent: WideEventManaging
@@ -49,7 +49,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                 updateCustomBaseSubscriptionURL: @escaping (URL?) -> Void,
                 currentViewController: @escaping () -> NSViewController?,
                 openSubscriptionTab: @escaping (URL) -> Void,
-                subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
+                subscriptionManager: any SubscriptionManagerV2,
                 subscriptionManagerV2: (any SubscriptionManagerV2)?,
                 subscriptionUserDefaults: UserDefaults,
                 wideEvent: WideEventManaging) {
@@ -59,7 +59,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         self.updateCustomBaseSubscriptionURL = updateCustomBaseSubscriptionURL
         self.currentViewController = currentViewController
         self.openSubscriptionTab = openSubscriptionTab
-        self.subscriptionAuthV1toV2Bridge = subscriptionAuthV1toV2Bridge
+        self.subscriptionManager = subscriptionManager
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.subscriptionUserDefaults = subscriptionUserDefaults
         self.wideEvent = wideEvent
@@ -226,14 +226,14 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
     @objc
     func activateSubscription() {
-        let url = subscriptionAuthV1toV2Bridge.url(for: .activationFlow)
+        let url = subscriptionManager.url(for: .activationFlow)
         openSubscriptionTab(url)
     }
 
     @objc
     func signOut() {
         Task {
-            await subscriptionAuthV1toV2Bridge.signOut(notifyUI: true, userInitiated: true)
+            await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
         }
     }
 

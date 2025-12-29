@@ -33,7 +33,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     private var testNotificationCenter: NotificationCenter!
     private var mockDefaultBrowserPreferences: DefaultBrowserPreferences!
-    private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    private var mockSubscriptionManager: SubscriptionManagerMockV2!
     private var pixelFiringMock: PixelKitMock!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
@@ -47,7 +47,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         try super.setUpWithError()
         testNotificationCenter = NotificationCenter()
         mockDefaultBrowserPreferences = DefaultBrowserPreferences(defaultBrowserProvider: DefaultBrowserProviderMock())
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMockV2()
         mockAIChatPreferences = AIChatPreferences(
             storage: MockAIChatPreferencesStorage(),
             aiChatMenuConfiguration: MockAIChatConfig(),

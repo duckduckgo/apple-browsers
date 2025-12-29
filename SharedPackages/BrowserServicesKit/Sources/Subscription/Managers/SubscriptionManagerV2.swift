@@ -96,13 +96,20 @@ public enum SubscriptionPixelType: Equatable {
     }
 }
 
+public enum AuthVersion: String {
+    // case v1 // removed
+    case v2
+
+    public static let key = "auth_version"
+}
+
 /// Pixels handler
 public protocol SubscriptionPixelHandling {
     func handle(pixel: SubscriptionPixelType)
     func handle(pixel: KeychainManager.Pixel)
 }
 
-public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionAuthV1toV2Bridge {
+public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
 
     // Environment
     static func loadEnvironmentFrom(userDefaults: UserDefaults) -> SubscriptionEnvironment?
@@ -160,12 +167,23 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// Closure called when an expired refresh token is detected and the Subscription login is invalid. An attempt to automatically recover it can be performed or the app can ask the user to do it manually
     typealias TokenRecoveryHandler = () async throws -> Void
 
+    var currentStorefrontRegion: SubscriptionRegion? { get }
+
     // MARK: - Features
 
-    /// Get the current subscription features
-    /// A feature is based on an entitlement and can be enabled or disabled
-    /// A user cant have an entitlement without the feature, if a user is missing an entitlement the feature is disabled
+    /// Returns the features available for the current subscription, a feature is enabled only if the user has the corresponding entitlement
+    /// - Parameter forceRefresh: ignore subscription and token cache and re-download everything
+    /// - Returns: An Array of SubscriptionFeature where each feature is enabled or disabled based on the user entitlements
     func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement]
+    func currentSubscriptionFeatures() async throws -> [SubscriptionEntitlement]
+    
+    /// Whether a feature is included in the Subscription.
+    /// This allows us to know if a feature is included in the current subscription.
+    func isFeatureIncludedInSubscription(_ feature: SubscriptionEntitlement) async throws -> Bool
+
+    /// Whether the feature is enabled for use.
+    /// This is mostly useful post-purchases.
+    func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool
 
     // MARK: - Token Management
 
@@ -186,13 +204,25 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
 
     /// Remove the stored token container and the legacy token
     func removeLocalAccount() throws
+
+    /// Checks if the user is eligible for a free trial.
+    func isUserEligibleForFreeTrial() -> Bool
 }
 
+// MARK: -  Utilities
+
 extension SubscriptionManagerV2 {
-    func signOut(notifyUI: Bool) async {
+
+    public func signOut(notifyUI: Bool) async {
         await signOut(notifyUI: notifyUI, userInitiated: false)
     }
+
+    public func currentSubscriptionFeatures() async throws -> [SubscriptionEntitlement] {
+        try await currentSubscriptionFeatures(forceRefresh: false)
+    }
 }
+
+// MARK: -  Default implementation
 
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
 public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
@@ -622,11 +652,16 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         return confirmation.subscription
     }
 
+    public var currentStorefrontRegion: SubscriptionRegion? {
+        if #available(macOS 12.0, *) {
+            return storePurchaseManager().currentStorefrontRegion
+        } else {
+            return nil
+        }
+    }
+
     // MARK: - Features
 
-    /// Returns the features available for the current subscription, a feature is enabled only if the user has the corresponding entitlement
-    /// - Parameter forceRefresh: ignore subscription and token cache and re-download everything
-    /// - Returns: An Array of SubscriptionFeature where each feature is enabled or disabled based on the user entitlements
     public func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement] {
         guard isUserAuthenticated else { return [] }
 
@@ -642,6 +677,41 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
         return availableFeatures
     }
+
+    public func isFeatureIncludedInSubscription(_ feature: SubscriptionEntitlement) async throws -> Bool {
+        try await currentSubscriptionFeatures(forceRefresh: false).contains(feature)
+    }
+
+    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool {
+        do {
+            guard isUserAuthenticated else { return false }
+            let tokenContainer = try await getTokenContainer(policy: .localValid)
+            return tokenContainer.decodedAccessToken.subscriptionEntitlements.contains(feature.subscriptionEntitlement)
+        } catch {
+            // Fallback to the cached user entitlements in case of keychain reading error
+            Logger.subscription.debug("Failed to read user entitlements from keychain: \(error, privacy: .public)")
+            return self.cachedUserEntitlements.contains(feature.subscriptionEntitlement)
+        }
+    }
+
+    /// Checks if the user is eligible for a free trial.
+    ///
+    /// Returns `true` for Stripe-based purchases (on all macOS versions)
+    /// or delegates to the store purchase manager for App Store purchases (requires macOS 12.0+).
+    ///
+    /// - Returns:
+    ///   - `true` for Stripe platform regardless of macOS version
+    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store on macOS 12.0+
+    ///   - `false` for App Store on macOS < 12.0
+    public func isUserEligibleForFreeTrial() -> Bool {
+        if currentEnvironment.purchasePlatform == .stripe {
+            return true
+        }
+        guard #available(macOS 12.0, *) else { return false }
+        return storePurchaseManager().isUserEligibleForFreeTrial()
+    }
+
+
 }
 
 extension DefaultSubscriptionManagerV2: SubscriptionTokenProvider {

@@ -308,7 +308,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     ///
     @objc func logFeedbackMetadataToConsole(_ sender: Any?) {
         Task { @MainActor in
-            let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+            let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionManagerV2)
             let metadata = await collector.collectMetadata()
 
             print(metadata.toPrettyPrintedJSON()!)

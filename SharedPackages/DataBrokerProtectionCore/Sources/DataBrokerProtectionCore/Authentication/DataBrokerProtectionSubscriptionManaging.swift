@@ -31,7 +31,7 @@ public protocol DataBrokerProtectionSubscriptionManaging {
 
 public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtectionSubscriptionManaging {
 
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManagerV2
     let runTypeProvider: AppRunTypeProviding
 
     public func accessToken() async -> String? {
@@ -61,7 +61,7 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
         subscriptionManager.isUserEligibleForFreeTrial()
     }
 
-    public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, runTypeProvider: AppRunTypeProviding) {
+    public init(subscriptionManager: any SubscriptionManagerV2, runTypeProvider: AppRunTypeProviding) {
         self.subscriptionManager = subscriptionManager
         self.runTypeProvider = runTypeProvider
     }

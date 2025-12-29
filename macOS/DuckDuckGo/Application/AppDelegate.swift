@@ -229,7 +229,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
-        subscriptionManager: subscriptionAuthV1toV2Bridge,
+        subscriptionManager: subscriptionManagerV2,
         featureFlagger: featureFlagger,
         vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
     )
@@ -238,8 +238,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let displaysTabsProgressIndicator: Bool
 
     let wideEvent: WideEventManaging
-    var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
-    let subscriptionManagerV2: (any SubscriptionManagerV2)?
+    let subscriptionManagerV2: any SubscriptionManagerV2
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
@@ -260,7 +259,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     public let vpnSettings = VPNSettings(defaults: .netP)
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
-        featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge),
+        featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManagerV2),
         featureFlagOverridesPublisher: featureFlagOverridesPublishingHandler.flagDidChangePublisher,
         loginItemsManager: LoginItemsManager(),
         defaults: .netP)
@@ -274,7 +273,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return VPNUpsellVisibilityManager(
             isFirstLaunch: false,
             isNewUser: AppDelegate.isNewUser,
-            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            subscriptionManager: subscriptionManagerV2,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
             persistor: vpnUpsellUserDefaultsPersistor,
@@ -290,7 +289,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Note: Using UserDefaultsWrapper as legacy store here because the pre-existed code used it.
     lazy var homePageSetUpDependencies: HomePageSetUpDependencies = {
-        return HomePageSetUpDependencies(subscriptionManager: subscriptionAuthV1toV2Bridge,
+        return HomePageSetUpDependencies(subscriptionManager: subscriptionManagerV2,
                                          keyValueStore: keyValueStore,
                                          legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
     }()
@@ -298,7 +297,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - DBP
 
     private lazy var dataBrokerProtectionSubscriptionEventHandler: DataBrokerProtectionSubscriptionEventHandler = {
-        let authManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionAuthV1toV2Bridge)
+        let authManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManagerV2)
         return DataBrokerProtectionSubscriptionEventHandler(featureDisabler: DataBrokerProtectionFeatureDisabler(),
                                                             authenticationManager: authManager,
                                                             pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
@@ -310,13 +309,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if DEBUG || REVIEW
         let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueStore)
         let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
-        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionManagerV2,
                                                                       winbackOfferStore: winbackOfferStore,
                                                                       winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
                                                                       dateProvider: dateProvider,
                                                                       timeBeforeOfferAvailability: .seconds(5))
 #else
-        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionManagerV2,
                                                                       winbackOfferStore: winbackOfferStore,
                                                                       winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider)
 #endif
@@ -333,7 +332,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var winBackOfferPromptPresenter: WinBackOfferPromptPresenting = {
         return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager,
-                                          subscriptionManager: subscriptionAuthV1toV2Bridge)
+                                          subscriptionManager: subscriptionManagerV2)
     }()
 
     lazy var winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator = {
@@ -348,7 +347,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return WideEventService(
             wideEvent: wideEvent,
             featureFlagger: featureFlagger,
-            subscriptionBridge: subscriptionAuthV1toV2Bridge
+            subscriptionManager: subscriptionManagerV2
         )
     }()
 
@@ -675,7 +674,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         subscriptionManagerV2 = subscriptionManager
-        subscriptionAuthV1toV2Bridge = subscriptionManager
 
         pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinedTabsManager: pinnedTabsManager)
 
@@ -683,7 +681,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
                 privacyConfigurationManager: privacyConfigurationManager,
-                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
+                purchasePlatform: subscriptionManagerV2.currentEnvironment.purchasePlatform,
                 featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
             ),
             internalUserDecider: internalUserDecider,
@@ -708,7 +706,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
             tabShower: windowControllersManager,
-            subscriptionManager: subscriptionAuthV1toV2Bridge
+            subscriptionManager: subscriptionManagerV2
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
@@ -875,7 +873,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     privacyConfigurationManager: privacyConfigurationManager
                 ),
                 remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
-                subscriptionManager: subscriptionAuthV1toV2Bridge,
+                subscriptionManager: subscriptionManagerV2,
                 featureFlagger: self.featureFlagger,
                 configurationURLProvider: configurationURLProvider,
                 themeManager: themeManager,
@@ -900,11 +898,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Update VPN environment and match the Subscription environment
-        vpnSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
+        vpnSettings.alignTo(subscriptionEnvironment: subscriptionManagerV2.currentEnvironment)
 
         // Update DBP environment and match the Subscription environment
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-        dbpSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
+        dbpSettings.alignTo(subscriptionEnvironment: subscriptionManagerV2.currentEnvironment)
 
         // Also update the stored run type so the login item knows if tests are running
         dbpSettings.updateStoredRunType()
@@ -913,7 +911,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
 
         freemiumDBPFeature = DefaultFreemiumDBPFeature(privacyConfigurationManager: privacyConfigurationManager,
-                                                       subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                                       subscriptionManager: subscriptionManagerV2,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                                                   freemiumDBPFeature: freemiumDBPFeature,
@@ -998,7 +996,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .appConfiguration,
                                                                       errorHandler: errorHandler)
         let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
-        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionAuthV1toV2Bridge)
+        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionManagerV2)
         let defaultBrowserProvider = SystemDefaultBrowserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
                                                                dataStoring: attributedMetricDataStorage,
@@ -1058,7 +1056,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
         let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
 
-        vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionAuthV1toV2Bridge,
+        vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionManagerV2,
                                                                    tunnelController: tunnelController,
                                                                    vpnUninstaller: vpnUninstaller)
 
@@ -1081,7 +1079,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Task {
-            await subscriptionManagerV2?.loadInitialData()
+            await subscriptionManagerV2.loadInitialData()
 
             vpnAppEventsHandler.applicationDidFinishLaunching()
         }
@@ -1200,7 +1198,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            subscriptionManager: subscriptionManagerV2,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
 
@@ -1270,7 +1268,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            subscriptionManager: subscriptionManagerV2,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
 

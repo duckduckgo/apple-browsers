@@ -701,7 +701,7 @@ final class MainMenu: NSMenu {
             toggleDownloadsShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .downloads)
             toggleShareShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .share)
 
-            if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isVPNVisible() {
+            if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManagerV2).isVPNVisible() {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = false
                 toggleNetworkProtectionShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .networkProtection)
             } else {
@@ -879,7 +879,7 @@ final class MainMenu: NSMenu {
                                   updateCustomBaseSubscriptionURL: updateCustomBaseSubscriptionURL,
                                   currentViewController: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController },
                                   openSubscriptionTab: { Application.appDelegate.windowControllersManager.showTab(with: .subscription($0)) },
-                                  subscriptionAuthV1toV2Bridge: Application.appDelegate.subscriptionAuthV1toV2Bridge,
+                                  subscriptionManager: Application.appDelegate.subscriptionManagerV2,
                                   subscriptionManagerV2: Application.appDelegate.subscriptionManagerV2,
                                   subscriptionUserDefaults: subscriptionUserDefaults,
                                   wideEvent: Application.appDelegate.wideEvent)

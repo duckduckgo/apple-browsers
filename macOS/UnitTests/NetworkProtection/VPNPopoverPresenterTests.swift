@@ -28,7 +28,7 @@ import Subscription
 final class VPNPopoverPresenterTests: XCTestCase {
 
     var sut: DefaultVPNUpsellPopoverPresenter!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMockV2!
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
@@ -37,7 +37,7 @@ final class VPNPopoverPresenterTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMockV2()
         mockFeatureFlagger = MockFeatureFlagger()
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()

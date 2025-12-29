@@ -51,6 +51,8 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
 
     /// Checks if the user is eligible for a free trial.
     func isUserEligibleForFreeTrial() -> Bool
+
+    var currentStorefrontRegion: SubscriptionRegion? { get }
 }
 
 public extension SubscriptionAuthV1toV2Bridge {
@@ -110,6 +112,14 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
         }
         guard #available(macOS 12.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
+    }
+
+    public var currentStorefrontRegion: SubscriptionRegion? {
+        if #available(macOS 12.0, *) {
+            return storePurchaseManager().currentStorefrontRegion
+        } else {
+            return nil
+        }
     }
 }
 

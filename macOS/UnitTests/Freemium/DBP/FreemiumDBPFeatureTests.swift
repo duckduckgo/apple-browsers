@@ -448,7 +448,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockSubscriptionManager.currentStorefrontRegion = .restOfWorld
         let currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
         mockSubscriptionManager.currentEnvironment = currentEnvironment
-        
+
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,

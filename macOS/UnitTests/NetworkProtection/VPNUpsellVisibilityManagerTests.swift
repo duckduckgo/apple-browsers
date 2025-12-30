@@ -388,7 +388,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .notEligible)
 
         // When
-        mockSubscriptionManager.hasAppStoreProductsAvailable = false //hasAppStoreProductsAvailableSubject.send(false)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
 
         // Then
         XCTAssertEqual(sut.state, .notEligible)
@@ -401,7 +401,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .notEligible)
 
         // When
-        mockSubscriptionManager.hasAppStoreProductsAvailable = true //mockSubscriptionManager.hasAppStoreProductsAvailableSubject.send(true)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
 
         // Then
         XCTAssertEqual(sut.state, .visible)

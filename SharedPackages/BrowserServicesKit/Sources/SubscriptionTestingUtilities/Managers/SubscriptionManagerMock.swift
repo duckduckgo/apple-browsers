@@ -25,8 +25,6 @@ import NetworkingTestingUtils
 
 public final class SubscriptionManagerMock: SubscriptionManager {
 
-    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> = .init(Just(false))
-
     public var email: String?
 
     public var isEligibleForFreeTrialResult: Bool = false
@@ -60,7 +58,16 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         }
     }
 
-    public var hasAppStoreProductsAvailable: Bool = true
+    private let hasAppStoreProductsAvailableSubject = PassthroughSubject<Bool, Never>()
+    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> {
+        hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
+    }
+
+    public var hasAppStoreProductsAvailable: Bool = true {
+        didSet {
+            self.hasAppStoreProductsAvailableSubject.send(hasAppStoreProductsAvailable)
+        }
+    }
 
     public var resultStorePurchaseManager: (any StorePurchaseManager)?
     public func storePurchaseManager() -> any StorePurchaseManager {
@@ -260,7 +267,14 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public func isSubscriptionPresent() -> Bool {
-        resultSubscription != nil
+        switch resultSubscription {
+        case .success(let success):
+            return true
+        case .failure(let failure):
+            return false
+        case nil:
+            return false
+        }
     }
 
     public func isUserEligibleForFreeTrial() -> Bool {

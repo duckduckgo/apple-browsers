@@ -375,7 +375,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
         // When
         mockSubscriptionManager.hasAppStoreProductsAvailable = true
-//        mockSubscriptionManager.hasAppStoreProductsAvailableSubject.send(true)
 
         // Then
         wait(for: [expectation], timeout: 2.0)
@@ -411,7 +410,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
         // When
         mockSubscriptionManager.hasAppStoreProductsAvailable = true
-//        mockSubscriptionManager.hasAppStoreProductsAvailableSubject.send(true)
 
         // Then
         wait(for: [expectation], timeout: 1.0)

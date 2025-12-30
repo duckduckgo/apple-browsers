@@ -159,11 +159,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
         switch currentPurchasePlatform {
         case .appStore:
-            if #available(macOS 12.0, *) {
-                if let subscriptionManager = subscriptionManager as? SubscriptionManager {
-                    region = subscriptionManager.storePurchaseManager().currentStorefrontRegion
-                }
-            }
+            region = subscriptionManager.currentStorefrontRegion
         case .stripe:
             region = .usa
         }

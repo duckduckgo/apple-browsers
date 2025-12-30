@@ -153,10 +153,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
         )
     }
 
-    private func createPreferencesSidebarModelWithDefaults(
-        includeDuckPlayer: Bool = false,
-        includeAIChat: Bool = false,
-    ) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+    private func createPreferencesSidebarModelWithDefaults(includeDuckPlayer: Bool = false,
+                                                           includeAIChat: Bool = false) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         let loadSections = { currentSubscriptionFeatures in
             return PreferencesSection.defaultSections(
                 includingDuckPlayer: includeDuckPlayer,

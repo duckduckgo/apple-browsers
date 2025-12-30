@@ -298,7 +298,9 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
     /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
-    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { hasAppStoreProductsAvailableSubject.eraseToAnyPublisher() }
+    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> {
+        hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
+    }
 
     @available(macOS 12.0, iOS 15.0, *)
     public func storePurchaseManager() -> StorePurchaseManager {

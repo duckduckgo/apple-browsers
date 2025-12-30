@@ -41,20 +41,20 @@ final class ScriptStyleProviderTests: XCTestCase {
     func testThemeNameChangesAreRelayedThroughThemeStylePublisher() async {
         let (styleProvider, themeManager) = buildStyleProvider()
 
-        async let styleUpdate = styleProvider.themeStylePublisher.nextValue()
-        themeManager.themeName = .green
+        let (_, themeName) = await styleProvider.themeStylePublisher.awaitFirst {
+            themeManager.themeName = .green
+        }
 
-        let (_, themeName) = await styleUpdate
         XCTAssertEqual(themeName, ThemeName.green.rawValue)
     }
 
     func testAppearanceChangesAreRelayedThroughThemeStylePublisher() async {
         let (styleProvider, themeManager) = buildStyleProvider()
 
-        async let styleUpdate = styleProvider.themeStylePublisher.nextValue()
-        themeManager.appearance = .light
+        let (appearance, _) = await styleProvider.themeStylePublisher.awaitFirst {
+            themeManager.appearance = .light
+        }
 
-        let (appearance, _) = await styleUpdate
         XCTAssertEqual(appearance, ThemeAppearance.light.rawValue)
     }
 }
@@ -73,18 +73,18 @@ private extension ScriptStyleProviderTests {
 //
 private extension AnyPublisher {
 
-    /// Awaits until the `next` value is published
-    ///
-    func nextValue() async -> Output where Failure == Never {
+    func awaitFirst(afterPerforming action: () -> Void) async -> Output where Failure == Never {
         await withCheckedContinuation { continuation in
             var cancellable: AnyCancellable?
-
             cancellable = self
                 .first()
-                .sink { newValue in
+                .sink { value in
                     cancellable?.cancel()
-                    continuation.resume(returning: newValue)
+                    continuation.resume(returning: value)
                 }
+
+            // Action runs, effectively, AFTER the subscription is established
+            action()
         }
     }
 }

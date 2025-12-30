@@ -22,8 +22,8 @@ import AppKit
 
 final class MockThemeManager: ThemeManaging {
 
-    @Published var appearance: ThemeAppearance = .dark
-    @Published var theme: ThemeStyleProviding = ThemeStyle.buildThemeStyle(themeName: .default, featureFlagger: NSApp.delegateTyped.featureFlagger)
+    @Published var appearance: ThemeAppearance
+    @Published var theme: ThemeStyleProviding
 
     var appearancePublisher: Published<ThemeAppearance>.Publisher {
         $appearance
@@ -31,6 +31,16 @@ final class MockThemeManager: ThemeManaging {
 
     var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
+    }
+
+    init(appearance: ThemeAppearance = .dark, themeName: ThemeName = .default) {
+        self.appearance = appearance
+        self.theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: NSApp.delegateTyped.featureFlagger)
+    }
+
+    func switchToStyle(appearance: ThemeAppearance, themeName: ThemeName) {
+        self.appearance = appearance
+        self.theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: NSApp.delegateTyped.featureFlagger)
     }
 }
 #endif

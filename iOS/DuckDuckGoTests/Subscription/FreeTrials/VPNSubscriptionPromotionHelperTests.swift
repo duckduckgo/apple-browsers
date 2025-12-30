@@ -28,7 +28,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
 
     private var sut: VPNSubscriptionPromotionHelping!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mocksubscriptionManager: SubscriptionManagerV2Mock!
+    private var mocksubscriptionManager: SubscriptionManagerMock!
     private var mockKeyValueStore: MockKeyValueStore!
     private var mockFreeTrialBadgePersistor: FreeTrialBadgePersisting!
     private var mockPixelFiring: PixelFiringMock!

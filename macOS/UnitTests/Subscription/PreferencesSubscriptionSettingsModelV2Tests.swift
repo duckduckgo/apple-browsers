@@ -54,7 +54,11 @@ final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
 
     private func makeSUT(subscription: DuckDuckGoSubscription? = nil,
                          purchasePlatform: SubscriptionEnvironment.PurchasePlatform = .appStore) -> PreferencesSubscriptionSettingsModelV2 {
-        mockSubscriptionManager.resultSubscription = subscription
+        if let subscription {
+            mockSubscriptionManager.resultSubscription = .success(subscription)
+        } else {
+            mockSubscriptionManager.resultSubscription = .failure(NSError(domain: "", code: 0, userInfo: nil))
+        }
         mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: purchasePlatform)
         return PreferencesSubscriptionSettingsModelV2(
             userEventHandler: { [weak self] event in

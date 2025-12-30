@@ -24,6 +24,7 @@ import BrowserServicesKit
 import SubscriptionTestingUtilities
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser
+import NetworkingTestingUtils
 
 @MainActor
 final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
@@ -165,7 +166,7 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
             }
 
         // When
-        mockSubscriptionManager.accessTokenResult = .success("mock-token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         NotificationCenter.default.post(name: .entitlementsDidChange, object: nil)
 
         // Then

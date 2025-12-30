@@ -23,6 +23,7 @@ import BrowserServicesKit
 import SubscriptionTestingUtilities
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser
+import NetworkingTestingUtils
 
 @MainActor
 final class VPNUpsellVisibilityManagerTests: XCTestCase {
@@ -77,7 +78,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenUserIsAuthenticated_ItDoesNotShowTheUpsell() {
         // Given
-        mockSubscriptionManager.accessTokenResult = .success("mock-token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
 
         // When
         sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
@@ -203,7 +204,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             .store(in: &cancellables)
 
         // When
-        mockSubscriptionManager.accessTokenResult = .success("mock-token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         NotificationCenter.default.post(name: .entitlementsDidChange, object: nil)
 
         // Then
@@ -324,7 +325,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenUserIsNewButAuthenticated_ItDoesNotShowTheUpsell() {
         // Given
-        mockSubscriptionManager.accessTokenResult = .success("mock-token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
 
         // When
         sut = createUpsellManager(isFirstLaunch: true, isNewUser: true)
@@ -387,7 +388,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .notEligible)
 
         // When
-        mockSubscriptionManager.hasAppStoreProductsAvailableSubject.send(false)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false //hasAppStoreProductsAvailableSubject.send(false)
 
         // Then
         XCTAssertEqual(sut.state, .notEligible)
@@ -400,7 +401,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .notEligible)
 
         // When
-        mockSubscriptionManager.hasAppStoreProductsAvailableSubject.send(true)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true //mockSubscriptionManager.hasAppStoreProductsAvailableSubject.send(true)
 
         // Then
         XCTAssertEqual(sut.state, .visible)

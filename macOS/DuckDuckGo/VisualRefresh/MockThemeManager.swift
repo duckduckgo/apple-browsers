@@ -19,9 +19,11 @@
 import Bookmarks
 import Foundation
 import AppKit
+import PrivacyConfig
 
 final class MockThemeManager: ThemeManaging {
 
+    private let featureFlagger: FeatureFlagger
     @Published var appearance: ThemeAppearance
     @Published var theme: ThemeStyleProviding
 
@@ -33,14 +35,19 @@ final class MockThemeManager: ThemeManaging {
         $theme
     }
 
-    init(appearance: ThemeAppearance = .dark, themeName: ThemeName = .default) {
-        self.appearance = appearance
-        self.theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: NSApp.delegateTyped.featureFlagger)
+    var themeName: ThemeName {
+        get {
+            theme.name
+        }
+        set {
+            theme = ThemeStyle.buildThemeStyle(themeName: newValue, featureFlagger: featureFlagger)
+        }
     }
 
-    func switchToStyle(appearance: ThemeAppearance, themeName: ThemeName) {
+    init(featureFlagger: FeatureFlagger = MockFeatureFlagger(), appearance: ThemeAppearance = .dark, themeName: ThemeName = .default, ) {
+        self.featureFlagger = featureFlagger
         self.appearance = appearance
-        self.theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: NSApp.delegateTyped.featureFlagger)
+        self.theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
     }
 }
 #endif

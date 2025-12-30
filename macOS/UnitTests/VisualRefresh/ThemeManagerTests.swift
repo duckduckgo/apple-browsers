@@ -56,7 +56,7 @@ final class ThemeManagerTests: XCTestCase {
         XCTAssertEqual(manager.theme.name, .default)
     }
 
-    func testLoosingInternalUserStateSetsTheLegacyTheme() async {
+    func testLosingInternalUserStateSetsTheLegacyTheme() async {
         let (manager, _, internalUserDecider) = buildThemeManager(isInternalUser: true, initialTheme: .green, initialAppearance: .light)
 
         internalUserDecider.isInternalUserSubject.send(false)

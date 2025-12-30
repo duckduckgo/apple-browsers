@@ -35,7 +35,6 @@ final class ScriptStyleProvider: ScriptStyleProviding {
 
     var themeStylePublisher: AnyPublisher<(appearance: String, themeName: String), Never> {
         Publishers.CombineLatest(themeManager.appearancePublisher, themeManager.themePublisher)
-            .dropFirst()
             .receive(on: DispatchQueue.main)
             .map { appearance, theme in
                 (appearance.encodedForFrontend, theme.name.encodedForFrontend)

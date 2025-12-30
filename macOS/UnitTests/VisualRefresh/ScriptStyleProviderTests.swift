@@ -38,15 +38,24 @@ final class ScriptStyleProviderTests: XCTestCase {
         XCTAssertEqual(styleProvider.themeAppearance, "system")
     }
 
-    func testThemeAndAppearanceChangesAreRelayedThroughThemeStylePublisher() async {
+    func testThemeNameChangesAreRelayedThroughThemeStylePublisher() async {
         let (styleProvider, themeManager) = buildStyleProvider()
 
         async let styleUpdate = styleProvider.themeStylePublisher.nextValue()
-        themeManager.switchToStyle(appearance: .light, themeName: .green)
+        themeManager.themeName = .green
 
-        let (appearance, themeName) = await styleUpdate
-        XCTAssertEqual(appearance, ThemeAppearance.light.rawValue)
+        let (_, themeName) = await styleUpdate
         XCTAssertEqual(themeName, ThemeName.green.rawValue)
+    }
+
+    func testAppearanceChangesAreRelayedThroughThemeStylePublisher() async {
+        let (styleProvider, themeManager) = buildStyleProvider()
+
+        async let styleUpdate = styleProvider.themeStylePublisher.nextValue()
+        themeManager.appearance = .light
+
+        let (appearance, _) = await styleUpdate
+        XCTAssertEqual(appearance, ThemeAppearance.light.rawValue)
     }
 }
 

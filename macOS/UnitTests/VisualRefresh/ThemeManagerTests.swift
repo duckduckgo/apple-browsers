@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import AppKit
+import Foundation
 import Combine
 import PrivacyConfig
 import PrivacyConfigTestsUtils

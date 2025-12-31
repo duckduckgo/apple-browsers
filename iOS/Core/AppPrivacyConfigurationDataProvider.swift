@@ -47,4 +47,6 @@ final public class AppPrivacyConfigurationDataProvider: EmbeddedDataProvider {
         let json = try? Data(contentsOf: embeddedUrl)
         return json!
     }
+
+    public init() {}
 }

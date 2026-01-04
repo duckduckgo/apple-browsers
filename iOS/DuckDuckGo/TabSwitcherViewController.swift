@@ -363,6 +363,15 @@ class TabSwitcherViewController: UIViewController {
         // If these calls are switched it'll be immediately dismissed along with this controller.
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
+    
+    func addNewAIChatTab() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+        
+        dismiss()
+        
+        self.delegate.tabSwitcherDidRequestAIChatTab(tabSwitcher: self)
+    }
 
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {
         let tabs = self.tabsModel.tabs

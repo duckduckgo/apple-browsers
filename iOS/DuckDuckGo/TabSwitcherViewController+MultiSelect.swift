@@ -489,9 +489,10 @@ extension TabSwitcherViewController {
         barsHandler.duckChatButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.aiChat, { [weak self] in
             guard let self else { return }
             if self.aichatFullModeFeature.isAvailable {
-                self.addNewTab()
+                addNewAIChatTab()
+            } else {
+                self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)
             }
-            self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)
         })
     }
 

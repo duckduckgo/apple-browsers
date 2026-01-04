@@ -3595,7 +3595,11 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
-        self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
+        if aichatFullModeFeature.isAvailable {
+            openAIChat()
+        } else {
+            self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
+        }
     }
 }
 

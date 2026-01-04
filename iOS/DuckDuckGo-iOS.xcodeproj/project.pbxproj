@@ -10343,11 +10343,9 @@
 				CB6CC7E32CD2529000320907 /* BrokenSitePrompt */,
 				CBECDB6E2CD3DFBE005B8B87 /* PageRefreshMonitor */,
 				4BC95E802D7416D7002FAB32 /* Bookmarks */,
-				4BC95E822D7416DD002FAB32 /* BrowserServicesKit */,
 				4BC95E842D7416E4002FAB32 /* Common */,
 				4BC95E862D7416EB002FAB32 /* Configuration */,
 				4BC95E882D7416F2002FAB32 /* ContentBlocking */,
-				4BC95E8A2D7416F9002FAB32 /* DDGSync */,
 				4BC95E8C2D741700002FAB32 /* DuckPlayer */,
 				4BC95E8E2D741706002FAB32 /* History */,
 				4BC95E902D741712002FAB32 /* Networking */,
@@ -15907,10 +15905,6 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Bookmarks;
 		};
-		4BC95E822D7416DD002FAB32 /* BrowserServicesKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = BrowserServicesKit;
-		};
 		4BC95E842D7416E4002FAB32 /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Common;
@@ -15922,10 +15916,6 @@
 		4BC95E882D7416F2002FAB32 /* ContentBlocking */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ContentBlocking;
-		};
-		4BC95E8A2D7416F9002FAB32 /* DDGSync */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = DDGSync;
 		};
 		4BC95E8C2D741700002FAB32 /* DuckPlayer */ = {
 			isa = XCSwiftPackageProductDependency;

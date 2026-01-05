@@ -258,7 +258,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
-        let voiceSearchController = VoiceSearchViewController(preferredTarget: .AIChat)
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: .AIChat, hideToggle: true)
         voiceSearchController.delegate = self
         voiceSearchController.modalTransitionStyle = .crossDissolve
         voiceSearchController.modalPresentationStyle = .overFullScreen

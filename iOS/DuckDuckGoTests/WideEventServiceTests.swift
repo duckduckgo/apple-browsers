@@ -75,8 +75,8 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withActivateAccountDuration_oldStart_noEntitlements_sendsUnknownPixel() {
-        subscriptionManager.subscriptionFeatures = []
-        
+        subscriptionManager.resultFeatures = []
+
         let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
         let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
         let data = createMockWideEventData(activateAccountDuration: interval)
@@ -100,8 +100,8 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withActivateAccountDuration_hasEntitlements_sendsSuccessPixel() {
-        subscriptionManager.subscriptionFeatures = [.networkProtection]
-        
+        subscriptionManager.resultFeatures = [.networkProtection]
+
         let oldStart = Date().addingTimeInterval(-3 * 60 * 60)
         let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
         let data = createMockWideEventData(activateAccountDuration: interval)
@@ -148,8 +148,8 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withActivateAccountDuration_entitlementsError_sendsUnknownPixel() {
-        subscriptionManager.subscriptionFeatures = []
-        
+        subscriptionManager.resultFeatures = []
+
         let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
         let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
         let data = createMockWideEventData(activateAccountDuration: interval)
@@ -194,7 +194,7 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withMultipleData_processesAll() {
-        subscriptionManager.subscriptionFeatures = [.networkProtection]
+        subscriptionManager.resultFeatures = [.networkProtection]
         
         let start = Date().addingTimeInterval(-1 * 60 * 60)
         let interval = WideEvent.MeasuredInterval(start: start, end: nil)

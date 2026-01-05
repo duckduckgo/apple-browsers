@@ -28,7 +28,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
 
     private var sut: VPNSubscriptionPromotionHelping!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mocksubscriptionManager: SubscriptionManagerMock!
+    private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockKeyValueStore: MockKeyValueStore!
     private var mockFreeTrialBadgePersistor: FreeTrialBadgePersisting!
     private var mockPixelFiring: PixelFiringMock!
@@ -69,7 +69,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
             activeOffers: [],
             tier: nil
         )
-        mockSubscriptionManager.returnSubscription = .success(subscription)
+        mockSubscriptionManager.resultSubscription = .success(subscription)
 
         // Then
         XCTAssertEqual(sut.subscriptionPromoStatus, .subscribed)
@@ -77,7 +77,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
 
     func testWhenSubscriptionIsNotActive_AndBadgeLimitIsNotReached_subscriptionPromoStatusIsPromo() {
         // When
-        mockSubscriptionManager.returnSubscription = .none
+        mockSubscriptionManager.resultSubscription = .none
         mockFeatureFlagger.enabledFeatureFlags = [.vpnMenuItem]
         mockKeyValueStore.set(0, forKey: persistenceKey)
 
@@ -87,7 +87,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
 
     func testWhenSubscriptionIsNotActive_AndFeatureFlaggerIsDisabled_subscriptionPromoStatusIsNoPromo() {
         // When
-        mockSubscriptionManager.returnSubscription = .none
+        mockSubscriptionManager.resultSubscription = .none
         mockFeatureFlagger.enabledFeatureFlags = []
         mockKeyValueStore.set(0, forKey: persistenceKey)
 
@@ -97,7 +97,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
 
     func testWhenSubscriptionIsNotActive_AndBadgeLimitIsReached_subscriptionPromoStatusIsNoPromo() {
         // When
-        mockSubscriptionManager.returnSubscription = .none
+        mockSubscriptionManager.resultSubscription = .none
         mockFeatureFlagger.enabledFeatureFlags = [.vpnMenuItem]
         mockKeyValueStore.set(4, forKey: persistenceKey)
 

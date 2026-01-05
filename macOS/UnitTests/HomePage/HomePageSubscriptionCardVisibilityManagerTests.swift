@@ -160,7 +160,9 @@ final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
             }
         }
         
-        self.subscriptionManager.hasAppStoreProductsAvailable = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.subscriptionManager.hasAppStoreProductsAvailable = false
+        }
         
         wait(for: [expectation], timeout: 1.0)
     }

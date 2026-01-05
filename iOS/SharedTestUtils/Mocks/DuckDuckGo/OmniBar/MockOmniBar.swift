@@ -67,6 +67,7 @@ final class MockOmniBar: OmniBar {
     func setDaxEasterEggLogoURL(_ logoURL: String?, searchQuery: String?) { }
     func refreshCustomizableButton() {}
     func enterAIChatMode() { }
+    func setDaxEasterEggLogoURL(_ logoURL: String?) { }
 
     final class MockOmniBarView: UIView, OmniBarView {
         required init?(coder: NSCoder) {

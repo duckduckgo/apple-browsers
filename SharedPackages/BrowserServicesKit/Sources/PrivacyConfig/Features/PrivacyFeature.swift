@@ -578,3 +578,12 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
     /// Show popup permission button in inactive state when temporary allowance is active
     case popupPermissionButtonPersistence
 }
+
+public enum UpdatesSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .updatesWontAutomaticallyRestartApp
+    }
+
+    /// Simplified update flow without expiration logic
+    case simplifiedFlow
+}

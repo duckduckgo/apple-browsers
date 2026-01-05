@@ -483,7 +483,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         }
 
         #if SPARKLE
-        guard let updateController = updateController as? SparkleUpdateController else { return }
+        guard let updateController = updateController as? any SparkleUpdateControllerProtocol else { return }
 
         // Log edge cases where menu item appears but doesn't function
         // To be removed in a future version

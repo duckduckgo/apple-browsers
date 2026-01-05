@@ -1064,11 +1064,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 #elseif SPARKLE
         if AppVersion.runType != .uiTests {
-            let updateController = SparkleUpdateController(
-                internalUserDecider: internalUserDecider
-            )
-            self.updateController = updateController
-            stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
+            let controller: any SparkleUpdateControllerProtocol
+            if featureFlagger.isFeatureOn(.updatesSimplifiedFlow) {
+                controller = SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider)
+            } else {
+                controller = SparkleUpdateController(internalUserDecider: internalUserDecider)
+            }
+            self.updateController = controller
+            stateRestorationManager.subscribeToAutomaticAppRelaunching(using: controller.willRelaunchAppPublisher)
         }
 #endif
 
@@ -1693,7 +1696,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         updateProgressCancellable = updateController.updateProgressPublisher
             .sink { [weak self] progress in
-                (self?.updateController as? SparkleUpdateController)?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+                (self?.updateController as? any SparkleUpdateControllerProtocol)?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
 #endif
     }

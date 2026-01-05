@@ -63,7 +63,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     var useLegacyAutoRestartLogic: Bool {
         #if SPARKLE
-        !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
+        (updateController as? any SparkleUpdateControllerProtocol)?.useLegacyAutoRestartLogic ?? false
         #else
         false
         #endif
@@ -184,7 +184,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
 #if SPARKLE
     private var isAtRestartCheckpoint: Bool {
-        guard let updateController = updateController as? SparkleUpdateController else { return false }
+        guard let updateController = updateController as? any SparkleUpdateControllerProtocol else { return false }
         return updateController.isAtRestartCheckpoint
     }
 #endif
@@ -217,7 +217,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             updateController?.checkForUpdateSkippingRollout()
         } else {
             #if SPARKLE
-            guard let updateController = updateController as? SparkleUpdateController else { return }
+            guard let updateController = updateController as? any SparkleUpdateControllerProtocol else { return }
             updateController.checkForUpdateRespectingRollout()
             #endif
         }

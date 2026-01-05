@@ -180,6 +180,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
             return !emailManager.isSignedIn
         case .subscription:
             return subscriptionCardVisibilityManager.shouldShowSubscriptionCard
+        case .personalizeBrowser:
+            return false // TODO: Implement visibility conditions for the Personalize Browser card.
+        case .sync:
+            return false // TODO: Implement visibility conditions for the Sync card.
         }
     }
 
@@ -198,6 +202,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
             dismissedLegacySetting = !legacyPersistor.shouldShowImportSetting
         case .subscription:
             dismissedLegacySetting = !legacySubscriptionCardPersistor.shouldShowSubscriptionSetting
+        default:
+            dismissedLegacySetting = false // No legacy setting for other (new) cards
         }
 
         // Checks the card's legacy setting first, to respect if the card was dismissed in the previous Next Steps implementation.

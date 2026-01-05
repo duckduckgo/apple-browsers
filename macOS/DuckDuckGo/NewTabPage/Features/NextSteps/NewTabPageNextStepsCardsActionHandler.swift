@@ -78,6 +78,10 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
             performEmailProtectionAction()
         case .subscription:
             performSubscriptionAction()
+        case .personalizeBrowser:
+            return // TODO: Add card action to open Customize panel on New Tab Page
+        case .sync:
+            return // TODO: Add card action to open sync setup flow
         }
     }
 }

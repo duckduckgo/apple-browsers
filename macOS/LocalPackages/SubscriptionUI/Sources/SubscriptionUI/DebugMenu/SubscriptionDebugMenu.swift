@@ -21,6 +21,7 @@ import SwiftUI
 import Subscription
 import StoreKit
 import PixelKit
+import Networking
 
 public final class SubscriptionDebugMenu: NSMenuItem {
 
@@ -261,17 +262,17 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     func checkEntitlements() {
         Task {
             do {
-                let productNames = Entitlement.ProductName.allCases
-                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                let productNames = SubscriptionEntitlement.allCases
+                let availableEntitlements = try await subscriptionManager.currentSubscriptionFeatures(forceRefresh: true)
                 var descriptions: [String] = []
-
                 for productName in productNames {
-                    let featureEnabledDescription: String = await {
-                        guard let isFeatureEnabled = try? await subscriptionManager.isFeatureEnabled(productName) else {
-                            return "error"
+                    let featureEnabledDescription: String = {
+                        let isFeatureEnabled = availableEntitlements.contains(productName)
+                        if isFeatureEnabled {
+                            return "\tenabled"
+                        } else {
+                            return "\tdisabled"
                         }
-
-                        return String(describing: isFeatureEnabled)
                     }()
 
                     descriptions.append("\(productName.rawValue): \(featureEnabledDescription)")

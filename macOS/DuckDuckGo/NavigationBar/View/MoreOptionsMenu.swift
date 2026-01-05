@@ -1345,20 +1345,20 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     private func refreshAvailabilityBasedOnEntitlements() {
         guard subscriptionManager.isUserAuthenticated else { return }
 
-        @Sendable func hasEntitlement(for productName: Entitlement.ProductName) async -> Bool {
-            // Note by Diego: this is bad as it will default to `false` on transient errors
-            (try? await subscriptionManager.isFeatureEnabled(productName)) ?? false
-        }
-
         Task.detached(priority: .background) { [weak self] in
             guard let self else { return }
 
-            let isNetworkProtectionItemEnabled = await hasEntitlement(for: .networkProtection)
-            let isDataBrokerProtectionItemEnabled = await hasEntitlement(for: .dataBrokerProtection)
-            let isPaidAIChatItemEnabled = await hasEntitlement(for: .paidAIChat)
+            guard let features = try? await subscriptionManager.currentSubscriptionFeatures(forceRefresh: false) else {
+                Logger.general.error("Failed to fetch subscription features")
+                return
+            }
 
-            let hasIdentityTheftRestoration = await hasEntitlement(for: .identityTheftRestoration)
-            let hasIdentityTheftRestorationGlobal = await hasEntitlement(for: .identityTheftRestorationGlobal)
+            let isNetworkProtectionItemEnabled = features.contains(.networkProtection)
+            let isDataBrokerProtectionItemEnabled = features.contains(.dataBrokerProtection)
+            let isPaidAIChatItemEnabled = features.contains(.paidAIChat)
+
+            let hasIdentityTheftRestoration = features.contains(.identityTheftRestoration)
+            let hasIdentityTheftRestorationGlobal = features.contains(.identityTheftRestorationGlobal)
             let isIdentityTheftRestorationItemEnabled = hasIdentityTheftRestoration || hasIdentityTheftRestorationGlobal
 
             Task { @MainActor in

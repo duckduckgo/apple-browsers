@@ -175,7 +175,6 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// - Parameter forceRefresh: ignore subscription and token cache and re-download everything
     /// - Returns: An Array of SubscriptionFeature where each feature is enabled or disabled based on the user entitlements
     func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement]
-    func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName]
 
     /// Whether a feature is included in the Subscription.
     /// This allows us to know if a feature is included in the current subscription.
@@ -183,7 +182,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
 
     /// Whether the feature is enabled for use.
     /// This is mostly useful post-purchases.
-    func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool
+    func isFeatureEnabled(_ feature: SubscriptionEntitlement) async throws -> Bool
 
     // MARK: - Token Management
 
@@ -217,10 +216,6 @@ extension SubscriptionManager {
         await signOut(notifyUI: notifyUI, userInitiated: false)
     }
 
-//    public func currentSubscriptionFeatures() async throws -> [SubscriptionEntitlement] {
-//        try await currentSubscriptionFeatures(forceRefresh: false)
-//    }
-
     /// Checks whether the user is eligible to purchase the subscription, regardless of purchase platform.
     public var isSubscriptionPurchaseEligible: Bool {
         switch currentEnvironment.purchasePlatform {
@@ -231,10 +226,8 @@ extension SubscriptionManager {
         }
     }
 
-    public func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName] {
-        try await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
-            subscriptionFeatureV2.entitlement.product
-        }
+    public func currentSubscriptionFeatures() async throws -> [SubscriptionEntitlement] {
+        try await currentSubscriptionFeatures(forceRefresh: false)
     }
 }
 
@@ -700,15 +693,15 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         try await currentSubscriptionFeatures(forceRefresh: false).contains(feature)
     }
 
-    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool {
+    public func isFeatureEnabled(_ feature: SubscriptionEntitlement) async throws -> Bool {
         do {
             guard isUserAuthenticated else { return false }
             let tokenContainer = try await getTokenContainer(policy: .localValid)
-            return tokenContainer.decodedAccessToken.subscriptionEntitlements.contains(feature.subscriptionEntitlement)
+            return tokenContainer.decodedAccessToken.subscriptionEntitlements.contains(feature)
         } catch {
             // Fallback to the cached user entitlements in case of keychain reading error
             Logger.subscription.debug("Failed to read user entitlements from keychain: \(error, privacy: .public)")
-            return self.cachedUserEntitlements.contains(feature.subscriptionEntitlement)
+            return self.cachedUserEntitlements.contains(feature)
         }
     }
 
@@ -734,26 +727,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 extension DefaultSubscriptionManager: SubscriptionTokenProvider {
     public func getAccessToken() async throws -> String {
         try await getTokenContainer(policy: .localValid).accessToken
-    }
-}
-
-extension SubscriptionEntitlement {
-
-    var entitlement: Entitlement {
-        switch self {
-        case .networkProtection:
-            return Entitlement(product: .networkProtection)
-        case .dataBrokerProtection:
-            return Entitlement(product: .dataBrokerProtection)
-        case .identityTheftRestoration:
-            return Entitlement(product: .identityTheftRestoration)
-        case .identityTheftRestorationGlobal:
-            return Entitlement(product: .identityTheftRestorationGlobal)
-        case .paidAIChat:
-            return Entitlement(product: .paidAIChat)
-        case .unknown:
-            return Entitlement(product: .unknown)
-        }
     }
 }
 

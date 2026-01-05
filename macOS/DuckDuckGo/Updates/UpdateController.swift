@@ -47,6 +47,12 @@ protocol UpdateController: AnyObject {
     var hasPendingUpdate: Bool { get }
     var hasPendingUpdatePublisher: Published<Bool>.Publisher { get }
 
+    /// Whether update UI (menu items, indicators) must be shown.
+    ///
+    /// For `SimplifiedSparkleUpdateController`, this is delayed for regular automatic updates
+    /// (1 hour delay to reduce noise). For other controllers, this mirrors `hasPendingUpdate`.
+    var mustShowUpdateIndicators: Bool { get }
+
     /// Controls the blue notification dot displayed in the main menu and Settings.
     ///
     /// **App Store vs Sparkle Behavior:**

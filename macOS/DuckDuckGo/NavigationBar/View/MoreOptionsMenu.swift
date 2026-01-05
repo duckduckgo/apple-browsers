@@ -492,7 +492,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         }
         #endif
 
-        guard updateController.hasPendingUpdate else {
+        guard updateController.hasPendingUpdate && updateController.mustShowUpdateIndicators else {
             return
         }
 

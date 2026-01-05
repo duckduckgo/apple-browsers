@@ -122,6 +122,8 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     @Published private(set) var hasPendingUpdate = false
     var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
 
+    var mustShowUpdateIndicators: Bool { hasPendingUpdate }
+
     @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
     var updateValidityStartDate: Date?
 

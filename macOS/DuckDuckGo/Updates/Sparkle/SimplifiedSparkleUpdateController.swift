@@ -97,7 +97,6 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         didSet {
             if let cachedUpdateResult {
                 refreshUpdateFromCache(cachedUpdateResult)
-                needsNotificationDot = hasPendingUpdate
             }
             handleUpdateNotification()
         }
@@ -111,6 +110,8 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
     @Published private(set) var hasPendingUpdate = false
     var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
+
+    private(set) var mustShowUpdateIndicators = false
 
     private let keyValueStore: ThrowingKeyValueStoring
 
@@ -261,18 +262,31 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         }
     }
 
-    // MARK: - Update Notification Handling
+    // MARK: - Update Indicators (Dot + Notification + Menu Item)
 
-    /// Handles update notification logic with delayed notifications for automatic updates.
+    /// Shows update UI: blue dot, banner notification, and enables menu item visibility.
+    private func showUpdateIndicators() {
+        mustShowUpdateIndicators = true
+        needsNotificationDot = true
+        showUpdateNotificationIfNeeded()
+    }
+
+    /// Hides update UI: cancels pending task, hides blue dot, and disables menu item visibility.
+    private func hideUpdateIndicators() {
+        pendingNotificationTask?.cancel()
+        pendingNotificationTask = nil
+        mustShowUpdateIndicators = false
+        needsNotificationDot = false
+    }
+
+    /// Handles update notification and blue dot logic with delays for automatic updates.
     ///
-    /// For automatic updates, regular notifications are delayed by 1 hour to reduce noise -
-    /// users who quit within that time get the update silently. Critical updates show immediately.
-    /// Manual update users see notifications immediately (unchanged behavior).
+    /// For automatic updates, regular notifications and the blue dot are delayed by 1 hour
+    /// to reduce noise - users who quit within that time get the update silently.
+    /// Critical updates show immediately. Manual updates show immediately (unchanged behavior).
     private func handleUpdateNotification() {
         guard let latestUpdate, hasPendingUpdate else {
-            // No pending update - cancel any scheduled notification
-            pendingNotificationTask?.cancel()
-            pendingNotificationTask = nil
+            hideUpdateIndicators()
             return
         }
 
@@ -281,7 +295,7 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
         // Manual updates: show immediately (unchanged behavior)
         guard areAutomaticUpdatesEnabled else {
-            showUpdateNotificationIfNeeded()
+            showUpdateIndicators()
             return
         }
 
@@ -291,17 +305,17 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             : NotificationDelay.regular
 
         if delay == 0 {
-            showUpdateNotificationIfNeeded()
+            showUpdateIndicators()
         } else {
             scheduleDelayedNotification(delay: delay)
         }
     }
 
     private func scheduleDelayedNotification(delay: TimeInterval) {
-        pendingNotificationTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        pendingNotificationTask = Task { [weak self] @MainActor in
+            try? await Task.sleep(interval: delay)
             guard let self, !Task.isCancelled, self.hasPendingUpdate else { return }
-            self.showUpdateNotificationIfNeeded()
+            self.showUpdateIndicators()
         }
     }
 

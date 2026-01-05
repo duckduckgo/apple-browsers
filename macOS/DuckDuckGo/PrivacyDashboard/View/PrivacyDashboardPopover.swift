@@ -17,12 +17,16 @@
 //
 
 import Cocoa
+import Combine
 import PrivacyDashboard
 import BrowserServicesKit
 
 final class PrivacyDashboardPopover: NSPopover {
 
     private weak var addressBar: NSView?
+
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     /// prefferred bounding box for the popover positioning
     override var boundingFrame: NSRect {
@@ -57,6 +61,9 @@ final class PrivacyDashboardPopover: NSPopover {
             permissionManager: permissionManager,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences
         )
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
@@ -100,5 +107,12 @@ extension PrivacyDashboardPopover: PrivacyDashboardViewControllerSizeDelegate {
 
     func privacyDashboardViewControllerDidChange(size: NSSize) {
         self.contentSize = size
+    }
+}
+
+extension PrivacyDashboardPopover: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.palette.surfaceCanvas
     }
 }

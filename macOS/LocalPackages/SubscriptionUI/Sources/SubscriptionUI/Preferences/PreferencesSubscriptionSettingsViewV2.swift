@@ -44,13 +44,13 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
 
                 switch model.settingsState {
                 case .subscriptionActive:
-                    StatusIndicatorView(status: .custom(UserText.subscribedStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
+                    subscriptionActiveHeader
                 case .subscriptionExpired:
                     expiredHeaderView
                 case .subscriptionPendingActivation:
                     pendingActivationHeaderView
                 case .subscriptionFreeTrialActive:
-                    StatusIndicatorView(status: .custom(UserText.freeTrialActiveStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
+                    subscriptionFreeTrialActiveHeader
                 }
             }
             .padding(.bottom, 16)
@@ -92,6 +92,26 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
         .onAppear(perform: {
             model.didAppear()
         })
+    }
+
+    @ViewBuilder
+    private var subscriptionActiveHeader: some View {
+        HStack(alignment: .center, spacing: 8) {
+            StatusIndicatorView(status: .custom(UserText.subscribedStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
+            if let variant = model.tierBadgeToDisplay {
+                TierBadgeView(variant: variant)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var subscriptionFreeTrialActiveHeader: some View {
+        HStack(alignment: .center, spacing: 8) {
+            StatusIndicatorView(status: .custom(UserText.freeTrialActiveStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
+            if let variant = model.tierBadgeToDisplay {
+                TierBadgeView(variant: variant)
+            }
+        }
     }
 
     @ViewBuilder
@@ -162,6 +182,19 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                 .padding(.bottom, 8)
 
             VStack(alignment: .leading, spacing: 14) {
+                if model.shouldShowViewAllPlans {
+                    TextButton(UserText.viewAllPlansButtonTitle, weight: .semibold) {
+                        switch model.viewAllPlansAction() {
+                        case .navigateToPlans(let navigationAction),
+                             .navigateToManageSubscription(let navigationAction):
+                            navigationAction()
+                        case .presentSheet(let sheet):
+                            manageSubscriptionSheet = sheet
+                        case .showInternalSubscriptionAlert:
+                            showingInternalSubscriptionAlert.toggle()
+                        }
+                    }
+                }
                 TextButton(UserText.updatePlanOrCancelButton, weight: .semibold) {
                     Task {
                         switch await model.changePlanOrBillingAction() {

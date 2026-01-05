@@ -1995,7 +1995,12 @@
     });
     output.featureSettings = parseFeatureSettings(data2, enabledFeatures);
     output.bundledConfig = data2;
+    output.messagingContextName = output.messagingContextName || "contentScopeScripts";
     return output;
+  }
+  function getLoadArgs(processedConfig) {
+    const { platform, site, bundledConfig, messagingConfig, messageSecret: messageSecret2, messagingContextName, currentCohorts } = processedConfig;
+    return { platform, site, bundledConfig, messagingConfig, messageSecret: messageSecret2, messagingContextName, currentCohorts };
   }
   function computeEnabledFeatures(data2, topLevelHostname, platformVersion, platformSpecificFeatures2 = []) {
     const remoteFeatureNames = Object.keys(data2.features);
@@ -2084,7 +2089,7 @@
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "duckAiDataClearing", "pageContext"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -2095,6 +2100,7 @@
       "messageBridge",
       "favicon"
     ],
+    "apple-ai-clear": ["duckAiDataClearing"],
     android: [...baseFeatures, "webCompat", "webInterferenceDetection", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
     "android-autofill-import": ["autofillImport"],
@@ -2124,7 +2130,7 @@
       "pageContext",
       "duckAiDataClearing"
     ],
-    firefox: ["cookie", ...baseFeatures, "clickToLoad"],
+    firefox: ["cookie", ...baseFeatures, "clickToLoad", "webInterferenceDetection", "breakageReporting"],
     chrome: ["cookie", ...baseFeatures, "clickToLoad", "webInterferenceDetection", "breakageReporting"],
     "chrome-mv3": ["cookie", ...baseFeatures, "clickToLoad", "webInterferenceDetection", "breakageReporting"],
     integration: [...baseFeatures, ...otherFeatures]
@@ -2182,7 +2188,7 @@
 
   // src/wrapper-utils.js
   init_define_import_meta_trackerLookup();
-  var ddgShimMark = Symbol("ddgShimMark");
+  var ddgShimMark = /* @__PURE__ */ Symbol("ddgShimMark");
   function defineProperty(object, propertyName, descriptor) {
     objectDefineProperty(object, propertyName, descriptor);
   }
@@ -2722,7 +2728,15 @@
           this.wkSend(handler, data2);
         });
         const cipher = new this.globals.Uint8Array([...ciphertext, ...tag]);
-        const decrypted = await this.decrypt(cipher, key, iv);
+        const decrypted = await this.decrypt(
+          /** @type {BufferSource} */
+          /** @type {unknown} */
+          cipher,
+          /** @type {BufferSource} */
+          /** @type {unknown} */
+          key,
+          iv
+        );
         return this.globals.JSONparse(decrypted || "{}");
       } catch (e) {
         if (e instanceof MissingHandler) {
@@ -3519,9 +3533,15 @@
 
   // src/sendmessage-transport.js
   init_define_import_meta_trackerLookup();
+  var sharedTransport = null;
   function extensionConstructMessagingConfig() {
-    const messagingTransport = new SendMessageMessagingTransport();
-    return new TestTransportConfig(messagingTransport);
+    return new TestTransportConfig(getSharedMessagingTransport());
+  }
+  function getSharedMessagingTransport() {
+    if (!sharedTransport) {
+      sharedTransport = new SendMessageMessagingTransport();
+    }
+    return sharedTransport;
   }
   var SendMessageMessagingTransport = class {
     constructor() {
@@ -4724,7 +4744,8 @@
        *   assets?: import('./content-feature.js').AssetConfig | undefined,
        *   site: import('./content-feature.js').Site,
        *   messagingConfig?: import('@duckduckgo/messaging').MessagingConfig,
-       *   currentCohorts?: [{feature: string, cohort: string, subfeature: string}],
+       *   messagingContextName: string,
+       *   currentCohorts?: Array<{feature: string, cohort: string, subfeature: string}>,
        * } | null}
        */
       __privateAdd(this, _args);
@@ -5219,9 +5240,9 @@
      * @return {MessagingContext}
      */
     _createMessagingContext() {
-      const contextName = this.injectName === "apple-isolated" ? "contentScopeScriptsIsolated" : "contentScopeScripts";
+      if (!this.args) throw new Error("messaging requires args to be set");
       return new MessagingContext({
-        context: contextName,
+        context: this.args.messagingContextName,
         env: this.isDebug ? "development" : "production",
         featureName: this.name
       });
@@ -12314,7 +12335,7 @@ ul.messages {
       }
     });
   }
-  async function getExpandedPerformanceMetrics() {
+  async function getExpandedPerformanceMetrics(timeoutMs = 500) {
     try {
       if (document.readyState !== "complete") {
         return returnError("Document not ready");
@@ -12331,7 +12352,7 @@ ul.messages {
       const fcp = paint.find((p) => p.name === "first-contentful-paint");
       let largestContentfulPaint = null;
       if (PerformanceObserver.supportedEntryTypes.includes("largest-contentful-paint")) {
-        largestContentfulPaint = await waitForLCP();
+        largestContentfulPaint = await waitForLCP(timeoutMs);
       }
       const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
       if (navigation) {
@@ -12502,6 +12523,15 @@ ul.messages {
           jsPerformance,
           referrer
         };
+        const getOpener = this.getFeatureSettingEnabled("opener", "enabled");
+        if (getOpener) {
+          result.opener = !!window.opener;
+        }
+        const getReloaded = this.getFeatureSettingEnabled("reloaded", "enabled");
+        if (getReloaded) {
+          result.pageReloaded = window.performance.navigation && window.performance.navigation.type === 1 || /** @type {PerformanceNavigationTiming[]} */
+          window.performance.getEntriesByType("navigation").map((nav) => nav.type).includes("reload");
+        }
         const detectorSettings = this.getFeatureSetting("interferenceTypes", "webInterferenceDetection");
         if (detectorSettings) {
           result.detectorData = {
@@ -12552,7 +12582,8 @@ ul.messages {
       }
     }
     async triggerExpandedPerformanceMetrics() {
-      const expandedPerformanceMetrics = await getExpandedPerformanceMetrics();
+      const permissableDelayMs = this.getFeatureSetting("expandedTimeoutMs") ?? 5e3;
+      const expandedPerformanceMetrics = await getExpandedPerformanceMetrics(permissableDelayMs);
       this.messaging.notify("expandedPerformanceMetricsResult", expandedPerformanceMetrics);
     }
   };
@@ -15233,13 +15264,7 @@ ul.messages {
         this._messaging = new Messaging(this.messagingContext, config2);
         return this._messaging;
       } else if (this.platform.name === "ios" || this.platform.name === "macos") {
-        const config2 = new WebkitMessagingConfig({
-          secret: "",
-          hasModernWebkitAPI: true,
-          webkitMessageHandlerNames: ["contentScopeScriptsIsolated"]
-        });
-        this._messaging = new Messaging(this.messagingContext, config2);
-        return this._messaging;
+        return super.messaging;
       } else {
         throw new Error("Messaging not supported yet on platform: " + this.name);
       }
@@ -15887,24 +15912,12 @@ ul.messages {
     const userUnprotectedDomains = $USER_UNPROTECTED_DOMAINS$;
     const userPreferences = $USER_PREFERENCES$;
     const processedConfig = processConfig(config2, userUnprotectedDomains, userPreferences, platformSpecificFeatures);
-    const handlerNames = [];
-    if (true) {
-      handlerNames.push("contentScopeScriptsIsolated");
-    } else {
-      handlerNames.push("contentScopeScripts");
-    }
     processedConfig.messagingConfig = new WebkitMessagingConfig({
-      webkitMessageHandlerNames: handlerNames,
+      webkitMessageHandlerNames: [processedConfig.messagingContextName],
       secret: "",
       hasModernWebkitAPI: true
     });
-    load({
-      platform: processedConfig.platform,
-      site: processedConfig.site,
-      bundledConfig: processedConfig.bundledConfig,
-      messagingConfig: processedConfig.messagingConfig,
-      messageSecret: processedConfig.messageSecret
-    });
+    load(getLoadArgs(processedConfig));
     init(processedConfig);
   }
   initCode();

@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var secureVault = { Logger(subsystem: "Secure Vault", category: "") }()
+    static let secureVault = Logger(subsystem: "Secure Vault", category: "")
 }

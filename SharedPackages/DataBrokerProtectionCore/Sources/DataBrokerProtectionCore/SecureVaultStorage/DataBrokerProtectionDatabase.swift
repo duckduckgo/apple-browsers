@@ -111,6 +111,8 @@ public protocol DataBrokerProtectionRepository {
     func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
                                                       brokerId: Int64,
                                                       extractedProfileId: Int64) throws
+
+    func haveAllScansRunAtLeastOnce() throws -> Bool
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -873,6 +875,18 @@ extension DataBrokerProtectionDatabase {
             )
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.incrementOptOutEmailConfirmationAttemptCount")
+            throw error
+        }
+    }
+
+    public func haveAllScansRunAtLeastOnce() throws -> Bool {
+        do {
+            let data = try fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
+            let scans = data.compactMap { $0.scanJobData }
+            let scansNotRun = scans.filter { $0.lastRunDate == nil }
+            return scansNotRun.count == 0
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.haveAllScansRunAtLeastOnce")
             throw error
         }
     }

@@ -19,7 +19,7 @@
 import Foundation
 import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {
@@ -31,6 +31,20 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isEmailConfirmationDecouplingFeatureOn: Bool {
         featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
+    }
+
+    var isForegroundRunningOnAppActiveFeatureOn: Bool {
+        // Not relevant to macOS
+        return false
+    }
+
+    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
+        // Not relevant to macOS
+        return false
+    }
+
+    var isClickActionDelayReductionOptimizationOn: Bool {
+        featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
     }
 
     init(featureFlagger: FeatureFlagger) {

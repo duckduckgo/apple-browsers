@@ -19,6 +19,8 @@
 import XCTest
 import Common
 import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import Subscription
 @testable import BrowserServicesKit
 
@@ -53,11 +55,12 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         XCTAssertFalse(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.allowPurchase))
 
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [:]
+
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+                                                                                     featureFlagProvider: featureFlagProvider)
         XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -69,11 +72,12 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         XCTAssertTrue(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.allowPurchase))
 
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [:]
+
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+                                                                                     featureFlagProvider: featureFlagProvider)
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -83,12 +87,57 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         XCTAssertFalse(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.allowPurchase))
 
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [:]
+
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+                                                                                     featureFlagProvider: featureFlagProvider)
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
+    }
+
+    // MARK: - Tests for Tier Messaging
+
+    func testTierMessagingDisabledWhenFeatureFlagDisabled() {
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [.tierMessaging: false]
+
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     featureFlagProvider: featureFlagProvider)
+        XCTAssertFalse(subscriptionFeatureAvailability.isTierMessagingEnabled)
+    }
+
+    func testTierMessagingEnabledWhenFeatureFlagEnabled() {
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [.tierMessaging: true]
+
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     featureFlagProvider: featureFlagProvider)
+        XCTAssertTrue(subscriptionFeatureAvailability.isTierMessagingEnabled)
+    }
+
+    // MARK: - Tests for Pro Tier Purchase
+
+    func testProTierPurchaseDisabledWhenFeatureFlagDisabled() {
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [.proTierPurchase: false]
+
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     featureFlagProvider: featureFlagProvider)
+        XCTAssertFalse(subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+    }
+
+    func testProTierPurchaseEnabledWhenFeatureFlagEnabled() {
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [.proTierPurchase: true]
+
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     featureFlagProvider: featureFlagProvider)
+        XCTAssertTrue(subscriptionFeatureAvailability.isProTierPurchaseEnabled)
     }
 
     // MARK: - Tests for DuckAI Premium
@@ -96,11 +145,12 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
     func testPaidAIChatDisabledWhenFeatureFlagDisabled() {
         XCTAssertFalse(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.paidAIChat))
 
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [.paidAIChat: false]
+
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { false },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+                                                                                     featureFlagProvider: featureFlagProvider)
         XCTAssertFalse(subscriptionFeatureAvailability.isPaidAIChatEnabled)
     }
 
@@ -109,11 +159,12 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         XCTAssertTrue(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.paidAIChat))
 
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [.paidAIChat: true]
+
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+                                                                                     featureFlagProvider: featureFlagProvider)
         XCTAssertTrue(subscriptionFeatureAvailability.isPaidAIChatEnabled)
     }
 
@@ -125,11 +176,12 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         XCTAssertFalse(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.allowPurchaseStripe))
 
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [:]
+
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
-                                                                                     paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+                                                                                     featureFlagProvider: featureFlagProvider)
         XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -141,11 +193,12 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         XCTAssertTrue(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.allowPurchaseStripe))
 
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [:]
+
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
-                                                                                     paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+                                                                                     featureFlagProvider: featureFlagProvider)
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -155,134 +208,51 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         XCTAssertFalse(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.allowPurchaseStripe))
 
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [:]
+
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
-                                                                                     paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+                                                                                     featureFlagProvider: featureFlagProvider)
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
     // MARK: - Tests for Alternate Stripe Payment Flow Support
 
     func testSupportsAlternateStripePaymentFlowDisabledWhenProviderReturnsFalse() {
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [.supportsAlternateStripePaymentFlow: false]
+
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { false },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+                                                                                     featureFlagProvider: featureFlagProvider)
         XCTAssertFalse(subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
     }
 
     func testSupportsAlternateStripePaymentFlowEnabledWhenProviderReturnsTrue() {
+        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
+        featureFlagProvider.flags = [.supportsAlternateStripePaymentFlow: true]
+
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { false },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { true },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+                                                                                     featureFlagProvider: featureFlagProvider)
         XCTAssertTrue(subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
-    }
-
-    // MARK: - Tests for Wide Event Measurement
-
-    func testIsSubscriptionPurchaseWidePixelMeasurementDisabledWhenProviderReturnsFalse() {
-        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                     purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { false },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
-        XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled)
-    }
-
-    func testIsSubscriptionPurchaseWidePixelMeasurementEnabledWhenProviderReturnsTrue() {
-        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                     purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { false },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
-                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { true })
-        XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled)
     }
 
     // MARK: - Helper
 
-    private func makeSubfeatureEnabledCheck(for enabledSubfeatures: [PrivacyProSubfeature]) -> (any PrivacySubfeature) -> Bool {
-        return {
-            guard let subfeature = $0 as? PrivacyProSubfeature else { return false }
+    private func makeSubfeatureEnabledCheck(for enabledSubfeatures: [PrivacyProSubfeature]) -> (any PrivacySubfeature, AppVersionProvider) -> Bool {
+        return { privacySubfeature, _ in
+            guard let subfeature = privacySubfeature as? PrivacyProSubfeature else { return false }
             return enabledSubfeatures.contains(subfeature)
         }
     }
 }
 
-class MockPrivacyConfiguration: PrivacyConfiguration {
+class MockSubscriptionPageFeatureFlagProvider: SubscriptionPageFeatureFlagProviding {
+    var flags: [SubscriptionPageFeatureFlag: Bool] = [:]
 
-    var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
-    func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
-        isSubfeatureEnabledCheck?(subfeature) ?? false
-    }
-
-    func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {
-        true
-    }
-
-    func stateFor(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
-        return .enabled
-    }
-
-    func stateFor(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
-        if isSubfeatureEnabledCheck?(subfeature) == true {
-            return .enabled
-        }
-        return .disabled(.disabledInConfig)
-    }
-
-    func stateFor(subfeatureID: BrowserServicesKit.SubfeatureID, parentFeatureID: BrowserServicesKit.ParentFeatureID, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
-        return .enabled
-    }
-
-    func cohorts(for subfeature: any BrowserServicesKit.PrivacySubfeature) -> [BrowserServicesKit.PrivacyConfigurationData.Cohort]? {
-        return nil
-    }
-
-    func cohorts(subfeatureID: BrowserServicesKit.SubfeatureID, parentFeatureID: BrowserServicesKit.ParentFeatureID) -> [BrowserServicesKit.PrivacyConfigurationData.Cohort]? {
-        return nil
-    }
-
-    func settings(for subfeature: any BrowserServicesKit.PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
-        return nil
-    }
-
-    var identifier: String = "abcd"
-    var version: String? = "123456789"
-    var userUnprotectedDomains: [String] = []
-    var tempUnprotectedDomains: [String] = []
-    var trackerAllowlist: PrivacyConfigurationData.TrackerAllowlist = .init(json: ["state": "disabled"])!
-    func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] { [] }
-    func isFeature(_ feature: PrivacyFeature, enabledForDomain: String?) -> Bool { true }
-    func isProtected(domain: String?) -> Bool { false }
-    func isUserUnprotected(domain: String?) -> Bool { false }
-    func isTempUnprotected(domain: String?) -> Bool { false }
-    func isInExceptionList(domain: String?, forFeature featureKey: PrivacyFeature) -> Bool { false }
-    func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings { .init() }
-    func userEnabledProtection(forDomain: String) {}
-    func userDisabledProtection(forDomain: String) {}
-}
-
-class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
-    var currentConfigString: String = ""
-    var currentConfig: Data {
-        currentConfigString.data(using: .utf8)!
-    }
-    var updatesSubject = PassthroughSubject<Void, Never>()
-    let updatesPublisher: AnyPublisher<Void, Never>
-    var privacyConfig: PrivacyConfiguration
-    let internalUserDecider: InternalUserDecider
-    func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
-        .downloaded
-    }
-
-    init(privacyConfig: PrivacyConfiguration, internalUserDecider: InternalUserDecider) {
-        self.updatesPublisher = updatesSubject.eraseToAnyPublisher()
-        self.privacyConfig = privacyConfig
-        self.internalUserDecider = internalUserDecider
+    func isEnabled(_ flag: SubscriptionPageFeatureFlag) -> Bool {
+        return flags[flag] ?? false
     }
 }

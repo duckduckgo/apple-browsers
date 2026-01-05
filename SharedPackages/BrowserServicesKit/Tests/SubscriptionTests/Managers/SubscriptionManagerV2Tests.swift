@@ -97,7 +97,8 @@ class SubscriptionManagerV2Tests: XCTestCase {
             expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
             platform: .stripe,
             status: .autoRenewable,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil
         )
         mockSubscriptionEndpointService.getSubscriptionResult = .success(activeSubscription)
         let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
@@ -117,7 +118,8 @@ class SubscriptionManagerV2Tests: XCTestCase {
             expiresOrRenewsAt: Date().addingTimeInterval(.days(-1)), // expired
             platform: .apple,
             status: .expired,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil
         )
         mockSubscriptionEndpointService.getSubscriptionResult = .success(expiredSubscription)
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
@@ -355,7 +357,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    // MARK: - Tests for canPurchasePublisher
+    // MARK: - Tests for hasAppStoreProductsAvailablePublisher
 
     func testCanPurchasePublisherEmitsValuesFromStorePurchaseManager() async throws {
         // Given
@@ -363,7 +365,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         var receivedValue: Bool?
 
         // When
-        let cancellable = subscriptionManager.canPurchasePublisher
+        let cancellable = subscriptionManager.hasAppStoreProductsAvailablePublisher
             .sink { value in
                 receivedValue = value
                 expectation.fulfill()
@@ -387,7 +389,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         var receivedValues: [Bool] = []
 
         // When
-        let cancellable = subscriptionManager.canPurchasePublisher
+        let cancellable = subscriptionManager.hasAppStoreProductsAvailablePublisher
             .sink { value in
                 receivedValues.append(value)
                 if receivedValues.count == 1 {

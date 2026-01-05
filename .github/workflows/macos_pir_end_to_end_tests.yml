@@ -145,7 +145,7 @@ jobs:
     - name: Run PIR e2e Tests
       id: run-tests
       run: |
-        launchctl setenv PRIVACYPRO_STAGING_TOKEN '${{ secrets.PRIVACYPRO_STAGING_TOKEN }}'
+        launchctl setenv PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 '${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}'
         set -o pipefail && xcodebuild test \
           -scheme "macOS PIR E2E Tests" \
           -derivedDataPath "DerivedData" \
@@ -158,7 +158,7 @@ jobs:
           | tee xcodebuild.log \
           | tee pir-e2e-tests.log
       env:
-          PRIVACYPRO_STAGING_TOKEN: ${{ secrets.PRIVACYPRO_STAGING_TOKEN }}
+          PRIVACYPRO_STAGING_ACCESS_TOKEN_V2: ${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}
 
     - name: Report job duration
       if: success() || (always() && steps.run-tests.outcome == 'failure')
@@ -183,6 +183,11 @@ jobs:
         report_paths: macOS/pir-e2e-tests.xml
         check_retries: true
 
+    - name: Collect PIR process logs
+      if: failure() || cancelled()
+      run: |
+        log show --predicate 'processImagePath CONTAINS "DuckDuckGo Personal Information Removal"' --last 1h > pir-process.log 2>&1 || true
+
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
@@ -190,6 +195,7 @@ jobs:
         name: "BuildLogs ${{ matrix.runner }}"
         path: |
           macOS/xcodebuild.log
+          macOS/pir-process.log
           macOS/DerivedData/Logs/Test/*.xcresult
           ~/Library/Logs/DiagnosticReports/*
         retention-days: 7

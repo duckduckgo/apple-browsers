@@ -81,9 +81,6 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     /// Callback triggered when the AI Chat left button is tapped
     var onAIChatLeftButtonPressed: (() -> Void)? { get set }
 
-    /// Callback triggered when the AI Chat right button is tapped
-    var onAIChatRightButtonPressed: (() -> Void)? { get set }
-
     /// Callback triggered when the omnibar branding area is tapped while in AI Chat mode
     var onAIChatBrandingPressed: (() -> Void)? { get set }
 

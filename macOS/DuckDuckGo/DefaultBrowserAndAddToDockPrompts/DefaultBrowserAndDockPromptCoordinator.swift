@@ -150,6 +150,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let dockCustomization: DockCustomization
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let pixelFiring: PixelFiring?
+    private let isSparkleBuild: Bool
     private let isOnboardingCompleted: () -> Bool
     private let dateProvider: () -> Date
     private let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?
@@ -161,6 +162,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         isOnboardingCompleted: @escaping () -> Bool,
         dockCustomization: DockCustomization = DockCustomizer(),
         defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
+        applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
         pixelFiring: PixelFiring? = PixelKit.shared,
         dateProvider: @escaping () -> Date = Date.init
     ) {
@@ -169,6 +171,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         self.isOnboardingCompleted = isOnboardingCompleted
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
+        self.isSparkleBuild = applicationBuildType.isSparkleBuild
         self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider
         self.notificationPresenter = notificationPresenter
@@ -200,14 +203,18 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         let isDefaultBrowser = defaultBrowserProvider.isDefault
         let isAddedToDock = dockCustomization.isAddedToDock
 
-        if isDefaultBrowser && isAddedToDock {
-            return nil
-        } else if isDefaultBrowser && !isAddedToDock {
-            return .addToDockPrompt
-        } else if !isDefaultBrowser && isAddedToDock {
-            return .setAsDefaultPrompt
+        if isSparkleBuild {
+            if isDefaultBrowser && isAddedToDock {
+                return nil
+            } else if isDefaultBrowser && !isAddedToDock {
+                return .addToDockPrompt
+            } else if !isDefaultBrowser && isAddedToDock {
+                return .setAsDefaultPrompt
+            } else {
+                return .bothDefaultBrowserAndDockPrompt
+            }
         } else {
-            return .bothDefaultBrowserAndDockPrompt
+            return isDefaultBrowser ? nil : .setAsDefaultPrompt
         }
     }
 

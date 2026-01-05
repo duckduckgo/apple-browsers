@@ -134,7 +134,7 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
         case .failure(let error):
             switch error {
             case .internalError(let innerError):
-                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(code: .invalidAuthorizationRequest)))
+                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(OAuthRequestError(from: .invalidAuthorizationRequest))))
             default:
                 XCTFail("Unexpected error \(error)")
             }
@@ -152,7 +152,7 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
         case .failure(let error):
             switch error {
             case .internalError(let innerError):
-                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(code: .invalidAuthorizationRequest)))
+                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(OAuthRequestError(from: .invalidAuthorizationRequest))))
             default:
                 XCTFail("Unexpected error \(error)")
             }
@@ -171,7 +171,7 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
         case .failure(let error):
             switch error {
             case .internalError(let innerError):
-                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(code: .invalidAuthorizationRequest)))
+                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(OAuthRequestError(from: .invalidAuthorizationRequest))))
             default:
                 XCTFail("Unexpected error \(error)")
             }

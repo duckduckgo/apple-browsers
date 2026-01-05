@@ -20,7 +20,7 @@
 import XCTest
 import WebKit
 import DuckPlayer
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 import Core
 import Combine

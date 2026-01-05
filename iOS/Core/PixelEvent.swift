@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Bookmarks
 import Configuration
+import ContentBlocking
 import DDGSync
 import MaliciousSiteProtection
 import PixelKit
@@ -62,6 +63,10 @@ extension Pixel {
         case forgetAllPressedSettings
         case forgetAllExecuted
         case forgetAllDataCleared
+        
+        case forgetAllPressedBrowsingDaily
+        case forgetAllPressedTabSwitcherDaily
+        case forgetAllExecutedDaily
         
         case privacyDashboardOpened
         case privacyDashboardFirstTimeOpenedUnique
@@ -138,9 +143,14 @@ extension Pixel {
         case experimentalBrowsingMenuUsed
         case experimentalBrowsingMenuDisplayed
         case experimentalBrowsingMenuDisplayedNTP
+        case experimentalBrowsingMenuDisplayedAIChat
+        case experimentalBrowsingMenuDisplayedError
+        case experimentalBrowsingMenuDismissed
 
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
+        case browsingMenuOpenedError
+        case browsingMenuDismissed
         case browsingMenuNewTab
         case browsingMenuAddToBookmarks
         case browsingMenuEditBookmark
@@ -162,7 +172,9 @@ extension Pixel {
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
         case browsingMenuRefreshPage
+        case browsingMenuNewDuckAddress
         case browsingMenuVPN
+        case browsingMenuAIChat
 
         case addressBarShare
         case addressBarSettings
@@ -516,6 +528,7 @@ extension Pixel {
         
         case secureVaultInitFailedError
         case secureVaultFailedToOpenDatabaseError
+        case sharedSecureVaultInitFailed
         
         // Replacing secureVaultIsEnabledCheckedWhenEnabledAndBackgrounded with data protection check
         case secureVaultIsEnabledCheckedWhenEnabledAndDataProtected
@@ -782,7 +795,6 @@ extension Pixel {
         
         case contentBlockingCompilationTaskPerformance(iterationCount: Int, timeBucketAggregation: CompileTimeBucketAggregation)
         case ampBlockingRulesCompilationFailed
-        case ampKeywordDetectionPerformance
 
         case webKitDidTerminate
         case webKitTerminationDidReloadCurrentTab
@@ -1145,10 +1157,6 @@ extension Pixel {
         case subscriptionInvalidRefreshTokenDetected
         case subscriptionInvalidRefreshTokenSignedOut
         case subscriptionInvalidRefreshTokenRecovered
-        case subscriptionAuthV2MigrationFailed
-        case subscriptionAuthV2MigrationFailed2
-        case subscriptionAuthV2MigrationSucceeded
-        case subscriptionAuthV2GetTokensError
         case subscriptionAuthV2GetTokensError2
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
@@ -1238,6 +1246,7 @@ extension Pixel {
         case settingsMoreSearchSettings
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
+        case settingsWhatsNewOpen
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
         case settingsOpenAssistSettings
@@ -1250,6 +1259,12 @@ extension Pixel {
         case subscriptionOfferYearlyPriceClick
         case subscriptionAddEmailSuccess
         case subscriptionWelcomeFAQClick
+        
+        // Tier Options
+        case subscriptionTierOptionsRequested
+        case subscriptionTierOptionsSuccess
+        case subscriptionTierOptionsFailure
+        case subscriptionTierOptionsUnexpectedProTier
 
         // MARK: Apple Ad Attribution
         case appleAdAttribution
@@ -1346,9 +1361,6 @@ extension Pixel {
         case appDidFinishLaunchingTime(time: BucketAggregation)
         case appDidShowUITime(time: BucketAggregation)
 
-        // MARK: Scene lifecycle
-        case sceneDidDisconnectAndAttemptedToReconnect
-
         // MARK: AI Chat
         case aiChatNoRemoteSettingsFound(settings: String)
         case openAIChatFromAddressBar
@@ -1372,6 +1384,8 @@ extension Pixel {
         case aiChatSettingsDisplayed
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
+        case aiChatSettingsFullModeEnabled
+        case aiChatSettingsFullModeDisabled
 
         case aiChatOpen
         case aiChatMetricStartNewConversation
@@ -1393,7 +1407,14 @@ extension Pixel {
         
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
-        
+
+        // MARK: AI Chat Sync
+
+        case aiChatSyncScopedSyncTokenError
+        case aiChatSyncEncryptionError
+        case aiChatSyncDecryptionError
+        case aiChatSyncHistoryEnabledError
+
         // MARK: New Address Bar Picker
         case aiChatNewAddressBarPickerDisplayed
         case aiChatNewAddressBarPickerConfirmed
@@ -1496,7 +1517,14 @@ extension Pixel {
         // MARK: - Push Notifications
         case inactiveUserProvisionalPushNotificationTapped
         case userNotificationAuthorizationStatusDaily
-        
+
+        // MARK: - Data Broker Protection Notifications
+        case dbpNotificationOpenedFirstScanComplete
+        case dbpNotificationOpenedFirstFreemiumScanComplete
+        case dbpNotificationOpenedFirstRemoval
+        case dbpNotificationOpenedAllRecordsRemoved
+        case dbpNotificationOpened1WeekCheckIn
+
         // MARK: - App Intent
         case appIntentPerformed
 
@@ -1511,6 +1539,23 @@ extension Pixel {
         // MARK: - Dax Easter Egg
         case daxEasterEggLogoDisplayed
         case daxEasterEggLogoTapped
+
+        // MARK: - Product surface telemetery
+        case productTelemeterySurfaceUsageMenu
+        case productTelemeterySurfaceUsageDAU
+        case productTelemeterySurfaceUsageIPad
+        case productTelemeterySurfaceUsageLandscapeMode
+        case productTelemeterySurfaceUsageKeyboardActive
+        case productTelemeterySurfaceUsageAutocomplete
+        case productTelemeterySurfaceUsageSERP
+        case productTelemeterySurfaceUsageWebsite
+        case productTelemeterySurfaceUsageDuckAI
+        case productTelemeterySurfaceUsageTabManager
+        case productTelemeterySurfaceUsageDataClearing
+        case productTelemeterySurfaceUsageNewTabPage
+        case productTelemeterySurfaceUsageSettings
+        case productTelemeterySurfaceUsageBookmarksPage
+        case productTelemeterySurfaceUsagePasswordsPage
     }
 
 }
@@ -1546,6 +1591,10 @@ extension Pixel.Event {
         case .forgetAllPressedSettings: return "m_forget-all-pressed_settings"
         case .forgetAllExecuted: return "mf"
         case .forgetAllDataCleared: return "mf_dc"
+        
+        case .forgetAllPressedBrowsingDaily: return "m_forget-all-pressed_browsing_daily"
+        case .forgetAllPressedTabSwitcherDaily: return "m_forget-all-pressed_tab-switcher_daily"
+        case .forgetAllExecutedDaily: return "m_forget-all-executed_daily"
             
         case .privacyDashboardOpened: return "mp"
         case .privacyDashboardFirstTimeOpenedUnique: return "m_privacy_dashboard_first_time_used_unique"
@@ -1602,14 +1651,20 @@ extension Pixel.Event {
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
-            
+        case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
+
         case .experimentalBrowsingMenuEnabled: return "m_experimental-browsing-menu_enabled"
         case .experimentalBrowsingMenuDisabled: return "m_experimental-browsing-menu_disabled"
         case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"
         case .experimentalBrowsingMenuDisplayed: return "m_experimental-browsing-menu_displayed"
         case .experimentalBrowsingMenuDisplayedNTP: return "m_experimental-browsing-menu_displayed_ntp"
+        case .experimentalBrowsingMenuDisplayedAIChat: return "m_experimental-browsing-menu_displayed_aichat"
+        case .experimentalBrowsingMenuDisplayedError: return "m_experimental-browsing-menu_displayed_error"
+        case .experimentalBrowsingMenuDismissed: return "m_experimental-browsing-menu_dismissed"
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
+        case .browsingMenuOpenedError: return "m_nav_menu_error"
+        case .browsingMenuDismissed: return "m_menu_dismissed"
         case .browsingMenuNewTab: return "mb_tb"
         case .browsingMenuAddToBookmarks: return "mb_abk"
         case .browsingMenuEditBookmark: return "mb_ebk"
@@ -1628,7 +1683,9 @@ extension Pixel.Event {
         case .browsingMenuFireproof: return "mb_f"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
         case .browsingMenuRefreshPage: return "m_menu_refresh_page"
-        case .browsingMenuVPN: return "m_nav_vpn_menu_item_pressed"
+        case .browsingMenuNewDuckAddress: return "m_menu_new_duck_address"
+        case .browsingMenuVPN: return "m_menu_vpn"
+        case .browsingMenuAIChat: return "m_menu_aichat"
 
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"
@@ -1967,6 +2024,7 @@ extension Pixel.Event {
 
         case .secureVaultInitFailedError: return "m_secure-vault_error_init-failed"
         case .secureVaultFailedToOpenDatabaseError: return "m_secure-vault_error_failed-to-open-database"
+        case .sharedSecureVaultInitFailed: return "m_debug_shared_secure_vault_init_failed"
 
         case .secureVaultIsEnabledCheckedWhenEnabledAndDataProtected: return "m_secure-vault_is-enabled-checked_when-enabled-and-data-protected"
 
@@ -2205,7 +2263,6 @@ extension Pixel.Event {
         case .contentBlockingCompilationTaskPerformance(let iterationCount, let timeBucketAggregation):
             return "m_content_blocking_compilation_loops_\(iterationCount)_time_\(timeBucketAggregation)"
         case .ampBlockingRulesCompilationFailed: return "m_debug_amp_rules_compilation_failed"
-        case .ampKeywordDetectionPerformance: return "m_debug_amp-keyword-detection-performance"
 
         case .webKitDidTerminate: return "m_d_wkt"
         case .webKitDidTerminateDuringWarmup: return "m_d_webkit-terminated-during-warmup"
@@ -2548,10 +2605,6 @@ extension Pixel.Event {
         case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .subscriptionAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
-        case .subscriptionAuthV2MigrationFailed2: return "m_privacy-pro_auth_v2_migration_failure2"
-        case .subscriptionAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
-        case .subscriptionAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
         case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
 
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
@@ -2608,6 +2661,12 @@ extension Pixel.Event {
         case .subscriptionOfferYearlyPriceClick: return "m_privacy-pro_offer_yearly-price_click"
         case .subscriptionAddEmailSuccess: return "m_privacy-pro_app_add-email_success_u"
         case .subscriptionWelcomeFAQClick: return "m_privacy-pro_welcome_faq_click_u"
+        
+        // Tier Options
+        case .subscriptionTierOptionsRequested: return "m_subscription_tier-options_requested"
+        case .subscriptionTierOptionsSuccess: return "m_subscription_tier-options_success"
+        case .subscriptionTierOptionsFailure: return "m_subscription_tier-options_failure"
+        case .subscriptionTierOptionsUnexpectedProTier: return "m_subscription_tier-options_unexpected-pro-tier"
         case .networkProtectionFailureRecoveryStarted: return "m_netp_ev_failure_recovery_started"
         case .networkProtectionFailureRecoveryFailed: return "m_netp_ev_failure_recovery_failed"
         case .networkProtectionFailureRecoveryCompletedHealthy: return "m_netp_ev_failure_recovery_completed_server_healthy"
@@ -2734,9 +2793,6 @@ extension Pixel.Event {
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"
         case .appDidShowUITime(let time): return "m_debug_app-did-show-ui-time-2-\(time)"
 
-        // MARK: Scene lifecycle
-        case .sceneDidDisconnectAndAttemptedToReconnect: return "m_debug_scene-did-disconnect-and-attempted-to-reconnect"
-
         // MARK: AI Chat
         case .aiChatNoRemoteSettingsFound(let settings):
             return "m_aichat_no_remote_settings_found-\(settings.lowercased())"
@@ -2762,6 +2818,8 @@ extension Pixel.Event {
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
         case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
         case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
+        case .aiChatSettingsFullModeEnabled: return "m_aichat_settings_full_mode_enabled"
+        case .aiChatSettingsFullModeDisabled: return "m_aichat_settings_full_mode_disabled"
 
         case .aiChatOpen: return "m_aichat_open"
         case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"
@@ -2815,8 +2873,15 @@ extension Pixel.Event {
         case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
         
         // MARK: AI Chat History Deletion
-        case .aiChatHistoryDeleteSuccessful: return "m_ios_aichat_history_delete_successful"
-        case .aiChatHistoryDeleteFailed: return "m_ios_aichat_history_delete_failed"
+        case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
+        case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
+
+        // MARK: AI Chat Sync
+
+        case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"
+        case .aiChatSyncEncryptionError: return "m_aichat_sync_internal_encryption-error"
+        case .aiChatSyncDecryptionError: return "m_aichat_sync_internal_decryption-error"
+        case .aiChatSyncHistoryEnabledError: return "m_aichat_sync_internal_history_enabled-error"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -2932,7 +2997,14 @@ extension Pixel.Event {
         // MARK: Push Notification
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
-            
+
+        // MARK: Data Broker Protection Notifications
+        case .dbpNotificationOpenedFirstScanComplete: return "m_ios_dbp_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_ios_dbp_freemium_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstRemoval: return "m_ios_dbp_notification_opened_first_removal"
+        case .dbpNotificationOpenedAllRecordsRemoved: return "m_ios_dbp_notification_opened_all_records_removed"
+        case .dbpNotificationOpened1WeekCheckIn: return "m_ios_dbp_notification_opened_1_week_check_in"
+
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"
 
@@ -2953,6 +3025,23 @@ extension Pixel.Event {
         // MARK: - Dax Easter Egg
         case .daxEasterEggLogoDisplayed: return "m_dax_easter_egg_logo_displayed"
         case .daxEasterEggLogoTapped: return "m_dax_easter_egg_logo_tapped"
+
+        // MARK: - Product surface telemetery
+        case .productTelemeterySurfaceUsageMenu: return "m_product_telemetry_surface_usage_menu"
+        case .productTelemeterySurfaceUsageDAU: return "m_product_telemetry_surface_usage_dau"
+        case .productTelemeterySurfaceUsageIPad: return "m_product_telemetry_surface_usage_ipad"
+        case .productTelemeterySurfaceUsageLandscapeMode: return "m_product_telemetry_surface_usage_landscape"
+        case .productTelemeterySurfaceUsageKeyboardActive: return "m_product_telemetry_surface_usage_keyboard_active"
+        case .productTelemeterySurfaceUsageAutocomplete: return "m_product_telemetry_surface_usage_autocomplete"
+        case .productTelemeterySurfaceUsageSERP: return "m_product_telemetry_surface_usage_serp"
+        case .productTelemeterySurfaceUsageWebsite: return "m_product_telemetry_surface_usage_website"
+        case .productTelemeterySurfaceUsageDuckAI: return "m_product_telemetry_surface_usage_duck_ai"
+        case .productTelemeterySurfaceUsageTabManager: return "m_product_telemetry_surface_usage_tab_manager"
+        case .productTelemeterySurfaceUsageDataClearing: return "m_product_telemetry_surface_usage_data_clearing"
+        case .productTelemeterySurfaceUsageNewTabPage: return "m_product_telemetry_surface_usage_new_tab_page"
+        case .productTelemeterySurfaceUsageSettings: return "m_product_telemetry_surface_usage_settings"
+        case .productTelemeterySurfaceUsageBookmarksPage: return "m_product_telemetry_surface_usage_bookmarks_page"
+        case .productTelemeterySurfaceUsagePasswordsPage: return "m_product_telemetry_surface_usage_passwords_page"
         }
     }
 }

@@ -23,6 +23,7 @@ import Combine
 import BrowserServicesKit
 import Bookmarks
 import Persistence
+import PrivacyConfig
 import History
 import Suggestions
 import Core
@@ -39,6 +40,7 @@ struct SuggestionTrayDependencies {
     let aiChatSettings: AIChatSettingsProvider
     let featureDiscovery: FeatureDiscovery
     let newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
 }
 
 /// Protocol for handling suggestion tray events
@@ -116,6 +118,7 @@ final class SuggestionTrayManager: NSObject {
                 aiChatSettings: self.dependencies.aiChatSettings,
                 featureDiscovery: self.dependencies.featureDiscovery,
                 newTabPageDependencies: self.dependencies.newTabPageDependencies,
+                productSurfaceTelemetry: self.dependencies.productSurfaceTelemetry,
                 hideBorder: true
             )
         }) else {

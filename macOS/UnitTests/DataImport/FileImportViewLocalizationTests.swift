@@ -39,7 +39,7 @@ class FileImportViewLocalizationTests: XCTestCase {
             // swizzle "locale".lproj bundle
             setLocale(locale)
 
-            for source in DataImport.Source.allCases {
+            for source in DataImport.Source.allCasesForLegacyImports {
                 for dataType in source.supportedDataTypes {
                     let e = expectation(description: "Button item should not be missing")
                     // build instructions

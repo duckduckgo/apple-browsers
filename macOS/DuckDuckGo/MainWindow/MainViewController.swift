@@ -17,7 +17,6 @@
 //
 
 import BrokenSitePrompt
-import BrowserServicesKit
 import Cocoa
 import Carbon.HIToolbox
 import Combine
@@ -28,6 +27,7 @@ import NetworkQualityMonitor
 import os.log
 import PerformanceTest
 import PixelKit
+import PrivacyConfig
 import SwiftUI
 import VPN
 
@@ -46,7 +46,6 @@ final class MainViewController: NSViewController {
     let bookmarksBarViewController: BookmarksBarViewController
     let aiChatOmnibarContainerViewController: AIChatOmnibarContainerViewController
     let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
-    let sharedTextState: AddressBarSharedTextState
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
@@ -132,7 +131,8 @@ final class MainViewController: NSViewController {
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
          vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
          sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator,
-         winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter
+         winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter,
+         memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -156,7 +156,8 @@ final class MainViewController: NSViewController {
             fireproofDomains: fireproofDomains,
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
             featureFlagger: featureFlagger,
-            tabDragAndDropManager: tabDragAndDropManager
+            tabDragAndDropManager: tabDragAndDropManager,
+            autoconsentStatsPopoverCoordinator: NSApp.delegateTyped.autoconsentStatsPopoverCoordinator
         )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
@@ -221,7 +222,6 @@ final class MainViewController: NSViewController {
             sidebarProvider: aiChatSidebarProvider,
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatTabOpener: aiChatTabOpener,
-            featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring
         )
@@ -238,10 +238,6 @@ final class MainViewController: NSViewController {
             aiChatTabOpener: aiChatTabOpener,
             pixelFiring: pixelFiring
         )
-
-        // Create the shared text state for address bar mode switching
-        let sharedTextState = AddressBarSharedTextState()
-        self.sharedTextState = sharedTextState
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          downloadListCoordinator: downloadListCoordinator,
@@ -266,7 +262,7 @@ final class MainViewController: NSViewController {
                                                                          downloadsPreferences: downloadsPreferences,
                                                                          tabsPreferences: tabsPreferences,
                                                                          accessibilityPreferences: accessibilityPreferences,
-                                                                         sharedTextState: sharedTextState)
+                                                                         memoryUsageMonitor: memoryUsageMonitor)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -279,7 +275,7 @@ final class MainViewController: NSViewController {
         // Create the shared AI Chat omnibar controller
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
-            sharedTextState: sharedTextState
+            tabCollectionViewModel: tabCollectionViewModel
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
@@ -288,7 +284,6 @@ final class MainViewController: NSViewController {
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
-            sharedTextState: sharedTextState,
             themeManager: themeManager
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
@@ -498,7 +493,7 @@ final class MainViewController: NSViewController {
             aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
         } else {
             aiChatOmnibarContainerViewController.cleanup()
-            aiChatOmnibarTextContainerViewController.cleanup()
+            aiChatOmnibarTextContainerViewController.stopEventMonitoring()
         }
     }
 
@@ -916,6 +911,13 @@ final class MainViewController: NSViewController {
         }
         let tabContent = tabContent ?? selectedTabViewModel.tab.content
 
+        /// Close AI Chat omnibar if visible before adjusting first responder
+        /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1212252449969913?focus=true
+        if mainView.isAIChatOmnibarContainerShown && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+            aiChatOmnibarContainerViewController.cleanup()
+        }
+
         if case .newtab = tabContent {
             navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
         } else {
@@ -1002,13 +1004,14 @@ extension MainViewController {
             return false
         }
 
-        if flags.contains(.shift) || flags.contains(.option),
+        if flags.contains(.option) || flags.contains(.shift),
            featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
            let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
             let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
             buttonsViewController.toggleSearchMode()
             if isSwitchingToAIChatMode {
-                self.aiChatOmnibarTextContainerViewController.insertNewline()
+                let currentText = navigationBarViewController.addressBarViewController?.addressBarTextField.stringValueWithoutSuffix ?? ""
+                self.aiChatOmnibarTextContainerViewController.insertNewlineIfHasContent(addressBarText: currentText)
             }
             return true
         } else if flags.contains(.control),

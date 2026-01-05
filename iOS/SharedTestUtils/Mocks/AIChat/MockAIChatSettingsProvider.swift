@@ -31,6 +31,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var isAIChatTabSwitcherUserSettingsEnabled: Bool
     public var sessionTimerInMinutes: Int
     public var isAIChatSearchInputUserSettingsEnabled: Bool
+    public var isAIChatFullModeEnabled: Bool
+    public var isAutomaticContextAttachmentEnabled: Bool
 
     public init(aiChatURL: URL = URL(string: "https://example.com")!,
                 isAIChatEnabled: Bool = false,
@@ -41,6 +43,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
                 isAIChatVoiceSearchUserSettingsEnabled: Bool = false,
                 isAIChatTabSwitcherUserSettingsEnabled: Bool = false,
                 isAIChatSearchInputUserSettingsEnabled: Bool = false,
+                isAIChatFullModeEnabled: Bool = false,
+                isAutomaticContextAttachmentEnabled: Bool = false,
                 sessionTimerInMinutes: Int = 60) {
 
         self.aiChatURL = aiChatURL
@@ -51,6 +55,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         self.isAIChatVoiceSearchUserSettingsEnabled = isAIChatVoiceSearchUserSettingsEnabled
         self.isAIChatTabSwitcherUserSettingsEnabled = isAIChatTabSwitcherUserSettingsEnabled
         self.isAIChatSearchInputUserSettingsEnabled = isAIChatSearchInputUserSettingsEnabled
+        self.isAIChatFullModeEnabled = isAIChatFullModeEnabled
+        self.isAutomaticContextAttachmentEnabled = isAutomaticContextAttachmentEnabled
         self.sessionTimerInMinutes = sessionTimerInMinutes
     }
     
@@ -76,5 +82,13 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
 
     public func enableAIChatSearchInputUserSettings(enable: Bool) {
         isAIChatSearchInputUserSettingsEnabled = enable
+    }
+
+    public func enableAIChatFullModeSetting(enable: Bool) {
+        isAIChatFullModeEnabled = enable
+    }
+    
+    public func enableAutomaticContextAttachment(enable: Bool) {
+        isAutomaticContextAttachmentEnabled = enable
     }
 }

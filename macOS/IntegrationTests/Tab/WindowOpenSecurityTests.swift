@@ -20,6 +20,8 @@ import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import WebKit
 import XCTest
@@ -71,7 +73,7 @@ final class WindowOpenSecurityTests: XCTestCase {
         contentBlockingMock = ContentBlockingMock()
         privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
 
@@ -883,6 +885,7 @@ final class WindowOpenSecurityTests: XCTestCase {
 // MARK: - TabDelegate
 @available(macOS 12.0, *)
 extension WindowOpenSecurityTests: TabDelegate {
+    var isInPopUpWindow: Bool { false }
 
     func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool) {}
     func tabDidStartNavigation(_ tab: Tab) {}

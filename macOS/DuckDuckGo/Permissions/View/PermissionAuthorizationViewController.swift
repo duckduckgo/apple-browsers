@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import PixelKit
 import SwiftUI
 
 extension PermissionType {
@@ -30,6 +31,8 @@ extension PermissionType {
             return UserText.permissionGeolocation
         case .popups:
             return UserText.permissionPopups
+        case .notification:
+            return UserText.permissionNotification
         case .externalScheme(scheme: let scheme):
             guard let url = URL(string: scheme + URL.NavigationalScheme.separator),
                   let app = NSWorkspace.shared.application(toOpen: url)
@@ -71,6 +74,10 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     private var swiftUIHostingView: NSHostingView<PermissionAuthorizationSwiftUIView>?
     private let newPermissionView: Bool
+
+    /// Indicates whether the authorization flow is still in progress (user hasn't clicked Allow/Deny yet).
+    /// This prevents the popover from being closed prematurely during two-step flows (e.g., geolocation).
+    private(set) var isAuthorizationInProgress: Bool = false
 
     weak var query: PermissionAuthorizationQuery? {
         didSet {
@@ -142,6 +149,9 @@ final class PermissionAuthorizationViewController: NSViewController {
             descriptionLabel.stringValue = String(format: UserText.popupWindowsPermissionAuthorizationFormat,
                                                   query.domain,
                                                   query.permissions.localizedDescription.lowercased())
+        case .notification:
+            descriptionLabel.stringValue = String(format: UserText.notificationPermissionAuthorizationFormat,
+                                                  query.domain)
         case .externalScheme where query.domain.isEmpty:
             descriptionLabel.stringValue = String(format: UserText.externalSchemePermissionAuthorizationNoDomainFormat,
                                                   query.permissions.localizedDescription)
@@ -199,21 +209,28 @@ final class PermissionAuthorizationViewController: NSViewController {
         swiftUIHostingView = nil
 
         let permissionType = PermissionAuthorizationType(from: query.permissions)
+        let showsTwoStepUI = permissionType.requiresSystemPermission
+            && systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType)
+
         let swiftUIView = PermissionAuthorizationSwiftUIView(
             domain: query.domain,
             permissionType: permissionType,
+            showsTwoStepUI: showsTwoStepUI,
+            isSystemPermissionDisabled: query.isSystemPermissionDisabled,
             onDeny: { [weak self] in
                 self?.handleDeny()
-            },
-            onAlwaysDeny: { [weak self] in
-                self?.handleAlwaysDeny()
             },
             onAllow: { [weak self] in
                 self?.handleAllow()
             },
-            onAlwaysAllow: { [weak self] in
-                self?.handleAlwaysAllow()
+            onDismiss: { [weak self] in
+                self?.handleDismiss()
             },
+            onLearnMore: permissionType.learnMoreURL != nil ? {
+                if let url = permissionType.learnMoreURL {
+                    Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+                }
+            } : nil,
             systemPermissionManager: systemPermissionManager
         )
 
@@ -229,25 +246,34 @@ final class PermissionAuthorizationViewController: NSViewController {
         ])
 
         swiftUIHostingView = hostingView
+        isAuthorizationInProgress = true
     }
 
     private func handleDeny() {
+        isAuthorizationInProgress = false
+        fireAuthorizationPixel(decision: .deny)
         dismiss()
         query?.handleDecision(grant: false, remember: nil)
     }
 
-    private func handleAlwaysDeny() {
-        dismiss()
-        query?.handleDecision(grant: false, remember: true)
-    }
-
     private func handleAllow() {
+        isAuthorizationInProgress = false
+        fireAuthorizationPixel(decision: .allow)
         dismiss()
         query?.handleDecision(grant: true, remember: nil)
     }
 
-    private func handleAlwaysAllow() {
+    private func handleDismiss() {
+        isAuthorizationInProgress = false
+        query?.cancel()
         dismiss()
-        query?.handleDecision(grant: true, remember: true)
+    }
+
+    private func fireAuthorizationPixel(decision: PermissionPixel.AuthorizationDecision) {
+        guard newPermissionView, let query = query else { return }
+        // Fire pixel for each permission type in the query
+        for permissionType in query.permissions {
+            PixelKit.fire(PermissionPixel.authorizationDecision(permissionType: permissionType, decision: decision))
+        }
     }
 }

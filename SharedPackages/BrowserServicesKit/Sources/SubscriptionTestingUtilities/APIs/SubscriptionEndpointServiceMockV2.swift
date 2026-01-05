@@ -44,6 +44,14 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
         }
     }
 
+    public var getTierProductsResult: Result<GetTierProductsResponse, APIRequestV2Error>?
+    public func getTierProducts(region: String?, platform: String?) async throws -> Subscription.GetTierProductsResponse {
+        switch getTierProductsResult! {
+        case .success(let result): return result
+        case .failure(let error): throw error
+        }
+    }
+
     public var getSubscriptionCalled: Bool = false
     public var onGetSubscription: ((String?, SubscriptionCachePolicy) -> Void)?
     public var getSubscriptionResult: Result<DuckDuckGoSubscription, SubscriptionEndpointServiceError>?
@@ -75,6 +83,14 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
     public var getSubscriptionFeaturesResult: Result<Subscription.GetSubscriptionFeaturesResponseV2, Error>?
     public func getSubscriptionFeatures(for subscriptionID: String) async throws -> Subscription.GetSubscriptionFeaturesResponseV2 {
         switch getSubscriptionFeaturesResult! {
+        case .success(let result): return result
+        case .failure(let error): throw error
+        }
+    }
+
+    public var getSubscriptionTierFeaturesResult: Result<Subscription.GetSubscriptionTierFeaturesResponse, Error>?
+    public func getSubscriptionTierFeatures(for subscriptionIDs: [String]) async throws -> Subscription.GetSubscriptionTierFeaturesResponse {
+        switch getSubscriptionTierFeaturesResult! {
         case .success(let result): return result
         case .failure(let error): throw error
         }

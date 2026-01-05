@@ -86,6 +86,7 @@ public enum RemoteMessageResponse {
         case modal
         // Used for 'What's New' (macOS)
         case dedicatedTab = "dedicated_tab"
+        case tabBar = "tab_bar"
     }
 
     struct JsonMessageAction: Decodable {
@@ -100,6 +101,12 @@ public enum RemoteMessageResponse {
         let descriptionText: String?
         let primaryActionText: String?
         let secondaryActionText: String?
+        let listItems: [String: JsonListItemTranslation]?
+    }
+
+    struct JsonListItemTranslation: Decodable {
+        let titleText: String?
+        let descriptionText: String?
     }
 
     struct JsonTargetPercentile: Decodable {
@@ -143,8 +150,12 @@ public enum RemoteMessageResponse {
         case visualDesignUpdate = "VisualDesignUpdate"
         case imageAI = "ImageAI"
         case radar = "Radar"
+        case radarCheckGreen = "RadarCheckGreen"
+        case radarCheckPurple = "RadarCheckPurple"
         case keyImport = "KeyImport"
         case mobileCustomization = "MobileCustomization"
+        case pir = "PIR"
+        case subscription = "Subscription"
     }
 
     public enum StatusError: Error {

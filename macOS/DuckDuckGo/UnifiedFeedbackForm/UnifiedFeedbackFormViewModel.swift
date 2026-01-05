@@ -21,7 +21,7 @@ import Combine
 import SwiftUI
 import PixelKit
 import Subscription
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
     func feedbackViewModelDismissedView(_ viewModel: UnifiedFeedbackFormViewModel)
@@ -129,6 +129,14 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
 
     let source: UnifiedFeedbackSource
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.selectFeature, .subscription]
+
+    var availableSubscriptionSubcategories: [SubscriptionFeedbackSubcategory] {
+        var subcategories: [SubscriptionFeedbackSubcategory] = SubscriptionFeedbackSubcategory.allCases
+        if !featureFlagger.isFeatureOn(.allowProTierPurchase) {
+            subcategories = subcategories.filter { $0 != .unableToAccessFeatures }
+        }
+        return subcategories
+    }
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          vpnMetadataCollector: any UnifiedMetadataCollector,

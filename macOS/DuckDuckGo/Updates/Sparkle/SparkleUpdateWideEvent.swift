@@ -18,10 +18,10 @@
 
 #if SPARKLE
 
-import BrowserServicesKit
 import Common
 import Foundation
 import PixelKit
+import PrivacyConfig
 import os.log
 
 /// Orchestrates Wide Event tracking for Sparkle update cycles.

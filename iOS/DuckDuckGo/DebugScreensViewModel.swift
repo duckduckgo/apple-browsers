@@ -20,7 +20,7 @@
 import Foundation
 import SwiftUI
 import UIKit
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import Core
 import Configuration
@@ -241,7 +241,7 @@ class DebugScreensViewModel: ObservableObject {
     }
 
     func fetchRemoteMessagingConfiguration() {
-        (UIApplication.shared.delegate as? AppDelegate)?.debugRefreshRemoteMessages()
+        dependencies.remoteMessagingDebugHandler.refreshRemoteMessages()
     }
 
     func fetchConfiguration(for configuration: Configuration, completion: @escaping (Bool) -> Void = { _ in }) {

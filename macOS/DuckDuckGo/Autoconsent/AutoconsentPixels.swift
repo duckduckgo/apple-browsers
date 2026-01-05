@@ -27,6 +27,7 @@ enum AutoconsentPixel: PixelKitEvent {
     case popupFound
     case done
     case doneCosmetic
+    case doneHeuristic
     case animationShown
     case animationShownCosmetic
     case disabledForSite
@@ -35,6 +36,12 @@ enum AutoconsentPixel: PixelKitEvent {
     case detectedOnlyRules
     case selfTestOk
     case selfTestFail
+    case errorReloadLoop
+    case popoverShown
+    case popoverClosed
+    case popoverClicked
+    case popoverNewTabOpened
+    case popoverAutoDismissed
 
     case summary(events: [String: Int])
     case usageStats(stats: [String: String])
@@ -47,6 +54,7 @@ enum AutoconsentPixel: PixelKitEvent {
         .popupFound,
         .done,
         .doneCosmetic,
+        .doneHeuristic,
         .animationShown,
         .animationShownCosmetic,
         .disabledForSite,
@@ -54,7 +62,13 @@ enum AutoconsentPixel: PixelKitEvent {
         .detectedByBoth,
         .detectedOnlyRules,
         .selfTestOk,
-        .selfTestFail
+        .selfTestFail,
+        .errorReloadLoop,
+        .popoverShown,
+        .popoverClosed,
+        .popoverClicked,
+        .popoverNewTabOpened,
+        .popoverAutoDismissed
     ]
 
     var name: String {
@@ -63,9 +77,11 @@ enum AutoconsentPixel: PixelKitEvent {
         case .missedPopup: "autoconsent_missed-popup"
         case .errorMultiplePopups: "autoconsent_error_multiple-popups"
         case .errorOptoutFailed: "autoconsent_error_optout"
+        case .errorReloadLoop: "autoconsent_error_reload-loop"
         case .popupFound: "autoconsent_popup-found"
         case .done: "autoconsent_done"
         case .doneCosmetic: "autoconsent_done_cosmetic"
+        case .doneHeuristic: "autoconsent_done_heuristic"
         case .animationShown: "autoconsent_animation-shown"
         case .animationShownCosmetic: "autoconsent_animation-shown_cosmetic"
         case .disabledForSite: "autoconsent_disabled-for-site"
@@ -74,6 +90,11 @@ enum AutoconsentPixel: PixelKitEvent {
         case .detectedOnlyRules: "autoconsent_detected-only-rules"
         case .selfTestOk: "autoconsent_self-test-ok"
         case .selfTestFail: "autoconsent_self-test-fail"
+        case .popoverShown: "autoconsent_popover-shown"
+        case .popoverClosed: "autoconsent_popover-closed"
+        case .popoverClicked: "autoconsent_popover-clicked"
+        case .popoverNewTabOpened: "autoconsent_popover-new-tab-opened"
+        case .popoverAutoDismissed: "autoconsent_popover-autodismissed"
         case .summary: "autoconsent_summary"
         case .usageStats: "autoconsent_usage-stats"
         }
@@ -106,9 +127,11 @@ enum AutoconsentPixel: PixelKitEvent {
                 .missedPopup,
                 .errorMultiplePopups,
                 .errorOptoutFailed,
+                .errorReloadLoop,
                 .popupFound,
                 .done,
                 .doneCosmetic,
+                .doneHeuristic,
                 .animationShown,
                 .animationShownCosmetic,
                 .disabledForSite,
@@ -117,6 +140,11 @@ enum AutoconsentPixel: PixelKitEvent {
                 .detectedOnlyRules,
                 .selfTestOk,
                 .selfTestFail,
+                .popoverShown,
+                .popoverClosed,
+                .popoverClicked,
+                .popoverNewTabOpened,
+                .popoverAutoDismissed,
                 .summary,
                 .usageStats:
             return [.pixelSource]

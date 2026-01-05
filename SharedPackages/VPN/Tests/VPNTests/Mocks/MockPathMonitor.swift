@@ -22,11 +22,13 @@ import Network
 
 final class MockPathMonitor: PathMonitoring {
     var pathUpdateHandler: ((Network.NWPath.Status) -> Void)?
+    private var queue: DispatchQueue?
 
     private(set) var startCallCount = 0
     private(set) var cancelCallCount = 0
 
     func start(queue: DispatchQueue) {
+        self.queue = queue
         startCallCount += 1
     }
 
@@ -35,6 +37,12 @@ final class MockPathMonitor: PathMonitoring {
     }
 
     func emitStatus(_ status: Network.NWPath.Status) {
-        pathUpdateHandler?(status)
+        guard let queue else {
+            assertionFailure("Expected the monitor to have started before emitting statuses")
+            return
+        }
+        queue.sync {
+            self.pathUpdateHandler?(status)
+        }
     }
 }

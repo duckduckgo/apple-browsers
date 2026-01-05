@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Combine
 import AppKit
-import BrowserServicesKit
+import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -55,8 +56,8 @@ final class ThemeManagerTests: XCTestCase {
         XCTAssertEqual(manager.theme.name, .orange)
     }
 
-    func testInternalUsersGetTheirDefaultThemeSetAsFigma() async {
-        let persistor = AppearancePreferencesPersistorMock(themeName: ThemeName.default.rawValue)
+    func testInternalUsersWithFigmaThemeSetAreRemappedToDefaultTheme() {
+        let persistor = AppearancePreferencesPersistorMock(themeName: "figma")
         let featureFlagger = MockFeatureFlagger()
         let preferences = AppearancePreferences(
             persistor: persistor,
@@ -64,13 +65,10 @@ final class ThemeManagerTests: XCTestCase {
             featureFlagger: featureFlagger
         )
 
-        let internalUserDecider = MockInternalUserDecider(isInternalUser: false)
+        let internalUserDecider = MockInternalUserDecider(isInternalUser: true)
         let manager = ThemeManager(appearancePreferences: preferences, internalUserDecider: internalUserDecider, featureFlagger: featureFlagger)
 
-        internalUserDecider.isInternalUserSubject.send(true)
-
-        let updatedTheme = await manager.$theme.nextValue()
-        XCTAssertEqual(updatedTheme.name, .figma)
+        XCTAssertEqual(manager.theme.name, .default)
     }
 
     func testLoosingInternalUserStateSetsTheLegacyTheme() async {

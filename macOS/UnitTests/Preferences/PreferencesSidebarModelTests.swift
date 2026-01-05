@@ -20,11 +20,13 @@ import XCTest
 import Combine
 import Common
 import PixelKitTestingUtilities
-@testable import Subscription
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SubscriptionUI
 import SubscriptionTestingUtilities
 import PreferencesUI_macOS
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Subscription
 
 @MainActor
 final class PreferencesSidebarModelTests: XCTestCase {
@@ -63,7 +65,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             expiresOrRenewsAt: expiresAt,
             platform: .stripe,
             status: .autoRenewable,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil
         )
         mockSubscriptionManager.returnSubscription = .success(subscription)
         mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat] // All enabled

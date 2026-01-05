@@ -83,7 +83,8 @@ final class TextZoomTests: XCTestCase {
         let item1 = coordinator.makeBrowsingMenuEntry(
             forLink: makeLink(url: URL(string: "https://other.org")!),
             inController: controller,
-            forWebView: webView)
+            forWebView: webView,
+            useSmallIcon: true)
 
         // Expecting the 'default' value
         if case .regular(let name, _, _, _, _, _) = item1 {
@@ -95,7 +96,8 @@ final class TextZoomTests: XCTestCase {
         let item2 = coordinator.makeBrowsingMenuEntry(
             forLink: makeLink(url: URL(string: "https://\(host)")!),
             inController: controller,
-            forWebView: webView)
+            forWebView: webView,
+            useSmallIcon: true)
 
         // Expecting the menu item to include the percent
         if case .regular(let name, _, _, _, _, _) = item2 {

@@ -22,8 +22,13 @@ import Navigation
 import SharedTestUtilities
 import WebKit
 import XCTest
+import HistoryView
 
 @testable import DuckDuckGo_Privacy_Browser
+
+private struct MockScriptProvider: HistoryUserScriptProvider {
+    var historyViewUserScript: HistoryViewUserScript
+}
 
 class HistoryTabExtensionTests: XCTestCase {
 
@@ -35,7 +40,21 @@ class HistoryTabExtensionTests: XCTestCase {
         let urlPublisher: AnyPublisher<URL?, Never> = Empty().eraseToAnyPublisher()
         let titlePublisher: AnyPublisher<String?, Never> = Empty().eraseToAnyPublisher()
         let popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never> = Empty().eraseToAnyPublisher()
-        let historyTabExtension = HistoryTabExtension(isCapturingHistory: false, historyCoordinating: historyCoordinatingMock, trackersPublisher: trackersPublisher, urlPublisher: urlPublisher, titlePublisher: titlePublisher, popupManagedPublisher: popupManagedPublisher)
+
+        let mockScriptProvider = MockScriptProvider(historyViewUserScript: HistoryViewUserScript())
+        let scriptsSubject = CurrentValueSubject<MockScriptProvider, Never>(mockScriptProvider)
+        let webViewSubject = PassthroughSubject<WKWebView, Never>()
+
+        let historyTabExtension = HistoryTabExtension(
+            isCapturingHistory: false,
+            historyCoordinating: historyCoordinatingMock,
+            trackersPublisher: trackersPublisher,
+            urlPublisher: urlPublisher,
+            titlePublisher: titlePublisher,
+            popupManagedPublisher: popupManagedPublisher,
+            scriptsPublisher: scriptsSubject.eraseToAnyPublisher(),
+            webViewPublisher: webViewSubject.eraseToAnyPublisher()
+        )
 
         let navigationIdentity = NavigationIdentity(nil)
         let responderChain = ResponderChain(responderRefs: [])

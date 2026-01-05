@@ -24,11 +24,14 @@ import Foundation
 import PixelKit
 import UserScript
 import OSLog
+import PrivacyConfig
+import DDGSync
 
 protocol AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)?)
 }
 
+// swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -41,6 +44,7 @@ protocol AIChatUserScriptHandling {
     func removeChat(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable?
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
@@ -58,6 +62,15 @@ protocol AIChatUserScriptHandling {
     func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable?
     func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable?
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
+
+    // Sync
+    func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
+    func getScopedSyncAuthToken(params: Any, message: UserScriptMessage) async -> Encodable?
+    func encryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable?
+    func decryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable?
+    func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable?
+    func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable?
+    func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -76,6 +89,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
     private let statisticsLoader: StatisticsLoader?
+    private let syncHandler: AIChatSyncHandling
+    private let featureFlagger: FeatureFlagger
     private let migrationStore = AIChatMigrationStore()
 
     init(
@@ -84,6 +99,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         windowControllersManager: WindowControllersManagerProtocol,
         pixelFiring: PixelFiring?,
         statisticsLoader: StatisticsLoader?,
+        syncHandler: AIChatSyncHandling,
+        featureFlagger: FeatureFlagger,
         notificationCenter: NotificationCenter = .default
     ) {
         self.storage = storage
@@ -91,7 +108,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
         self.statisticsLoader = statisticsLoader
+        self.syncHandler = syncHandler
         self.notificationCenter = notificationCenter
+        self.featureFlagger = featureFlagger
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
@@ -180,22 +199,18 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     @MainActor func openSummarizationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
-        guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params), let url = openLinkParams.url.url
-        else { return nil }
-
-        let isSidebar = message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
-
-        switch openLinkParams.target {
-        case .sameTab where isSidebar == false: // for same tab outside of sidebar we force opening new tab to keep the AI chat tab
-            windowControllersManager.show(url: url, source: .switchToOpenTab, newTab: true, selected: true)
-        default:
-            windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
-        }
-        pixelFiring?.fire(AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)
-        return nil
+        var modifiedParams = params as? [String: Any] ?? [:]
+        modifiedParams["name"] = "summarization"
+        return await openAIChatLink(params: modifiedParams, message: message)
     }
 
     @MainActor func openTranslationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        var modifiedParams = params as? [String: Any] ?? [:]
+        modifiedParams["name"] = "translation"
+        return await openAIChatLink(params: modifiedParams, message: message)
+    }
+
+    @MainActor func openAIChatLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params), let url = openLinkParams.url.url
         else { return nil }
 
@@ -207,7 +222,19 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         default:
             windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
         }
-        pixelFiring?.fire(AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)
+
+        // Fire appropriate pixel based on the name parameter
+        if let name = openLinkParams.name {
+            switch name {
+            case .summarization:
+                pixelFiring?.fire(AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)
+            case .translation:
+                pixelFiring?.fire(AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)
+            case .pageContext:
+                pixelFiring?.fire(AIChatPixel.aiChatPageContextSourceLinkClicked, frequency: .dailyAndStandard)
+            }
+        }
+
         return nil
     }
 
@@ -274,7 +301,129 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         return migrationStore.clear()
     }
+
+    func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable? {
+        do {
+            return AIChatPayloadResponse(payload: try syncHandler.getSyncStatus(featureAvailable: featureFlagger.isFeatureOn(.aiChatSync)))
+        } catch {
+            return AIChatErrorResponse(reason: "internal error")
+        }
+    }
+
+    @MainActor func getScopedSyncAuthToken(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard featureFlagger.isFeatureOn(.aiChatSync) else {
+            return AIChatErrorResponse(reason: "sync disabled")
+        }
+
+        do {
+            return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
+        } catch {
+            let reason: String
+            switch error {
+            case SyncError.accountNotFound:
+                reason = "sync off"
+            case SyncError.noToken:
+                reason = "token unavailable"
+            case SyncError.invalidDataInResponse:
+                reason = "invalid response"
+            case SyncError.unexpectedStatusCode:
+                reason = "unexpected status code"
+            case AIChatSyncHandler.Errors.emptyResponse:
+                reason = "empty response"
+            default:
+                reason = "internal error"
+            }
+            pixelFiring?.fire(AIChatPixel.aiChatSyncScopedSyncTokenError(reason: reason), frequency: .dailyAndStandard)
+            return AIChatErrorResponse(reason: reason)
+        }
+    }
+
+    func encryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard featureFlagger.isFeatureOn(.aiChatSync) else {
+            return AIChatErrorResponse(reason: "sync disabled")
+        }
+
+        guard syncHandler.isSyncTurnedOn() else {
+            return AIChatErrorResponse(reason: "sync off")
+        }
+
+        guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
+            pixelFiring?.fire(AIChatPixel.aiChatSyncEncryptionError(reason: "invalid parameters"), frequency: .dailyAndStandard)
+            return AIChatErrorResponse(reason: "invalid parameters")
+        }
+
+        do {
+            return AIChatPayloadResponse(payload: try syncHandler.encrypt(data))
+        } catch {
+            let reason: String
+            switch error {
+            case SyncError.failedToEncryptValue:
+                reason = "encryption failed"
+            default:
+                reason = "internal error"
+            }
+            pixelFiring?.fire(AIChatPixel.aiChatSyncEncryptionError(reason: reason), frequency: .dailyAndStandard)
+            return AIChatErrorResponse(reason: reason)
+        }
+    }
+
+    func decryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard featureFlagger.isFeatureOn(.aiChatSync) else {
+            return AIChatErrorResponse(reason: "sync disabled")
+        }
+
+        guard syncHandler.isSyncTurnedOn() else {
+            return AIChatErrorResponse(reason: "sync off")
+        }
+
+        guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
+            pixelFiring?.fire(AIChatPixel.aiChatSyncDecryptionError(reason: "invalid parameters"), frequency: .dailyAndStandard)
+            return AIChatErrorResponse(reason: "invalid parameters")
+        }
+
+        do {
+            return AIChatPayloadResponse(payload: try syncHandler.decrypt(data))
+        } catch {
+            let reason = error.localizedDescription
+            pixelFiring?.fire(AIChatPixel.aiChatSyncDecryptionError(reason: reason), frequency: .dailyAndStandard)
+            return AIChatErrorResponse(reason: "internal error")
+        }
+    }
+
+    public func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+        Task { @MainActor [weak self] in
+            self?.windowControllersManager.showTab(with: .settings(pane: .sync))
+        }
+        return AIChatOKResponse()
+    }
+
+    public func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard featureFlagger.isFeatureOn(.aiChatSync) else {
+            return AIChatErrorResponse(reason: "setup disabled")
+        }
+
+        guard syncHandler.isSyncTurnedOn() == false else {
+            return AIChatErrorResponse(reason: "sync already enabled")
+        }
+
+        Task { @MainActor in
+            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .aiChat, completion: nil)
+        }
+        return AIChatOKResponse()
+    }
+
+    func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let dict = params as? [String: Any],
+              let enabled = dict["enabled"] as? Bool else {
+            pixelFiring?.fire(AIChatPixel.aiChatSyncHistoryEnabledError(reason: "invalid parameters"), frequency: .dailyAndStandard)
+            return AIChatErrorResponse(reason: "invalid parameters")
+        }
+
+        syncHandler.setAIChatHistoryEnabled(enabled)
+        return nil
+    }
 }
+// swiftlint:enable inclusive_language
 
 extension NSNotification.Name {
     static let aiChatNativeHandoffData: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.aiChatNativeHandoffData")
@@ -285,11 +434,18 @@ extension AIChatUserScriptHandler {
     struct OpenLink: Codable, Equatable {
         let url: String
         let target: OpenTarget
+        let name: Name?
 
         enum OpenTarget: String, Codable, Equatable {
             case sameTab = "same-tab"
             case newTab = "new-tab"
             case newWindow = "new-window"
+        }
+
+        enum Name: String, Codable, Equatable {
+            case summarization
+            case translation
+            case pageContext
         }
     }
 

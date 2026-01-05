@@ -23,6 +23,8 @@ import AttributedMetricTestsUtils
 final class RollingEightDaysBoolTests: XCTestCase {
 
     private var rollingBool: RollingEightDaysBool!
+    /// Fixed reference date for all tests: January 15, 2025, 12:00 UTC
+    private let referenceDate = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 15, hour: 12))!
 
     override func setUp() {
         super.setUp()
@@ -40,18 +42,13 @@ final class RollingEightDaysBoolTests: XCTestCase {
     }
 
     func testSetTodayToTrueFirstTime() {
-        let beforeDate = Date()
+        let timeMachine = TimeMachine(date: referenceDate)
 
-        rollingBool.setTodayToTrue(dateProvider: DefaultDateProvider())
+        rollingBool.setTodayToTrue(dateProvider: timeMachine)
 
-        let afterDate = Date()
-
-        // Should set lastDay to current date
+        // Should set lastDay to current date from TimeMachine
         XCTAssertNotNil(rollingBool.lastDay)
-        if let lastDay = rollingBool.lastDay {
-            XCTAssertGreaterThanOrEqual(lastDay, beforeDate)
-            XCTAssertLessThanOrEqual(lastDay, afterDate)
-        }
+        XCTAssertEqual(rollingBool.lastDay, referenceDate)
 
         // Should append true to the array
         XCTAssertEqual(rollingBool.allValues, [true])
@@ -59,14 +56,16 @@ final class RollingEightDaysBoolTests: XCTestCase {
     }
 
     func testSetTodayToTrueSameDay() {
+        let timeMachine = TimeMachine(date: referenceDate)
+
         // Set up initial state
-        rollingBool.setTodayToTrue(dateProvider: DefaultDateProvider())
+        rollingBool.setTodayToTrue(dateProvider: timeMachine)
         let initialCount = rollingBool.count
         let initialValues = rollingBool.allValues
         let initialLastDay = rollingBool.lastDay
 
         // Call again on same day
-        rollingBool.setTodayToTrue(dateProvider: DefaultDateProvider())
+        rollingBool.setTodayToTrue(dateProvider: timeMachine)
 
         // Should not change count or values
         XCTAssertEqual(rollingBool.count, initialCount)
@@ -75,66 +74,64 @@ final class RollingEightDaysBoolTests: XCTestCase {
     }
 
     func testSetTodayToTrueDifferentDay() {
-        // Set up initial state with a past date
-        let pastDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let timeMachine = TimeMachine(date: referenceDate)
+
+        // Set up initial state with a past date (day before reference)
+        let pastDate = Calendar.eastern.date(byAdding: .day, value: -1, to: referenceDate)!
         rollingBool.lastDay = pastDate
         rollingBool.append(true)
 
         let initialCount = rollingBool.count
 
         // Call setTodayToTrue (should be different day)
-        rollingBool.setTodayToTrue(dateProvider: DefaultDateProvider())
+        rollingBool.setTodayToTrue(dateProvider: timeMachine)
 
         // Should increment count and append new value
         XCTAssertEqual(rollingBool.count, initialCount + 1)
         XCTAssertEqual(rollingBool.allValues, [true, true])
 
-        // Should update lastDay to current date
+        // Should update lastDay to current date from TimeMachine
         XCTAssertNotNil(rollingBool.lastDay)
-        if let lastDay = rollingBool.lastDay {
-            XCTAssertTrue(Calendar.current.isDateInToday(lastDay))
-        }
+        XCTAssertEqual(rollingBool.lastDay, referenceDate)
     }
 
     func testIsSameDayWithNilLastDay() {
-        XCTAssertFalse(rollingBool.isSameDay(Date()))
+        XCTAssertFalse(rollingBool.isSameDay(referenceDate))
         XCTAssertFalse(rollingBool.isSameDay(Date.distantPast))
         XCTAssertFalse(rollingBool.isSameDay(Date.distantFuture))
     }
 
     func testIsSameDayWithSameDay() {
-        let testDate = Date()
-        rollingBool.lastDay = testDate
+        rollingBool.lastDay = referenceDate
 
-        XCTAssertTrue(rollingBool.isSameDay(testDate))
+        XCTAssertTrue(rollingBool.isSameDay(referenceDate))
 
         // Test with slightly different times on same day
-        let sameDay = Calendar.current.date(byAdding: .hour, value: 1, to: testDate)!
+        let sameDay = Calendar.eastern.date(byAdding: .hour, value: 1, to: referenceDate)!
         XCTAssertTrue(rollingBool.isSameDay(sameDay))
     }
 
     func testIsSameDayWithDifferentDay() {
-        let testDate = Date()
-        rollingBool.lastDay = testDate
+        rollingBool.lastDay = referenceDate
 
-        let differentDay = Calendar.current.date(byAdding: .day, value: 1, to: testDate)!
+        let differentDay = Calendar.eastern.date(byAdding: .day, value: 1, to: referenceDate)!
         XCTAssertFalse(rollingBool.isSameDay(differentDay))
 
-        let pastDay = Calendar.current.date(byAdding: .day, value: -1, to: testDate)!
+        let pastDay = Calendar.eastern.date(byAdding: .day, value: -1, to: referenceDate)!
         XCTAssertFalse(rollingBool.isSameDay(pastDay))
     }
 
     func testMultipleDaysSequence() {
-        let currentDate = Date()
+        let timeMachine = TimeMachine(date: referenceDate)
 
         // Simulate multiple days of calling setTodayToTrue
         for i in 0..<10 {
-            // Set lastDay to current date to simulate different days
+            // Set lastDay to previous day to simulate different days
             if i > 0 {
-                rollingBool.lastDay = currentDate.addingTimeInterval(-.day)
+                rollingBool.lastDay = Calendar.eastern.date(byAdding: .day, value: -1, to: timeMachine.now())!
             }
 
-            rollingBool.setTodayToTrue(dateProvider: DefaultDateProvider())
+            rollingBool.setTodayToTrue(dateProvider: timeMachine)
 
             // Verify count doesn't exceed 8 (rolling behaviour)
             XCTAssertLessThanOrEqual(rollingBool.count, 8)
@@ -144,6 +141,9 @@ final class RollingEightDaysBoolTests: XCTestCase {
             } else {
                 XCTAssertEqual(rollingBool.count, 8)
             }
+
+            // Advance time machine for next iteration
+            timeMachine.travel(by: .day, value: 1)
         }
 
         // All values should be true
@@ -232,6 +232,8 @@ final class RollingEightDaysBoolTests: XCTestCase {
     }
 
     func testSetTodayToTrueAfterDecodingWithoutLastDayBehavesCorrectly() throws {
+        let timeMachine = TimeMachine(date: referenceDate)
+
         // Create state without lastDay (old data format)
         rollingBool.append(true)
 
@@ -247,8 +249,9 @@ final class RollingEightDaysBoolTests: XCTestCase {
         XCTAssertNil(decoded.lastDay)
 
         // First call should initialize lastDay
-        decoded.setTodayToTrue(dateProvider: DefaultDateProvider())
+        decoded.setTodayToTrue(dateProvider: timeMachine)
         XCTAssertNotNil(decoded.lastDay)
+        XCTAssertEqual(decoded.lastDay, referenceDate)
         XCTAssertEqual(decoded.count, 2) // Original value + new value
     }
 

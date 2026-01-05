@@ -25,14 +25,16 @@ struct NewImportErrorView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size24.info).frame(width: 24, height: 24)
-            Text(text)
+            Image(nsImage: DesignSystemImages.Glyphs.Size24.infoSolid).frame(width: 24, height: 24)
+            Text(text).multilineTextAlignment(.leading)
         }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(12)
         .background(Color(designSystemColor: .surfaceSecondary))
         .cornerRadius(10)
         .overlay(
         RoundedRectangle(cornerRadius: 10)
-            .inset(by: 0.5).stroke()
+            .inset(by: 0.5).stroke(Color(designSystemColor: .lines))
         )
     }
 }

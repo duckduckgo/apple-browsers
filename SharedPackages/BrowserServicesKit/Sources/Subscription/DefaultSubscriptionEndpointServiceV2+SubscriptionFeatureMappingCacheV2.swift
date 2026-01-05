@@ -31,4 +31,9 @@ extension DefaultSubscriptionEndpointServiceV2: SubscriptionFeatureMappingCacheV
             return [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
         }
     }
+
+    public func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async throws -> [String: [TierFeature]] {
+        let response = try await getSubscriptionTierFeatures(for: subscriptionIdentifiers)
+        return response.features
+    }
 }

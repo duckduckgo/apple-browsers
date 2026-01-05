@@ -59,11 +59,12 @@ final class AddressBarSharedTextState: ObservableObject {
     ///   - newText: The new text value
     ///   - markInteraction: Whether to mark this as a user interaction (defaults to true)
     func updateText(_ newText: String, markInteraction: Bool = true) {
-        text = newText
         if markInteraction && !newText.isEmpty {
             hasUserInteractedWithText = true
             hasUserInteractedWithTextAfterSwitchingModes = true
         }
+
+        text = newText
 
         // Adjust selection range if it's now beyond the text length
         if selectionRange.location > newText.count {

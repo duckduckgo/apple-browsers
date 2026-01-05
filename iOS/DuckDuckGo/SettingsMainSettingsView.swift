@@ -74,7 +74,7 @@ struct SettingsMainSettingsView: View {
             AnyView(NavigationLink(destination: SettingsAIFeaturesView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAiFeatures,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.aiGeneral),
-                                 isNew: viewModel.isUpdatedAIFeaturesSettingsEnabled)
+                                 optionalBadgeText: viewModel.isUpdatedAIFeaturesSettingsEnabled ? UserText.settingsItemNewBadge : nil)
             })
         }
 
@@ -93,7 +93,7 @@ struct SettingsMainSettingsView: View {
         }
 
         @ViewBuilder func buildDataClearing(viewModel: SettingsViewModel) -> AnyView {
-            AnyView(NavigationLink(destination: SettingsDataClearingView().environmentObject(viewModel)) {
+            AnyView(NavigationLink(destination: SettingsDataClearingView(viewModel: viewModel.dataClearingViewModel).environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.dataClearing,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.fire))
             })

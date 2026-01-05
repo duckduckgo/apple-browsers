@@ -17,12 +17,12 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Common
 import FeatureFlags
 import Foundation
 import History
 import os.log
+import PrivacyConfig
 
 /**
  * This protocol describes a data source (history provider) for `HistoryGroupingProvider`.

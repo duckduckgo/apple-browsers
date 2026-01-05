@@ -17,16 +17,17 @@
 //
 
 import Bookmarks
+import BrowserServicesKitTestsUtils
 import Foundation
-import Persistence
-import RemoteMessaging
 import Freemium
+import Persistence
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import RemoteMessaging
+import RemoteMessagingTestsUtils
+import SubscriptionTestingUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-import SubscriptionTestingUtilities
-import RemoteMessagingTestsUtils
-import BrowserServicesKit
-import BrowserServicesKitTestsUtils
 @testable import Subscription
 
 struct MockRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {
@@ -185,7 +186,8 @@ final class RemoteMessagingClientTests: XCTestCase {
             expiresOrRenewsAt: Date(timeIntervalSince1970: 2000),
             platform: .google,
             status: .autoRenewable,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil
         )
         subscriptionAuthV1toV2Bridge.returnSubscription = .success(subscription)
         availabilityProvider.isRemoteMessagingAvailable = true

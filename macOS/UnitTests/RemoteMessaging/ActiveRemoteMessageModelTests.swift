@@ -32,7 +32,7 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         store = MockRemoteMessagingStore()
         message = RemoteMessageModel(
             id: "1",
-            surfaces: .newTabPage, // Surface not handled yet in macOS
+            surfaces: .newTabPage,
             content: .small(titleText: "test", descriptionText: "desc"), matchingRules: [], exclusionRules: [], isMetricsEnabled: false
         )
     }
@@ -95,9 +95,9 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
     }
 
     func testWhenMessageIsForTabBar_thenCorrectPublisherIsSet() {
-        let tabBarRemoteMessage = RemoteMessageModel(
-            id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
-            surfaces: .newTabPage, // Surface not handled yet in macOS
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: "tab_bar_message",
+            surfaces: .tabBar,
             content: .bigSingleAction(titleText: "Help Us Improve!",
                                       descriptionText: "Description",
                                       placeholder: .announce,
@@ -107,7 +107,6 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             exclusionRules: [],
             isMetricsEnabled: false
         )
-        store.scheduledRemoteMessage = tabBarRemoteMessage
         model = ActiveRemoteMessageModel(
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
@@ -117,6 +116,30 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
 
         XCTAssertNotNil(model.tabBarRemoteMessage)
         XCTAssertNil(model.newTabPageRemoteMessage)
+    }
+
+    func testWhenMessageTargetsBothSurfaces_thenBothPublishersAreSet() {
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: "tab_bar_and_new_tab_message",
+            surfaces: [.tabBar, .newTabPage],
+            content: .bigSingleAction(titleText: "Help Us Improve!",
+                                      descriptionText: "Description",
+                                      placeholder: .announce,
+                                      primaryActionText: "Test",
+                                      primaryAction: .survey(value: "www.survey.com")),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { }
+        )
+
+        XCTAssertNotNil(model.tabBarRemoteMessage)
+        XCTAssertNotNil(model.newTabPageRemoteMessage)
     }
 
     func testWhenMessageIsForNewTabPage_thenCorrectPublisherIsSet() {
@@ -130,6 +153,50 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
 
         XCTAssertNil(model.tabBarRemoteMessage)
         XCTAssertNotNil(model.newTabPageRemoteMessage)
+    }
+
+    func testWhenSurfaceSwitchesBetweenTabBarAndNewTabPage_thenOtherPublisherIsCleared() {
+        let tabBarMessage = RemoteMessageModel(
+            id: "tab_bar_message",
+            surfaces: .tabBar,
+            content: .bigSingleAction(titleText: "Help Us Improve!",
+                                      descriptionText: "Description",
+                                      placeholder: .announce,
+                                      primaryActionText: "Test",
+                                      primaryAction: .survey(value: "www.survey.com")),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        store.scheduledRemoteMessage = tabBarMessage
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { }
+        )
+        XCTAssertNotNil(model.tabBarRemoteMessage)
+        XCTAssertNil(model.newTabPageRemoteMessage)
+
+        let newTabMessage = RemoteMessageModel(
+            id: "new_tab_message",
+            surfaces: .newTabPage,
+            content: .small(titleText: "Hello", descriptionText: "World"),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        store.scheduledRemoteMessage = newTabMessage
+        NotificationCenter.default.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+
+        let expectation = expectation(description: "Switches to new tab message and clears tab bar message")
+        DispatchQueue.main.async {
+            XCTAssertNil(self.model.tabBarRemoteMessage)
+            XCTAssertEqual(self.model.newTabPageRemoteMessage, newTabMessage)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testWhenScheduledMessageIsCalledThenSurfaceIsNewTabPage() {
@@ -148,7 +215,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(store.fetchScheduledRemoteMessageCalls, 1)
-        XCTAssertEqual(store.capturedSurfaces, .newTabPage)
+        XCTAssertTrue(store.capturedSurfaces!.contains(.newTabPage))
+        XCTAssertTrue(store.capturedSurfaces!.contains(.tabBar))
     }
 
 }

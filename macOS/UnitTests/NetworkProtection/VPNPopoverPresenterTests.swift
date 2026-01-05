@@ -19,7 +19,7 @@
 import XCTest
 import Combine
 import VPN
-import BrowserServicesKit
+import PrivacyConfig
 import SubscriptionTestingUtilities
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser
@@ -43,15 +43,12 @@ final class VPNPopoverPresenterTests: XCTestCase {
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
         firedPixels = []
 
-        mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
-
         vpnUpsellVisibilityManager = VPNUpsellVisibilityManager(
             isFirstLaunch: false,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
-            featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,
             timerDuration: 0.01,
             autoDismissDays: 7,

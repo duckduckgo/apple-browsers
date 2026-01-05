@@ -25,9 +25,7 @@ final class AIChatFullModeOmniBrandingView: UIView {
 
     // MARK: - UI Elements
 
-    private let containerView = UIView()
-    private let leftIconView = UIImageView()
-    private let chevronIconView = UIImageView()
+    private let stackView = UIStackView()
     private let brandingIconView = UIImageView()
     private let textLabel = UILabel()
 
@@ -50,77 +48,35 @@ final class AIChatFullModeOmniBrandingView: UIView {
     private func setupViews() {
         backgroundColor = .clear
 
-        containerView.backgroundColor = .clear
-        containerView.layer.cornerRadius = 8
-        containerView.clipsToBounds = true
-        addSubview(containerView)
+        stackView.axis = .horizontal
+        stackView.alignment = .center
+        stackView.spacing = 4
+        addSubview(stackView)
 
-        for iconView in [leftIconView, chevronIconView, brandingIconView] {
-            iconView.contentMode = .scaleAspectFit
-            containerView.addSubview(iconView)
-        }
-
-        leftIconView.image = DesignSystemImages.Color.Size32.duckDuckGo
-        chevronIconView.image = UIImage(systemName: "chevron.right")?.withRenderingMode(.alwaysTemplate)
-        chevronIconView.tintColor = UIColor(designSystemColor: .iconsTertiary)
+        brandingIconView.contentMode = .scaleAspectFit
         brandingIconView.image = DesignSystemImages.Color.Size24.aiChatGradient
+        stackView.addArrangedSubview(brandingIconView)
 
         textLabel.text = UserText.omnibarFullAIChatModeDisplayTitle
         textLabel.font = UIFont.daxBodyRegular()
         textLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        textLabel.setContentHuggingPriority(.required, for: .horizontal)
-        containerView.addSubview(textLabel)
+        stackView.addArrangedSubview(textLabel)
     }
 
     private func setupConstraints() {
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        leftIconView.translatesAutoresizingMaskIntoConstraints = false
-        chevronIconView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.translatesAutoresizingMaskIntoConstraints = false
         brandingIconView.translatesAutoresizingMaskIntoConstraints = false
-        textLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: topAnchor),
-            containerView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            containerView.trailingAnchor.constraint(equalTo: trailingAnchor)
-        ])
 
         let iconSize: CGFloat = 24
-        let chevronSize: CGFloat = 18
-        let topBottomSpacing: CGFloat = 10
-        let iconTextSpacing: CGFloat = 4
 
-        // Left icon
         NSLayoutConstraint.activate([
-            leftIconView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
-            leftIconView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: topBottomSpacing),
-            leftIconView.widthAnchor.constraint(equalToConstant: iconSize),
-            leftIconView.heightAnchor.constraint(equalToConstant: iconSize)
-        ])
+            stackView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            stackView.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-        // Chevron icon
-        NSLayoutConstraint.activate([
-            chevronIconView.leadingAnchor.constraint(equalTo: leftIconView.trailingAnchor, constant: iconTextSpacing),
-            chevronIconView.centerYAnchor.constraint(equalTo: leftIconView.centerYAnchor),
-            chevronIconView.widthAnchor.constraint(equalToConstant: chevronSize),
-            chevronIconView.heightAnchor.constraint(equalToConstant: chevronSize)
-        ])
-
-        // Branding icon
-        NSLayoutConstraint.activate([
-            brandingIconView.leadingAnchor.constraint(equalTo: chevronIconView.trailingAnchor, constant: iconTextSpacing),
-            brandingIconView.topAnchor.constraint(equalTo: leftIconView.topAnchor),
             brandingIconView.widthAnchor.constraint(equalToConstant: iconSize),
-            brandingIconView.heightAnchor.constraint(equalToConstant: iconSize)
-        ])
+            brandingIconView.heightAnchor.constraint(equalToConstant: iconSize),
 
-        NSLayoutConstraint.activate([
-            textLabel.leadingAnchor.constraint(equalTo: brandingIconView.trailingAnchor, constant: iconTextSpacing),
-            textLabel.centerYAnchor.constraint(equalTo: leftIconView.centerYAnchor),
-            textLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -8)
+            heightAnchor.constraint(equalToConstant: 44)
         ])
-
-        containerView.heightAnchor.constraint(equalToConstant: 44).isActive = true
     }
 }

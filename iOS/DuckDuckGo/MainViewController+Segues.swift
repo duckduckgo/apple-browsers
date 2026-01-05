@@ -111,7 +111,8 @@ extension MainViewController {
                                     syncService: self.syncService,
                                     syncDataProviders: self.syncDataProviders,
                                     appSettings: self.appSettings,
-                                    keyValueStore: self.keyValueStore)
+                                    keyValueStore: self.keyValueStore,
+                                    productSurfaceTelemetry: self.productSurfaceTelemetry)
         }
         bookmarks.delegate = self
 
@@ -200,7 +201,11 @@ extension MainViewController {
                                       featureFlagger: self.featureFlagger,
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
-                                      appSettings: self.appSettings)
+                                      appSettings: self.appSettings,
+                                      productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                      historyManager: self.historyManager,
+                                      fireproofing: self.fireproofing,
+                                      keyValueStore: self.keyValueStore)
         }) else {
             assertionFailure()
             return
@@ -244,6 +249,14 @@ extension MainViewController {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .netP)
         }, deepLinkTarget: .netP)
+    }
+
+    func segueToDataBrokerProtection() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .dbp)
+        }, deepLinkTarget: .dbp)
     }
 
     func segueToDebugSettings() {
@@ -339,11 +352,21 @@ extension MainViewController {
                                                             keyValueStore: keyValueStore,
                                                             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                             daxDialogsManager: daxDialogsManager,
-                                                            dbpIOSPublicInterface: dbpIOSPublicInterface)
+                                                            dbpIOSPublicInterface: dbpIOSPublicInterface,
+                                                            subscriptionDataReporter: subscriptionDataReporter,
+                                                            remoteMessagingDebugHandler: remoteMessagingDebugHandler,
+                                                            productSurfaceTelemetry: productSurfaceTelemetry)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
                                                         featureFlagger: featureFlagger)
+        let whatsNewCoordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: whatsNewRepository,
+            remoteMessageActionHandler: remoteMessagingActionHandler,
+            isIPad: UIDevice.current.userInterfaceIdiom == .pad,
+            pixelReporter: nil,
+            userScriptsDependencies: userScriptsDependencies)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   isAuthV2Enabled: isAuthV2Enabled,
@@ -370,7 +393,8 @@ extension MainViewController {
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
-                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore))
+                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore),
+                                                  whatsNewCoordinator: whatsNewCoordinator)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)
@@ -383,7 +407,9 @@ extension MainViewController {
             } else {
                 assert(self.presentedViewController == nil)
 
-                let settingsController = SettingsHostingController(viewModel: settingsViewModel, viewProvider: legacyViewProvider)
+                let settingsController = SettingsHostingController(viewModel: settingsViewModel,
+                                                                   viewProvider: legacyViewProvider,
+                                                                   productSurfaceTelemetry: self.productSurfaceTelemetry)
 
                 // We are still presenting legacy views, so use a Navcontroller
                 let navController = SettingsUINavigationController(rootViewController: settingsController)
@@ -423,7 +449,9 @@ extension MainViewController {
             daxDialogManager: self.daxDialogsManager,
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
-            runPrequisitesDelegate: self.dbpIOSPublicInterface))
+            runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            subscriptionDataReporter: self.subscriptionDataReporter,
+            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

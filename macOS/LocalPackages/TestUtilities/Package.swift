@@ -21,7 +21,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "",
+    name: "TestUtilities",
     platforms: [
         .macOS("11.4")
     ],

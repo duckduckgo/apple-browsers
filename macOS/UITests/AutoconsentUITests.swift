@@ -71,6 +71,39 @@ class AutoconsentUITests: UITestCase {
         app.typeKey(.escape, modifierFlags: [])
     }
 
+    // Re-enable when experiment is shipped to 100%
+    func disabled_testAutoconsent_PrivacyTestPages_HeuristicModeWorks() throws {
+        // Navigate to DuckDuckGo's privacy test pages for autoconsent
+        let testURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/heuristic.html")!
+        addressBarTextField.pasteURL(testURL, pressingEnter: true)
+
+        // Wait for autoconsent test page to load with specific content
+        let webView = app.webViews.firstMatch
+        let autoconsentPageContent = webView.staticTexts.containing(\.value, containing: "Tests for heuristic mode").firstMatch
+        XCTAssertTrue(autoconsentPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Autoconsent test page should load with 'Tests for heuristic mode' text")
+
+        // Verify autoconsent automatically clicked the first button - should show "Reject was clicked!"
+        let clickedButton = webView.buttons.containing(\.title, containing: "Reject was clicked!").firstMatch
+        XCTAssertTrue(clickedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Autoconsent should have automatically clicked the first button, changing it to 'Reject was clicked!'")
+
+        // Check privacy dashboard for autoconsent status
+        let privacyButton = app.buttons.matching(identifier: "AddressBarButtonsViewController.privacyDashboardButton").firstMatch
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available")
+
+        privacyButton.click()
+
+        // Wait for privacy dashboard to open
+        let privacyDashboard = app.popovers.firstMatch
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
+
+        // Look for "Cookies Managed" in the privacy dashboard (for button clicking test)
+        let cookiesManagedInfo = privacyDashboard.groups.containing(.button, identifier: "Cookies Managed").firstMatch
+        XCTAssertTrue(cookiesManagedInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show 'Cookies Managed' for autoconsent button clicking")
+
+        // Close privacy dashboard
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
     func testAutoconsent_CookieBannerHiding_BannersAreHidden() throws {
         // Navigate to test page with cookie banner
         let bannerTestURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/banner.html")!
@@ -204,5 +237,40 @@ class AutoconsentUITests: UITestCase {
         XCTAssertTrue(firstPageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertTrue(clickedButton2.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
+    }
+
+    func testAutoconsent_ReloadLoop_IsPrevented() throws {
+        // Navigate to the reload loop test page
+        // This page automatically reloads after the reject button is clicked,
+        // which would cause an infinite reload loop without prevention
+        let reloadLoopURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/reload-loop.html")!
+        addressBarTextField.pasteURL(reloadLoopURL, pressingEnter: true)
+
+        let webView = app.webViews.firstMatch
+
+        // Wait for the page to load
+        let pageContent = webView.staticTexts.containing(\.value, containing: "CPM reload loop detection").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Reload loop test page should load")
+
+        // The flow is:
+        // 1. First load: autoconsent clicks "Reject all" button
+        // 2. Button click triggers location.reload()
+        // 3. Second load: autoconsent clicks again, but detects a reload loop
+        // 4. Third load: autoconsent prevents further clicks. Page stabilizes with "Reject all" button still visible (not clicked)
+
+        // Wait for page to stabilize after the reload cycle
+        let rejectButton = webView.buttons.containing(\.title, containing: "Reject all").firstMatch
+
+        // Wait a bit for the reload cycle to complete and page to stabilize
+        sleep(3)
+
+        // Verify the page is stable and showing the reject button (not clicked)
+        // If reload loop prevention wasn't working, the page would keep reloading infinitely
+        XCTAssertTrue(pageContent.exists, "Page should still be visible after reload loop prevention kicks in")
+        XCTAssertTrue(rejectButton.exists, "Reject button should be visible (not clicked) after reload loop prevention")
+
+        // Verify exactly 3 page loads occurred: initial navigation + 2 reloads
+        let pageLoadCount = webView.staticTexts.containing(\.value, containing: "Page load count: 3").firstMatch
+        XCTAssertTrue(pageLoadCount.exists, "Page should have loaded exactly 3 times (initial + 2 reloads)")
     }
 }

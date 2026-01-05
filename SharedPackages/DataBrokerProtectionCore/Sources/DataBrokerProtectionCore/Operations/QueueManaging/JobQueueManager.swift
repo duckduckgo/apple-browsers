@@ -41,7 +41,7 @@ enum BrokerProfileJobQueueMode {
     var priorityDate: Date? {
         switch self {
         case .idle, .immediate:
-            return nil
+            return Date()
         case .scheduled:
             return Date()
         }
@@ -94,6 +94,7 @@ public protocol JobQueueManaging {
                                                  completion: (() -> Void)?)
     func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding)
     func stop()
+    func stopScheduledOperationsOnly()
 
     func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand)
     var debugRunningStatusString: String { get }
@@ -101,6 +102,7 @@ public protocol JobQueueManaging {
 
 public protocol JobQueueManagerDelegate: AnyObject {
     func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging)
+    func queueManagerDidCompleteIndividualJob(_ queueManager: JobQueueManaging)
 }
 
 public final class JobQueueManager: JobQueueManaging {
@@ -220,6 +222,14 @@ public final class JobQueueManager: JobQueueManaging {
     public func stop() {
         cancelCurrentModeAndResetIfNeeded()
     }
+
+    // Won't stop if running immediate scans
+    public func stopScheduledOperationsOnly() {
+        if case .immediate = mode {
+            return
+        }
+        cancelCurrentModeAndResetIfNeeded()
+    }
 }
 
 private extension JobQueueManager {
@@ -304,7 +314,7 @@ private extension JobQueueManager {
             jobs = try jobProvider.createJobs(with: jobType,
                                               withPriorityDate: priorityDate,
                                               showWebView: showWebView,
-                                              errorDelegate: self,
+                                              statusReportingDelegate: self,
                                               jobDependencies: jobDependencies)
 
             for job in jobs {
@@ -331,7 +341,7 @@ private extension JobQueueManager {
     }
 }
 
-extension JobQueueManager: BrokerProfileJobErrorDelegate {
+extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
     public func dataBrokerOperationDidError(_ error: any Error,
                                             withBrokerURL brokerURL: String?,
                                             version: String?,
@@ -355,6 +365,12 @@ extension JobQueueManager: BrokerProfileJobErrorDelegate {
         default:
             pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version))
         }
+
+        delegate?.queueManagerDidCompleteIndividualJob(self)
+    }
+
+    public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?, version: String?, dataBrokerParent: String?) {
+        delegate?.queueManagerDidCompleteIndividualJob(self)
     }
 }
 

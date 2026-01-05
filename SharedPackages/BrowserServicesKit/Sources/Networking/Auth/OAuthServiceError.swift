@@ -20,7 +20,7 @@ import Foundation
 import Common
 
 public enum OAuthServiceError: DDGError {
-    case authAPIError(code: OAuthRequest.BodyErrorCode)
+    case authAPIError(OAuthRequestError)
     case apiServiceError(Error)
     case invalidRequest
     case invalidResponseCode(HTTPStatusCode)
@@ -28,8 +28,8 @@ public enum OAuthServiceError: DDGError {
 
     public var description: String {
         switch self {
-        case .authAPIError(let code):
-            "Auth API responded with error \(code.rawValue) - \(code.description)"
+        case .authAPIError(let apiError):
+            "Auth API responded with error \(apiError.description)"
         case .apiServiceError(let error):
             "API service error - \(String(describing: error))"
         case .invalidRequest:
@@ -45,19 +45,29 @@ public enum OAuthServiceError: DDGError {
 
     public var errorCode: Int {
         switch self {
-        case .authAPIError: 11200
-        case .apiServiceError: 11201
-        case .invalidRequest: 11202
-        case .invalidResponseCode: 11203
-        case .missingResponseValue: 11204
+        case .authAPIError:
+            return 11200
+        case .apiServiceError:
+            return 11201
+        case .invalidRequest:
+            return 11202
+        case .invalidResponseCode:
+            return 11203
+        case .missingResponseValue:
+            return 11204
         }
     }
 
     public var underlyingError: Error? {
         switch self {
+        case .authAPIError(let apiError):
+            return apiError
         case .apiServiceError(let error):
             return error
-        default:
+        case .invalidResponseCode(let httpStatusCode):
+            return NSError(domain: "com.duckduckgo.networking.HTTPStatusCode", code: httpStatusCode.rawValue)
+        case .invalidRequest,
+            .missingResponseValue:
             return nil
         }
     }

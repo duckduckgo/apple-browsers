@@ -1,0 +1,46 @@
+<svg fill="none" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#edge_svg__a)">
+    <path fill="url(#edge_svg__b)" d="M54.553 45.672q-1.126.586-2.319 1.028a22.3 22.3 0 0 1-7.853 1.4c-10.347 0-19.36-7.11-19.36-16.253a6.89 6.89 0 0 1 3.588-5.972c-9.362.394-11.768 10.15-11.768 15.86 0 16.187 14.897 17.806 18.112 17.806 1.728 0 4.331-.503 5.906-1.007l.285-.087a28.07 28.07 0 0 0 14.569-11.55.875.875 0 0 0-1.16-1.225"/>
+    <path fill="url(#edge_svg__c)" d="M54.553 45.672q-1.126.586-2.319 1.028a22.3 22.3 0 0 1-7.853 1.4c-10.347 0-19.36-7.11-19.36-16.253a6.89 6.89 0 0 1 3.588-5.972c-9.362.394-11.768 10.15-11.768 15.86 0 16.187 14.897 17.806 18.112 17.806 1.728 0 4.331-.503 5.906-1.007l.285-.087a28.07 28.07 0 0 0 14.569-11.55.875.875 0 0 0-1.16-1.225" opacity=".35"/>
+    <path fill="url(#edge_svg__d)" d="M27.122 56.784a17.3 17.3 0 0 1-4.966-4.659 17.653 17.653 0 0 1 6.453-26.25c.7-.328 1.86-.897 3.413-.875a7.09 7.09 0 0 1 5.622 2.844 6.98 6.98 0 0 1 1.378 4.09c0-.043 5.36-17.412-17.5-17.412-9.603 0-17.5 9.1-17.5 17.106a28.5 28.5 0 0 0 2.647 12.25A28 28 0 0 0 40.88 58.534a16.52 16.52 0 0 1-13.737-1.75z"/>
+    <path fill="url(#edge_svg__e)" d="M27.122 56.784a17.3 17.3 0 0 1-4.966-4.659 17.653 17.653 0 0 1 6.453-26.25c.7-.328 1.86-.897 3.413-.875a7.09 7.09 0 0 1 5.622 2.844 6.98 6.98 0 0 1 1.378 4.09c0-.043 5.36-17.412-17.5-17.412-9.603 0-17.5 9.1-17.5 17.106a28.5 28.5 0 0 0 2.647 12.25A28 28 0 0 0 40.88 58.534a16.52 16.52 0 0 1-13.737-1.75z" opacity=".41"/>
+    <path fill="url(#edge_svg__f)" d="M37.338 36.55c-.197.219-.744.547-.744 1.225 0 .569.372 1.138 1.05 1.597 3.128 2.187 9.056 1.881 9.078 1.881a13.04 13.04 0 0 0 6.628-1.815A13.43 13.43 0 0 0 60 27.866c.066-4.9-1.75-8.16-2.472-9.603C52.868 9.205 42.872 4 32 4A28 28 0 0 0 4 31.606c.11-7.984 8.05-14.437 17.5-14.437.766 0 5.14.065 9.188 2.187a15.9 15.9 0 0 1 6.759 6.41c1.334 2.318 1.575 5.272 1.575 6.453s-.59 2.91-1.706 4.353z"/>
+    <path fill="url(#edge_svg__g)" d="M37.338 36.55c-.197.219-.744.547-.744 1.225 0 .569.372 1.138 1.05 1.597 3.128 2.187 9.056 1.881 9.078 1.881a13.04 13.04 0 0 0 6.628-1.815A13.43 13.43 0 0 0 60 27.866c.066-4.9-1.75-8.16-2.472-9.603C52.868 9.205 42.872 4 32 4A28 28 0 0 0 4 31.606c.11-7.984 8.05-14.437 17.5-14.437.766 0 5.14.065 9.188 2.187a15.9 15.9 0 0 1 6.759 6.41c1.334 2.318 1.575 5.272 1.575 6.453s-.59 2.91-1.706 4.353z"/>
+  </g>
+  <defs>
+    <radialGradient id="edge_svg__c" cx="0" cy="0" r="1" gradientTransform="matrix(20.8688 0 0 19.8253 38.388 43.013)" gradientUnits="userSpaceOnUse">
+      <stop offset=".7" stop-opacity="0"/>
+      <stop offset=".9" stop-opacity=".5"/>
+      <stop offset="1"/>
+    </radialGradient>
+    <radialGradient id="edge_svg__e" cx="0" cy="0" r="1" gradientTransform="matrix(4.69872 -31.01176 25.05435 3.7961 19.434 47.517)" gradientUnits="userSpaceOnUse">
+      <stop offset=".8" stop-opacity="0"/>
+      <stop offset=".9" stop-opacity=".5"/>
+      <stop offset="1"/>
+    </radialGradient>
+    <radialGradient id="edge_svg__f" cx="0" cy="0" r="1" gradientTransform="matrix(-1.7713 44.27498 -94.29657 -3.7725 9.664 14.35)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35C1F1"/>
+      <stop offset=".1" stop-color="#34C1ED"/>
+      <stop offset=".2" stop-color="#2FC2DF"/>
+      <stop offset=".3" stop-color="#2BC3D2"/>
+      <stop offset=".7" stop-color="#36C752"/>
+    </radialGradient>
+    <radialGradient id="edge_svg__g" cx="0" cy="0" r="1" gradientTransform="rotate(73.74 14.317 48.13)scale(21.2844 17.3085)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#66EB6E"/>
+      <stop offset="1" stop-color="#66EB6E" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="edge_svg__b" x1="16.841" x2="55.866" y1="42.719" y2="42.719" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0C59A4"/>
+      <stop offset="1" stop-color="#114A8B"/>
+    </linearGradient>
+    <linearGradient id="edge_svg__d" x1="37.403" x2="13.056" y1="25.788" y2="52.322" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1B9DE2"/>
+      <stop offset=".2" stop-color="#1595DF"/>
+      <stop offset=".7" stop-color="#0680D7"/>
+      <stop offset="1" stop-color="#0078D4"/>
+    </linearGradient>
+    <clipPath id="edge_svg__a">
+      <path fill="#fff" d="M4 4h56v56H4z"/>
+    </clipPath>
+  </defs>
+</svg>

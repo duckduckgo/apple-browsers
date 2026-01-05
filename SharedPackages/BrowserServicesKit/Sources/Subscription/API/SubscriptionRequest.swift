@@ -45,6 +45,28 @@ struct SubscriptionRequest {
         return SubscriptionRequest(apiRequest: request)
     }
 
+    static func getTierProducts(baseURL: URL, region: String?, platform: String?) -> SubscriptionRequest? {
+        let path = "/v2/products"
+        var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true)
+
+        var queryItems: [URLQueryItem] = []
+        if let region = region {
+            queryItems.append(URLQueryItem(name: "region", value: region))
+        }
+        if let platform = platform {
+            queryItems.append(URLQueryItem(name: "platform", value: platform))
+        }
+        if !queryItems.isEmpty {
+            urlComponents?.queryItems = queryItems
+        }
+        guard let url = urlComponents?.url,
+              let request = APIRequestV2(url: url,
+                                         method: .get) else {
+            return nil
+        }
+        return SubscriptionRequest(apiRequest: request)
+    }
+
     static func getCustomerPortalURL(baseURL: URL, accessToken: String, externalID: String) -> SubscriptionRequest? {
         let path = "/checkout/portal"
         let headers = [
@@ -81,6 +103,21 @@ struct SubscriptionRequest {
     static func subscriptionFeatures(baseURL: URL, subscriptionID: String) -> SubscriptionRequest? {
         let path = "/products/\(subscriptionID)/features"
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
+                                         cachePolicy: .returnCacheDataElseLoad) else { // Cached on purpose, the response never changes
+            return nil
+        }
+        return SubscriptionRequest(apiRequest: request)
+    }
+
+    static func subscriptionTierFeatures(baseURL: URL, subscriptionIDs: [String]) -> SubscriptionRequest? {
+        let path = "/v2/features"
+        var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true)
+
+        // Add multiple sku query parameters
+        urlComponents?.queryItems = subscriptionIDs.map { URLQueryItem(name: "sku", value: $0) }
+
+        guard let url = urlComponents?.url,
+              let request = APIRequestV2(url: url,
                                          cachePolicy: .returnCacheDataElseLoad) else { // Cached on purpose, the response never changes
             return nil
         }

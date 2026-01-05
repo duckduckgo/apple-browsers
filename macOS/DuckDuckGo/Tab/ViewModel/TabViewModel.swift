@@ -22,6 +22,7 @@ import Combine
 import Common
 import FeatureFlags
 import MaliciousSiteProtection
+import PrivacyConfig
 import PrivacyDashboard
 import WebKit
 import DesignResourcesKitIcons
@@ -62,12 +63,16 @@ final class TabViewModel: NSObject {
 
     var lastAddressBarTextFieldValue: AddressBarTextField.Value?
 
+    /// Shared text state for the address bar and AI Chat omnibar for this tab
+    let addressBarSharedTextState = AddressBarSharedTextState()
+
     @Published private(set) var title: String = UserText.tabHomeTitle
     @Published private(set) var favicon: NSImage?
     var findInPage: FindInPageModel? { tab.findInPage?.model }
 
     @Published private(set) var usedPermissions = Permissions()
     @Published private(set) var permissionAuthorizationQuery: PermissionAuthorizationQuery?
+    @Published private(set) var permissionsNeedReload = false
 
     let zoomLevelSubject = PassthroughSubject<DefaultZoomValue, Never>()
     private(set) var zoomLevel: DefaultZoomValue = .percent100 {
@@ -293,6 +298,8 @@ final class TabViewModel: NSObject {
             .store(in: &cancellables)
         tab.permissions.$authorizationQuery.assign(to: \.permissionAuthorizationQuery, onWeaklyHeld: self)
             .store(in: &cancellables)
+        tab.permissions.$permissionsNeedReload.assign(to: \.permissionsNeedReload, onWeaklyHeld: self)
+            .store(in: &cancellables)
     }
 
     private func subscribeToPreferences() {
@@ -387,31 +394,31 @@ final class TabViewModel: NSObject {
         let showFullURL = showFullURL ?? appearancePreferences.showFullURL
         passiveAddressBarAttributedString = switch tab.content {
         case .newtab, .onboarding, .none:
-                .init() // empty
+            .init() // empty
         case .settings:
-                .settingsTrustedIndicator
+            .settingsTrustedIndicator
         case .bookmarks:
-                .bookmarksTrustedIndicator
+            .bookmarksTrustedIndicator
         case .history:
             .historyTrustedIndicator
         case .url(let url, _, _) where url.isHistory:
             .historyTrustedIndicator
         case .dataBrokerProtection:
-                .dbpTrustedIndicator
+            .dbpTrustedIndicator
         case .subscription:
-            NSAttributedString.subscriptionTrustedIndicator
+            .subscriptionTrustedIndicator
         case .identityTheftRestoration:
-                .identityTheftRestorationTrustedIndicator
+            .identityTheftRestorationTrustedIndicator
         case .releaseNotes:
-                .releaseNotesTrustedIndicator
+            .releaseNotesTrustedIndicator
         case .url(let url, _, _) where url.isDuckPlayer:
-                .duckPlayerTrustedIndicator
+            .duckPlayerTrustedIndicator
         case .url(let url, _, _) where url.isEmailProtection:
-                .emailProtectionTrustedIndicator
+            .emailProtectionTrustedIndicator
+        case .aiChat:
+            .aiChatTrustedIndicator
         case .url(let url, _, _), .webExtensionUrl(let url):
             NSAttributedString(string: passiveAddressBarString(with: url, showFullURL: showFullURL))
-        case .aiChat:
-                .aiChatTrustedIndicator
         }
     }
 

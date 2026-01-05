@@ -33,6 +33,7 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
         case onConfigUpdate = "protections_onConfigUpdate"
         case onDataUpdate = "protections_onDataUpdate"
         case setConfig = "protections_setConfig"
+        case scroll = "protections_scroll"
     }
 
     public init(model: NewTabPageProtectionsReportModel) {
@@ -70,6 +71,14 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
                                                                        feed: model.activeFeed,
                                                                        showBurnAnimation: shouldShowBurnAnimation)
                     self?.notifyConfigUpdated(config)
+                }
+            }
+            .store(in: &cancellables)
+
+        model.scroller.scrollPublisher
+            .sink { [weak self] webView in
+                Task { @MainActor in
+                    self?.scrollProtectionsReport(in: webView)
                 }
             }
             .store(in: &cancellables)
@@ -131,5 +140,10 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
         } else {
             NewTabPageDataModel.ProtectionsDataLegacy(totalCount: await model.calculateTotalCount())
         }
+    }
+
+    @MainActor
+    private func scrollProtectionsReport(in webView: WKWebView) {
+        pushMessage(named: MessageName.scroll.rawValue, params: nil, to: webView)
     }
 }

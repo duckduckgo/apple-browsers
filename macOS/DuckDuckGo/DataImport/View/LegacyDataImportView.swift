@@ -17,10 +17,11 @@
 //
 
 import AppKit
-import SwiftUI
 import BrowserServicesKit
-import PixelKit
 import DesignResourcesKitIcons
+import PixelKit
+import PrivacyConfig
+import SwiftUI
 import UniformTypeIdentifiers
 
 @MainActor
@@ -212,7 +213,7 @@ struct LegacyDataImportView: ModalView {
             Button {
                 dismiss.callAsFunction()
                 let source = SyncDeviceButtonTouchpoint.dataImportStart
-                PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+                PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
                 syncLauncher.startDeviceSyncFlow(source: source) {
                     importFlowLauncher.relaunchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
                 }
@@ -348,10 +349,10 @@ struct LegacyDataImportView: ModalView {
     private func viewFooter() -> some View {
         HStack(spacing: 8) {
             if case .show(let syncLauncher) = syncFeatureVisibility, model.shouldShowSyncFooterButton {
-                Button(UserText.importDataCompleteSyncButtonTitle) {
+                Button(UserText.legacyImportDataCompleteSyncButtonTitle) {
                     dismiss.callAsFunction()
                     let source = SyncDeviceButtonTouchpoint.dataImportFinish
-                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": SyncDeviceButtonTouchpoint.dataImportFinish.rawValue])
+                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": SyncDeviceButtonTouchpoint.dataImportFinish.rawValue], doNotEnforcePrefix: true)
                     syncLauncher.startDeviceSyncFlow(source: source, completion: nil)
                 }
             }

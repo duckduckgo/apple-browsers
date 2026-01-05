@@ -18,10 +18,12 @@
 //
 
 import Common
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import WebKit
 import XCTest
 
-@testable import BrowserServicesKit
+import BrowserServicesKit
 @testable import Core
 @testable import DuckDuckGo
 

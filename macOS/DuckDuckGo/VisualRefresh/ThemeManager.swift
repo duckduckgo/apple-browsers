@@ -20,10 +20,13 @@ import Foundation
 import Combine
 import AppKit
 import DesignResourcesKit
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 
 protocol ThemeManaging {
+    var appearance: ThemeAppearance { get }
+    var appearancePublisher: Published<ThemeAppearance>.Publisher { get }
+
     var theme: ThemeStyleProviding { get }
     var themePublisher: Published<any ThemeStyleProviding>.Publisher { get }
 }
@@ -32,19 +35,37 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
     private var appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
-    @Published private(set) var theme: ThemeStyleProviding
+
+    @Published private(set) var appearance: ThemeAppearance
+
+    var appearancePublisher: Published<ThemeAppearance>.Publisher {
+        $appearance
+    }
+
+    @Published private(set) var theme: ThemeStyleProviding {
+        didSet {
+            switchDesignSystemPalette(to: theme.name.designColorPalette)
+        }
+    }
 
     var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
     }
 
+    @Published private(set) var designColorPalette: DesignResourcesKit.ColorPalette
+
     init(appearancePreferences: AppearancePreferences, internalUserDecider: InternalUserDecider, featureFlagger: FeatureFlagger) {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
-        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
 
+        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
+        self.appearance = appearancePreferences.themeAppearance
+        self.designColorPalette = appearancePreferences.themeName.designColorPalette
+
+        switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
         subscribeToInternalUserChanges(internalUserDecider: internalUserDecider)
+        subscribeToSystemAppearance()
     }
 
     private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
@@ -65,26 +86,34 @@ final class ThemeManager: ObservableObject, ThemeManaging {
             }
             .store(in: &cancellables)
     }
+
+    private func subscribeToSystemAppearance() {
+        appearancePreferences.$themeAppearance
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] appearance in
+                self?.appearance = appearance
+            }
+            .store(in: &cancellables)
+    }
 }
 
 private extension ThemeManager {
 
+    /// Relay the change to all of our observers
     func switchToTheme(named themeName: ThemeName) {
-        /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
-        DesignSystemPalette.current = themeName.designColorPalette
-
-        /// Relay the change to all of our observers
         theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
     }
 
-    func resetThemeNameIfNeeded(isInternalUser: Bool) {
-        /// Internal Users should not see the `.default` theme
-        if isInternalUser, appearancePreferences.themeName == .default {
-            appearancePreferences.themeName = .figma
-            return
-        }
+    /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
+    /// We're also keeping a reference to the active `designColorPalette`, so that it's Observable in SwiftUI
+    func switchDesignSystemPalette(to palette: DesignResourcesKit.ColorPalette) {
+        DesignSystemPalette.current = palette
+        designColorPalette = palette
+    }
 
-        /// Non Internal Users should only see the `.default` theme
+    /// Non Internal Users should only see the `.default` theme
+    func resetThemeNameIfNeeded(isInternalUser: Bool) {
         if isInternalUser == false, appearancePreferences.themeName != .default {
             appearancePreferences.themeName = .default
         }

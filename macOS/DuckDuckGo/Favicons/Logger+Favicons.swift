@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var favicons = { Logger(subsystem: "Favicons", category: "") }()
+    static let favicons = Logger(subsystem: "Favicons", category: "")
 }

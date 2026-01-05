@@ -59,7 +59,7 @@ struct SettingsCellView: View, Identifiable {
     var id: UUID = UUID()
     var isButton: Bool
     var isGreyedOut: Bool
-    var isNew: Bool = false
+    var optionalBadgeText: String?
     var shouldShowWinBackOffer: Bool = false
 
     /// Initializes a `SettingsCellView` with the specified label and accessory.
@@ -75,8 +75,8 @@ struct SettingsCellView: View, Identifiable {
     ///   - disclosureIndicator: Forces Adds a disclosure indicator on the right (chevron)
     ///   - webLinkIndicator: Adds a link indicator on the right
     ///   - isButton: Disables the tap actions on the cell if true
-    ///   - isNew: Displays "New" badges next to the item for feature discovery
-    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, isNew: Bool = false, shouldShowWinBackOffer: Bool = false) {
+    ///   - optionalBadgeText: If non nil displays badges next to the item for feature discovery with the specified text
+    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, optionalBadgeText: String? = nil, shouldShowWinBackOffer: Bool = false) {
         self.label = label
         self.subtitle = subtitle
         self.image = image
@@ -88,7 +88,7 @@ struct SettingsCellView: View, Identifiable {
         self.webLinkIndicator = webLinkIndicator
         self.isButton = isButton
         self.isGreyedOut = isGreyedOut
-        self.isNew = isNew
+        self.optionalBadgeText = optionalBadgeText
         self.shouldShowWinBackOffer = shouldShowWinBackOffer
     }
 
@@ -194,8 +194,8 @@ struct SettingsCellView: View, Identifiable {
     private func badgeView() -> some View {
         if shouldShowWinBackOffer {
             BadgeView(text: UserText.winBackCampaignMenuBadgeText)
-        } else if isNew {
-            BadgeView(text: UserText.settingsItemNewBadge)
+        } else if let optionalBadgeText {
+            BadgeView(text: optionalBadgeText)
         } else {
             EmptyView()
         }

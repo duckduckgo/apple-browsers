@@ -50,6 +50,15 @@ public final class DataImportManager: DataImportManaging {
             default: return nil
             }
         }
+        
+        public var matchingDataTypes: Set<DataImport.DataType> {
+            switch self {
+            case .csv:  return [.passwords]
+            case .html: return [.bookmarks]
+            case .json: return [.creditCards]
+            default: return []
+            }
+        }
     }
 
     public struct ImportPreview: Equatable, Hashable {
@@ -96,19 +105,19 @@ public final class DataImportManager: DataImportManaging {
         switch fileType {
         case .csv:
             csvImporter = createCSVImporter(url: url)
-            return await importData(types: [.passwords]).task.value
+            return await importData(types: fileType.matchingDataTypes).task.value
         case .html:
             do {
                 let html: String = try String(contentsOf: url, encoding: .utf8)
                 bookmarksImporter = await createBookmarksImporter(htmlContent: html)
-                return await importData(types: [.bookmarks]).task.value
+                return await importData(types: fileType.matchingDataTypes).task.value
             } catch {
                 Logger.autofill.debug("Failed to read HTML file: \(error.localizedDescription)")
                 return nil
             }
         case .json:
             jsonImporter = createJSONImporter(jsonContent: try String(contentsOf: url, encoding: .utf8))
-            return await importData(types: [.creditCards]).task.value
+            return await importData(types: fileType.matchingDataTypes).task.value
         default:
             return nil
         }

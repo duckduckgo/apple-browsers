@@ -20,10 +20,12 @@
 import Foundation
 import Combine
 import WebKit
+import UIKit
 import BrowserServicesKit
 import Common
 import os.log
 import DataBrokerProtectionCore
+import PrivacyConfig
 import Subscription
 import enum UserScript.UserScriptError
 
@@ -36,6 +38,7 @@ public final class DBPUIViewModel {
     private weak var authenticationDelegate: DBPIOSInterface.AuthenticationDelegate?
     private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
     private weak var feedbackFormDelegate: DBPUIViewModelOpenFeedbackFormDelegate?
+    private weak var userEventsDelegate: DBPIOSInterface.UserEventsDelegate?
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let contentScopeProperties: ContentScopeProperties
     private var communicationLayer: DBPUICommunicationLayer?
@@ -47,6 +50,7 @@ public final class DBPUIViewModel {
     public init(authenticationDelegate: DBPIOSInterface.AuthenticationDelegate,
                 databaseDelegate: DBPIOSInterface.DatabaseDelegate,
                 feedbackFormDelegate: DBPUIViewModelOpenFeedbackFormDelegate,
+                userEventsDelegate: DBPIOSInterface.UserEventsDelegate,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfigManager: PrivacyConfigurationManaging,
@@ -54,6 +58,7 @@ public final class DBPUIViewModel {
         self.authenticationDelegate = authenticationDelegate
         self.databaseDelegate = databaseDelegate
         self.feedbackFormDelegate = feedbackFormDelegate
+        self.userEventsDelegate = userEventsDelegate
         self.webUISettings = webUISettings
         self.pixelHandler = pixelHandler
         self.privacyConfigManager = privacyConfigManager
@@ -88,6 +93,20 @@ public final class DBPUIViewModel {
             }
             fatalError("Failed to apply DBPUI configuration: \(error)")
         }
+    }
+
+    func viewDidAppear() {
+        userEventsDelegate?.dashboardDidOpen()
+    }
+
+    func viewDidDisappear() {
+        userEventsDelegate?.dashboardDidClose()
+    }
+
+    @MainActor
+    func sendBackgroundAppRefreshDidChange(into webView: WKWebView) async {
+        let needBackgroundAppRefresh = await self.needBackgroundAppRefresh()
+        communicationLayer?.sendBackgroundAppRefreshDidChange(needBackgroundAppRefresh: needBackgroundAppRefresh, into: webView)
     }
 }
 
@@ -215,5 +234,17 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
 
     public func applyVPNBypassSetting(_ bypass: Bool) async {
         // No op, we don't have a VPN bypass on iOS
+    }
+
+    @MainActor
+    public func needBackgroundAppRefresh() async -> Bool {
+        UIApplication.shared.backgroundRefreshStatus != .available && ProcessInfo.processInfo.isLowPowerModeEnabled == false
+    }
+
+    @MainActor
+    public func enableBackgroundAppRefresh() async {
+        guard let url = URL(string: UIApplication.openSettingsURLString),
+              UIApplication.shared.canOpenURL(url) else { return }
+        await UIApplication.shared.open(url)
     }
 }

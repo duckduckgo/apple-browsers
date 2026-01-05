@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case duckAI = "Duck.ai"
@@ -49,12 +49,8 @@ public protocol FeatureFlagCategorization {
 extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
-        case .aiChatSidebar,
-                .aiChatTextSummarization,
-                .aiChatTextTranslation,
-                .aiChatPageContext,
+        case .aiChatPageContext,
                 .duckAISearchParameter,
-                .aiChatImprovements,
                 .aiChatKeepSession,
                 .aiChatDataClearing,
                 .aiChatOmnibarToggle,
@@ -76,18 +72,14 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
-                .vpnToolbarUpsell,
                 .winBackOffer:
             return .vpn
         case .dbpEmailConfirmationDecoupling,
-                .dbpRemoteBrokerDelivery:
+                .dbpRemoteBrokerDelivery,
+                .dbpClickActionDelayReductionOptimization:
             return .dbp
-        case .privacyProAuthV2,
-                .paidAIChat,
+        case .paidAIChat,
                 .supportsAlternateStripePaymentFlow,
-                .subscriptionPurchaseWidePixelMeasurement,
-                .authV2WideEventEnabled,
-                .vpnConnectionWidePixelMeasurement,
                 .blackFridayCampaign,
                 .tierMessagingEnabled,
                 .allowProTierPurchase:

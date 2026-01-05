@@ -86,6 +86,10 @@ public final class FileStoreMock: NSObject {
     }
 
     public func directoryContents(at path: String) throws -> [String] {
+        if let failWithError {
+            throw failWithError
+        }
+
         return directoryStorage[path] ?? []
     }
 

@@ -81,6 +81,22 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?vpn_first_used=10&vpn_last_used=5")
     }
 
+    func testAddingTrialActiveParameterTrue() {
+        let builder = buildRemoteMessagingSurveyURLBuilder(subscriptionTrialActive: true)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.subscriptionTrialActive], to: baseURL)
+
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?ppro_trial_active=true")
+    }
+
+    func testAddingTrialActiveParameterFalse() {
+        let builder = buildRemoteMessagingSurveyURLBuilder(subscriptionTrialActive: false)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.subscriptionTrialActive], to: baseURL)
+
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?ppro_trial_active=false")
+    }
+
     func testAddingParametersToURLThatAlreadyHasThem() {
         let builder = buildRemoteMessagingSurveyURLBuilder(vpnDaysSinceActivation: 10, vpnDaysSinceLastActive: 5)
         let baseURL = URL(string: "https://duckduckgo.com?param=test")!
@@ -159,7 +175,8 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         vpnDaysSinceActivation: Int = 2,
         vpnDaysSinceLastActive: Int = 1,
         locale: Locale = Locale(identifier: "en_US"),
-        lastSearchDate: Date? = nil
+        lastSearchDate: Date? = nil,
+        subscriptionTrialActive: Bool = false
     ) -> DefaultRemoteMessagingSurveyURLBuilder {
 
         let mockStatisticsStore = MockStatisticsStore()
@@ -177,6 +194,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         mockSubscription.status = "auto_renewable"
         mockSubscription.started = Date(timeIntervalSince1970: 1000)
         mockSubscription.expiry = Date(timeIntervalSince1970: 2000)
+        mockSubscription.trialActive = subscriptionTrialActive
 
         standardDefaults.set(lastSearchDate, forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
 
@@ -218,6 +236,7 @@ private final class MockDuckDuckGoSubscription: SubscriptionSurveyDataProviding 
     var billing: String?
     var started: Date?
     var expiry: Date?
+    var trialActive: Bool?
 
     public var subscriptionStatus: String? {
         return status
@@ -237,5 +256,9 @@ private final class MockDuckDuckGoSubscription: SubscriptionSurveyDataProviding 
 
     public var subscriptionExpiryDate: Date? {
         return expiry
+    }
+
+    public var subscriptionTrialActive: Bool? {
+        return trialActive
     }
 }

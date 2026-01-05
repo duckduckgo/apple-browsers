@@ -21,22 +21,23 @@ import Combine
 import AIChat
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 final class AIChatOmnibarControllerTests: XCTestCase {
 
     private var controller: AIChatOmnibarController!
     private var mockDelegate: MockAIChatOmnibarControllerDelegate!
     private var mockTabOpener: MockAIChatTabOpener!
-    private var sharedTextState: AddressBarSharedTextState!
+    private var tabCollectionViewModel: TabCollectionViewModel!
 
     override func setUp() {
         super.setUp()
         mockDelegate = MockAIChatOmnibarControllerDelegate()
         mockTabOpener = MockAIChatTabOpener()
-        sharedTextState = AddressBarSharedTextState()
+        tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
 
         controller = AIChatOmnibarController(
             aiChatTabOpener: mockTabOpener,
-            sharedTextState: sharedTextState
+            tabCollectionViewModel: tabCollectionViewModel
         )
         controller.delegate = mockDelegate
     }
@@ -45,7 +46,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller = nil
         mockDelegate = nil
         mockTabOpener = nil
-        sharedTextState = nil
+        tabCollectionViewModel = nil
         super.tearDown()
     }
 
@@ -94,7 +95,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     // MARK: - AI Chat Query Tests
 
-    @MainActor
     func testWhenSearchQueryIsSubmitted_ThenAIChatFlowIsFollowed() async {
         // Given
         controller.updateText("what is privacy")
@@ -111,7 +111,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(mockTabOpener.openAIChatTabCalled, "AI chat tab should be opened for search query")
     }
 
-    @MainActor
     func testWhenMultiWordQueryIsSubmitted_ThenAIChatFlowIsFollowed() async {
         // Given
         controller.updateText("how does DuckDuckGo protect my privacy")
@@ -128,7 +127,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
     }
 
-    @MainActor
     func testWhenQueryWithSpecialCharactersIsSubmitted_ThenAIChatFlowIsFollowed() async {
         // Given
         controller.updateText("what is 2 + 2?")
@@ -211,8 +209,9 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller.updateText("shared text")
 
         // Then
-        XCTAssertEqual(sharedTextState.text, "shared text")
-        XCTAssertTrue(sharedTextState.hasUserInteractedWithText)
+        let sharedTextState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertEqual(sharedTextState?.text, "shared text")
+        XCTAssertEqual(sharedTextState?.hasUserInteractedWithText, true)
     }
 }
 

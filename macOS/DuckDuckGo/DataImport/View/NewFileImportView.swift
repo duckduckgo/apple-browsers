@@ -22,6 +22,7 @@ import UniformTypeIdentifiers
 import os.log
 import BrowserServicesKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 @NewInstructionsView.InstructionsBuilder
 func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> [NewInstructionsView.InstructionsItem] {
@@ -29,11 +30,12 @@ func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> 
     case .safari, .safariTechnologyPreview:
         NSLocalizedString("import.zip.instructions.safari", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
-        %d Choose **Bookmarks, Passwords,** and/or **Credit Cards**, then click **Export**
-        %d Add the exported ZIP file below
+        %d Choose **Bookmarks, Passwords,** and **Credit Cards**, → **Export** and save the file
+        %d Upload the exported ZIP or CSV file to DuckDuckGo
         """, comment: """
         Instructions to import multiple data types exported as ZIP from Safari.
         %N$d - step number
+        %2$@ - browser icon
         **bold text**; _italic text_
         """)
         (source.importSourceImage ?? DataImport.Source.safari.importSourceImage!).resizedToFaviconSize()
@@ -45,7 +47,7 @@ func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> 
          .onePassword8, .onePassword7,
          .bitwarden, .lastPass,
          // file formats
-         .csv, .bookmarksHTML:
+         .csv, .bookmarksHTML, .fileImport:
         []
         assertionFailure("Invalid source for multi import")
     }
@@ -63,7 +65,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         Instructions to import Passwords as CSV from Google Chrome browser.
         %N$d - step number
         %2$s - browser name (Chrome)
-        %4$@ - hamburger menu icon
+        %3$@ - hamburger menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -78,7 +80,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         Instructions to import Passwords as CSV from Brave browser.
         %N$d - step number
         %2$s - browser name (Brave)
-        %4$@ - hamburger menu icon
+        %3$@ - hamburger menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -94,7 +96,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         Instructions to import Passwords as CSV from Chromium-based browsers.
         %N$d - step number
         %2$s - browser name
-        %4$@ - hamburger menu icon
+        %3$@ - hamburger menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -108,11 +110,9 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         """, comment: """
         Instructions to import Passwords as CSV from Cốc Cốc browser.
         %N$d - step number
-        %2$s - browser name (Cốc Cốc)
-        %4$@ - hamburger menu icon
+        %3$@ - menu icon
         **bold text**; _italic text_
         """)
-        source.importSourceName
         NSImage.menuVertical16
 
     case (.opera, .passwords):
@@ -136,11 +136,9 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         """, comment: """
         Instructions to import Passwords exported as CSV from Vivaldi browser.
         %N$d - step number
-        %2$s - browser name (Vivaldi)
-        %4$@ - menu button icon
+        %3$@ - menu button icon
         **bold text**; _italic text_
         """)
-        source.importSourceName
         NSImage.menuVertical16
 
     case (.operaGX, .passwords):
@@ -167,8 +165,8 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         Instructions to import Passwords as CSV from Yandex Browser.
         %N$d - step number
         %2$s - browser name (Yandex)
-        %4$@ - hamburger menu icon
-        %6$@ - vertical menu icon
+        %3$@ - hamburger menu icon
+        %5$@ - vertical menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -241,7 +239,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         Instructions to import Bookmarks exported as HTML from Yandex Browser.
         %N$d - step number
         %2$s - browser name (Yandex)
-        %4$@ - hamburger menu icon
+        %4$@ - menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -251,7 +249,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         if #available(macOS 15.2, *) {
             NSLocalizedString("import.csv.instructions.safari.macos15-2", value: """
             %d Open **Safari → File → Export Browsing Data to File...**
-            %d Select **passwords** and save the file
+            %d Select **Passwords** and save the file
             %d Double click the .zip file to unzip it, then upload the CSV file to DuckDuckGo
             """, comment: """
             Instructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.
@@ -287,8 +285,8 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         Instructions to import Passwords as CSV from Firefox.
         %N$d - step number
         %2$s - browser name (Firefox)
-        %4$@ - hamburger menu icon
-        %6$@ - horizontal menu icon
+        %3$@ - hamburger menu icon (first instance)
+        %4$@ - horizontal menu icon (second instance)
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -313,10 +311,11 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
     case (.onePassword8, .passwords):
         NSLocalizedString("import.csv.instructions.onePassword8.new", value: """
         %d Open **%s → File → Export** and select an account to export
-        %d Select format **CSV Logins and Passwords only → Export** and save the file
+        %d Select format **CSV (Logins and Passwords only) → Export Data** and save the file
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from 1Password 8.
+        %N$d - step number
         %2$s - app name (1Password)
         **bold text**; _italic text_
         """)
@@ -324,13 +323,12 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.onePassword7, .passwords):
         NSLocalizedString("import.csv.instructions.onePassword7.new", value: """
-        %d Open **%s** and select the vault you want to export (one vault at a time)
-        %d Select **File → Export → All Items**
-        %d Enter your 1Password password
-        %d Select **File Format: iCloud Keychain (.csv)** and save the file
+        %d Open **%s** and select the vault to export **→ File → Export → All Items** from the menu bar
+        %d Select the format **Comma Delimited Text (.csv)** and save the file
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from 1Password 7.
+        %N$d - step number
         %2$s - app name (1Password)
         **bold text**; _italic text_
         """)
@@ -338,55 +336,43 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.bitwarden, .passwords):
         NSLocalizedString("import.csv.instructions.bitwarden.new", value: """
-        %d Open and unlock **%s → File → Export vault**
-        %d Select **File Format: .csv**
-        %d Enter your Bitwarden password → Click %@ and save the file
+        %d Open **%s → Settings** and scroll down to **Tools →** select **Export vault**
+        %d Select the **File Format: .csv → Export vault** and save the file
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from Bitwarden.
+        %N$d - step number
         %2$s - app name (Bitwarden)
-        %5$@ - download icon
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage(systemSymbolName: "square.and.arrow.down", accessibilityDescription: nil) ?? .downloads
 
     case (.lastPass, .passwords):
         NSLocalizedString("import.csv.instructions.lastpass.new", value: """
-        %d Click the **%s** icon in your browser → enter your password → **Open My Vault**
-        %d From the sidebar: **Advanced Options → Export**
-        %d Enter your LastPass password
-        %d Select **File Format: Comma Delimited Text (.csv)** and save the file
+        %d Log in to the **%s** website → select **Advanced Options → Export → Continue**. You'll receive a verification email.
+        %d In the email, click **Continue export**, then return to **%s** and select **Advanced Options → Export → Submit** and save the **CSV** file
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from LastPass.
-        %2$s - app name (LastPass)
+        %N$d - step number
+        %2$s - app name (LastPass) - first instance
+        %4$s - app name (LastPass) - second instance
         **bold text**; _italic text_
         """)
         source.importSourceName
+        source.importSourceName
 
     case (.csv, .passwords):
-        NSLocalizedString("import.csv.instructions.generic.new", value: """
-        The CSV importer will try to match column headers to their position.
-        If there is no header, it supports two formats:
-        %d URL, Username, Password
-        %d Title, URL, Username, Password
-        """, comment: """
-        Instructions to import a generic CSV passwords file.
-        %N$d - step number
-        **bold text**; _italic text_
-        """)
+        BookmarksPasswordsTextProvider.passwordsText
 
     case (.bookmarksHTML, .bookmarks):
-        NSLocalizedString("import.html.instructions.generic.new", value: """
-        %d Open your old browser → **Bookmark Manager**
-        %d **Export bookmarks to HTML…** and save the file
-        %d Upload the exported HTML file to DuckDuckGo
-        """, comment: """
-        Instructions to import a generic HTML Bookmarks file.
-        %N$d - step number
-        **bold text**; _italic text_
-        """)
+        BookmarksPasswordsTextProvider.bookmarksText
+
+    case (.fileImport, .passwords):
+        BookmarksPasswordsTextProvider.passwordsText
+
+    case (.fileImport, .bookmarks):
+        BookmarksPasswordsTextProvider.bookmarksText
 
     case (.bookmarksHTML, .passwords),
         (.tor, .passwords),
@@ -398,6 +384,33 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         (_, .creditCards):
         assertionFailure("Invalid source/dataType")
     }
+}
+
+private struct BookmarksPasswordsTextProvider {
+    static let bookmarksText: String = {
+        NSLocalizedString("import.html.instructions.generic.new", value: """
+        %d Open your old browser → **Bookmark Manager**
+        %d **Export bookmarks to HTML…** and save the file
+        %d Upload the exported HTML file to DuckDuckGo
+        """, comment: """
+        Instructions to import a generic HTML Bookmarks file.
+        %N$d - step number
+        **bold text**; _italic text_
+        """)
+    }()
+
+    static let passwordsText: String = {
+        NSLocalizedString("import.csv.instructions.generic.new", value: """
+        The CSV importer will try to match column headers to their position.
+        If there is no header, it supports two formats:
+        %d URL, Username, Password
+        %d Title, URL, Username, Password
+        """, comment: """
+        Instructions to import a generic CSV passwords file.
+        %N$d - step number
+        **bold text**; _italic text_
+        """)
+    }()
 }
 
 enum FilePickerMode {
@@ -488,9 +501,8 @@ struct NewFileImportView: View {
             }
 
             VStack(alignment: .center, spacing: 20) {
-                Image(.passwordsAdd96)
-                    .resizable()
-                    .frame(width: 54, height: 54)
+                Image(nsImage: isTargeted ? DesignSystemImages.Color.Size128.fileDrop : DesignSystemImages.Color.Size128.fileDrag)
+
                 VStack(alignment: .center, spacing: 0) {
                     Text(UserText.importDragAndDropFile).font(.system(size: 14, weight: .bold))
                     button(UserText.importDataSelectFileButtonTitle)
@@ -826,12 +838,231 @@ struct NewCircleNumberView: View {
 
 // MARK: - Preview
 
-#Preview {
-    HStack {
-        NewFileImportView(source: .onePassword8, allowedFileTypes: [.zip], isButtonDisabled: false, kind: .archive)
-            .padding()
-            .frame(width: 512 - 20)
+#Preview("Multiple Types") {
+    VStack(spacing: 20) {
+        Text("Safari Multi-Type Import").font(.headline)
+        NewInstructionsView {
+            newFileImportMultipleTypeInstructionsBuilder(source: .safari)
+        }
     }
+    .padding()
+    .frame(width: 600)
     .font(.system(size: 13))
-    .background(Color.white)
+}
+
+#Preview("Passwords") {
+    ScrollView {
+        VStack(alignment: .leading, spacing: 30) {
+            Text("Chrome").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .chrome, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Brave").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .brave, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Chromium").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .chromium, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Edge").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .edge, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Cốc Cốc").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .coccoc, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Opera").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .opera, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Vivaldi").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .vivaldi, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Opera GX").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .operaGX, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Yandex").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .yandex, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Safari").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .safari, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Firefox").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .firefox, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("1Password 8").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .onePassword8, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("1Password 7").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .onePassword7, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Bitwarden").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .bitwarden, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("LastPass").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .lastPass, dataType: .passwords)
+            }
+
+            Divider()
+
+            Text("Generic CSV").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .csv, dataType: .passwords)
+            }
+        }
+        .padding()
+    }
+    .frame(width: 600, height: 800)
+    .font(.system(size: 13))
+}
+
+#Preview("Bookmarks") {
+    ScrollView {
+        VStack(alignment: .leading, spacing: 30) {
+            Text("Chrome").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .chrome, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Brave").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .brave, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Chromium").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .chromium, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Edge").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .edge, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Cốc Cốc").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .coccoc, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Vivaldi").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .vivaldi, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Opera").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .opera, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Opera GX").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .operaGX, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Yandex").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .yandex, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Safari").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .safari, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Firefox").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .firefox, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Tor").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .tor, dataType: .bookmarks)
+            }
+
+            Divider()
+
+            Text("Generic HTML").font(.headline)
+            NewInstructionsView {
+                newFileImportSingleTypeInstructionsBuilder(source: .bookmarksHTML, dataType: .bookmarks)
+            }
+        }
+        .padding()
+    }
+    .frame(width: 600, height: 800)
+    .font(.system(size: 13))
 }

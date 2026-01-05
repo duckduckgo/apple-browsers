@@ -277,7 +277,7 @@ func fileImportInstructionsBuilder(source: DataImport.Source, dataType: DataImpo
 
     case (.safari, .passwords), (.safariTechnologyPreview, .passwords):
         if #available(macOS 15.2, *) {
-            NSLocalizedString("import.csv.instructions.safari.macos15-2", value: """
+            NSLocalizedString("import.csv.instructions.safari.macos15-2.old", value: """
             %d Open **Safari**
             %d Open the **File menu → Export Browsing Data to File...**
             %d Select **passwords** and save the file someplace you can find it (e.g., Desktop)
@@ -466,7 +466,8 @@ func fileImportInstructionsBuilder(source: DataImport.Source, dataType: DataImpo
         (.bitwarden, .bookmarks),
         (.lastPass, .bookmarks),
         (.csv, .bookmarks),
-        (_, .creditCards):
+        (_, .creditCards),
+        (.fileImport, _):
         assertionFailure("Invalid source/dataType")
     }
 }

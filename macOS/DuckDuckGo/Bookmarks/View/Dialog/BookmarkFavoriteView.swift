@@ -28,7 +28,7 @@ struct BookmarkFavoriteView: View {
             HStack(spacing: 6) {
                 Image(.favoriteFilledBorder)
                 Text(UserText.addToFavorites)
-                    .foregroundColor(.primary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
             }
         }
         .toggleStyle(.checkbox)

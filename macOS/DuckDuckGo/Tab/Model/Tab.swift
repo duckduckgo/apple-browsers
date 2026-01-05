@@ -28,6 +28,7 @@ import Onboarding
 import os.log
 import PageRefreshMonitor
 import PixelKit
+import PrivacyConfig
 import SpecialErrorPages
 import UserScript
 import WebKit
@@ -35,6 +36,8 @@ import SERPSettings
 import AutoconsentStats
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
+    var isInPopUpWindow: Bool { get }
+
     func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool)
     func tabDidStartNavigation(_ tab: Tab)
     func tab(_ tab: Tab, createdChild childTab: Tab, of kind: NewWindowPolicy)
@@ -79,6 +82,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
     let featureFlagger: FeatureFlagger
+    private let privacyFeatures: AnyPrivacyFeatures
     private let fireproofDomains: FireproofDomains
     let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
@@ -89,6 +93,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     let tabsPreferences: TabsPreferences
     let reloadPublisher = PassthroughSubject<Void, Never>()
     let navigationDidEndPublisher = PassthroughSubject<Tab, Never>()
+
+    private let themeManager: ThemeManaging
+    private var themeCancellable: AnyCancellable?
 
     private var extensions: TabExtensions
     // accesing TabExtensions‘ Public Protocols projecting tab.extensions.extensionName to tab.extensionName
@@ -117,6 +124,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      downloadsPreferences: DownloadsPreferences? = nil,
                      permissionManager: PermissionManagerProtocol? = nil,
                      geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
+                     notificationService: UserNotificationAuthorizationServicing? = nil,
                      cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? = ContentBlockingAssetsCompilationTimeReporter.shared,
                      statisticsLoader: StatisticsLoader? = nil,
                      extensionsBuilder: TabExtensionsBuilderProtocol = TabExtensionsBuilder.default,
@@ -145,7 +153,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      aiChatSidebarProvider: AIChatSidebarProviding? = nil,
                      newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
-                     autoconsentStats: AutoconsentStatsCollecting? = nil
+                     autoconsentStats: AutoconsentStatsCollecting? = nil,
+                     themeManager: ThemeManaging? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -154,13 +163,15 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         ?? (AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil)
         let privacyFeatures = privacyFeatures ?? NSApp.delegateTyped.privacyFeatures
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
-        var faviconManager = faviconManagement
         let fireproofDomains = fireproofDomains ?? NSApp.delegateTyped.fireproofDomains
+
+        var faviconManager = faviconManagement
         if burnerMode.isBurner {
             faviconManager = FaviconManager(
                 cacheType: .inMemory,
                 bookmarkManager: NSApp.delegateTyped.bookmarkManager,
-                fireproofDomains: fireproofDomains)
+                fireproofDomains: fireproofDomains,
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager)
         }
 
         self.init(id: id,
@@ -179,6 +190,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   downloadsPreferences: downloadsPreferences ?? NSApp.delegateTyped.downloadsPreferences,
                   permissionManager: permissionManager ?? NSApp.delegateTyped.permissionManager,
                   geolocationService: geolocationService,
+                  notificationService: notificationService ?? NSApp.delegateTyped.notificationService,
                   extensionsBuilder: extensionsBuilder,
                   featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger,
                   contentScopeExperimentsManager: contentScopeExperimentsManager ?? NSApp.delegateTyped.contentScopeExperimentsManager,
@@ -208,7 +220,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   aiChatSidebarProvider: aiChatSidebarProvider ?? NSApp.delegateTyped.aiChatSidebarProvider,
                   newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
-                  autoconsentStats: autoconsentStats ?? NSApp.delegateTyped.autoconsentStats
+                  autoconsentStats: autoconsentStats ?? NSApp.delegateTyped.autoconsentStats,
+                  themeManager: themeManager ?? NSApp.delegateTyped.themeManager
         )
     }
 
@@ -229,6 +242,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          downloadsPreferences: DownloadsPreferences,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol,
+         notificationService: UserNotificationAuthorizationServicing,
          extensionsBuilder: TabExtensionsBuilderProtocol,
          featureFlagger: FeatureFlagger,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -258,7 +272,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          aiChatSidebarProvider: AIChatSidebarProviding,
          newTabPageShownPixelSender: NewTabPageShownPixelSender,
          tabCrashAggregator: TabCrashAggregator,
-         autoconsentStats: AutoconsentStatsCollecting
+         autoconsentStats: AutoconsentStatsCollecting,
+         themeManager: ThemeManaging
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -269,6 +284,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.navigationDelegate = DistributedNavigationDelegate(isPerformanceReportingEnabled: featureFlagger.isFeatureOn(.webKitPerformanceReporting))
         self.statisticsLoader = statisticsLoader
         self.internalUserDecider = internalUserDecider
+        self.privacyFeatures = privacyFeatures
         self.title = title
         self.favicon = favicon
         self.parentTab = parentTab
@@ -280,6 +296,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.lastSelectedAt = lastSelectedAt
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
+        self.themeManager = themeManager
 
         self.specialPagesUserScript = SpecialPagesUserScript()
         specialPagesUserScript?
@@ -323,6 +340,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                           isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
                           isTabBurner: burnerMode.isBurner,
                           isTabLoadedInSidebar: isLoadedInSidebar,
+                          isInPopUpWindow: { tabGetter()?.delegate?.isInPopUpWindow ?? false },
                           contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
                           setContent: { tabGetter()?.setContent($0) },
                           closeTab: { tabGetter().map { $0.delegate?.closeTab($0) } },
@@ -337,7 +355,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                           tabsPreferences: tabsPreferences,
                           burnerMode: burnerMode,
                           urlProvider: { tabGetter()?.url },
-                          createChildTab: { tabGetter()?.createChildTab(with: $0, for: $1, of: $2) },
+                          createChildTab: { tabGetter()?.createChildTab(with: $0, securityOrigin: $1, of: $2) },
                           presentTab: { childTab, kind in tabGetter().map { $0.delegate?.tab($0, createdChild: childTab, of: kind) } },
                           newWindowPolicyDecisionMakers: { tabGetter()?.newWindowPolicyDecisionMakers }
                          ),
@@ -373,7 +391,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         faviconCancellable = extensions.favicons?.faviconPublisher.assign(to: \.favicon, onWeaklyHeld: self)
         if favicon == nil {
-            extensions.favicons?.handleFavicon(oldValue: nil, error: error)
+            extensions.favicons?.loadCachedFavicon(oldValue: nil, isBurner: burnerMode.isBurner, error: error)
         }
 
         emailDidSignOutCancellable = NotificationCenter.default.publisher(for: .emailDidSignOut)
@@ -396,6 +414,13 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
             crashIndicatorModel.setUp(with: crashRecoveryExtension.tabDidCrashPublisher)
         }
+
+        themeCancellable = themeManager.themePublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] theme in
+                self?.refreshErrorHTMLIfNeeded(themeName: theme.name)
+            }
     }
 
 #if DEBUG
@@ -480,6 +505,15 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func enableLongDecisionMakingChecks() {}
 #endif
 
+    /// Ensures `WKUIDelegate` createWebView callbacks are ordered behind any in-flight `decidePolicyForNavigationAction` evaluation.
+    @MainActor
+    func dispatchCreateWebView(_ callback: @Sendable @escaping @MainActor () -> Void) { navigationDelegate.dispatchCreateWebView(callback) }
+    var isCreateWebViewGatingFailsafeEnabled: Bool {
+        privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(
+            PopupBlockingSubfeature.createWebViewGatingFailsafe,
+            defaultValue: true)
+    }
+
     // MARK: - Event Publishers
 
     /// Publishes currently active main frame Navigation state
@@ -547,7 +581,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 webView.stopAllMedia(shouldStopLoading: false)
             }
             Task { @MainActor in
-                extensions.favicons?.handleFavicon(oldValue: oldValue, error: error)
+                extensions.favicons?.loadCachedFavicon(oldValue: oldValue, isBurner: burnerMode.isBurner, error: error)
             }
             if navigationDelegate.currentNavigation == nil {
                 updateCanGoBackForward(withCurrentNavigation: nil)
@@ -610,12 +644,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         if let url = webView.url {
             let content = TabContent.contentFromURL(url, source: .webViewUpdated)
 
-            if self.content.isUrl, self.content.urlForWebView == url {
+            if self.content.displaysContentInWebView, self.content.urlForWebView == url {
                 // ignore content updates when tab.content has userEntered or credential set but equal url as it comes from the WebView url updated event
             } else if content != self.content {
                 self.content = content
             }
-        } else if self.content.isUrl,
+        } else if self.content.isExternalUrl,
                   // DuckURLSchemeHandler redirects duck:// address to a simulated request
                   // ignore webView.url temporarily switching to `nil`
                   self.content.urlForWebView?.isDuckPlayer != true {
@@ -956,7 +990,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
 
         self.content = content.forceReload()
-        if webView.url == nil, content.isUrl {
+        if webView.url == nil, content.displaysContentInWebView {
             // load from cache or interactionStateData when called by lazy loader
             return reloadIfNeeded(source: .lazyLoad)
         } else {
@@ -1462,7 +1496,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     private func loadErrorHTML(_ error: WKError, header: String, forUnreachableURL url: URL, alternate: Bool) {
-        let html = ErrorPageHTMLFactory.html(for: error, featureFlagger: featureFlagger, header: header)
+        let html = ErrorPageHTMLFactory.html(for: error, header: header, featureFlagger: featureFlagger, themeName: themeManager.theme.name)
 
         // Fire error page shown pixel when error page is actually loaded
         if error.code == WKError.Code.webContentProcessTerminated {
@@ -1479,6 +1513,20 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         }
     }
 
+    @MainActor
+    private func refreshErrorHTMLIfNeeded(themeName: ThemeName) {
+        // No need to reload the HTML for `Special Errors` as `SpecialErrorPageUserScript` will relay an `onThemeUpdate` JS message
+        guard let error, error.requiresSpecialErrorHTMLPage == false else {
+            return
+        }
+
+        let processDidCrash = error.userInfo[WKProcessTerminationReason.userInfoKey] != nil
+        let header = processDidCrash ? UserText.webProcessCrashPageHeader : UserText.errorPageHeader
+        let html = ErrorPageHTMLFactory.html(for: error, header: header, featureFlagger: featureFlagger, themeName: themeName)
+
+        webView.setDocumentHtml(html)
+    }
+
     func renderingProgressDidChange(progressEvents: UInt) {
         // Emit only after first paint event, when the white background content is not visible anymore
         // https://github.com/WebKit/WebKit/blob/407a96d094af6d48100f4524d964667336d962b4/Source/WebKit/Shared/API/Cocoa/_WKRenderingProgressEvents.h
@@ -1489,14 +1537,14 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     /// Factory method to create a child Tab
     @MainActor
-    func createChildTab(with configuration: WKWebViewConfiguration,
-                        for navigationAction: WKNavigationAction,
+    func createChildTab(with configuration: WKWebViewConfiguration?,
+                        securityOrigin: SecurityOrigin?,
                         of kind: NewWindowPolicy) -> Tab? {
 
         let tab = Tab(content: .none,
                       webViewConfiguration: configuration,
                       parentTab: self,
-                      securityOrigin: navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) },
+                      securityOrigin: securityOrigin,
                       burnerMode: burnerMode,
                       canBeClosedWithBack: kind.isSelectedTab,
                       webViewSize: webView.superview?.bounds.size ?? .zero)

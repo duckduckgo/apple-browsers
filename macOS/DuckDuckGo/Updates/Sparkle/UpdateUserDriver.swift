@@ -17,11 +17,11 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Foundation
 import os.log
 import PixelKit
+import PrivacyConfig
 #if SPARKLE
 import Sparkle
 #endif

@@ -69,9 +69,6 @@ protocol OmniBarDelegate: AnyObject {
     /// Called when the AI Chat left button is tapped
     func onAIChatLeftButtonPressed()
 
-    /// Called when the AI Chat right button is tapped
-    func onAIChatRightButtonPressed()
-
     /// Called when the AI Chat full mode omnibar branding area is tapped.
     func onAIChatBrandingPressed()
 
@@ -150,9 +147,6 @@ extension OmniBarDelegate {
     }
 
     func onAIChatLeftButtonPressed() {
-    }
-
-    func onAIChatRightButtonPressed() {
     }
 
     func onAIChatBrandingPressed() {

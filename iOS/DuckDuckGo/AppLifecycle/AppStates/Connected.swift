@@ -56,7 +56,10 @@ struct Connected: ConnectedHandling {
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, featureFlagger: appDependencies.featureFlagger)
+        let autoClearService = AutoClearService(autoClear: autoClear,
+                                                overlayWindowManager: overlayWindowManager,
+                                                keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
 
@@ -73,7 +76,7 @@ struct Connected: ConnectedHandling {
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
-    /// If confirmed this scenario never occurs, this code should be removed.
+    /// This unfortunately happens for iOS 16 and lower. Remove this once we drop support for it.
     init(stateContext: Foreground.StateContext, actionToHandle: AppAction?, window: UIWindow) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = 0
@@ -86,7 +89,10 @@ struct Connected: ConnectedHandling {
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, featureFlagger: appDependencies.featureFlagger)
+        let autoClearService = AutoClearService(autoClear: autoClear,
+                                                overlayWindowManager: overlayWindowManager,
+                                                keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
@@ -97,7 +103,7 @@ struct Connected: ConnectedHandling {
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
-    /// If confirmed this scenario never occurs, this code should be removed.
+    /// This unfortunately happens for iOS 16 and lower. Remove this once we drop support for it.
     init(stateContext: Background.StateContext, actionToHandle: AppAction?, window: UIWindow) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = 0
@@ -110,7 +116,10 @@ struct Connected: ConnectedHandling {
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, featureFlagger: appDependencies.featureFlagger)
+        let autoClearService = AutoClearService(autoClear: autoClear,
+                                                overlayWindowManager: overlayWindowManager,
+                                                keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,

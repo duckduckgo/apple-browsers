@@ -18,7 +18,7 @@
 
 import Cocoa
 import WebKit
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol PermissionContextMenuDelegate: AnyObject {
     func permissionContextMenu(_ menu: PermissionContextMenu, mutePermissions: [PermissionType])
@@ -295,7 +295,7 @@ final class PermissionContextMenu: NSMenu {
             deeplink = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
         case .geolocation:
             deeplink = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")!
-        case .popups, .externalScheme:
+        case .popups, .notification, .externalScheme:
             assertionFailure("No settings available")
             return
         }
@@ -352,7 +352,7 @@ private extension NSMenuItem {
     static func alwaysAsk(_ permission: PermissionType, on domain: String, target: PermissionContextMenu, isChecked: Bool) -> NSMenuItem {
         let title: String
         switch permission {
-        case .camera, .microphone, .geolocation, .externalScheme:
+        case .camera, .microphone, .geolocation, .notification, .externalScheme:
             title = UserText.privacyDashboardPermissionAsk
         case .popups:
             title = UserText.privacyDashboardPopupsAlwaysAsk
@@ -432,9 +432,11 @@ private extension NSMenuItem {
         let title: String
         switch permission {
         case .camera, .microphone, .geolocation:
-            title = String(format: UserText.devicePermissionAuthorizationFormat, domain, permission.localizedDescription.lowercased())
+            title = String(format: UserText.permissionMenuHeaderDeviceFormat, domain, permission.localizedDescription.lowercased())
         case .externalScheme(scheme: let scheme):
             title = String(format: UserText.permissionMenuHeaderExternalSchemeFormat, permission.localizedDescription.lowercased(), scheme)
+        case .notification:
+            title = String(format: UserText.notificationPermissionAuthorizationFormat, domain)
         case .popups:
             title = String(format: UserText.permissionMenuHeaderPopupWindowsFormat, domain)
         }
@@ -452,7 +454,12 @@ private extension NSMenuItem {
                           permission: PermissionType,
                           target: PermissionContextMenu) -> NSMenuItem {
 
-        let title = String(format: UserText.permissionPopupOpenFormat, (query.url?.isEmpty ?? true) ? "“”" : query.url!.absoluteString)
+        let displayedUrl: String? = {
+            guard let url = query.url, !url.isEmpty else { return nil }
+            return url.absoluteString.truncated(length: MainMenu.Constants.maxTitleLength, middle: "…")
+        }()
+        let title = String(format: UserText.permissionPopupOpenFormat, displayedUrl ?? "“”")
+
         let item = NSMenuItem(title: title, action: #selector(PermissionContextMenu.allowPermissionQuery), keyEquivalent: "")
         item.representedObject = query
         item.target = target
@@ -468,6 +475,7 @@ private extension NSMenuItem {
         if isChecked {
             item.state = .on
         }
+        item.setAccessibilityIdentifier("PermissionContextMenu.allowPopupsForPage")
         return item
     }
 

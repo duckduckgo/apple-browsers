@@ -110,7 +110,8 @@ public struct DefaultOAuthService: OAuthService {
     /// - Returns: and AuthServiceError.authAPIError containing the error code and description, nil if the body
     func extractError(from response: APIResponseV2) -> OAuthServiceError? {
         if let bodyError: OAuthRequest.BodyError = try? response.decodeBody() {
-            return OAuthServiceError.authAPIError(code: bodyError.error)
+            let bodyErrorCode = bodyError.error
+            return OAuthServiceError.authAPIError(OAuthRequestError(from: bodyErrorCode))
         }
         return nil
     }

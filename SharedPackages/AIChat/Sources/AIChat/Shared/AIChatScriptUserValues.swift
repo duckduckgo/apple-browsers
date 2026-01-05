@@ -82,6 +82,8 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsAIChatFullMode: Bool
     public let appVersion: String
     public let supportsHomePageEntryPoint: Bool
+    public let supportsOpenAIChatLink: Bool
+    public let supportsAIChatSync: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -96,7 +98,9 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsPageContext: false,
                                         supportsAIChatFullMode: false,
                                         appVersion: "",
-                                        supportsHomePageEntryPoint: true)
+                                        supportsHomePageEntryPoint: true,
+                                        supportsOpenAIChatLink: true,
+                                        supportsAIChatSync: false)
 #endif
 
 #if os(macOS)
@@ -111,7 +115,9 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsPageContext: false,
                                         supportsAIChatFullMode: false,
                                         appVersion: "",
-                                        supportsHomePageEntryPoint: true)
+                                        supportsHomePageEntryPoint: true,
+                                        supportsOpenAIChatLink: true,
+                                        supportsAIChatSync: false)
 #endif
     }
 
@@ -126,7 +132,9 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsPageContext: Bool,
                 supportsAIChatFullMode: Bool,
                 appVersion: String,
-                supportsHomePageEntryPoint: Bool = true) {
+                supportsHomePageEntryPoint: Bool = true,
+                supportsOpenAIChatLink: Bool = true,
+                supportsAIChatSync: Bool) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -140,6 +148,8 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsAIChatFullMode = supportsAIChatFullMode
         self.appVersion = appVersion
         self.supportsHomePageEntryPoint = supportsHomePageEntryPoint
+        self.supportsOpenAIChatLink = supportsOpenAIChatLink
+        self.supportsAIChatSync = supportsAIChatSync
     }
 }
 

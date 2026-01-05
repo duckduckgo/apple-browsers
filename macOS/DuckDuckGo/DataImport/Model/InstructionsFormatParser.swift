@@ -190,7 +190,7 @@ struct InstructionsFormatParser {
                 try accept(character)
 
             // " " follows ** - reset and recurse
-            case ("**", .some(let character)) where !character.isWordChar && !isBold:
+            case ("**", " ") where !isBold:
                 append("*")
                 append("*")
                 try accept(character)

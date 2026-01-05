@@ -189,10 +189,7 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
 
     func testWhenFeatureFlagIsDisabled_ItDoesNotAffectTheButton() {
         // Given
-        let upsellManager = createUpsellManager(
-            shouldShowUpsell: false,
-            featureEnabled: false
-        )
+        let upsellManager = createUpsellManager(shouldShowUpsell: false)
         sut = createButtonModel(with: upsellManager)
 
         // When
@@ -231,24 +228,17 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
 
 extension NetworkProtectionNavBarButtonModelTests {
     private func createUpsellManager(
-        shouldShowUpsell: Bool,
-        featureEnabled: Bool = true
+        shouldShowUpsell: Bool
     ) -> VPNUpsellVisibilityManager {
-        let mockFeatureFlagger = MockFeatureFlagger()
         let mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockDefaultBrowserProvider.isDefault = true
 
-        if featureEnabled && shouldShowUpsell {
-            mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
-        }
-
         let manager = VPNUpsellVisibilityManager(
             isFirstLaunch: false,
-            isNewUser: true,
+            isNewUser: shouldShowUpsell,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
-            featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,
             timerDuration: 0.01
         )
@@ -268,7 +258,6 @@ extension NetworkProtectionNavBarButtonModelTests {
             onboardStatusPublisher: Just(.completed).eraseToAnyPublisher()
         )
         let statusReporter = TestNetworkProtectionStatusReporter()
-        let iconProvider = NavigationBarIconProvider()
 
         let themeManager = MockThemeManager()
         return NetworkProtectionNavBarButtonModel(

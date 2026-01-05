@@ -68,6 +68,7 @@ extension Preferences {
 
                     Spacer().frame(height: 16)
 
+#if SPARKLE
                     PreferencePaneSection(UserText.shortcuts, spacing: 4) {
                         PreferencePaneSubSection {
                             HStack {
@@ -100,6 +101,8 @@ extension Preferences {
                             }
                         }
                     }
+#endif
+
                 }
             }
         }

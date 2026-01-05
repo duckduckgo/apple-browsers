@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import DesignResourcesKitIcons
 import FeatureFlags
 import MaliciousSiteProtection
 import Navigation
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import Subscription
 import WebKit
@@ -396,7 +397,6 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testDisplayedFaviconForAIChat() {
         let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSidebar]
         let aiChatURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=2")!
         let tabViewModel = TabViewModel.forTabWithURL(aiChatURL, featureFlagger: mockFeatureFlagger)
 
@@ -406,7 +406,6 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testDisplayedFaviconForDuckAIURL() {
         let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSidebar]
         let duckAIURL = URL(string: "https://duck.ai/chat")!
         let tabViewModel = TabViewModel.forTabWithURL(duckAIURL, featureFlagger: mockFeatureFlagger)
 
@@ -838,51 +837,4 @@ private extension Tab {
     convenience init(url: URL? = nil) {
         self.init(content: url.map { TabContent.url($0, source: .link) } ?? .none)
     }
-}
-
-// MARK: - Test Mocks
-
-final class MockThemeStyle: ThemeStyleProviding {
-    var name: ThemeName
-
-    var palette: ColorPalette
-
-    var toolbarButtonsCornerRadius: CGFloat = 0
-
-    var fireWindowGraphic: NSImage = .fireHeader
-
-    var areNavigationBarCornersRound: Bool = false
-
-    var fireButtonSize: CGFloat = 0
-
-    var navigationToolbarButtonsSpacing: CGFloat = 0
-
-    var tabBarButtonSize: CGFloat = 0
-
-    var addToolbarShadow: Bool = false
-
-    let isNewStyle: Bool
-
-    init(isNewStyle: Bool, name: ThemeName = .default, palette: ColorPalette = NewColorPalette()) {
-        self.isNewStyle = isNewStyle
-        self.name = name
-        self.palette = palette
-    }
-
-    var addressBarStyleProvider: DuckDuckGo_Privacy_Browser.AddressBarStyleProviding {
-        fatalError("Not implemented for test")
-    }
-
-    var colorsProvider: DuckDuckGo_Privacy_Browser.ColorsProviding {
-        fatalError("Not implemented for test")
-    }
-
-    var iconsProvider: DuckDuckGo_Privacy_Browser.IconsProviding {
-        fatalError("Not implemented for test")
-    }
-
-    var tabStyleProvider: any DuckDuckGo_Privacy_Browser.TabStyleProviding {
-        fatalError("Not implemented for test")
-    }
-
 }

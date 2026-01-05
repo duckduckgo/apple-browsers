@@ -39,9 +39,9 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
 
     func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName]
     func signOut(notifyUI: Bool, userInitiated: Bool) async
-    var canPurchase: Bool { get }
-    /// Publisher that emits a boolean value indicating whether the user can purchase.
-    var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
+    var hasAppStoreProductsAvailable: Bool { get }
+    /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
+    var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
     @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription
     func isSubscriptionPresent() -> Bool
     func url(for type: SubscriptionURL) -> URL
@@ -56,6 +56,16 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
 public extension SubscriptionAuthV1toV2Bridge {
     func signOut(notifyUI: Bool) async {
         await signOut(notifyUI: notifyUI, userInitiated: false)
+    }
+
+    /// Checks whether the user is eligible to purchase the subscription, regardless of purchase platform.
+    var isSubscriptionPurchaseEligible: Bool {
+        switch currentEnvironment.purchasePlatform {
+        case .appStore:
+            return hasAppStoreProductsAvailable
+        case .stripe:
+            return true
+        }
     }
 }
 

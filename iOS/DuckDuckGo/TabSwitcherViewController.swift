@@ -26,7 +26,7 @@ import Bookmarks
 import Persistence
 import os.log
 import SwiftUI
-import BrowserServicesKit
+import PrivacyConfig
 import AIChat
 import Combine
 
@@ -117,7 +117,10 @@ class TabSwitcherViewController: UIViewController {
 
     let featureFlagger: FeatureFlagger
     let tabManager: TabManager
+    let historyManager: HistoryManaging
+    let fireproofing: Fireproofing
     let aiChatSettings: AIChatSettingsProvider
+    let keyValueStore: ThrowingKeyValueStoring
     var tabsModel: TabsModel {
         tabManager.model
     }
@@ -129,6 +132,8 @@ class TabSwitcherViewController: UIViewController {
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
 
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
                    syncService: DDGSyncing,
@@ -137,15 +142,23 @@ class TabSwitcherViewController: UIViewController {
                    tabManager: TabManager,
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
-                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
+                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   productSurfaceTelemetry: ProductSurfaceTelemetry,
+                   historyManager: HistoryManaging,
+                   fireproofing: Fireproofing,
+                   keyValueStore: ThrowingKeyValueStoring) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
+        self.keyValueStore = keyValueStore
         self.favicons = favicons
         self.tabManager = tabManager
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.historyManager = historyManager
+        self.fireproofing = fireproofing
         super.init(coder: coder)
     }
 
@@ -246,6 +259,11 @@ class TabSwitcherViewController: UIViewController {
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
 
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.tabManagerUsed()
     }
 
     private func setupBackgroundView() {
@@ -394,8 +412,8 @@ class TabSwitcherViewController: UIViewController {
         burn(sender: sender)
     }
 
-    func forgetAll() {
-        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self)
+    func forgetAll(_ options: FireOptions) {
+        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self, fireOptions: options)
     }
 
     func dismiss() {

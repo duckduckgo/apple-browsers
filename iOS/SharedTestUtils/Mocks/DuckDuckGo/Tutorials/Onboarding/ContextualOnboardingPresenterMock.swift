@@ -156,6 +156,8 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
 
+    private(set) var clearHeldURLDataCallCount = 0
+
     func setTryAnonymousSearchMessageSeen() { }
 
     func setTryVisitSiteMessageSeen() {}
@@ -182,7 +184,9 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     func resumeRegularFlow() {}
 
-    func clearHeldURLData() {}
+    func clearHeldURLData() {
+        clearHeldURLDataCallCount += 1
+    }
 
     func fireButtonPulseStarted() {}
 

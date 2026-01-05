@@ -144,9 +144,8 @@ extension TabContent {
             if url.isWebExtensionUrl {
                 return .webExtensionUrl(url)
             }
-            if url.isDuckAIURL,
-               NSApp.delegateTyped.featureFlagger.isFeatureOn(.aiChatSidebar) {
-                    return .aiChat(url)
+            if url.isDuckAIURL {
+                return .aiChat(url)
             }
 
             let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -253,7 +252,7 @@ extension TabContent {
     /// `real` URL loaded in the web view
     var urlForWebView: URL? {
         switch self {
-        case .url(let url, credential: _, source: _):
+        case .url(let url, credential: _, source: _), .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url), .aiChat(let url):
             return url
         case .newtab:
             return .newtab
@@ -273,10 +272,6 @@ extension TabContent {
             return .dataBrokerProtection
         case .releaseNotes:
             return .releaseNotes
-        case .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url):
-            return url
-        case .aiChat(let url):
-            return url
         case .none:
             return nil
         }
@@ -292,9 +287,9 @@ extension TabContent {
         }
     }
 
-    var isUrl: Bool {
+    var isExternalUrl: Bool {
         switch self {
-        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history, .aiChat:
+        case .url, .subscription, .identityTheftRestoration, .aiChat:
             return true
         default:
             return false
@@ -327,7 +322,10 @@ extension TabContent {
     }
 
     var displaysContentInWebView: Bool {
-        isUrl
+        switch self {
+        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history, .aiChat: true
+        default: false
+        }
     }
 
     var usesExternalWebView: Bool {
@@ -355,7 +353,7 @@ extension TabContent {
         case .releaseNotes:
             return false
         default:
-            return isUrl
+            return isExternalUrl
         }
     }
 

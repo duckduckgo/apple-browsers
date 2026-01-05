@@ -47,13 +47,11 @@ final class SafariDataImporter: DataImporter {
     private var source: DataImport.Source {
         profile.browser.importSource
     }
-    private let featureFlagger: FeatureFlagger
 
-    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager, featureFlagger: FeatureFlagger) {
+    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager) {
         self.profile = profile
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
-        self.featureFlagger = featureFlagger
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -74,7 +72,7 @@ final class SafariDataImporter: DataImporter {
     func validateAccess(for types: Set<DataImport.DataType>) -> [DataImport.DataType: any DataImportError]? {
         guard types.contains(.bookmarks) else { return nil }
 
-        if case .failure(let error) = SafariBookmarksReader(safariBookmarksFileURL: fileUrl, featureFlagger: featureFlagger).validateFileReadAccess() {
+        if case .failure(let error) = SafariBookmarksReader(safariBookmarksFileURL: fileUrl).validateFileReadAccess() {
             return [.bookmarks: error]
         }
         return nil
@@ -82,27 +80,22 @@ final class SafariDataImporter: DataImporter {
 
     @MainActor
     private func importDataSync(types: Set<DataImport.DataType>, updateProgress: DataImportProgressCallback) async -> DataImportSummary {
-        let updateSafariBookmarksImport = featureFlagger.isFeatureOn(.updateSafariBookmarksImport)
-
         // logins will be imported from CSV
         guard types.contains(.bookmarks) else { return [:] }
 
-        let bookmarkReader = SafariBookmarksReader(safariBookmarksFileURL: fileUrl, featureFlagger: featureFlagger)
+        let bookmarkReader = SafariBookmarksReader(safariBookmarksFileURL: fileUrl)
         let bookmarkResult = bookmarkReader.readBookmarks()
 
         var summary = DataImportSummary()
 
         switch bookmarkResult {
         case .success(let bookmarks):
-            let maxFavoritesCount = updateSafariBookmarksImport ? Constants.maxFavoritesCount : nil
-            let bookmarksSummary = bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
+            let bookmarksSummary = bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: Constants.maxFavoritesCount)
 
             await importFavicons(from: profile.profileURL)
 
-            if updateSafariBookmarksImport {
-                let numberOfFavorites = min(bookmarks.topLevelFolders.bookmarkBar?.children?.count ?? 0, maxFavoritesCount ?? Int.max)
-                PixelKit.fire(GeneralPixel.favoritesImportSucceeded(source: source.pixelSourceParameterName, sourceVersion: profile.installedAppsMajorVersionDescription(), favoritesBucket: .init(count: numberOfFavorites)), frequency: .dailyAndStandard)
-            }
+            let numberOfFavorites = min(bookmarks.topLevelFolders.bookmarkBar?.children?.count ?? 0, Constants.maxFavoritesCount)
+            PixelKit.fire(GeneralPixel.favoritesImportSucceeded(source: source.pixelSourceParameterName, sourceVersion: profile.installedAppsMajorVersionDescription(), favoritesBucket: .init(count: numberOfFavorites)), frequency: .dailyAndStandard)
 
             summary[.bookmarks] = .success(.init(bookmarksSummary))
         case .failure(let error):

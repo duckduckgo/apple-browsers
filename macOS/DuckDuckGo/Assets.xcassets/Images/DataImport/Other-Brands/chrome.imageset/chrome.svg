@@ -1,0 +1,26 @@
+<svg fill="none" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#chrome_svg__a)">
+    <path fill="url(#chrome_svg__b)" d="M31.996 18h24.245a27.993 27.993 0 0 0-48.491.003l12.122 20.996.01-.003A13.983 13.983 0 0 1 31.997 18Z"/>
+    <path fill="url(#chrome_svg__c)" d="M44.127 38.997 32.005 59.994a27.993 27.993 0 0 0 24.242-41.996H32.003l-.003.01a13.983 13.983 0 0 1 12.127 20.99Z"/>
+    <path fill="url(#chrome_svg__d)" d="M19.877 39.004 7.754 18.007A27.993 27.993 0 0 0 32.003 60l12.122-20.997-.008-.008a13.983 13.983 0 0 1-24.24.009"/>
+    <path fill="#fff" d="M32 46c7.732 0 14-6.268 14-14s-6.268-14-14-14-14 6.268-14 14 6.268 14 14 14"/>
+    <path fill="#1A73E8" d="M32 43.083c6.121 0 11.083-4.962 11.083-11.083S38.121 20.917 32 20.917 20.916 25.879 20.916 32 25.88 43.083 32 43.083"/>
+  </g>
+  <defs>
+    <linearGradient id="chrome_svg__b" x1="53.216" x2="28.971" y1="16.252" y2="58.247" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D93025"/>
+      <stop offset="1" stop-color="#EA4335"/>
+    </linearGradient>
+    <linearGradient id="chrome_svg__c" x1="57.837" x2="9.346" y1="21.499" y2="21.499" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FCC934"/>
+      <stop offset="1" stop-color="#FBBC04"/>
+    </linearGradient>
+    <linearGradient id="chrome_svg__d" x1="35.031" x2="10.785" y1="58.252" y2="16.257" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E8E3E"/>
+      <stop offset="1" stop-color="#34A853"/>
+    </linearGradient>
+    <clipPath id="chrome_svg__a">
+      <path fill="#fff" d="M4 4h56v56H4z"/>
+    </clipPath>
+  </defs>
+</svg>

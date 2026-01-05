@@ -20,7 +20,7 @@
 import UIKit
 import DesignResourcesKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import Bookmarks
 import Persistence
 import History
@@ -122,6 +122,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        if switchBarHandler.isUsingFadeOutAnimation {
+            switchBarHandler.updateBarPosition(isTop: isUsingTopBarPosition)
+        }
         setupView()
         installComponents()
         setupSubscriptions()

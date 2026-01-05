@@ -19,6 +19,7 @@
 import Common
 import History
 import HistoryView
+import PrivacyConfig
 import SharedTestUtilities
 import WebKit
 import XCTest
@@ -384,7 +385,7 @@ final class FireDialogViewModelTests: XCTestCase {
         // Verify window still exists and old tab was removed, new tab was inserted
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning (old tab removed)")
-        XCTAssert(tabCollectionVM.tabs.first?.content.isUrl != true || tabCollectionVM.tabs.first?.content.urlForWebView != .duckDuckGo, "New tab should not be the old burned tab")
+        XCTAssert(tabCollectionVM.tabs.first?.content.isExternalUrl != true || tabCollectionVM.tabs.first?.content.urlForWebView != .duckDuckGo, "New tab should not be the old burned tab")
     }
 
     @MainActor func testBurn_CurrentWindow_WithIncludeHistoryTrue_BurnVisitsCalled() {

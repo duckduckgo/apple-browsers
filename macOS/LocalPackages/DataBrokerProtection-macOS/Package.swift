@@ -58,6 +58,7 @@ let package = Package(
                 .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
                 .product(name: "NetworkProtectionProxy", package: "NetworkProtectionMac"),
                 .product(name: "LoginItems", package: "LoginItems"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

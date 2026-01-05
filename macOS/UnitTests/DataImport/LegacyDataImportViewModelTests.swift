@@ -48,7 +48,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // Validate supported DataType-s of all Import Sources
     func testDataImportSourceSupportedDataTypes() {
-        for source in Source.allCases {
+        for source in Source.allCasesForLegacyImports {
             if source.legacyInitialScreen == .profileAndDataTypesPicker {
                 if source == .tor {
                     XCTAssertEqual(source.supportedDataTypes, [.bookmarks], source.importSourceName)
@@ -56,10 +56,13 @@ final class LegacyDataImportViewModelTests: XCTestCase {
                     XCTAssertEqual(source.supportedDataTypes, [.bookmarks, .passwords], source.importSourceName)
                 }
             } else {
+                // File import sources (csv, bookmarksHTML) should have a single data type
                 if source == .bookmarksHTML {
                     XCTAssertEqual(source.supportedDataTypes, [.bookmarks], source.importSourceName)
-                } else {
+                } else if source == .csv || source == .onePassword8 || source == .onePassword7 || source == .bitwarden || source == .lastPass {
                     XCTAssertEqual(source.supportedDataTypes, [.passwords], source.importSourceName)
+                } else {
+                    XCTFail("Unexpected source with fileImport initial screen: \(source)")
                 }
             }
         }
@@ -71,7 +74,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
     }
 
     func testWhenModelIsInstantiated_initialScreenIsShown() {
-        for source in Source.allCases {
+        for source in Source.allCasesForLegacyImports {
             model = LegacyDataImportViewModel(importSource: source)
             XCTAssertEqual(model.screen, source.legacyInitialScreen, "\(source)")
         }
@@ -111,7 +114,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     func testWhenImportSummaryCompletesWithErrorsThenHasSummaryErrorsShouldReturnTrue() async throws {
         // GIVEN
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             // GIVEN
             let browser = try XCTUnwrap(ThirdPartyBrowser.browser(for: source))
             for dataType in DataType.allCases {
@@ -131,7 +134,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     func testWhenImportSummaryCompletesWithoutErrorsThenHasSummaryErrorsShouldReturnFalse() async throws {
         // GIVEN
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             // GIVEN
             let browser = try XCTUnwrap(ThirdPartyBrowser.browser(for: source))
             for dataType in DataType.allCases {
@@ -165,7 +168,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
     }
 
     func testWhenInvalidProfilesArePresent_onlyValidProfilesShownAndFirstValidProfileSelected() {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else { continue }
 
             model = LegacyDataImportViewModel(importSource: source, loadProfiles: { browser in
@@ -196,7 +199,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
     }
 
     func testWhenDefaultProfileIsInvalidAndOnlyOneValidProfileIsPresent_validProfileSelected() {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else { continue }
 
             model = LegacyDataImportViewModel(importSource: source, loadProfiles: { browser in
@@ -218,7 +221,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
     }
 
     func testWhenNoValidProfilesPresent_noProfilesShownAndDefaultProfileSelected() {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else { continue }
 
             model = LegacyDataImportViewModel(importSource: source, loadProfiles: { browser in
@@ -267,7 +270,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenNoDataTypesSelected_actionButtonDisabled() {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             model = LegacyDataImportViewModel(importSource: source)
 
             XCTAssertEqual(model.selectedDataTypes, source.supportedDataTypes)
@@ -337,7 +340,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenFileImportSourceSelected_buttonActionsAreCancelAndNone() {
-        for source in Source.allCases where ThirdPartyBrowser.browser(for: source) == nil || source.isBrowser == false {
+        for source in Source.allCasesForLegacyImports where ThirdPartyBrowser.browser(for: source) == nil || source.isBrowser == false {
             model = LegacyDataImportViewModel(importSource: source, loadProfiles: {
                 XCTAssertNotNil(ThirdPartyBrowser.browser(for: source), "Unexpected loadProfiles – \(source)")
                 return .init(browser: $0, profiles: [.test(for: $0)])
@@ -543,7 +546,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> bookmarks success, passwords success -> summary
     func testWhenBrowserBookmarksImportSucceedsPasswordsImportSucceeds_summaryShown() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -563,7 +566,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> bookmarks success, passwords failure -> file import
     func testWhenBrowserBookmarksImportSucceedsPasswordsImportFails_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -583,7 +586,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> bookmarks success, no passwords imported -> file import
     func testWhenBrowserBookmarksImportSucceedsNoPasswords_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -603,7 +606,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> bookmarks success, no passwords file found -> file import
     func testWhenBrowserBookmarksImportSucceedsNoPasswordsFileError_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -623,7 +626,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> bookmarks success, passwords (nil) -> boookmarks summary [Next]
     func testWhenBrowserBookmarksOnlyImportSucceeds_bookmarksSummaryShown() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -656,7 +659,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> bookmarks failure, passwords success -> file import
     func testWhenBrowserPasswordsImportSucceedsBookmarksImportFails_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -676,7 +679,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> bookmarks failure, no passwords imported -> file import
     func testWhenBrowserBookmarksImportFailsNoPasswords_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -696,7 +699,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> bookmarks failure, passwords failure -> file import
     func testWhenBrowserBookmarksImportFailsPasswordsImportFails_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -716,7 +719,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> bookmarks failure, no passwords file found -> file import
     func testWhenBrowserBookmarksImportFailsNoPasswordsFileError_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -736,7 +739,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> bookmarks failure, passwords (nil) -> file import
     func testWhenBrowserBookmarksOnlyImportSucceeds_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -757,7 +760,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> no bookmarks, passwords success -> file import
     func testWhenBrowserNoBookmarksPasswordsImportSucceeds_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -777,7 +780,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> no bookmarks, passwords failuire -> file import
     func testWhenBrowserNoBookmarksPasswordsImportFails_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -797,7 +800,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> no bookmarks, no passwords -> file import
     func testWhenBrowserNoBookmarksNoPasswords_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -817,7 +820,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> no bookmarks, no passwords file found -> file import
     func testWhenBrowserNoBookmarksNoPasswordsFileFound_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -837,7 +840,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> no bookmarks, passwords (nil) -> file import
     func testWhenBrowserNoBookmarksOnly_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -858,7 +861,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> no bookmarks file found, passwords success -> file import
     func testWhenBrowserNoBookmarksFileFoundPasswordsImportSucceeds_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -878,7 +881,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> no bookmarks file found, passwords failuire -> file import
     func testWhenBrowserNoBookmarksFileFoundPasswordsImportFails_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -898,7 +901,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> no bookmarks file found, no passwords -> file import
     func testWhenBrowserNoBookmarksFileFoundNoPasswords_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -918,7 +921,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> no bookmarks file found, no passwords file found -> file import
     func testWhenBrowserNoBookmarksFileFoundNoPasswordsFileFound_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -938,7 +941,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import -> no bookmarks file found, passwords (nil) -> file import
     func testWhenBrowserNoBookmarksFileFoundOnly_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -959,7 +962,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import passwords -> passwords success -> summary
     func testWhenBrowserOnlySelectedPasswordsImportSucceeds_summaryShown() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -978,7 +981,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import passwords -> passwords failure -> summary
     func testWhenBrowserOnlySelectedPasswordsImportFails_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -997,7 +1000,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import passwords -> no passwords
     func testWhenBrowserOnlySelectedPasswordsResultsWithNoPasswords_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -1016,7 +1019,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     // initial -> import passwords -> no passwords file found
     func testWhenBrowserOnlySelectedPasswordsImportResultsWithNoPasswordsFileFound_manualImportSuggested() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             guard let browser = ThirdPartyBrowser.browser(for: source) else {
                 XCTFail("no ThirdPartyBrowser for \(source)")
                 continue
@@ -1036,7 +1039,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
     // initial -> import passwords -> only file import supported for passwords -> [Next] -> file import
     @MainActor
     func testWhenBrowserOnlySelectedPasswordsCannotBeImported_manualImportSuggested() throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             setupModel(with: source, profiles: [BrowserProfile.test, BrowserProfile.default, BrowserProfile.test2], dataImporterFactory: { src, dataType, _, _ in
                 XCTAssertEqual(src, source)
                 XCTAssertNil(dataType)
@@ -1060,7 +1063,10 @@ final class LegacyDataImportViewModelTests: XCTestCase {
     // csv/html file import succeeds -> summary
     @MainActor
     func testWhenFileImportSourceImportSucceeds_summaryShown() async throws {
-        for source in Source.allCases where source.legacyInitialScreen.isFileImport {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen.isFileImport {
+            // Skip .fileImport as it's not available for legacy imports
+            guard source != .fileImport else { continue }
+
             setupModel(with: source)
 
             guard case .fileImport(dataType: let dataType, summary: []) = model.screen else {
@@ -1068,8 +1074,10 @@ final class LegacyDataImportViewModelTests: XCTestCase {
                 continue
             }
 
-            XCTAssertEqual([dataType], source.supportedDataTypes)
-            XCTAssertEqual(model.selectedDataTypes, [dataType], source.rawValue)
+            // File import sources should have a single data type matching the screen
+            XCTAssertEqual([dataType], source.supportedDataTypes, "\(source) should have a single supported data type matching the screen dataType")
+            // LegacyDataImportViewModel initializes selectedDataTypes from supportedDataTypes
+            XCTAssertEqual(model.selectedDataTypes, source.supportedDataTypes, "\(source) selectedDataTypes should match supportedDataTypes")
             XCTAssertEqual(model.buttons, [.cancel], source.rawValue)
 
             try await initiateImport(of: [dataType], fromFile: dataType == .passwords ? .testCSV : .testHTML, resultingWith: [
@@ -1084,7 +1092,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
     // csv/html file import succeeds with 0 passwords/bookmarks imported -> summary
     @MainActor
     func testWhenFileImportSourceImportSucceedsWithNoDataFound_summaryShown() async throws {
-        for source in Source.allCases where source.legacyInitialScreen.isFileImport {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen.isFileImport {
             setupModel(with: source)
 
             guard case .fileImport(dataType: let dataType, summary: []) = model.screen else {
@@ -1092,7 +1100,8 @@ final class LegacyDataImportViewModelTests: XCTestCase {
                 continue
             }
 
-            XCTAssertEqual(model.selectedDataTypes, [dataType], source.rawValue)
+            // LegacyDataImportViewModel initializes selectedDataTypes from supportedDataTypes
+            XCTAssertEqual(model.selectedDataTypes, source.supportedDataTypes, "\(source) selectedDataTypes should match supportedDataTypes")
             XCTAssertEqual(model.buttons, [.cancel], source.rawValue)
 
             try await initiateImport(of: [dataType], fromFile: dataType == .passwords ? .testCSV : .testHTML, resultingWith: [
@@ -1107,7 +1116,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
     // csv/html file import fails -> feedback
     @MainActor
     func testWhenFileImportSourceImportFails_feedbackScreenShown() async throws {
-        for source in Source.allCases where source.legacyInitialScreen.isFileImport {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen.isFileImport {
             setupModel(with: source)
 
             guard case .fileImport(dataType: let dataType, summary: []) = model.screen else {
@@ -1115,7 +1124,8 @@ final class LegacyDataImportViewModelTests: XCTestCase {
                 continue
             }
 
-            XCTAssertEqual(model.selectedDataTypes, [dataType], source.rawValue)
+            // LegacyDataImportViewModel initializes selectedDataTypes from supportedDataTypes
+            XCTAssertEqual(model.selectedDataTypes, source.supportedDataTypes, "\(source) selectedDataTypes should match supportedDataTypes")
             XCTAssertEqual(model.buttons, [.cancel], source.rawValue)
 
             try await initiateImport(of: [dataType], fromFile: dataType == .passwords ? .testCSV : .testHTML, resultingWith: [
@@ -1217,7 +1227,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenBrowsersOnlySelectedBookmarksFileImportSucceeds_summaryShown() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             for bookmarksSummary in bookmarksSummaries
             // initial bookmark import failed or ended with empty result
             where bookmarksSummary?.result.isSuccess == false || (try? bookmarksSummary?.result.get())?.isEmpty == true {
@@ -1342,7 +1352,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenBrowsersOnlySelectedBookmarksFileImportFails_feedbackShown() async throws {
-        for source in Source.allCases where source.legacyInitialScreen == .profileAndDataTypesPicker {
+        for source in Source.allCasesForLegacyImports where source.legacyInitialScreen == .profileAndDataTypesPicker {
             for bookmarksSummary in bookmarksSummaries
             // initial bookmark import failed or ended with empty result
             where bookmarksSummary?.result.isSuccess == false || (try? bookmarksSummary?.result.get())?.isEmpty == true {

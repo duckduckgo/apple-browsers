@@ -17,7 +17,6 @@
 //
 
 import AutoconsentStats
-import BrowserServicesKit
 import Combine
 import Common
 import History
@@ -25,10 +24,13 @@ import HistoryView
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import PrivacyStats
 import SharedTestUtilities
 import XCTest
 import RemoteMessagingTestsUtils
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockPrivacyStats: PrivacyStatsCollecting {
@@ -46,10 +48,15 @@ final class MockAutoconsentStats: AutoconsentStatsCollecting {
     let statsUpdatePublisher: AnyPublisher<Void, Never> = Empty<Void, Never>().eraseToAnyPublisher()
 
     func recordAutoconsentAction(clicksMade: Int64, timeSpent: TimeInterval) async {}
-    func fetchTotalCookiePopUpsBlocked() async -> Int64 { 0 }
+
+    var totalCookiePopUpsBlocked: Int64 = 0
+    func fetchTotalCookiePopUpsBlocked() async -> Int64 {
+        return totalCookiePopUpsBlocked
+    }
+
     func fetchAutoconsentDailyUsagePack() async -> AutoconsentDailyUsagePack {
         AutoconsentDailyUsagePack(
-            totalCookiePopUpsBlocked: 0,
+            totalCookiePopUpsBlocked: totalCookiePopUpsBlocked,
             totalClicksMadeBlockingCookiePopUps: 0,
             totalTotalTimeSpentBlockingCookiePopUps: 0
         )
@@ -61,7 +68,6 @@ final class MockAutoconsentStats: AutoconsentStatsCollecting {
 final class NewTabPageCoordinatorTests: XCTestCase {
     var coordinator: NewTabPageCoordinator!
     var appearancePreferences: AppearancePreferences!
-    var themeManager: ThemeManaging!
     var customizationModel: NewTabPageCustomizationModel!
     var notificationCenter: NotificationCenter!
     var keyValueStore: MockKeyValueFileStore!
@@ -69,11 +75,15 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var featureFlagger: FeatureFlagger!
     var windowControllersManager: (WindowControllersManagerProtocol & AIChatTabManaging)!
     var tabsPreferences: TabsPreferences!
+    var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
+    var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
 
     @MainActor
     override func setUp() async throws {
         try await super.setUp()
 
+        subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
+        homePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting()
         notificationCenter = NotificationCenter()
         keyValueStore = try MockKeyValueFileStore()
         firePixelCalls.removeAll()
@@ -86,15 +96,12 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             featureFlagger: featureFlagger
         )
 
-        themeManager = MockThemeManager()
-
         customizationModel = NewTabPageCustomizationModel(
             appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: nil,
             sendPixel: { _ in },
             openFilePanel: { nil },
-            showAddImageFailedAlert: {},
-            themeManager: themeManager
+            showAddImageFailedAlert: {}
         )
 
         windowControllersManager = WindowControllersManagerMock()
@@ -113,6 +120,20 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                                               windowControllersManager: windowControllersManager,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
+        let cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager)
+        let visualizeFireAnimationDecider = MockVisualizeFireAnimationDecider()
+        let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
+        let protectionsReportModel = NewTabPageProtectionsReportModel(
+            privacyStats: MockPrivacyStats(),
+            autoconsentStats: MockAutoconsentStats(),
+            keyValueStore: keyValueStore,
+            burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
+            showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
+            isAutoconsentEnabled: { cookiePopupProtectionPreferences.isAutoconsentEnabled },
+            getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
+            getLegacyActiveFeedSetting: settingsMigrator.activeFeed
+        )
+
         coordinator = NewTabPageCoordinator(
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
@@ -130,7 +151,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             privacyStats: MockPrivacyStats(),
             autoconsentStats: MockAutoconsentStats(),
-            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
             freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator(
                 freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager(),
                 freemiumDBPFeature: MockFreemiumDBPFeature(),
@@ -143,12 +164,15 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             fireCoordinator: fireCoordinator,
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
-            visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider(),
+            visualizeFireAnimationDecider: visualizeFireAnimationDecider,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()),
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            protectionsReportModel: protectionsReportModel,
+            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersisting,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }
@@ -162,8 +186,9 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         keyValueStore = nil
         notificationCenter = nil
         tabsPreferences = nil
-        themeManager = nil
         windowControllersManager = nil
+        subscriptionCardVisibilityManager = nil
+        homePageContinueSetUpModelPersisting = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {

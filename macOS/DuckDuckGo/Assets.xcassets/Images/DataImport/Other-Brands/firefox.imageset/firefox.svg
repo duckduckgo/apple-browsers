@@ -1,0 +1,111 @@
+<svg fill="none" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#firefox_svg__a)">
+    <path fill="url(#firefox_svg__b)" d="M57.507 22.578c-1.196-2.878-3.623-5.986-5.523-6.968a28.6 28.6 0 0 1 2.788 8.353l.005.046c-3.112-7.756-8.388-10.889-12.7-17.7-.218-.345-.436-.69-.648-1.054a9 9 0 0 1-.304-.569 5 5 0 0 1-.41-1.09.07.07 0 0 0-.063-.071.1.1 0 0 0-.052 0c-.003 0-.009.006-.013.008l-.02.01.01-.018c-6.914 4.049-9.262 11.542-9.475 15.293a13.77 13.77 0 0 0-7.579 2.92 8 8 0 0 0-.71-.539 12.76 12.76 0 0 1-.077-6.728 20.4 20.4 0 0 0-6.627 5.12h-.013c-1.09-1.382-1.014-5.942-.951-6.895q-.486.196-.92.488a20 20 0 0 0-2.69 2.305 24 24 0 0 0-2.573 3.088v.004-.005a23.3 23.3 0 0 0-3.694 8.339l-.037.182a44 44 0 0 0-.27 1.719q-.002.03-.007.06a26 26 0 0 0-.447 3.795v.142a27.531 27.531 0 0 0 54.658 4.656c.046-.355.083-.707.125-1.066a28.3 28.3 0 0 0-1.786-13.83zm-31.73 21.55c.13.062.25.129.382.188l.02.012q-.201-.096-.401-.2m29-20.111v-.026l.006.029z"/>
+    <path fill="url(#firefox_svg__c)" d="M57.507 22.578c-1.196-2.878-3.623-5.986-5.523-6.968a28.6 28.6 0 0 1 2.788 8.353v.026l.005.03a24.93 24.93 0 0 1-.856 18.58c-3.155 6.77-10.79 13.71-22.744 13.369-12.913-.366-24.292-9.952-26.416-22.503-.387-1.98 0-2.983.195-4.592a20.5 20.5 0 0 0-.443 3.799v.142a27.531 27.531 0 0 0 54.658 4.655c.046-.355.083-.706.124-1.065a28.3 28.3 0 0 0-1.785-13.83z"/>
+    <path fill="url(#firefox_svg__d)" d="M57.507 22.578c-1.196-2.878-3.623-5.986-5.523-6.968a28.6 28.6 0 0 1 2.788 8.353v.026l.005.03a24.93 24.93 0 0 1-.856 18.58c-3.155 6.77-10.79 13.71-22.744 13.369-12.913-.366-24.292-9.952-26.416-22.503-.387-1.98 0-2.983.195-4.592a20.5 20.5 0 0 0-.443 3.799v.142a27.531 27.531 0 0 0 54.658 4.655c.046-.355.083-.706.124-1.065a28.3 28.3 0 0 0-1.785-13.83z"/>
+    <path fill="url(#firefox_svg__e)" d="M44.125 25.81q.089.063.171.126A15 15 0 0 0 41.74 22.6c-8.559-8.56-2.242-18.553-1.178-19.065l.011-.015c-6.915 4.048-9.262 11.542-9.475 15.292.32-.022.639-.049.967-.049a13.89 13.89 0 0 1 12.06 7.044z"/>
+    <path fill="url(#firefox_svg__f)" d="M32.078 27.522c-.045.684-2.465 3.046-3.31 3.046-7.828 0-9.1 4.736-9.1 4.736.347 3.987 3.126 7.273 6.485 9.006.153.08.309.151.464.222q.405.18.809.33c1.152.409 2.36.642 3.582.692 13.723.643 16.38-16.408 6.477-21.359a9.5 9.5 0 0 1 6.638 1.612 13.89 13.89 0 0 0-12.061-7.044c-.327 0-.647.027-.968.049a13.77 13.77 0 0 0-7.579 2.92c.42.355.894.83 1.892 1.813 1.868 1.84 6.659 3.747 6.67 3.97z"/>
+    <path fill="url(#firefox_svg__g)" d="M32.078 27.522c-.045.684-2.465 3.046-3.31 3.046-7.828 0-9.1 4.736-9.1 4.736.347 3.987 3.126 7.273 6.485 9.006.153.08.309.151.464.222q.405.18.809.33c1.152.409 2.36.642 3.582.692 13.723.643 16.38-16.408 6.477-21.359a9.5 9.5 0 0 1 6.638 1.612 13.89 13.89 0 0 0-12.061-7.044c-.327 0-.647.027-.968.049a13.77 13.77 0 0 0-7.579 2.92c.42.355.894.83 1.892 1.813 1.868 1.84 6.659 3.747 6.67 3.97z"/>
+    <path fill="url(#firefox_svg__h)" d="M22.233 20.824c.223.142.407.265.568.377a12.76 12.76 0 0 1-.077-6.729 20.4 20.4 0 0 0-6.626 5.121c.134-.003 4.127-.075 6.135 1.23"/>
+    <path fill="url(#firefox_svg__i)" d="M4.756 33.467c2.124 12.55 13.502 22.14 26.416 22.502 11.954.338 19.59-6.602 22.743-13.368a24.93 24.93 0 0 0 .857-18.581v-.026c0-.021-.004-.033 0-.027l.005.047c.977 6.376-2.267 12.55-7.337 16.734l-.016.036c-9.88 8.047-19.334 4.854-21.245 3.551q-.2-.096-.4-.2c-5.76-2.753-8.14-7.997-7.63-12.5a7.07 7.07 0 0 1-6.52-4.103 10.39 10.39 0 0 1 10.121-.406 13.7 13.7 0 0 0 10.335.406c-.01-.223-4.802-2.13-6.67-3.97-.998-.984-1.471-1.458-1.891-1.814a8 8 0 0 0-.71-.538 39 39 0 0 0-.569-.377c-2.008-1.306-6.001-1.234-6.133-1.23h-.013c-1.09-1.383-1.014-5.944-.952-6.896q-.484.195-.919.488a20 20 0 0 0-2.69 2.305 24 24 0 0 0-2.584 3.08 23.3 23.3 0 0 0-3.694 8.34c-.013.056-.992 4.332-.51 6.55z"/>
+    <path fill="url(#firefox_svg__j)" d="M41.738 22.6a15 15 0 0 1 2.557 3.338c.151.114.293.228.413.338 6.241 5.753 2.97 13.886 2.727 14.461 5.07-4.177 8.31-10.356 7.338-16.734-3.114-7.764-8.396-10.896-12.7-17.708a33 33 0 0 1-.649-1.054 9 9 0 0 1-.303-.568 5 5 0 0 1-.41-1.09.07.07 0 0 0-.062-.071.1.1 0 0 0-.053 0c-.004 0-.01.006-.014.007l-.02.011c-1.064.505-7.38 10.505 1.18 19.057z"/>
+    <path fill="url(#firefox_svg__k)" d="M44.707 26.279a6 6 0 0 0-.413-.338q-.083-.063-.17-.126a9.5 9.5 0 0 0-6.639-1.612c9.902 4.95 7.245 21.998-6.477 21.359a12.3 12.3 0 0 1-3.582-.691q-.405-.152-.808-.331a10 10 0 0 1-.465-.222l.02.012c1.913 1.306 11.364 4.498 21.245-3.551l.015-.036c.247-.575 3.517-8.708-2.727-14.461z"/>
+    <path fill="url(#firefox_svg__l)" d="M19.669 35.3s1.27-4.736 9.099-4.736c.846 0 3.267-2.362 3.31-3.047a13.7 13.7 0 0 1-10.334-.406 10.39 10.39 0 0 0-10.122.406 7.07 7.07 0 0 0 6.521 4.102c-.51 4.502 1.87 9.746 7.629 12.502.128.061.25.128.381.187-3.361-1.737-6.137-5.021-6.484-9.006z"/>
+    <path fill="url(#firefox_svg__m)" d="M57.507 22.578c-1.196-2.878-3.623-5.986-5.523-6.968a28.6 28.6 0 0 1 2.788 8.353l.005.046c-3.112-7.756-8.388-10.889-12.7-17.7-.218-.345-.436-.69-.648-1.054a9 9 0 0 1-.304-.569 5 5 0 0 1-.41-1.09.07.07 0 0 0-.063-.071.1.1 0 0 0-.052 0c-.003 0-.009.006-.013.008l-.02.01.01-.018c-6.914 4.049-9.262 11.542-9.475 15.293.321-.022.64-.05.968-.05a13.89 13.89 0 0 1 12.06 7.045 9.5 9.5 0 0 0-6.637-1.612c9.901 4.95 7.245 21.998-6.477 21.359a12.3 12.3 0 0 1-3.582-.692q-.405-.15-.809-.33c-.155-.072-.31-.143-.464-.222l.019.012q-.2-.096-.4-.2c.128.062.249.129.38.188-3.361-1.738-6.137-5.022-6.483-9.007 0 0 1.27-4.735 9.098-4.735.846 0 3.268-2.362 3.311-3.047-.01-.223-4.802-2.13-6.67-3.97-.998-.984-1.471-1.458-1.891-1.814a8 8 0 0 0-.71-.538 12.76 12.76 0 0 1-.078-6.729 20.4 20.4 0 0 0-6.626 5.122h-.013c-1.091-1.383-1.014-5.943-.952-6.896q-.485.195-.919.488a20 20 0 0 0-2.69 2.305 24 24 0 0 0-2.574 3.088A23.3 23.3 0 0 0 5.27 26.92l-.037.181a47 47 0 0 0-.318 1.737 32 32 0 0 0-.406 3.838v.142a27.531 27.531 0 0 0 54.657 4.655c.046-.355.084-.706.125-1.065a28.3 28.3 0 0 0-1.786-13.83z"/>
+  </g>
+  <defs>
+    <radialGradient id="firefox_svg__c" cx="0" cy="0" r="1" gradientTransform="translate(52.094 9.913)scale(57.3919)" gradientUnits="userSpaceOnUse">
+      <stop offset=".129" stop-color="#FFBD4F"/>
+      <stop offset=".186" stop-color="#FFAC31"/>
+      <stop offset=".247" stop-color="#FF9D17"/>
+      <stop offset=".283" stop-color="#FF980E"/>
+      <stop offset=".403" stop-color="#FF563B"/>
+      <stop offset=".467" stop-color="#FF3750"/>
+      <stop offset=".71" stop-color="#F5156C"/>
+      <stop offset=".782" stop-color="#EB0878"/>
+      <stop offset=".86" stop-color="#E50080"/>
+    </radialGradient>
+    <radialGradient id="firefox_svg__d" cx="0" cy="0" r="1" gradientTransform="translate(30.786 33.353)scale(57.3919)" gradientUnits="userSpaceOnUse">
+      <stop offset=".3" stop-color="#960E18"/>
+      <stop offset=".351" stop-color="#B11927" stop-opacity=".74"/>
+      <stop offset=".435" stop-color="#DB293D" stop-opacity=".343"/>
+      <stop offset=".497" stop-color="#F5334B" stop-opacity=".094"/>
+      <stop offset=".53" stop-color="#FF3750" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="firefox_svg__e" cx="0" cy="0" r="1" gradientTransform="translate(37.889 -2.872)scale(41.5736)" gradientUnits="userSpaceOnUse">
+      <stop offset=".132" stop-color="#FFF44F"/>
+      <stop offset=".252" stop-color="#FFDC3E"/>
+      <stop offset=".506" stop-color="#FF9D12"/>
+      <stop offset=".526" stop-color="#FF980E"/>
+    </radialGradient>
+    <radialGradient id="firefox_svg__f" cx="0" cy="0" r="1" gradientTransform="translate(24.393 48.27)scale(27.3251)" gradientUnits="userSpaceOnUse">
+      <stop offset=".353" stop-color="#3A8EE6"/>
+      <stop offset=".472" stop-color="#5C79F0"/>
+      <stop offset=".669" stop-color="#9059FF"/>
+      <stop offset="1" stop-color="#C139E6"/>
+    </radialGradient>
+    <radialGradient id="firefox_svg__g" cx="0" cy="0" r="1" gradientTransform="matrix(14.08429 -3.40527 3.98672 16.4892 33.562 28.427)" gradientUnits="userSpaceOnUse">
+      <stop offset=".206" stop-color="#9059FF" stop-opacity="0"/>
+      <stop offset=".278" stop-color="#8C4FF3" stop-opacity=".064"/>
+      <stop offset=".747" stop-color="#7716A8" stop-opacity=".45"/>
+      <stop offset=".975" stop-color="#6E008B" stop-opacity=".6"/>
+    </radialGradient>
+    <radialGradient id="firefox_svg__h" cx="0" cy="0" r="1" gradientTransform="translate(30.075 7.782)scale(19.661)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE226"/>
+      <stop offset=".121" stop-color="#FFDB27"/>
+      <stop offset=".295" stop-color="#FFC82A"/>
+      <stop offset=".502" stop-color="#FFA930"/>
+      <stop offset=".732" stop-color="#FF7E37"/>
+      <stop offset=".792" stop-color="#FF7139"/>
+    </radialGradient>
+    <radialGradient id="firefox_svg__i" cx="0" cy="0" r="1" gradientTransform="translate(45.701 -5.003)scale(83.886)" gradientUnits="userSpaceOnUse">
+      <stop offset=".113" stop-color="#FFF44F"/>
+      <stop offset=".456" stop-color="#FF980E"/>
+      <stop offset=".622" stop-color="#FF5634"/>
+      <stop offset=".716" stop-color="#FF3647"/>
+      <stop offset=".904" stop-color="#E31587"/>
+    </radialGradient>
+    <radialGradient id="firefox_svg__j" cx="0" cy="0" r="1" gradientTransform="rotate(83.976 19.56 21.34)scale(61.4729 40.3441)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF44F"/>
+      <stop offset=".06" stop-color="#FFE847"/>
+      <stop offset=".168" stop-color="#FFC830"/>
+      <stop offset=".304" stop-color="#FF980E"/>
+      <stop offset=".356" stop-color="#FF8B16"/>
+      <stop offset=".455" stop-color="#FF672A"/>
+      <stop offset=".57" stop-color="#FF3647"/>
+      <stop offset=".737" stop-color="#E31587"/>
+    </radialGradient>
+    <radialGradient id="firefox_svg__k" cx="0" cy="0" r="1" gradientTransform="translate(30.075 14.886)scale(52.363)" gradientUnits="userSpaceOnUse">
+      <stop offset=".137" stop-color="#FFF44F"/>
+      <stop offset=".48" stop-color="#FF980E"/>
+      <stop offset=".592" stop-color="#FF5634"/>
+      <stop offset=".655" stop-color="#FF3647"/>
+      <stop offset=".904" stop-color="#E31587"/>
+    </radialGradient>
+    <radialGradient id="firefox_svg__l" cx="0" cy="0" r="1" gradientTransform="translate(43.57 17.727)scale(57.3138)" gradientUnits="userSpaceOnUse">
+      <stop offset=".094" stop-color="#FFF44F"/>
+      <stop offset=".231" stop-color="#FFE141"/>
+      <stop offset=".509" stop-color="#FFAF1E"/>
+      <stop offset=".626" stop-color="#FF980E"/>
+    </radialGradient>
+    <linearGradient id="firefox_svg__b" x1="53.863" x2="8.16" y1="12.318" y2="56.414" gradientUnits="userSpaceOnUse">
+      <stop offset=".048" stop-color="#FFF44F"/>
+      <stop offset=".111" stop-color="#FFE847"/>
+      <stop offset=".225" stop-color="#FFC830"/>
+      <stop offset=".368" stop-color="#FF980E"/>
+      <stop offset=".401" stop-color="#FF8B16"/>
+      <stop offset=".462" stop-color="#FF672A"/>
+      <stop offset=".534" stop-color="#FF3647"/>
+      <stop offset=".705" stop-color="#E31587"/>
+    </linearGradient>
+    <linearGradient id="firefox_svg__m" x1="53.309" x2="14.427" y1="12.084" y2="50.973" gradientUnits="userSpaceOnUse">
+      <stop offset=".167" stop-color="#FFF44F" stop-opacity=".8"/>
+      <stop offset=".266" stop-color="#FFF44F" stop-opacity=".634"/>
+      <stop offset=".489" stop-color="#FFF44F" stop-opacity=".217"/>
+      <stop offset=".6" stop-color="#FFF44F" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="firefox_svg__a">
+      <path fill="#fff" d="M4 3h56v57.844H4z"/>
+    </clipPath>
+  </defs>
+</svg>

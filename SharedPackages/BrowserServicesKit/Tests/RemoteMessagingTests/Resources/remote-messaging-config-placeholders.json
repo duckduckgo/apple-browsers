@@ -174,7 +174,7 @@
                 "messageType": "medium",
                 "titleText": "Here goes a title",
                 "descriptionText": "description",
-                "placeholder": "Radar"
+                "placeholder": "RadarCheckGreen"
             },
             "metrics": {
                 "state": "enabled"
@@ -196,7 +196,67 @@
             }
         },
         {
-          "id": "14",
+            "id": "14",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "Radar"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "15",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "RadarCheckPurple"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "16",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "PIR"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "17",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "Subscription"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+          "id": "18",
           "surfaces": ["modal"],
           "content": {
             "messageType": "cards_list",
@@ -328,7 +388,7 @@
                 "type": "two_line_list_item",
                 "titleText": "Hide AI Images in Search",
                 "descriptionText": "Easily hide AI images from your search results",
-                "placeholder": "Radar",
+                "placeholder": "RadarCheckGreen",
                 "primaryAction": {
                   "type": "url_in_context",
                   "value": "https://example.com"
@@ -340,6 +400,50 @@
                 "titleText": "Hide AI Images in Search",
                 "descriptionText": "Easily hide AI images from your search results",
                 "placeholder": "KeyImport",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "14",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "Radar",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "15",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "RadarCheckPurple",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "16",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "PIR",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "17",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "Subscription",
                 "primaryAction": {
                   "type": "url_in_context",
                   "value": "https://example.com"

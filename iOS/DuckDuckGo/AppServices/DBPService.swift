@@ -46,6 +46,19 @@ final class DBPService: NSObject {
         let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
 
         if let pixelKit = PixelKit.shared {
+            let notificationPixelHandler = DataBrokerProtectionNotificationPixelHandler(pixelKit: pixelKit)
+            let notificationService = DefaultDataBrokerProtectionUserNotificationService(
+                authenticationManager: authManager,
+                pixelHandler: notificationPixelHandler
+            )
+            let eventsHandler = BrokerProfileJobEventsHandler(userNotificationService: notificationService)
+
+            #if DEBUG
+            let isWebViewInspectable = true
+            #else
+            let isWebViewInspectable = AppUserDefaults().inspectableWebViewEnabled
+            #endif
+
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
@@ -63,11 +76,13 @@ final class DBPService: NSObject {
                         vpnMetadataCollector: DefaultVPNMetadataCollector(),
                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
                         isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
+                        isProTierPurchaseEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) },
                         source: .pir)
                     let view = UnifiedFeedbackRootView(viewModel: viewModel)
                     return view
-                })
-
+                },
+                eventsHandler: eventsHandler,
+                isWebViewInspectable: isWebViewInspectable)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -87,6 +102,7 @@ final class DBPService: NSObject {
 }
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {
+    
     private let appDependencies: DependencyProvider
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {
@@ -95,6 +111,18 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isEmailConfirmationDecouplingFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
+    }
+
+    var isForegroundRunningOnAppActiveFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
+    }
+
+    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
+    }
+
+    var isClickActionDelayReductionOptimizationOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
     }
 
     init(appDependencies: DependencyProvider) {

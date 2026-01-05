@@ -31,14 +31,13 @@ final class ImportSourcePickerViewModel: ObservableObject {
         }
     }
 
+    var selectableImportTypes: [DataImport.DataType]
+
     @Published var availableImportSources: [DataImport.Source]
     @Published var selectedSource: DataImport.Source {
         didSet {
-            selectedImportTypes = Self.selectableDataTypes(for: selectedSource)
-            typeButtonTitle = Self.titleFor(selectedImportTypes: selectedImportTypes)
-            importTypeItems = Self.selectableDataTypes(for: selectedSource).map {
-                .init(dataType: $0, isSelected: selectedImportTypes.contains($0))
-            }
+            updateImportTypeItems()
+            ensurePickerExpandedIfNeeded()
         }
     }
     @Published var isPickerExpanded: Bool = false
@@ -60,24 +59,38 @@ final class ImportSourcePickerViewModel: ObservableObject {
     init(availableSources: [DataImport.Source],
          selectedSource: DataImport.Source,
          selectedImportTypes: [DataImport.DataType],
+         selectableImportTypes: [DataImport.DataType],
          shouldShowSyncButton: Bool,
+         initialPickerExpanded: Bool = false,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
          onTypeSelected: @escaping (DataImport.DataType, Bool) -> Void,
          onSyncSelected: @escaping () -> Void) {
         self.availableImportSources = availableSources
         self.selectedSource = selectedSource
         self.selectedImportTypes = selectedImportTypes
+        self.selectableImportTypes = selectableImportTypes
         self.shouldShowSyncButton = shouldShowSyncButton
         self.onSourceSelected = onSourceSelected
         self.onTypeSelected = onTypeSelected
         self.onSyncSelected = onSyncSelected
+        self.isPickerExpanded = initialPickerExpanded
         typeButtonTitle = Self.titleFor(selectedImportTypes: selectedImportTypes)
-        importTypeItems = Self.selectableDataTypes(for: selectedSource).map {
-            .init(dataType: $0, isSelected: selectedImportTypes.contains($0))
-        }
+        importTypeItems = Self.makeImportTypeItems(selectableTypes: selectableImportTypes, selectedTypes: selectedImportTypes)
+
+        ensurePickerExpandedIfNeeded()
     }
 
     // MARK: - Business Logic
+
+    private static func makeImportTypeItems(selectableTypes: [DataImport.DataType], selectedTypes: [DataImport.DataType]) -> [ImportTypeItem] {
+        selectableTypes.sorted(by: { $0.displayName < $1.displayName }).map {
+            .init(dataType: $0, isSelected: selectedTypes.contains($0))
+        }
+    }
+
+    private func updateImportTypeItems() {
+        importTypeItems = Self.makeImportTypeItems(selectableTypes: selectableImportTypes, selectedTypes: selectedImportTypes)
+    }
 
     var visibleOptions: [DataImport.Source] {
         isPickerExpanded ? availableImportSources : collapsedOptions
@@ -85,6 +98,12 @@ final class ImportSourcePickerViewModel: ObservableObject {
 
     private var collapsedOptions: [DataImport.Source] {
         Array(availableImportSources[0..<min(availableImportSources.count, Constants.minVisibleOptions)])
+    }
+
+    private func ensurePickerExpandedIfNeeded() {
+        if visibleOptions.contains(selectedSource) == false {
+            isPickerExpanded = true
+        }
     }
 
     var shouldShowExpandButton: Bool {
@@ -111,40 +130,38 @@ final class ImportSourcePickerViewModel: ObservableObject {
     }
 
     func typeSelectionCancelled() {
-        importTypeItems = Self.selectableDataTypes(for: selectedSource).map {
-            .init(dataType: $0, isSelected: selectedImportTypes.contains($0))
-        }
+        updateImportTypeItems()
         isTypePickerSheetVisible = false
     }
 
     func typeSelectionDone() {
         importTypeItems.forEach { item in
-            if item.isSelected {
-                onTypeSelected(item.dataType, true)
-            } else {
-                onTypeSelected(item.dataType, false)
-            }
+            onTypeSelected(item.dataType, item.isSelected)
         }
-        selectedImportTypes = importTypeItems.filter(\.isSelected).map( \.dataType )
+        selectedImportTypes = importTypeItems.filter(\.isSelected).map(\.dataType)
         isTypePickerSheetVisible = false
+    }
+
+    func updateSelectableImportTypes(_ newSelectableImportTypes: [DataImport.DataType]) {
+        selectableImportTypes = newSelectableImportTypes
+
+        selectedImportTypes = selectedImportTypes.filter { newSelectableImportTypes.contains($0) }
+        updateImportTypeItems()
+    }
+
+    func updateSelectedImportTypes(_ newSelectedImportTypes: [DataImport.DataType]) {
+        selectedImportTypes = newSelectedImportTypes
+        updateImportTypeItems()
     }
 }
 
 private extension ImportSourcePickerViewModel {
-    static func selectableDataTypes(for source: DataImport.Source) -> [DataImport.DataType] {
-        switch source {
-        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .safari, .safariTechnologyPreview, .vivaldi, .yandex:
-            return [.bookmarks, .passwords]
-        case .tor:
-            return [.bookmarks]
-        case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
-            return [.passwords]
-        case .bookmarksHTML:
-            return [.bookmarks]
-        }
-    }
-
     static func titleFor(selectedImportTypes: [DataImport.DataType]) -> String {
+        guard !selectedImportTypes.isEmpty else {
+            // No types available - this shouldn't happen!
+            return UserText.importDataImportTypeTitleSelected
+        }
+
         if selectedImportTypes.count >= 2,
             selectedImportTypes.contains(.passwords),
             selectedImportTypes.contains(.bookmarks) {
@@ -154,7 +171,7 @@ private extension ImportSourcePickerViewModel {
         } else if selectedImportTypes.first == .passwords {
             return UserText.importTypeSelectionTitlePasswords
         } else {
-            assert(false, "Unsupported data type selection: \(selectedImportTypes)")
+            // Fallback for unexpected cases
             return UserText.importDataImportTypeTitleSelected
         }
     }

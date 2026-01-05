@@ -18,10 +18,12 @@
 
 import BrowserServicesKit
 import Combine
+import Common
 import ContentBlocking
 import Foundation
 import History
 import MaliciousSiteProtection
+import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
 import WebKit
@@ -97,6 +99,7 @@ typealias TabExtensionsBuilderArguments = (
     isTabPinned: () -> Bool,
     isTabBurner: Bool,
     isTabLoadedInSidebar: Bool,
+    isInPopUpWindow: () -> Bool,
     contentPublisher: AnyPublisher<Tab.TabContent, Never>,
     setContent: (Tab.TabContent) -> Void,
     closeTab: () -> Void,
@@ -111,7 +114,7 @@ typealias TabExtensionsBuilderArguments = (
     tabsPreferences: TabsPreferences,
     burnerMode: BurnerMode,
     urlProvider: () -> URL?,
-    createChildTab: (WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?,
+    createChildTab: (WKWebViewConfiguration?, SecurityOrigin?, NewWindowPolicy) -> Tab?,
     presentTab: (Tab, NewWindowPolicy) -> Void,
     newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaking]?
 )
@@ -173,6 +176,17 @@ extension TabExtensionsBuilder {
                                        contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScriptIsolated))
         }
 
+        if dependencies.featureFlagger.isFeatureOn(.webNotifications) {
+            add {
+                WebNotificationsTabExtension(
+                    tabUUID: args.tabID,
+                    contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScript),
+                    webViewPublisher: args.webViewFuture,
+                    permissionModel: args.permissionModel
+                )
+            }
+        }
+
         add {
             AdClickAttributionTabExtension(inheritedAttribution: args.inheritedAttribution,
                                            userContentControllerFuture: args.userContentControllerFuture,
@@ -216,7 +230,8 @@ extension TabExtensionsBuilder {
                                       tld: dependencies.privacyFeatures.contentBlocking.tld,
                                       interactionEventsPublisher: args.interactionEventsPublisher,
                                       isTabPinned: args.isTabPinned,
-                                      isBurner: args.isTabBurner)
+                                      isBurner: args.isTabBurner,
+                                      isInPopUpWindow: args.isInPopUpWindow)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))
@@ -255,9 +270,11 @@ extension TabExtensionsBuilder {
             HistoryTabExtension(isCapturingHistory: isCapturingHistory,
                                 historyCoordinating: dependencies.historyCoordinating,
                                 trackersPublisher: contentBlocking.trackersPublisher,
-                                urlPublisher: args.contentPublisher.map { content in content.isUrl ? content.urlForWebView : nil },
+                                urlPublisher: args.contentPublisher.map { content in content.displaysContentInWebView ? content.urlForWebView : nil },
                                 titlePublisher: args.titlePublisher,
-                                popupManagedPublisher: autoconsentTabExtension.popupManagedPublisher)
+                                popupManagedPublisher: autoconsentTabExtension.popupManagedPublisher,
+                                scriptsPublisher: userScripts.compactMap { $0 },
+                                webViewPublisher: args.webViewFuture)
         }
         add {
             PrivacyStatsTabExtension(

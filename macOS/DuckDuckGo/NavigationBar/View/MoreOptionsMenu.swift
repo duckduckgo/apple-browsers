@@ -22,6 +22,7 @@ import Common
 import BrowserServicesKit
 import History
 import PixelKit
+import PrivacyConfig
 import VPN
 import Subscription
 import os.log
@@ -200,6 +201,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
+#if SPARKLE
         if let dockCustomizer = self.dockCustomizer {
             if dockCustomizer.isAddedToDock == false {
                 if dockCustomizer.shouldShowNotification {
@@ -222,7 +224,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 }
             }
         }
-
+#endif
         if !defaultBrowserPreferences.isDefault {
             let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser, action: #selector(setAsDefault(_:)))
                 .targetting(self)
@@ -621,7 +623,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private func addSubscriptionItems() {
         func shouldHideDueToNoProduct() -> Bool {
             let platform = subscriptionManager.currentEnvironment.purchasePlatform
-            return platform == .appStore && subscriptionManager.canPurchase == false
+            return platform == .appStore && subscriptionManager.hasAppStoreProductsAvailable == false
         }
 
         // Check if user is eligible for Win-back Offer
@@ -857,7 +859,9 @@ final class EmailOptionsButtonSubMenu: NSMenu {
             let pixelParameters = self.emailManager.emailPixelParameters
             self.emailManager.updateLastUseDate()
 
-            PixelKit.fire(NonStandardEvent(NonStandardPixel.emailUserCreatedAlias), withAdditionalParameters: pixelParameters)
+            PixelKit.fire(NonStandardPixel.emailUserCreatedAlias,
+                          withAdditionalParameters: pixelParameters,
+                          doNotEnforcePrefix: true)
 
             NSPasteboard.general.copy(address)
             NotificationCenter.default.post(name: NSNotification.Name.privateEmailCopiedToClipboard, object: nil)

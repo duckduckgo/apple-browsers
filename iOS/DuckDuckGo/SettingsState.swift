@@ -36,7 +36,7 @@ struct SettingsState {
     }
 
     struct Subscription: Codable {
-        var canPurchase: Bool
+        var hasAppStoreProductsAvailable: Bool
         var isSignedIn: Bool
         var hasSubscription: Bool
         var hasActiveSubscription: Bool
@@ -61,7 +61,6 @@ struct SettingsState {
     // Appearance properties
     var appThemeStyle: ThemeStyle
     var appIcon: AppIcon
-    var fireButtonAnimation: FireButtonAnimationType
     var textZoom: TextZoom
     var addressBar: AddressBar
     var showsFullURL: Bool
@@ -69,12 +68,10 @@ struct SettingsState {
     var refreshButtonPosition: RefreshButtonPosition
     var mobileCustomization: MobileCustomization.State
     var showMenuInSheet: Bool
-    var sheetMenuVariant: BrowsingMenuClusteringVariant
 
     // Privacy properties
     var sendDoNotSell: Bool
     var autoconsentEnabled: Bool
-    var autoclearDataEnabled: Bool
     var autoClearAIChatHistory: Bool
     var applicationLock: Bool
 
@@ -126,7 +123,6 @@ struct SettingsState {
         return SettingsState(
             appThemeStyle: .systemDefault,
             appIcon: AppIconManager.shared.appIcon,
-            fireButtonAnimation: .fireRising,
             textZoom: TextZoom(level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
@@ -134,10 +130,8 @@ struct SettingsState {
             refreshButtonPosition: .addressBar,
             mobileCustomization: .default,
             showMenuInSheet: false,
-            sheetMenuVariant: .a,
             sendDoNotSell: true,
             autoconsentEnabled: false,
-            autoclearDataEnabled: false,
             autoClearAIChatHistory: false,
             applicationLock: false,
             autocomplete: true,
@@ -155,7 +149,7 @@ struct SettingsState {
             speechRecognitionAvailable: false,
             loginsEnabled: false,
             networkProtectionConnected: false,
-            subscription: Subscription(canPurchase: false,
+            subscription: Subscription(hasAppStoreProductsAvailable: false,
                                        isSignedIn: false,
                                        hasSubscription: false,
                                        hasActiveSubscription: false,

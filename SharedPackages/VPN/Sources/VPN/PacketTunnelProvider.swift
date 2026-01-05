@@ -372,54 +372,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }()
 
-    @MainActor
-    private lazy var connectionTester: NetworkProtectionConnectionTester = {
-        NetworkProtectionConnectionTester(timerQueue: timerQueue) { @MainActor [weak self] result in
-            guard let self else { return }
-
-            let serverName = lastSelectedServerInfo?.name ?? "Unknown"
-
-            switch result {
-            case .connected:
-                self.tunnelHealth.isHavingConnectivityIssues = false
-
-            case .reconnected(let failureCount):
-                providerEvents.fire(
-                    .connectionTesterStatusChange(
-                        .recovered(duration: .immediate, failureCount: failureCount),
-                        server: serverName))
-
-                if failureCount >= Self.connectionTesterExtendedFailuresCount {
-                    providerEvents.fire(
-                        .connectionTesterStatusChange(
-                            .recovered(duration: .extended, failureCount: failureCount),
-                            server: serverName))
-                }
-
-                self.tunnelHealth.isHavingConnectivityIssues = false
-
-            case .disconnected(let failureCount):
-                if failureCount == 1 {
-                    providerEvents.fire(
-                        .connectionTesterStatusChange(
-                            .failed(duration: .immediate),
-                            server: serverName))
-                } else if failureCount == 8 {
-                    providerEvents.fire(
-                        .connectionTesterStatusChange(
-                            .failed(duration: .extended),
-                            server: serverName))
-                }
-
-                self.tunnelHealth.isHavingConnectivityIssues = true
-
-                Task {
-                    await self.bandwidthAnalyzer.reset()
-                }
-            }
-        }
-    }()
-
     private lazy var tunnelFailureMonitor = NetworkProtectionTunnelFailureMonitor(handshakeReporter: adapter)
 
     public let latencyMonitor: LatencyMonitoring
@@ -438,9 +390,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - WideEvent
 
     private var wideEvent: WideEventManaging
-    private var isConnectionWideEventMeasurementEnabled: Bool = false
     private var connectionWideEventData: VPNConnectionWideEventData?
     private let connectionTunnelTimeoutInterval: TimeInterval = .minutes(15)
+
+    // MARK: - Connection Tester
+
+    private let connectionTester: ConnectionTesting
 
     // MARK: - Cancellables
 
@@ -453,6 +408,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let providerEvents: EventMapping<Event>
     public let entitlementCheck: (() async -> Result<Bool, Error>)?
 
+    @MainActor
     public init(notificationsPresenter: VPNNotificationsPresenting,
                 tunnelHealthStore: NetworkProtectionTunnelHealthStore,
                 controllerErrorStore: NetworkProtectionTunnelErrorStore,
@@ -472,6 +428,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),
                 deviceManager: NetworkProtectionDeviceManagement? = nil,
                 serverStatusMonitor: ServerStatusMonitoring? = nil,
+                connectionTester: ConnectionTesting? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -517,7 +474,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             notificationsPresenter: notificationsPresenter
         )
 
+        self.connectionTester = connectionTester ?? NetworkProtectionConnectionTester(timerQueue: timerQueue)
+
         super.init()
+
+        self.connectionTester.resultHandler = { @MainActor [weak self] result in
+            self?.handleConnectionTestResult(result)
+        }
 
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider initialized")
 
@@ -621,6 +584,50 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     @MainActor
+    private func handleConnectionTestResult(_ result: NetworkProtectionConnectionTester.Result) {
+        let serverName = lastSelectedServerInfo?.name ?? "Unknown"
+
+        switch result {
+        case .connected:
+            self.tunnelHealth.isHavingConnectivityIssues = false
+
+        case .reconnected(let failureCount):
+            providerEvents.fire(
+                .connectionTesterStatusChange(
+                    .recovered(duration: .immediate, failureCount: failureCount),
+                    server: serverName))
+
+            if failureCount >= Self.connectionTesterExtendedFailuresCount {
+                providerEvents.fire(
+                    .connectionTesterStatusChange(
+                        .recovered(duration: .extended, failureCount: failureCount),
+                        server: serverName))
+            }
+
+            self.tunnelHealth.isHavingConnectivityIssues = false
+
+        case .disconnected(let failureCount):
+            if failureCount == 1 {
+                providerEvents.fire(
+                    .connectionTesterStatusChange(
+                        .failed(duration: .immediate),
+                        server: serverName))
+            } else if failureCount == 8 {
+                providerEvents.fire(
+                    .connectionTesterStatusChange(
+                        .failed(duration: .extended),
+                        server: serverName))
+            }
+
+            self.tunnelHealth.isHavingConnectivityIssues = true
+
+            Task {
+                await self.bandwidthAnalyzer.reset()
+            }
+        }
+    }
+
+    @MainActor
     open func handleConnectionStatusChange(old: ConnectionStatus, new: ConnectionStatus) {
         Logger.networkProtectionPixel.debug("⚫️ Connection Status Change: \(old.description, privacy: .public) -> \(new.description, privacy: .public)")
 
@@ -662,7 +669,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         let startupOptions = StartupOptions(options: options ?? [:])
         Logger.networkProtection.log("Starting tunnel with options: \(startupOptions.description, privacy: .public)")
-        isConnectionWideEventMeasurementEnabled = startupOptions.isConnectionWideEventMeasurementEnabled
         setupAndStartConnectionWideEvent(with: startupOptions.startupMethod)
 
         // Reset snooze if the VPN is restarting.
@@ -1886,7 +1892,6 @@ extension WireGuardAdapterError: LocalizedError, CustomDebugStringConvertible {
 extension PacketTunnelProvider {
 
     func setupAndStartConnectionWideEvent(with startupMethod: StartupOptions.StartupMethod) {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         completeAllPendingVPNConnectionPixels()
         // Already measured
         guard startupMethod != .manualByMainApp else { return }
@@ -1905,7 +1910,7 @@ extension PacketTunnelProvider {
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
-        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        guard let data = self.connectionWideEventData else { return }
         data.tunnelStartDuration?.complete()
         data.overallDuration?.complete()
         if let error {

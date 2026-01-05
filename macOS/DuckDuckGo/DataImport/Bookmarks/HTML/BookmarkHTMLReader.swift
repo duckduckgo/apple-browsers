@@ -298,7 +298,8 @@ private extension BookmarkImportSource {
              .thirdPartyBrowser(.onePassword7),
              .thirdPartyBrowser(.lastPass),
              .thirdPartyBrowser(.csv),
-             .thirdPartyBrowser(.bookmarksHTML):
+             .thirdPartyBrowser(.bookmarksHTML),
+             .thirdPartyBrowser(.fileImport):
             return false
         }
     }

@@ -72,6 +72,7 @@ final class AutofillSettingsViewController: UIViewController {
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
     private let keyValueStore: ThrowingKeyValueStoring
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     init(appSettings: AppSettings,
          syncService: DDGSyncing,
@@ -84,7 +85,8 @@ final class AutofillSettingsViewController: UIViewController {
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode,
-         keyValueStore: ThrowingKeyValueStoring
+         keyValueStore: ThrowingKeyValueStoring,
+         productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         self.appSettings = appSettings
         self.syncService = syncService
@@ -98,6 +100,7 @@ final class AutofillSettingsViewController: UIViewController {
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
         self.keyValueStore = keyValueStore
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         self.viewModel = AutofillSettingsViewModel(appSettings: appSettings, source: source, syncService: syncService, syncDataProviders: syncDataProviders)
         
         super.init(nibName: nil, bundle: nil)
@@ -147,7 +150,8 @@ final class AutofillSettingsViewController: UIViewController {
             source: source,
             bookmarksDatabase: bookmarksDatabase,
             favoritesDisplayMode: favoritesDisplayMode,
-            keyValueStore: keyValueStore
+            keyValueStore: keyValueStore,
+            productSurfaceTelemetry: productSurfaceTelemetry
         )
         navigationController?.pushViewController(autofillLoginListViewController, animated: true)
     }

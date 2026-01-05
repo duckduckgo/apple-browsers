@@ -38,6 +38,11 @@ final class FaviconsTabExtension {
     private var cancellables = Set<AnyCancellable>()
     private weak var faviconUserScript: FaviconUserScript?
     private var content: Tab.TabContent?
+    private var faviconHandlingTask: Task<Void, Never>? {
+        willSet {
+            faviconHandlingTask?.cancel()
+        }
+    }
     @Published private(set) var favicon: NSImage?
 
     init(
@@ -61,15 +66,16 @@ final class FaviconsTabExtension {
     }
 
     @MainActor
-    func handleFavicon(oldValue: TabContent? = nil, error: Error? = nil) {
-        guard let content, content.isUrl, let url = content.urlForWebView, error == nil else {
-            favicon = nil
+    func loadCachedFavicon(oldValue: TabContent? = nil, isBurner: Bool, error: Error? = nil) {
+        guard let content, content.isExternalUrl, let url = content.urlForWebView, error == nil else {
+            // Load default Favicon for SpecialURL(s) such as newtab
+            favicon = content?.displayedFavicon(error: error, isBurner: isBurner)
             return
         }
 
         guard faviconManagement.isCacheLoaded else { return }
 
-        if let cachedFavicon = faviconManagement.getCachedFavicon(for: url, sizeCategory: .small)?.image {
+        if let cachedFavicon = faviconManagement.getCachedFavicon(forUrlOrAnySubdomain: url, sizeCategory: .small, fallBackToSmaller: false)?.image {
             if cachedFavicon != favicon {
                 favicon = cachedFavicon
             }
@@ -78,27 +84,29 @@ final class FaviconsTabExtension {
             favicon = nil
         }
     }
+
+    deinit {
+        faviconHandlingTask?.cancel()
+    }
 }
 
 extension FaviconsTabExtension: FaviconUserScriptDelegate {
     @MainActor
-    func faviconUserScript(_ faviconUserScript: FaviconUserScript, didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink], for documentUrl: URL) async {
-        guard documentUrl != .error,
-              documentUrl == content?.urlForWebView,
-              let favicon = await faviconManagement.handleFaviconLinks(faviconLinks, documentUrl: documentUrl)
-        else {
-            return
+    func faviconUserScript(_ faviconUserScript: FaviconUserScript, didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink], for documentUrl: URL, in webView: WKWebView?) {
+        guard documentUrl != .error, documentUrl == content?.urlForWebView else { return }
+        // old task cancelled in setter
+        faviconHandlingTask = Task { [weak self, faviconManagement] in
+            if let favicon = await faviconManagement.handleFaviconLinks(faviconLinks, documentUrl: documentUrl, webView: webView),
+               !Task.isCancelled, let self, documentUrl == content?.urlForWebView {
+                self.favicon = favicon.image
+            }
         }
-        self.favicon = favicon.image
     }
 }
 
-extension FaviconsTabExtension: NavigationResponder {
-}
-
-protocol FaviconsTabExtensionProtocol: AnyObject, NavigationResponder {
+protocol FaviconsTabExtensionProtocol: AnyObject {
     @MainActor
-    func handleFavicon(oldValue: TabContent?, error: Error?)
+    func loadCachedFavicon(oldValue: TabContent?, isBurner: Bool, error: Error?)
 
     var faviconPublisher: AnyPublisher<NSImage?, Never> { get }
 }

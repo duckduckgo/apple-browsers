@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import AIChat
+@testable import AIChat
 import Combine
 import Common
 import PixelKitTestingUtilities
+import PrivacyConfig
 import SharedTestUtilities
 import Testing
 import UserScript
@@ -63,6 +64,7 @@ struct AIChatUserScriptHandlerTests {
     private var pixelFiring = PixelKitMock()
     private var handler: AIChatUserScriptHandler
     private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
+    private var mockAIChatSyncHandler: MockAIChatSyncHandling = MockAIChatSyncHandling()
 
     @MainActor
     init() {
@@ -74,6 +76,8 @@ struct AIChatUserScriptHandlerTests {
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring,
             statisticsLoader: statisticsLoader,
+            syncHandler: mockAIChatSyncHandler,
+            featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
     }
@@ -178,7 +182,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenSummarizationSourceLinkCallsWindowControllersManagerShow() async throws {
         let urlString = "https://example.com"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)]
 
@@ -197,7 +201,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenSummarizationSourceLinkCallsWindowControllersManagerOpen(_ target: AIChatUserScriptHandler.OpenLink.OpenTarget) async throws {
         let urlString = "https://example.com"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: target)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: target, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)]
 
@@ -214,7 +218,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenSummarizationSourceLinkDoesNotCallWindowControllersManagerWhenInvalidURLIsPassed() async throws {
         let urlString = "invalid"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
 
         _ = await handler.openSummarizationSourceLink(params: params, message: WKScriptMessage())
@@ -226,7 +230,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenTranslationSourceLinkCallsWindowControllersManagerShow() async throws {
         let urlString = "https://example.com"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)]
 
@@ -244,7 +248,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenTranslationSourceLinkCallsWindowControllersManagerOpen(_ target: AIChatUserScriptHandler.OpenLink.OpenTarget) async throws {
         let urlString = "https://example.com"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: target)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: target, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)]
 
@@ -261,7 +265,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenTranslationSourceLinkDoesNotCallWindowControllersManagerWhenInvalidURLIsPassed() async throws {
         let urlString = "invalid"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
 
         _ = await handler.openTranslationSourceLink(params: params, message: WKScriptMessage())
@@ -308,6 +312,8 @@ struct AIChatUserScriptHandlerTests {
                 windowControllersManager: windowControllersManager,
                 pixelFiring: pixelFiring,
                 statisticsLoader: loader,
+                syncHandler: mockAIChatSyncHandler,
+                featureFlagger: MockFeatureFlagger(),
                 notificationCenter: notificationCenter
             )
 
@@ -336,6 +342,8 @@ struct AIChatUserScriptHandlerTests {
                 windowControllersManager: windowControllersManager,
                 pixelFiring: pixelFiring,
                 statisticsLoader: loader,
+                syncHandler: mockAIChatSyncHandler,
+                featureFlagger: MockFeatureFlagger(),
                 notificationCenter: notificationCenter
             )
 
@@ -349,4 +357,48 @@ struct AIChatUserScriptHandlerTests {
         }
     }
 
+}
+
+/// Mock implementation of AIChatSyncHandling for testing
+final class MockAIChatSyncHandling: AIChatSyncHandling {
+
+    var syncTurnedOn = false
+    var syncStatus: AIChatSyncHandler.SyncStatus = AIChatSyncHandler.SyncStatus(syncAvailable: false,
+                                                                                userId: nil,
+                                                                                deviceId: nil,
+                                                                                deviceName: nil,
+                                                                                deviceType: nil)
+    var scopedToken: AIChatSyncHandler.SyncToken = AIChatSyncHandler.SyncToken(token: "token")
+    var encryptValue: (String) throws -> String = { "encrypted_\($0)" }
+    var decryptValue: (String) throws -> String = { $0.dropping(prefix: "encrypted_") }
+
+    private(set) var encryptCalls: [String] = []
+    private(set) var decryptCalls: [String] = []
+    private(set) var setAIChatHistoryEnabledCalls: [Bool] = []
+
+    func isSyncTurnedOn() -> Bool {
+        syncTurnedOn
+    }
+
+    func getSyncStatus(featureAvailable: Bool) throws -> AIChatSyncHandler.SyncStatus {
+        syncStatus
+    }
+
+    func getScopedToken() async throws -> AIChatSyncHandler.SyncToken {
+        scopedToken
+    }
+
+    func encrypt(_ string: String) throws -> AIChatSyncHandler.EncryptedData {
+        encryptCalls.append(string)
+        return AIChatSyncHandler.EncryptedData(encryptedData: try encryptValue(string))
+    }
+
+    func decrypt(_ string: String) throws -> AIChatSyncHandler.DecryptedData {
+        decryptCalls.append(string)
+        return AIChatSyncHandler.DecryptedData(decryptedData: try decryptValue(string))
+    }
+
+    func setAIChatHistoryEnabled(_ enabled: Bool) {
+        setAIChatHistoryEnabledCalls.append(enabled)
+    }
 }

@@ -28,8 +28,16 @@ import Subscription
 import os.log
 import AIChat
 import Combine
+import PrivacyConfig
 
-class TabManager {
+protocol TabManaging {
+    var count: Int { get }
+    @MainActor func prepareAllTabsExceptCurrentForDataClearing()
+    @MainActor func prepareCurrentTabForDataClearing()
+    func removeAll()
+}
+
+class TabManager: TabManaging {
 
     private(set) var model: TabsModel
     private(set) var persistence: TabsModelPersisting
@@ -60,6 +68,9 @@ class TabManager {
     private let keyValueStore: ThrowingKeyValueStoring
     private let daxDialogsManager: DaxDialogsManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+    private let sharedSecureVault: (any AutofillSecureVault)?
+    private let voiceSearchHelper: VoiceSearchHelperProtocol
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -93,7 +104,10 @@ class TabManager {
          featureDiscovery: FeatureDiscovery,
          keyValueStore: ThrowingKeyValueStoring,
          daxDialogsManager: DaxDialogsManaging,
-         aiChatSettings: AIChatSettingsProvider
+         aiChatSettings: AIChatSettingsProvider,
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         sharedSecureVault: (any AutofillSecureVault)? = nil,
+         voiceSearchHelper: VoiceSearchHelperProtocol
     ) {
         self.model = model
         self.persistence = persistence
@@ -121,6 +135,9 @@ class TabManager {
         self.keyValueStore = keyValueStore
         self.daxDialogsManager = daxDialogsManager
         self.aiChatSettings = aiChatSettings
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.sharedSecureVault = sharedSecureVault
+        self.voiceSearchHelper = voiceSearchHelper
         registerForNotifications()
     }
 
@@ -163,7 +180,11 @@ class TabManager {
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
-                                                              daxDialogsManager: daxDialogsManager, aiChatSettings: aiChatSettings)
+                                                              daxDialogsManager: daxDialogsManager,
+                                                              aiChatSettings: aiChatSettings,
+                                                              productSurfaceTelemetry: productSurfaceTelemetry,
+                                                              sharedSecureVault: sharedSecureVault,
+                                                              voiceSearchHelper: voiceSearchHelper)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -261,7 +282,10 @@ class TabManager {
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
                                                               daxDialogsManager: daxDialogsManager,
-                                                              aiChatSettings: aiChatSettings)
+                                                              aiChatSettings: aiChatSettings,
+                                                              productSurfaceTelemetry: productSurfaceTelemetry,
+                                                              sharedSecureVault: sharedSecureVault,
+                                                              voiceSearchHelper: voiceSearchHelper)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

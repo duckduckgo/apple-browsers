@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Modifica";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "Chat di Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Chat IA";
+"action.title.aiChat.new" = "Nuova Chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Impostazioni di Duck.ai";
@@ -89,7 +92,7 @@
 "action.title.newBackgroundTabForUrl" = "Apri in background";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Nuova";
+"action.title.newTabAction" = "Nuova scheda";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Apri in una nuova scheda";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Aggiornare nome utente?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Prodotti disponibili";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Risparmia il %d%% sul primo anno";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Aggiungi ai segnalibri";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Non puoi annullare più di una volta";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Verifica dell'account esistente...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Chiudi tutte le schede";
@@ -1152,6 +1164,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Abbonamenti attuali";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "CONTENUTO DELLA CELLA PERSONALIZZATO";
@@ -1643,7 +1658,7 @@
 "Enrolled: %@" = "Iscritti: %@";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Pillola d'ingresso";
+"Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Accedi";
@@ -1674,6 +1689,9 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Si è verificato un errore sconosciuto";
+
+/* No comment provided by engineer. */
+"External ID: %@" = "ID esterno: %@";
 
 /* No comment provided by engineer. */
 "favorite" = "Preferito";
@@ -1912,6 +1930,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "SELEZIONA UNA CATEGORIA";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Impossibile accedere alle funzionalità del livello Plus o Pro";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Il tuo feedback anonimo è importante per noi.";
 
@@ -2082,6 +2103,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Ultima elaborazione: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Caricamento dei prodotti disponibili...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Caricamento dei broker in corso...";
@@ -2429,6 +2453,12 @@
 "new.address.bar.picker.title" = "Opzione Barra degli indirizzi";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Nessun abbonamento attivo";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Nessun abbonamento trovato";
+
+/* No comment provided by engineer. */
 "No Logs" = "Nessun log";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2466,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Nessun risultato trovato";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Nessun abbonamento disponibile";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2448,6 +2481,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Popup nascosto";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Fatto";
@@ -2519,7 +2555,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Impostazioni > Funzionalità AI.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vuoi un accesso più semplice\nall'AI chat privata?";
+"onboarding.highlights.searchExperience.title" = "Vuoi un accesso facile alla chat AI privata?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Continua";
@@ -2816,7 +2852,7 @@
 "Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Ripristina lo stato modale di priming";
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "Results" = "Risultati";
@@ -2911,6 +2947,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Impostazioni di Search Assist";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Mostra le nuove chat di Duck.ai come schede nel browser";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Modalità schede Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Nascondi le immagini generate dall'IA";
 
@@ -2926,18 +2968,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Posizione Barra degli indirizzi";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Menu sperimentale del browser";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Apri i collegamenti nelle loro app associate";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Disattiva per impedire che i collegamenti si aprano automaticamente in altre app installate.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Elimina tutti i dati del sito, inclusi i siti visitati. Potrebbe disconnetterti dagli account.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookie e dati del sito";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Elimina tutte le chat, comprese quelle fissate";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Chat di Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Cancella";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Cancella tutte le schede e i dati";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Chiudi le schede e la chat di Duck.ai ed elimina i dati";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Chiudi tutte le schede aperte";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Schede";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Uscita dall'app, inattività di 15 minuti";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Uscita dall'app, inattività di 1 ora";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Uscita dall'app, inattività di 30 minuti";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Uscita dall'app, inattività di 5 minuti";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Solo in caso di uscita dall'app";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "L'uscita dall'app avviene scorrendo l'app per chiuderla mentre l'inattività si verifica quando l'app rimane aperta in background.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Intervallo desiderato";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "I dati saranno cancellati al riavvio dell'app.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Suggerimenti di ricerca";
 
@@ -2956,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Se hai attivato Touch ID, Face ID o un passcode di sistema, ti verrà chiesto di sbloccare l'app al momento dell'apertura.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Cancellazione automatica dei dati";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Feedback sul browser";
 
@@ -2965,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Cancella le chat di Duck.ai";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Cancella i dati di navigazione";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Cancellazione automatica dei dati";
 
@@ -2992,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Cancellazione dati";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "L'eliminazione dei tuoi dati aiuta a proteggere la tua privacy online. Utilizza il Fire Button per eliminare i dati manualmente, o imposta la cancellazione automatica.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Browser predefinito";
 
@@ -3037,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Siti protetti";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Siti web con Fireproof";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Generale";
 
@@ -3052,8 +3148,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importa password";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nuova";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Anteprima";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastiera";
@@ -3289,6 +3388,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Il browser DuckDuckGo fornisce protezioni dal tracciamento, che sono sempre attive. [Scopri di più](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Novità";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Mostra i dati di registro dell'ultimo minuto, per aiutare a diagnosticare i problemi subito dopo un aggiornamento.";
 
@@ -3324,6 +3426,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Quale sito web è danneggiato?";
+
+/* No comment provided by engineer. */
+"Status" = "Stato";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Stato: invalidato";
@@ -3978,6 +4083,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Un messaggio da parte di %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Verrà collegato all'account esistente";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Creerà un NUOVO account";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "RISPARMIA IL 25%";

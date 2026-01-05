@@ -27,6 +27,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
     let repository = BrokerUpdaterRepositoryMock()
     let resources = ResourcesRepositoryMock()
     let pixelHandler = MockDataBrokerProtectionPixelsHandler()
+    let runTypeProvider = MockAppRunTypeProvider()
     let vault: DataBrokerProtectionSecureVaultMock? = try? DataBrokerProtectionSecureVaultMock(providers:
                                                         SecureStorageProviders(
                                                             crypto: EmptySecureStorageCryptoProviderMock(),
@@ -42,7 +43,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenNoVersionIsStored_thenWeTryToUpdateBrokers() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
             repository.lastCheckedVersion = nil
 
             try await sut.checkForUpdates()
@@ -56,7 +57,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenVersionIsStoredAndPatchIsLessThanCurrentOne_thenWeTryToUpdateBrokers() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.1"), pixelHandler: pixelHandler)
+            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.1"), pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
             repository.lastCheckedVersion = "1.74.0"
 
             try await sut.checkForUpdates()
@@ -70,7 +71,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenVersionIsStoredAndMinorIsLessThanCurrentOne_thenWeTryToUpdateBrokers() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
+            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
             repository.lastCheckedVersion = "1.73.0"
 
             try await sut.checkForUpdates()
@@ -84,7 +85,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenVersionIsStoredAndMajorIsLessThanCurrentOne_thenWeTryToUpdateBrokers() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
+            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
             repository.lastCheckedVersion = "0.74.0"
 
             try await sut.checkForUpdates()
@@ -98,7 +99,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenVersionIsStoredAndIsEqualOrGreaterThanCurrentOne_thenCheckingUpdatesIsSkipped() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
+            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
             repository.lastCheckedVersion = "1.74.0"
 
             try await sut.checkForUpdates()
@@ -112,7 +113,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenSavedBrokerIsOnAnOldVersion_thenWeUpdateIt() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
             repository.lastCheckedVersion = nil
             resources.brokersList = [
                 .init(id: 1,
@@ -141,7 +142,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenSavedBrokerIsOnTheCurrentVersion_thenWeDoNotUpdateIt() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
             repository.lastCheckedVersion = nil
             resources.brokersList = [
                 .init(id: 1,
@@ -169,7 +170,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenFileBrokerIsNotStored_thenWeAddTheBrokerAndScanOperations() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
             repository.lastCheckedVersion = nil
             resources.brokersList = [
                 .init(id: 1,
@@ -206,7 +207,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
             return
         }
 
-        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
         repository.lastCheckedVersion = nil
         resources.brokersList = [
             .init(id: 1,
@@ -249,7 +250,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         let removedDate = Date(timeIntervalSince1970: 1693526400)
         let expectedTimestamp: Int64 = 1693526400000
 
-        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
         repository.lastCheckedVersion = nil
         resources.brokersList = [
             .init(id: 1,
@@ -289,7 +290,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
             return
         }
 
-        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
         repository.lastCheckedVersion = nil
         resources.brokersList = [
             .init(id: 1,
@@ -332,7 +333,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
             return
         }
 
-        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
         repository.lastCheckedVersion = nil
         resources.shouldThrowOnFetch = true // Force fetch to fail
 

@@ -102,6 +102,14 @@ struct SettingsAIFeaturesView: View {
                         }
                     }
                 }
+                
+                if viewModel.experimentalAIChatManager.isContextualDuckAIModeEnabled {
+                    Section {
+                        SettingsCellView(label: UserText.settingsAutomaticPageContextTitle,
+                                         subtitle: UserText.settingsAutomaticPageContextSubtitle,
+                                         accessory: .toggle(isOn: viewModel.isAutomaticContextAttachmentEnabled))
+                    }
+                }
 
                 if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                     Section {
@@ -154,6 +162,16 @@ struct SettingsAIFeaturesView: View {
                     }
                 }
             }
+            
+            if viewModel.experimentalAIChatManager.fullDuckAIModeExperimentalSettingFlagEnabled {
+                Section {
+                    SettingsCellView(label: UserText.settingsEnableDuckAIFullModeTitle,
+                                     subtitle: UserText.settingsEnableDuckAIFullModeSubtitle,
+                                     accessory: .toggle(isOn: viewModel.isAIChatFullModeEnabled),
+                                     optionalBadgeText: UserText.settingsItemPreviewBadge)
+                }
+            }
+            
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)

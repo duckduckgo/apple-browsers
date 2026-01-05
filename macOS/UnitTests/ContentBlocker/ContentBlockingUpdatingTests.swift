@@ -21,6 +21,8 @@ import Common
 import History
 import HistoryView
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import TrackerRadarKit
 import SharedTestUtilities
 import WebKit
@@ -79,6 +81,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        featureFlagger: featureFlagger,
                                        onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                        appearancePreferences: appearancePreferences,
+                                       themeManager: MockThemeManager(),
                                        startupPreferences: startupPreferences,
                                        windowControllersManager: windowControllersManager,
                                        bookmarkManager: MockBookmarkManager(),

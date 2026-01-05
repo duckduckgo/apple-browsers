@@ -19,6 +19,7 @@
 import AppKit
 import Common
 import PixelKitTestingUtilities
+import PrivacyConfig
 import Testing
 
 @testable import DuckDuckGo_Privacy_Browser

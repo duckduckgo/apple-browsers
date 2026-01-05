@@ -17,13 +17,13 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Common
 import Foundation
 import History
 import os.log
 import PixelKit
+import PrivacyConfig
 import Suggestions
 
 protocol SuggestionContainerProtocol {
@@ -161,7 +161,7 @@ final class SuggestionContainer: SuggestionContainerProtocol {
             var usedUrls = Set<String>() // deduplicate
             return openTabViewModels.compactMap { model in
                 guard model.tab !== selectedTab,
-                      model.tab.content.isUrl
+                      model.tab.content.displaysContentInWebView
                         || model.tab.content.urlForWebView?.isSettingsURL == true
                         || model.tab.content.urlForWebView == .bookmarks,
                       let url = model.tab.content.userEditableUrl,
@@ -281,7 +281,7 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
 
 }
 
-extension HistoryEntry: HistorySuggestion {
+extension HistoryEntry: @retroactive HistorySuggestion {
 
     public var numberOfVisits: Int {
         return numberOfTotalVisits

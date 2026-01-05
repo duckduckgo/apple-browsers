@@ -64,12 +64,12 @@ final class BookmarkListViewController: NSViewController {
             self?.onImportClicked()
         } onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }
         return emptyStateView.embeddedInHostingView()
     }()
-    private lazy var searchBar = NSSearchField()
+    private lazy var searchBar = SearchField()
         .withAccessibilityIdentifier("BookmarkListViewController.searchBar")
     private var boxDividerTopConstraint = NSLayoutConstraint()
 
@@ -392,6 +392,7 @@ final class BookmarkListViewController: NSViewController {
         outlineView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
 
         subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
@@ -569,7 +570,7 @@ final class BookmarkListViewController: NSViewController {
             self?.onImportClicked()
         } onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }
         emptyStateHostingView.rootView = emptyStateView
@@ -770,7 +771,11 @@ extension BookmarkListViewController: ThemeUpdateListening {
             return
         }
 
-        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+        let palette = theme.palette
+        contentView.backgroundColor = palette.surfaceSecondary
+        searchBar.borderColor = palette.controlsBorderPrimary
+        searchBar.borderHighlightColor = palette.accentPrimary
+        searchBar.innerBackgroundColor = palette.surfaceTertiary
     }
 }
 

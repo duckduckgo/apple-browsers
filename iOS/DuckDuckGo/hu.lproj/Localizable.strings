@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "fiókodhoz";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Szerkesztés";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "Duck.ai-csevegések";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "AI-csevegés";
+"action.title.aiChat.new" = "Új csevegés";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "A Duck.ai beállításai";
@@ -89,7 +92,7 @@
 "action.title.newBackgroundTabForUrl" = "Megnyitás a háttérben";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Új";
+"action.title.newTabAction" = "Új lap";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Megnyitás új lapon";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Frissíted a felhasználónevet?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Elérhető termékek";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Spórolj %d%%-ot az első évben";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Könyvjelző mentése";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "A visszavonás egynél többször nem engedélyezett";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Meglévő fiók keresése...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Összes lap bezárása";
@@ -1152,6 +1164,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Jelenlegi előfizetések";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "EGYÉNI CELLATARTALOM";
@@ -1676,6 +1691,9 @@
 "error.unknown.try.again" = "Ismeretlen hiba történt";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Külső azonosító: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Kedvenc";
 
 /* No comment provided by engineer. */
@@ -1912,6 +1930,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "VÁLASSZ KATEGÓRIÁT";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Nem sikerült hozzáférni a Plusz vagy a Pro szintű funkciókhoz";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Anonim visszajelzésed fontos számunkra.";
 
@@ -2082,6 +2103,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Utolsó feldolgozás: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Elérhető termékek betöltése...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Brókerek betöltése…";
@@ -2429,6 +2453,12 @@
 "new.address.bar.picker.title" = "Címsorbeállítás";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Nincsenek aktív előfizetéseid";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Nem található meglévő előfizetés";
+
+/* No comment provided by engineer. */
 "No Logs" = "Nincsenek naplók";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2466,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Nincs találat";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Nincsenek előfizetések";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2448,6 +2481,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Felugró ablak elrejtve";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Megvan";
@@ -2519,7 +2555,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Beállítások > AI-funkciók";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Szeretnél könnyebben hozzáférni a privát AI-csevegéshez?";
+"onboarding.highlights.searchExperience.title" = "Szeretnél könnyedén hozzáférni a privát AI-csevegéshez?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Rajta, csináljuk!";
@@ -2911,6 +2947,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Keresési asszisztens beállításai";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Az új Duck.ai-csevegések megjelenítése böngészőlapként";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Duck.ai lap mód";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI által generált képek elrejtése";
 
@@ -2926,18 +2968,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Címsor elhelyezkedése";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Kísérleti böngészési menü";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Hivatkozások megnyitása társított alkalmazásokban";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Letiltásával megakadályozhatod, hogy a hivatkozások automatikusan megnyíljanak más telepített alkalmazásokban.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Összes webhelyadat törlése, beleértve a meglátogatott webhelyeket is. Fiókokból való kijelentkezést eredményezhet.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Sütik és webhelyadatok";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Az összes csevegés törlése, beleértve a kitűzött csevegéseket is";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai-csevegések";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Törlés";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Lapok és adatok törlése";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Lapok, adatok és Duck.ai-csevegések törlése";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Összes megnyitott lap bezárása";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Lapok";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Kilépés az alkalmazásból 15 perc inaktivitás után";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Kilépés az alkalmazásból 1 óra inaktivitás után";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Kilépés az alkalmazásból 30 perc inaktivitás után";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Kilépés az alkalmazásból 5 perc inaktivitás után";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Kilépés csak az alkalmazásból";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Az alkalmazásból való kilépést úgy határozzák meg, hogy elhúzva bezárják az alkalmazást inaktivitása alatt, amikor az alkalmazás a háttérben van.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Kívánt időzítés";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Az adatok az alkalmazás újraindításakor törlődnek.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Keresési javaslatok";
 
@@ -2956,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ha az ujjlenyomat- vagy az arcfelismerés, illetve rendszerjelszó engedélyezve van, az alkalmazást annak megnyitásakor fel kell oldanod.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatikus adattörlés";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Böngésző-visszajelzés";
 
@@ -2965,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Duck.ai-csevegések törlése";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Böngészési adatok törlése";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Adatok automatikus törlése";
 
@@ -2992,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Adattörlés";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Az adatok törlése segíthet az online adatvédelemben. A Fire Button segítségével manuálisan törölhetők az adatok, illetve beállítható automatikus törlés is.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Alapértelmezett böngésző";
 
@@ -3037,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Tűzálló weboldalak";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Tűzálló webhelyek";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Általános";
 
@@ -3052,8 +3148,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Jelszavak importálása";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Új";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Előnézet";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Billentyűzet";
@@ -3289,6 +3388,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "A DuckDuckGo böngésző nyomkövetés elleni védelmi megoldásokat kínál, amelyek mindig aktívak. [További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Újdonságok";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Megjeleníti az utolsó perc naplóit, hogy segítsen a közvetlenül a frissítés után felmerülő problémák diagnosztizálásában.";
 
@@ -3324,6 +3426,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Melyik weboldal nem működik?”";
+
+/* No comment provided by engineer. */
+"Status" = "Állapot";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Állapot: Érvénytelenítve";
@@ -3978,6 +4083,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "%@ üzenete:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "MEGLÉVŐ fiókhoz lesz társítva";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "ÚJ fiókot fog létrehozni";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SPÓROLJ 25%-OT";

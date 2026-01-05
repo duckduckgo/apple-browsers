@@ -19,7 +19,7 @@
 
 import UIKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol FadeOutContainerViewControllerDelegate: AnyObject {
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode)
@@ -224,11 +224,17 @@ extension FadeOutContainerViewController: UIGestureRecognizerDelegate {
         }
 
         let velocity = panGesture.velocity(in: view)
-        return abs(velocity.x) > abs(velocity.y)
+        // Only begin if horizontal velocity is significantly greater than vertical
+        return abs(velocity.x) > abs(velocity.y) * 1.5
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        // Don't recognize simultaneously with scroll views
+        // (We installSuggestionsTray in searchPageContainer and they can conflict with each other)
+        if otherGestureRecognizer.view is UIScrollView {
+            return false
+        }
         return true
     }
 }

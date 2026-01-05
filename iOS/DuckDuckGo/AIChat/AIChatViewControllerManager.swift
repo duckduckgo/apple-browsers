@@ -21,6 +21,7 @@ import UserScript
 import AIChat
 import Foundation
 import BrowserServicesKit
+import PrivacyConfig
 import WebKit
 import Core
 import SwiftUI
@@ -30,6 +31,7 @@ protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String)
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager)
+    func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String)
 }
 
@@ -59,6 +61,7 @@ final class AIChatViewControllerManager {
     private var cancellables = Set<AnyCancellable>()
     private var sessionTimer: AIChatSessionTimer?
     private var pixelMetricHandler: (any AIChatPixelMetricHandling)?
+    private var productSurfaceTelemetry: ProductSurfaceTelemetry
 
     // MARK: - Initialization
 
@@ -70,7 +73,8 @@ final class AIChatViewControllerManager {
          featureFlagger: FeatureFlagger,
          featureDiscovery: FeatureDiscovery,
          aiChatSettings: AIChatSettingsProvider,
-         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler()) {
+         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler(),
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -81,6 +85,7 @@ final class AIChatViewControllerManager {
         self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
         self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
+        self.productSurfaceTelemetry = productSurfaceTelemetry
     }
 
     // MARK: - Public Methods
@@ -154,6 +159,9 @@ final class AIChatViewControllerManager {
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
                       completion: (() -> Void)? = nil) {
+
+        productSurfaceTelemetry.duckAIUsed()
+
         // Reset the session timer if the subscription state has changed
         if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
             stopSessionTimer()
@@ -436,6 +444,11 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
             }
         case .closeAIChat:
             chatViewController?.dismiss(animated: true)
+        case .sendToSyncSettings, .sendToSetupSync:
+            chatViewController?.dismiss(animated: true) { [weak self] in
+                guard let self = self else { return }
+                self.delegate?.aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(self)
+            }
         default:
             break
         }

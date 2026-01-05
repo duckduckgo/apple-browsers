@@ -29,13 +29,9 @@ protocol DataImportFlowRelaunching {
     /// Launches the data import flow with the specified configuration
     /// - Parameters:
     ///   - model: The view model containing import data and state
-    ///   - title: The title to display in the import dialog
-    ///   - isDataTypePickerExpanded: Whether the data type picker should start expanded
     @MainActor
     func relaunchDataImport(
-        model: DataImportViewModel,
-        title: String,
-        isDataTypePickerExpanded: Bool
+        model: DataImportViewModel
     )
 }
 
@@ -65,15 +61,11 @@ protocol LegacyDataImportFlowRelaunching {
 final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportFlowRelaunching {
     @MainActor
     func relaunchDataImport(
-        model: DataImportViewModel,
-        title: String,
-        isDataTypePickerExpanded: Bool
+        model: DataImportViewModel
     ) {
         DataImportView(
             model: model,
             importFlowLauncher: self,
-            title: title,
-            isDataTypePickerExpanded: isDataTypePickerExpanded,
             syncFeatureVisibility: syncFeatureVisibility
         ).show()
     }
@@ -114,12 +106,14 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
             ).show(in: window, completion: completion)
             return
         }
-        let viewModel = DataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
+        let viewModel = DataImportViewModel(
+            syncFeatureVisibility: syncFeatureVisibility,
+            onFinished: onFinished,
+            onCancelled: onCancelled
+        )
         DataImportView(
             model: viewModel,
             importFlowLauncher: self,
-            title: title,
-            isDataTypePickerExpanded: isDataTypePickerExpanded,
             syncFeatureVisibility: syncFeatureVisibility
         ).show(in: window, completion: completion)
     }

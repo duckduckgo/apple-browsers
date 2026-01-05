@@ -175,7 +175,7 @@ public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStri
 
 public struct EntitlementPayload: Codable, Equatable {
     public let product: SubscriptionEntitlement // Can expand in future
-    public let name: String // always `subscriber`
+    public let name: String
 }
 
 public extension JWTAccessToken {

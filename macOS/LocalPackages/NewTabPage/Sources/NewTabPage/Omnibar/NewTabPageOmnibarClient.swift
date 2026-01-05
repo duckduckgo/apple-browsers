@@ -45,10 +45,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         self.actionHandler = actionHandler
         super.init()
 
-        Publishers.Merge3(
+        Publishers.Merge(
             configProvider.isAIChatShortcutEnabledPublisher,
-            configProvider.isAIChatSettingVisiblePublisher,
-            configProvider.showCustomizePopoverPublisher
+            configProvider.isAIChatSettingVisiblePublisher
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -71,11 +70,6 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        // Count the number of popover presentations
-        if configProvider.showCustomizePopover {
-            configProvider.customizePopoverPresentationCount += 1
-        }
-
         return NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,

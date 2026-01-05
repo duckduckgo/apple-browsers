@@ -29,7 +29,8 @@ final class PassiveAddressBarTextField: NSTextField {
     }
 
     private(set) weak var tabViewModel: TabViewModel?
-    private var tabViewModelCancellable: AnyCancellable?
+    private var selectedTabViewModelCancellable: AnyCancellable?
+    private var valueCancellable: AnyCancellable?
 
     var theme: ThemeStyleProviding = NSApp.delegateTyped.themeManager.theme
 
@@ -61,25 +62,39 @@ final class PassiveAddressBarTextField: NSTextField {
     }
 
     private func subscribeToSelectedTabViewModel() {
-        guard let selectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel else {
+        guard let tabCollectionViewModel else {
             setTabViewModel(nil)
+            selectedTabViewModelCancellable = nil
             return
         }
-        setTabViewModel(selectedTabViewModel)
+
+        selectedTabViewModelCancellable = tabCollectionViewModel.$selectedTabViewModel
+            .compactMap { $0 }
+            .sink { [weak self] selectedTabViewModel in
+                self?.setTabViewModel(selectedTabViewModel)
+            }
     }
 
     private func setTabViewModel(_ tabViewModel: TabViewModel?) {
-        tabViewModelCancellable?.cancel()
         self.tabViewModel = tabViewModel
 
         // Subscribe to the passive address bar attributed string from TabViewModel
-        tabViewModelCancellable = tabViewModel?.$passiveAddressBarAttributedString
+        valueCancellable = tabViewModel?.$passiveAddressBarAttributedString
             .receive(on: DispatchQueue.main)
-            .assign(to: \.attributedStringValue, onWeaklyHeld: self)
+            .sink { [weak self] attributedString in
+                self?.setAttributedStringValue(attributedString)
+            }
+    }
+
+    private func setAttributedStringValue(_ attributedString: NSAttributedString?) {
+        if let attributedString, attributedString.containsAttachments { // used to draw page icon (TabViewModel.updatePassiveAddressBarString)
+            self.attributedStringValue = attributedString
+        } else {
+            self.stringValue = attributedString?.string ?? "" // allow truncation of regular (non-attributed) URLs
+        }
     }
 
     override func cursorUpdate(with event: NSEvent) {
-
     }
 
 }
@@ -104,8 +119,10 @@ extension PassiveAddressBarTextField: NSTextViewDelegate {
 // MARK: - NSMenuDelegate
 extension PassiveAddressBarTextField: NSMenuDelegate {
     func menuDidClose(_ menu: NSMenu) {
-        // Unselect text when menu closes
-        currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
+        // The menu is only shown in pop-up windows, 
+        // so we need to make the Web View first responder back.
+        // BrowserTabViewController adjusts the first responder when `nil` is passed.
+        window?.makeFirstResponder(nil)
     }
 }
 // MARK: - SharingMenuDelegate
@@ -126,7 +143,7 @@ final class PassiveAddressBarTextFieldCell: NSTextFieldCell {
     override var isSelectable: Bool {
         get {
             // allow context menu but don‘t show beam cursor in pop ups
-            return super.isSelectable || NSApp.currentEvent?.type == .rightMouseDown
+            return super.isSelectable || NSApp.currentEvent?.isContextClick ?? false
         }
         set {
             super.isSelectable = newValue

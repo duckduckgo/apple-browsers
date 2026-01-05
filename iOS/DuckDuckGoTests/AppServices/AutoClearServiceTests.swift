@@ -19,6 +19,7 @@
 
 import Foundation
 import Testing
+import PersistenceTestingUtils
 @testable import DuckDuckGo
 @testable import Core
 
@@ -62,17 +63,20 @@ final class AutoClearServiceTests {
 
     var mockAutoClear: MockAutoClear!
     var mockOverlayWindowManager: MockOverlayWindowManager!
+    var mockKeyValueStore: MockKeyValueFileStore!
 
-    init() {
+    init() throws {
         mockAutoClear = MockAutoClear()
         mockOverlayWindowManager = MockOverlayWindowManager()
+        mockKeyValueStore = try MockKeyValueFileStore()
     }
 
     @Test("autoClearService's init() should start clearing data")
     func clearDataOnInit() async {
         // When
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                keyValueStore: mockKeyValueStore)
 
         // Then
         await autoClearService.autoClearTask?.value
@@ -84,7 +88,8 @@ final class AutoClearServiceTests {
     func resume() async {
         // Given
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                keyValueStore: mockKeyValueStore)
 
         // When
         autoClearService.resume()
@@ -100,7 +105,8 @@ final class AutoClearServiceTests {
         // Given
         mockAutoClear.didTimeExpired = false
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                keyValueStore: mockKeyValueStore)
 
         // When
         autoClearService.resume()
@@ -116,7 +122,8 @@ final class AutoClearServiceTests {
         // Given
         mockAutoClear.isClearingEnabledValue = true
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                keyValueStore: mockKeyValueStore)
 
         // When
         autoClearService.suspend()
@@ -131,7 +138,8 @@ final class AutoClearServiceTests {
         // Given
         mockAutoClear.isClearingEnabledValue = false
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                keyValueStore: mockKeyValueStore)
 
 
         // When
@@ -146,7 +154,8 @@ final class AutoClearServiceTests {
     func waitForDataCleared() async {
         // Given
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager)
+                                                overlayWindowManager: mockOverlayWindowManager,
+                                                keyValueStore: mockKeyValueStore)
 
         // When
         await autoClearService.waitForDataCleared()

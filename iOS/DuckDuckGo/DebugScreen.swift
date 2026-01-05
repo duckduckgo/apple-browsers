@@ -19,13 +19,18 @@
 
 import DDGSync
 import Persistence
-import BrowserServicesKit
+import PrivacyConfig
 import Core
 import SwiftUI
 import UIKit
 import Configuration
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import Subscription
+
+protocol RemoteMessagingDebugHandling {
+    func refreshRemoteMessages()
+}
 
 enum DebugScreen: Identifiable {
 
@@ -44,6 +49,8 @@ enum DebugScreen: Identifiable {
         let databaseDelegate: DBPIOSInterface.DatabaseDelegate?
         let debuggingDelegate: DBPIOSInterface.DebuggingDelegate?
         let runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
+        let subscriptionDataReporter: SubscriptionDataReporting
+        let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
 
     }
 

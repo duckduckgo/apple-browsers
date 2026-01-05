@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
 import SyncUI_macOS
-import BrowserServicesKit
+import PrivacyConfig
 import PixelKit
 import Subscription
 import SubscriptionUI
@@ -604,7 +605,8 @@ enum Preferences {
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
                                                           keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                           winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                                                          blackFridayCampaignProvider: blackFridayCampaignProvider)
+                                                          blackFridayCampaignProvider: blackFridayCampaignProvider,
+                                                          isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

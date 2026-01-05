@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import NewTabPage
-import BrowserServicesKit
 import Combine
 import FeatureFlags
+import Foundation
+import NewTabPage
+import PrivacyConfig
 
 extension Notification.Name {
 

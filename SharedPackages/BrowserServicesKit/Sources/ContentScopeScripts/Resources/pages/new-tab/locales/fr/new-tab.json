@@ -60,6 +60,10 @@
     "title" : "Aucune activité de pistage récente",
     "note" : "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
   },
+  "protections_newBadge" : {
+    "title" : "Nouveau",
+    "note" : "Text displayed in a badge to indicate a new feature or statistic."
+  },
   "stats_menuTitle" : {
     "title" : "Tentatives de pistage bloquées",
     "note" : "Used as a label in a customization menu"
@@ -117,7 +121,7 @@
     "note" : "The heading indicating multiple cookie pop-ups were handled by the CPM"
   },
   "stats_protectionsReportInfo" : {
-    "title" : "Affiche les tentatives de pistage bloquées au cours des 7 derniers jours et le nombre de fenêtres contextuelles de cookies bloquées depuis que vous avez commencé à utiliser le navigateur. <span>Vous pouvez réinitialiser ces statistiques en utilisant le Fire Button.</span>",
+    "title" : "Affiche les tentatives de pistage bloquées au cours des 7 derniers jours et le nombre de fenêtres contextuelles de cookies bloquées depuis que vous avez commencé à utiliser le navigateur.",
     "note" : "Text explaining how to reset the protections stats"
   },
   "stats_feedCountBlockedSingular" : {
@@ -321,7 +325,7 @@
     "note" : "Title of the Next Steps card for unlocking your free trial of DuckDuckGo subscription"
   },
   "nextSteps_subscription_summary" : {
-    "title" : "Profitez d'un essai gratuit de notre abonnement comprenant un VPN + 3 autres fonctionnalités avancées.",
+    "title" : "Profitez d'un essai gratuit de notre abonnement comprenant un VPN et plus fonctionnalités avancées.",
     "note" : "Summary of the Next Steps card about the DuckDuckGo subscription"
   },
   "nextSteps_subscription_actionText" : {

@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
@@ -26,6 +25,7 @@ import MaliciousSiteProtection
 import Networking
 import os.log
 import PixelKit
+import PrivacyConfig
 
 extension MaliciousSiteProtectionManager {
 

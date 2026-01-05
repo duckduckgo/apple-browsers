@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
+import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class UnifiedFeedbackFormViewModelTests: XCTestCase {
@@ -189,6 +190,41 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         XCTAssertEqual(sender.capturedSubcategory, "accessSubscriptionModels")
     }
 
+    func testWhenProTierPurchaseEnabled_ThenSubscriptionSubcategoriesIncludesUnableToAccessFeatures() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: featureFlagger)
+
+        let subcategories = viewModel.availableSubscriptionSubcategories
+
+        XCTAssertTrue(subcategories.contains(.selectSubcategory))
+        XCTAssertTrue(subcategories.contains(.otp))
+        XCTAssertTrue(subcategories.contains(.unableToAccessFeatures))
+        XCTAssertTrue(subcategories.contains(.somethingElse))
+    }
+
+    func testWhenProTierPurchaseDisabled_ThenSubscriptionSubcategoriesExcludesUnableToAccessFeatures() {
+        let featureFlagger = MockFeatureFlagger()
+
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: featureFlagger)
+
+        let subcategories = viewModel.availableSubscriptionSubcategories
+
+        XCTAssertTrue(subcategories.contains(.selectSubcategory))
+        XCTAssertTrue(subcategories.contains(.otp))
+        XCTAssertFalse(subcategories.contains(.unableToAccessFeatures))
+        XCTAssertTrue(subcategories.contains(.somethingElse))
+    }
+
 }
 
 // MARK: - Mocks
@@ -335,7 +371,7 @@ extension SubscriptionManagerMock {
                   storePurchaseManager: StorePurchaseManagerMock(),
                   currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
                                                               purchasePlatform: .appStore),
-                  canPurchase: false,
+                  hasAppStoreProductsAvailable: false,
                   subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
     }
 }

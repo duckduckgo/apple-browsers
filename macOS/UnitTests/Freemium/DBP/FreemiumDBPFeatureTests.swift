@@ -54,7 +54,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
                                                           authEndpointService: mockAuthService,
                                                           storePurchaseManager: mockStorePurchaseManager,
                                                           currentEnvironment: currentEnvironment,
-                                                          canPurchase: false,
+                                                          hasAppStoreProductsAvailable: false,
                                                           subscriptionFeatureMappingCache: mockSubscriptionFeatureMappingCache)
 
         mockFreemiumDBPUserStateManagerManager = MockFreemiumDBPUserStateManager()
@@ -81,8 +81,9 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenSubscriptionNotAvailable_thenFreemiumDBPIsNotAvailable() throws {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = false
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
         mockAccountManager.accessToken = nil
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
@@ -98,8 +99,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenAllConditionsAreNotMet_thenFreemiumDBPIsNotAvailable() throws {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
-        mockSubscriptionManager.canPurchase = false
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
         mockAccountManager.accessToken = "some_token"
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
@@ -115,8 +116,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenUserAlreadySubscribed_thenFreemiumDBPIsNotAvailable() throws {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = "some_token"
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
@@ -133,8 +134,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testWhenUserDidNotActivate_thenOffboardingIsNotExecuted() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = false
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
 
         // When
@@ -151,8 +152,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testWhenUserdidActivate_andFeatureIsDisabled_andUserCanPurchase_andUserIsNotSubscribed_thenOffboardingIsExecuted() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = true
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
 
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
@@ -173,8 +174,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testWhenUserdidActivate_andFeatureIsDisabled_andUserCanPurchase_andUserIsSubscribed_thenOffboardingIsNotExecuted() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = true
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = "some_token"
 
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
@@ -195,8 +196,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testWhenUserdidActivate_andFeatureIsEnabled_andUserCanPurchase_andUserIsNotSubscribed_thenOffboardingIsNotExecuted() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = true
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
 
         // When
@@ -214,8 +215,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testWhenUserdidActivate_andFeatureIsDisabled_andUserCannotPurchase_thenOffboardingIsNotExecuted() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = true
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = false
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
         mockAccountManager.accessToken = nil
 
         // When
@@ -233,8 +234,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testWhenFeatureFlagValueChangesToEnabled_thenIsAvailablePublisherEmitsCorrectValue() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = false
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         let expectation = XCTestExpectation(description: "isAvailablePublisher emits values")
 
@@ -256,7 +257,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
         // When
         sut.subscribeToDependencyUpdates()
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
         mockPrivacyConfigurationManager.updatesSubject.send()
 
         // Then
@@ -267,8 +268,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testWhenFeatureFlagValueChangesToDisabled_thenIsAvailablePublisherEmitsCorrectValue() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = true
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         let expectation = XCTestExpectation(description: "isAvailablePublisher emits values")
 
@@ -290,7 +291,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
         // When
         sut.subscribeToDependencyUpdates()
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
         mockPrivacyConfigurationManager.updatesSubject.send()
 
         // Then
@@ -301,8 +302,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testSubscriptionStatusChangesToSubscribed_thenIsAvailablePublisherEmitsCorrectValue() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = true
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         let expectation = XCTestExpectation(description: "isAvailablePublisher emits values")
 
@@ -335,8 +336,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testSubscriptionStatusChangesToUnsubscribed_thenIsAvailablePublisherEmitsCorrectValue() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = true
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = "some_token"
         let expectation = XCTestExpectation(description: "isAvailablePublisher emits values")
 
@@ -369,8 +370,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testIsAvailablePublisherEmitsWhenCanPurchaseChangesOnAppStore() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = false
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = false
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
         mockAccountManager.accessToken = nil
 
         sut = DefaultFreemiumDBPFeature(
@@ -381,7 +382,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
             userDefaults: testUserDefaults
         )
 
-        let expectation = XCTestExpectation(description: "isAvailablePublisher emits when canPurchase changes")
+        let expectation = XCTestExpectation(description: "isAvailablePublisher emits when hasAppStoreProductsAvailable changes")
         var results: [Bool] = []
         sut.isAvailablePublisher
             .sink { isAvailable in
@@ -393,8 +394,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut.subscribeToDependencyUpdates()
 
         // When
-        mockSubscriptionManager.canPurchase = true
-        mockSubscriptionManager.canPurchaseSubject.send(true)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.hasAppStoreProductsAvailableSubject.send(true)
 
         // Then
         wait(for: [expectation], timeout: 2.0)
@@ -406,8 +407,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         let nonAppStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockSubscriptionManager.currentEnvironment = nonAppStoreEnvironment
         mockFreemiumDBPUserStateManagerManager.didActivate = false
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = false
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
         mockAccountManager.accessToken = nil
 
         sut = DefaultFreemiumDBPFeature(
@@ -418,7 +419,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
             userDefaults: testUserDefaults
         )
 
-        let expectation = XCTestExpectation(description: "isAvailablePublisher does not emit on canPurchase change for non-appStore")
+        let expectation = XCTestExpectation(description: "isAvailablePublisher does not emit on hasAppStoreProductsAvailable change for non-appStore")
         expectation.isInverted = true
 
         sut.isAvailablePublisher
@@ -430,8 +431,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut.subscribeToDependencyUpdates()
 
         // When
-        mockSubscriptionManager.canPurchase = true
-        mockSubscriptionManager.canPurchaseSubject.send(true)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.hasAppStoreProductsAvailableSubject.send(true)
 
         // Then
         wait(for: [expectation], timeout: 1.0)
@@ -440,8 +441,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     @available(macOS 12.0, *)
     func testWhenStorefrontIsUSA_andCanPurchase_andNotSubscribed_thenIsAvailable() throws {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .usa
         let currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
@@ -462,8 +463,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     @available(macOS 12.0, *)
     func testWhenStorefrontIsNotUSA_andCanPurchase_andNotSubscribed_thenIsNotAvailable() throws {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .restOfWorld
         let currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
@@ -484,8 +485,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     @available(macOS 12.0, *)
     func testWhenPlatformIsStripe_thenStorefrontIsIgnoredAndIsAvailable() throws {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .restOfWorld
         let currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
@@ -507,8 +508,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenFeatureFlagOverrideIsSetToTrue_thenIsAvailableIsTrue() {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false } // Real value is false
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false } // Real value is false
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .usa
 
@@ -532,8 +533,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenFeatureFlagOverrideIsSetToFalse_thenIsAvailableIsFalse() {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true } // Real value is true
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true } // Real value is true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .usa
 
@@ -557,8 +558,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenNoOverrideIsSet_thenRealFeatureFlagValueIsUsed() {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .usa
 
@@ -582,8 +583,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     @available(macOS 12.0, *)
     func testWhenStorefrontOverrideIsSetToTrue_thenIsAvailableIsTrue() {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .restOfWorld // Real value is non-USA
 
@@ -608,8 +609,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     @available(macOS 12.0, *)
     func testWhenStorefrontOverrideIsSetToFalse_thenIsAvailableIsFalse() {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .usa // Real value is USA
 
@@ -634,8 +635,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     @available(macOS 12.0, *)
     func testWhenFeatureFlagOverrideIsTrueAndStorefrontIsNonUSA_thenIsAvailableIsFalse() {
         // Given: Real storefront is non-USA and there's no storefront override
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .restOfWorld
 
@@ -658,8 +659,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     @available(macOS 12.0, *)
     func testWhenStorefrontOverrideIsTrueAndFeatureFlagIsFalse_thenIsAvailableIsFalse() {
         // Given: Real feature flag is false and there's no flag override
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .restOfWorld
 
@@ -681,8 +682,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenFeatureFlagOverrideIsSetAndPublisherUpdates_thenOverrideTakesPrecedence() {
         // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
         mockStorePurchaseManager.currentStorefrontRegion = .usa
 
@@ -721,10 +722,10 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         // Given
         let injectedFeatureDisabler = MockFeatureDisabler()
         mockFreemiumDBPUserStateManagerManager.didActivate = true
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
         mockAccountManager.accessToken = nil
         // Need to set up conditions for shouldDisableAndDelete to be true
-        mockSubscriptionManager.canPurchase = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockStorePurchaseManager.currentStorefrontRegion = .usa
 
         sut = DefaultFreemiumDBPFeature(
@@ -756,8 +757,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         anotherUserDefaults.set(true, forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
 
         // Don't set override in the default testUserDefaults
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
-        mockSubscriptionManager.canPurchase = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAccountManager.accessToken = nil
 
         sut = DefaultFreemiumDBPFeature(
@@ -778,9 +779,9 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     func testOffboarding_WhenConditionsMetAndNoOverride_TriggersSuccessfully() {
         // Given
         mockFreemiumDBPUserStateManagerManager.didActivate = true
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
         mockAccountManager.accessToken = nil
-        mockSubscriptionManager.canPurchase = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockStorePurchaseManager.currentStorefrontRegion = .usa
 
         // Ensure no overrides are set

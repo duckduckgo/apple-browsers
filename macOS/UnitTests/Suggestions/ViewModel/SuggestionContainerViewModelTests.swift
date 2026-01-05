@@ -17,6 +17,7 @@
 //
 
 import Combine
+import PrivacyConfig
 import SharedTestUtilities
 import Suggestions
 import XCTest

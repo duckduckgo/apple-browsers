@@ -24,7 +24,7 @@ import UIKit
 import Networking
 import Common
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 
 final class PixelConfiguration {
 

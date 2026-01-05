@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Simulate ServiceNow Cmd+Click Bug</title>
+</head>
+<body>
+  <p>Cmd+Click or right-click and open in new tab on any of the links below:</p>
+
+  <ul>
+    <li><a href="https://example.com" class="ticket-link extra" data-id="INC001">Incident INC001 (with extra tabs)</a></li>
+    <li><a href="https://example.com" class="ticket-link clean" data-id="INC002">Incident INC002 (clean)</a></li>
+  </ul>
+
+  <div id="debug"></div>
+
+  <script>
+    function openInternalTab(recordId) {
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute('sandbox', ''); // simulate isolation (no script execution)
+      iframe.srcdoc = `<h2>${recordId}</h2><p>Internal tab using srcdoc iframe.</p>`;
+      document.body.appendChild(iframe);
+    }
+
+    function openExtraTabs(useWindowOpen = true) {
+      // Simulate rogue tab generation: optionally skip window.open
+      if (useWindowOpen) {
+        for (let i = 0; i < 2; i++) {
+          window.open('', '_blank'); // blank tab
+        }
+      }
+
+      const f = document.createElement('iframe');
+      f.srcdoc = '<h3>Orphan iframe</h3>'; // triggers about:srcdoc
+      document.body.appendChild(f);
+    }
+
+    document.querySelectorAll('.ticket-link').forEach(link => {
+      link.addEventListener('click', function (e) {
+        const metaClick = e.metaKey || e.ctrlKey;
+        const triggerExtras = link.classList.contains('extra');
+        const skipWindowOpen = link.classList.contains('clean');
+
+        if (metaClick) {
+          // Allow default: browser will open href in new tab
+          setTimeout(() => {
+            openInternalTab(link.dataset.id);
+            openExtraTabs(!skipWindowOpen);
+          }, 0);
+        } else {
+          e.preventDefault();
+          openInternalTab(link.dataset.id);
+          openExtraTabs(!skipWindowOpen);
+          window.location.href = link.href;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

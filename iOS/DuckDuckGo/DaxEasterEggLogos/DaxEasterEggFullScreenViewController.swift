@@ -21,7 +21,7 @@ import UIKit
 import Kingfisher
 import Core
 import DesignResourcesKit
-import BrowserServicesKit
+import PrivacyConfig
 import os.log
 
 /// Utility for calculating DaxEasterEgg logo frames with consistent sizing across components.

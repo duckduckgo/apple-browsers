@@ -23,35 +23,29 @@ protocol NewTabPageNextStepsCardsPixelHandling {
 
     /// Fires the next steps card shown pixels for each card in the provided list of cards, the first time the card is shown.
     /// - Parameter cards: The list of cards that were shown.
-    func fireNextStepsCardShownPixels(_ cards: [NewTabPageDataModel.CardID]) -> Void
+    func fireNextStepsCardShownPixels(_ cards: [NewTabPageDataModel.CardID])
 
     /// Fires the next steps card clicked pixel for the provided card.
-    /// - Parameters:
-    ///  - card: The card that was clicked.
-    ///  - includeAppVersionParameter: Whether to include the app version parameter in the pixel.
-    func fireNextStepsCardClickedPixel(_ card: NewTabPageDataModel.CardID) -> Void
+    func fireNextStepsCardClickedPixel(_ card: NewTabPageDataModel.CardID)
 
     /// Fires the next steps card dismissed pixel for the provided card.
-    /// - Parameters:
-    ///  - card: The card that was dismissed.
-    ///  - includeAppVersionParameter: Whether to include the app version parameter in the pixel.
-    func fireNextStepsCardDismissedPixel(_ card: NewTabPageDataModel.CardID) -> Void
+    func fireNextStepsCardDismissedPixel(_ card: NewTabPageDataModel.CardID)
 
     /// Fires the add to dock pixel if the add to dock card is present in the provided list of cards.
     /// - Parameter cards: The list of cards that were shown.
-    func fireAddToDockPresentedPixelIfNeeded(_ cards: [NewTabPageDataModel.CardID]) -> Void
+    func fireAddToDockPresentedPixelIfNeeded(_ cards: [NewTabPageDataModel.CardID])
 
     /// Fires the `GeneralPixel.userAddedToDockFromNewTabPageCard` pixel.
-    func fireAddedToDockPixel() -> Void
+    func fireAddedToDockPixel()
 
     /// Fires the `GeneralPixel.defaultRequestedFromHomepageSetupView` pixel.
-    func fireDefaultBrowserRequestedPixel() -> Void
+    func fireDefaultBrowserRequestedPixel()
 
     /// Fires the `SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked` pixel.
-    func fireSubscriptionCardClickedPixel() -> Void
+    func fireSubscriptionCardClickedPixel()
 
     /// Fires the `SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed` pixel.
-    func fireSubscriptionCardDismissedPixel() -> Void
+    func fireSubscriptionCardDismissedPixel()
 }
 
 final class NewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPixelHandling {
@@ -60,7 +54,7 @@ final class NewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPixelH
     init(pixelHandler: @escaping (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { PixelKit.fire($0, frequency: $1, includeAppVersionParameter: $2) }) {
         self.pixelHandler = pixelHandler
     }
-    
+
     func fireAddToDockPresentedPixelIfNeeded(_ cards: [NewTabPageDataModel.CardID]) {
         guard cards.contains(.addAppToDockMac) else {
             return

@@ -33,7 +33,7 @@ final class MockNewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPi
     func fireAddToDockPresentedPixelIfNeeded(_ cards: [NewTabPageDataModel.CardID]) {
         fireAddToDockPresentedPixelIfNeededCalledWith = cards
     }
-    
+
     func fireNextStepsCardShownPixels(_ cards: [NewTabPageDataModel.CardID]) {
         fireNextStepsCardShownPixelsCalledWith = cards
     }

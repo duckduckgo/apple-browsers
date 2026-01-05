@@ -18,7 +18,7 @@
 
 import Cocoa
 import SwiftUI
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 
 final class PermissionAuthorizationPopover: NSPopover {
@@ -64,7 +64,6 @@ final class PermissionAuthorizationPopover: NSPopover {
         if featureFlagger.isFeatureOn(.newPermissionView) {
             // Create programmatically
             controller = PermissionAuthorizationViewController(newPermissionView: true)
-
         } else {
             // Load from storyboard
             controller = setupStoryboardController()

@@ -37,5 +37,4 @@ public enum NetworkProtectionOptionKey {
     public static let tunnelMemoryCrashSimulation = "tunnelMemoryCrashSimulation"
     public static let connectionTesterEnabled = "connectionTesterEnabled"
     public static let settings = "settings"
-    public static let isConnectionWideEventMeasurementEnabled = "isConnectionWideEventMeasurementEnabled"
 }

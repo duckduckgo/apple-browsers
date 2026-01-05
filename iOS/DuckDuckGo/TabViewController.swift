@@ -46,6 +46,7 @@ import WKAbstractions
 import SERPSettings
 import AIChat
 import PixelKit
+import PrivacyConfig
 
 class TabViewController: UIViewController {
 
@@ -280,6 +281,7 @@ class TabViewController: UIViewController {
             updateTabModel()
             delegate?.tabLoadingStateDidChange(tab: self)
             checkLoginDetectionAfterNavigation()
+            updateInputAccessoryViewVisibility()
         }
     }
     
@@ -411,7 +413,8 @@ class TabViewController: UIViewController {
                                    daxDialogsManager: DaxDialogsManaging,
                                    aiChatSettings: AIChatSettingsProvider,
                                    productSurfaceTelemetry: ProductSurfaceTelemetry,
-                                   sharedSecureVault: (any AutofillSecureVault)? = nil) -> TabViewController {
+                                   sharedSecureVault: (any AutofillSecureVault)? = nil,
+                                   voiceSearchHelper: VoiceSearchHelperProtocol) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
@@ -440,7 +443,8 @@ class TabViewController: UIViewController {
                               daxDialogsManager: daxDialogsManager,
                               aiChatSettings: aiChatSettings,
                               productSurfaceTelemetry: productSurfaceTelemetry,
-                              sharedSecureVault: sharedSecureVault
+                              sharedSecureVault: sharedSecureVault,
+                              voiceSearchHelper: voiceSearchHelper
             )
         })
         return controller
@@ -492,6 +496,12 @@ class TabViewController: UIViewController {
     let sharedSecureVault: (any AutofillSecureVault)?
     
     private(set) var aiChatContentHandler: AIChatContentHandling
+    private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
+    lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
+        let coordinator = AIChatContextualSheetCoordinator(voiceSearchHelper: voiceSearchHelper)
+        coordinator.delegate = self
+        return coordinator
+    }()
     let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     required init?(coder aDecoder: NSCoder,
@@ -523,7 +533,8 @@ class TabViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-                   sharedSecureVault: (any AutofillSecureVault)? = nil) {
+                   sharedSecureVault: (any AutofillSecureVault)? = nil,
+                   voiceSearchHelper: VoiceSearchHelperProtocol) {
 
         self.tabModel = tabModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -559,6 +570,7 @@ class TabViewController: UIViewController {
         self.aiChatFullModeFeature = aiChatFullModeFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
+        self.voiceSearchHelper = voiceSearchHelper
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
@@ -1910,6 +1922,12 @@ extension TabViewController: WKNavigationDelegate {
             saveLoginPromptIsPresenting = false
             shouldShowAutofillExtensionPrompt = false
         }
+    }
+
+    /// Hides the default keyboard input accessory view when on duck.ai pages.
+    private func updateInputAccessoryViewVisibility() {
+        guard let webView = webView as? WebView else { return }
+        webView.shouldHideDefaultInputAccessoryView = isAITab
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

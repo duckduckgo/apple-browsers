@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import BrowserServicesKit
+import PrivacyConfig
 
 final actor AdAttributionPixelReporter {
 

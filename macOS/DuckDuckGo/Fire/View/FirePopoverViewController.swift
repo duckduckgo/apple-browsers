@@ -24,6 +24,7 @@ import os.log
 import PixelKit
 import DesignResourcesKitIcons
 import BrowserServicesKit
+import PrivacyConfig
 
 protocol FirePopoverViewControllerDelegate: AnyObject {
 

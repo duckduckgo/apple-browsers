@@ -62,7 +62,7 @@ class DBPDebugWebViewWindowManager {
         // Find the PIR Debug Mode window and make it visible with a Close button
         DispatchQueue.main.async {
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                for window in windowScene.windows {
+                if let window = windowScene.windows.last {
                     if let navController = window.rootViewController as? UINavigationController,
                        let topViewController = navController.topViewController,
                        let currentTitle = topViewController.title,
@@ -78,9 +78,10 @@ class DBPDebugWebViewWindowManager {
                         topViewController.title = title
 
                         window.makeKeyAndVisible()
-                        break
                     }
                 }
+            } else {
+                Logger.dataBrokerProtection.log("No UIWindowScene")
             }
         }
     }

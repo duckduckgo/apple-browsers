@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import XCTest
 import AIChat
+import PrivacyConfig
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AIChatSidebarProviderTests: XCTestCase {
@@ -493,6 +494,85 @@ final class AIChatSidebarProviderTests: XCTestCase {
         // Then
         XCTAssertFalse(provider.isShowingSidebar(for: tabID))
         XCTAssertNotNil(provider.sidebarsByTab[tabID]?.hiddenAt) // hiddenAt should be set
+    }
+
+    // MARK: - Reset Sidebar Tests
+
+    func testWhenResetSidebarCalledThenSidebarIsRemoved() {
+        // Given
+        let tabID = "reset-test-tab"
+        _ = provider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        provider.sidebarsByTab[tabID]?.updateRestorationData("test-data")
+        XCTAssertNotNil(provider.sidebarsByTab[tabID])
+
+        // When
+        provider.resetSidebar(for: tabID)
+
+        // Then - sidebar should be removed from dictionary
+        XCTAssertNil(provider.sidebarsByTab[tabID])
+        XCTAssertEqual(provider.sidebarsByTab.count, 0)
+    }
+
+    func testWhenResetSidebarCalledForNonExistentTabThenNothingHappens() {
+        // Given
+        let existingTabID = "existing-tab"
+        let nonExistentTabID = "non-existent-tab"
+        _ = provider.makeSidebarViewController(for: existingTabID, burnerMode: .regular)
+        provider.sidebarsByTab[existingTabID]?.updateRestorationData("test-data")
+        let initialCount = provider.sidebarsByTab.count
+
+        // When
+        provider.resetSidebar(for: nonExistentTabID)
+
+        // Then - existing tab should be unaffected
+        XCTAssertEqual(provider.sidebarsByTab.count, initialCount)
+        XCTAssertNotNil(provider.sidebarsByTab[existingTabID]?.restorationData)
+    }
+
+    func testWhenResetSidebarCalledThenOtherTabsAreNotAffected() {
+        // Given
+        let tabID1 = "tab1"
+        let tabID2 = "tab2"
+        _ = provider.makeSidebarViewController(for: tabID1, burnerMode: .regular)
+        _ = provider.makeSidebarViewController(for: tabID2, burnerMode: .regular)
+        provider.sidebarsByTab[tabID1]?.updateRestorationData("data1")
+        provider.sidebarsByTab[tabID2]?.updateRestorationData("data2")
+
+        // When
+        provider.resetSidebar(for: tabID1)
+
+        // Then - tab1 should be removed, tab2 should be unaffected
+        XCTAssertNil(provider.sidebarsByTab[tabID1])
+        XCTAssertNotNil(provider.sidebarsByTab[tabID2])
+        XCTAssertEqual(provider.sidebarsByTab[tabID2]?.restorationData, "data2")
+    }
+
+    func testWhenResetSidebarCalledBeforeNewHandoffThenFreshSidebarIsCreated() {
+        // Given - Create provider with keep session enabled
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatKeepSession]
+        let keepSessionProvider = AIChatSidebarProvider(featureFlagger: mockFeatureFlagger)
+
+        let tabID = "fresh-url-tab"
+        _ = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        keepSessionProvider.sidebarsByTab[tabID]?.setRevealed()
+        keepSessionProvider.sidebarsByTab[tabID]?.updateRestorationData("old-chat-data")
+
+        // Simulate closing the sidebar
+        keepSessionProvider.handleSidebarDidClose(for: tabID)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
+
+        // When - Reset before creating new sidebar (simulating new handoff)
+        keepSessionProvider.resetSidebar(for: tabID)
+        XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID]) // Sidebar was removed
+
+        // Creating new sidebar should create a fresh one
+        let newViewController = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+
+        // Then - Should have a fresh sidebar without restoration data
+        XCTAssertNotNil(newViewController)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
+        XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID]?.restorationData)
     }
 
 }

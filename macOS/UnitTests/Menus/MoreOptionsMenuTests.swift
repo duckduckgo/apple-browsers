@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import NetworkProtectionUI
 import Persistence
+import PrivacyConfig
 import SharedTestUtilities
 import Subscription
 import SubscriptionTestingUtilities

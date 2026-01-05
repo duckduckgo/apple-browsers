@@ -78,7 +78,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         let result = try! sut.createJobs(with: .manualScan,
                                          withPriorityDate: Date(),
                                          showWebView: false,
-                                         errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                         statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                          jobDependencies: mockDependencies)
 
         // Then
@@ -107,7 +107,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         let result = try sut.createJobs(with: .all,
                                         withPriorityDate: nil,
                                         showWebView: false,
-                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                         jobDependencies: mockDependencies)
 
         // Then
@@ -140,7 +140,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         let result = try sut.createJobs(with: .all,
                                         withPriorityDate: nil,
                                         showWebView: false,
-                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                         jobDependencies: mockDependencies)
 
         // Then
@@ -199,7 +199,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         let result = try sut.createJobs(with: .all,
                                         withPriorityDate: nil,
                                         showWebView: false,
-                                        errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                        statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                         jobDependencies: mockDependencies)
 
         // Then
@@ -239,7 +239,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             let result = try sut.createJobs(with: jobType,
                                             withPriorityDate: nil,
                                             showWebView: false,
-                                            errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                            statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                             jobDependencies: mockDependencies)
 
             XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData for \(jobType)")
@@ -248,5 +248,94 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             // Should create at most 1 job (for active broker only)
             XCTAssertLessThanOrEqual(result.count, 1, "Should create at most 1 job for \(jobType)")
         }
+    }
+
+    // MARK: - Click Delay Optimization Tests
+
+    func testWhenClickDelayOptimizationIsOn_thenCreateOptOutRunnerUsesOptimizedDelay() {
+        // Given
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
+        let dependencies = BrokerProfileJobDependencies(
+            database: mockDatabase,
+            contentScopeProperties: ContentScopeProperties.mock,
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            executionConfig: mockSchedulerConfig,
+            notificationCenter: .default,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler,
+            dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            captchaService: CaptchaServiceMock(),
+            featureFlagger: featureFlagger
+        )
+
+        // When
+        let runner = dependencies.createOptOutRunner(
+            profileQuery: BrokerProfileQueryData.mock(),
+            stageDurationCalculator: MockStageDurationCalculator(),
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        let concreteRunner = runner as! BrokerProfileOptOutSubJobWebRunner
+        XCTAssertEqual(concreteRunner.clickAwaitTime, 3, "Should use optimized 3s delay when flag is ON")
+    }
+
+    func testWhenClickDelayOptimizationIsOff_thenCreateOptOutRunnerUsesLegacyDelay() {
+        // Given
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
+        let dependencies = BrokerProfileJobDependencies(
+            database: mockDatabase,
+            contentScopeProperties: ContentScopeProperties.mock,
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            executionConfig: mockSchedulerConfig,
+            notificationCenter: .default,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler,
+            dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            captchaService: CaptchaServiceMock(),
+            featureFlagger: featureFlagger
+        )
+
+        // When
+        let runner = dependencies.createOptOutRunner(
+            profileQuery: BrokerProfileQueryData.mock(),
+            stageDurationCalculator: MockStageDurationCalculator(),
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        let concreteRunner = runner as! BrokerProfileOptOutSubJobWebRunner
+        XCTAssertEqual(concreteRunner.clickAwaitTime, 40, "Should use legacy 40s delay when flag is OFF")
+    }
+
+    func testCreateScanRunner_alwaysUsesZeroClickDelay() {
+        // Given
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
+        let dependencies = BrokerProfileJobDependencies(
+            database: mockDatabase,
+            contentScopeProperties: ContentScopeProperties.mock,
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            executionConfig: mockSchedulerConfig,
+            notificationCenter: .default,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler,
+            dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            captchaService: CaptchaServiceMock(),
+            featureFlagger: featureFlagger
+        )
+
+        // When
+        let runner = dependencies.createScanRunner(
+            profileQuery: BrokerProfileQueryData.mock(),
+            stageDurationCalculator: MockStageDurationCalculator(),
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        let concreteRunner = runner as! BrokerProfileScanSubJobWebRunner
+        XCTAssertEqual(concreteRunner.clickAwaitTime, 0, "Scan runner should always use 0s delay")
     }
 }

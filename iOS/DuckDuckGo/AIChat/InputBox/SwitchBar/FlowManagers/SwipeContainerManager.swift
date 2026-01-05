@@ -19,8 +19,7 @@
 
 import Foundation
 import UIKit
-import BrowserServicesKit
-
+import PrivacyConfig
 
 /// Manages the horizontal swipe container with pagination between search and AI chat modes
 final class SwipeContainerManager: NSObject {

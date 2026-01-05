@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import XCTest
-import VPN
+import Common
+import Combine
 import NetworkProtectionIPC
 import NetworkProtectionProxy
-import Common
+import PrivacyConfig
+import VPN
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-import Combine
 
 final class VPNPreferencesModelTests: XCTestCase {
 

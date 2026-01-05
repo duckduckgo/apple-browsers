@@ -54,6 +54,7 @@ private enum AttributesKey: String, CaseIterable {
     case duckPlayerEnabled
     case messageShown
     case isCurrentFreemiumPIRUser
+    case isCurrentPIRUser
     case allFeatureFlagsEnabled
     case syncEnabled
     case shouldShowWinBackOfferUrgencyMessage
@@ -96,6 +97,7 @@ private enum AttributesKey: String, CaseIterable {
         case .duckPlayerEnabled: return DuckPlayerEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .messageShown: return MessageShownMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isCurrentFreemiumPIRUser: return FreemiumPIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isCurrentPIRUser: return PIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .syncEnabled: return SyncEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .shouldShowWinBackOfferUrgencyMessage: return WinBackOfferUrgencyMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
@@ -337,7 +339,7 @@ struct JsonToRemoteMessageModelMapper {
         case .newForMacAndWindows:
             return .newForMacAndWindows
         case .privacyShield:
-            return .privacyShield
+            return .subscription
         case .aiChat:
             return .aiChat
         case .visualDesignUpdate:
@@ -346,10 +348,18 @@ struct JsonToRemoteMessageModelMapper {
             return .imageAI
         case .radar:
             return .radar
+        case .radarCheckGreen:
+            return .radarCheckGreen
+        case .radarCheckPurple:
+            return .radarCheckPurple
         case .keyImport:
             return .keyImport
         case .mobileCustomization:
             return .mobileCustomization
+        case .pir:
+            return .pir
+        case .subscription:
+            return .subscription
         case .none:
             return .announce
         }

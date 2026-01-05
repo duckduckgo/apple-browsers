@@ -23,6 +23,7 @@ import Combine
 import BrowserServicesKit
 import Bookmarks
 import Persistence
+import PrivacyConfig
 import History
 import Suggestions
 import Core

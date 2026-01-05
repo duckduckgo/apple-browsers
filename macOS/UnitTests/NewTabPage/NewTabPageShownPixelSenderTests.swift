@@ -20,6 +20,8 @@ import Combine
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import PrivacyStats
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser

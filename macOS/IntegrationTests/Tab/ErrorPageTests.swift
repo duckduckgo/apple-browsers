@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
 
@@ -115,7 +116,7 @@ class ErrorPageTests: XCTestCase {
             contentBlockingMock = ContentBlockingMock()
             privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
             // disable waiting for CBR compilation on navigation
-            privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+            privacyConfiguration.isFeatureEnabledCheck = { _, _ in
                 return false
             }
 

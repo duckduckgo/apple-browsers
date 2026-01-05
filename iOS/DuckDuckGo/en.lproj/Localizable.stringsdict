@@ -642,5 +642,23 @@ I blocked them!
 			<string>%d Selected Tabs</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d sites excluded from clearing</string>
+			<key>one</key>
+			<string>%d site excluded from clearing</string>
+			<key>other</key>
+			<string>%d sites excluded from clearing</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

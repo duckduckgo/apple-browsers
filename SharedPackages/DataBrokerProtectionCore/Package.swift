@@ -42,8 +42,10 @@ let package = Package(
             name: "DataBrokerProtectionCore",
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "Subscription", package: "BrowserServicesKit"),
                 "ZIPFoundation",
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],

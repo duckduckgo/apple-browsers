@@ -1342,6 +1342,9 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
 
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Summarize this Page";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Show Duck.ai buttons and links in DuckDuckGo search results.";
 
@@ -2854,11 +2857,56 @@ Take back control of your personal information with the browser designed for dat
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Disable to prevent links from automatically opening in other installed apps.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Delete all site data, including visited sites. May sign you out of accounts.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookies and Site Data";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Delete all chats, including pinned chats";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai Chats";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Clear";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Clear Tabs and Data";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data, and Duck.ai Chats";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Close all open tabs";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Tabs";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "App Exit, Inactive for 15 Minutes";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "App Exit, Inactive for 1 Hour";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "App Exit, Inactive for 30 Minutes";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "App Exit, Inactive for 5 Minutes";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "App Exit Only";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "App exit is defined by swiping the app to close it while inactivity is when the app is in the background.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Desired Timing";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Data will be deleted upon restart of the app.";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Search Suggestions";
@@ -2878,6 +2926,9 @@ Take back control of your personal information with the browser designed for dat
 /* Section footer Autolock description */
 "settings.autolock.description" = "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatic Data Clearing";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browser Feedback";
 
@@ -2886,6 +2937,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Clear Duck.ai Chats";
+
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Clear Browsing Data";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automatically Clear Data";
@@ -2913,6 +2967,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Data Clearing";
+
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Deleting your data can help protect your privacy online. Use the Fire Button to clear data manually, or set up automatic clearing.";
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Default Browser";
@@ -2958,6 +3015,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Fireproof Sites";
+
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproofed Sites";
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "General";
@@ -3213,6 +3273,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "The DuckDuckGo browser provides tracking protections, which are always active. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
+
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "What’s New";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Select the option that best describes the problem you experienced.";

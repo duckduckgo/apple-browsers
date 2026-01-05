@@ -19,7 +19,7 @@
 import Combine
 import Foundation
 import FeatureFlags
-import BrowserServicesKit
+import PrivacyConfig
 
 typealias TabIdentifier = String
 typealias AIChatSidebarsByTab = [TabIdentifier: AIChatSidebar]
@@ -54,6 +54,11 @@ protocol AIChatSidebarProviding: AnyObject {
     /// Removes sidebars for tabs that are no longer active.
     /// - Parameter currentTabIDs: Array of tab IDs that are currently open
     func cleanUp(for currentTabIDs: [TabIdentifier])
+
+    /// Resets the sidebar state for the specified tab
+    /// This clears any saved URL (with chatID) and restoration data.
+    /// - Parameter tabID: The unique identifier of the tab
+    func resetSidebar(for tabID: TabIdentifier)
 
     /// The underlying model containing all active chat sidebars mapped by their tab identifiers.
     /// This dictionary maintains the state of all chat sidebars across different browser tabs.
@@ -162,5 +167,9 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
     func restoreState(_ sidebarsByTab: AIChatSidebarsByTab) {
         cleanUp(for: [])
         self.sidebarsByTab = sidebarsByTab
+    }
+
+    func resetSidebar(for tabID: TabIdentifier) {
+        sidebarsByTab.removeValue(forKey: tabID)
     }
 }

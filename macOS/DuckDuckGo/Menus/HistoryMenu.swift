@@ -16,13 +16,13 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
 import FeatureFlags
 import History
 import os.log
+import PrivacyConfig
 
 final class HistoryMenu: NSMenu {
 

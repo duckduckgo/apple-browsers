@@ -20,6 +20,8 @@ import AppKit
 import BrowserServicesKit
 import Common
 import Foundation
+import FeatureFlags
+import PrivacyConfig
 
 enum SecureVaultItem: Equatable, Identifiable, Comparable {
 
@@ -260,6 +262,19 @@ final class PasswordManagementItemListModel: ObservableObject {
         }
     }
 
+    private var shouldDisplayExternalPasswordManagerRow: Bool {
+        passwordManagerCoordinator.isEnabled && (sortDescriptor.category == .allItems || sortDescriptor.category == .logins)
+    }
+
+    private var shouldSelectFirstDomainMatch: Bool {
+        guard featureFlagger?.isFeatureOn(.autofillPasswordSearchPrioritizeDomain) == true,
+              !filter.isEmpty else {
+            return false
+        }
+
+        return sortDescriptor.category == .allItems || sortDescriptor.category == .logins
+    }
+
     @Published var sortDescriptor = SecureVaultSorting.default {
         didSet {
             guard oldValue != sortDescriptor else {
@@ -351,6 +366,7 @@ final class PasswordManagementItemListModel: ObservableObject {
     private let tld: TLD
     private let autofillPreferences: AutofillPreferencesPersistor
     private let urlMatcher: AutofillDomainNameUrlMatcher
+    private let featureFlagger: FeatureFlagger?
     private static let randomColorsCount = 15
 
     init(passwordManagerCoordinator: PasswordManagerCoordinating,
@@ -358,6 +374,7 @@ final class PasswordManagementItemListModel: ObservableObject {
          urlMatcher: AutofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher(),
          tld: TLD = NSApp.delegateTyped.tld,
          autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences(),
+         featureFlagger: FeatureFlagger? = nil,
          onItemSelected: @escaping (_ old: SecureVaultItem?, _ new: SecureVaultItem?) -> Void,
          onAddItemSelected: @escaping (_ category: SecureVaultSorting.Category) -> Void) {
         self.onItemSelected = onItemSelected
@@ -367,6 +384,7 @@ final class PasswordManagementItemListModel: ObservableObject {
         self.urlMatcher = urlMatcher
         self.tld = tld
         self.autofillPreferences = autofillPreferences
+        self.featureFlagger = featureFlagger
     }
 
     func update(items: [SecureVaultItem]) {
@@ -478,21 +496,55 @@ final class PasswordManagementItemListModel: ObservableObject {
         case .dateModified:
             displayedSections = PasswordManagementListSection.sections(with: itemsByCategory, by: \.lastUpdated, order: sortDescriptor.order)
         }
+
+        // Clear selection if no longer present
+        if let currentSelected = selected, !displayedSections.contains(where: { section in
+            section.items.contains(currentSelected)
+        }) {
+            selected(item: nil, notify: true)
+        }
     }
 
     func selectFirst() {
         selected = nil
         syncPromoSelected = false
 
-        if passwordManagerCoordinator.isEnabled && (sortDescriptor.category == .allItems || sortDescriptor.category == .logins) {
+        if shouldDisplayExternalPasswordManagerRow {
             externalPasswordManagerSelected = true
-        } else if shouldDisplaySyncPromoRow {
+            return
+        }
+
+        if shouldDisplaySyncPromoRow {
             syncPromoSelected = true
-        } else if let firstSection = displayedSections.first, let selectedItem = firstSection.items.first {
+            return
+        }
+
+        if shouldSelectFirstDomainMatch {
+            let query = filter.lowercased()
+
+            for section in displayedSections {
+                if let domainMatch = section.items.first(where: { item in
+                    guard case .account(let account) = item else { return false }
+                    return domainMatchesQuery(account.domain, query: query)
+                }) {
+                    selected(item: domainMatch)
+                    return
+                }
+            }
+            // Fall through if no domain match found
+        }
+
+        if let firstSection = displayedSections.first, let selectedItem = firstSection.items.first {
             selected(item: selectedItem)
         } else {
             selected(item: nil)
         }
+    }
+
+    /// - returns: True if the query is present within the domain
+    private func domainMatchesQuery(_ domain: String?, query: String) -> Bool {
+        guard let domain = domain, !domain.isEmpty, !query.isEmpty else { return false }
+        return domain.lowercased().contains(query.lowercased())
     }
 
     func clear() {

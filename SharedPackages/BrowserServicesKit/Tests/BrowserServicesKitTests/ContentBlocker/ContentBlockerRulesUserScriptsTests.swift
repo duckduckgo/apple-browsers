@@ -21,6 +21,7 @@
 
 import BrowserServicesKit
 import Common
+import PrivacyConfig
 import TrackerRadarKit
 import WebKit
 import XCTest

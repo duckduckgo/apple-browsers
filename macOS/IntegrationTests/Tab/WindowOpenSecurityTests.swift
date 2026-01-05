@@ -20,6 +20,8 @@ import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import WebKit
 import XCTest
@@ -71,7 +73,7 @@ final class WindowOpenSecurityTests: XCTestCase {
         contentBlockingMock = ContentBlockingMock()
         privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
 

@@ -18,7 +18,7 @@
 
 import XCTest
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 15.4, *)

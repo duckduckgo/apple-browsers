@@ -17,11 +17,11 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
 import Foundation
+import PrivacyConfig
 
 @objc(Application)
 final class Application: NSApplication {
@@ -57,7 +57,8 @@ final class Application: NSApplication {
             privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
             isFireWindowDefault: delegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
             configurationURLProvider: delegate.configurationURLProvider,
-            contentScopePreferences: delegate.contentScopePreferences
+            contentScopePreferences: delegate.contentScopePreferences,
+            quitSurveyPersistor: QuitSurveyUserDefaultsPersistor(keyValueStore: delegate.keyValueStore)
         )
         self.mainMenu = mainMenu
 

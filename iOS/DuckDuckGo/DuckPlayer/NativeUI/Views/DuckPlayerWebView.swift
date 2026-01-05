@@ -24,6 +24,7 @@ import os.log
 import Combine
 import UserScript
 import BrowserServicesKit
+import PrivacyConfig
 
 struct DuckPlayerWebView: UIViewRepresentable {
     let viewModel: DuckPlayerViewModel
@@ -83,7 +84,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
            self.contentScopeUserScripts = try contentScopeUserScripts ??
            ContentScopeUserScript(scriptSourceProvider.privacyConfigurationManager,
                                   properties: scriptSourceProvider.contentScopeProperties,
-                                  isIsolated: true,
+                                  scriptContext: .contentScopeIsolated,
                                   privacyConfigurationJSONGenerator: jsonGenerator
            )
        } catch {

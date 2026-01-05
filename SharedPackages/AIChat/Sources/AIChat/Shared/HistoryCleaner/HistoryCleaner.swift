@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import WebKit
-import UserScript
 import BrowserServicesKit
 import os.log
+import PrivacyConfig
+import UserScript
+import WebKit
 
 public protocol HistoryCleaning {
     @MainActor func cleanAIChatHistory() async -> Result<Void, Error>
@@ -114,6 +115,7 @@ public final class HistoryCleaner: HistoryCleaning {
         let contentScope = try ContentScopeUserScript(
             privacyConfig,
             properties: contentScopeProperties,
+            scriptContext: .aiChatDataClearing,
             allowedNonisolatedFeatures: [aiChatDataClearing.featureName],
             privacyConfigurationJSONGenerator: nil
         )

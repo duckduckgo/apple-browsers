@@ -1,7 +1,7 @@
 {
   "name": "BeenVerified",
   "url": "beenverified.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts",
   "mirrorSites": [
     {
@@ -157,6 +157,16 @@
           "id": "86a38770-0484-4066-9a79-9c2edcc506ab"
         },
         {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#optout-form"
+            }
+          ],
+          "id": "999d275a-9c32-46c8-8a37-ebb78c3c37e5"
+        },
+        {
           "actionType": "fillForm",
           "selector": "#optout-form",
           "dataSource": "userProfile",
@@ -196,7 +206,37 @@
               "selector": "//button[@aria-label='search-optout-button' and @type='submit']"
             }
           ],
-          "id": "019eb5ef-b469-41a6-af92-da9056c00781"
+          "id": "018eb6ef-b469-41a6-af92-da9056c00781"
+        },
+
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#comprehensive-form"
+            }
+          ],
+          "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+        },
+        {
+          "actionType": "fillForm",
+          "selector": "#comprehensive-form",
+          "elements": [
+            {
+              "type": "email",
+              "selector": "#requestor_email"
+            },
+            {
+              "type": "$generated_street_address$",
+              "selector": "#street"
+            },
+            {
+              "type": "$generated_zip_code$",
+              "selector": "#zip"
+            }
+          ],
+          "id": "b2c34e54-f67a-4bc8-9d0e-1f2a3bc5d6e2"
         },
         {
           "actionType": "fillForm",
@@ -205,59 +245,36 @@
           "elements": [
             {
               "type": "firstName",
-              "selector": ".//input[@name='fname']"
+              "selector": "#fname"
             },
             {
               "type": "middleName",
-              "selector": ".//input[@name='mn']"
+              "selector": "#mn"
             },
             {
               "type": "lastName",
-              "selector": ".//input[@name='ln']"
+              "selector": "#ln"
             },
             {
               "type": "age",
-              "selector": ".//input[@name='age']"
+              "selector": "#age"
             },
             {
               "type": "city",
-              "selector": ".//input[@name='city']"
-            },
-            {
-              "type": "state",
-              "selector": ".//input[@name='state']"
+              "selector": "#city"
             }
           ],
-          "id": "1b38a1e3-496c-4b88-9c71-f496f986c0db"
-        },
-        {
-          "actionType": "fillForm",
-          "selector": "#comprehensive-form",
-          "elements": [
-            {
-              "type": "email",
-              "selector": ".//input[@name='requestor_email']"
-            },
-            {
-              "type": "$generated_street_address$",
-              "selector": ".//input[@name='street']"
-            },
-            {
-              "type": "$generated_zip_code$",
-              "selector": ".//input[@name='zip']"
-            }
-          ],
-          "id": "19d0ffb1-a437-4db2-90ce-06a79f3026b2"
+          "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"
         },
         {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
-              "selector": "//button[@aria-label='continue-button' and @type='submit']"
+              "selector": "button[aria-label='continue-button']"
             }
           ],
-          "id": "3ca42ab0-2f26-46f8-944e-999c097a94d0"
+          "id": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f"
         },
         {
           "actionType": "click",
@@ -312,32 +329,20 @@
           "elements": [
             {
               "type": "button",
-              "selector": "//input[@type='checkbox']"
+              "selector": "input[type='checkbox']"
             }
           ],
-          "id": "bc926ad2-4218-4e8a-bda6-a11c641540a2"
-        },
-        {
-          "actionType": "getCaptchaInfo",
-          "captchaType": "cloudFlareTurnstile",
-          "selector": "#captcha-widget",
-          "id": "54731c48-abd8-4f7f-a898-59dc2417115c"
-        },
-        {
-          "actionType": "solveCaptcha",
-          "captchaType": "cloudFlareTurnstile",
-          "selector": "#captcha-widget",
-          "id": "1bd50686-0506-4126-913e-bb029c5c4fdb"
+          "id": "013eb5ef-b479-41a6-af92-da9056c00781"
         },
         {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
-              "selector": "//button[contains(text(), 'Remove') and @type='submit']"
+              "selector": "//button[contains(text(), 'Remove my Info')]"
             }
           ],
-          "id": "974761a9-29f4-41c1-9623-f683a797b245"
+          "id": "129eb5ff-b469-41a6-af92-da9056c00781"
         },
         {
           "actionType": "expectation",
@@ -345,7 +350,7 @@
             {
               "type": "text",
               "selector": "body",
-              "expect": "Your optout request was submitted"
+              "expect": "Your optout request was submitted."
             }
           ],
           "id": "8e4d9bb1-7941-4dc1-b7f3-c3d694d93413"

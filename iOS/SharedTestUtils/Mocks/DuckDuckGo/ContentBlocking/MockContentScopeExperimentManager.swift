@@ -18,7 +18,7 @@
 //
 
 @testable import DuckDuckGo
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 
 public class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {

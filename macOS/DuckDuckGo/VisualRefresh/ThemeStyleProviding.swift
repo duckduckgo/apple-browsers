@@ -18,15 +18,15 @@
 
 import AppKit
 import Combine
-import BrowserServicesKit
 import FeatureFlags
 import NetworkProtectionUI
 import DesignResourcesKit
 import PixelKit
+import PrivacyConfig
 
 protocol ThemeStyleProviding {
     var name: ThemeName { get }
-    var palette: ColorPalette { get }
+    var palette: ThemeColors { get }
 
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
@@ -64,7 +64,7 @@ enum AddressBarSizeClass {
 
 struct ThemeStyle: ThemeStyleProviding {
     let name: ThemeName
-    let palette: ColorPalette
+    let palette: ThemeColors
 
     let toolbarButtonsCornerRadius: CGFloat
     let fireWindowGraphic: NSImage
@@ -84,7 +84,7 @@ struct ThemeStyle: ThemeStyleProviding {
         return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger)
     }
 
-    private static func buildThemeStyle(name: ThemeName, palette: ColorPalette, featureFlagger: FeatureFlagger) -> ThemeStyle {
+    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger) -> ThemeStyle {
         return ThemeStyle(
             name: name,
             palette: palette,

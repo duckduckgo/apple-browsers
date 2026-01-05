@@ -21,6 +21,8 @@ import Common
 import History
 import HistoryView
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
 
@@ -86,6 +88,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             featureFlagger: featureFlagger,
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
             appearancePreferences: appearancePreferences,
+            themeManager: MockThemeManager(),
             startupPreferences: startupPreferences,
             windowControllersManager: windowControllersManager,
             bookmarkManager: MockBookmarkManager(),

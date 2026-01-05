@@ -33,9 +33,11 @@ final class WebNotificationsTabExtension {
 
     init(tabUUID: String,
          contentScopeUserScriptPublisher: some Publisher<ContentScopeUserScript, Never>,
-         webViewPublisher: some Publisher<WKWebView, Never>) {
+         webViewPublisher: some Publisher<WKWebView, Never>,
+         permissionModel: PermissionModel) {
 
         self.handler = WebNotificationsHandler(tabUUID: tabUUID)
+        self.handler.permissionModel = permissionModel
 
         webViewPublisher.sink { [weak self] webView in
             self?.handler.webView = webView

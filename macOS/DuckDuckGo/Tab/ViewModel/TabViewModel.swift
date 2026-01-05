@@ -22,6 +22,7 @@ import Combine
 import Common
 import FeatureFlags
 import MaliciousSiteProtection
+import PrivacyConfig
 import PrivacyDashboard
 import WebKit
 import DesignResourcesKitIcons

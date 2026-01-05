@@ -21,7 +21,7 @@ import Foundation
 import os.log
 import Core
 import Persistence
-import BrowserServicesKit
+import PrivacyConfig
 import AIChat
 import RemoteMessaging
 

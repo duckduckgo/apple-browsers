@@ -28,6 +28,7 @@ import NetworkProtectionUI
 import os.log
 import PageRefreshMonitor
 import PixelKit
+import PrivacyConfig
 import Subscription
 import SubscriptionUI
 import VPN

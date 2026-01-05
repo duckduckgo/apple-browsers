@@ -256,7 +256,20 @@ jobs:
       with:
         xcode-version: ${{ matrix.xcode-version }}
 
+    - name: Configure system logging
+      working-directory: SharedPackages/BrowserServicesKit
+      run: |
+        sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+        sudo killall logd || true
+
+    - name: Start log stream in background
+      working-directory: macOS
+      run: |
+        log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
+        echo $! > log_stream.pid
+
     - name: Build for testing
+      working-directory: macOS
       run: |
         set -o pipefail && xcodebuild build-for-testing \
           -scheme "macOS UI Tests CI" \
@@ -267,6 +280,7 @@ jobs:
         | xcbeautify
 
     - name: Extract and Copy app to /DerivedData
+      working-directory: macOS
       run: |
         cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
 
@@ -283,6 +297,8 @@ jobs:
         mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Run UI Tests
+      id: run-ui-tests
+      working-directory: macOS
       run: |
         defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1
         set -o pipefail && xcodebuild test-without-building \
@@ -292,13 +308,35 @@ jobs:
           -skipMacroValidation \
           -test-iterations 2 \
           -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
           '-only-testing:UI Tests/${{ matrix.test }}' \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
+    - name: Stop log stream
+      if: always()
+      working-directory: macOS
+      run: |
+        if [ -f log_stream.pid ]; then
+          kill $(cat log_stream.pid) || true
+        fi
+
+    - name: Check for test failures
+      id: check-failures
+      if: always()
+      working-directory: macOS
+      run: |
+        if grep -Eq 'XCTAssert.*failed|Test Case.*failed|Testing failed:' ui-tests.log; then
+          echo "had_failures=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Detected test failures in the log (may have passed on retry)"
+        else
+          echo "had_failures=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Prepare test report
       id: prepare-test-report
       if: always()
+      working-directory: macOS
       run: |
         test_id="${{ matrix.test }} (macOS ${{ matrix.os-version }})"
         file="${test_id}.xml"
@@ -317,8 +355,26 @@ jobs:
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
         retention-days: 1
 
+    - name: Upload xcresult files (passed on retry)
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      with:
+        name: "xcresult-${{ matrix.test }}-macos${{ matrix.os-version }}"
+        path: "macOS/DerivedData/Logs/Test/*.xcresult"
+        retention-days: 1
+
+    - name: Upload app console log (passed on retry)
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      with:
+        name: "app-console-${{ matrix.test }}-macos${{ matrix.os-version }}"
+        path: "macOS/app-console.log"
+        if-no-files-found: warn
+        retention-days: 1
+
     - name: Organize logs for upload
       if: failure() || cancelled()
+      working-directory: macOS
       run: |
         echo "Current working directory: $(pwd)"
 
@@ -330,8 +386,9 @@ jobs:
 
         # locate and copy all files, flattening the structure with verbose output
         cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
+        cp "app-console.log" "$archive_name/" || echo "No app-console.log found"
         find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
-        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/"
+        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/" || echo "No DiagnosticReports found"
 
         # Store archive name for upload step
         echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV

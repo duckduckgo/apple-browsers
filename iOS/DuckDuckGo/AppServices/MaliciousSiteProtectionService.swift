@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import MaliciousSiteProtection
 import Core
 

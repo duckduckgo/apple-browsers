@@ -23,6 +23,7 @@ import ContentBlocking
 import Foundation
 import History
 import MaliciousSiteProtection
+import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
 import WebKit
@@ -180,7 +181,8 @@ extension TabExtensionsBuilder {
                 WebNotificationsTabExtension(
                     tabUUID: args.tabID,
                     contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScript),
-                    webViewPublisher: args.webViewFuture
+                    webViewPublisher: args.webViewFuture,
+                    permissionModel: args.permissionModel
                 )
             }
         }
@@ -270,7 +272,9 @@ extension TabExtensionsBuilder {
                                 trackersPublisher: contentBlocking.trackersPublisher,
                                 urlPublisher: args.contentPublisher.map { content in content.displaysContentInWebView ? content.urlForWebView : nil },
                                 titlePublisher: args.titlePublisher,
-                                popupManagedPublisher: autoconsentTabExtension.popupManagedPublisher)
+                                popupManagedPublisher: autoconsentTabExtension.popupManagedPublisher,
+                                scriptsPublisher: userScripts.compactMap { $0 },
+                                webViewPublisher: args.webViewFuture)
         }
         add {
             PrivacyStatsTabExtension(

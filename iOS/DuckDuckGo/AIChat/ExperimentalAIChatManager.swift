@@ -20,7 +20,7 @@
 import Foundation
 import Core
 import Common
-import BrowserServicesKit
+import PrivacyConfig
 
 struct ExperimentalAIChatManager {
     private let featureFlagger: FeatureFlagger

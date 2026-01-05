@@ -19,6 +19,8 @@
 import XCTest
 import BrowserServicesKit
 import PixelKitTestingUtilities
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor

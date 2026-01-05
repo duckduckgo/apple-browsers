@@ -48,12 +48,12 @@ final class ConfigurationStorageTests: XCTestCase {
             XCTAssertEqual(etag, configurationStore.loadEtag(for: config))
         }
     }
-    
+
     func testWhenLoadingEmbeddedEtagThenItMatchesProviderConstants() {
         XCTAssertEqual(AppTrackerDataSetProvider.Constants.embeddedDataETag,
                        configurationStore.loadEmbeddedEtag(for: .trackerDataSet))
         XCTAssertEqual(AppPrivacyConfigurationDataProvider.Constants.embeddedDataETag,
                        configurationStore.loadEmbeddedEtag(for: .privacyConfiguration))
     }
-    
+
 }

@@ -696,7 +696,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         VPNAppState(defaults: .netP).isAuthV2Enabled = isUsingAuthV2
 
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinedTabsManager: pinnedTabsManager)
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinnedTabsManager: pinnedTabsManager)
 
         let windowControllersManager = WindowControllersManager(
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,

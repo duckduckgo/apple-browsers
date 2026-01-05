@@ -26,6 +26,7 @@ let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
     .init("BWManager.swift", .source),
     .init("DuckDuckGo VPN.app", .unknown),
     .init("DuckDuckGo Personal Information Removal.app", .unknown),
+    .init("SimplifiedSparkleUpdateController.swift", .source),
     .init("SparkleDebugHelper.swift", .source),
     .init("SparkleUpdateCompletionValidator.swift", .source),
     .init("SparkleUpdateController.swift", .source),

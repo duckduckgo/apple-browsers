@@ -40,6 +40,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         ]
         let sut = DataBrokerProtectionStatsPixels(database: database,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: repository)
 
         // When
@@ -62,6 +63,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         ]
         let sut = DataBrokerProtectionStatsPixels(database: database,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: repository)
 
         // When
@@ -86,6 +88,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         ]
         let sut = DataBrokerProtectionStatsPixels(database: database,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: repository)
 
         // When
@@ -104,6 +107,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         database.brokerProfileQueryDataToReturn = BrokerProfileQueryData.queryDataMultipleBrokersVaryingSuccessRates
         let sut = DataBrokerProtectionStatsPixels(database: database,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: repository)
         let expectation = self.expectation(description: "Async task completion")
 
@@ -184,6 +188,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -223,6 +228,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -262,6 +268,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -301,6 +308,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -338,6 +346,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -378,6 +387,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -416,6 +426,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -454,6 +465,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -507,6 +519,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: database,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: repository)
 
         // When

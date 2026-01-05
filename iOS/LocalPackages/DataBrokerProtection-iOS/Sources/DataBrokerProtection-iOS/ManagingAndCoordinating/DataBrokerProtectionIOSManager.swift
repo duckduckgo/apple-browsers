@@ -192,7 +192,8 @@ public final class DataBrokerProtectionIOSManager {
     )
     private lazy var statsPixels = DataBrokerProtectionStatsPixels(
         database: jobDependencies.database,
-        handler: jobDependencies.pixelHandler
+        handler: jobDependencies.pixelHandler,
+        featureFlagger: featureFlagger
     )
 
     init(queueManager: JobQueueManaging,

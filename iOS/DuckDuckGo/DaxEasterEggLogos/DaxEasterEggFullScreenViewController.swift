@@ -67,9 +67,9 @@ struct DaxEasterEggLayout {
 class DaxEasterEggFullScreenViewController: UIViewController {
 
     private let imageView = UIImageView()
-    private let closeButton = UIButton(type: .system)
     private let titleLabel = UILabel()
     private let setAsLogoButton = UIButton(type: .system)
+    private let closeButton = UIButton(type: .system)
 
     private let imageURL: URL?
     private let sourceFrame: CGRect
@@ -111,74 +111,75 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.88)
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.75)
         imageView.contentMode = .scaleAspectFit
 
-        setupCloseButton()
         setupTitleLabel()
+        setupCloseButton()
         setupSetAsLogoButton()
 
         view.addSubview(imageView)
-        view.addSubview(closeButton)
         view.addSubview(titleLabel)
+        view.addSubview(closeButton)
         view.addSubview(setAsLogoButton)
 
         imageView.translatesAutoresizingMaskIntoConstraints = true
-        closeButton.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
         setAsLogoButton.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            closeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            closeButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            closeButton.widthAnchor.constraint(equalToConstant: 44),
-            closeButton.heightAnchor.constraint(equalToConstant: 44),
+            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 100),
+            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
-            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 80),
-            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
+            closeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            closeButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            closeButton.widthAnchor.constraint(equalToConstant: 30),
+            closeButton.heightAnchor.constraint(equalToConstant: 30),
 
             setAsLogoButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            setAsLogoButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -40)
+            setAsLogoButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
         ])
-    }
-    
-    private func setupCloseButton() {
-        closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
-        closeButton.tintColor = .white
-        closeButton.backgroundColor = .clear
-        closeButton.layer.cornerRadius = 22
-        closeButton.addTarget(self, action: #selector(dismissViewController), for: .touchUpInside)
     }
 
     private func setupTitleLabel() {
+        guard featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo), imageURL != nil else {
+            titleLabel.isHidden = true
+            return
+        }
+
         titleLabel.text = UserText.daxEasterEggFoundTitle
         titleLabel.font = UIFont.boldAppFont(ofSize: 20)
         titleLabel.textColor = .white
         titleLabel.textAlignment = .center
         titleLabel.numberOfLines = 1
-        titleLabel.layer.shadowColor = UIColor.black.cgColor
-        titleLabel.layer.shadowOffset = CGSize(width: 0, height: 1)
-        titleLabel.layer.shadowOpacity = 0.5
-        titleLabel.layer.shadowRadius = 2
         titleLabel.alpha = 0
+        titleLabel.isHidden = isCurrentLogoStored
+    }
+
+    private func setupCloseButton() {
+        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        let xImage = UIImage(systemName: "xmark", withConfiguration: config)
+        closeButton.setImage(xImage, for: .normal)
+        closeButton.tintColor = .white
+        closeButton.addTarget(self, action: #selector(dismissViewController), for: .touchUpInside)
     }
 
     private func setupSetAsLogoButton() {
         guard featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo), imageURL != nil else {
             setAsLogoButton.isHidden = true
-            titleLabel.isHidden = true
             return
         }
+
         updateSetAsLogoButtonTitle()
         setAsLogoButton.titleLabel?.font = UIFont.boldAppFont(ofSize: 15)
         setAsLogoButton.setTitleColor(UIColor(designSystemColor: .buttonsPrimaryText), for: .normal)
         setAsLogoButton.backgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
-        setAsLogoButton.layer.cornerRadius = 12
-        setAsLogoButton.contentEdgeInsets = UIEdgeInsets(top: 16, left: 24, bottom: 16, right: 24)
-        setAsLogoButton.addTarget(self, action: #selector(setAsLogoButtonTapped), for: .touchUpInside)
+        setAsLogoButton.contentEdgeInsets = UIEdgeInsets(top: 14, left: 24, bottom: 14, right: 24)
+        setAsLogoButton.layer.cornerRadius = 8
         setAsLogoButton.alpha = 0
+        setAsLogoButton.addTarget(self, action: #selector(setAsLogoButtonTapped), for: .touchUpInside)
     }
 
     private var isCurrentLogoStored: Bool {
@@ -200,12 +201,11 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         if isCurrentLogoStored {
             logoStore.clearLogo()
             Pixel.fire(pixel: .daxEasterEggLogoResetToDefault)
-            updateSetAsLogoButtonTitle()
         } else if let urlString = imageURL?.absoluteString {
             logoStore.setLogo(url: urlString)
             Pixel.fire(pixel: .daxEasterEggLogoSetAsPermanent)
-            dismiss(animated: true)
         }
+        dismiss(animated: true)
     }
     
     override func viewDidLayoutSubviews() {

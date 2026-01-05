@@ -336,25 +336,6 @@ class PrivacyIconView: UIView {
         }
     }
 
-    func animateSavedEffect() {
-        let ringView = UIView()
-        ringView.backgroundColor = .clear
-        ringView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
-        ringView.layer.borderWidth = 2
-        ringView.layer.cornerRadius = 12
-        ringView.frame = CGRect(x: 0, y: 0, width: 24, height: 24)
-        ringView.center = CGPoint(x: bounds.midX, y: bounds.midY)
-        ringView.alpha = 1
-        addSubview(ringView)
-
-        UIView.animate(withDuration: 0.4, delay: 0, options: [.curveEaseOut]) {
-            ringView.transform = CGAffineTransform(scaleX: 1.8, y: 1.8)
-            ringView.alpha = 0
-        } completion: { _ in
-            ringView.removeFromSuperview()
-        }
-    }
-
     func refresh() {
         updateShieldImageView(for: icon)
         updateAccessibilityLabels(for: icon)

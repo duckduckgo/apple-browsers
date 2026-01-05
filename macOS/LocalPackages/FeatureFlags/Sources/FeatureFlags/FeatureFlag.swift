@@ -274,7 +274,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
     case heuristicAction
 
-    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1212292190049422?focus=true
+    /// Next Steps cards iteration with single card displayed on New Tab page
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
     case nextStepsSingleCardIteration
 }
 

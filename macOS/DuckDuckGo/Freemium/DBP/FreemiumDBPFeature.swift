@@ -203,10 +203,7 @@ private extension DefaultFreemiumDBPFeature {
             return storefrontOverride
         }
         guard subscriptionManager.platformIsAppStore else { return true }
-
-        // Default to false for older macOS versions as a conservative approach
-        var isUSStoreFront = subscriptionManager.currentStorefrontRegion == .usa
-        return isUSStoreFront
+        return subscriptionManager.currentStorefrontRegion == .usa
     }
 
     /// Checks if the user can make purchases. Always true for Stripe, based on App Store product availability for App Store.

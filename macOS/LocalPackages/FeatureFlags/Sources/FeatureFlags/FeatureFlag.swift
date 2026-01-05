@@ -307,7 +307,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportWideEventMeasurement,
                 .tabProgressIndicator,
                 .firstTimeQuitSurvey,
-                .autofillPasswordSearchPrioritizeDomain:
+                .autofillPasswordSearchPrioritizeDomain,
+                .themes:
             true
         default:
             false
@@ -505,7 +506,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .themes:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.themes))
         case .appStoreUpdateFlow:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:

@@ -146,6 +146,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
     case tabProgressIndicator
 
+    /// Feature flag for Themes
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
+    case themes
+
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey

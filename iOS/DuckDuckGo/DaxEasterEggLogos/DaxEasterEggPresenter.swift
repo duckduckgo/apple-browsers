@@ -18,7 +18,7 @@
 //
 
 import UIKit
-import BrowserServicesKit
+import PrivacyConfig
 
 /// Presents Dax Easter Egg logos in full-screen mode with zoom transitions.
 protocol DaxEasterEggPresenting {

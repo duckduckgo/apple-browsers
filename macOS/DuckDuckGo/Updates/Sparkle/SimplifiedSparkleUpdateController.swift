@@ -298,7 +298,7 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     }
 
     private func scheduleDelayedNotification(delay: TimeInterval) {
-        pendingNotificationTask = Task { [weak self] @MainActor in
+        pendingNotificationTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             guard let self, !Task.isCancelled, self.hasPendingUpdate else { return }
             self.showUpdateNotificationIfNeeded()

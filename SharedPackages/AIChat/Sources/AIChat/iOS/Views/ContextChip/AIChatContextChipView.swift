@@ -30,20 +30,29 @@ public final class AIChatContextChipView: UIView {
     // MARK: - Constants
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 8
+        static let chipWidth: CGFloat = 280
+        static let cornerRadius: CGFloat = 12
         static let borderWidth: CGFloat = 1
-        static let horizontalPadding: CGFloat = 12
-        static let verticalPadding: CGFloat = 8
-        static let faviconSize: CGFloat = 24
+
+        static let faviconSize: CGFloat = 36
         static let faviconCornerRadius: CGFloat = 4
+        static let faviconLeading: CGFloat = 10
+        static let faviconVerticalPadding: CGFloat = 10
+
+        static let removeButtonSize: CGFloat = 44
+        static let removeButtonTrailing: CGFloat = 10
+        static let removeButtonVerticalPadding: CGFloat = 6
+
         static let contentSpacing: CGFloat = 8
         static let labelSpacing: CGFloat = 2
-        static let removeButtonSize: CGFloat = 24
         static let separatorHeight: CGFloat = 1
+
         static let infoIconSize: CGFloat = 16
         static let infoRowSpacing: CGFloat = 6
-        static let infoRowTopPadding: CGFloat = 8
-        static let infoFontSize: CGFloat = 13
+        static let infoRowVerticalPadding: CGFloat = 8
+        static let infoFontSize: CGFloat = 11
+        static let titleFontSize: CGFloat = 14
+        static let subtitleFontSize: CGFloat = 14
     }
 
     // MARK: - Properties
@@ -100,7 +109,8 @@ public final class AIChatContextChipView: UIView {
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.daxSubheadSemibold()
+        let fontMetrics = UIFontMetrics(forTextStyle: .body)
+        label.font = fontMetrics.scaledFont(for: .systemFont(ofSize: Constants.titleFontSize, weight: .bold))
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.numberOfLines = 1
@@ -111,7 +121,8 @@ public final class AIChatContextChipView: UIView {
 
     private lazy var subtitleLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.daxFootnoteRegular()
+        let fontMetrics = UIFontMetrics(forTextStyle: .body)
+        label.font = fontMetrics.scaledFont(for: .systemFont(ofSize: Constants.subtitleFontSize, weight: .regular))
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textSecondary)
         label.numberOfLines = 1
@@ -225,32 +236,34 @@ private extension AIChatContextChipView {
 
     func setupConstraints() {
         NSLayoutConstraint.activate([
+            widthAnchor.constraint(equalToConstant: Constants.chipWidth),
+
             mainStackView.topAnchor.constraint(equalTo: topAnchor),
             mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            faviconView.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor, constant: Constants.horizontalPadding),
-            faviconView.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
+            faviconView.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor, constant: Constants.faviconLeading),
+            faviconView.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.faviconVerticalPadding),
+            faviconView.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.faviconVerticalPadding),
             faviconView.widthAnchor.constraint(equalToConstant: Constants.faviconSize),
             faviconView.heightAnchor.constraint(equalToConstant: Constants.faviconSize),
 
             labelsStackView.leadingAnchor.constraint(equalTo: faviconView.trailingAnchor, constant: Constants.contentSpacing),
-            labelsStackView.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.verticalPadding),
-            labelsStackView.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.verticalPadding),
+            labelsStackView.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
             labelsStackView.trailingAnchor.constraint(lessThanOrEqualTo: removeButton.leadingAnchor, constant: -Constants.contentSpacing),
 
-            removeButton.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor, constant: -Constants.horizontalPadding),
-            removeButton.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
+            removeButton.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor, constant: -Constants.removeButtonTrailing),
+            removeButton.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.removeButtonVerticalPadding),
+            removeButton.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.removeButtonVerticalPadding),
             removeButton.widthAnchor.constraint(equalToConstant: Constants.removeButtonSize),
             removeButton.heightAnchor.constraint(equalToConstant: Constants.removeButtonSize),
 
             separatorLine.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),
 
-            infoRowStackView.topAnchor.constraint(equalTo: infoRowContainer.topAnchor, constant: Constants.infoRowTopPadding),
-            infoRowStackView.leadingAnchor.constraint(equalTo: infoRowContainer.leadingAnchor, constant: Constants.horizontalPadding),
-            infoRowStackView.trailingAnchor.constraint(lessThanOrEqualTo: infoRowContainer.trailingAnchor, constant: -Constants.horizontalPadding),
-            infoRowStackView.bottomAnchor.constraint(equalTo: infoRowContainer.bottomAnchor, constant: -Constants.verticalPadding),
+            infoRowStackView.topAnchor.constraint(equalTo: infoRowContainer.topAnchor, constant: Constants.infoRowVerticalPadding),
+            infoRowStackView.centerXAnchor.constraint(equalTo: infoRowContainer.centerXAnchor),
+            infoRowStackView.bottomAnchor.constraint(equalTo: infoRowContainer.bottomAnchor, constant: -Constants.infoRowVerticalPadding),
 
             infoIcon.widthAnchor.constraint(equalToConstant: Constants.infoIconSize),
             infoIcon.heightAnchor.constraint(equalToConstant: Constants.infoIconSize),

@@ -41,7 +41,7 @@ public final class AIChatNativeInputView: UIView {
     // MARK: - Constants
 
     private enum Constants {
-        static let fontSize: CGFloat = 16
+        static let fontSize: CGFloat = 17
         static let textContainerInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 48)
         static let placeholderTopOffset: CGFloat = 12
         static let placeholderHorizontalOffset: CGFloat = 16
@@ -53,8 +53,8 @@ public final class AIChatNativeInputView: UIView {
         static let textViewMinHeight: CGFloat = 48
         static let textViewMaxHeight: CGFloat = 200
         static let chipContainerPadding: CGFloat = 12
-        static let chipFadeDuration: TimeInterval = 0.1
-        static let chipHeightDuration: TimeInterval = 0.15
+        static let chipFadeDuration: TimeInterval = 0.05
+        static let chipHeightDuration: TimeInterval = 0.12
     }
 
     // MARK: - Properties
@@ -89,7 +89,7 @@ public final class AIChatNativeInputView: UIView {
     }
 
     public var isAttachButtonHidden = false {
-        didSet { attachButton.isHidden = isAttachButtonHidden }
+        didSet { attachButtonContainer.isHidden = isAttachButtonHidden }
     }
 
     /// Whether a context chip is currently visible.
@@ -127,6 +127,7 @@ public final class AIChatNativeInputView: UIView {
         textView.textContainerInset = Constants.textContainerInset
         textView.isScrollEnabled = false
         textView.delegate = self
+        textView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         textView.translatesAutoresizingMaskIntoConstraints = false
         return textView
     }()
@@ -161,6 +162,14 @@ public final class AIChatNativeInputView: UIView {
 
     private lazy var bottomBar: UIView = {
         let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
+    private lazy var attachButtonContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.layer.cornerRadius = Constants.buttonSize / 2
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -248,12 +257,11 @@ public final class AIChatNativeInputView: UIView {
         NSLayoutConstraint.activate([
             chipView.topAnchor.constraint(equalTo: chipContainer.topAnchor, constant: Constants.chipContainerPadding),
             chipView.leadingAnchor.constraint(equalTo: chipContainer.leadingAnchor, constant: Constants.chipContainerPadding),
-            chipView.trailingAnchor.constraint(equalTo: chipContainer.trailingAnchor, constant: -Constants.chipContainerPadding),
             chipView.bottomAnchor.constraint(equalTo: chipContainer.bottomAnchor, constant: -Constants.chipContainerPadding),
         ])
 
         isContextChipVisible = true
-        attachButton.isHidden = true
+        attachButtonContainer.isHidden = true
 
         chipContainer.layoutIfNeeded()
         let targetHeight = chipView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height + (Constants.chipContainerPadding * 2)
@@ -262,7 +270,7 @@ public final class AIChatNativeInputView: UIView {
             chipView.alpha = 0
             UIView.animate(withDuration: Constants.chipHeightDuration, delay: 0, options: .curveEaseOut) {
                 self.chipHeightConstraint?.constant = targetHeight
-                self.layoutIfNeeded()
+                self.superview?.superview?.layoutIfNeeded()
             } completion: { _ in
                 guard self.isContextChipVisible else { return }
                 UIView.animate(withDuration: Constants.chipFadeDuration) {
@@ -271,7 +279,7 @@ public final class AIChatNativeInputView: UIView {
             }
         } else {
             chipHeightConstraint?.constant = targetHeight
-            layoutIfNeeded()
+            superview?.superview?.layoutIfNeeded()
         }
     }
 
@@ -288,7 +296,7 @@ public final class AIChatNativeInputView: UIView {
             guard self.currentChipView === chipToRemove else { return }
             chipToRemove?.removeFromSuperview()
             self.currentChipView = nil
-            self.attachButton.isHidden = self.isAttachButtonHidden
+            self.attachButtonContainer.isHidden = self.isAttachButtonHidden
             self.delegate?.nativeInputViewDidRemoveContextChip(self)
         }
 
@@ -299,14 +307,14 @@ public final class AIChatNativeInputView: UIView {
                 guard self.currentChipView === chipToRemove else { return }
                 UIView.animate(withDuration: Constants.chipHeightDuration, delay: 0, options: .curveEaseIn) {
                     self.chipHeightConstraint?.constant = 0
-                    self.layoutIfNeeded()
+                    self.superview?.superview?.layoutIfNeeded()
                 } completion: { _ in
                     cleanup()
                 }
             }
         } else {
             chipHeightConstraint?.constant = 0
-            layoutIfNeeded()
+            superview?.superview?.layoutIfNeeded()
             cleanup()
         }
     }
@@ -323,7 +331,8 @@ private extension AIChatNativeInputView {
         mainContainer.addSubview(topRightButton)
         mainContainer.addSubview(chipContainer)
         mainContainer.addSubview(bottomBar)
-        bottomBar.addSubview(attachButton)
+        bottomBar.addSubview(attachButtonContainer)
+        attachButtonContainer.addSubview(attachButton)
         bottomBar.addSubview(submitButtonContainer)
         submitButtonContainer.addSubview(submitButton)
 
@@ -334,6 +343,7 @@ private extension AIChatNativeInputView {
 
     func setupConstraints() {
         textViewHeightConstraint = textView.heightAnchor.constraint(equalToConstant: Constants.textViewMinHeight)
+        textViewHeightConstraint?.priority = .defaultHigh
         chipHeightConstraint = chipContainer.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
@@ -367,10 +377,13 @@ private extension AIChatNativeInputView {
             bottomBar.bottomAnchor.constraint(equalTo: mainContainer.bottomAnchor, constant: -Constants.bottomBarHorizontalPadding),
             bottomBar.heightAnchor.constraint(equalToConstant: Constants.bottomBarHeight),
 
-            attachButton.leadingAnchor.constraint(equalTo: bottomBar.leadingAnchor, constant: Constants.bottomBarHorizontalPadding),
-            attachButton.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
-            attachButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            attachButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            attachButtonContainer.leadingAnchor.constraint(equalTo: bottomBar.leadingAnchor, constant: Constants.bottomBarHorizontalPadding),
+            attachButtonContainer.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
+            attachButtonContainer.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            attachButtonContainer.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+
+            attachButton.centerXAnchor.constraint(equalTo: attachButtonContainer.centerXAnchor),
+            attachButton.centerYAnchor.constraint(equalTo: attachButtonContainer.centerYAnchor),
 
             submitButtonContainer.trailingAnchor.constraint(equalTo: bottomBar.trailingAnchor, constant: -Constants.bottomBarHorizontalPadding),
             submitButtonContainer.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
@@ -450,7 +463,7 @@ private extension AIChatNativeInputView {
     func updateAttachMenu(title: String) {
         let attachPageAction = UIAction(
             title: title,
-            image: DesignSystemImages.Glyphs.Size16.findInPage
+            image: DesignSystemImages.Glyphs.Size16.summary
         ) { [weak self] _ in
             guard let self else { return }
             self.delegate?.nativeInputViewDidTapAttachPageContent(self)

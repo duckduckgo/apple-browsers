@@ -118,7 +118,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var daxIcon: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = DesignSystemImages.Glyphs.Size24.duckDuckGoDaxColor
+        imageView.image = DesignSystemImages.Color.Size24.duckAI
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView

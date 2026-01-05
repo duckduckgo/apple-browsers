@@ -2235,9 +2235,9 @@ extension Pixel.Event {
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
 
         /// These debug pixels are extremely short lived.  We want to validate that the feature flag is working correctly.
-        /// To do so there should be an almost exact equal number of daily pixels, but it's possible for the pre-ff pixel to be noticably higher.
-        /// The reason it might not be exact is that it could be the feature flag does not get enabled until "the next day" so the 'daily' part doesn't kick in, but
-        /// we're hoping not to the level that we're seeing in Grafana
+        /// To do so there should be an almost exact equal number of daily pixels, but it's possible for the count to be fairly different (though not massively).
+        /// The reason it might not be exact is that it could be the feature flag does not get enabled until "the next day" so the 'daily' part doesn't kick in.
+        /// This will let us reason about why the DAU data in Grafana is different to our ATB data (by about 15%)
         case .debugTelemetryDAUPreFF: return "m_debug_validate_telemetry_pre-feature-flag"
         case .debugTelemetryDAUPostFF: return "m_debug_validate_telemetry_post-feature-flag"
 

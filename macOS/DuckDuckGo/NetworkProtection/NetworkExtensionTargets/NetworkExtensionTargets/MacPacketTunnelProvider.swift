@@ -505,11 +505,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         self.tokenStorageV2 = tokenStoreV2
         self.subscriptionManagerV2 = subscriptionManager
 
-        let tokenHandlerProvider: () -> any SubscriptionTokenHandling = {
-            Logger.networkProtection.debug("tokenHandlerProvider")
-            return subscriptionManager
-        }
-
         // MARK: -
 
         let tunnelHealthStore = NetworkProtectionTunnelHealthStore(notificationCenter: notificationCenter)
@@ -521,7 +516,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    snoozeTimingStore: NetworkProtectionSnoozeTimingStore(userDefaults: .netP),
                    wireGuardInterface: DefaultWireGuardInterface(),
                    keychainType: Bundle.keychainType,
-                   tokenHandlerProvider: tokenHandlerProvider,
+                   tokenHandlerProvider: subscriptionManager,
                    debugEvents: debugEvents,
                    providerEvents: Self.packetTunnelProviderEvents,
                    settings: settings,
@@ -557,7 +552,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     }
 
     private func loadTokenContainer(from options: StartupOptions) async throws {
-        let tokenHandler = tokenHandlerProvider()
+        let tokenHandler = tokenHandlerProvider
         Logger.networkProtection.log("Load token container")
         switch options.tokenContainer {
         case .set(let newTokenContainer):

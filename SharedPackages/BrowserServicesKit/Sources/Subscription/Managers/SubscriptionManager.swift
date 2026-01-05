@@ -729,7 +729,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 
-
 }
 
 extension DefaultSubscriptionManager: SubscriptionTokenProvider {

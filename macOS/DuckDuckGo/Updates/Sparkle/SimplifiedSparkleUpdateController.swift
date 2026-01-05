@@ -29,20 +29,11 @@ import PrivacyConfig
 import SwiftUI
 import os.log
 
-/// Simplified Sparkle update controller without expiration logic and legacy auto-restart branches.
-///
-/// This controller is an independent copy of `SparkleUpdateController` with the following simplifications:
-/// - **Expiration logic removed**: No forced re-checks after threshold periods
-/// - **Legacy auto-restart branches removed**: Only the "new" behavior (always pauses at restart checkpoint)
-/// - **No custom rate limiting**: Relies on Sparkle's built-in scheduling
-/// - **Delayed notifications for automatic updates**: Regular updates notify after 1 hour;
-///   critical updates notify immediately. Users who quit sooner get silent updates.
+/// Simplified Sparkle update controller.
 ///
 /// Update checks rely on Sparkle's built-in scheduling (SUScheduledCheckInterval in Info.plist,
 /// currently 3 hours) plus check-on-launch. Sparkle's `canCheckForUpdates` and `sessionInProgress`
 /// guards prevent concurrent or invalid checks.
-///
-/// The simplifications make the update flow more predictable and easier to reason about.
 final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     enum Constants {

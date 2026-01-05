@@ -101,15 +101,19 @@ public final class AIChatNativeInputView: UIView {
     }
 
     public var isAttachButtonHidden = false {
-        didSet { attachButtonContainer.isHidden = isAttachButtonHidden }
+        didSet { updateAttachButtonVisibility() }
     }
 
     /// Whether a context chip is currently visible.
     public private(set) var isContextChipVisible = false
 
     /// The actions available in the attach menu. Set this to configure the menu.
+    /// When empty, the attach button is hidden.
     public var attachActions: [AIChatAttachAction] = [] {
-        didSet { updateAttachMenu() }
+        didSet {
+            updateAttachMenu()
+            updateAttachButtonVisibility()
+        }
     }
 
     // MARK: - UI Components
@@ -273,7 +277,7 @@ public final class AIChatNativeInputView: UIView {
         ])
 
         isContextChipVisible = true
-        attachButtonContainer.isHidden = true
+        updateAttachButtonVisibility()
 
         chipContainer.layoutIfNeeded()
         let targetHeight = chipView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height + (Constants.chipContainerPadding * 2)
@@ -308,7 +312,7 @@ public final class AIChatNativeInputView: UIView {
             guard self.currentChipView === chipToRemove else { return }
             chipToRemove?.removeFromSuperview()
             self.currentChipView = nil
-            self.attachButtonContainer.isHidden = self.isAttachButtonHidden
+            self.updateAttachButtonVisibility()
             self.delegate?.nativeInputViewDidRemoveContextChip(self)
         }
 
@@ -351,6 +355,7 @@ private extension AIChatNativeInputView {
         setupConstraints()
         setupAttachMenu()
         updateButtonStates()
+        updateAttachButtonVisibility()
     }
 
     func setupConstraints() {
@@ -481,6 +486,11 @@ private extension AIChatNativeInputView {
 
         attachButton.menu = UIMenu(children: menuActions)
         attachButton.showsMenuAsPrimaryAction = true
+    }
+
+    func updateAttachButtonVisibility() {
+        let shouldHide = isAttachButtonHidden || attachActions.isEmpty || isContextChipVisible
+        attachButtonContainer.isHidden = shouldHide
     }
 
     @objc func submitButtonTapped() {

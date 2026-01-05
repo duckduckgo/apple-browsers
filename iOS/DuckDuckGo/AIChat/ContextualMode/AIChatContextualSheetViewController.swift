@@ -127,7 +127,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.text = UserText.duckAiFeatureName
-        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        label.font = UIFont.daxHeadline()
+        label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textPrimary)
         return label
     }()

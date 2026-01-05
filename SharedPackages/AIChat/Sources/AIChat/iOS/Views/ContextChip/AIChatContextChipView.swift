@@ -50,9 +50,6 @@ public final class AIChatContextChipView: UIView {
         static let infoIconSize: CGFloat = 16
         static let infoRowSpacing: CGFloat = 6
         static let infoRowVerticalPadding: CGFloat = 8
-        static let infoFontSize: CGFloat = 11
-        static let titleFontSize: CGFloat = 14
-        static let subtitleFontSize: CGFloat = 14
     }
 
     // MARK: - Properties
@@ -109,8 +106,7 @@ public final class AIChatContextChipView: UIView {
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
-        let fontMetrics = UIFontMetrics(forTextStyle: .body)
-        label.font = fontMetrics.scaledFont(for: .systemFont(ofSize: Constants.titleFontSize, weight: .bold))
+        label.font = UIFont.daxBodyBold()
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.numberOfLines = 1
@@ -121,8 +117,7 @@ public final class AIChatContextChipView: UIView {
 
     private lazy var subtitleLabel: UILabel = {
         let label = UILabel()
-        let fontMetrics = UIFontMetrics(forTextStyle: .body)
-        label.font = fontMetrics.scaledFont(for: .systemFont(ofSize: Constants.subtitleFontSize, weight: .regular))
+        label.font = UIFont.daxBodyRegular()
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textSecondary)
         label.numberOfLines = 1
@@ -172,8 +167,7 @@ public final class AIChatContextChipView: UIView {
 
     private lazy var infoLabel: UILabel = {
         let label = UILabel()
-        let fontMetrics = UIFontMetrics(forTextStyle: .footnote)
-        label.font = fontMetrics.scaledFont(for: UIFont.italicSystemFont(ofSize: Constants.infoFontSize))
+        label.font = UIFont.daxCaptionItalic()
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textSecondary)
         label.numberOfLines = 1

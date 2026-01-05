@@ -19,7 +19,6 @@
 
 import XCTest
 @testable import DuckDuckGo
-@testable import SharedTestUtils
 
 final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 

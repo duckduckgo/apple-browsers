@@ -470,7 +470,7 @@ private extension RemoteMessagingUI.CardsListDisplayModel.Item {
         switch self {
         case .twoLinesCard(let card):
             return card
-        case .section:
+        case .section, .featuredTwoLinesCard:
             return nil
         }
     }

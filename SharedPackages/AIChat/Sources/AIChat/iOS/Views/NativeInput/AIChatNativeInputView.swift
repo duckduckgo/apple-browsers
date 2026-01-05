@@ -23,13 +23,25 @@ import UIKit
 
 // MARK: - Delegate Protocol
 
+/// Represents an action available in the attach menu.
+public struct AIChatAttachAction {
+    public let title: String
+    public let icon: UIImage?
+    public let handler: () -> Void
+
+    public init(title: String, icon: UIImage?, handler: @escaping () -> Void) {
+        self.title = title
+        self.icon = icon
+        self.handler = handler
+    }
+}
+
 /// Delegate protocol for handling user interactions with the native input view.
 public protocol AIChatNativeInputViewDelegate: AnyObject {
     func nativeInputViewDidChangeText(_ view: AIChatNativeInputView, text: String)
     func nativeInputViewDidTapSubmit(_ view: AIChatNativeInputView, text: String)
     func nativeInputViewDidTapVoice(_ view: AIChatNativeInputView)
     func nativeInputViewDidTapClear(_ view: AIChatNativeInputView)
-    func nativeInputViewDidTapAttachPageContent(_ view: AIChatNativeInputView)
     func nativeInputViewDidRemoveContextChip(_ view: AIChatNativeInputView)
 }
 
@@ -95,9 +107,9 @@ public final class AIChatNativeInputView: UIView {
     /// Whether a context chip is currently visible.
     public private(set) var isContextChipVisible = false
 
-    /// The title for the attach page content menu action.
-    public var attachMenuTitle: String = "Attach Page Content" {
-        didSet { updateAttachMenu(title: attachMenuTitle) }
+    /// The actions available in the attach menu. Set this to configure the menu.
+    public var attachActions: [AIChatAttachAction] = [] {
+        didSet { updateAttachMenu() }
     }
 
     // MARK: - UI Components
@@ -457,19 +469,17 @@ private extension AIChatNativeInputView {
     }
 
     func setupAttachMenu() {
-        updateAttachMenu(title: attachMenuTitle)
+        updateAttachMenu()
     }
 
-    func updateAttachMenu(title: String) {
-        let attachPageAction = UIAction(
-            title: title,
-            image: DesignSystemImages.Glyphs.Size16.summary
-        ) { [weak self] _ in
-            guard let self else { return }
-            self.delegate?.nativeInputViewDidTapAttachPageContent(self)
+    func updateAttachMenu() {
+        let menuActions = attachActions.map { action in
+            UIAction(title: action.title, image: action.icon) { _ in
+                action.handler()
+            }
         }
 
-        attachButton.menu = UIMenu(children: [attachPageAction])
+        attachButton.menu = UIMenu(children: menuActions)
         attachButton.showsMenuAsPrimaryAction = true
     }
 

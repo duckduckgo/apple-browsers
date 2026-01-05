@@ -27,7 +27,6 @@ protocol AIChatContextualInputViewControllerDelegate: AnyObject {
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String)
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction)
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController)
-    func contextualInputViewControllerDidTapAttachPageContent(_ viewController: AIChatContextualInputViewController)
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController)
 }
 
@@ -110,9 +109,9 @@ final class AIChatContextualInputViewController: UIViewController {
         nativeInputViewController.isContextChipVisible
     }
 
-    var attachMenuTitle: String {
-        get { nativeInputViewController.attachMenuTitle }
-        set { nativeInputViewController.attachMenuTitle = newValue }
+    var attachActions: [AIChatAttachAction] {
+        get { nativeInputViewController.attachActions }
+        set { nativeInputViewController.attachActions = newValue }
     }
 
     func setText(_ text: String, notifyDelegate: Bool = true) {
@@ -242,10 +241,6 @@ extension AIChatContextualInputViewController: AIChatNativeInputViewControllerDe
 
     func nativeInputViewControllerDidTapVoice(_ viewController: AIChatNativeInputViewController) {
         delegate?.contextualInputViewControllerDidTapVoice(self)
-    }
-
-    func nativeInputViewControllerDidTapAttachPageContent(_ viewController: AIChatNativeInputViewController) {
-        delegate?.contextualInputViewControllerDidTapAttachPageContent(self)
     }
 
     func nativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatNativeInputViewController) {

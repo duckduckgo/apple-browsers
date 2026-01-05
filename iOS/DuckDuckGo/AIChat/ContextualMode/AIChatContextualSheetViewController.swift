@@ -206,12 +206,22 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private func showContextualInput() {
         contextualInputViewController.delegate = self
-        contextualInputViewController.attachMenuTitle = UserText.aiChatAttachPageContent
+        configureAttachActions()
         embedChildViewController(contextualInputViewController)
 
         if settings.isAutomaticContextAttachmentEnabled {
             attachPageContext()
         }
+    }
+
+    private func configureAttachActions() {
+        let attachPageAction = AIChatAttachAction(
+            title: UserText.aiChatAttachPageContent,
+            icon: DesignSystemImages.Glyphs.Size16.summary
+        ) { [weak self] in
+            self?.attachPageContext()
+        }
+        contextualInputViewController.attachActions = [attachPageAction]
     }
 
     private func attachPageContext() {
@@ -263,10 +273,6 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         voiceSearchController.modalTransitionStyle = .crossDissolve
         voiceSearchController.modalPresentationStyle = .overFullScreen
         present(voiceSearchController, animated: true)
-    }
-
-    func contextualInputViewControllerDidTapAttachPageContent(_ viewController: AIChatContextualInputViewController) {
-        attachPageContext()
     }
 
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {

@@ -92,9 +92,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
 
-    /// Set externally via `AIChatContentHandler.setup()`.
-    var displayMode: AIChatDisplayMode?
-
     init(experimentalAIChatManager: ExperimentalAIChatManager,
          syncHandler: AIChatSyncHandling,
          featureFlagger: FeatureFlagger,
@@ -173,8 +170,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
             supportsPageContext: defaults.supportsPageContext,
-            supportsAIChatFullMode: supportsFullMode,
-            supportsAIChatContextualMode: supportsContextualMode,
+            supportsAIChatFullMode: aichatFullModeFeature.isAvailable ? true : defaults.supportsAIChatFullMode,
+            supportsAIChatContextualMode: aichatContextualModeFeature.isAvailable ? true : defaults.supportsAIChatContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,

@@ -69,21 +69,15 @@ struct SettingsAppearanceView: View {
                                  isButton: true)
 
                 // Theme
-                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                       label: UserText.settingsTheme,
+                SettingsPickerCellView(label: UserText.settingsTheme,
                                        options: ThemeStyle.allCases,
                                        selectedOption: viewModel.themeStyleBinding)
             }
 
-
-            if viewModel.state.mobileCustomization.isEnabled {
-                customizableSettings()
-                    .onFirstAppear {
-                        navigateToSubPageIfNeeded()
-                    }
-            } else {
-                legacySettings()
-            }
+            customizableSettings()
+                .onFirstAppear {
+                    navigateToSubPageIfNeeded()
+                }
 
             if viewModel.browsingMenuSheetCapability.isAvailable {
                 Section {
@@ -179,21 +173,6 @@ struct SettingsAppearanceView: View {
     }
 
     @ViewBuilder
-    func legacySettings() -> some View {
-        Section(header: Text(UserText.addressBar)) {
-            addressBarPositionSetting()
-
-            // Refresh Button Position
-            SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                   label: UserText.settingsRefreshButtonPositionTitle,
-                                   options: RefreshButtonPosition.allCases,
-                                   selectedOption: viewModel.refreshButtonPositionBinding)
-
-            showFullSiteAddressSetting()
-        }
-    }
-
-    @ViewBuilder
     func showFullSiteAddressSetting() -> some View {
         SettingsCellView(label: UserText.settingsFullURL,
                          accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
@@ -202,8 +181,7 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func addressBarPositionSetting() -> some View {
         if viewModel.state.addressBar.enabled {
-            SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                   label: UserText.settingsAddressBarPosition,
+            SettingsPickerCellView(label: UserText.settingsAddressBarPosition,
                                    options: AddressBarPosition.allCases,
                                    selectedOption: viewModel.addressBarPositionBinding)
         }

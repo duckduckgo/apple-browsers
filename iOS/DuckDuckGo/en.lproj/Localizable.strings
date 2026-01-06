@@ -1244,7 +1244,7 @@
 "date.range.yesterday" = "Yesterday";
 
 /* Title shown when user taps on an easter egg logo in full screen view */
-"dax.easter.egg.found.title" = "You Found an Easter-Egg Logo!";
+"dax.easter.egg.found.title" = "You found a hidden logo!";
 
 /* Toast message shown when the user saves a custom logo */
 "dax.easter.egg.logo.saved" = "Logo Saved";

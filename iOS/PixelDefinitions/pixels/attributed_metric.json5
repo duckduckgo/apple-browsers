@@ -273,6 +273,6 @@
         "owners": ["federicocappelli"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain", "appVersion", "pixelSource"]
     }
 }

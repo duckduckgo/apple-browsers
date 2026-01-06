@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import AppKit
+import Foundation
 import Combine
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -27,52 +27,54 @@ import XCTest
 final class ThemeManagerTests: XCTestCase {
 
     func testInitializationEffectivelyPicksLatestPersistedThemeName() {
-        let persistor = AppearancePreferencesPersistorMock(themeName: ThemeName.green.rawValue)
-        let featureFlagger = MockFeatureFlagger()
-        let preferences = AppearancePreferences(
-            persistor: persistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
-        )
-        let internalUserDecider = MockInternalUserDecider()
-
-        let manager = ThemeManager(appearancePreferences: preferences, internalUserDecider: internalUserDecider, featureFlagger: featureFlagger)
+        let (manager, _, _) = buildThemeManager(initialTheme: .green)
         XCTAssertEqual(manager.theme.name, .green)
     }
 
-    func testThemeManagerRefreshesActiveThemeWhenAppearancePreferencesMutate() {
-        let persistor = AppearancePreferencesPersistorMock(themeName: ThemeName.default.rawValue)
-        let featureFlagger = MockFeatureFlagger()
-        let preferences = AppearancePreferences(
-            persistor: persistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
-        )
+    func testThemeManagerRefreshesActiveThemeWhenAppearancePreferencesMutate() async {
+        let (manager, preferences, _) = buildThemeManager(initialTheme: .default)
 
-        preferences.themeName = .orange
-        let internalUserDecider = MockInternalUserDecider()
+        preferences.themeName = .violet
 
-        let manager = ThemeManager(appearancePreferences: preferences, internalUserDecider: internalUserDecider, featureFlagger: featureFlagger)
-        XCTAssertEqual(manager.theme.name, .orange)
+        let updatedTheme = await manager.themePublisher.nextValue()
+        XCTAssertEqual(updatedTheme.name, .violet)
+    }
+
+    func testThemeManagerRefreshesActiveAppearanceWhenAppearancePreferencesMutate() async {
+        let (manager, preferences, _) = buildThemeManager(initialAppearance: .dark)
+        XCTAssertEqual(manager.appearance, .dark)
+
+        preferences.themeAppearance = .systemDefault
+
+        let updatedAppearance = await manager.appearancePublisher.nextValue()
+        XCTAssertEqual(updatedAppearance, .systemDefault)
     }
 
     func testInternalUsersWithFigmaThemeSetAreRemappedToDefaultTheme() {
-        let persistor = AppearancePreferencesPersistorMock(themeName: "figma")
-        let featureFlagger = MockFeatureFlagger()
-        let preferences = AppearancePreferences(
-            persistor: persistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
-        )
-
-        let internalUserDecider = MockInternalUserDecider(isInternalUser: true)
-        let manager = ThemeManager(appearancePreferences: preferences, internalUserDecider: internalUserDecider, featureFlagger: featureFlagger)
+        let (manager, _, _) = buildThemeManager(isInternalUser: true, initialTheme: "figma", initialAppearance: "dark")
 
         XCTAssertEqual(manager.theme.name, .default)
     }
 
-    func testLoosingInternalUserStateSetsTheLegacyTheme() async {
-        let persistor = AppearancePreferencesPersistorMock(themeName: ThemeName.green.rawValue)
+    func testLosingInternalUserStateSetsTheLegacyTheme() async {
+        let (manager, _, internalUserDecider) = buildThemeManager(isInternalUser: true, initialTheme: .green, initialAppearance: .light)
+
+        internalUserDecider.isInternalUserSubject.send(false)
+
+        let updatedTheme = await manager.themePublisher.nextValue()
+        XCTAssertEqual(updatedTheme.name, .default)
+        XCTAssertEqual(manager.appearance, .light)
+    }
+}
+
+private extension ThemeManagerTests {
+
+    func buildThemeManager(isInternalUser: Bool = false, initialTheme: ThemeName = .default, initialAppearance: ThemeAppearance = .systemDefault) -> (ThemeManaging, AppearancePreferences, MockInternalUserDecider) {
+        buildThemeManager(isInternalUser: isInternalUser, initialTheme: initialTheme.rawValue, initialAppearance: initialAppearance.rawValue)
+    }
+
+    func buildThemeManager(isInternalUser: Bool = false, initialTheme: String, initialAppearance: String) -> (ThemeManaging, AppearancePreferences, MockInternalUserDecider) {
+        let persistor = AppearancePreferencesPersistorMock(themeAppearance: initialAppearance, themeName: initialTheme)
         let featureFlagger = MockFeatureFlagger()
         let preferences = AppearancePreferences(
             persistor: persistor,
@@ -80,13 +82,10 @@ final class ThemeManagerTests: XCTestCase {
             featureFlagger: featureFlagger
         )
 
-        let internalUserDecider = MockInternalUserDecider(isInternalUser: true)
+        let internalUserDecider = MockInternalUserDecider(isInternalUser: isInternalUser)
         let manager = ThemeManager(appearancePreferences: preferences, internalUserDecider: internalUserDecider, featureFlagger: featureFlagger)
 
-        internalUserDecider.isInternalUserSubject.send(false)
-
-        let updatedTheme = await manager.$theme.nextValue()
-        XCTAssertEqual(updatedTheme.name, .default)
+        return (manager, preferences, internalUserDecider)
     }
 }
 

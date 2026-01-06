@@ -13667,7 +13667,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Strip SUPublicEDKey when unsigned updates are allowed\nif [[ \"${SWIFT_ACTIVE_COMPILATION_CONDITIONS}\" == *\"SPARKLE_ALLOWS_UNSIGNED_UPDATES\"* ]]; then\n    /usr/libexec/PlistBuddy -c \"Delete :SUPublicEDKey\" \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\" 2>/dev/null || true\n    echo \"Removed SUPublicEDKey (unsigned updates allowed)\"\nelse\n    echo \"Keeping SUPublicEDKey (signature verification enabled)\"\nfi\n";
+			shellScript = "# Strip SUPublicEDKey when unsigned updates are allowed\n# This allows for simpler update testing in non-release builds\nif [[ \"${SWIFT_ACTIVE_COMPILATION_CONDITIONS}\" == *\"SPARKLE_ALLOWS_UNSIGNED_UPDATES\"* ]]; then\n    /usr/libexec/PlistBuddy -c \"Delete :SUPublicEDKey\" \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\" 2>/dev/null || true\n    echo \"Removed SUPublicEDKey (unsigned updates allowed)\"\nelse\n    echo \"Keeping SUPublicEDKey (signature verification enabled)\"\nfi\n";
 		};
 		7B2E361D2D6DE89600A08CB7 /* Embed System Network Extension */ = {
 			isa = PBXShellScriptBuildPhase;

@@ -148,6 +148,7 @@ public final class CustomToggleControl: NSControl {
     private let expansionAnimationDuration: CFTimeInterval = 0.2
 
     public var onWidthChange: ((CGFloat) -> Void)?
+    public var onTabPressed: (() -> Bool)?
     public var collapsedWidth: CGFloat = 70
     private let iconLabelSpacing: CGFloat = 4
     private let segmentPadding: CGFloat = 8
@@ -614,6 +615,12 @@ public final class CustomToggleControl: NSControl {
             selectedSegment = 0
         case KeyCode.rightArrow:
             selectedSegment = 1
+        case KeyCode.tab:
+            /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1212664632351053?focus=true
+            if onTabPressed?() == true {
+                return
+            }
+            super.keyDown(with: event)
         default:
             super.keyDown(with: event)
         }

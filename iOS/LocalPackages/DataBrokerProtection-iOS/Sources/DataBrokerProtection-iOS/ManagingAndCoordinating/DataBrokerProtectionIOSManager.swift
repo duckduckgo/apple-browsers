@@ -256,6 +256,11 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
         guard await authenticationManager.isUserAuthenticated else { return }
 
+        guard (try? meetsProfileRunPrequisite) == true else {
+            Logger.dataBrokerProtection.log("No profile, skipping foreground operations")
+            return
+        }
+
         if featureFlagger.isForegroundRunningOnAppActiveFeatureOn {
             await startImmediateScanOperations()
         } else {

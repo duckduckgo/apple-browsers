@@ -315,7 +315,7 @@ private enum SparkleTestingResources {
 
     def generate_self_signed_cert():
         """Generate a self-signed certificate for localhost.
-        
+
         Returns: (exists, newly_generated) tuple
         """
         if os.path.exists(CERT_FILE) and os.path.exists(KEY_FILE):

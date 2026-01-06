@@ -208,7 +208,7 @@ extension Preferences {
 
         var body: some View {
             SlidingPickerView(settings: .buildThemesPickerSettings(theme: theme),
-                              allValues: ThemeName.allCases,
+                              allValues: ThemeName.allCasesSorted,
                               selectedValue: $model.themeName) { themeName in
                 AnyView(
                     ThemeView(themeName: themeName)

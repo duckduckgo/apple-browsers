@@ -24,6 +24,16 @@ SPARKLE_URL_ALPHA = https:/$()/staticcdn.duckduckgo.com/macos-desktop-browser/al
 SPARKLE_FEED_URL = $(SPARKLE_URL_RELEASE)
 SPARKLE_FEED_URL[config=Alpha] = $(SPARKLE_URL_ALPHA)
 
+// Sparkle EdDSA public key for signature verification
+// Empty value = omitted from plist (requires GENERATE_INFOPLIST_FILE = YES)
+// Debug/CI/Review: empty = no signature verification (allows unsigned test updates)
+// Release/Alpha: production key = signature verification enabled
+INFOPLIST_KEY_SUPublicEDKey[config=Debug] =
+INFOPLIST_KEY_SUPublicEDKey[config=CI] =
+INFOPLIST_KEY_SUPublicEDKey[config=Review] =
+INFOPLIST_KEY_SUPublicEDKey[config=Release] = ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=
+INFOPLIST_KEY_SUPublicEDKey[config=Alpha] = ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=
+
 // Swift compilation flag for builds that allow unsigned updates.
 // When set, custom feed URL overrides are enabled.
 SPARKLE_SUBFEATURES[config=Debug] = SPARKLE_ALLOWS_UNSIGNED_UPDATES

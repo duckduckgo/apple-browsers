@@ -556,8 +556,6 @@
 	<true/>
 	<key>SUFeedURL</key>
 	<string>$(SPARKLE_FEED_URL)</string>
-	<key>SUPublicEDKey</key>
-	<string>ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>10800</integer>
 	<key>ViewBridgeService</key>

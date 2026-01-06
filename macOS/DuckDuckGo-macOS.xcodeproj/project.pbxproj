@@ -12799,7 +12799,6 @@
 				AA585D7A248FD31100E9A3E2 /* Sources */,
 				AA585D7B248FD31100E9A3E2 /* Frameworks */,
 				AA585D7C248FD31100E9A3E2 /* Resources */,
-				7B0CEF2C2F0D81B10052C2EF /* Remove update signing requirements for non-release builds */,
 				B6F2C8722A7A4C7D000498CF /* Make /Applications symlink, remove app on Clean build */,
 				4B2D065D2A11D2AE00DE1F49 /* Embed Login Items */,
 			);
@@ -13650,24 +13649,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "echo \"SwiftLint disabled for now\"\n";
-		};
-		7B0CEF2C2F0D81B10052C2EF /* Remove update signing requirements for non-release builds */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Remove update signing requirements for non-release builds";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Strip SUPublicEDKey when unsigned updates are allowed\n# This allows for simpler update testing in non-release builds\nif [[ \"${SWIFT_ACTIVE_COMPILATION_CONDITIONS}\" == *\"SPARKLE_ALLOWS_UNSIGNED_UPDATES\"* ]]; then\n    /usr/libexec/PlistBuddy -c \"Delete :SUPublicEDKey\" \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\" 2>/dev/null || true\n    echo \"Removed SUPublicEDKey (unsigned updates allowed)\"\nelse\n    echo \"Keeping SUPublicEDKey (signature verification enabled)\"\nfi\n";
 		};
 		7B2E361D2D6DE89600A08CB7 /* Embed System Network Extension */ = {
 			isa = PBXShellScriptBuildPhase;

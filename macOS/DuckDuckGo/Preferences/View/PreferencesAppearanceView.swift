@@ -102,7 +102,7 @@ extension Preferences {
                     .font(.system(size: 13))
                     .foregroundColor(.primary)
             }
-            .frame(height: 32)
+            .frame(height: 30)
             .frame(minWidth: 100, maxWidth: 139)
         }
     }
@@ -391,8 +391,9 @@ private extension SlidingPickerSettings {
             backgroundColor: Color(theme.palette.surfacePrimary),
             borderColor: Color(theme.palette.surfaceDecorationPrimary),
             selectionBackgroundColor: Color(theme.palette.surfaceTertiary),
-            selectionBorderColor: Color(theme.palette.surfaceDecorationPrimary),
+            selectionBorderColor: Color(theme.palette.shadowSecondary),
             animationsEnabled: false,
-            dividerSize: CGSize(width: 1, height: 16))
+            dividerSize: CGSize(width: 1, height: 16),
+            elementsMargin: 1)
     }
 }

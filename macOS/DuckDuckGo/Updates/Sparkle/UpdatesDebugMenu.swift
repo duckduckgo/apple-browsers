@@ -26,6 +26,7 @@ final class UpdatesDebugMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
+#if !SPARKLE_REQUIRES_SIGNED_UPDATES
             NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
                 .targetting(self)
             NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
@@ -33,6 +34,7 @@ final class UpdatesDebugMenu: NSMenu {
             NSMenuItem(title: "Set up Sparkle testing environment…", action: #selector(setupSparkleTestingEnvironment))
                 .targetting(self)
             NSMenuItem.separator()
+#endif
             NSMenuItem(title: "Expire current update", action: #selector(expireCurrentUpdate))
                 .targetting(self)
             NSMenuItem(title: "Reset last update check", action: #selector(resetLastUpdateCheck))
@@ -93,6 +95,7 @@ final class UpdatesDebugMenu: NSMenu {
         )
     }
 
+#if !SPARKLE_REQUIRES_SIGNED_UPDATES
     // MARK: - Custom Feed URL
 
     @UserDefaultsWrapper(key: .debugSparkleCustomFeedURL)
@@ -172,9 +175,11 @@ final class UpdatesDebugMenu: NSMenu {
             alert.runModal()
         }
     }
+#endif
 
 }
 
+#if !SPARKLE_REQUIRES_SIGNED_UPDATES
 // MARK: - Sparkle Testing Resources
 
 private enum SparkleTestingResources {
@@ -393,3 +398,4 @@ private enum SparkleTestingResources {
     """#
 
 }
+#endif

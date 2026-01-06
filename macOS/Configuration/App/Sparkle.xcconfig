@@ -30,3 +30,11 @@ INFOPLIST_KEY_SUPublicEDKey[config=CI] =
 INFOPLIST_KEY_SUPublicEDKey[config=Review] =
 INFOPLIST_KEY_SUPublicEDKey[config=Release] = ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=
 INFOPLIST_KEY_SUPublicEDKey[config=Alpha] = ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=
+
+// Swift compilation flag for builds that require signed updates.
+// When set, custom feed URL overrides are disabled.
+SPARKLE_SUBFEATURES[config=Debug] =
+SPARKLE_SUBFEATURES[config=CI] =
+SPARKLE_SUBFEATURES[config=Review] =
+SPARKLE_SUBFEATURES[config=Release] = SPARKLE_REQUIRES_SIGNED_UPDATES
+SPARKLE_SUBFEATURES[config=Alpha] = SPARKLE_REQUIRES_SIGNED_UPDATES

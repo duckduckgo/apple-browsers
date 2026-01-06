@@ -80,6 +80,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsPageContext: Bool
     public let supportsStandaloneMigration: Bool
     public let supportsAIChatFullMode: Bool
+    public let supportsAIChatContextualMode: Bool
     public let appVersion: String
     public let supportsHomePageEntryPoint: Bool
     public let supportsOpenAIChatLink: Bool
@@ -97,6 +98,7 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsFullChatRestoration: false,
                                         supportsPageContext: false,
                                         supportsAIChatFullMode: false,
+                                        supportsAIChatContextualMode: false,
                                         appVersion: "",
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
@@ -114,6 +116,7 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsFullChatRestoration: false,
                                         supportsPageContext: false,
                                         supportsAIChatFullMode: false,
+                                        supportsAIChatContextualMode: false,
                                         appVersion: "",
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
@@ -131,6 +134,7 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsFullChatRestoration: Bool,
                 supportsPageContext: Bool,
                 supportsAIChatFullMode: Bool,
+                supportsAIChatContextualMode: Bool,
                 appVersion: String,
                 supportsHomePageEntryPoint: Bool = true,
                 supportsOpenAIChatLink: Bool = true,
@@ -146,6 +150,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsPageContext = supportsPageContext
         self.supportsStandaloneMigration = supportsStandaloneMigration
         self.supportsAIChatFullMode = supportsAIChatFullMode
+        self.supportsAIChatContextualMode = supportsAIChatContextualMode
         self.appVersion = appVersion
         self.supportsHomePageEntryPoint = supportsHomePageEntryPoint
         self.supportsOpenAIChatLink = supportsOpenAIChatLink

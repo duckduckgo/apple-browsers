@@ -27,9 +27,6 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var tabCollectionVM: TabCollectionViewModel!
     private var capturingDefaultBrowserProvider: CapturingDefaultBrowserProvider!
     private var capturingDataImportProvider: CapturingDataImportProvider!
-    private var emailManager: EmailManager!
-    private var emailStorage: MockEmailStorage!
-    private var duckPlayerPreferences: DuckPlayerPreferencesPersistor!
     private var privacyConfigManager: MockPrivacyConfigurationManager!
     private var dockCustomizer: DockCustomization!
     private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
@@ -39,9 +36,6 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         dockCustomizer = DockCustomizerMock()
         capturingDataImportProvider = CapturingDataImportProvider()
         tabCollectionVM = TabCollectionViewModel(isPopup: false)
-        emailStorage = MockEmailStorage()
-        emailManager = EmailManager(storage: emailStorage)
-        duckPlayerPreferences = DuckPlayerPreferencesPersistorMock()
         privacyConfigManager = MockPrivacyConfigurationManager()
         let config = MockPrivacyConfiguration()
         privacyConfigManager.privacyConfig = config
@@ -52,8 +46,6 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
             dockCustomizer: dockCustomizer,
             dataImportProvider: capturingDataImportProvider,
             tabOpener: MockTabOpener(tabCollectionViewModel: tabCollectionVM),
-            emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences,
             privacyConfigurationManager: privacyConfigManager,
             pixelHandler: pixelHandler
         )
@@ -64,10 +56,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         capturingDefaultBrowserProvider = nil
         capturingDataImportProvider = nil
         tabCollectionVM = nil
-        emailManager = nil
-        emailStorage = nil
         dockCustomizer = nil
-        duckPlayerPreferences = nil
         privacyConfigManager = nil
         pixelHandler = nil
     }

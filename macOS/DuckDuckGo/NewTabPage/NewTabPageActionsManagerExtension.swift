@@ -174,8 +174,6 @@ extension NewTabPageActionsManager {
                                                                        dockCustomizer: DockCustomizer(),
                                                                        dataImportProvider: dataImportProvider,
                                                                        tabOpener: NewTabPageTabOpener(),
-                                                                       emailManager: EmailManager(),
-                                                                       duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
                                                                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                                                                        pixelHandler: nextStepsPixelHandler)
 

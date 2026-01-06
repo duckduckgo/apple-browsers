@@ -41,8 +41,6 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let dockCustomizer: DockCustomization
     private let dataImportProvider: DataImportStatusProviding
     private let tabOpener: NewTabPageNextStepsCardsTabOpening
-    private let emailManager: EmailManager
-    private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
 
     var duckPlayerURL: String {
@@ -54,8 +52,6 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          dockCustomizer: DockCustomization,
          dataImportProvider: DataImportStatusProviding,
          tabOpener: NewTabPageNextStepsCardsTabOpening,
-         emailManager: EmailManager,
-         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          pixelHandler: NewTabPageNextStepsCardsPixelHandling) {
 
@@ -63,8 +59,6 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.dockCustomizer = dockCustomizer
         self.dataImportProvider = dataImportProvider
         self.tabOpener = tabOpener
-        self.emailManager = emailManager
-        self.duckPlayerPreferences = duckPlayerPreferences
         self.privacyConfigurationManager = privacyConfigurationManager
         self.pixelHandler = pixelHandler
     }

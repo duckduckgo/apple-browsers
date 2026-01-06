@@ -175,7 +175,8 @@ extension NewTabPageActionsManager {
                                                                        dataImportProvider: dataImportProvider,
                                                                        tabOpener: NewTabPageTabOpener(),
                                                                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
-                                                                       pixelHandler: nextStepsPixelHandler)
+                                                                       pixelHandler: nextStepsPixelHandler,
+                                                                       newTabPageNavigator: DefaultNewTabPageNavigator())
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(

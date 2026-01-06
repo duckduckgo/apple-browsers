@@ -42,6 +42,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let dataImportProvider: DataImportStatusProviding
     private let tabOpener: NewTabPageNextStepsCardsTabOpening
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
+    private let newTabPageNavigator: NewTabPageNavigator
+    private let syncLauncher: SyncDeviceFlowLaunching?
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
@@ -53,7 +55,9 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          dataImportProvider: DataImportStatusProviding,
          tabOpener: NewTabPageNextStepsCardsTabOpening,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         pixelHandler: NewTabPageNextStepsCardsPixelHandling) {
+         pixelHandler: NewTabPageNextStepsCardsPixelHandling,
+         newTabPageNavigator: NewTabPageNavigator,
+         syncLauncher: SyncDeviceFlowLaunching? = nil) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.dockCustomizer = dockCustomizer
@@ -61,6 +65,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.tabOpener = tabOpener
         self.privacyConfigurationManager = privacyConfigurationManager
         self.pixelHandler = pixelHandler
+        self.newTabPageNavigator = newTabPageNavigator
+        self.syncLauncher = syncLauncher
     }
 
     @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
@@ -79,9 +85,9 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         case .subscription:
             performSubscriptionAction()
         case .personalizeBrowser:
-            return // TODO: Add card action to open Customize panel on New Tab Page
+            performPersonalizeBrowserAction()
         case .sync:
-            return // TODO: Add card action to open sync setup flow
+            performSyncAction(completion: refreshCardsAction)
         }
     }
 }
@@ -128,5 +134,15 @@ private extension NewTabPageNextStepsCardsActionHandler {
 
         let tab = Tab(content: .url(url, source: .link), shouldLoadInBackground: true)
         tabOpener.openTab(tab)
+    }
+
+    func performPersonalizeBrowserAction() {
+        newTabPageNavigator.openNewTabPageBackgroundCustomizationSettings()
+    }
+
+    @MainActor
+    func performSyncAction(completion: (() -> Void)?) {
+        let syncLauncher = syncLauncher ?? DeviceSyncCoordinator()
+        syncLauncher?.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
     }
 }

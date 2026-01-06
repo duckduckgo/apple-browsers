@@ -166,4 +166,3 @@ final class CustomToggleControlTests: XCTestCase {
 }
 
 #endif
-

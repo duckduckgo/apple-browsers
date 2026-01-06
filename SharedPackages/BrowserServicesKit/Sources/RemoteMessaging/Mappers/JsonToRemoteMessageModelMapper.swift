@@ -421,12 +421,12 @@ private extension JsonToRemoteMessageModelMapper {
         } else {
             nil
         }
-        let listItems = try validator.compactMap(\.listItems) { items throws(MappingError) in
+        let listItems = try validator.mapRequired(\.listItems) { items throws(MappingError) in
             let mappedItems = try mapToListItems(items, surveyActionMapper: surveyActionMapper)
             return try validator.notEmpty(mappedItems, keyPath: \RemoteMessageResponse.JsonContent.listItems)
         }
         let primaryActionText = try validator.notNilOrEmpty(\.primaryActionText)
-        let primaryAction = try validator.compactMap(\.primaryAction) { action in
+        let primaryAction = try validator.mapRequired(\.primaryAction) { action in
             mapToAction(action, surveyActionMapper: surveyActionMapper)
         }
         return .cardsList(titleText: titleText, placeholder: placeHolderImage, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
@@ -449,7 +449,7 @@ private extension JsonToRemoteMessageModelMapper {
                 let titleText = try validator.notEmpty(\.titleText)
                 let descriptionText = try validator.notNilOrEmpty(\.descriptionText)
                 let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
-                let primaryRemoteAction = try validator.compactMap(\.primaryAction) { action in
+                let primaryRemoteAction = jsonListItem.primaryAction.flatMap { action in
                     mapToAction(action, surveyActionMapper: surveyActionMapper)
                 }
                 listItemType = .featuredTwoLinesSingleActionItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, primaryActionText: jsonListItem.primaryActionText, primaryAction: primaryRemoteAction)
@@ -459,7 +459,7 @@ private extension JsonToRemoteMessageModelMapper {
                 let titleText = try validator.notEmpty(\.titleText)
                 let descriptionText = jsonListItem.descriptionText ?? ""
                 let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
-                let remoteAction = try validator.compactMap(\.primaryAction) { action in
+                let remoteAction = jsonListItem.primaryAction.flatMap { action in
                     mapToAction(action, surveyActionMapper: surveyActionMapper)
                 }
                 listItemType = .twoLinesItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, action: remoteAction)

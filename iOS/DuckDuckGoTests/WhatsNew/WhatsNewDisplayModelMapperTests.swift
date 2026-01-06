@@ -214,6 +214,34 @@ final class WhatsNewDisplayModelMapperTests {
         // THEN
         #expect(messageAppearCalled)
     }
+
+    @Test("Check Section Items Are Mapped Correctly")
+    func whenListHasSectionThenSectionIsMapped() throws {
+        // GIVEN
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section-1", titleText: "Section Title", itemIDs: ["item-1", "item-2"]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-1"),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-2")
+        ]
+        let message = RemoteMessageModel.makeCardsListMessage(items: items)
+
+        // WHEN
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // THEN
+        #expect(displayModel.items.count == 3)
+        let section = try #require(displayModel.items[0].section)
+        #expect(section == "Section Title")
+    }
 }
 
 @MainActor
@@ -443,6 +471,15 @@ private extension RemoteMessagingUI.CardsListDisplayModel.Item {
         case .twoLinesCard(let card):
             return card
         case .section:
+            return nil
+        }
+    }
+
+    var section: String? {
+        switch self {
+        case .section(let title):
+            return title
+        case .twoLinesCard:
             return nil
         }
     }

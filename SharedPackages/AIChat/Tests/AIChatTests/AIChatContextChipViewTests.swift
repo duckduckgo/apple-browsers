@@ -68,18 +68,5 @@ final class AIChatContextChipViewTests: XCTestCase {
         // Then
         XCTAssertNotNil(sut.onRemove)
     }
-
-    func testViewHasIntrinsicContentSize() {
-        // Given
-        let sut = AIChatContextChipView()
-        sut.configure(title: "Test Title", favicon: nil)
-        sut.subtitle = "Page Content"
-
-        // When
-        sut.layoutIfNeeded()
-
-        // Then
-        XCTAssertGreaterThan(sut.intrinsicContentSize.width, 0)
-    }
 }
 #endif

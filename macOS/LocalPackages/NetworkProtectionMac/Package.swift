@@ -35,7 +35,7 @@ let package = Package(
         .library(name: "VPNNotifications", targets: ["VPNNotifications"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.1"),
+        .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.2"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),

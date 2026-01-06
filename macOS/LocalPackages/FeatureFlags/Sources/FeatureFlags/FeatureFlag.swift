@@ -273,6 +273,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Autoconsent heuristic action experiment
     /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
     case heuristicAction
+
+    /// Next Steps cards iteration with single card displayed on New Tab page
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
+    case nextStepsSingleCardIteration
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -390,7 +394,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
                 .aiChatSync,
-                .heuristicAction:
+                .heuristicAction,
+                .nextStepsSingleCardIteration:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -565,6 +570,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .heuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
+        case .nextStepsSingleCardIteration:
+            return .disabled
         }
     }
 }

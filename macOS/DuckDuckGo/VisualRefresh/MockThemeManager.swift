@@ -19,11 +19,13 @@
 import Bookmarks
 import Foundation
 import AppKit
+import PrivacyConfig
 
 final class MockThemeManager: ThemeManaging {
 
-    @Published var appearance: ThemeAppearance = .dark
-    @Published var theme: ThemeStyleProviding = ThemeStyle.buildThemeStyle(themeName: .default, featureFlagger: NSApp.delegateTyped.featureFlagger)
+    private let featureFlagger: FeatureFlagger
+    @Published var appearance: ThemeAppearance
+    @Published var theme: ThemeStyleProviding
 
     var appearancePublisher: Published<ThemeAppearance>.Publisher {
         $appearance
@@ -31,6 +33,21 @@ final class MockThemeManager: ThemeManaging {
 
     var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
+    }
+
+    var themeName: ThemeName {
+        get {
+            theme.name
+        }
+        set {
+            theme = ThemeStyle.buildThemeStyle(themeName: newValue, featureFlagger: featureFlagger)
+        }
+    }
+
+    init(featureFlagger: FeatureFlagger = MockFeatureFlagger(), appearance: ThemeAppearance = .dark, themeName: ThemeName = .default, ) {
+        self.featureFlagger = featureFlagger
+        self.appearance = appearance
+        self.theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
     }
 }
 #endif

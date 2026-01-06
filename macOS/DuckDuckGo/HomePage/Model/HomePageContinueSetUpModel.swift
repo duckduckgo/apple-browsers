@@ -72,7 +72,7 @@ extension HomePage.Models {
         private let emailManager: EmailManager
         private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
         private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
-        private let pixelHandler: (PixelKitEvent, Bool) -> Void
+        private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
 
         @UserDefaultsWrapper(key: .homePageShowAllFeatures, defaultValue: false)
         var shouldShowAllFeatures: Bool {
@@ -114,7 +114,7 @@ extension HomePage.Models {
              privacyConfigurationManager: PrivacyConfigurationManaging,
              subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
              persistor: HomePageContinueSetUpModelPersisting,
-             pixelHandler: @escaping (PixelKitEvent, Bool) -> Void = { PixelKit.fire($0, includeAppVersionParameter: $1) }) {
+             pixelHandler: NewTabPageNextStepsCardsPixelHandling) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer
@@ -161,7 +161,7 @@ extension HomePage.Models {
 
         private func performDefaultBrowserAction() {
             do {
-                firePixel(GeneralPixel.defaultRequestedFromHomepageSetupView)
+                pixelHandler.fireDefaultBrowserRequestedPixel()
                 try defaultBrowserProvider.presentDefaultBrowserPrompt()
             } catch {
                 defaultBrowserProvider.openSystemPreferences()
@@ -187,13 +187,13 @@ extension HomePage.Models {
         }
 
         func performDockAction() {
-            firePixel(GeneralPixel.userAddedToDockFromNewTabPageCard, includeAppVersionParameter: false)
+            pixelHandler.fireAddedToDockPixel()
             dockCustomizer.addToDock()
         }
 
         @MainActor
         private func performSubscriptionAction() {
-            firePixel(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked)
+            pixelHandler.fireSubscriptionCardClickedPixel()
             guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.newTabPageNextStepsCard.rawValue)?.url else {
                 return
             }
@@ -216,7 +216,7 @@ extension HomePage.Models {
             case .emailProtection:
                 persistor.shouldShowEmailProtectionSetting = false
             case .subscription:
-                firePixel(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed)
+                pixelHandler.fireSubscriptionCardDismissedPixel()
                 subscriptionCardVisibilityManager.dismissSubscriptionCard()
             }
             refreshFeaturesMatrix()
@@ -224,18 +224,14 @@ extension HomePage.Models {
 
         // MARK: - Pixel Firing
 
-        private func firePixel(_ event: PixelKitEvent, includeAppVersionParameter: Bool = true) {
-            pixelHandler(event, includeAppVersionParameter)
-        }
-
         private func fireNextStepsCardClickedPixel(for featureType: FeatureType) {
             let card = NewTabPageDataModel.CardID(featureType)
-            firePixel(NewTabPagePixel.nextStepsCardClicked(card.rawValue))
+            pixelHandler.fireNextStepsCardClickedPixel(card)
         }
 
         private func fireNextStepsCardDismissedPixel(for featureType: FeatureType) {
             let card = NewTabPageDataModel.CardID(featureType)
-            firePixel(NewTabPagePixel.nextStepsCardDismissed(card.rawValue))
+            pixelHandler.fireNextStepsCardDismissedPixel(card)
         }
 
         private func observeSubscriptionCardVisibilityChanges() {

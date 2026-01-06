@@ -15703,7 +15703,7 @@
 			repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
 			requirement = {
 				kind = exactVersion;
-				version = 0.9.19;
+				version = 0.9.20;
 			};
 		};
 		984249C12CED4F430071C7DB /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {
@@ -15727,7 +15727,7 @@
 			repositoryURL = "https://github.com/airbnb/lottie-spm.git";
 			requirement = {
 				kind = exactVersion;
-				version = 4.5.1;
+				version = 4.5.2;
 			};
 		};
 		9FDD72032D895D8C0016246B /* XCRemoteSwiftPackageReference "combine-schedulers" */ = {

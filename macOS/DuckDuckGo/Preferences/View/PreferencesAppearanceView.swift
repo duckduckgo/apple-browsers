@@ -94,7 +94,7 @@ extension Preferences {
 
         var body: some View {
             HStack(spacing: 6) {
-                Image(systemNamed: appearance.icon)
+                Image(named: appearance.icon)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.primary)
 
@@ -361,14 +361,14 @@ extension Preferences {
 //
 private extension ThemeAppearance {
 
-    var icon: Image.SystemImageName {
+    var icon: Image.ImageName {
         switch self {
         case .light:
-            .sunMax
+            .appearanceLight
         case .dark:
-            .moon
+            .appearanceDark
         case .systemDefault:
-            .circleLeftHalfFilled
+            .appearanceSystem
         }
     }
 }
@@ -391,7 +391,7 @@ private extension SlidingPickerSettings {
             backgroundColor: Color(theme.palette.surfacePrimary),
             borderColor: Color(theme.palette.surfaceDecorationPrimary),
             selectionBackgroundColor: Color(theme.palette.surfaceTertiary),
-            selectionBorderColor: Color(theme.palette.accentPrimary),
+            selectionBorderColor: Color(theme.palette.surfaceDecorationPrimary),
             animationsEnabled: false,
             dividerSize: CGSize(width: 1, height: 16))
     }

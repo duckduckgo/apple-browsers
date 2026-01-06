@@ -121,6 +121,9 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
     var updateValidityStartDate: Date?
 
+    @UserDefaultsWrapper(key: .debugSparkleCustomFeedURL)
+    private var customFeedURL: String?
+
     private let keyValueStore: ThrowingKeyValueStoring
 
     private var pendingUpdateInfo: Data? {
@@ -555,9 +558,27 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     func handleAppTermination() {
         updateWideEvent.handleAppTermination()
     }
+
+    // MARK: - Debug: Custom Feed URL
+
+    func setCustomFeedURL(_ urlString: String) {
+        customFeedURL = urlString
+    }
+
+    func resetFeedURLToDefault() {
+        customFeedURL = nil
+    }
 }
 
 extension SparkleUpdateController: SPUUpdaterDelegate {
+
+    func feedURLString(for updater: SPUUpdater) -> String? {
+#if DEBUG || REVIEW
+        return customFeedURL
+#else
+        return nil
+#endif
+    }
 
     func allowedChannels(for updater: SPUUpdater) -> Set<String> {
         if internalUserDecider.isInternalUser {

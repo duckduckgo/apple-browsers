@@ -30,6 +30,11 @@ final class UpdatesDebugMenu: NSMenu {
             NSMenuItem(title: "Reset last update check", action: #selector(resetLastUpdateCheck))
                 .targetting(self)
             NSMenuItem.separator()
+            NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
+                .targetting(self)
+            NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
+                .targetting(self)
+            NSMenuItem.separator()
             NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
                 .targetting(self)
             NSMenuItem.separator()
@@ -83,6 +88,33 @@ final class UpdatesDebugMenu: NSMenu {
             text: UserText.browserUpdatedNotification,
             buttonText: UserText.viewDetails
         )
+    }
+
+    // MARK: - Custom Feed URL
+
+    @UserDefaultsWrapper(key: .debugSparkleCustomFeedURL)
+    private var customFeedURL: String?
+
+    private var sparkleUpdateController: SparkleUpdateController? {
+        Application.appDelegate.updateController as? SparkleUpdateController
+    }
+
+    @objc func setCustomFeedURL() {
+        let currentURL = customFeedURL ?? ""
+        let alert = NSAlert.customConfigurationAlert(configurationUrl: currentURL)
+        alert.messageText = "Set custom Sparkle feed URL:"
+
+        if alert.runModal() != .cancel {
+            guard let textField = alert.accessoryView as? NSTextField,
+                  !textField.stringValue.isEmpty else {
+                return
+            }
+            sparkleUpdateController?.setCustomFeedURL(textField.stringValue)
+        }
+    }
+
+    @objc func resetFeedURLToDefault() {
+        sparkleUpdateController?.resetFeedURLToDefault()
     }
 
 }

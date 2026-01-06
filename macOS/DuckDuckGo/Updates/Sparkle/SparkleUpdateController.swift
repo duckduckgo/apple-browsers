@@ -121,7 +121,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
     var updateValidityStartDate: Date?
 
-#if !SPARKLE_REQUIRES_SIGNED_UPDATES
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     @UserDefaultsWrapper(key: .debugSparkleCustomFeedURL)
     private var customFeedURL: String?
 #endif
@@ -561,7 +561,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
         updateWideEvent.handleAppTermination()
     }
 
-#if !SPARKLE_REQUIRES_SIGNED_UPDATES
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     // MARK: - Debug: Custom Feed URL
 
     func setCustomFeedURL(_ urlString: String) {
@@ -577,10 +577,10 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 extension SparkleUpdateController: SPUUpdaterDelegate {
 
     func feedURLString(for updater: SPUUpdater) -> String? {
-#if SPARKLE_REQUIRES_SIGNED_UPDATES
-        return nil
-#else
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
         return customFeedURL
+#else
+        return nil
 #endif
     }
 

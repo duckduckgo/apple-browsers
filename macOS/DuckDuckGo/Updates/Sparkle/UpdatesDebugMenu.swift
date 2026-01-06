@@ -26,7 +26,7 @@ final class UpdatesDebugMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
-#if !SPARKLE_REQUIRES_SIGNED_UPDATES
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
             NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
                 .targetting(self)
             NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
@@ -95,7 +95,7 @@ final class UpdatesDebugMenu: NSMenu {
         )
     }
 
-#if !SPARKLE_REQUIRES_SIGNED_UPDATES
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     // MARK: - Custom Feed URL
 
     @UserDefaultsWrapper(key: .debugSparkleCustomFeedURL)
@@ -179,7 +179,7 @@ final class UpdatesDebugMenu: NSMenu {
 
 }
 
-#if !SPARKLE_REQUIRES_SIGNED_UPDATES
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
 // MARK: - Sparkle Testing Resources
 
 private enum SparkleTestingResources {

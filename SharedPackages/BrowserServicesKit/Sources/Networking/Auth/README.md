@@ -30,7 +30,6 @@ The **main** interface for client applications to interact with the authenticati
 Key features include:
 - Token management and refresh
 - Account creation and activation
-- Token migration from V1 to V2
 - Logout functionality
 
 ### OAuthService
@@ -53,7 +52,6 @@ Defines all API endpoints and request structures for the authentication service:
 - **Secure Token Management**: Automatic token refresh and secure storage
 - **JWT Verification**: Built-in JWT verification using server-provided keys
 - **Error Handling**: Comprehensive error handling with detailed error messages
-- **Token Migration**: Support for migrating from Auth V1 to V2.
 - **Environment Support**: Support for both production and staging environments.
 
 ## Usage
@@ -119,25 +117,12 @@ public enum OAuthClientError: DDGError {
     case unauthenticated
     case refreshTokenExpired
     case invalidTokenRequest
-    case authMigrationNotPerformed
 }
 ```
 
 **Notable errors:**
 
 - `refreshTokenExpired` is generally bad news, that means the account is become unusable, the token can't be refreshed and the user must be logged out.
-- `authMigrationNotPerformed` is not really an error, just a state for when a migration is attempted but is not needed.
-
-## Auth V1 to V2 Migration
-
-The framework provides automatic migration from Auth V1 to V2 tokens. When initializing the `DefaultOAuthClient` with a `legacyTokenStorage` that contains a V1 token, the migration process will:
-
-1. Check if a V2 token already exists
-2. If no V2 token exists, attempt to exchange the V1 token for a V2 token container.
-3. Store the new V2 token container while preserving the V1 token for potential rollback. This ensures a smooth transition while maintaining backward compatibility.
-4. Use the V2 token container for all subsequent operations.
-
-Note: A log out will remove both V1 and V2 tokens.
 
 ## Security and other considerations
 

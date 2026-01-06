@@ -23,79 +23,6 @@ import os.log
 import Networking
 import PixelKit
 
-public enum SubscriptionManagerError: DDGError {
-    /// The app has no `TokenContainer`
-    case noTokenAvailable
-    /// There was a failure wile retrieving, updating or creating the `TokenContainer`
-    case errorRetrievingTokenContainer(error: Error?)
-
-    case confirmationHasInvalidSubscription
-    case noProductsFound
-
-    public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
-        switch (lhs, rhs) {
-        case (.errorRetrievingTokenContainer(let lhsError), .errorRetrievingTokenContainer(let rhsError)):
-            return String(describing: lhsError) == String(describing: rhsError)
-        case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
-            (.noProductsFound, .noProductsFound),
-            (.noTokenAvailable, .noTokenAvailable):
-            return true
-        default:
-            return false
-        }
-    }
-
-    public var description: String {
-        switch self {
-        case .noTokenAvailable: "No token available"
-        case .errorRetrievingTokenContainer(error: let error): "Error retrieving token container: \(String(describing: error))"
-        case .confirmationHasInvalidSubscription: "Confirmation has an invalid subscription"
-        case .noProductsFound: "No products found"
-        }
-    }
-
-    public static var errorDomain: String { "com.duckduckgo.subscription.SubscriptionManagerError" }
-
-    public var errorCode: Int {
-        switch self {
-        case .noTokenAvailable: 12000
-        case .errorRetrievingTokenContainer: 12001
-        case .confirmationHasInvalidSubscription: 12002
-        case .noProductsFound: 12003
-        }
-    }
-
-    public var underlyingError: (any Error)? {
-        switch self {
-        case .errorRetrievingTokenContainer(error: let error):
-            return error
-        default:
-            return nil
-        }
-    }
-}
-
-public enum SubscriptionPixelType: Equatable {
-    case invalidRefreshToken
-    case subscriptionIsActive
-    case getTokensError(AuthTokensCachePolicy, Error)
-    case invalidRefreshTokenSignedOut
-    case invalidRefreshTokenRecovered
-
-    public static func == (lhs: SubscriptionPixelType, rhs: SubscriptionPixelType) -> Bool {
-        switch (lhs, rhs) {
-        case (.invalidRefreshToken, .invalidRefreshToken),
-            (.subscriptionIsActive, .subscriptionIsActive),
-            (.invalidRefreshTokenSignedOut, .invalidRefreshTokenSignedOut),
-            (.invalidRefreshTokenRecovered, .invalidRefreshTokenRecovered),
-            (.getTokensError, .getTokensError):
-            return true
-        default:
-            return false
-        }
-    }
-}
-
 public enum AuthVersion: String {
     // case v1 // removed
     case v2
@@ -534,7 +461,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             self.updateCachedUserEntitlements([])
             throw SubscriptionManagerError.noTokenAvailable
         } catch {
-            pixelHandler.handle(pixel: .getTokensError(policy, error))
+            pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, error))
 
             switch error {
 

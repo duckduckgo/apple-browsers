@@ -115,11 +115,11 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
     }
 
     public var currentStorefrontRegion: SubscriptionRegion? {
-        if #available(macOS 12.0, *) {
-            return storePurchaseManager().currentStorefrontRegion
-        } else {
+        if currentEnvironment.purchasePlatform == .stripe {
             return nil
         }
+        guard #available(macOS 12.0, iOS 15.0, *) else { return nil }
+        return storePurchaseManager().currentStorefrontRegion
     }
 }
 

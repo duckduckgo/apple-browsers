@@ -74,10 +74,13 @@ struct SettingsAppearanceView: View {
                                        selectedOption: viewModel.themeStyleBinding)
             }
 
-            customizableSettings()
-                .onFirstAppear {
-                    navigateToSubPageIfNeeded()
-                }
+            // Open iPad this won't be visible.
+            if viewModel.mobileCustomization.isEnabled {
+                customizableSettings()
+                    .onFirstAppear {
+                        navigateToSubPageIfNeeded()
+                    }
+            }
 
             if viewModel.browsingMenuSheetCapability.isAvailable {
                 Section {

@@ -19,6 +19,7 @@
 import AppKit
 import AIChat
 import Common
+import CryptoKit
 import os.log
 
 final class UpdatesDebugMenu: NSMenu {
@@ -149,6 +150,11 @@ final class UpdatesDebugMenu: NSMenu {
     // MARK: - Sparkle Testing Environment Setup
 
     @objc func setupSparkleTestingEnvironment() {
+        // Prompt for private key
+        guard let privateKeyBase64 = promptForPrivateKey() else {
+            return
+        }
+
         let fileManager = FileManager.default
         let desktopURL = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Desktop")
         let testingDir = desktopURL.appendingPathComponent("ddg-update-testing")
@@ -160,10 +166,6 @@ final class UpdatesDebugMenu: NSMenu {
             // Create serve_update.py
             let scriptURL = testingDir.appendingPathComponent("serve_update.py")
             try SparkleTestingResources.serverScript.write(to: scriptURL, atomically: true, encoding: .utf8)
-
-            // Create appcast2.xml
-            let appcastURL = testingDir.appendingPathComponent("appcast2.xml")
-            try SparkleTestingResources.appcastXML.write(to: appcastURL, atomically: true, encoding: .utf8)
 
             // Create README.md
             let readmeURL = testingDir.appendingPathComponent("README.md")
@@ -186,6 +188,15 @@ final class UpdatesDebugMenu: NSMenu {
                 throw NSError(domain: "UpdatesDebugMenu", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to create zip file"])
             }
 
+            // Sign the zip file
+            let signature = try signFile(at: zipURL, withPrivateKeyBase64: privateKeyBase64)
+            let zipSize = try fileManager.attributesOfItem(atPath: zipURL.path)[.size] as? Int ?? 0
+
+            // Create appcast2.xml with the signature
+            let appcastURL = testingDir.appendingPathComponent("appcast2.xml")
+            let appcastContent = SparkleTestingResources.appcastXML(signature: signature, fileSize: zipSize)
+            try appcastContent.write(to: appcastURL, atomically: true, encoding: .utf8)
+
             // Open README.md
             NSWorkspace.shared.open(readmeURL)
 
@@ -197,6 +208,50 @@ final class UpdatesDebugMenu: NSMenu {
             alert.alertStyle = .warning
             alert.runModal()
         }
+    }
+
+    private func promptForPrivateKey() -> String? {
+        let alert = NSAlert()
+        alert.messageText = "Enter Debug Signing Private Key"
+        alert.informativeText = "Paste the base64-encoded EdDSA private key (64 bytes).\nThis key is stored in the company secure location."
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Cancel")
+
+        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 400, height: 24))
+        textField.placeholderString = "Base64 private key..."
+        alert.accessoryView = textField
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            let key = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !key.isEmpty {
+                return key
+            }
+        }
+        return nil
+    }
+
+    private func signFile(at url: URL, withPrivateKeyBase64: String) throws -> String {
+        // Decode the private key (64 bytes: 32-byte seed + 32-byte public key)
+        guard let privateKeyData = Data(base64Encoded: withPrivateKeyBase64),
+              privateKeyData.count == 64 else {
+            throw NSError(domain: "UpdatesDebugMenu", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "Invalid private key format. Expected 64 bytes base64-encoded."])
+        }
+
+        // Extract the 32-byte seed (first 32 bytes)
+        let seed = privateKeyData.prefix(32)
+
+        // Create the signing key from the seed
+        let signingKey = try Curve25519.Signing.PrivateKey(rawRepresentation: seed)
+
+        // Read the file data
+        let fileData = try Data(contentsOf: url)
+
+        // Sign the data
+        let signature = try signingKey.signature(for: fileData)
+
+        // Return base64-encoded signature
+        return signature.base64EncodedString()
     }
 #endif
 
@@ -269,26 +324,31 @@ private enum SparkleTestingResources {
     - `README.md` - This file
     """
 
-    static let appcastXML = """
-    <?xml version="1.0" encoding="utf-8"?>
-    <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-      <channel>
-        <title>DuckDuckGo</title>
-        <item>
-          <title>Version 99.0.0</title>
-          <pubDate>Mon, 01 Jan 2099 12:00:00 +0000</pubDate>
-          <sparkle:version>9999</sparkle:version>
-          <sparkle:shortVersionString>99.0.0</sparkle:shortVersionString>
-          <description><![CDATA[
-            <ul>
-              <li>Test update for local Sparkle testing</li>
-            </ul>
-          ]]></description>
-          <enclosure url="https://localhost:8443/DuckDuckGo.app.zip" length="200000000" type="application/octet-stream"/>
-        </item>
-      </channel>
-    </rss>
-    """
+    static func appcastXML(signature: String, fileSize: Int) -> String {
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+          <channel>
+            <title>DuckDuckGo</title>
+            <item>
+              <title>Version 99.0.0</title>
+              <pubDate>Mon, 01 Jan 2099 12:00:00 +0000</pubDate>
+              <sparkle:version>9999</sparkle:version>
+              <sparkle:shortVersionString>99.0.0</sparkle:shortVersionString>
+              <description><![CDATA[
+                <ul>
+                  <li>Test update for local Sparkle testing</li>
+                </ul>
+              ]]></description>
+              <enclosure url="https://localhost:8443/DuckDuckGo.app.zip"
+                         length="\(fileSize)"
+                         type="application/octet-stream"
+                         sparkle:edSignature="\(signature)"/>
+            </item>
+          </channel>
+        </rss>
+        """
+    }
 
     static let serverScript = #"""
     #!/usr/bin/env python3

@@ -27,8 +27,8 @@ import os.log
 /// Coordinates server-side AI Chat deletion to mirror local clears (Fire/AutoClear).
 /// Stores a timestamp when local data is cleared and retries the DELETE on next trigger until it succeeds.
 protocol SyncAIChatsCleaning: AnyObject {
-    func recordLocalClear(date: Date?)
-    func recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+    func recordLocalClear(date: Date?) async
+    func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async
     func deleteIfNeeded() async
 }
 
@@ -43,6 +43,7 @@ final class SyncAIChatsCleaner: SyncAIChatsCleaning {
     private let keyValueStore: ThrowingKeyValueStoring
     private let featureFlagger: FeatureFlagger
     private let dateProvider: () -> Date
+    private let state: SyncAIChatsState
     
     private var canUseAIChatSyncDelete: Bool {
         guard featureFlagger.isFeatureOn(for: FeatureFlag.aiChatSync) else {
@@ -68,28 +69,25 @@ final class SyncAIChatsCleaner: SyncAIChatsCleaning {
         self.keyValueStore = keyValueStore
         self.featureFlagger = featureFlagger
         self.dateProvider = dateProvider
+        self.state = SyncAIChatsState(store: keyValueStore)
     }
 
     /// Record the time of a local clear (Fire/autoclear). This timestamp will be used for the next delete call.
-    func recordLocalClear(date: Date? = nil) {
+    func recordLocalClear(date: Date? = nil) async {
         guard canUseAIChatSyncDelete else {
             return
         }
         
         let timestamp = (date ?? dateProvider()).timeIntervalSince1970
-        try? keyValueStore.set(timestamp, forKey: Keys.lastClearTimestamp)
+
+        await state.setLastClear(timestamp: timestamp)
     }
 
     /// Converts the persisted AutoClear background timestamp into a delete-until timestamp, if present.
     ///
     /// This is used to avoid deleting server-side AI Chats before a local AutoClear actually runs.
-    func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() {
-        guard let timestampValue = try? keyValueStore.object(forKey: Keys.autoClearBackgroundTimestamp) as? Double else {
-            return
-        }
-
-        recordLocalClear(date: Date(timeIntervalSince1970: timestampValue))
-        try? keyValueStore.removeObject(forKey: Keys.autoClearBackgroundTimestamp)
+    func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async {
+        await state.promoteAutoClearToLastClear()
     }
 
     /// If a clear timestamp exists, attempt to delete AI Chats up to that time on the server.
@@ -99,7 +97,7 @@ final class SyncAIChatsCleaner: SyncAIChatsCleaning {
             return
         }
 
-        guard let timestampValue = try? keyValueStore.object(forKey: Keys.lastClearTimestamp) as? Double else {
+        guard let timestampValue = await state.readLastClear() else {
             return
         }
 
@@ -110,12 +108,41 @@ final class SyncAIChatsCleaner: SyncAIChatsCleaning {
             try await sync.deleteAIChats(until: untilDate)
 
             // Only clear the stored timestamp if it hasn't been updated since we read it.
-            if let currentTimestamp = try? keyValueStore.object(forKey: Keys.lastClearTimestamp) as? Double,
-               currentTimestamp == timestampValue {
-                try? keyValueStore.removeObject(forKey: Keys.lastClearTimestamp)
-            }
+            await state.clearLastClearIf(unchanged: timestampValue)
         } catch {
             Logger.sync.debug("Failed to delete AI Chats: \(error)")
+        }
+    }
+}
+
+private actor SyncAIChatsState {
+    private let store: ThrowingKeyValueStoring
+
+    init(store: ThrowingKeyValueStoring) {
+        self.store = store
+    }
+
+    func setLastClear(timestamp: Double) {
+        try? store.set(timestamp, forKey: SyncAIChatsCleaner.Keys.lastClearTimestamp)
+    }
+
+    func promoteAutoClearToLastClear() {
+        guard let timestampValue = try? store.object(forKey: SyncAIChatsCleaner.Keys.autoClearBackgroundTimestamp) as? Double else {
+            return
+        }
+
+        try? store.set(timestampValue, forKey: SyncAIChatsCleaner.Keys.lastClearTimestamp)
+        try? store.removeObject(forKey: SyncAIChatsCleaner.Keys.autoClearBackgroundTimestamp)
+    }
+
+    func readLastClear() -> Double? {
+        try? store.object(forKey: SyncAIChatsCleaner.Keys.lastClearTimestamp) as? Double
+    }
+
+    func clearLastClearIf(unchanged expected: Double) {
+        if let currentTimestamp = try? store.object(forKey: SyncAIChatsCleaner.Keys.lastClearTimestamp) as? Double,
+           currentTimestamp == expected {
+            try? store.removeObject(forKey: SyncAIChatsCleaner.Keys.lastClearTimestamp)
         }
     }
 }

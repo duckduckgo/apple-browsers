@@ -3785,10 +3785,12 @@ extension MainViewController: FireExecutorDelegate {
     }
 
     func willStartBurningAIHistory(fireContext: FireContext) {
-        if autoClearInProgress {
-            syncAIChatsCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
-        } else {
-            syncAIChatsCleaner.recordLocalClear(date: Date())
+        Task {
+            if autoClearInProgress {
+                await syncAIChatsCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+            } else {
+                await syncAIChatsCleaner.recordLocalClear(date: Date())
+            }
         }
     }
     

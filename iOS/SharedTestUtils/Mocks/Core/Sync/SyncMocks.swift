@@ -37,11 +37,11 @@ final class MockSyncAIChatsCleaning: SyncAIChatsCleaning {
     private(set) var recordLocalClearFromAutoClearBackgroundTimestampIfPresentCallCount = 0
     private(set) var deleteIfNeededCallCount = 0
 
-    func recordLocalClear(date: Date?) {
+    func recordLocalClear(date: Date?) async {
         recordLocalClearDates.append(date)
     }
 
-    func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() {
+    func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async {
         recordLocalClearFromAutoClearBackgroundTimestampIfPresentCallCount += 1
     }
 

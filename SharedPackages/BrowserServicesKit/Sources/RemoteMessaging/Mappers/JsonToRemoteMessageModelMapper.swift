@@ -445,6 +445,16 @@ private extension JsonToRemoteMessageModelMapper {
 
             let listItemType: RemoteMessageModelType.ListItem.ListItemType
             switch jsonType {
+            case .featuredTwoLinesSingleActionItem:
+                let titleText = try validator.notEmpty(\.titleText)
+                let descriptionText = try validator.notNilOrEmpty(\.descriptionText)
+                let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
+                let primaryRemoteAction = try validator.compactMap(\.primaryAction) { action in
+                    mapToAction(action, surveyActionMapper: surveyActionMapper)
+                }
+                listItemType = .featuredTwoLinesSingleActionItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, primaryActionText: jsonListItem.primaryActionText, primaryAction: primaryRemoteAction)
+                matchingRules = jsonListItem.matchingRules ?? []
+                exclusionRules = jsonListItem.exclusionRules ?? []
             case .twoLinesItem:
                 let titleText = try validator.notEmpty(\.titleText)
                 let descriptionText = jsonListItem.descriptionText ?? ""
@@ -480,6 +490,10 @@ private extension JsonToRemoteMessageModelMapper {
                 // Check we have not mapped already an item with the same id and discard it
                 guard !mappedIDs.contains(jsonListItem.id) else { throw MappingError.duplicateValue(\RemoteMessageResponse.JsonListItem.id) }
                 let item = try mapToListItem(jsonListItem, surveyActionMapper: surveyActionMapper)
+                // Check we have not mapped already a featured card (Only one can exist per list).
+                if item.type.isFeaturedItem, items.contains(where: \.type.isFeaturedItem) {
+                    throw MappingError.duplicateValue(\RemoteMessageResponse.JsonListItem.type)
+                }
                 // Only insert ID after successful parsing
                 mappedIDs.insert(jsonListItem.id)
                 items.append(item)

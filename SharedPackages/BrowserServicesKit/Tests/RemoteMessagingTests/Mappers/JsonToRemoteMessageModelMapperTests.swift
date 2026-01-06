@@ -33,7 +33,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
                 listItems: [
                     "item-1-id": .init(
                         titleText: "en-CA-list-item-title",
-                        descriptionText: "en-CA-list-item-description"
+                        descriptionText: "en-CA-list-item-description",
+                        primaryActionText: "en-CA-list-item-primaryAction"
                     )
                 ]
             ),
@@ -46,7 +47,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
                 listItems: [
                     "item-1-id": .init(
                         titleText: "en-list-item-title",
-                        descriptionText: "en-list-item-description"
+                        descriptionText: "en-list-item-description",
+                        primaryActionText: "en-list-item-primaryAction"
                     )
                 ]
             ),
@@ -62,6 +64,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         XCTAssertEqual(translation?.secondaryActionText, "en-CA-secondary")
         XCTAssertEqual(translation?.listItems?["item-1-id"]?.titleText, "en-CA-list-item-title")
         XCTAssertEqual(translation?.listItems?["item-1-id"]?.descriptionText, "en-CA-list-item-description")
+        XCTAssertEqual(translation?.listItems?["item-1-id"]?.primaryActionText, "en-CA-list-item-primaryAction")
     }
 
     func testThatGetTranslationReturnsGenericTranslationWhenOnlyLanguageMatches() {
@@ -75,7 +78,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
                 listItems: [
                     "item-1-id": .init(
                         titleText: "en-CA-list-item-title",
-                        descriptionText: "en-CA-list-item-description"
+                        descriptionText: "en-CA-list-item-description",
+                        primaryActionText: "en-CA-list-item-primaryAction"
                     )
                 ]
             ),
@@ -88,7 +92,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
                 listItems: [
                     "item-1-id": .init(
                         titleText: "en-list-item-title",
-                        descriptionText: "en-list-item-description"
+                        descriptionText: "en-list-item-description",
+                        primaryActionText: "en-list-item-primaryAction"
                     )
                 ]
             ),
@@ -104,6 +109,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         XCTAssertEqual(translation?.secondaryActionText, "en-secondary")
         XCTAssertEqual(translation?.listItems?["item-1-id"]?.titleText, "en-list-item-title")
         XCTAssertEqual(translation?.listItems?["item-1-id"]?.descriptionText, "en-list-item-description")
+        XCTAssertEqual(translation?.listItems?["item-1-id"]?.primaryActionText, "en-list-item-primaryAction")
     }
 
     // MARK: - CardsList Translation Tests
@@ -117,11 +123,13 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "item1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Title 1",
-                descriptionText: "Translated Description 1"
+                descriptionText: "Translated Description 1",
+                primaryActionText: nil
             ),
             "item2": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Title 2",
-                descriptionText: "Translated Description 2"
+                descriptionText: "Translated Description 2",
+                primaryActionText: nil
             )
         ]
         let translation = jsonTranslation(titleText: "Translated Message Title", primaryActionText: "Translated Button", listItems: translatedItems)
@@ -153,7 +161,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "item1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Item Title 1",
-                descriptionText: "Translated Item Description 1"
+                descriptionText: "Translated Item Description 1",
+                primaryActionText: nil
             )
         ]
         let translation = jsonTranslation(listItems: translatedItems)
@@ -184,7 +193,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "item1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: nil, // Nil title should fall back to original
-                descriptionText: nil  // Nil description should fall back to original
+                descriptionText: nil,  // Nil description should fall back to original
+                primaryActionText: nil
             )
         ]
         let translation = jsonTranslation(listItems: translatedItems)
@@ -209,7 +219,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "item1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Title",
-                descriptionText: "Translated Description"
+                descriptionText: "Translated Description",
+                primaryActionText: nil
             )
         ]
         let translation = jsonTranslation(listItems: translatedItems)
@@ -255,7 +266,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "section1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Section Title",
-                descriptionText: nil
+                descriptionText: nil,
+                primaryActionText: nil
             )
         ]
         let translation = jsonTranslation(listItems: translatedItems)
@@ -280,7 +292,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "section1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: nil,
-                descriptionText: nil
+                descriptionText: nil,
+                primaryActionText: nil
             )
         ]
         let translation = jsonTranslation(listItems: translatedItems)
@@ -309,7 +322,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "section1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Section Title",
-                descriptionText: nil
+                descriptionText: nil,
+                primaryActionText: nil
             )
         ]
         let translation = jsonTranslation(listItems: translatedItems)
@@ -338,15 +352,18 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "section1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Section",
-                descriptionText: nil
+                descriptionText: nil,
+                primaryActionText: nil
             ),
             "item1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Item 1",
-                descriptionText: "Translated Description 1"
+                descriptionText: "Translated Description 1",
+                primaryActionText: nil
             ),
             "item2": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Item 2",
-                descriptionText: "Translated Description 2"
+                descriptionText: "Translated Description 2",
+                primaryActionText: nil
             )
         ]
         let translation = jsonTranslation(listItems: translatedItems)
@@ -386,7 +403,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "section1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Section",
-                descriptionText: nil
+                descriptionText: nil,
+                primaryActionText: nil
             )
         ]
         let translation = jsonTranslation(listItems: translatedItems)
@@ -408,6 +426,242 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         // Item should remain original
         XCTAssertEqual(items.last?.titleText, "Original Item 1")
         XCTAssertEqual(items.last?.descriptionText, "Original Description 1")
+    }
+
+    // MARK: - Featured Item Translation Tests
+
+    func testThatFeaturedItemTranslatesAllFieldsCorrectly() throws {
+        // GIVEN
+        let featuredItem = RemoteMessageModelType.ListItem.makeFeaturedItem(
+            id: "featured1",
+            titleText: "Original Featured Title",
+            descriptionText: "Original Featured Description",
+            primaryActionText: "Original Action"
+        )
+        var message = RemoteMessageModel.makeCardsListMessage(
+            id: "test",
+            titleText: "Original Title",
+            items: [featuredItem],
+            primaryActionText: "Done"
+        )
+
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "featured1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Featured Title",
+                descriptionText: "Translated Featured Description",
+                primaryActionText: "Translated Action"
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+
+        let firstItem = try XCTUnwrap(items.first)
+        XCTAssertEqual(firstItem.titleText, "Translated Featured Title")
+        XCTAssertEqual(firstItem.descriptionText, "Translated Featured Description")
+        XCTAssertEqual(firstItem.primaryActionText, "Translated Action")
+    }
+
+    func testThatFeaturedItemFallsBackToOriginalWhenTranslationIsNil() throws {
+        // GIVEN
+        let featuredItem = RemoteMessageModelType.ListItem.makeFeaturedItem(
+            id: "featured1",
+            titleText: "Original Featured Title",
+            descriptionText: "Original Featured Description",
+            primaryActionText: "Original Action"
+        )
+        var message = RemoteMessageModel.makeCardsListMessage(
+            id: "test",
+            titleText: "Original Title",
+            items: [featuredItem],
+            primaryActionText: "Done"
+        )
+
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "featured1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: nil,
+                descriptionText: nil,
+                primaryActionText: nil
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+
+        let firstItem = try XCTUnwrap(items.first)
+        XCTAssertEqual(firstItem.titleText, "Original Featured Title")
+        XCTAssertEqual(firstItem.descriptionText, "Original Featured Description")
+        XCTAssertEqual(firstItem.primaryActionText, "Original Action")
+    }
+
+    func testThatFeaturedItemPreservesNonTranslatableFields() throws {
+        // GIVEN
+        let featuredItem = RemoteMessageModelType.ListItem.makeFeaturedItem(
+            id: "featured1",
+            titleText: "Original Title",
+            descriptionText: "Original Description",
+            placeholder: .visualDesignUpdate,
+            primaryActionText: "Original Action",
+            primaryAction: .navigation(value: .settings),
+            matchingRules: [7],
+            exclusionRules: [8]
+        )
+        var message = RemoteMessageModel.makeCardsListMessage(
+            id: "test",
+            titleText: "Original Title",
+            items: [featuredItem],
+            primaryActionText: "Done"
+        )
+
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "featured1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Title",
+                descriptionText: "Translated Description",
+                primaryActionText: "Translated Action"
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+
+        let firstItem = try XCTUnwrap(items.first)
+        XCTAssertEqual(firstItem.id, "featured1")
+        XCTAssertEqual(
+            firstItem.type,
+            .featuredTwoLinesSingleActionItem(
+                titleText: "Translated Title",
+                descriptionText: "Translated Description",
+                placeholderImage: .visualDesignUpdate,
+                primaryActionText: "Translated Action",
+                primaryAction: .navigation(value: .settings)
+            )
+        )
+        XCTAssertEqual(firstItem.matchingRules, [7])
+        XCTAssertEqual(firstItem.exclusionRules, [8])
+    }
+
+    func testThatFeaturedItemPartiallyTranslatesFields() throws {
+        // GIVEN
+        let featuredItem = RemoteMessageModelType.ListItem.makeFeaturedItem(
+            id: "featured1",
+            titleText: "Original Title",
+            descriptionText: "Original Description",
+            primaryActionText: "Original Action"
+        )
+        var message = RemoteMessageModel.makeCardsListMessage(
+            id: "test",
+            titleText: "Original Title",
+            items: [featuredItem],
+            primaryActionText: "Done"
+        )
+
+        // Only translate title and primaryActionText, leave description as original
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "featured1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Title",
+                descriptionText: nil,
+                primaryActionText: "Translated Action"
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+
+        let firstItem = try XCTUnwrap(items.first)
+        XCTAssertEqual(firstItem.titleText, "Translated Title")
+        XCTAssertEqual(firstItem.descriptionText, "Original Description")
+        XCTAssertEqual(firstItem.primaryActionText, "Translated Action")
+    }
+
+    func testThatMixedListWithFeaturedItemsTranslatesCorrectly() throws {
+        // GIVEN
+        let featuredItem = RemoteMessageModelType.ListItem.makeFeaturedItem(
+            id: "featured1",
+            titleText: "Original Featured",
+            descriptionText: "Original Featured Description",
+            primaryActionText: "Original Featured Action"
+        )
+        let section = RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Original Section")
+        let item1 = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", titleText: "Original Item 1", descriptionText: "Original Description 1")
+        var message = RemoteMessageModel.makeCardsListMessage(
+            id: "test",
+            titleText: "Original Title",
+            items: [featuredItem, section, item1],
+            primaryActionText: "Done"
+        )
+
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "featured1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Featured",
+                descriptionText: "Translated Featured Description",
+                primaryActionText: "Translated Featured Action"
+            ),
+            "section1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Section",
+                descriptionText: nil,
+                primaryActionText: nil
+            ),
+            "item1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Item 1",
+                descriptionText: "Translated Description 1",
+                primaryActionText: nil
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+
+        XCTAssertEqual(items.count, 3)
+        let resultFeatured = try XCTUnwrap(items[safe: 0])
+        let resultSection = try XCTUnwrap(items[safe: 1])
+        let resultItem = try XCTUnwrap(items[safe: 2])
+
+        // Verify featured item
+        XCTAssertEqual(resultFeatured.titleText, "Translated Featured")
+        XCTAssertEqual(resultFeatured.descriptionText, "Translated Featured Description")
+        XCTAssertEqual(resultFeatured.primaryActionText, "Translated Featured Action")
+
+        // Verify section
+        XCTAssertEqual(resultSection.titleText, "Translated Section")
+
+        // Verify regular item
+        XCTAssertEqual(resultItem.titleText, "Translated Item 1")
+        XCTAssertEqual(resultItem.descriptionText, "Translated Description 1")
     }
 
 }

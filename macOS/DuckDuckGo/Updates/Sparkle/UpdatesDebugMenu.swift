@@ -314,9 +314,12 @@ private enum SparkleTestingResources {
 
 
     def generate_self_signed_cert():
-        """Generate a self-signed certificate for localhost."""
+        """Generate a self-signed certificate for localhost.
+        
+        Returns: (exists, newly_generated) tuple
+        """
         if os.path.exists(CERT_FILE) and os.path.exists(KEY_FILE):
-            return True
+            return (True, False)
 
         print("Generating self-signed certificate...")
 
@@ -333,10 +336,10 @@ private enum SparkleTestingResources {
         try:
             subprocess.run(cmd, check=True, capture_output=True)
             print(f"Certificate generated: {CERT_FILE}")
-            return True
+            return (True, True)
         except subprocess.CalledProcessError as e:
             print(f"Error generating certificate: {e.stderr.decode()}")
-            return False
+            return (False, False)
 
 
     def is_cert_trusted():
@@ -370,11 +373,26 @@ private enum SparkleTestingResources {
             return False
 
 
+    def delete_old_cert():
+        """Remove existing certificate with same name from keychain."""
+        print("Removing old certificate from keychain if present...")
+        subprocess.run(
+            ["sudo", "security", "delete-certificate", "-c", CERT_NAME,
+             "/Library/Keychains/System.keychain"],
+            capture_output=True  # Ignore errors if not found
+        )
+
+
     def run_server():
         """Run the HTTPS server."""
         # Generate certificate if needed
-        if not generate_self_signed_cert():
+        (success, newly_generated) = generate_self_signed_cert()
+        if not success:
             sys.exit(1)
+
+        # If we just generated a new cert, remove any old one from keychain first
+        if newly_generated:
+            delete_old_cert()
 
         # Check if certificate is trusted
         if not is_cert_trusted():

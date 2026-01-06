@@ -114,8 +114,8 @@ final class AIChatContextualInputViewController: UIViewController {
         set { nativeInputViewController.attachActions = newValue }
     }
 
-    func setText(_ text: String, notifyDelegate: Bool = true) {
-        nativeInputViewController.setText(text, notifyDelegate: notifyDelegate)
+    func setText(_ text: String) {
+        nativeInputViewController.setText(text)
     }
 
     func showContextChip(_ chipView: UIView, animated: Bool = true) {

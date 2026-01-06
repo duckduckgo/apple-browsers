@@ -83,13 +83,11 @@ public final class AIChatNativeInputView: UIView {
         }
     }
 
-    /// Sets the text and optionally notifies the delegate of the change.
+    /// Sets the text and notifies the delegate of the change.
     /// Use this when programmatically setting text (e.g., from voice search) and want to trigger text change behaviors.
-    public func setText(_ text: String, notifyDelegate: Bool) {
+    public func setText(_ text: String) {
         self.text = text
-        if notifyDelegate {
-            delegate?.nativeInputViewDidChangeText(self, text: text)
-        }
+        delegate?.nativeInputViewDidChangeText(self, text: text)
     }
 
     public var placeholder = "" {

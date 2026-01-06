@@ -226,7 +226,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     private func attachPageContext() {
-        // For now, use placeholder data - actual page context integration comes in Part 6
+        // Todo: For now, use placeholder data - actual page context integration comes later
         let placeholderTitle = "Example Page Title"
         let placeholderFavicon: UIImage? = nil
 
@@ -277,7 +277,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
-        // Handle any cleanup when context chip is removed
+        // Todo: Handle any cleanup when context chip is removed
     }
 }
 
@@ -288,7 +288,7 @@ extension AIChatContextualSheetViewController: VoiceSearchViewControllerDelegate
     func voiceSearchViewController(_ viewController: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
         viewController.dismiss(animated: true)
         if let query, !query.isEmpty {
-            contextualInputViewController.setText(query, notifyDelegate: true)
+            contextualInputViewController.setText(query)
         }
     }
 }

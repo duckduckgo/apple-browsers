@@ -75,8 +75,8 @@ final class AIChatNativeInputViewController: UIViewController {
         set { nativeInputView.attachActions = newValue }
     }
 
-    func setText(_ text: String, notifyDelegate: Bool = true) {
-        nativeInputView.setText(text, notifyDelegate: notifyDelegate)
+    func setText(_ text: String) {
+        nativeInputView.setText(text)
     }
 
     // MARK: - Initialization

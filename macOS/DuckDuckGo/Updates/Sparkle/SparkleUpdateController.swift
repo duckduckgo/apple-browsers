@@ -465,7 +465,8 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
             userDriver.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
         } else {
             userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
-                                          areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
+                                          areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled,
+                                          useLegacyAutoRestartLogic: useLegacyAutoRestartLogic)
         }
 
         guard let userDriver,

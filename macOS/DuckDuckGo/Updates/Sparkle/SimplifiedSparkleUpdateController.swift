@@ -303,7 +303,7 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     }
 
     private func scheduleDelayedNotification(delay: TimeInterval) {
-        pendingNotificationTask = Task { [weak self] @MainActor in
+        pendingNotificationTask = Task { @MainActor [weak self] in
             try? await Task.sleep(interval: delay)
             guard let self, !Task.isCancelled, self.hasPendingUpdate else { return }
             self.showUpdateIndicators()
@@ -386,7 +386,8 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             userDriver.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
         } else {
             userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
-                                          areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
+                                          areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled,
+                                          useLegacyAutoRestartLogic: false)
         }
 
         guard let userDriver,

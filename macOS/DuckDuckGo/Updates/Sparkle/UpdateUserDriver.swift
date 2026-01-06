@@ -144,23 +144,17 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     private(set) var sparkleUpdateState: SPUUserUpdateState?
 
-    // MARK: - Feature Flags support
-
-    private let featureFlagger: FeatureFlagger
-
-    private var useLegacyAutoRestartLogic: Bool {
-        !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
-    }
+    private let useLegacyAutoRestartLogic: Bool
 
     // MARK: - Initializers
 
     init(internalUserDecider: InternalUserDecider,
          areAutomaticUpdatesEnabled: Bool,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         useLegacyAutoRestartLogic: Bool) {
 
-        self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
+        self.useLegacyAutoRestartLogic = useLegacyAutoRestartLogic
     }
 
     func resume() {

@@ -106,16 +106,39 @@ final class UpdatesDebugMenu: NSMenu {
     }
 
     @objc func setCustomFeedURL() {
-        let currentURL = customFeedURL ?? ""
-        let alert = NSAlert.customConfigurationAlert(configurationUrl: currentURL)
-        alert.messageText = "Set custom Sparkle feed URL:"
+        var currentURL = customFeedURL ?? ""
+        var errorMessage: String?
 
-        if alert.runModal() != .cancel {
-            guard let textField = alert.accessoryView as? NSTextField,
-                  !textField.stringValue.isEmpty else {
+        while true {
+            let alert = NSAlert.customConfigurationAlert(configurationUrl: currentURL)
+            alert.messageText = "Set custom Sparkle feed URL:"
+
+            if let error = errorMessage {
+                alert.informativeText = error
+            }
+
+            if alert.runModal() == .cancel {
                 return
             }
-            sparkleUpdateController?.setCustomFeedURL(textField.stringValue)
+
+            guard let textField = alert.accessoryView as? NSTextField else {
+                return
+            }
+
+            let trimmedURL = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if trimmedURL.isEmpty {
+                return
+            }
+
+            if !trimmedURL.lowercased().hasSuffix(".xml") {
+                errorMessage = "⚠️ URL must end with .xml"
+                currentURL = trimmedURL
+                continue
+            }
+
+            sparkleUpdateController?.setCustomFeedURL(trimmedURL)
+            return
         }
     }
 
@@ -253,7 +276,7 @@ private enum SparkleTestingResources {
         <title>DuckDuckGo</title>
         <item>
           <title>Version 99.0.0</title>
-          <pubDate>Mon, 06 Jan 2026 12:00:00 +0000</pubDate>
+          <pubDate>Mon, 01 Jan 2099 12:00:00 +0000</pubDate>
           <sparkle:version>9999</sparkle:version>
           <sparkle:shortVersionString>99.0.0</sparkle:shortVersionString>
           <description><![CDATA[

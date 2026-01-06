@@ -23,3 +23,10 @@ SPARKLE_URL_ALPHA = https:/$()/staticcdn.duckduckgo.com/macos-desktop-browser/al
 
 SPARKLE_FEED_URL = $(SPARKLE_URL_RELEASE)
 SPARKLE_FEED_URL[config=Alpha] = $(SPARKLE_URL_ALPHA)
+
+// Only add to Info.plist for Release and Alpha builds
+INFOPLIST_KEY_SUPublicEDKey[config=Debug] =
+INFOPLIST_KEY_SUPublicEDKey[config=CI] =
+INFOPLIST_KEY_SUPublicEDKey[config=Review] =
+INFOPLIST_KEY_SUPublicEDKey[config=Release] = ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=
+INFOPLIST_KEY_SUPublicEDKey[config=Alpha] = ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=

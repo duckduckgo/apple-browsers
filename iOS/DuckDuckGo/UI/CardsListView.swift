@@ -61,7 +61,7 @@ extension RemoteMessagingUI.CardsListDisplayModel.Item {
         let icon: String
         let title: String
         let description: String
-        let actionButtonTitle: String
+        let actionButtonTitle: String?
         let onAppear: (() -> Void)?
         let onTapAction: (() -> Void)?
     }
@@ -177,8 +177,8 @@ extension RemoteMessagingUI {
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Color.secondary)
 
-                if let action = displayModel.onTapAction {
-                    actionButton(action: action)
+                if let actionText = displayModel.actionButtonTitle, let action = displayModel.onTapAction {
+                    actionButton(title: actionText, action: action)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .center)
@@ -198,10 +198,10 @@ extension RemoteMessagingUI {
             }
         }
 
-        private func actionButton(action: @escaping () -> Void) -> some View {
+        private func actionButton(title: String, action: @escaping () -> Void) -> some View {
             HStack(spacing: Metrics.Card.FeaturedTwoLines.buttonHorizontalSpacing) {
                 Button(action: action) {
-                    Text(displayModel.actionButtonTitle)
+                    Text(title)
                         .font(.system(size: Metrics.Card.FeaturedTwoLines.buttonTitleSize))
                         .underline(true)
                         .multilineTextAlignment(.center)

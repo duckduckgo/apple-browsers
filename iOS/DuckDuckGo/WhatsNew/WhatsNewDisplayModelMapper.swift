@@ -58,6 +58,21 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
                     // Map Title Section Item
                 case let .titledSection(titleText, _):
                     return RemoteMessagingUI.CardsListDisplayModel.Item.section(title: titleText)
+                    // Map Featured Two Lines Card Item
+                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, primaryActionText, primaryAction):
+                    let featuredTwoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.FeaturedTwoLinesCard(
+                        icon: placeholderImage.rawValue,
+                        title: titleText,
+                        description: descriptionText,
+                        actionButtonTitle: primaryActionText,
+                        onAppear: {
+                            onItemAppear(remoteListItem.id)
+                        },
+                        onTapAction: primaryAction.map { action in
+                            makeAction(for: action, itemId: remoteListItem.id, handler: onItemAction)
+                        }
+                    )
+                    return RemoteMessagingUI.CardsListDisplayModel.Item.featuredTwoLinesCard(featuredTwoLinesCard)
                     // Map Two Lines Card Item
                 case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):
                     let disclosureIcon = action != nil ? Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall) : nil

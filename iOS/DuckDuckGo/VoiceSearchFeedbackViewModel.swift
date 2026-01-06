@@ -51,6 +51,7 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
 
     @Published var searchTarget: VoiceSearchTarget = .SERP {
         didSet {
+            guard !hideToggle else { return }
             storedSearchTarget = searchTarget.rawValue
         }
     }

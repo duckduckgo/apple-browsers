@@ -71,7 +71,7 @@ public struct RemoteMessagingConfigMatcher {
                 guard !sanitisedItemsAndSections.isEmpty else { return nil }
 
                 // If items have been filtered return new content with items otherwise return the same message.
-                return items != sanitisedItemsAndSections ? message.withFilteredItems(sanitisedItemsAndSections) : message
+                return items != sanitisedItemsAndSections ? message.withNewItems(sanitisedItemsAndSections) : message
             }
             .first
     }
@@ -185,13 +185,13 @@ private extension RemoteMessagingConfigMatcher {
 
 }
 
-private extension RemoteMessageModel {
+extension RemoteMessageModel {
 
-    func withFilteredItems(_ items: [RemoteMessageModelType.ListItem]) -> RemoteMessageModel {
+    func withNewItems(_ items: [RemoteMessageModelType.ListItem]) -> RemoteMessageModel {
         RemoteMessageModel(
             id: self.id,
             surfaces: self.surfaces,
-            content: content?.withFilteredItems(items),
+            content: content?.withNewItems(items),
             matchingRules: self.matchingRules,
             exclusionRules: self.exclusionRules,
             isMetricsEnabled: self.isMetricsEnabled
@@ -200,9 +200,9 @@ private extension RemoteMessageModel {
 
 }
 
-private extension RemoteMessageModelType {
+extension RemoteMessageModelType {
 
-    func withFilteredItems(_ items: [ListItem]) -> Self {
+    func withNewItems(_ items: [ListItem]) -> Self {
         switch self {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
             return self
@@ -223,7 +223,7 @@ private extension [RemoteMessageModelType.ListItem] {
             switch item.type {
             case .twoLinesItem:
                 return item.id
-            case .titledSection:
+            case .titledSection, .featuredTwoLinesSingleActionItem: // Featured Items cannot appear in sections
                 return nil
             }
         })
@@ -231,7 +231,7 @@ private extension [RemoteMessageModelType.ListItem] {
         // Filter out sections that have no valid items
         return self.filter { item in
             switch item.type {
-            case .twoLinesItem:
+            case .twoLinesItem, .featuredTwoLinesSingleActionItem:
                 return true
             case .titledSection(_, let itemIDs):
                 // Keep section only if at least one of its itemIds exists in validItemIds

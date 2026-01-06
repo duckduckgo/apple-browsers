@@ -251,7 +251,7 @@ private enum SparkleTestingResources {
 
     Open Terminal and run:
 
-        sudo security delete-certificate -c "ddd-sparkle-testing" /Library/Keychains/System.keychain
+        sudo security delete-certificate -c "ddg-sparkle-testing" /Library/Keychains/System.keychain
 
     ### Stop the Server
 
@@ -308,9 +308,9 @@ private enum SparkleTestingResources {
     import sys
 
     PORT = 8443
-    CERT_FILE = "ddd-sparkle-testing.pem"
-    KEY_FILE = "ddd-sparkle-testing-key.pem"
-    CERT_NAME = "ddd-sparkle-testing"
+    CERT_FILE = "ddg-sparkle-testing.pem"
+    KEY_FILE = "ddg-sparkle-testing-key.pem"
+    CERT_NAME = "ddg-sparkle-testing"
 
 
     def generate_self_signed_cert():

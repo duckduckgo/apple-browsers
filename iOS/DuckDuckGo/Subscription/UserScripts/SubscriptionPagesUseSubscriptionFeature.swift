@@ -113,7 +113,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
 
     func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable?
-    // Auth V2
+    // Auth
     func setAuthTokens(params: Any, original: WKScriptMessage) async throws -> Encodable?
     func getAuthAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable?
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable?

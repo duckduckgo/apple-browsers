@@ -143,6 +143,7 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
             return nil
         }
         model.theme = data.theme
+        model.themeVariant = data.themeVariant
         return nil
     }
 

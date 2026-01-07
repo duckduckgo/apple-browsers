@@ -61,6 +61,7 @@
             "wideEventType",
             "wideEventSampleRate",
             "wideEventFeatureStatus",
+            "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",

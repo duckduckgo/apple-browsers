@@ -502,6 +502,11 @@ final class MainViewController: NSViewController {
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
         }
+
+        /// This enables TAB key navigation from toggle back to AI Chat text view
+        navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.onToggleTabPressedInAIChatMode = { [weak self] in
+            self?.aiChatOmnibarTextContainerViewController.focusTextViewWithCursorAtEnd()
+        }
     }
 
     private func wireAIChatOmnibarHeightUpdates() {

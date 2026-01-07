@@ -113,6 +113,6 @@ extension PrivacyDashboardPopover: PrivacyDashboardViewControllerSizeDelegate {
 extension PrivacyDashboardPopover: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
-        backgroundColor = theme.palette.surfacePrimary
+        backgroundColor = theme.palette.surfaceCanvas
     }
 }

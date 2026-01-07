@@ -917,7 +917,14 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
 public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
 
-    public static var lastPixelsFired = [DataBrokerProtectionSharedPixels]()
+    private static let queue = DispatchQueue(label: "MockDataBrokerProtectionPixelsHandler.queue")
+    private static var _lastPixelsFired = [DataBrokerProtectionSharedPixels]()
+
+    public static var lastPixelsFired: [DataBrokerProtectionSharedPixels] {
+        get { queue.sync { _lastPixelsFired } }
+        set { queue.sync { _lastPixelsFired = newValue } }
+    }
+
     public var lastFiredEvent: DataBrokerProtectionSharedPixels?
     public var lastPassedParameters: [String: String]?
 
@@ -931,7 +938,9 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
         mockMapping = { [weak self] event, _, params, _ in
             self?.lastFiredEvent = event
             self?.lastPassedParameters = params
-            MockDataBrokerProtectionPixelsHandler.lastPixelsFired.append(event)
+            MockDataBrokerProtectionPixelsHandler.queue.sync {
+                MockDataBrokerProtectionPixelsHandler._lastPixelsFired.append(event)
+            }
         }
     }
 
@@ -940,7 +949,9 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
     }
 
     public func clear() {
-        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.removeAll()
+        MockDataBrokerProtectionPixelsHandler.queue.sync {
+            MockDataBrokerProtectionPixelsHandler._lastPixelsFired.removeAll()
+        }
         lastFiredEvent = nil
         lastPassedParameters = nil
     }

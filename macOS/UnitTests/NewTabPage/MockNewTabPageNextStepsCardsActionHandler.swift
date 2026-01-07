@@ -1,7 +1,7 @@
 //
-//  PrivacyDashboardStyleExtension.swift
+//  MockNewTabPageNextStepsCardsActionHandler.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import Foundation
-import AppKit
-import PrivacyDashboard
+@testable import DuckDuckGo_Privacy_Browser
+import NewTabPage
 
-extension PrivacyDashboardStyle {
+final class MockNewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActionHandling {
+    private(set) var cardActionsPerformed: [NewTabPage.NewTabPageDataModel.CardID] = []
 
-    init(themeName: ThemeName, appearance: ThemeAppearance) {
-        self.init(theme: appearance.rawValue, themeVariant: themeName.rawValue)
+    func performAction(for card: NewTabPage.NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
+        cardActionsPerformed.append(card)
+        refreshCardsAction?()
     }
 }

@@ -24,7 +24,12 @@ import os.log
 final class WebView: WKWebView {
     private var customAccesoryView: UIView?
 
+    var shouldHideDefaultInputAccessoryView: Bool = false
+
     override var inputAccessoryView: UIView? {
+        if shouldHideDefaultInputAccessoryView {
+            return nil
+        }
         guard customAccesoryView != nil else {
             return super.inputAccessoryView
         }

@@ -136,7 +136,7 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         XCTAssertNotNil(parameters)
 
         XCTAssertEqual(parameters?["vpnSubscriptionActive"], "true")
-        XCTAssertEqual(parameters?["authVersion"], "v2")
+        XCTAssertEqual(parameters?["vpnAuthVersion"], "v2")
     }
 
     // MARK: - Error Handling Tests

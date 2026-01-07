@@ -970,7 +970,6 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         XCTAssertEqual(result, expectedMessage, "Section should be removed when the featured item it references is filtered out")
     }
 
-
     func testWhenSectionReferencesOnlyFeaturedItem_ThenSectionIsRemoved() throws {
         // GIVEN - Section that only references a featured item should be removed
         let items = [

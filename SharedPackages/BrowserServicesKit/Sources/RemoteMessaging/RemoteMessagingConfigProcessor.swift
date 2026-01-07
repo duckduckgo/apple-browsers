@@ -124,5 +124,5 @@ private extension RemoteMessagingConfigProcessor {
 
         return message.withNewItems(reorderedItems)
     }
-    
+
 }

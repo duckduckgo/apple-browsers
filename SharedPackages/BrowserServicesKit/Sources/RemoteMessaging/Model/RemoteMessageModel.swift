@@ -101,9 +101,17 @@ public struct RemoteMessageModel: Equatable, Codable {
                 let translatedItemType: RemoteMessageModelType.ListItem.ListItemType
                 switch item.type {
                 case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):
-                    translatedItemType = .twoLinesItem(titleText: translatedItem.titleText ?? titleText, descriptionText: translatedItem.descriptionText ?? descriptionText, placeholderImage: placeholderImage, action: action)
+                    translatedItemType = .twoLinesItem(
+                        titleText: translatedItem.titleText ?? titleText,
+                        descriptionText: translatedItem.descriptionText ?? descriptionText,
+                        placeholderImage: placeholderImage,
+                        action: action
+                    )
                 case let .titledSection(titleText, itemIDs):
-                    translatedItemType = .titledSection(titleText: translatedItem.titleText ?? titleText, itemIDs: itemIDs)
+                    translatedItemType = .titledSection(
+                        titleText: translatedItem.titleText ?? titleText,
+                        itemIDs: itemIDs
+                    )
                 }
 
                 return RemoteMessageModelType.ListItem(

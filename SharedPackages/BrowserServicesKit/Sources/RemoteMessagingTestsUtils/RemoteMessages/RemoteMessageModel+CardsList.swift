@@ -100,7 +100,7 @@ public extension RemoteMessageModelType.ListItem {
 
     var descriptionText: String? {
         switch type {
-        case.titledSection:
+        case .titledSection:
             return nil
         case let .twoLinesItem(_, descriptionText, _, _):
             return descriptionText
@@ -109,7 +109,7 @@ public extension RemoteMessageModelType.ListItem {
 
     var placeholderImage: RemotePlaceholder? {
         switch type {
-        case.titledSection:
+        case .titledSection:
             return nil
         case let .twoLinesItem(_, _, placeholderImage, _):
             return placeholderImage
@@ -118,7 +118,7 @@ public extension RemoteMessageModelType.ListItem {
 
     var action: RemoteAction? {
         switch type {
-        case.titledSection:
+        case .titledSection:
             return nil
         case let .twoLinesItem(_, _, _, action):
             return action

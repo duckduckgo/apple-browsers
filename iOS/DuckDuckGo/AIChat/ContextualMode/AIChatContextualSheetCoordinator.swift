@@ -86,21 +86,24 @@ final class AIChatContextualSheetCoordinator {
         if let existingSheet = sheetViewController {
             sheetVC = existingSheet
         } else {
-            let vm = AIChatContextualSheetViewModel(
+            let sheetViewModel = AIChatContextualSheetViewModel(
                 settings: settings,
                 hasExistingChat: webViewController != nil
             )
             // TODO: Set page context from tab when available
-            vm.pageContext = AIChatContextualSheetViewModel.PageContext(
+            sheetViewModel.pageContext = AIChatContextualSheetViewModel.PageContext(
                 title: "Example Page Title",
                 favicon: nil
             )
-            viewModel = vm
+            viewModel = sheetViewModel
 
             sheetVC = AIChatContextualSheetViewController(
-                viewModel: vm,
+                viewModel: sheetViewModel,
                 voiceSearchHelper: voiceSearchHelper,
-                webViewControllerFactory: makeWebViewController,
+                webViewControllerFactory: { [weak self] in
+                    guard let self else { preconditionFailure("Coordinator deallocated unexpectedly") }
+                    return self.makeWebViewController()
+                },
                 existingWebViewController: webViewController
             )
             sheetVC.delegate = self

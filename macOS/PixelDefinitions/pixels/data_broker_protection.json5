@@ -913,5 +913,46 @@
                 "enum": ["true", "false"]
             }
         ]
+    },
+    "m_mac_dbp_databroker_custom_stats_optoutsubmit": {
+        "description": "Fired daily with per-broker opt-out submission success rate stats.",
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "triggers": ["scheduled"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            {
+                "key": "optout_submit_success_rate",
+                "description": "The opt-out submission success rate for this broker",
+                "type": "number"
+            },
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_mac_dbp_custom_stats_optoutsubmit": {
+        "description": "Fired daily with global opt-out submission success rate stats.",
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "triggers": ["scheduled"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "optout_submit_success_rate",
+                "description": "The global opt-out submission success rate",
+                "type": "number"
+            },
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "boolean"
+            }
+        ]
     }
 }

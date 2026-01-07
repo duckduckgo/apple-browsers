@@ -37,7 +37,7 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
         .init(
             background: .init(customizationModel.customBackground),
             theme: .init(appearancePreferences.themeAppearance),
-            themeVariant: .init(rawValue: appearancePreferences.themeName.rawValue),
+            themeVariant: appearancePreferences.areThemesAvailable ? .init(rawValue: appearancePreferences.themeName.rawValue) : nil,
             userColor: customizationModel.lastPickedCustomColor,
             userImages: customizationModel.availableUserBackgroundImages.map(NewTabPageDataModel.UserImage.init)
         )

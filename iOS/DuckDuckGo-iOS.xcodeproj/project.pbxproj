@@ -1752,6 +1752,7 @@
 		C1E42C7B2C5CD8AE00509204 /* AutofillCredentialsDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E42C7A2C5CD8AD00509204 /* AutofillCredentialsDebugViewController.swift */; };
 		C1E4E9A62D0861AD00AA39AF /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C1E4E9A42D0861AD00AA39AF /* InfoPlist.strings */; };
 		C1E4E9A92D0861AD00AA39AF /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C1E4E9A72D0861AD00AA39AF /* Localizable.strings */; };
+		C1E9B8EA2F0D36C000E845AA /* AIChatContextualWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E9B8E92F0D36C000E845AA /* AIChatContextualWebViewController.swift */; };
 		C1EA26642EB5725A006A863C /* AutofillExtensionSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EA26622EB5725A006A863C /* AutofillExtensionSettingsViewModel.swift */; };
 		C1EA26652EB5725A006A863C /* AutofillExtensionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EA26602EB5725A006A863C /* AutofillExtensionSettingsView.swift */; };
 		C1EA26662EB5725A006A863C /* AutofillExtensionSettingsActivationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EA265F2EB5725A006A863C /* AutofillExtensionSettingsActivationView.swift */; };
@@ -4118,6 +4119,7 @@
 		C1E490592D08646400F86C5A /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sl; path = sl.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C1E4E9A52D0861AD00AA39AF /* bg */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bg; path = bg.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1E4E9A82D0861AD00AA39AF /* bg */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bg; path = bg.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C1E9B8E92F0D36C000E845AA /* AIChatContextualWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualWebViewController.swift; sourceTree = "<group>"; };
 		C1EA265F2EB5725A006A863C /* AutofillExtensionSettingsActivationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillExtensionSettingsActivationView.swift; sourceTree = "<group>"; };
 		C1EA26602EB5725A006A863C /* AutofillExtensionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillExtensionSettingsView.swift; sourceTree = "<group>"; };
 		C1EA26612EB5725A006A863C /* AutofillExtensionSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillExtensionSettingsViewController.swift; sourceTree = "<group>"; };
@@ -7966,6 +7968,7 @@
 		C13EBC4D2EE9C65F00CE5A4B /* ContextualMode */ = {
 			isa = PBXGroup;
 			children = (
+				C1E9B8E92F0D36C000E845AA /* AIChatContextualWebViewController.swift */,
 				C19888DE2EF1519F004612AD /* QuickActions */,
 				C1F9D91C2EF6400000E35AD5 /* AIChatContextualInputViewController.swift */,
 				C1F9D9162EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift */,
@@ -11669,6 +11672,7 @@
 				37FCAAAB29911BF1000E420A /* WaitlistExtensions.swift in Sources */,
 				C1DA98EB2E7C653F00F8BED9 /* SyncRecoveryAlternativeView.swift in Sources */,
 				EE4BE0092A740BED00CD6AA8 /* ClearTextField.swift in Sources */,
+				C1E9B8EA2F0D36C000E845AA /* AIChatContextualWebViewController.swift in Sources */,
 				56D060282C380D83003BAEB5 /* OnboardingSuggestedSearchesProvider.swift in Sources */,
 				F44D279C27F331BB0037F371 /* AutofillLoginPromptView.swift in Sources */,
 				369E69282E5F4B9600F98A8F /* InactivityNotificationSchedulerService.swift in Sources */,

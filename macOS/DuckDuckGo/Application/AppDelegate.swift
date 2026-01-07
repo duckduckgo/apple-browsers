@@ -897,7 +897,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
                 featureFlagger: self.featureFlagger,
                 configurationURLProvider: configurationURLProvider,
-                themeManager: themeManager
+                themeManager: themeManager,
+                dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager }
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
@@ -1252,7 +1253,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         memoryUsageMonitor.enableIfNeeded(featureFlagger: featureFlagger)
 
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
+        PixelKit.fire(GeneralPixel.launch, doNotEnforcePrefix: true)
     }
 
     private func fireFailedCompilationsPixelIfNeeded() {
@@ -1283,6 +1284,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyFireWindowConfigurationPixels()
 
         fireAutoconsentDailyPixel()
+        fireThemeDailyPixel()
 
         initializeSync()
 
@@ -1313,25 +1315,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireDailyActiveUserPixels() {
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser), frequency: .legacyDaily)
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault)), frequency: .daily)
+        PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily, doNotEnforcePrefix: true)
+        PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily, doNotEnforcePrefix: true)
 #if SPARKLE
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyAddedToDock(isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .daily)
+        PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: DockCustomizer().isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
 #endif
     }
 
     private func fireDailyFireWindowConfigurationPixels() {
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationStartupFireWindowEnabled(
+        PixelKit.fire(GeneralPixel.dailyFireWindowConfigurationStartupFireWindowEnabled(
             startupFireWindow: startupPreferences.startupWindowType == .fireWindow
-        )), frequency: .daily)
+        ), frequency: .daily, doNotEnforcePrefix: true)
 
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(
+        PixelKit.fire(GeneralPixel.dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(
             openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault
-        )), frequency: .daily)
+        ), frequency: .daily, doNotEnforcePrefix: true)
 
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationFireAnimationEnabled(
+        PixelKit.fire(GeneralPixel.dailyFireWindowConfigurationFireAnimationEnabled(
             fireAnimationEnabled: dataClearingPreferences.isFireAnimationEnabled
-        )), frequency: .daily)
+        ), frequency: .daily, doNotEnforcePrefix: true)
     }
 
     private func fireAutoconsentDailyPixel() {
@@ -1341,6 +1343,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let dailyStats = await autoconsentStats.fetchAutoconsentDailyUsagePack().asPixelParameters()
             PixelKit.fire(AutoconsentPixel.usageStats(stats: dailyStats), frequency: .daily)
         }
+    }
+
+    private func fireThemeDailyPixel() {
+        guard featureFlagger.isFeatureOn(.themes) else { return }
+        PixelKit.fire(ThemePixels.themeNameDaily(themeName: themeManager.theme.name), frequency: .daily)
     }
 
     private func initializeSync() {
@@ -1692,7 +1699,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func emailDidSignInNotification(_ notification: Notification) {
-        PixelKit.fire(NonStandardEvent(NonStandardPixel.emailEnabled))
+        PixelKit.fire(NonStandardPixel.emailEnabled, doNotEnforcePrefix: true)
         if AppDelegate.isNewUser {
             PixelKit.fire(GeneralPixel.emailEnabledInitial, frequency: .legacyInitial)
         }
@@ -1703,7 +1710,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func emailDidSignOutNotification(_ notification: Notification) {
-        PixelKit.fire(NonStandardEvent(NonStandardPixel.emailDisabled))
+        PixelKit.fire(NonStandardPixel.emailDisabled, doNotEnforcePrefix: true)
         if let object = notification.object as? EmailManager, let emailManager = syncDataProviders?.settingsAdapter.emailManager, object !== emailManager {
             syncService?.scheduler.notifyDataChanged()
         }

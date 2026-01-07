@@ -1,5 +1,5 @@
 //
-//  PrivacyDashboardStyleExtension.swift
+//  ThemePixels.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,12 +17,31 @@
 //
 
 import Foundation
-import AppKit
-import PrivacyDashboard
+import PixelKit
 
-extension PrivacyDashboardStyle {
+private enum ThemePixelName: String {
+    case themeNameDaily = "m_mac_theme_name"
+}
 
-    init(themeName: ThemeName, appearance: ThemeAppearance) {
-        self.init(theme: appearance.rawValue, themeVariant: themeName.rawValue)
+enum ThemePixels: PixelKitEvent {
+
+    case themeNameDaily(themeName: ThemeName)
+
+    var name: String {
+        switch self {
+        case .themeNameDaily:
+            ThemePixelName.themeNameDaily.rawValue
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .themeNameDaily(let themeName):
+            return [PixelKit.Parameters.themeName: themeName.rawValue]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        return [.pixelSource]
     }
 }

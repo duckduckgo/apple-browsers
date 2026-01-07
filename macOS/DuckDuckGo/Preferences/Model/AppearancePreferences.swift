@@ -254,13 +254,14 @@ final class AppearancePreferences: ObservableObject {
         didSet {
             persistor.themeAppearance = themeAppearance.rawValue
             updateUserInterfaceStyle()
-            pixelFiring?.fire(SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
+            pixelFiring?.fire(SettingsPixel.themeAppearanceChanged, frequency: .standard)
         }
     }
 
     @Published var themeName: ThemeName {
         didSet {
             persistor.themeName = themeName.rawValue
+            pixelFiring?.fire(SettingsPixel.themeNameChanged(name: themeName), frequency: .standard)
         }
     }
 
@@ -287,6 +288,10 @@ final class AppearancePreferences: ObservableObject {
 
     var isOmnibarAvailable: Bool {
         return featureFlagger.isFeatureOn(.newTabPageOmnibar)
+    }
+
+    var areThemesAvailable: Bool {
+        return featureFlagger.isFeatureOn(.themes)
     }
 
     @Published var isOmnibarVisible: Bool {

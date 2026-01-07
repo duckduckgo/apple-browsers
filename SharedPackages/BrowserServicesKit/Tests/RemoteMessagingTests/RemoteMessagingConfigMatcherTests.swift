@@ -852,7 +852,8 @@ private extension RemoteMessagingConfigMatcherTests {
                 shownMessageIds: [],
                 enabledFeatureFlags: [],
                 isSyncEnabled: false,
-                shouldShowWinBackOfferUrgencyMessage: false
+                shouldShowWinBackOfferUrgencyMessage: false,
+                isCurrentPIRUser: false
             ),
             percentileStore: percentileStore,
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

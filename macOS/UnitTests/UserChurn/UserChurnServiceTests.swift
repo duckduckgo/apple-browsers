@@ -22,14 +22,18 @@ import PersistenceTestingUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockPixelFiring: PixelFiring {
-    var firedPixels: [(event: PixelKitEvent, frequency: PixelKit.Frequency)] = []
+    var firedPixels: [(event: PixelKitEvent, frequency: PixelKit.Frequency, additionalParameters: [String: String]?)] = []
 
     func fire(_ event: PixelKitEvent) {
         fire(event, frequency: .standard)
     }
 
     func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
-        firedPixels.append((event: event, frequency: frequency))
+        firedPixels.append((event: event, frequency: frequency, additionalParameters: nil))
+    }
+
+    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, withAdditionalParameters: [String: String]) {
+        firedPixels.append((event: event, frequency: frequency, additionalParameters: withAdditionalParameters))
     }
 }
 

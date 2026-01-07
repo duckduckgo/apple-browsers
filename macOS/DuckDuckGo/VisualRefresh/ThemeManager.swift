@@ -24,8 +24,8 @@ import PrivacyConfig
 import FeatureFlags
 
 protocol ThemeManaging {
-    var effectiveAppearance: ThemeAppearance { get }
-    var effectiveAppearancePublisher: Published<ThemeAppearance>.Publisher { get }
+    var appearance: ThemeAppearance { get }
+    var appearancePublisher: Published<ThemeAppearance>.Publisher { get }
 
     var theme: ThemeStyleProviding { get }
     var themePublisher: Published<any ThemeStyleProviding>.Publisher { get }
@@ -36,13 +36,10 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     private var appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
 
-    /// Effective Appearance is expected to only be either `.light` or `.dark`.
-    /// This allows us to address a FE shortcoming, where `.system` is not supported
-    ///
-    @Published private(set) var effectiveAppearance: ThemeAppearance
+    @Published private(set) var appearance: ThemeAppearance
 
-    var effectiveAppearancePublisher: Published<ThemeAppearance>.Publisher {
-        $effectiveAppearance
+    var appearancePublisher: Published<ThemeAppearance>.Publisher {
+        $appearance
     }
 
     @Published private(set) var theme: ThemeStyleProviding {
@@ -60,8 +57,9 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     init(appearancePreferences: AppearancePreferences, internalUserDecider: InternalUserDecider, featureFlagger: FeatureFlagger) {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
+
         self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
-        self.effectiveAppearance = NSApp.effectiveAppearance.effectiveThemeAppearance
+        self.appearance = appearancePreferences.themeAppearance
         self.designColorPalette = appearancePreferences.themeName.designColorPalette
 
         switchDesignSystemPalette(to: theme.name.designColorPalette)
@@ -90,10 +88,11 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     }
 
     private func subscribeToSystemAppearance() {
-        NSApp.publisher(for: \.effectiveAppearance)
+        appearancePreferences.$themeAppearance
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] appearance in
-                self?.effectiveAppearance = appearance.effectiveThemeAppearance
+                self?.appearance = appearance
             }
             .store(in: &cancellables)
     }

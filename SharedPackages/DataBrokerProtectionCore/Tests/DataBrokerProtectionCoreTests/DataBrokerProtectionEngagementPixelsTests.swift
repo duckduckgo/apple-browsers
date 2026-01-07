@@ -65,7 +65,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
-        XCTAssertTrue(wasPixelFired(.dailyActiveUser(isAuthenticated: true)))
+        XCTAssertTrue(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil)))
         XCTAssertTrue(repository.wasDailyPixelSent)
     }
 
@@ -76,7 +76,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-02-21"))
 
-        XCTAssertTrue(wasPixelFired(.dailyActiveUser(isAuthenticated: true)))
+        XCTAssertTrue(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil)))
         XCTAssertTrue(repository.wasDailyPixelSent)
     }
 
@@ -87,7 +87,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
-        XCTAssertFalse(wasPixelFired(.dailyActiveUser(isAuthenticated: true)))
+        XCTAssertFalse(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil)))
         XCTAssertFalse(repository.wasDailyPixelSent)
     }
 

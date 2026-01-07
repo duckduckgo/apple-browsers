@@ -56,7 +56,8 @@ struct Connected: ConnectedHandling {
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller),
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, featureFlagger: appDependencies.featureFlagger)
+        let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
                                                 keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
@@ -88,7 +89,8 @@ struct Connected: ConnectedHandling {
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller),
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, featureFlagger: appDependencies.featureFlagger)
+        let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
                                                 keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
@@ -114,7 +116,8 @@ struct Connected: ConnectedHandling {
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller),
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, featureFlagger: appDependencies.featureFlagger)
+        let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
                                                 keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)

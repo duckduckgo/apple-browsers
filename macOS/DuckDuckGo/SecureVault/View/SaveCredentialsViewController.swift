@@ -84,9 +84,13 @@ final class SaveCredentialsViewController: NSViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    private(set) var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
+
     private let backfilledKey = GeneralPixel.AutofillParameterKeys.backfilled
     private let fireproofDomains: FireproofDomains
 
+    @IBOutlet var backgroundBox: NSBox!
     @IBOutlet var ddgPasswordManagerTitle: NSView!
     @IBOutlet var titleLabel: NSTextField!
     @IBOutlet var passwordManagerTitle: NSView!
@@ -159,6 +163,9 @@ final class SaveCredentialsViewController: NSViewController {
         updateSaveSegmentedControl()
         setUpStrings()
         setUpSecurityInfoViews()
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
@@ -558,5 +565,11 @@ final class SaveCredentialsViewController: NSViewController {
         let pixel = action == .confirmed ? confirmedPixel : dismissedPixel
         PixelKit.fire(pixel, withAdditionalParameters: [backfilledKey: String(describing: backfilled)])
     }
+}
 
+extension SaveCredentialsViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: any ThemeStyleProviding) {
+        backgroundBox.fillColor = theme.colorsProvider.popoverBackgroundColor
+    }
 }

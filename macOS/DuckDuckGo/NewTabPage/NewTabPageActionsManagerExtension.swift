@@ -168,6 +168,7 @@ extension NewTabPageActionsManager {
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger
         )
+        let nextStepsPixelHandler = NewTabPageNextStepsCardsPixelHandler()
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
@@ -189,9 +190,11 @@ extension NewTabPageActionsManager {
                         tabOpener: NewTabPageTabOpener(),
                         privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                         subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-                        persistor: homePageContinueSetUpModelPersistor
+                        persistor: homePageContinueSetUpModelPersistor,
+                        pixelHandler: nextStepsPixelHandler
                     ),
-                    appearancePreferences: appearancePreferences
+                    appearancePreferences: appearancePreferences,
+                    pixelHandler: nextStepsPixelHandler
                 )
             ),
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),

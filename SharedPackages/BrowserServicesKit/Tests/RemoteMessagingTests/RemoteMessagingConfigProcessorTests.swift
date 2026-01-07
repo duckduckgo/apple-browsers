@@ -53,7 +53,8 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                 shownMessageIds: [],
                 enabledFeatureFlags: [],
                 isSyncEnabled: false,
-                shouldShowWinBackOfferUrgencyMessage: false
+                shouldShowWinBackOfferUrgencyMessage: false,
+                isCurrentPIRUser: false
             ),
             percentileStore: MockRemoteMessagePercentileStore(),
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

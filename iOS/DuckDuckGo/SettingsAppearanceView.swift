@@ -74,12 +74,29 @@ struct SettingsAppearanceView: View {
                                        selectedOption: viewModel.themeStyleBinding)
             }
 
-            // Open iPad this won't be visible.
+            // AddressBar specific settings
+            Section {
+                addressBarPositionSetting()
+
+                showFullSiteAddressSetting()
+
+                showReloadButtonSetting()
+
+            } header: {
+                Text(UserText.addressBar)
+            }
+
+            // Customizable buttons specific settings.
             if viewModel.mobileCustomization.isEnabled {
-                customizableSettings()
-                    .onFirstAppear {
-                        navigateToSubPageIfNeeded()
-                    }
+                Section {
+                    addressBarButtonSetting()
+                    toolbarButtonSetting()
+                } header: {
+                    Text(UserText.mobileCustomizationSectionTitle)
+                }
+                .onFirstAppear {
+                    navigateToSubPageIfNeeded()
+                }
             }
 
             if viewModel.browsingMenuSheetCapability.isAvailable {
@@ -95,27 +112,6 @@ struct SettingsAppearanceView: View {
                                     viewModel: viewModel)
         .onFirstAppear {
             Pixel.fire(pixel: .settingsAppearanceOpen)
-        }
-    }
-
-    @ViewBuilder
-    func customizableSettings() -> some View {
-        Section {
-            addressBarPositionSetting()
-
-            showFullSiteAddressSetting()
-
-            showReloadButtonSetting()
-
-        } header: {
-            Text(UserText.addressBar)
-        }
-
-        Section {
-            addressBarButtonSetting()
-            toolbarButtonSetting()
-        } header: {
-            Text(UserText.mobileCustomizationSectionTitle)
         }
     }
 

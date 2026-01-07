@@ -35,8 +35,7 @@ public struct UserText {
     public static let webFavoriteRemoved = NSLocalizedString("web.url.remove.favorite.done", value: "Favorite removed", comment: "Confirmation message")
     public static let webSaveBookmarkNone = NSLocalizedString("web.url.save.bookmark.none", value: "No webpage to bookmark", comment: "Floating message indicating failure")
 
-    public static let settingsItemNewBadge = NSLocalizedString("settings.item.badge.new", value: "New", comment: "Copy for badge on settings item to show an item is new")
-    public static let settingsItemPreviewBadge = NSLocalizedString("settings.item.badge.preview", value: "Preview", comment: "Copy for badge on settings item to show an item is experimental")
+    public static let settingsItemNewBadge = NSLocalizedString("settings.item.badge.new", value: "New", comment: "Copy for budge on settings item to show an item is new")
     public static let actionPasteAndGo = NSLocalizedString("action.title.pasteAndGo", value: "Paste & Go", comment: "Paste and Go action")
     public static let actionRefresh = NSLocalizedString("action.title.refresh", value: "Refresh", comment: "Refresh action - button shown in alert")
     public static let actionAdd = NSLocalizedString("action.title.add", value: "Add", comment: "Add action - button shown in alert")
@@ -1852,13 +1851,9 @@ public struct UserText {
     public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
     public static let settingsEnableAiChatSubtitle = NSLocalizedString("settings.enable.aichat.subtitle", value: "Chat privately with popular 3rd-party AI models", comment: "A description of what the AI Chat toggle does")
-    
-    public static let settingsEnableDuckAIFullModeTitle = NSLocalizedString("settings.aifeatures.full.mode.title", value: "Duck.ai Tabs Mode", comment: "Settings screen cell title for enabling Duck.ai as tabs")
-    
-    public static let settingsEnableDuckAIFullModeSubtitle = NSLocalizedString("settings.aifeatures.full.mode.subtitle", value: "Show new Duck.ai Chats as tabs in the browser", comment: "Settings screen cell subtitle for enabling Duck.ai as tabs")
-    
+
     public static let settingsAutomaticPageContextTitle = NSLocalizedString("settings.aifeatures.automatic.context.title", value: "Automatically Send Context", comment: "Settings screen cell title for enabling automatic page context")
-    
+
     public static let settingsAutomaticPageContextSubtitle = NSLocalizedString("settings.aifeatures.automatic.context.subtitle", value: "Automatically send page context to Duck.ai", comment: "Settings screen cell subtitle for enabling automatic page context")
 
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")

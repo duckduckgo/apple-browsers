@@ -90,8 +90,8 @@ public enum VPNSubscriptionClientCheckPixel: PixelKitEvent, PixelKitEventWithCus
             }()
 
             return [
-                "isSubscriptionActive": isSubscriptionActiveString,
-                "authVersion": "v2"
+                "vpnSubscriptionActive": isSubscriptionActiveString,
+                "vpnAuthVersion": "v2"
             ]
         }
     }

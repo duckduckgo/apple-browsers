@@ -130,9 +130,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
             // Empty id -> Fail
             (id: "", titleText: "Feature", descriptionText: "Description", primaryAction: .dismiss),
             // Empty titleText -> Fail
-            (id: "item1", titleText: "", descriptionText: "", primaryAction: .dismiss),
-            // Empty action -> Fail
-            (id: "item1", titleText: "Feature", descriptionText: "Description", primaryAction: nil),
+            (id: "item1", titleText: "", descriptionText: "", primaryAction: .dismiss)
         ] as [(String, String, String, RemoteMessageResponse.JsonMessageAction?)]
     )
     func missingRequiredItemFieldDiscardsItem(
@@ -198,8 +196,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let firstInvalidItem = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "")
         // Invalid - empty titleText
         let secondInvalidItem = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "item 2", titleText: "")
-        // Invalid - action
-        let thirdInvalidItem = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "item 3", titleText: "Test", primaryAction: nil)
+        // Invalid - title
+        let thirdInvalidItem = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "item 3", titleText: "")
         let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [firstInvalidItem, secondInvalidItem, thirdInvalidItem])
 
         // WHEN
@@ -312,7 +310,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        #expect(result == nil, "Current implementation requires action, but spec says optional")
+        #expect(result != nil)
     }
 
     @Test("Check Different Action Types Map Correctly",

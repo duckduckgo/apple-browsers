@@ -47,6 +47,14 @@ Fetches and updates certificates and provisioning profiles for Alpha distributio
 
 Fetches and updates certificates and provisioning profiles for Ad-Hoc distribution
 
+### ios sync_signing_experimental
+
+```sh
+[bundle exec] fastlane ios sync_signing_experimental
+```
+
+Fetches and updates certificates and provisioning profiles for Experimental distribution
+
 ### ios adhoc
 
 ```sh

@@ -30,6 +30,11 @@ platform :ios do
     do_sync_signing(options)
   end
 
+  desc 'Fetches and updates certificates and provisioning profiles for Experimental distribution'
+  lane :sync_signing_experimental do |options|
+    do_sync_signing(options)
+  end
+
   desc 'Makes Ad-Hoc build with a specified name and alpha bundle ID in a given directory'
   lane :adhoc do |options|
     alpha_adhoc(options)

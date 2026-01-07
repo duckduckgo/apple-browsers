@@ -29,6 +29,13 @@ import PrivacyConfig
 import SwiftUI
 import os.log
 
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+protocol SparkleCustomFeedURLProviding {
+    func setCustomFeedURL(_ urlString: String)
+    func resetFeedURLToDefault()
+}
+#endif
+
 protocol SparkleUpdateControllerProtocol: UpdateController {
     // Sparkle-specific state
     var isAtRestartCheckpoint: Bool { get }
@@ -580,6 +587,10 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     }
 #endif
 }
+
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+extension SparkleUpdateController: SparkleCustomFeedURLProviding {}
+#endif
 
 extension SparkleUpdateController: SPUUpdaterDelegate {
 

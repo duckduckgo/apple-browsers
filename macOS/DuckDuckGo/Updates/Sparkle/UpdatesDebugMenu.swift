@@ -102,8 +102,8 @@ final class UpdatesDebugMenu: NSMenu {
     @UserDefaultsWrapper(key: .debugSparkleCustomFeedURL)
     private var customFeedURL: String?
 
-    private var sparkleUpdateController: SparkleUpdateController? {
-        Application.appDelegate.updateController as? SparkleUpdateController
+    private var sparkleUpdateController: SparkleCustomFeedURLProviding? {
+        Application.appDelegate.updateController as? SparkleCustomFeedURLProviding
     }
 
     @objc func setCustomFeedURL() {

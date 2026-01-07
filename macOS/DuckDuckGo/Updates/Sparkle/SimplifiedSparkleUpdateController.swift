@@ -118,6 +118,11 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
     var lastUpdateNotificationShownDate: Date = .distantPast
 
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+    @UserDefaultsWrapper(key: .debugSparkleCustomFeedURL)
+    private var customFeedURL: String?
+#endif
+
     private var shouldShowUpdateNotification: Bool {
         Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
     }
@@ -458,9 +463,33 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             Logger.updates.log("isResumable: \(userDriver.isResumable, privacy: .public)")
         }
     }
+
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+    // MARK: - Debug: Custom Feed URL
+
+    func setCustomFeedURL(_ urlString: String) {
+        customFeedURL = urlString
+    }
+
+    func resetFeedURLToDefault() {
+        customFeedURL = nil
+    }
+#endif
 }
 
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+extension SimplifiedSparkleUpdateController: SparkleCustomFeedURLProviding {}
+#endif
+
 extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
+
+    func feedURLString(for updater: SPUUpdater) -> String? {
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+        return customFeedURL
+#else
+        return nil
+#endif
+    }
 
     func allowedChannels(for updater: SPUUpdater) -> Set<String> {
         if internalUserDecider.isInternalUser {

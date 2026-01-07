@@ -669,7 +669,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
 
 #if os(iOS)
-            if (try? await tokenHandlerProvider().getToken()) == nil {
+            if (try? await tokenHandlerProvider.getToken()) == nil {
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: nil)
             }
 #endif

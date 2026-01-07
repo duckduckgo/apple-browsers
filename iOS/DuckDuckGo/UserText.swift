@@ -1647,7 +1647,7 @@ public struct UserText {
     public static let subscriptionUpgradeSectionCaption = NotLocalizedString("subscription.upgrade.section.caption", value: "Unlock smarter, more powerful AI", comment: "Caption text in the upgrade section promoting AI features")
     public static func subscriptionUpgradeButton(tierName: String) -> String {
         let format = NotLocalizedString("subscription.upgrade.button", value: "Upgrade to %@", comment: "Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro')")
-        return String(format: format, tierName)
+        return String(format: format, tierName.capitalized)
     }
     public static let subscriptionChangePlan = NSLocalizedString("subscription.change.plan", value: "Update Plan or Cancel", comment: "Change plan or cancel title")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")

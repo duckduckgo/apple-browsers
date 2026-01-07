@@ -40,9 +40,9 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
         // the tests locally
 
         if runTypeProvider.runType == .integrationTests {
-            Logger.dataBrokerProtection.error("🐕 integrationTests")
+            Logger.dataBrokerProtection.log("🐕 integrationTests")
             var tokenKey: String
-            Logger.dataBrokerProtection.error("🐕 auth v2")
+            Logger.dataBrokerProtection.log("🐕 auth v2")
             tokenKey = "PRIVACYPRO_STAGING_ACCESS_TOKEN_V2"
 
             if let token = ProcessInfo.processInfo.environment[tokenKey] {

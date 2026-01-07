@@ -19,6 +19,7 @@
 
 import UIKit
 import Persistence
+import AIChat
 
 protocol AutoClearServiceProtocol {
 
@@ -73,7 +74,7 @@ final class AutoClearService: AutoClearServiceProtocol {
         if autoClear.isClearingEnabled {
             overlayWindowManager.displayBlankSnapshotWindow(for: .autoClearing)
             try? keyValueStore.set(Date().timeIntervalSince1970,
-                                   forKey: SyncAIChatsCleaner.Keys.autoClearBackgroundTimestamp)
+                                   forKey: AIChatSyncCleaner.Keys.autoClearBackgroundTimestamp)
         }
         autoClear.startClearingTimer(Date().timeIntervalSince1970)
     }

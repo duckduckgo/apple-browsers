@@ -28,6 +28,7 @@ import Kingfisher
 import BrowserServicesKit
 import Bookmarks
 import Persistence
+//import AIChat
 import PrivacyDashboard
 import Networking
 import Suggestions
@@ -239,7 +240,7 @@ class MainViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
-    private let syncAIChatsCleaner: SyncAIChatsCleaning
+    private let aiChatSyncCleaner: AIChatSyncCleaning
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
@@ -302,7 +303,7 @@ class MainViewController: UIViewController {
         fireExecutor: FireExecuting,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
-        syncAiChatsCleaner: SyncAIChatsCleaning,
+        aiChatSyncCleaner: AIChatSyncCleaning,
         whatsNewRepository: WhatsNewMessageRepository
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -353,7 +354,7 @@ class MainViewController: UIViewController {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
-        self.syncAIChatsCleaner = syncAiChatsCleaner
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.whatsNewRepository = whatsNewRepository
 
         super.init(nibName: nil, bundle: nil)
@@ -3787,9 +3788,9 @@ extension MainViewController: FireExecutorDelegate {
     func willStartBurningAIHistory(fireContext: FireContext) {
         Task {
             if autoClearInProgress {
-                await syncAIChatsCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+                await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
             } else {
-                await syncAIChatsCleaner.recordLocalClear(date: Date())
+                await aiChatSyncCleaner.recordLocalClear(date: Date())
             }
         }
     }

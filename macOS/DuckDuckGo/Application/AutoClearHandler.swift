@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Foundation
+import AIChat
 
 final class AutoClearHandler {
 
@@ -26,18 +27,18 @@ final class AutoClearHandler {
     private let startupPreferences: StartupPreferences
     private let fireViewModel: FireViewModel
     private let stateRestorationManager: AppStateRestorationManager
-    private let syncAIChatsCleaner: SyncAIChatsCleaning?
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
 
     init(dataClearingPreferences: DataClearingPreferences,
          startupPreferences: StartupPreferences,
          fireViewModel: FireViewModel,
          stateRestorationManager: AppStateRestorationManager,
-         syncAIChatsCleaner: SyncAIChatsCleaning?) {
+         aiChatSyncCleaner: AIChatSyncCleaning?) {
         self.dataClearingPreferences = dataClearingPreferences
         self.startupPreferences = startupPreferences
         self.fireViewModel = fireViewModel
         self.stateRestorationManager = stateRestorationManager
-        self.syncAIChatsCleaner = syncAIChatsCleaner
+        self.aiChatSyncCleaner = aiChatSyncCleaner
     }
 
     @MainActor
@@ -87,7 +88,9 @@ final class AutoClearHandler {
     @MainActor
     private func performAutoClear() {
         if dataClearingPreferences.isAutoClearAIChatHistoryEnabled {
-            syncAIChatsCleaner?.recordLocalClear(date: Date())
+            Task {
+                await aiChatSyncCleaner?.recordLocalClear(date: Date())
+            }
         }
         fireViewModel.fire.burnAll(isBurnOnExit: true, includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled) { [weak self] in
             self?.appTerminationHandledCorrectly = true

@@ -191,7 +191,7 @@ final class MainCoordinator {
                                         productSurfaceTelemetry: productSurfaceTelemetry,
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
-                                        syncAiChatsCleaner: syncService.aiChatsCleaner,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         whatsNewRepository: whatsNewRepository)
     }
 

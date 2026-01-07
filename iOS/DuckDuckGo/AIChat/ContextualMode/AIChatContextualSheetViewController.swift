@@ -241,7 +241,6 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     @objc private func newChatButtonTapped() {
-        viewModel.didStartNewChat()
         currentWebViewController?.startNewChat()
     }
 
@@ -315,6 +314,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         removeCurrentChildViewController()
         embedChildViewController(webVC)
         currentWebViewController = webVC
+        // Clear existingWebViewController after transition to avoid double retention
         existingWebViewController = nil
     }
 
@@ -406,10 +406,6 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling) {
         delegate?.aiChatContextualSheetViewControllerDidRequestOpenSyncSettings(self)
-    }
-
-    func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        viewModel.didSubmitPrompt()
     }
 }
 

@@ -50,7 +50,6 @@ final class AIChatContextualSheetCoordinator {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
-    private let featureFlagger: FeatureFlagger
 
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
@@ -67,14 +66,12 @@ final class AIChatContextualSheetCoordinator {
          settings: AIChatSettingsProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
-         featureDiscovery: FeatureDiscovery,
-         featureFlagger: FeatureFlagger) {
+         featureDiscovery: FeatureDiscovery) {
         self.voiceSearchHelper = voiceSearchHelper
         self.settings = settings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
-        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Public Methods
@@ -89,23 +86,21 @@ final class AIChatContextualSheetCoordinator {
         if let existingSheet = sheetViewController {
             sheetVC = existingSheet
         } else {
-            let sheetViewModel = AIChatContextualSheetViewModel(
+            let vm = AIChatContextualSheetViewModel(
                 settings: settings,
                 hasExistingChat: webViewController != nil
             )
             // TODO: Set page context from tab when available
-            sheetViewModel.pageContext = AIChatContextualSheetViewModel.PageContext(
+            vm.pageContext = AIChatContextualSheetViewModel.PageContext(
                 title: "Example Page Title",
                 favicon: nil
             )
-            viewModel = sheetViewModel
+            viewModel = vm
 
             sheetVC = AIChatContextualSheetViewController(
-                viewModel: sheetViewModel,
+                viewModel: vm,
                 voiceSearchHelper: voiceSearchHelper,
-                webViewControllerFactory: { [unowned self] in
-                    self.makeWebViewController()
-                },
+                webViewControllerFactory: makeWebViewController,
                 existingWebViewController: webViewController
             )
             sheetVC.delegate = self
@@ -140,8 +135,7 @@ final class AIChatContextualSheetCoordinator {
             aiChatSettings: settings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            featureDiscovery: featureDiscovery,
-            featureFlagger: featureFlagger
+            featureDiscovery: featureDiscovery
         )
     }
 }

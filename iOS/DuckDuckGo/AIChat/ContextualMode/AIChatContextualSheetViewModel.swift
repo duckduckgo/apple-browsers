@@ -67,11 +67,9 @@ final class AIChatContextualSheetViewModel {
 
     // MARK: - Public Methods
 
-    /// Returns the URL to use when expanding to full mode.
-    /// Uses the contextual chat URL if available (preserves active chat session),
-    /// otherwise falls back to the base AI chat URL.
+    /// Returns the URL to use when expanding to full mode
     func expandURL() -> URL {
-        contextualChatURL ?? settings.aiChatURL
+        hasSubmittedPrompt ? (contextualChatURL ?? settings.aiChatURL) : settings.aiChatURL
     }
 
     /// Creates the attach actions for the contextual input view
@@ -110,14 +108,11 @@ final class AIChatContextualSheetViewModel {
 
     /// Called when the contextual chat URL changes
     func didUpdateContextualChatURL(_ url: URL?) {
+        // If chat URL goes from having an ID to nil, user started a new chat
+        if contextualChatURL != nil && url == nil {
+            hasSubmittedPrompt = false
+        }
         contextualChatURL = url
-        updateExpandButtonState()
-    }
-
-    /// Called when the user explicitly starts a new chat
-    func didStartNewChat() {
-        hasSubmittedPrompt = false
-        contextualChatURL = nil
         updateExpandButtonState()
     }
 

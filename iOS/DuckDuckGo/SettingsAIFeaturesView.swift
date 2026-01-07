@@ -162,16 +162,6 @@ struct SettingsAIFeaturesView: View {
                     }
                 }
             }
-            
-            if viewModel.experimentalAIChatManager.fullDuckAIModeExperimentalSettingFlagEnabled {
-                Section {
-                    SettingsCellView(label: UserText.settingsEnableDuckAIFullModeTitle,
-                                     subtitle: UserText.settingsEnableDuckAIFullModeSubtitle,
-                                     accessory: .toggle(isOn: viewModel.isAIChatFullModeEnabled),
-                                     optionalBadgeText: UserText.settingsItemPreviewBadge)
-                }
-            }
-            
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)

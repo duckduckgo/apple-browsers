@@ -171,4 +171,8 @@ extension AIChatNativeInputViewController: AIChatNativeInputViewDelegate {
     func nativeInputViewDidRemoveContextChip(_ view: AIChatNativeInputView) {
         delegate?.nativeInputViewControllerDidRemoveContextChip(self)
     }
+
+    func nativeInputViewNeedsLayout(_ view: AIChatNativeInputView) {
+        self.view.superview?.layoutIfNeeded()
+    }
 }

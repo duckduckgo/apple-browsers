@@ -43,6 +43,7 @@ public protocol AIChatNativeInputViewDelegate: AnyObject {
     func nativeInputViewDidTapVoice(_ view: AIChatNativeInputView)
     func nativeInputViewDidTapClear(_ view: AIChatNativeInputView)
     func nativeInputViewDidRemoveContextChip(_ view: AIChatNativeInputView)
+    func nativeInputViewNeedsLayout(_ view: AIChatNativeInputView)
 }
 
 // MARK: - View
@@ -284,7 +285,7 @@ public final class AIChatNativeInputView: UIView {
             chipView.alpha = 0
             UIView.animate(withDuration: Constants.chipHeightDuration, delay: 0, options: .curveEaseOut) {
                 self.chipHeightConstraint?.constant = targetHeight
-                self.superview?.superview?.layoutIfNeeded()
+                self.delegate?.nativeInputViewNeedsLayout(self)
             } completion: { _ in
                 guard self.isContextChipVisible else { return }
                 UIView.animate(withDuration: Constants.chipFadeDuration) {
@@ -293,7 +294,7 @@ public final class AIChatNativeInputView: UIView {
             }
         } else {
             chipHeightConstraint?.constant = targetHeight
-            superview?.superview?.layoutIfNeeded()
+            delegate?.nativeInputViewNeedsLayout(self)
         }
     }
 
@@ -321,14 +322,14 @@ public final class AIChatNativeInputView: UIView {
                 guard self.currentChipView === chipToRemove else { return }
                 UIView.animate(withDuration: Constants.chipHeightDuration, delay: 0, options: .curveEaseIn) {
                     self.chipHeightConstraint?.constant = 0
-                    self.superview?.superview?.layoutIfNeeded()
+                    self.delegate?.nativeInputViewNeedsLayout(self)
                 } completion: { _ in
                     cleanup()
                 }
             }
         } else {
             chipHeightConstraint?.constant = 0
-            superview?.superview?.layoutIfNeeded()
+            delegate?.nativeInputViewNeedsLayout(self)
             cleanup()
         }
     }

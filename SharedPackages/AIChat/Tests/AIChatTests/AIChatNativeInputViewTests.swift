@@ -50,6 +50,10 @@ final class AIChatNativeInputViewTests: XCTestCase {
         func nativeInputViewDidRemoveContextChip(_ view: AIChatNativeInputView) {
             didRemoveContextChipCount += 1
         }
+
+        func nativeInputViewNeedsLayout(_ view: AIChatNativeInputView) {
+            // No-op for tests
+        }
     }
 
     // MARK: - Properties

@@ -11,13 +11,6 @@
             "type": "number"
         }]
     },
-    "m_mac_autoconsent_missed-popup_daily": {
-        "description": "If heuristics detected a potential popup on a page, but autoconsent did not find anything.",
-        "owners": ["sammacbeth"],
-        "triggers": ["page_load"],
-        "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
-    },
     "m_mac_autoconsent_error_multiple-popups_daily": {
         "description": "Autoconsent error state when multiple valid rules were matched on a page.",
         "owners": ["sammacbeth"],
@@ -194,11 +187,6 @@
             {
                 "key": "init",
                 "description": "Number of autoconsent init pixels fired.",
-                "type": "number"
-            },
-            {
-                "key": "missed-popup",
-                "description": "Number of autoconsent missed-popup pixels fired.",
                 "type": "number"
             },
             {

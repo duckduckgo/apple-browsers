@@ -3359,6 +3359,14 @@ extension MainViewController: TabDelegate {
         segueToVPN()
     }
 
+    func tabDidRequestSettingsToAIChat(_ tab: TabViewController) {
+        segueToSettingsAIChat()
+    }
+
+    func tabDidRequestSettingsToSync(_ tab: TabViewController) {
+        segueToSettingsSync()
+    }
+
     func tabContentProcessDidTerminate(tab: TabViewController) {
         findInPageView.done()
         tabManager.invalidateCache(forController: tab)

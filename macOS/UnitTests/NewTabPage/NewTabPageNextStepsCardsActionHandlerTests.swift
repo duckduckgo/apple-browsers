@@ -24,9 +24,9 @@ import XCTest
 
 final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var actionHandler: NewTabPageNextStepsCardsActionHandler!
-    private var tabCollectionVM: TabCollectionViewModel!
     private var capturingDefaultBrowserProvider: CapturingDefaultBrowserProvider!
     private var capturingDataImportProvider: CapturingDataImportProvider!
+    private var tabOpener: MockTabOpener!
     private var privacyConfigManager: MockPrivacyConfigurationManager!
     private var dockCustomizer: DockCustomization!
     private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
@@ -35,7 +35,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         capturingDefaultBrowserProvider = CapturingDefaultBrowserProvider()
         dockCustomizer = DockCustomizerMock()
         capturingDataImportProvider = CapturingDataImportProvider()
-        tabCollectionVM = TabCollectionViewModel(isPopup: false)
+        tabOpener = MockTabOpener()
         privacyConfigManager = MockPrivacyConfigurationManager()
         let config = MockPrivacyConfiguration()
         privacyConfigManager.privacyConfig = config
@@ -45,7 +45,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
             defaultBrowserProvider: capturingDefaultBrowserProvider,
             dockCustomizer: dockCustomizer,
             dataImportProvider: capturingDataImportProvider,
-            tabOpener: MockTabOpener(tabCollectionViewModel: tabCollectionVM),
+            tabOpener: tabOpener,
             privacyConfigurationManager: privacyConfigManager,
             pixelHandler: pixelHandler
         )
@@ -55,14 +55,14 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         actionHandler = nil
         capturingDefaultBrowserProvider = nil
         capturingDataImportProvider = nil
-        tabCollectionVM = nil
+        tabOpener = nil
         dockCustomizer = nil
         privacyConfigManager = nil
         pixelHandler = nil
     }
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserCardThenItPresentsTheDefaultBrowserPrompt() {
-        actionHandler.performAction(for: .defaultApp, completion: nil)
+        actionHandler.performAction(for: .defaultApp, refreshCardsAction: nil)
 
         XCTAssertTrue(capturingDefaultBrowserProvider.presentDefaultBrowserPromptCalled)
         XCTAssertFalse(capturingDefaultBrowserProvider.openSystemPreferencesCalled)
@@ -70,80 +70,85 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserCardAndDefaultBrowserPromptThrowsThenItOpensSystemPreferences() {
         capturingDefaultBrowserProvider.throwError = true
-        actionHandler.performAction(for: .defaultApp, completion: nil)
+        actionHandler.performAction(for: .defaultApp, refreshCardsAction: nil)
 
         XCTAssertTrue(capturingDefaultBrowserProvider.presentDefaultBrowserPromptCalled)
         XCTAssertTrue(capturingDefaultBrowserProvider.openSystemPreferencesCalled)
     }
 
     @MainActor func testWhenAskedToPerformActionForDockThenItAddsAppToDock() {
-        actionHandler.performAction(for: .addAppToDockMac, completion: nil)
+        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
 
         XCTAssertTrue(dockCustomizer.isAddedToDock)
     }
 
-    @MainActor func testWhenAskedToPerformActionForImportPromptThrowsThenItOpensImportWindow() {
-        actionHandler.performAction(for: .bringStuff, completion: nil)
+    @MainActor func testWhenAskedToPerformActionForImportPromptThenItOpensImportWindowAndCallsRefreshCardsAction() {
+        var cardsRefreshed = false
+        actionHandler.performAction(for: .bringStuff, refreshCardsAction: { cardsRefreshed = true })
 
         XCTAssertTrue(capturingDataImportProvider.showImportWindowCalled)
+        XCTAssertTrue(cardsRefreshed)
     }
 
     @MainActor func testWhenAskedToPerformActionForEmailProtectionThenItOpensEmailProtectionSite() {
-        actionHandler.performAction(for: .emailProtection, completion: nil)
+        actionHandler.performAction(for: .emailProtection, refreshCardsAction: nil)
 
-        XCTAssertEqual(tabCollectionVM.tabs[1].url, EmailUrls().emailProtectionLink)
+        XCTAssertEqual(tabOpener.openedTabs.count, 1)
+        XCTAssertEqual(tabOpener.openedTabs.first?.url, EmailUrls().emailProtectionLink)
     }
 
     @MainActor func testWhenAskedToPerformActionForDuckPlayerThenItOpensYoutubeVideo() {
-        actionHandler.performAction(for: .duckplayer, completion: nil)
+        actionHandler.performAction(for: .duckplayer, refreshCardsAction: nil)
 
-        XCTAssertEqual(tabCollectionVM.tabs[1].url, URL(string: actionHandler.duckPlayerURL))
+        XCTAssertEqual(tabOpener.openedTabs.count, 1)
+        XCTAssertEqual(tabOpener.openedTabs.first?.url, URL(string: actionHandler.duckPlayerURL))
     }
 
     @MainActor func testWhenAskedToPerformActionForSubscriptionThenItOpensSubscriptionSite() {
-        actionHandler.performAction(for: .subscription, completion: nil)
+        actionHandler.performAction(for: .subscription, refreshCardsAction: nil)
 
         let expectedURL = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.newTabPageNextStepsCard.rawValue)?.url
 
-        XCTAssertEqual(tabCollectionVM.tabs[1].url, expectedURL)
+        XCTAssertEqual(tabOpener.openedTabs.count, 1)
+        XCTAssertEqual(tabOpener.openedTabs.first?.url, expectedURL)
     }
 
     // MARK: - Pixel Tests
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserThenItFiresPixels() {
-        actionHandler.performAction(for: .defaultApp, completion: nil)
+        actionHandler.performAction(for: .defaultApp, refreshCardsAction: nil)
 
         XCTAssertTrue(pixelHandler.fireDefaultBrowserRequestedPixelCalled)
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .defaultApp)
     }
 
     @MainActor func testWhenAskedToPerformActionForDockThenItFiresPixels() {
-        actionHandler.performAction(for: .addAppToDockMac, completion: nil)
+        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
 
         XCTAssertTrue(pixelHandler.fireAddedToDockPixelCalled)
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .addAppToDockMac)
     }
 
     @MainActor func testWhenAskedToPerformActionForDuckplayerThenItFiresPixel() {
-        actionHandler.performAction(for: .duckplayer, completion: nil)
+        actionHandler.performAction(for: .duckplayer, refreshCardsAction: nil)
 
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .duckplayer)
     }
 
     @MainActor func testWhenAskedToPerformActionForEmailProtectionThenItFiresPixel() {
-        actionHandler.performAction(for: .emailProtection, completion: nil)
+        actionHandler.performAction(for: .emailProtection, refreshCardsAction: nil)
 
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .emailProtection)
     }
 
     @MainActor func testWhenAskedToPerformActionForImportPromptThenItFiresPixel() {
-        actionHandler.performAction(for: .bringStuff, completion: nil)
+        actionHandler.performAction(for: .bringStuff, refreshCardsAction: nil)
 
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .bringStuff)
     }
 
     @MainActor func testWhenAskedToPerformActionForSubscriptionThenItFiresPixels() {
-        actionHandler.performAction(for: .subscription, completion: nil)
+        actionHandler.performAction(for: .subscription, refreshCardsAction: nil)
 
         XCTAssertTrue(pixelHandler.fireSubscriptionCardClickedPixelCalled)
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .subscription)
@@ -151,11 +156,11 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
 
 }
 
-private struct MockTabOpener: NewTabPageNextStepsCardsTabOpening {
-    let tabCollectionViewModel: TabCollectionViewModel
+private final class MockTabOpener: NewTabPageNextStepsCardsTabOpening {
+    var openedTabs: [Tab] = []
 
     @MainActor
     func openTab(_ tab: Tab) {
-        tabCollectionViewModel.insertOrAppend(tab: tab, selected: true)
+        openedTabs.append(tab)
     }
 }

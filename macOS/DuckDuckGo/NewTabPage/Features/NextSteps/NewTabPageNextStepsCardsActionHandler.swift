@@ -26,8 +26,8 @@ protocol NewTabPageNextStepsCardsActionHandling {
     /// Performs the action associated with the given card.
     /// - Parameters:
     ///   - card: The identifier of the card for which to perform the action.
-    ///   - completion: A closure to be called upon completion of the action, if applicable.
-    @MainActor func performAction(for card: NewTabPageDataModel.CardID, completion: (() -> Void)?)
+    ///   - completion: A closure to be called upon completion of the action, if needed to refresh the cards state.
+    @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?)
 }
 
 protocol NewTabPageNextStepsCardsTabOpening {
@@ -63,7 +63,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.pixelHandler = pixelHandler
     }
 
-    @MainActor func performAction(for card: NewTabPageDataModel.CardID, completion: (() -> Void)?) {
+    @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
         pixelHandler.fireNextStepsCardClickedPixel(card)
         switch card {
         case .defaultApp:
@@ -71,7 +71,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         case .addAppToDockMac:
             performDockAction()
         case .bringStuff:
-            performImportBookmarksAndPasswordsAction(completion: completion)
+            performImportBookmarksAndPasswordsAction(completion: refreshCardsAction)
         case .duckplayer:
             performDuckPlayerAction()
         case .emailProtection:

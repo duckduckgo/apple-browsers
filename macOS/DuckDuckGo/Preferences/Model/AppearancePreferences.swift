@@ -247,7 +247,8 @@ final class AppearancePreferences: ObservableObject {
     struct Constants {
         static let bookmarksBarAlignmentChangedIsCenterAlignedParameter = "isCenterAligned"
         static let showTabsAndBookmarksBarOnFullScreenParameter = "showTabsAndBookmarksBarOnFullScreen"
-        static let dismissNextStepsCardsAfterDays = 9
+        static let legacyDismissNextStepsCardsAfterDays = 9
+        static let maxNextStepsCardsDemonstrationDays = 14
     }
 
     @Published var themeAppearance: ThemeAppearance {
@@ -314,6 +315,10 @@ final class AppearancePreferences: ObservableObject {
         }
     }
 
+    var maxNextStepsCardsDemonstrationDays: Int {
+        featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
+    }
+
     @Published var isContinueSetUpCardsViewOutdated: Bool
 
     @Published var continueSetUpCardsClosed: Bool {
@@ -346,7 +351,7 @@ final class AppearancePreferences: ObservableObject {
                 persistor.continueSetUpCardsLastDemonstrated = Date()
                 persistor.continueSetUpCardsNumberOfDaysDemonstrated += 1
 
-                if persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays {
+                if persistor.continueSetUpCardsNumberOfDaysDemonstrated >= maxNextStepsCardsDemonstrationDays {
                     self.isContinueSetUpCardsViewOutdated = true
                 }
             }
@@ -455,7 +460,8 @@ final class AppearancePreferences: ObservableObject {
         self.featureFlagger = featureFlagger
 
         /// when adding new properties, make sure to update `reload()` to include them there.
-        isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
+        let maxNextStepsCardsDemonstrationDays = featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
+        isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= maxNextStepsCardsDemonstrationDays
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         themeName = .init(rawValue: persistor.themeName) ?? .default
@@ -479,7 +485,7 @@ final class AppearancePreferences: ObservableObject {
     ///
     /// - Note: This is only used in the debug menu and shouldn't need to be called in the production code.
     func reload() {
-        isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
+        isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= maxNextStepsCardsDemonstrationDays
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         themeName = .init(rawValue: persistor.themeName) ?? .default

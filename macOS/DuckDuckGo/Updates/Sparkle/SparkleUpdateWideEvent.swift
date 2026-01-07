@@ -93,7 +93,7 @@ final class SparkleUpdateWideEvent {
             updateConfiguration: areAutomaticUpdatesEnabled ? .automatic : .manual,
             isInternalUser: internalUserDecider.isInternalUser,
             contextData: WideEventContextData(name: "sparkle_update"),
-            appData: WideEventAppData(internalUser: internalUserDecider.isInternalUser),
+            appData: WideEventAppData(),
             globalData: WideEventGlobalData(id: globalID)
         )
         eventData.totalDuration = .startingNow()

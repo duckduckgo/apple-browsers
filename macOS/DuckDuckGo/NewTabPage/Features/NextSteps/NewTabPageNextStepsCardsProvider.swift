@@ -25,11 +25,11 @@ import UserScript
 final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding {
     let continueSetUpModel: HomePage.Models.ContinueSetUpModel
     let appearancePreferences: AppearancePreferences
-    private let pixelHandler: (PixelKitEvent, PixelKit.Frequency, Bool) -> Void
+    private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
 
     init(continueSetUpModel: HomePage.Models.ContinueSetUpModel,
          appearancePreferences: AppearancePreferences,
-         pixelHandler: @escaping (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { PixelKit.fire($0, frequency: $1, includeAppVersionParameter: $2) }) {
+         pixelHandler: NewTabPageNextStepsCardsPixelHandling) {
         self.continueSetUpModel = continueSetUpModel
         self.appearancePreferences = appearancePreferences
         self.pixelHandler = pixelHandler
@@ -82,22 +82,8 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
     @MainActor
     func willDisplayCards(_ cards: [NewTabPageDataModel.CardID]) {
         appearancePreferences.continueSetUpCardsViewDidAppear()
-        fireAddToDockPixelIfNeeded(cards)
-        fireNextStepsCardShownPixels(cards)
-    }
-
-    private func fireAddToDockPixelIfNeeded(_ cards: [NewTabPageDataModel.CardID]) {
-        guard cards.contains(.addAppToDockMac) else {
-            return
-        }
-        pixelHandler(GeneralPixel.addToDockNewTabPageCardPresented, .uniqueByName, false)
-    }
-
-    private func fireNextStepsCardShownPixels(_ cards: [NewTabPageDataModel.CardID]) {
-        for card in cards {
-            // Fires once per card (unique by name + key parameter)
-            pixelHandler(NewTabPagePixel.nextStepsCardShown(card.rawValue), .uniqueByNameAndParameters, false)
-        }
+        pixelHandler.fireAddToDockPresentedPixelIfNeeded(cards)
+        pixelHandler.fireNextStepsCardShownPixels(cards)
     }
 }
 

@@ -3583,6 +3583,12 @@ extension MainViewController: TabSwitcherDelegate {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
+    
+    func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController) {
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
+        newTab(allowingKeyboard: false)
+        openAIChat()
+    }
 }
 
 extension MainViewController: BookmarksDelegate {

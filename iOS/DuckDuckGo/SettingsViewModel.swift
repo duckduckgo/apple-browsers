@@ -71,6 +71,7 @@ final class SettingsViewModel: ObservableObject {
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     var browsingMenuSheetCapability: BrowsingMenuSheetCapable
+    private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
@@ -648,6 +649,7 @@ final class SettingsViewModel: ObservableObject {
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          browsingMenuSheetCapability: BrowsingMenuSheetCapable,
+         onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
     ) {
 
@@ -679,6 +681,11 @@ final class SettingsViewModel: ObservableObject {
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
         self.browsingMenuSheetCapability = browsingMenuSheetCapability
+        self.onboardingSearchExperienceSettingsResolver = onboardingSearchExperienceSettingsResolver ?? OnboardingSearchExperienceSettingsResolver(
+            featureFlagger: AppDependencyProvider.shared.featureFlagger,
+            onboardingProvider: OnboardingSearchExperience(),
+            daxDialogsStatusProvider: legacyViewProvider.daxDialogsManager
+        )
         self.whatsNewCoordinator = whatsNewCoordinator
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
@@ -1373,11 +1380,19 @@ extension SettingsViewModel {
 
     var aiChatSearchInputEnabledBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
+            get: {
+                self.onboardingSearchExperienceSettingsResolver.deferredValue ?? self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+            },
             set: { newValue in
-                guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
-                self.objectWillChange.send()
-                self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                if self.onboardingSearchExperienceSettingsResolver.shouldUseDeferredOnboardingChoice {
+                    if self.onboardingSearchExperienceSettingsResolver.storeIfDeferred(newValue) {
+                        self.objectWillChange.send()
+                    }
+                } else {
+                    guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                }
             }
         )
     }
@@ -1399,19 +1414,7 @@ extension SettingsViewModel {
             }
         )
     }
-    
-    var isAIChatFullModeEnabled: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatFullModeEnabled },
-            set: { newValue in
-                withAnimation {
-                    self.objectWillChange.send()
-                    self.aiChatSettings.enableAIChatFullModeSetting(enable: newValue)
-                }
-            }
-        )
-    }
-    
+
     var isAutomaticContextAttachmentEnabled: Binding<Bool> {
         Binding<Bool>(
             get: { self.aiChatSettings.isAutomaticContextAttachmentEnabled },

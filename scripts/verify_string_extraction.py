@@ -277,7 +277,7 @@ def verify_string_changes(platform: str) -> Tuple[List[str], List[str]]:
 
     Returns:
         Tuple of (missing_new_keys, missing_modified_keys)
-        Each is a list of strings in format "file_path:key"
+        Each is a list of strings in format "file_path::key"
     """
     paths = get_search_paths(platform)
     changed_swift_files = get_changed_files(['.swift'], paths)
@@ -312,21 +312,21 @@ def verify_string_changes(platform: str) -> Tuple[List[str], List[str]]:
         for key in new_keys:
             string_file = find_key_in_string_files(key, string_files)
             if not string_file:
-                missing_new_keys.append(f"{swift_file}:{key}")
+                missing_new_keys.append(f"{swift_file}::{key}")
             else:
                 print(f"     ✓ Key '{key}' found")
 
         for key in modified_keys:
             string_file = find_key_in_string_files(key, string_files)
             if not string_file:
-                missing_modified_keys.append(f"{swift_file}:{key}")
+                missing_modified_keys.append(f"{swift_file}::{key}")
             else:
                 if string_file not in changed_string_files_cache:
                     changed_string_files_cache[string_file] = is_file_changed(string_file)
                 if changed_string_files_cache[string_file]:
                     print(f"     ✓ Key '{key}' found with updated value")
                 else:
-                    missing_modified_keys.append(f"{swift_file}:{key}")
+                    missing_modified_keys.append(f"{swift_file}::{key}")
 
     return missing_new_keys, missing_modified_keys
 
@@ -367,7 +367,7 @@ def main():
         # Group keys by file_path
         keys_by_file: Dict[str, List[str]] = {}
         for item in missing_new_keys:
-            file_path, key = item.rsplit(':', 1)
+            file_path, key = item.rsplit('::', 1)
             if file_path not in keys_by_file:
                 keys_by_file[file_path] = []
             keys_by_file[file_path].append(key)
@@ -383,7 +383,7 @@ def main():
         # Group keys by file_path
         keys_by_file: Dict[str, List[str]] = {}
         for item in missing_modified_keys:
-            file_path, key = item.rsplit(':', 1)
+            file_path, key = item.rsplit('::', 1)
             if file_path not in keys_by_file:
                 keys_by_file[file_path] = []
             keys_by_file[file_path].append(key)

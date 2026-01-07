@@ -65,7 +65,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     // MARK: - expandURL Tests
 
-    func testExpandURLReturnsAIChatURLWhenNoPromptSubmitted() {
+    func testExpandURLReturnsBaseURLWhenNoContextualChatURL() {
         // Given
         sut = AIChatContextualSheetViewModel(settings: mockSettings)
 
@@ -80,7 +80,6 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
         // Given
         sut = AIChatContextualSheetViewModel(settings: mockSettings)
         let chatURL = URL(string: "https://duck.ai/chat/abc123")!
-        sut.didSubmitPrompt()
         sut.didUpdateContextualChatURL(chatURL)
 
         // When
@@ -90,16 +89,20 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
         XCTAssertEqual(url, chatURL)
     }
 
-    func testExpandURLFallsBackToAIChatURLWhenContextualChatURLIsNil() {
-        // Given
+    func testExpandURLPreservesChatURLAfterNewChat() {
+        // Given - User had a chat, started new chat, then got a new chat URL
         sut = AIChatContextualSheetViewModel(settings: mockSettings)
+        let originalChatURL = URL(string: "https://duck.ai/chat/original123")!
         sut.didSubmitPrompt()
+        sut.didUpdateContextualChatURL(originalChatURL)
 
-        // When
-        let url = sut.expandURL()
+        // When - User starts new chat and types directly in web view (no didSubmitPrompt call)
+        sut.didStartNewChat()
+        let newChatURL = URL(string: "https://duck.ai/chat/new456")!
+        sut.didUpdateContextualChatURL(newChatURL)
 
-        // Then
-        XCTAssertEqual(url, mockSettings.aiChatURL)
+        // Then - expand should use the new chat URL, not the base URL
+        XCTAssertEqual(sut.expandURL(), newChatURL)
     }
 
     // MARK: - didSubmitPrompt Tests
@@ -132,7 +135,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
         XCTAssertEqual(sut.contextualChatURL, chatURL)
     }
 
-    func testDidUpdateContextualChatURLResetsHasSubmittedPromptWhenURLGoesNil() {
+    func testDidUpdateContextualChatURLDoesNotResetHasSubmittedPromptWhenURLGoesNil() {
         // Given
         sut = AIChatContextualSheetViewModel(settings: mockSettings)
         let chatURL = URL(string: "https://duck.ai/chat/abc123")!
@@ -140,12 +143,32 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
         sut.didUpdateContextualChatURL(chatURL)
         XCTAssertTrue(sut.hasSubmittedPrompt)
 
-        // When - URL goes nil (new chat started)
+        // When - URL goes nil (e.g., during navigation)
         sut.didUpdateContextualChatURL(nil)
+
+        // Then - hasSubmittedPrompt should NOT be reset (only explicit didStartNewChat resets it)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertNil(sut.contextualChatURL)
+    }
+
+    // MARK: - didStartNewChat Tests
+
+    func testDidStartNewChatResetsState() {
+        // Given
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
+        let chatURL = URL(string: "https://duck.ai/chat/abc123")!
+        sut.didSubmitPrompt()
+        sut.didUpdateContextualChatURL(chatURL)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertNotNil(sut.contextualChatURL)
+
+        // When
+        sut.didStartNewChat()
 
         // Then
         XCTAssertFalse(sut.hasSubmittedPrompt)
         XCTAssertNil(sut.contextualChatURL)
+        XCTAssertTrue(sut.isExpandEnabled)
     }
 
     // MARK: - isExpandEnabled Tests

@@ -1,5 +1,5 @@
 //
-//  MockNewTabPageNextStepsCardsPersisting.swift
+//  MockNewTabPageNextStepsCardsPersistor.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -55,4 +55,3 @@ final class MockNewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersi
         timesDismissedStorage.removeAll()
     }
 }
-

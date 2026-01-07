@@ -644,5 +644,3 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         )
     }
 }
-
-

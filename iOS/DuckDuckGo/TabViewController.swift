@@ -501,8 +501,7 @@ class TabViewController: UIViewController {
             settings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            featureDiscovery: featureDiscovery,
-            featureFlagger: featureFlagger
+            featureDiscovery: featureDiscovery
         )
         coordinator.delegate = self
         return coordinator

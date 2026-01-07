@@ -31,7 +31,7 @@ import NetworkingTestingUtils
 
 // For Diego to refactor or remove
 
-//final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTestCase {
+// final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTestCase {
 //
 //    private var sut: (any SubscriptionPagesUseSubscriptionFeature)!
 //
@@ -135,4 +135,4 @@ import NetworkingTestingUtils
 //        XCTAssertNil(additionalParams[experimentNameKey])
 //        XCTAssertNil(additionalParams[experimentTreatmentKey])
 //    }
-//}
+// }

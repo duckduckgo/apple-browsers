@@ -32,22 +32,18 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
 
     @MainActor
     override func setUp() async throws {
-        let privacyConfigManager = MockPrivacyConfigurationManager()
-        let config = MockPrivacyConfiguration()
-        privacyConfigManager.privacyConfig = config
         pixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
 
         let continueSetUpModel = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: CapturingDefaultBrowserProvider(),
             dockCustomizer: DockCustomizerMock(),
             dataImportProvider: CapturingDataImportProvider(),
-            tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: TabCollectionViewModel(isPopup: false)),
             emailManager: EmailManager(storage: MockEmailStorage()),
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
-            privacyConfigurationManager: privacyConfigManager,
             subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging(),
             persistor: MockHomePageContinueSetUpModelPersisting(),
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler()
         )
         provider = NewTabPageNextStepsCardsProvider(
             continueSetUpModel: continueSetUpModel,

@@ -250,6 +250,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case foregroundRunningOnAppActive
     case foregroundRunningWhenDashboardOpen
     case clickActionDelayReductionOptimization
+    case pirRollout
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

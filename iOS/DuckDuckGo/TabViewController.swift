@@ -498,7 +498,7 @@ class TabViewController: UIViewController {
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
-        let coordinator = AIChatContextualSheetCoordinator(voiceSearchHelper: voiceSearchHelper)
+        let coordinator = AIChatContextualSheetCoordinator(voiceSearchHelper: voiceSearchHelper, settings: aiChatSettings)
         coordinator.delegate = self
         return coordinator
     }()

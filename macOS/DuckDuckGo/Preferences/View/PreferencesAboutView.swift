@@ -46,6 +46,9 @@ extension Preferences {
         var body: some View {
             PreferencePane {
                 VStack(alignment: .leading) {
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+                    customFeedURLWarning
+#endif
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
                     if let warning = model.osSupportWarning {
@@ -71,6 +74,37 @@ extension Preferences {
                 // is toggled.
             }
         }
+
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+        /// Warning banner shown when a custom Sparkle feed URL is configured.
+        ///
+        /// This reminder helps developers avoid accidentally forgetting they have a custom
+        /// feed URL set, which could lead to confusion when testing updates or when the
+        /// app doesn't behave as expected with production updates.
+        @ViewBuilder
+        private var customFeedURLWarning: some View {
+            if let customURL = model.customFeedURL {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Updates Are Using a Custom Feed URL")
+                            .fontWeight(.semibold)
+                        Text(customURL)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("To disable, go to Debug → Updates → Reset feed URL to default")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.orange.opacity(0.15))
+                .cornerRadius(8)
+            }
+        }
+#endif
     }
 
     struct AboutContentSection: View {

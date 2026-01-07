@@ -189,6 +189,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 #endif
 
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+    var customFeedURL: String? {
+        UserDefaults.standard.string(forKey: UserDefaultsWrapper<String>.Key.debugSparkleCustomFeedURL.rawValue)
+    }
+#endif
+
     private var cancellable: AnyCancellable?
 
     let displayableAboutURL: String = URL.aboutDuckDuckGo

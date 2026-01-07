@@ -41,7 +41,15 @@ final class AIChatContextualWebViewController: UIViewController {
     private let aiChatSettings: AIChatSettingsProvider
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
-    private var contentHandler: AIChatContentHandling
+    private let featureDiscovery: FeatureDiscovery
+
+    private(set) var aiChatContentHandler: AIChatContentHandling
+
+    /// Passthrough delegate for the content handler. Set this to receive navigation callbacks.
+    var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
+        get { aiChatContentHandler.delegate }
+        set { aiChatContentHandler.delegate = newValue }
+    }
 
     private var pendingPrompt: String?
     private var userContentController: UserContentController?
@@ -74,11 +82,15 @@ final class AIChatContextualWebViewController: UIViewController {
     init(aiChatSettings: AIChatSettingsProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
-         contentHandler: AIChatContentHandling) {
+         featureDiscovery: FeatureDiscovery) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
-        self.contentHandler = contentHandler
+        self.featureDiscovery = featureDiscovery
+        self.aiChatContentHandler = AIChatContentHandler(
+            aiChatSettings: aiChatSettings,
+            featureDiscovery: featureDiscovery
+        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -104,18 +116,23 @@ final class AIChatContextualWebViewController: UIViewController {
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
     func submitPrompt(_ prompt: String) {
         if isPageReady && isContentHandlerReady {
-            contentHandler.submitPrompt(prompt)
+            aiChatContentHandler.submitPrompt(prompt)
         } else {
             pendingPrompt = prompt
         }
     }
 
     func startNewChat() {
-        contentHandler.submitStartChatAction()
+        aiChatContentHandler.submitStartChatAction()
     }
 
     func reload() {
         webView.reload()
+    }
+
+    /// Returns the current contextual chat URL if one exists, nil otherwise.
+    var currentContextualChatURL: URL? {
+        webView.url.flatMap { $0.duckAIChatID != nil ? $0 : nil }
     }
 
     // MARK: - Private Methods
@@ -162,14 +179,13 @@ final class AIChatContextualWebViewController: UIViewController {
               isContentHandlerReady else { return }
 
         pendingPrompt = nil
-        contentHandler.submitPrompt(prompt)
+        aiChatContentHandler.submitPrompt(prompt)
     }
 
     // MARK: - URL Observation
 
     private func setupURLObservation() {
         urlObservation = webView.observe(\.url, options: [.new]) { [weak self] _, _ in
-            // Use a small delay to allow the URL to fully propagate
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                 self?.handleURLChange()
             }
@@ -198,7 +214,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
             return
         }
 
-        contentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
         isContentHandlerReady = true
         submitPendingPromptIfReady()
     }

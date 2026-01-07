@@ -29,7 +29,6 @@ protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
-    func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String)
     func submitStartChatAction()
     func submitOpenSettingsAction()
@@ -154,6 +153,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         return components.url ?? aiChatSettings.aiChatURL
     }
     
+    /// Submits a prompt to the AI Chat.
     func submitPrompt(_ prompt: String) {
         userScript?.submitPrompt(prompt)
     }

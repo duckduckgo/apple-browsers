@@ -31,7 +31,7 @@
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
     },
     "m_mac_remote_message_dismissed": {
-        "description": "Triggered when a remote message is is dismissed by the user",
+        "description": "Triggered when a remote message is dismissed by the user",
         "owners": ["ayoy"],
         "triggers": ["other"],
         "suffixes": [],

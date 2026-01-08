@@ -63,6 +63,7 @@ final class AddressBarButtonsViewController: NSViewController {
         static let askAiChatButtonAnimationDuration: TimeInterval = 0.2
     }
 
+    /// Struct to keep track of some Toggle conditions to avoid expensive operations like checking user defaults
     private struct AIChatOmnibarToggleConditions {
         let isFeatureOn: Bool
         let hasUserInteractedWithToggle: Bool

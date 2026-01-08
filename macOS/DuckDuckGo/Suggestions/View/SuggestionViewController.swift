@@ -20,6 +20,7 @@ import Cocoa
 import Combine
 import History
 import Suggestions
+import AIChat
 
 protocol SuggestionViewControllerDelegate: AnyObject {
 
@@ -57,11 +58,12 @@ final class SuggestionViewController: NSViewController {
     required init?(coder: NSCoder,
                    suggestionContainerViewModel: SuggestionContainerViewModel,
                    isBurner: Bool,
-                   themeManager: ThemeManaging) {
+                   themeManager: ThemeManaging,
+                   aiChatPreferencesStorage: AIChatPreferencesStorage) {
         self.suggestionContainerViewModel = suggestionContainerViewModel
         self.isBurner = isBurner
         self.themeManager = themeManager
-
+        self.aiChatPreferencesStorage = aiChatPreferencesStorage
         super.init(coder: coder)
     }
 
@@ -73,19 +75,19 @@ final class SuggestionViewController: NSViewController {
 
     /// Flag to prevent re-entrancy when programmatically updating table selection
     private var isUpdatingTableSelection = false
+    private var isAIChatToggleBeingDisplayed: Bool = false
+    private let aiChatPreferencesStorage: AIChatPreferencesStorage
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         tableView.delegate = self
         tableView.dataSource = self
-
-        setupTableView()
+f        setupTableView()
         addTrackingArea()
         subscribeToSuggestionResult()
         subscribeToSelectionSync()
         subscribeToThemeChanges()
-
         applyThemeStyle()
 
         if Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
@@ -93,8 +95,14 @@ final class SuggestionViewController: NSViewController {
         }
     }
 
+    private func updateAIChatToggleFlag() {
+        let isToggleFeatureEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatPreferencesStorage.isAIFeaturesEnabled
+        isAIChatToggleBeingDisplayed = isToggleFeatureEnabled && aiChatPreferencesStorage.showSearchAndDuckAIToggle
+    }
+
     override func viewWillAppear() {
         super.viewWillAppear()
+        updateAIChatToggleFlag()
 
         self.view.window!.isOpaque = false
         self.view.window!.backgroundColor = .clear
@@ -361,6 +369,7 @@ extension SuggestionViewController: NSTableViewDelegate {
 
         let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
         cell.theme = themeManager.theme
+        cell.isAIChatToggleBeingDisplayed = isAIChatToggleBeingDisplayed
 
         switch rowContent {
         case .searchCell:
@@ -440,7 +449,6 @@ extension SuggestionViewController: NSTableViewDelegate {
         }
 
         suggestionTableRowView.theme = themeManager.theme
-
         return suggestionTableRowView
     }
 

@@ -443,30 +443,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let controllerErrorStore = NetworkProtectionTunnelErrorStore(notificationCenter: notificationCenter)
         let debugEvents = Self.networkProtectionDebugEvents(controllerErrorStore: controllerErrorStore)
 
-//        // MARK: - V1
-//        let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
-//                                                             serviceName: Self.tokenServiceName,
-//                                                             errorEvents: debugEvents,
-//                                                             useAccessTokenProvider: false,
-//                                                             accessTokenProvider: {
-//            assertionFailure("Should not be called")
-//            return nil
-//        })
-//        let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
-//                                                                 key: UserDefaultsCacheKey.subscriptionEntitlements,
-//                                                                 settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
-//
-//        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
-//                                                                             userAgent: UserAgent.duckDuckGoUserAgent())
-//        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
-//                                                             userAgent: UserAgent.duckDuckGoUserAgent())
-//        let accountManager = DefaultAccountManager(accessTokenStorage: tokenStore,
-//                                                   entitlementsCache: entitlementsCache,
-//                                                   subscriptionEndpointService: subscriptionEndpointService,
-//                                                   authEndpointService: authEndpointService)
-//        self.accountManager = accountManager
-//        self.tokenStoreV1 = tokenStore
-
         // MARK: - Subscription
         let subscriptionUserDefaults = UserDefaults(suiteName: MacPacketTunnelProvider.subscriptionsAppGroup)!
         let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,

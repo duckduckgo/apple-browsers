@@ -93,6 +93,7 @@ public struct UserDefaultsWrapper<T> {
         case openFireWindowByDefault = "preferences.startup.open-fire-window-by-default"
         case themeAppearance = "com.duckduckgo.macos.currentThemeNameKey"
         case themeName = "preferences.appearance.theme-name"
+        case themePopoverDismissed = "preferences.appearance.theme-popover.dismissed"
         case showFullURL = "preferences.appearance.show-full-url"
         case syncAppIconWithTheme = "preferences.appearance.sync-app-icon-with-theme"
         case showAutocompleteSuggestions = "preferences.appearance.show-autocomplete-suggestions"

@@ -2501,7 +2501,6 @@
 		4B2DF8A52E64C67000FBF11E /* WideEventServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WideEventServiceTests.swift; sourceTree = "<group>"; };
 		4B37E04F2B928CA6009E81CA /* vpn-light-mode.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vpn-light-mode.json"; sourceTree = "<group>"; };
 		4B412ACB2BBB3D0900A39F5E /* LazyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyView.swift; sourceTree = "<group>"; };
-		4B4A6D112F0EBBF60074444F /* Configuration-Experimental.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Configuration-Experimental.xcconfig"; sourceTree = "<group>"; };
 		4B4A6D122F0EC5620074444F /* DuckDuckGoExperimental.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoExperimental.entitlements; sourceTree = "<group>"; };
 		4B52648A25F9613B00CB4C24 /* trackerData.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trackerData.json; sourceTree = "<group>"; };
 		4B53648926718D0E001AA041 /* EmailWaitlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailWaitlist.swift; sourceTree = "<group>"; };
@@ -2526,6 +2525,7 @@
 		4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWaitlistUserText.swift; sourceTree = "<group>"; };
 		4BC21A2C272388BD00229F0E /* RunLoopExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLoopExtensionTests.swift; sourceTree = "<group>"; };
 		4BC5E8602E174B6A00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/Infrastructure/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
+		4BC991252F0F4EF1001F6575 /* Configuration-Experimental.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Configuration-Experimental.xcconfig"; path = "Configuration/Configuration-Experimental.xcconfig"; sourceTree = "<group>"; };
 		4BCBE45D2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BCBE45F2BA7E87100FC75A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BCD14662B05B682000B1E4C /* NetworkProtectionTermsAndConditionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionTermsAndConditionsStore.swift; sourceTree = "<group>"; };
@@ -6294,7 +6294,7 @@
 				EE3B98EB2A963515002F63A0 /* WidgetsExtensionAlpha.entitlements */,
 				6FB030C7234331B400A10DB9 /* Configuration.xcconfig */,
 				EEB8FDB92A990AEE00EBEDCF /* Configuration-Alpha.xcconfig */,
-				4B4A6D112F0EBBF60074444F /* Configuration-Experimental.xcconfig */,
+				4BC991252F0F4EF1001F6575 /* Configuration-Experimental.xcconfig */,
 				B6DFE6D92BC7E61B00A9CE59 /* SwiftLintToolBundleConfiguration.xcconfig */,
 				84E341941E2F7EFB00BDBA6F /* DuckDuckGo */,
 				F143C2E51E4A4CD400CFDE3A /* Core */,
@@ -13747,7 +13747,7 @@
 		};
 		4B4A6CF52F0EBA640074444F /* Experimental */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4B4A6D112F0EBBF60074444F /* Configuration-Experimental.xcconfig */;
+			baseConfigurationReference = 4BC991252F0F4EF1001F6575 /* Configuration-Experimental.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;

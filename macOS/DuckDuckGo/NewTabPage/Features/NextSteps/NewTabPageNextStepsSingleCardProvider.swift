@@ -22,8 +22,8 @@ import Combine
 import Foundation
 import NewTabPage
 
-/// Provides the next steps cards to be displayed on the new tab page.
-/// This provider expects a single card (the first card in the list) to be displayed at a time.
+/// Provides the Next Steps cards to be displayed on the New Tab Page.
+/// This provider expects a single card (the first card in the list) to be displayed at a time and should not be used with the legacy Next Steps widget.
 ///
 final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProviding {
     private let cardActionHandler: NewTabPageNextStepsCardsActionHandling
@@ -49,11 +49,13 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     private var cancellables: Set<AnyCancellable> = []
 
-    /// For protocol conformance; this provider is used to display a single card at a time and should not be used with the legacy next steps widget.
-    var isViewExpanded: Bool = false
+    /// For protocol conformance; this provider expects to display a single card at a time (not expandable).
+    @Published var isViewExpanded: Bool = false
 
-    /// For protocol conformance; this provider is used to display a single card at a time and should not be used with the legacy next steps widget.
-    var isViewExpandedPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
+    /// For protocol conformance; this provider expects to display a single card at a time (not expandable).
+    var isViewExpandedPublisher: AnyPublisher<Bool, Never> {
+        $isViewExpanded.dropFirst().eraseToAnyPublisher()
+    }
 
     @Published private var cardList: [NewTabPageDataModel.CardID] = []
 
@@ -115,12 +117,14 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         NotificationCenter.default.addObserver(self, selector: #selector(refreshCardsForHTMLNewTabPage(_:)), name: .newTabPageWebViewDidAppear, object: nil)
     }
 
+    @MainActor
     func handleAction(for card: NewTabPageDataModel.CardID) {
         cardActionHandler.performAction(for: card) { [weak self] in
             self?.refreshCardList()
         }
     }
 
+    @MainActor
     func dismiss(_ card: NewTabPageDataModel.CardID) {
         pixelHandler.fireNextStepsCardDismissedPixel(card)
         if card == .subscription {
@@ -130,6 +134,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         refreshCardList()
     }
 
+    @MainActor
     func willDisplayCards(_ cards: [NewTabPageDataModel.CardID]) {
         appearancePreferences.continueSetUpCardsViewDidAppear()
         if let card = cards.first {

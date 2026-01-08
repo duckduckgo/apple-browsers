@@ -24,6 +24,7 @@ import Persistence
 /// Coordinates server-side AI Chat deletion to mirror local clears (Fire/AutoClear).
 /// Stores a timestamp when local data is cleared and retries the DELETE on next trigger until it succeeds.
 public protocol AIChatSyncCleaning: AnyObject {
+    func recordAutoClearBackgroundTimestamp(date: Date?) async
     func recordLocalClear(date: Date?) async
     func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async
     func deleteIfNeeded() async
@@ -80,6 +81,17 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
         await state.setLastClear(timestamp: timestamp)
     }
 
+    /// Records the timestamp when the app is backgrounded with AutoClear enabled.
+    /// This timestamp will later be promoted to a delete-until timestamp once the local AutoClear actually runs.
+    public func recordAutoClearBackgroundTimestamp(date: Date? = nil) async {
+        guard canUseAIChatSyncDelete else {
+            return
+        }
+
+        let timestamp = (date ?? dateProvider()).timeIntervalSince1970
+        await state.setAutoClearBackground(timestamp: timestamp)
+    }
+
     /// Converts the persisted AutoClear background timestamp into a delete-until timestamp, if present.
     ///
     /// This is used to avoid deleting server-side AI Chats before a local AutoClear actually runs.
@@ -121,6 +133,10 @@ private actor AIChatSyncState {
 
     init(store: ThrowingKeyValueStoring) {
         self.store = store
+    }
+
+    func setAutoClearBackground(timestamp: Double) {
+        try? store.set(timestamp, forKey: AIChatSyncCleaner.Keys.autoClearBackgroundTimestamp)
     }
 
     func setLastClear(timestamp: Double) {

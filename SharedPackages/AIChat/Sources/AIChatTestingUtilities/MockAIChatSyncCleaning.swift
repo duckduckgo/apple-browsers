@@ -21,11 +21,16 @@ import AIChat
 
 public final class MockAIChatSyncCleaning: AIChatSyncCleaning {
 
+    public private(set) var recordAutoClearBackgroundTimestampDates: [Date?] = []
     public private(set) var recordLocalClearDates: [Date?] = []
     public private(set) var recordLocalClearFromAutoClearBackgroundTimestampIfPresentCallCount = 0
     public private(set) var deleteIfNeededCallCount = 0
 
     public init() {}
+
+    public func recordAutoClearBackgroundTimestamp(date: Date?) async {
+        recordAutoClearBackgroundTimestampDates.append(date)
+    }
 
     public func recordLocalClear(date: Date?) async {
         recordLocalClearDates.append(date)

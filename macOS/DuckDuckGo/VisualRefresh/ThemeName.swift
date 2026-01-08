@@ -32,6 +32,12 @@ enum ThemeName: String, CaseIterable {
 
 extension ThemeName {
 
+    static var allCasesSorted: [ThemeName] {
+        [
+            .default, .coolGray, .slateBlue, .green, .violet, .rose, .orange, .desert
+        ]
+    }
+
     var designColorPalette: DesignResourcesKit.ColorPalette {
         switch self {
         case .default:

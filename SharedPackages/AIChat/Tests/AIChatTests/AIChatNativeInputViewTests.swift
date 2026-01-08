@@ -29,7 +29,7 @@ final class AIChatNativeInputViewTests: XCTestCase {
         var didTapSubmitCalls: [String] = []
         var didTapVoiceCount = 0
         var didTapClearCount = 0
-        var didTapAttachCount = 0
+        var didRemoveContextChipCount = 0
 
         func nativeInputViewDidChangeText(_ view: AIChatNativeInputView, text: String) {
             didChangeTextCalls.append(text)
@@ -47,8 +47,12 @@ final class AIChatNativeInputViewTests: XCTestCase {
             didTapClearCount += 1
         }
 
-        func nativeInputViewDidTapAttach(_ view: AIChatNativeInputView) {
-            didTapAttachCount += 1
+        func nativeInputViewDidRemoveContextChip(_ view: AIChatNativeInputView) {
+            didRemoveContextChipCount += 1
+        }
+
+        func nativeInputViewNeedsLayout(_ view: AIChatNativeInputView) {
+            // No-op for tests
         }
     }
 
@@ -139,6 +143,90 @@ final class AIChatNativeInputViewTests: XCTestCase {
 
         // Then
         XCTAssertTrue(sut.isAttachButtonHidden)
+    }
+
+    // MARK: - Attach Actions Tests
+
+    func testAttachActionsInitiallyEmpty() {
+        XCTAssertTrue(sut.attachActions.isEmpty)
+    }
+
+    func testSettingAttachActionsUpdatesValue() {
+        // Given
+        let action = AIChatAttachAction(title: "Test Action", icon: nil) {}
+
+        // When
+        sut.attachActions = [action]
+
+        // Then
+        XCTAssertEqual(sut.attachActions.count, 1)
+        XCTAssertEqual(sut.attachActions.first?.title, "Test Action")
+    }
+
+    func testMultipleAttachActionsAreStored() {
+        // Given
+        let action1 = AIChatAttachAction(title: "Action 1", icon: nil) {}
+        let action2 = AIChatAttachAction(title: "Action 2", icon: nil) {}
+
+        // When
+        sut.attachActions = [action1, action2]
+
+        // Then
+        XCTAssertEqual(sut.attachActions.count, 2)
+    }
+
+    // MARK: - Context Chip Tests
+
+    func testContextChipNotVisibleInitially() {
+        XCTAssertFalse(sut.isContextChipVisible)
+    }
+
+    func testShowContextChipSetsVisibility() {
+        // Given
+        let chipView = UIView()
+
+        // When
+        sut.showContextChip(chipView, animated: false)
+
+        // Then
+        XCTAssertTrue(sut.isContextChipVisible)
+    }
+
+    func testHideContextChipClearsVisibility() {
+        // Given
+        let chipView = UIView()
+        sut.showContextChip(chipView, animated: false)
+
+        // When
+        sut.hideContextChip(animated: false)
+
+        // Then
+        XCTAssertFalse(sut.isContextChipVisible)
+    }
+
+    func testHideContextChipNotifiesDelegate() {
+        // Given
+        let chipView = UIView()
+        sut.showContextChip(chipView, animated: false)
+
+        // When
+        sut.hideContextChip(animated: false)
+
+        // Then
+        XCTAssertEqual(mockDelegate.didRemoveContextChipCount, 1)
+    }
+
+    func testShowContextChipTwiceDoesNotDuplicate() {
+        // Given
+        let chipView1 = UIView()
+        let chipView2 = UIView()
+        sut.showContextChip(chipView1, animated: false)
+
+        // When
+        sut.showContextChip(chipView2, animated: false)
+
+        // Then - second show is ignored while first is visible
+        XCTAssertTrue(sut.isContextChipVisible)
     }
 }
 #endif

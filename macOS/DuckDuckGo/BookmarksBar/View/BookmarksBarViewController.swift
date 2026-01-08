@@ -34,6 +34,9 @@ final class BookmarksBarViewController: NSViewController {
     @IBOutlet private var promptAnchor: NSView!
     @IBOutlet var backgroundColorView: ColorView!
 
+    @IBOutlet var backseparatorColorView: ColorView!
+    @IBOutlet var separatorColorView: ColorView!
+
     @IBOutlet weak var syncButton: NSView!
     @IBOutlet weak var syncMouseOverView: MouseOverView!
     @IBOutlet weak var syncButtonIcon: NSImageView!
@@ -443,6 +446,8 @@ extension BookmarksBarViewController: ThemeUpdateListening {
 
         backgroundColorView.backgroundColor = navigationBackgroundColor
         bookmarksBarCollectionView.backgroundColors = [navigationBackgroundColor]
+        separatorColorView.backgroundColor = theme.palette.surfaceDecorationPrimary
+        backseparatorColorView.backgroundColor = theme.palette.surfaceBackdrop
     }
 }
 

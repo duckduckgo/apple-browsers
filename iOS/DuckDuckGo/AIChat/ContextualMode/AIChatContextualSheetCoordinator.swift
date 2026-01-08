@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import UIKit
 
 /// Delegate protocol for coordinating actions that require interaction with the browser.
@@ -36,14 +37,16 @@ final class AIChatContextualSheetCoordinator {
     weak var delegate: AIChatContextualSheetCoordinatorDelegate?
 
     private let voiceSearchHelper: VoiceSearchHelperProtocol
+    private let settings: AIChatSettingsProvider
 
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
 
     // MARK: - Initialization
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, settings: AIChatSettingsProvider) {
         self.voiceSearchHelper = voiceSearchHelper
+        self.settings = settings
     }
 
     // MARK: - Public Methods
@@ -58,7 +61,7 @@ final class AIChatContextualSheetCoordinator {
         if let existingSheet = sheetViewController {
             sheetVC = existingSheet
         } else {
-            sheetVC = AIChatContextualSheetViewController(voiceSearchHelper: voiceSearchHelper)
+            sheetVC = AIChatContextualSheetViewController(voiceSearchHelper: voiceSearchHelper, settings: settings)
             sheetVC.delegate = self
             sheetViewController = sheetVC
         }

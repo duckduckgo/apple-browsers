@@ -19,6 +19,7 @@
 import SwiftUI
 
 struct TabBarRemoteMessageView: View {
+    @ObservedObject var themeManager: ThemeManager
     @State private var wasViewHovered: Bool = false
     @State private var wasCloseButtonHovered: Bool = false
 
@@ -30,20 +31,24 @@ struct TabBarRemoteMessageView: View {
     let onHoverEnd: () -> Void
     let onAppear: () -> Void
 
+    private var palette: ThemeColors {
+        themeManager.theme.palette
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             HStack {
                 Text(model.buttonTitle)
                     .font(.system(size: 13))
                     .fixedSize(horizontal: true, vertical: false)
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(palette.accentContentPrimary))
             }
             .padding([.leading, .top, .bottom], 8)
             .padding(.trailing, 6)
             .cornerRadius(8)
             .background(wasViewHovered
-                        ? Color(.tabBarRemoteMessageButtonHover)
-                        : Color(.tabBarRemoteMessageButtonRest))
+                        ? Color(palette.accentSecondary)
+                        : Color(palette.accentPrimary))
             .onTapGesture { onTap(model.surveyURL) }
             .onHover { hovering in
                 wasViewHovered = hovering
@@ -56,7 +61,7 @@ struct TabBarRemoteMessageView: View {
             }
 
             Divider()
-                .background(Color.white.opacity(0.3))
+                .background(Color(palette.accentContentTertiary))
                 .frame(width: 1)
                 .padding([.top, .bottom], 3)
 
@@ -64,14 +69,14 @@ struct TabBarRemoteMessageView: View {
                 Image(.close)
                     .resizable()
                     .scaledToFit()
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(palette.accentContentPrimary))
                     .frame(width: 16, height: 16)
             }
             .padding([.top, .bottom])
             .padding([.leading, .trailing], 4)
             .background(wasCloseButtonHovered
-                        ? Color(.tabBarRemoteMessageButtonHover)
-                        : Color(.tabBarRemoteMessageButtonRest))
+                        ? Color(palette.accentSecondary)
+                        : Color(palette.accentPrimary))
             .cornerRadius(8)
             .onTapGesture {
                 onClose()
@@ -82,8 +87,8 @@ struct TabBarRemoteMessageView: View {
             .frame(maxWidth: .infinity)
         }
         .background(wasCloseButtonHovered || wasViewHovered
-                    ? Color(.tabBarRemoteMessageButtonHover)
-                    : Color(.tabBarRemoteMessageButtonRest))
+                    ? Color(palette.accentSecondary)
+                    : Color(palette.accentPrimary))
         .frame(height: 24)
         .cornerRadius(8)
         .onAppear(perform: { onAppear() })

@@ -269,9 +269,24 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
     case aiChatSync
+
+    /// Autoconsent heuristic action experiment
+    /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
+    case heuristicAction
+
+    /// Next Steps cards iteration with single card displayed on New Tab page
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
+    case nextStepsSingleCardIteration
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
+
+    /// Cohorts for the autoconsent heuristic action experiment
+    public enum HeuristicActionCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     public var defaultValue: Bool {
         switch self {
         case .supportsAlternateStripePaymentFlow,
@@ -301,6 +316,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
+        case .heuristicAction:
+            return HeuristicActionCohort.self
         default:
             return nil
         }
@@ -376,7 +393,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillPasswordSearchPrioritizeDomain,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
-                .aiChatSync:
+                .aiChatSync,
+                .heuristicAction,
+                .nextStepsSingleCardIteration:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -548,6 +567,10 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .memoryUsageMonitor:
             return .disabled
         case .aiChatSync:
+            return .disabled
+        case .heuristicAction:
+            return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
+        case .nextStepsSingleCardIteration:
             return .disabled
         }
     }

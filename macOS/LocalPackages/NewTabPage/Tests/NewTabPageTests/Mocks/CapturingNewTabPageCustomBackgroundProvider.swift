@@ -22,7 +22,7 @@ import NewTabPage
 final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgroundProviding {
     var customizerOpener: NewTabPageCustomizerOpener = NewTabPageCustomizerOpener()
 
-    var customizerData: NewTabPageDataModel.CustomizerData = .init(background: .default, theme: .none, themeVariant: .default, userColor: nil, userImages: [])
+    var customizerData: NewTabPageDataModel.CustomizerData = .init(background: .default, theme: .none, themeVariant: nil, userColor: nil, userImages: [])
 
     @Published
     var background: NewTabPageDataModel.Background = .default

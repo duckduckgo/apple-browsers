@@ -146,6 +146,7 @@ public extension DesignSystemImages {
             public static var document: DesignSystemImage { .init(resource: .documentColor24) }
             public static var downloads: DesignSystemImage { .init(resource: .downloadsColor24) }
             public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGoColor24) }
+            public static var duckAI: DesignSystemImage { .init(resource: .duckAIColor24) }
             public static var email: DesignSystemImage { .init(resource: .emailColor24) }
             public static var emailBlock: DesignSystemImage { .init(resource: .emailBlockColor24) }
             public static var emailCheck: DesignSystemImage { .init(resource: .emailCheckColor24) }

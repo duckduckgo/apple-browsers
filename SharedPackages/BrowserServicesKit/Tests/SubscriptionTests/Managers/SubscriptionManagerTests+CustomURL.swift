@@ -1,5 +1,5 @@
 //
-//  SubscriptionManagerV2Tests+CustomURL.swift
+//  SubscriptionManagerTests+CustomURL.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

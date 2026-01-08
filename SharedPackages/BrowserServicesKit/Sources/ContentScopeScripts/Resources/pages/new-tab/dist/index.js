@@ -1445,7 +1445,8 @@
     "pages/new-tab/app/customizer/components/Customizer.module.css"() {
       Customizer_default = {
         lowerRightFixed: "Customizer_lowerRightFixed",
-        customizeButton: "Customizer_customizeButton"
+        customizeButton: "Customizer_customizeButton",
+        popover: "Customizer_popover"
       };
     }
   });
@@ -1959,6 +1960,77 @@
       }
     ));
   }
+  function NewTabOptionsIcon(props) {
+    return /* @__PURE__ */ _("svg", { fill: "none", width: "96", height: "96", viewBox: "0 0 96 96", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "url(#NewTab-Options-96_svg__a)",
+        d: "M46 78a5 5 0 0 0 5-5v-2c0-11.046 8.954-20 20-20h5a4 4 0 0 0 4-4V26a8 8 0 0 0-8-8H29a8 8 0 0 0-8 8v44a8 8 0 0 0 8 8z"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "url(#NewTab-Options-96_svg__b)",
+        d: "M47 78a4 4 0 0 0 4-4v-3c0-11.046 8.954-20 20-20h4V26a8 8 0 0 0-8-8H24a8 8 0 0 0-8 8v44a8 8 0 0 0 8 8z"
+      }
+    ), /* @__PURE__ */ _("path", { fill: "url(#NewTab-Options-96_svg__c)", d: "M37 32.5a8.5 8.5 0 1 1 17 0 8.5 8.5 0 0 1-17 0" }), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#fff",
+        d: "M43.803 38.342c.666.246 2.106.306 2.889.03a39 39 0 0 1-.439-1.023c-.32.076-.742.084-.84-.08-.368.319-1.073.78-1.22.683-.282-.184-.548-1.606-.336-1.907.322-.293 1.001.026 1.477.194.066-.112.237-.193.427-.237-.23-.766-.3-1.384-.002-1.568-.894-.257-1.587-.775-1.41-1.529.145-1.031 2.095-.709 2.967-.825q.011 0 .023-.003c.107-.701-.213-3.252-1.98-3.638-1.843-2.28-3.598.321-2.708.143.71-.177 1.238-.014 1.216-.007-3.904.493-.71 8.01-.48 9.587.085.116.267.115.413.17zm3-8.375c-.325-.174-.608-.085-.762-.036-.087.027-.133.041-.122-.014.128-.265.788-.267.918.01.017.024-.008.051-.034.04m-4.06.388c-.017.028-.084.024-.084-.01.017-.443.77-.657 1.044-.381.033.041-.016.038-.104.031-.123-.009-.323-.023-.488.069-.242.103-.32.215-.367.29Zm3.858 1.13c-.506-.003-.506-.783 0-.787.507.003.507.785 0 .787m-2.57-.12c-.01.602-.893.602-.904 0 .003-.6.901-.6.905 0Z"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#fff",
+        d: "M47.964 37.2c-.02.127-.064.212-.142.224-.15.023-.815-.13-1.193-.273-.043.198-1.056.385-1.217.12-.368.317-1.072.778-1.22.682-.282-.185-.547-1.607-.335-1.908.323-.293 1.001.026 1.477.194.161-.272.942-.376 1.104-.152.428-.325 1.14-.783 1.21-.7.347.418.39 1.412.316 1.813",
+        opacity: ".5"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#fff",
+        "fill-rule": "evenodd",
+        d: "M44.35 32.905c.145-1.032 2.094-.709 2.966-.825a5.6 5.6 0 0 0 1.42-.352c.721-.296.844-.002.491.46-.995 1.18-3.208.32-3.605.93-.115.181-.026.607.885.74 1.23.181 2.24-.217 2.365.024-.28 1.288-4.95.85-4.523-.977Z",
+        "clip-rule": "evenodd",
+        opacity: ".7"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#fff",
+        "fill-rule": "evenodd",
+        d: "M45.5 26.89a5.61 5.61 0 1 0 0 11.22 5.61 5.61 0 0 0 0-11.22M39 32.5a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0",
+        "clip-rule": "evenodd"
+      }
+    ), /* @__PURE__ */ _("path", { fill: "#000", "fill-opacity": ".1", d: "M62.273 53a19.9 19.9 0 0 1 6.083-1.825A4 4 0 0 0 65 45H26a4 4 0 0 0 0 8z" }), /* @__PURE__ */ _("path", { fill: "#fff", d: "M65 51a4 4 0 0 0 0-8H26a4 4 0 0 0 0 8z" }), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#fff",
+        "fill-opacity": ".6",
+        d: "M31 64a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2zm11 0a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2zm10.26 0A20 20 0 0 1 55 58.999V58a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2z"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#000",
+        "fill-opacity": ".1",
+        d: "M32 68a1 1 0 1 0 0-2h-6a1 1 0 1 0 0 2zm11 0a1 1 0 1 0 0-2h-6a1 1 0 1 0 0 2zm8.224 0q.153-1.018.407-2H48a1 1 0 1 0 0 2z"
+      }
+    ), /* @__PURE__ */ _("path", { fill: "#ccc", d: "M24 47a2 2 0 1 1 4 0 2 2 0 0 1-4 0" }), /* @__PURE__ */ _("path", { fill: "#557ff3", d: "M71 87c8.837 0 16-7.163 16-16s-7.163-16-16-16-16 7.163-16 16 7.163 16 16 16" }), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#ccc",
+        d: "M92.501 59c.298 0 .595.12.823.354.454.468.454 1.23 0 1.698l-2.333 2.4a1.145 1.145 0 0 1-1.65 0 1.227 1.227 0 0 1 0-1.698l2.333-2.4c.227-.234.524-.354.822-.354zm-1.166 10.798h3.499c.641 0 1.166.54 1.166 1.2s-.525 1.2-1.166 1.2h-3.499c-.641 0-1.166-.54-1.166-1.2s.525-1.2 1.166-1.2m-1.982 8.754c.227-.234.525-.354.822-.354h.006c.297 0 .595.12.822.354l2.332 2.4c.455.467.455 1.23 0 1.697a1.145 1.145 0 0 1-1.65 0l-2.332-2.4a1.227 1.227 0 0 1 0-1.697"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#fff",
+        d: "M75.5 72a4.5 4.5 0 1 1-4.242 6H62.5a1.5 1.5 0 0 1 0-3h8.758a4.5 4.5 0 0 1 4.242-3m-9-11a4.5 4.5 0 0 1 4.242 3H79.5a1.5 1.5 0 0 1 0 3h-8.758a4.5 4.5 0 1 1-4.242-6"
+      }
+    ), /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("linearGradient", { id: "NewTab-Options-96_svg__a", x1: "50.5", x2: "50.5", y1: "78", y2: "18", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#e46f4f" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#876ecb" })), /* @__PURE__ */ _("linearGradient", { id: "NewTab-Options-96_svg__b", x1: "27", x2: "67.5", y1: "75.5", y2: "19", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#f8bbaa" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#a591dc" })), /* @__PURE__ */ _("linearGradient", { id: "NewTab-Options-96_svg__c", x1: "42.667", x2: "49.467", y1: "41", y2: "24.567", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#eb876c" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#6b4eba" }))));
+  }
   var init_Icons2 = __esm({
     "pages/new-tab/app/components/Icons.js"() {
       "use strict";
@@ -1967,88 +2039,526 @@
     }
   });
 
-  // pages/new-tab/app/customizer/components/CustomizerMenu.js
-  function getItems() {
-    const next = [];
-    const detail = {
-      register: (incoming) => {
-        next.push(incoming);
-      }
-    };
-    const event = new CustomEvent(OPEN_EVENT, { detail });
-    window.dispatchEvent(event);
-    next.sort((a4, b4) => a4.index - b4.index);
-    return next;
-  }
-  function useContextMenu() {
-    const messaging2 = useMessaging();
-    y2(() => {
-      function handler(e4) {
-        e4.preventDefault();
-        e4.stopImmediatePropagation();
-        const items = getItems();
-        const simplified = items.filter((x4) => !x4.id.startsWith("_")).map((item) => {
-          return {
-            id: item.id,
-            title: item.title
-          };
-        });
-        messaging2.contextMenu({ visibilityMenuItems: simplified });
-      }
-      document.body.addEventListener("contextmenu", handler);
-      return () => {
-        document.body.removeEventListener("contextmenu", handler);
+  // pages/new-tab/app/components/BackgroundReceiver.module.css
+  var BackgroundReceiver_default;
+  var init_BackgroundReceiver = __esm({
+    "pages/new-tab/app/components/BackgroundReceiver.module.css"() {
+      BackgroundReceiver_default = {
+        root: "BackgroundReceiver_root",
+        "fade-in": "BackgroundReceiver_fade-in"
       };
-    }, [messaging2]);
-  }
-  function CustomizerButton({ menuId, buttonId, isOpen, toggleMenu, buttonRef, kind }) {
-    const { t: t4 } = useTypedTranslation();
-    return /* @__PURE__ */ _(
-      "button",
-      {
-        ref: buttonRef,
-        class: Customizer_default.customizeButton,
-        onClick: toggleMenu,
-        "aria-haspopup": "true",
-        "aria-expanded": isOpen,
-        "aria-controls": menuId,
-        "data-kind": kind,
-        id: buttonId,
-        "data-testid": "customizer-button"
-      },
-      /* @__PURE__ */ _(CustomizeIcon, null),
-      /* @__PURE__ */ _("span", null, t4("ntp_customizer_button"))
-    );
-  }
-  function CustomizerMenuPositionedFixed({ children }) {
-    return /* @__PURE__ */ _("div", { class: Customizer_default.lowerRightFixed }, children);
-  }
-  function useCustomizer({ title, id, icon, toggle, visibility, index: index2, enabled }) {
-    y2(() => {
-      const handler = (e4) => {
-        e4.detail.register({ title, id, icon, toggle, visibility, index: index2, enabled });
-      };
-      window.addEventListener(OPEN_EVENT, handler);
-      return () => window.removeEventListener(OPEN_EVENT, handler);
-    }, [title, id, icon, toggle, visibility, index2, enabled]);
-    y2(() => {
-      window.dispatchEvent(new Event(UPDATE_EVENT));
-      return () => {
-        window.dispatchEvent(new Event(UPDATE_EVENT));
-      };
-    }, [visibility]);
-  }
-  var OPEN_EVENT, UPDATE_EVENT;
-  var init_CustomizerMenu = __esm({
-    "pages/new-tab/app/customizer/components/CustomizerMenu.js"() {
+    }
+  });
+
+  // pages/new-tab/app/customizer/values.js
+  var values;
+  var init_values = __esm({
+    "pages/new-tab/app/customizer/values.js"() {
       "use strict";
+      values = {
+        colors: {
+          color01: { hex: "#000000", colorScheme: "dark" },
+          color02: { hex: "#342e42", colorScheme: "dark" },
+          color03: { hex: "#4d5f7f", colorScheme: "dark" },
+          color04: { hex: "#9a979d", colorScheme: "dark" },
+          color05: { hex: "#dbdddf", colorScheme: "light" },
+          color06: { hex: "#577de4", colorScheme: "dark" },
+          color07: { hex: "#75b9f0", colorScheme: "light" },
+          color08: { hex: "#5552ac", colorScheme: "dark" },
+          color09: { hex: "#b79ed4", colorScheme: "light" },
+          color10: { hex: "#e4def2", colorScheme: "light" },
+          color11: { hex: "#b5e2ce", colorScheme: "light" },
+          color12: { hex: "#5bc787", colorScheme: "light" },
+          color13: { hex: "#4594a7", colorScheme: "dark" },
+          color14: { hex: "#e9dccd", colorScheme: "light" },
+          color15: { hex: "#f3bb44", colorScheme: "light" },
+          color16: { hex: "#e5724f", colorScheme: "light" },
+          color17: { hex: "#d55154", colorScheme: "dark" },
+          color18: { hex: "#f7dee5", colorScheme: "light" },
+          color19: { hex: "#e28499", colorScheme: "light" }
+        },
+        gradients: {
+          gradient01: { path: "gradients/gradient01.svg", fallback: "#f2e5d4", colorScheme: "light" },
+          gradient02: { path: "gradients/gradient02.svg", fallback: "#d5bcd1", colorScheme: "light" },
+          /**
+           * Note: the following name `gradient02.01` is used to allow migration for existing macOS users.
+           * When switching to the web-based NTP, we introduced an eight gradient to round-out the columns, but
+           * the colors in the gradient meant it needed to be wedged in between 02 and 03.
+           */
+          "gradient02.01": { path: "gradients/gradient02.01.svg", fallback: "#f4ca78", colorScheme: "light" },
+          gradient03: { path: "gradients/gradient03.svg", fallback: "#e6a356", colorScheme: "light" },
+          gradient04: { path: "gradients/gradient04.svg", fallback: "#4448ae", colorScheme: "dark" },
+          gradient05: { path: "gradients/gradient05.svg", fallback: "#a55778", colorScheme: "dark" },
+          gradient06: { path: "gradients/gradient06.svg", fallback: "#222566", colorScheme: "dark" },
+          gradient07: { path: "gradients/gradient07.svg", fallback: "#0e0e3d", colorScheme: "dark" }
+        },
+        userImages: {
+          "01": {
+            colorScheme: "dark",
+            id: "01",
+            src: "backgrounds/bg-01.jpg",
+            thumb: "backgrounds/bg-01-thumb.jpg"
+          },
+          "02": {
+            colorScheme: "light",
+            id: "02",
+            src: "backgrounds/bg-02.jpg",
+            thumb: "backgrounds/bg-02-thumb.jpg"
+          },
+          "03": {
+            colorScheme: "light",
+            id: "03",
+            src: "backgrounds/bg-03.jpg",
+            thumb: "backgrounds/bg-03-thumb.jpg"
+          }
+        }
+      };
+    }
+  });
+
+  // pages/new-tab/app/customizer/utils.js
+  function detectThemeFromHex(backgroundColor) {
+    const hex = backgroundColor.replace("#", "");
+    const r4 = parseInt(hex.slice(0, 2), 16);
+    const g6 = parseInt(hex.slice(2, 4), 16);
+    const b4 = parseInt(hex.slice(4, 6), 16);
+    const luminance = 0.2126 * r4 + 0.7152 * g6 + 0.0722 * b4;
+    return luminance < 128 ? "dark" : "light";
+  }
+  function applyDefaultStyles(defaultStyles) {
+    if (defaultStyles?.lightBackgroundColor || defaultStyles?.darkBackgroundColor) {
+      console.warn("defaultStyles is deprecated. Use themeVariant instead. This will override theme variant colors.", defaultStyles);
+    }
+    if (defaultStyles?.lightBackgroundColor) {
+      document.body.style.setProperty("--default-light-background-color", defaultStyles.lightBackgroundColor);
+    }
+    if (defaultStyles?.darkBackgroundColor) {
+      document.body.style.setProperty("--default-dark-background-color", defaultStyles.darkBackgroundColor);
+    }
+  }
+  var init_utils = __esm({
+    "pages/new-tab/app/customizer/utils.js"() {
+      "use strict";
+    }
+  });
+
+  // ../node_modules/preact/compat/dist/compat.module.js
+  function g5(n3, t4) {
+    for (var e4 in t4) n3[e4] = t4[e4];
+    return n3;
+  }
+  function E3(n3, t4) {
+    for (var e4 in n3) if ("__source" !== e4 && !(e4 in t4)) return true;
+    for (var r4 in t4) if ("__source" !== r4 && n3[r4] !== t4[r4]) return true;
+    return false;
+  }
+  function N2(n3, t4) {
+    this.props = n3, this.context = t4;
+  }
+  function M3(n3, e4) {
+    function r4(n4) {
+      var t4 = this.props.ref, r5 = t4 == n4.ref;
+      return !r5 && t4 && (t4.call ? t4(null) : t4.current = null), e4 ? !e4(this.props, n4) || !r5 : E3(this.props, n4);
+    }
+    function u4(e5) {
+      return this.shouldComponentUpdate = r4, _(n3, e5);
+    }
+    return u4.displayName = "Memo(" + (n3.displayName || n3.name) + ")", u4.prototype.isReactComponent = true, u4.__f = true, u4.type = n3, u4;
+  }
+  function V2(n3, t4, e4) {
+    return n3 && (n3.__c && n3.__c.__H && (n3.__c.__H.__.forEach(function(n4) {
+      "function" == typeof n4.__c && n4.__c();
+    }), n3.__c.__H = null), null != (n3 = g5({}, n3)).__c && (n3.__c.__P === e4 && (n3.__c.__P = t4), n3.__c.__e = true, n3.__c = null), n3.__k = n3.__k && n3.__k.map(function(n4) {
+      return V2(n4, t4, e4);
+    })), n3;
+  }
+  function W(n3, t4, e4) {
+    return n3 && e4 && (n3.__v = null, n3.__k = n3.__k && n3.__k.map(function(n4) {
+      return W(n4, t4, e4);
+    }), n3.__c && n3.__c.__P === t4 && (n3.__e && e4.appendChild(n3.__e), n3.__c.__e = true, n3.__c.__P = e4)), n3;
+  }
+  function P3() {
+    this.__u = 0, this.o = null, this.__b = null;
+  }
+  function j3(n3) {
+    var t4 = n3.__.__c;
+    return t4 && t4.__a && t4.__a(n3);
+  }
+  function z3(n3) {
+    var e4, r4, u4, o4 = null;
+    function i5(i6) {
+      if (e4 || (e4 = n3()).then(function(n4) {
+        n4 && (o4 = n4.default || n4), u4 = true;
+      }, function(n4) {
+        r4 = n4, u4 = true;
+      }), r4) throw r4;
+      if (!u4) throw e4;
+      return o4 ? _(o4, i6) : null;
+    }
+    return i5.displayName = "Lazy", i5.__f = true, i5;
+  }
+  function B3() {
+    this.i = null, this.l = null;
+  }
+  function rn() {
+  }
+  function un() {
+    return this.cancelBubble;
+  }
+  function on() {
+    return this.defaultPrevented;
+  }
+  var T4, A4, F4, U, H2, q4, G2, J2, K2, Q2, X, en, ln, cn, fn, an, sn;
+  var init_compat_module = __esm({
+    "../node_modules/preact/compat/dist/compat.module.js"() {
+      init_preact_module();
       init_preact_module();
       init_hooks_module();
-      init_Customizer();
-      init_Icons2();
-      init_types();
-      OPEN_EVENT = "ntp-customizer-open";
-      UPDATE_EVENT = "ntp-customizer-update";
+      init_hooks_module();
+      (N2.prototype = new x()).isPureReactComponent = true, N2.prototype.shouldComponentUpdate = function(n3, t4) {
+        return E3(this.props, n3) || E3(this.state, t4);
+      };
+      T4 = l.__b;
+      l.__b = function(n3) {
+        n3.type && n3.type.__f && n3.ref && (n3.props.ref = n3.ref, n3.ref = null), T4 && T4(n3);
+      };
+      A4 = "undefined" != typeof Symbol && Symbol.for && /* @__PURE__ */ Symbol.for("react.forward_ref") || 3911;
+      F4 = l.__e;
+      l.__e = function(n3, t4, e4, r4) {
+        if (n3.then) {
+          for (var u4, o4 = t4; o4 = o4.__; ) if ((u4 = o4.__c) && u4.__c) return null == t4.__e && (t4.__e = e4.__e, t4.__k = e4.__k), u4.__c(n3, t4);
+        }
+        F4(n3, t4, e4, r4);
+      };
+      U = l.unmount;
+      l.unmount = function(n3) {
+        var t4 = n3.__c;
+        t4 && t4.__R && t4.__R(), t4 && 32 & n3.__u && (n3.type = null), U && U(n3);
+      }, (P3.prototype = new x()).__c = function(n3, t4) {
+        var e4 = t4.__c, r4 = this;
+        null == r4.o && (r4.o = []), r4.o.push(e4);
+        var u4 = j3(r4.__v), o4 = false, i5 = function() {
+          o4 || (o4 = true, e4.__R = null, u4 ? u4(l5) : l5());
+        };
+        e4.__R = i5;
+        var l5 = function() {
+          if (!--r4.__u) {
+            if (r4.state.__a) {
+              var n4 = r4.state.__a;
+              r4.__v.__k[0] = W(n4, n4.__c.__P, n4.__c.__O);
+            }
+            var t5;
+            for (r4.setState({ __a: r4.__b = null }); t5 = r4.o.pop(); ) t5.forceUpdate();
+          }
+        };
+        r4.__u++ || 32 & t4.__u || r4.setState({ __a: r4.__b = r4.__v.__k[0] }), n3.then(i5, i5);
+      }, P3.prototype.componentWillUnmount = function() {
+        this.o = [];
+      }, P3.prototype.render = function(n3, e4) {
+        if (this.__b) {
+          if (this.__v.__k) {
+            var r4 = document.createElement("div"), o4 = this.__v.__k[0].__c;
+            this.__v.__k[0] = V2(this.__b, r4, o4.__O = o4.__P);
+          }
+          this.__b = null;
+        }
+        var i5 = e4.__a && _(k, null, n3.fallback);
+        return i5 && (i5.__u &= -33), [_(k, null, e4.__a ? null : n3.children), i5];
+      };
+      H2 = function(n3, t4, e4) {
+        if (++e4[1] === e4[0] && n3.l.delete(t4), n3.props.revealOrder && ("t" !== n3.props.revealOrder[0] || !n3.l.size)) for (e4 = n3.i; e4; ) {
+          for (; e4.length > 3; ) e4.pop()();
+          if (e4[1] < e4[0]) break;
+          n3.i = e4 = e4[2];
+        }
+      };
+      (B3.prototype = new x()).__a = function(n3) {
+        var t4 = this, e4 = j3(t4.__v), r4 = t4.l.get(n3);
+        return r4[0]++, function(u4) {
+          var o4 = function() {
+            t4.props.revealOrder ? (r4.push(u4), H2(t4, n3, r4)) : u4();
+          };
+          e4 ? e4(o4) : o4();
+        };
+      }, B3.prototype.render = function(n3) {
+        this.i = null, this.l = /* @__PURE__ */ new Map();
+        var t4 = H(n3.children);
+        n3.revealOrder && "b" === n3.revealOrder[0] && t4.reverse();
+        for (var e4 = t4.length; e4--; ) this.l.set(t4[e4], this.i = [1, 0, this.i]);
+        return n3.children;
+      }, B3.prototype.componentDidUpdate = B3.prototype.componentDidMount = function() {
+        var n3 = this;
+        this.l.forEach(function(t4, e4) {
+          H2(n3, e4, t4);
+        });
+      };
+      q4 = "undefined" != typeof Symbol && Symbol.for && /* @__PURE__ */ Symbol.for("react.element") || 60103;
+      G2 = /^(?:accent|alignment|arabic|baseline|cap|clip(?!PathU)|color|dominant|fill|flood|font|glyph(?!R)|horiz|image(!S)|letter|lighting|marker(?!H|W|U)|overline|paint|pointer|shape|stop|strikethrough|stroke|text(?!L)|transform|underline|unicode|units|v|vector|vert|word|writing|x(?!C))[A-Z]/;
+      J2 = /^on(Ani|Tra|Tou|BeforeInp|Compo)/;
+      K2 = /[A-Z0-9]/g;
+      Q2 = "undefined" != typeof document;
+      X = function(n3) {
+        return ("undefined" != typeof Symbol && "symbol" == typeof /* @__PURE__ */ Symbol() ? /fil|che|rad/ : /fil|che|ra/).test(n3);
+      };
+      x.prototype.isReactComponent = {}, ["componentWillMount", "componentWillReceiveProps", "componentWillUpdate"].forEach(function(t4) {
+        Object.defineProperty(x.prototype, t4, { configurable: true, get: function() {
+          return this["UNSAFE_" + t4];
+        }, set: function(n3) {
+          Object.defineProperty(this, t4, { configurable: true, writable: true, value: n3 });
+        } });
+      });
+      en = l.event;
+      l.event = function(n3) {
+        return en && (n3 = en(n3)), n3.persist = rn, n3.isPropagationStopped = un, n3.isDefaultPrevented = on, n3.nativeEvent = n3;
+      };
+      cn = { enumerable: false, configurable: true, get: function() {
+        return this.class;
+      } };
+      fn = l.vnode;
+      l.vnode = function(n3) {
+        "string" == typeof n3.type && (function(n4) {
+          var t4 = n4.props, e4 = n4.type, u4 = {}, o4 = -1 === e4.indexOf("-");
+          for (var i5 in t4) {
+            var l5 = t4[i5];
+            if (!("value" === i5 && "defaultValue" in t4 && null == l5 || Q2 && "children" === i5 && "noscript" === e4 || "class" === i5 || "className" === i5)) {
+              var c4 = i5.toLowerCase();
+              "defaultValue" === i5 && "value" in t4 && null == t4.value ? i5 = "value" : "download" === i5 && true === l5 ? l5 = "" : "translate" === c4 && "no" === l5 ? l5 = false : "o" === c4[0] && "n" === c4[1] ? "ondoubleclick" === c4 ? i5 = "ondblclick" : "onchange" !== c4 || "input" !== e4 && "textarea" !== e4 || X(t4.type) ? "onfocus" === c4 ? i5 = "onfocusin" : "onblur" === c4 ? i5 = "onfocusout" : J2.test(i5) && (i5 = c4) : c4 = i5 = "oninput" : o4 && G2.test(i5) ? i5 = i5.replace(K2, "-$&").toLowerCase() : null === l5 && (l5 = void 0), "oninput" === c4 && u4[i5 = c4] && (i5 = "oninputCapture"), u4[i5] = l5;
+            }
+          }
+          "select" == e4 && u4.multiple && Array.isArray(u4.value) && (u4.value = H(t4.children).forEach(function(n5) {
+            n5.props.selected = -1 != u4.value.indexOf(n5.props.value);
+          })), "select" == e4 && null != u4.defaultValue && (u4.value = H(t4.children).forEach(function(n5) {
+            n5.props.selected = u4.multiple ? -1 != u4.defaultValue.indexOf(n5.props.value) : u4.defaultValue == n5.props.value;
+          })), t4.class && !t4.className ? (u4.class = t4.class, Object.defineProperty(u4, "className", cn)) : (t4.className && !t4.class || t4.class && t4.className) && (u4.class = u4.className = t4.className), n4.props = u4;
+        })(n3), n3.$$typeof = q4, fn && fn(n3);
+      };
+      an = l.__r;
+      l.__r = function(n3) {
+        an && an(n3), ln = n3.__c;
+      };
+      sn = l.diffed;
+      l.diffed = function(n3) {
+        sn && sn(n3);
+        var t4 = n3.props, e4 = n3.__e;
+        null != e4 && "textarea" === n3.type && "value" in t4 && t4.value !== e4.value && (e4.value = null == t4.value ? "" : t4.value), ln = null;
+      };
+    }
+  });
+
+  // pages/new-tab/app/components/BackgroundProvider.js
+  function inferSchemeFrom(background, browserTheme, system) {
+    const browser = themeFromBrowser(browserTheme, system);
+    switch (background.kind) {
+      case "default":
+        return { bg: browser, browser };
+      case "color": {
+        const color = values.colors[background.value];
+        return { bg: color.colorScheme, browser };
+      }
+      case "gradient": {
+        const gradient = values.gradients[background.value];
+        return { bg: gradient.colorScheme, browser };
+      }
+      case "userImage":
+        return { bg: background.value.colorScheme, browser };
+      case "hex":
+        return { bg: detectThemeFromHex(background.value), browser };
+    }
+  }
+  function themeFromBrowser(browserTheme, system) {
+    if (browserTheme === "system") {
+      return system;
+    }
+    return browserTheme;
+  }
+  function BackgroundConsumer({ browser, variant }) {
+    const { data: data2 } = x2(CustomizerContext);
+    const background = data2.value.background;
+    useSignalEffect(() => {
+      const background2 = data2.value.background;
+      document.body.dataset.backgroundKind = background2.kind;
+      let nextBodyBackground = "";
+      if (background2.kind === "gradient") {
+        const gradient = values.gradients[background2.value];
+        nextBodyBackground = gradient.fallback;
+      }
+      if (background2.kind === "color") {
+        const color = values.colors[background2.value];
+        nextBodyBackground = color.hex;
+      }
+      if (background2.kind === "hex") {
+        nextBodyBackground = background2.value;
+      }
+      if (background2.kind === "userImage") {
+        const isDark = background2.value.colorScheme === "dark";
+        nextBodyBackground = isDark ? "var(--default-dark-background-color)" : "var(--default-light-background-color)";
+      }
+      if (background2.kind === "default") {
+        nextBodyBackground = browser.value === "dark" ? "var(--default-dark-background-color)" : "var(--default-light-background-color)";
+      }
+      document.body.style.setProperty("background-color", nextBodyBackground);
+      if (!document.body.dataset.animateBackground) {
+        requestAnimationFrame(() => {
+          document.body.dataset.animateBackground = "true";
+        });
+      }
+    });
+    useSignalEffect(() => {
+      document.body.dataset.theme = browser.value;
+    });
+    useSignalEffect(() => {
+      document.body.dataset.themeVariant = variant.value;
+    });
+    switch (background.kind) {
+      case "color":
+      case "default":
+      case "hex": {
+        return null;
+      }
+      case "userImage": {
+        const img = background.value;
+        return /* @__PURE__ */ _(ImageCrossFade, { src: img.src });
+      }
+      case "gradient": {
+        const gradient = values.gradients[background.value];
+        return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _(ImageCrossFade, { src: gradient.path }), /* @__PURE__ */ _(
+          "div",
+          {
+            className: BackgroundReceiver_default.root,
+            style: {
+              backgroundImage: `url(gradients/grain.png)`,
+              backgroundRepeat: "repeat",
+              opacity: 0.5,
+              mixBlendMode: "soft-light"
+            }
+          }
+        ));
+      }
+      default: {
+        console.warn("Unreachable!");
+        return null;
+      }
+    }
+  }
+  function ImageCrossFade_({ src }) {
+    const [state, setState] = d2({
+      /** @type {ImgState} */
+      value: states.idle,
+      current: src,
+      next: src
+    });
+    y2(() => {
+      let img = new Image();
+      let cancelled = false;
+      setState((prev) => {
+        const nextState = prev.value === states.idle ? states.loadingFirst : states.loading;
+        return { ...prev, value: nextState };
+      });
+      let handler = () => {
+        if (cancelled) return;
+        setState((prev) => {
+          if (prev.value === states.loading) {
+            return { ...prev, value: states.fading, next: src };
+          }
+          return prev;
+        });
+      };
+      img.addEventListener("load", handler);
+      img.src = src;
+      return () => {
+        cancelled = true;
+        if (img && handler) {
+          img.removeEventListener("load", handler);
+          img = void 0;
+          handler = void 0;
+        }
+      };
+    }, [src]);
+    switch (state.value) {
+      case states.settled:
+      case states.loadingFirst:
+        return /* @__PURE__ */ _("img", { class: BackgroundReceiver_default.root, "data-state": state.value, src: state.current, alt: "" });
+      case states.loading:
+      case states.fading:
+        return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("img", { class: BackgroundReceiver_default.root, "data-state": state.value, src: state.current, alt: "" }), /* @__PURE__ */ _(
+          "img",
+          {
+            class: BackgroundReceiver_default.root,
+            "data-state": state.value,
+            src: state.next,
+            onLoad: (e4) => {
+              const elem2 = (
+                /** @type {HTMLImageElement} */
+                e4.target
+              );
+              elem2.style.opacity = "0";
+              const anim = elem2.animate([{ opacity: "0" }, { opacity: "1" }], {
+                duration: 250,
+                iterations: 1,
+                fill: "both"
+              });
+              anim.onfinish = () => {
+                setState((prev) => {
+                  return { ...prev, value: states.settled, current: prev.next, next: prev.next };
+                });
+              };
+            }
+          }
+        ));
+      default:
+        return null;
+    }
+  }
+  var states, ImageCrossFade;
+  var init_BackgroundProvider = __esm({
+    "pages/new-tab/app/components/BackgroundProvider.js"() {
+      "use strict";
+      init_preact_module();
+      init_BackgroundReceiver();
+      init_values();
+      init_hooks_module();
+      init_CustomizerProvider();
+      init_utils();
+      init_signals_module();
+      init_compat_module();
+      states = {
+        idle: "idle",
+        loadingFirst: "loadingFirst",
+        loading: "loading",
+        fading: "fading",
+        settled: "settled"
+      };
+      ImageCrossFade = M3(ImageCrossFade_);
+    }
+  });
+
+  // pages/new-tab/app/customizer/themes.js
+  function useThemes(data2) {
+    const mq = useSignal(mediaQueryList.matches ? "dark" : "light");
+    useSignalEffect(() => {
+      const listener = (e4) => {
+        mq.value = e4.matches ? "dark" : "light";
+      };
+      mediaQueryList.addEventListener("change", listener);
+      return () => mediaQueryList.removeEventListener("change", listener);
+    });
+    const main = useComputed(() => {
+      return inferSchemeFrom(data2.value.background, data2.value.theme, mq.value).bg;
+    });
+    const browser = useComputed(() => {
+      return themeFromBrowser(data2.value.theme, mq.value);
+    });
+    const variant = useComputed(() => data2.value.themeVariant ?? "default");
+    return { main, browser, variant };
+  }
+  var THEME_QUERY, mediaQueryList;
+  var init_themes = __esm({
+    "pages/new-tab/app/customizer/themes.js"() {
+      "use strict";
+      init_signals_module();
+      init_BackgroundProvider();
+      THEME_QUERY = "(prefers-color-scheme: dark)";
+      mediaQueryList = window.matchMedia(THEME_QUERY);
     }
   });
 
@@ -2061,10 +2571,10 @@
     injectName = "windows",
     locale = "en"
   }) {
-    const [theme, setTheme] = d2(window.matchMedia(THEME_QUERY).matches ? "dark" : "light");
+    const [theme, setTheme] = d2(window.matchMedia(THEME_QUERY2).matches ? "dark" : "light");
     const [isReducedMotion, setReducedMotion] = d2(window.matchMedia(REDUCED_MOTION_QUERY).matches);
     y2(() => {
-      const mediaQueryList2 = window.matchMedia(THEME_QUERY);
+      const mediaQueryList2 = window.matchMedia(THEME_QUERY2);
       const listener = (e4) => setTheme(e4.matches ? "dark" : "light");
       mediaQueryList2.addEventListener("change", listener);
       return () => mediaQueryList2.removeEventListener("change", listener);
@@ -2116,7 +2626,7 @@
   function useLocale() {
     return x2(EnvironmentContext).locale;
   }
-  var EnvironmentContext, THEME_QUERY, REDUCED_MOTION_QUERY;
+  var EnvironmentContext, THEME_QUERY2, REDUCED_MOTION_QUERY;
   var init_EnvironmentProvider = __esm({
     "shared/components/EnvironmentProvider.js"() {
       "use strict";
@@ -2136,8 +2646,521 @@
         /** @type {import('../environment').Environment['env']} */
         env: "production"
       });
-      THEME_QUERY = "(prefers-color-scheme: dark)";
+      THEME_QUERY2 = "(prefers-color-scheme: dark)";
       REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+    }
+  });
+
+  // pages/new-tab/app/components/Drawer.js
+  function useDrawer(initial) {
+    const { isReducedMotion } = useEnv();
+    const asideRef = A2(
+      /** @type {HTMLDivElement|null} */
+      null
+    );
+    const buttonRef = A2(
+      /** @type {HTMLButtonElement|null} */
+      null
+    );
+    const buttonId = g2();
+    const drawerId = g2();
+    const visibility = useSignal(
+      /** @type {DrawerVisibility} */
+      "hidden"
+    );
+    const displayChildren = useSignal(false);
+    const animating = useSignal(false);
+    const hidden = useComputed(() => displayChildren.value === false);
+    _2(() => {
+      const controller = new AbortController();
+      const aside = asideRef.current;
+      if (!aside) return;
+      const update = (value2) => {
+        visibility.value = value2;
+        if (isReducedMotion) {
+          displayChildren.value = visibility.value === "visible";
+        }
+      };
+      const close = () => update("hidden");
+      const open = () => update("visible");
+      const toggle = () => {
+        const next = visibility.value === "hidden" ? "visible" : "hidden";
+        update(next);
+      };
+      window.addEventListener(CLOSE_DRAWER_EVENT, close, { signal: controller.signal });
+      window.addEventListener(TOGGLE_DRAWER_EVENT, toggle, { signal: controller.signal });
+      window.addEventListener(OPEN_DRAWER_EVENT, open, { signal: controller.signal });
+      aside?.addEventListener(
+        "transitionend",
+        (e4) => {
+          if (e4.target !== e4.currentTarget) return;
+          r3(() => {
+            displayChildren.value = visibility.value === "visible";
+            animating.value = false;
+            if (displayChildren.value === false) {
+              buttonRef.current?.focus?.();
+            }
+          });
+        },
+        { signal: controller.signal }
+      );
+      aside?.addEventListener(
+        "transitionstart",
+        (e4) => {
+          if (e4.target !== e4.currentTarget) return;
+          r3(() => {
+            animating.value = true;
+            displayChildren.value = true;
+          });
+        },
+        { signal: controller.signal }
+      );
+      return () => {
+        controller.abort();
+      };
+    }, [isReducedMotion, initial]);
+    const ntp = useMessaging();
+    y2(() => {
+      if (initial === "visible") {
+        _open();
+      }
+      return ntp.messaging.subscribe("customizer_autoOpen", () => {
+        _open();
+      });
+    }, [initial, ntp]);
+    return {
+      buttonRef,
+      visibility,
+      displayChildren,
+      buttonId,
+      drawerId,
+      hidden,
+      animating,
+      asideRef
+    };
+  }
+  function _toggle() {
+    window.dispatchEvent(new CustomEvent(TOGGLE_DRAWER_EVENT));
+  }
+  function _open() {
+    window.dispatchEvent(new CustomEvent(OPEN_DRAWER_EVENT));
+  }
+  function _close() {
+    window.dispatchEvent(new CustomEvent(CLOSE_DRAWER_EVENT));
+  }
+  function useDrawerEventListeners({ onOpen, onClose, onToggle }, deps = []) {
+    y2(() => {
+      const controller = new AbortController();
+      if (onOpen) window.addEventListener(OPEN_DRAWER_EVENT, onOpen, { signal: controller.signal });
+      if (onClose) window.addEventListener(CLOSE_DRAWER_EVENT, onClose, { signal: controller.signal });
+      if (onToggle) window.addEventListener(TOGGLE_DRAWER_EVENT, onToggle, { signal: controller.signal });
+      return () => controller.abort();
+    }, deps);
+  }
+  function useDrawerControls() {
+    return {
+      toggle: _toggle,
+      close: _close,
+      open: _open
+    };
+  }
+  var CLOSE_DRAWER_EVENT, TOGGLE_DRAWER_EVENT, OPEN_DRAWER_EVENT;
+  var init_Drawer = __esm({
+    "pages/new-tab/app/components/Drawer.js"() {
+      "use strict";
+      init_hooks_module();
+      init_signals_module();
+      init_EnvironmentProvider();
+      init_types();
+      CLOSE_DRAWER_EVENT = "close-drawer";
+      TOGGLE_DRAWER_EVENT = "toggle-drawer";
+      OPEN_DRAWER_EVENT = "open-drawer";
+    }
+  });
+
+  // pages/new-tab/app/customizer/CustomizerProvider.js
+  function CustomizerProvider({ service, initialData, children }) {
+    const data2 = useSignal(initialData);
+    const { main, browser, variant } = useThemes(data2);
+    useSignalEffect(() => {
+      const unsubs = [
+        service.onBackground((evt) => {
+          data2.value = { ...data2.value, background: evt.data.background };
+        }),
+        service.onTheme((evt) => {
+          const updates = { theme: evt.data.theme };
+          if (evt.data.themeVariant !== void 0) {
+            updates.themeVariant = evt.data.themeVariant;
+          }
+          data2.value = { ...data2.value, ...updates };
+        }),
+        service.onImages((evt) => {
+          data2.value = { ...data2.value, userImages: evt.data.userImages };
+        }),
+        service.onColor((evt) => {
+          data2.value = { ...data2.value, userColor: evt.data.userColor };
+        }),
+        service.onShowThemeVariantPopover((evt) => {
+          data2.value = { ...data2.value, showThemeVariantPopover: evt.data.showThemeVariantPopover };
+        })
+      ];
+      return () => {
+        unsubs.forEach((unsub) => unsub());
+      };
+    });
+    useSignalEffect(() => {
+      const unsub = service.onTheme((evt) => {
+        if (evt.source === "subscription") {
+          applyDefaultStyles(evt.data.defaultStyles);
+        }
+      });
+      return () => {
+        unsub();
+      };
+    });
+    const select = q2(
+      (bg) => {
+        service.setBackground(bg);
+      },
+      [service]
+    );
+    const upload = q2(() => {
+      service.upload();
+    }, [service]);
+    const setTheme = q2(
+      (theme) => {
+        service.setTheme(theme);
+      },
+      [service]
+    );
+    const deleteImage = q2(
+      (id) => {
+        service.deleteImage(id);
+      },
+      [service]
+    );
+    const customizerContextMenu = q2((params) => service.contextMenu(params), [service]);
+    const dismissThemeVariantPopover = q2(() => {
+      service.dismissThemeVariantPopover();
+    }, [service]);
+    const drawerOpenCount = useSignal(0);
+    const showThemeNewBadge = useComputed(() => !!initialData.showThemeVariantPopover && drawerOpenCount.value === 1);
+    useDrawerEventListeners(
+      {
+        onOpen: () => {
+          drawerOpenCount.value++;
+          service.dismissThemeVariantPopover();
+        },
+        onToggle: () => {
+          drawerOpenCount.value++;
+          service.dismissThemeVariantPopover();
+        }
+      },
+      [service]
+    );
+    return /* @__PURE__ */ _(
+      CustomizerContext.Provider,
+      {
+        value: {
+          data: data2,
+          select,
+          upload,
+          setTheme,
+          deleteImage,
+          customizerContextMenu,
+          dismissThemeVariantPopover,
+          showThemeNewBadge
+        }
+      },
+      /* @__PURE__ */ _(CustomizerThemesContext.Provider, { value: { main, browser, variant } }, children)
+    );
+  }
+  var CustomizerThemesContext, CustomizerContext;
+  var init_CustomizerProvider = __esm({
+    "pages/new-tab/app/customizer/CustomizerProvider.js"() {
+      "use strict";
+      init_preact_module();
+      init_hooks_module();
+      init_signals_module();
+      init_themes();
+      init_utils();
+      init_Drawer();
+      CustomizerThemesContext = Q({
+        /** @type {import("@preact/signals").Signal<'light' | 'dark'>} */
+        main: d3("light"),
+        /** @type {import("@preact/signals").Signal<'light' | 'dark'>} */
+        browser: d3("light"),
+        /** @type {import("@preact/signals").Signal<ThemeVariant>} */
+        variant: d3("default")
+      });
+      CustomizerContext = Q({
+        /** @type {import("@preact/signals").Signal<CustomizerData>} */
+        data: d3({
+          background: { kind: "default" },
+          userImages: [],
+          userColor: null,
+          theme: "system"
+        }),
+        /** @type {(bg: BackgroundData) => void} */
+        select: (_5) => {
+        },
+        upload: () => {
+        },
+        /**
+         * @type {(theme: ThemeData) => void}
+         */
+        setTheme: (_5) => {
+        },
+        /**
+         * @type {(id: string) => void}
+         */
+        deleteImage: (_5) => {
+        },
+        /**
+         * @param {UserImageContextMenu} _params
+         */
+        customizerContextMenu: (_params) => {
+        },
+        /** @type {() => void} */
+        dismissThemeVariantPopover: () => {
+        },
+        /** @type {import("@preact/signals").Signal<boolean>} */
+        showThemeNewBadge: d3(false)
+      });
+    }
+  });
+
+  // pages/new-tab/app/components/DismissButton.module.css
+  var DismissButton_default;
+  var init_DismissButton = __esm({
+    "pages/new-tab/app/components/DismissButton.module.css"() {
+      DismissButton_default = {
+        btn: "DismissButton_btn"
+      };
+    }
+  });
+
+  // pages/new-tab/app/components/DismissButton.jsx
+  function DismissButton({ className, onClick, buttonProps = {} }) {
+    const { t: t4 } = useTypedTranslation();
+    return /* @__PURE__ */ _("button", { class: (0, import_classnames.default)(DismissButton_default.btn, className), onClick, "aria-label": t4("ntp_dismiss"), "data-testid": "dismissBtn", ...buttonProps }, /* @__PURE__ */ _(Cross, null));
+  }
+  var import_classnames;
+  var init_DismissButton2 = __esm({
+    "pages/new-tab/app/components/DismissButton.jsx"() {
+      "use strict";
+      init_preact_module();
+      import_classnames = __toESM(require_classnames(), 1);
+      init_Icons2();
+      init_types();
+      init_DismissButton();
+    }
+  });
+
+  // pages/new-tab/app/components/NewBadge.module.css
+  var NewBadge_default;
+  var init_NewBadge = __esm({
+    "pages/new-tab/app/components/NewBadge.module.css"() {
+      NewBadge_default = {
+        badge: "NewBadge_badge"
+      };
+    }
+  });
+
+  // pages/new-tab/app/components/NewBadge.js
+  function NewBadge() {
+    const { t: t4 } = useTypedTranslationWith(
+      /** @type {Strings} */
+      {}
+    );
+    return /* @__PURE__ */ _("span", { class: NewBadge_default.badge }, t4("newBadge"));
+  }
+  var init_NewBadge2 = __esm({
+    "pages/new-tab/app/components/NewBadge.js"() {
+      "use strict";
+      init_preact_module();
+      init_NewBadge();
+      init_types();
+    }
+  });
+
+  // pages/new-tab/app/components/Popover.module.css
+  var Popover_default;
+  var init_Popover = __esm({
+    "pages/new-tab/app/components/Popover.module.css"() {
+      Popover_default = {
+        popover: "Popover_popover",
+        content: "Popover_content",
+        closeButton: "Popover_closeButton",
+        imageContainer: "Popover_imageContainer",
+        textContainer: "Popover_textContainer",
+        heading: "Popover_heading",
+        title: "Popover_title",
+        description: "Popover_description",
+        arrow: "Popover_arrow"
+      };
+    }
+  });
+
+  // pages/new-tab/app/components/Popover.js
+  function Popover({ image, title, showNewBadge, onClose, position: position2 = "left", className, children }) {
+    const { t: t4 } = useTypedTranslationWith(
+      /** @type {Strings} */
+      {}
+    );
+    const titleId = g2();
+    const descriptionId = g2();
+    const popoverRef = A2(
+      /** @type {HTMLDivElement|null} */
+      null
+    );
+    y2(() => {
+      popoverRef.current?.focus();
+      const handleEscapeKey = (event) => {
+        if (event.key === "Escape") {
+          onClose();
+        }
+      };
+      document.addEventListener("keydown", handleEscapeKey);
+      return () => document.removeEventListener("keydown", handleEscapeKey);
+    }, [onClose]);
+    return /* @__PURE__ */ _(
+      "div",
+      {
+        ref: popoverRef,
+        class: (0, import_classnames2.default)(Popover_default.popover, className),
+        "data-position": position2,
+        role: "dialog",
+        "aria-labelledby": titleId,
+        "aria-describedby": descriptionId,
+        tabIndex: -1
+      },
+      /* @__PURE__ */ _("svg", { class: Popover_default.arrow, xmlns: "http://www.w3.org/2000/svg", width: "12", height: "30", viewBox: "0 0 12 30", fill: "none" }, /* @__PURE__ */ _(
+        "path",
+        {
+          d: "M9.20362 6.3927L0.510957 13.8636C-0.183621 14.4619 -0.16344 15.5367 0.531137 16.1351L9.20362 23.606C10.9677 25.1256 11.9819 27.3368 11.9819 29.6632L11.9819 30.0003L11.9819 -0.000488281V0.335449C11.9819 2.66185 10.9677 4.87302 9.20362 6.3927Z",
+          fill: "currentColor"
+        }
+      )),
+      /* @__PURE__ */ _("div", { class: Popover_default.content }, /* @__PURE__ */ _(
+        DismissButton,
+        {
+          className: Popover_default.closeButton,
+          onClick: onClose,
+          buttonProps: { "aria-label": t4("ntp_popover_close_button") }
+        }
+      ), image && /* @__PURE__ */ _("div", { class: Popover_default.imageContainer }, image), /* @__PURE__ */ _("div", { class: Popover_default.textContainer }, /* @__PURE__ */ _("h3", { id: titleId, class: Popover_default.heading }, showNewBadge && /* @__PURE__ */ _(NewBadge, null), /* @__PURE__ */ _("span", { class: Popover_default.title }, title)), /* @__PURE__ */ _("p", { id: descriptionId, class: Popover_default.description }, children)))
+    );
+  }
+  var import_classnames2;
+  var init_Popover2 = __esm({
+    "pages/new-tab/app/components/Popover.js"() {
+      "use strict";
+      init_preact_module();
+      init_hooks_module();
+      import_classnames2 = __toESM(require_classnames(), 1);
+      init_types();
+      init_DismissButton2();
+      init_NewBadge2();
+      init_Popover();
+    }
+  });
+
+  // pages/new-tab/app/customizer/components/CustomizerMenu.js
+  function getItems() {
+    const next = [];
+    const detail = {
+      register: (incoming) => {
+        next.push(incoming);
+      }
+    };
+    const event = new CustomEvent(OPEN_EVENT, { detail });
+    window.dispatchEvent(event);
+    next.sort((a4, b4) => a4.index - b4.index);
+    return next;
+  }
+  function useContextMenu() {
+    const messaging2 = useMessaging();
+    y2(() => {
+      function handler(e4) {
+        e4.preventDefault();
+        e4.stopImmediatePropagation();
+        const items = getItems();
+        const simplified = items.filter((x4) => !x4.id.startsWith("_")).map((item) => {
+          return {
+            id: item.id,
+            title: item.title
+          };
+        });
+        messaging2.contextMenu({ visibilityMenuItems: simplified });
+      }
+      document.body.addEventListener("contextmenu", handler);
+      return () => {
+        document.body.removeEventListener("contextmenu", handler);
+      };
+    }, [messaging2]);
+  }
+  function CustomizerButton({ menuId, buttonId, isOpen, toggleMenu, buttonRef, kind }) {
+    const { t: t4 } = useTypedTranslation();
+    const { data: data2, dismissThemeVariantPopover } = x2(CustomizerContext);
+    return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _(
+      "button",
+      {
+        ref: buttonRef,
+        class: Customizer_default.customizeButton,
+        onClick: toggleMenu,
+        "aria-haspopup": "true",
+        "aria-expanded": isOpen,
+        "aria-controls": menuId,
+        "data-kind": kind,
+        id: buttonId,
+        "data-testid": "customizer-button"
+      },
+      /* @__PURE__ */ _(CustomizeIcon, null),
+      /* @__PURE__ */ _("span", null, t4("ntp_customizer_button"))
+    ), data2.value.showThemeVariantPopover && /* @__PURE__ */ _(
+      Popover,
+      {
+        className: Customizer_default.popover,
+        image: /* @__PURE__ */ _(NewTabOptionsIcon, { width: "72", height: "72" }),
+        title: t4("customizer_themeVariantPopoverTitle"),
+        position: "bottomRight",
+        onClose: dismissThemeVariantPopover
+      },
+      t4("customizer_themeVariantPopoverDescription")
+    ));
+  }
+  function CustomizerMenuPositionedFixed({ children }) {
+    return /* @__PURE__ */ _("div", { class: Customizer_default.lowerRightFixed }, children);
+  }
+  function useCustomizer({ title, id, icon, toggle, visibility, index: index2, enabled }) {
+    y2(() => {
+      const handler = (e4) => {
+        e4.detail.register({ title, id, icon, toggle, visibility, index: index2, enabled });
+      };
+      window.addEventListener(OPEN_EVENT, handler);
+      return () => window.removeEventListener(OPEN_EVENT, handler);
+    }, [title, id, icon, toggle, visibility, index2, enabled]);
+    y2(() => {
+      window.dispatchEvent(new Event(UPDATE_EVENT));
+      return () => {
+        window.dispatchEvent(new Event(UPDATE_EVENT));
+      };
+    }, [visibility]);
+  }
+  var OPEN_EVENT, UPDATE_EVENT;
+  var init_CustomizerMenu = __esm({
+    "pages/new-tab/app/customizer/components/CustomizerMenu.js"() {
+      "use strict";
+      init_preact_module();
+      init_hooks_module();
+      init_Customizer();
+      init_Icons2();
+      init_types();
+      init_CustomizerProvider();
+      init_Popover2();
+      OPEN_EVENT = "ntp-customizer-open";
+      UPDATE_EVENT = "ntp-customizer-update";
     }
   });
 
@@ -5392,209 +6415,6 @@
     }
   });
 
-  // ../node_modules/preact/compat/dist/compat.module.js
-  function g5(n3, t4) {
-    for (var e4 in t4) n3[e4] = t4[e4];
-    return n3;
-  }
-  function E3(n3, t4) {
-    for (var e4 in n3) if ("__source" !== e4 && !(e4 in t4)) return true;
-    for (var r4 in t4) if ("__source" !== r4 && n3[r4] !== t4[r4]) return true;
-    return false;
-  }
-  function N2(n3, t4) {
-    this.props = n3, this.context = t4;
-  }
-  function M3(n3, e4) {
-    function r4(n4) {
-      var t4 = this.props.ref, r5 = t4 == n4.ref;
-      return !r5 && t4 && (t4.call ? t4(null) : t4.current = null), e4 ? !e4(this.props, n4) || !r5 : E3(this.props, n4);
-    }
-    function u4(e5) {
-      return this.shouldComponentUpdate = r4, _(n3, e5);
-    }
-    return u4.displayName = "Memo(" + (n3.displayName || n3.name) + ")", u4.prototype.isReactComponent = true, u4.__f = true, u4.type = n3, u4;
-  }
-  function V2(n3, t4, e4) {
-    return n3 && (n3.__c && n3.__c.__H && (n3.__c.__H.__.forEach(function(n4) {
-      "function" == typeof n4.__c && n4.__c();
-    }), n3.__c.__H = null), null != (n3 = g5({}, n3)).__c && (n3.__c.__P === e4 && (n3.__c.__P = t4), n3.__c.__e = true, n3.__c = null), n3.__k = n3.__k && n3.__k.map(function(n4) {
-      return V2(n4, t4, e4);
-    })), n3;
-  }
-  function W(n3, t4, e4) {
-    return n3 && e4 && (n3.__v = null, n3.__k = n3.__k && n3.__k.map(function(n4) {
-      return W(n4, t4, e4);
-    }), n3.__c && n3.__c.__P === t4 && (n3.__e && e4.appendChild(n3.__e), n3.__c.__e = true, n3.__c.__P = e4)), n3;
-  }
-  function P3() {
-    this.__u = 0, this.o = null, this.__b = null;
-  }
-  function j3(n3) {
-    var t4 = n3.__.__c;
-    return t4 && t4.__a && t4.__a(n3);
-  }
-  function z3(n3) {
-    var e4, r4, u4, o4 = null;
-    function i5(i6) {
-      if (e4 || (e4 = n3()).then(function(n4) {
-        n4 && (o4 = n4.default || n4), u4 = true;
-      }, function(n4) {
-        r4 = n4, u4 = true;
-      }), r4) throw r4;
-      if (!u4) throw e4;
-      return o4 ? _(o4, i6) : null;
-    }
-    return i5.displayName = "Lazy", i5.__f = true, i5;
-  }
-  function B3() {
-    this.i = null, this.l = null;
-  }
-  function rn() {
-  }
-  function un() {
-    return this.cancelBubble;
-  }
-  function on() {
-    return this.defaultPrevented;
-  }
-  var T4, A4, F4, U, H2, q4, G2, J2, K2, Q2, X, en, ln, cn, fn, an, sn;
-  var init_compat_module = __esm({
-    "../node_modules/preact/compat/dist/compat.module.js"() {
-      init_preact_module();
-      init_preact_module();
-      init_hooks_module();
-      init_hooks_module();
-      (N2.prototype = new x()).isPureReactComponent = true, N2.prototype.shouldComponentUpdate = function(n3, t4) {
-        return E3(this.props, n3) || E3(this.state, t4);
-      };
-      T4 = l.__b;
-      l.__b = function(n3) {
-        n3.type && n3.type.__f && n3.ref && (n3.props.ref = n3.ref, n3.ref = null), T4 && T4(n3);
-      };
-      A4 = "undefined" != typeof Symbol && Symbol.for && /* @__PURE__ */ Symbol.for("react.forward_ref") || 3911;
-      F4 = l.__e;
-      l.__e = function(n3, t4, e4, r4) {
-        if (n3.then) {
-          for (var u4, o4 = t4; o4 = o4.__; ) if ((u4 = o4.__c) && u4.__c) return null == t4.__e && (t4.__e = e4.__e, t4.__k = e4.__k), u4.__c(n3, t4);
-        }
-        F4(n3, t4, e4, r4);
-      };
-      U = l.unmount;
-      l.unmount = function(n3) {
-        var t4 = n3.__c;
-        t4 && t4.__R && t4.__R(), t4 && 32 & n3.__u && (n3.type = null), U && U(n3);
-      }, (P3.prototype = new x()).__c = function(n3, t4) {
-        var e4 = t4.__c, r4 = this;
-        null == r4.o && (r4.o = []), r4.o.push(e4);
-        var u4 = j3(r4.__v), o4 = false, i5 = function() {
-          o4 || (o4 = true, e4.__R = null, u4 ? u4(l5) : l5());
-        };
-        e4.__R = i5;
-        var l5 = function() {
-          if (!--r4.__u) {
-            if (r4.state.__a) {
-              var n4 = r4.state.__a;
-              r4.__v.__k[0] = W(n4, n4.__c.__P, n4.__c.__O);
-            }
-            var t5;
-            for (r4.setState({ __a: r4.__b = null }); t5 = r4.o.pop(); ) t5.forceUpdate();
-          }
-        };
-        r4.__u++ || 32 & t4.__u || r4.setState({ __a: r4.__b = r4.__v.__k[0] }), n3.then(i5, i5);
-      }, P3.prototype.componentWillUnmount = function() {
-        this.o = [];
-      }, P3.prototype.render = function(n3, e4) {
-        if (this.__b) {
-          if (this.__v.__k) {
-            var r4 = document.createElement("div"), o4 = this.__v.__k[0].__c;
-            this.__v.__k[0] = V2(this.__b, r4, o4.__O = o4.__P);
-          }
-          this.__b = null;
-        }
-        var i5 = e4.__a && _(k, null, n3.fallback);
-        return i5 && (i5.__u &= -33), [_(k, null, e4.__a ? null : n3.children), i5];
-      };
-      H2 = function(n3, t4, e4) {
-        if (++e4[1] === e4[0] && n3.l.delete(t4), n3.props.revealOrder && ("t" !== n3.props.revealOrder[0] || !n3.l.size)) for (e4 = n3.i; e4; ) {
-          for (; e4.length > 3; ) e4.pop()();
-          if (e4[1] < e4[0]) break;
-          n3.i = e4 = e4[2];
-        }
-      };
-      (B3.prototype = new x()).__a = function(n3) {
-        var t4 = this, e4 = j3(t4.__v), r4 = t4.l.get(n3);
-        return r4[0]++, function(u4) {
-          var o4 = function() {
-            t4.props.revealOrder ? (r4.push(u4), H2(t4, n3, r4)) : u4();
-          };
-          e4 ? e4(o4) : o4();
-        };
-      }, B3.prototype.render = function(n3) {
-        this.i = null, this.l = /* @__PURE__ */ new Map();
-        var t4 = H(n3.children);
-        n3.revealOrder && "b" === n3.revealOrder[0] && t4.reverse();
-        for (var e4 = t4.length; e4--; ) this.l.set(t4[e4], this.i = [1, 0, this.i]);
-        return n3.children;
-      }, B3.prototype.componentDidUpdate = B3.prototype.componentDidMount = function() {
-        var n3 = this;
-        this.l.forEach(function(t4, e4) {
-          H2(n3, e4, t4);
-        });
-      };
-      q4 = "undefined" != typeof Symbol && Symbol.for && /* @__PURE__ */ Symbol.for("react.element") || 60103;
-      G2 = /^(?:accent|alignment|arabic|baseline|cap|clip(?!PathU)|color|dominant|fill|flood|font|glyph(?!R)|horiz|image(!S)|letter|lighting|marker(?!H|W|U)|overline|paint|pointer|shape|stop|strikethrough|stroke|text(?!L)|transform|underline|unicode|units|v|vector|vert|word|writing|x(?!C))[A-Z]/;
-      J2 = /^on(Ani|Tra|Tou|BeforeInp|Compo)/;
-      K2 = /[A-Z0-9]/g;
-      Q2 = "undefined" != typeof document;
-      X = function(n3) {
-        return ("undefined" != typeof Symbol && "symbol" == typeof /* @__PURE__ */ Symbol() ? /fil|che|rad/ : /fil|che|ra/).test(n3);
-      };
-      x.prototype.isReactComponent = {}, ["componentWillMount", "componentWillReceiveProps", "componentWillUpdate"].forEach(function(t4) {
-        Object.defineProperty(x.prototype, t4, { configurable: true, get: function() {
-          return this["UNSAFE_" + t4];
-        }, set: function(n3) {
-          Object.defineProperty(this, t4, { configurable: true, writable: true, value: n3 });
-        } });
-      });
-      en = l.event;
-      l.event = function(n3) {
-        return en && (n3 = en(n3)), n3.persist = rn, n3.isPropagationStopped = un, n3.isDefaultPrevented = on, n3.nativeEvent = n3;
-      };
-      cn = { enumerable: false, configurable: true, get: function() {
-        return this.class;
-      } };
-      fn = l.vnode;
-      l.vnode = function(n3) {
-        "string" == typeof n3.type && (function(n4) {
-          var t4 = n4.props, e4 = n4.type, u4 = {}, o4 = -1 === e4.indexOf("-");
-          for (var i5 in t4) {
-            var l5 = t4[i5];
-            if (!("value" === i5 && "defaultValue" in t4 && null == l5 || Q2 && "children" === i5 && "noscript" === e4 || "class" === i5 || "className" === i5)) {
-              var c4 = i5.toLowerCase();
-              "defaultValue" === i5 && "value" in t4 && null == t4.value ? i5 = "value" : "download" === i5 && true === l5 ? l5 = "" : "translate" === c4 && "no" === l5 ? l5 = false : "o" === c4[0] && "n" === c4[1] ? "ondoubleclick" === c4 ? i5 = "ondblclick" : "onchange" !== c4 || "input" !== e4 && "textarea" !== e4 || X(t4.type) ? "onfocus" === c4 ? i5 = "onfocusin" : "onblur" === c4 ? i5 = "onfocusout" : J2.test(i5) && (i5 = c4) : c4 = i5 = "oninput" : o4 && G2.test(i5) ? i5 = i5.replace(K2, "-$&").toLowerCase() : null === l5 && (l5 = void 0), "oninput" === c4 && u4[i5 = c4] && (i5 = "oninputCapture"), u4[i5] = l5;
-            }
-          }
-          "select" == e4 && u4.multiple && Array.isArray(u4.value) && (u4.value = H(t4.children).forEach(function(n5) {
-            n5.props.selected = -1 != u4.value.indexOf(n5.props.value);
-          })), "select" == e4 && null != u4.defaultValue && (u4.value = H(t4.children).forEach(function(n5) {
-            n5.props.selected = u4.multiple ? -1 != u4.defaultValue.indexOf(n5.props.value) : u4.defaultValue == n5.props.value;
-          })), t4.class && !t4.className ? (u4.class = t4.class, Object.defineProperty(u4, "className", cn)) : (t4.className && !t4.class || t4.class && t4.className) && (u4.class = u4.className = t4.className), n4.props = u4;
-        })(n3), n3.$$typeof = q4, fn && fn(n3);
-      };
-      an = l.__r;
-      l.__r = function(n3) {
-        an && an(n3), ln = n3.__c;
-      };
-      sn = l.diffed;
-      l.diffed = function(n3) {
-        sn && sn(n3);
-        var t4 = n3.props, e4 = n3.__e;
-        null != e4 && "textarea" === n3.type && "value" in t4 && t4.value !== e4.value && (e4.value = null == t4.value ? "" : t4.value), ln = null;
-      };
-    }
-  });
-
   // pages/new-tab/app/favorites/components/Favorites.module.css
   var Favorites_default;
   var init_Favorites = __esm({
@@ -5626,7 +6446,7 @@
 
   // pages/new-tab/app/components/ShowHideButton.jsx
   function ShowHideButtonCircle({ label, onClick, buttonAttrs = {} }) {
-    return /* @__PURE__ */ _("button", { ...buttonAttrs, class: (0, import_classnames.default)(ShowHide_default.button, ShowHide_default.round), "aria-label": label, "data-toggle": "true", onClick }, /* @__PURE__ */ _("div", { class: ShowHide_default.iconBlock }, /* @__PURE__ */ _(Chevron, null)));
+    return /* @__PURE__ */ _("button", { ...buttonAttrs, class: (0, import_classnames3.default)(ShowHide_default.button, ShowHide_default.round), "aria-label": label, "data-toggle": "true", onClick }, /* @__PURE__ */ _("div", { class: ShowHide_default.iconBlock }, /* @__PURE__ */ _(Chevron, null)));
   }
   function ShowHideButtonPill({ label, onClick, text: text2, fill = true, buttonAttrs = {} }) {
     const btnText = label ? /* @__PURE__ */ _("span", { "aria-hidden": "true" }, text2) : text2;
@@ -5635,7 +6455,7 @@
       {
         ...buttonAttrs,
         "aria-label": label,
-        class: (0, import_classnames.default)(ShowHide_default.button, ShowHide_default.hover, ShowHide_default.pill, fill && ShowHide_default.fill),
+        class: (0, import_classnames3.default)(ShowHide_default.button, ShowHide_default.hover, ShowHide_default.pill, fill && ShowHide_default.fill),
         "data-toggle": "true",
         onClick
       },
@@ -5646,12 +6466,12 @@
   function ShowHideBar({ children }) {
     return /* @__PURE__ */ _("div", { class: ShowHide_default.bar, "data-show-hide": true }, children);
   }
-  var import_classnames;
+  var import_classnames3;
   var init_ShowHideButton = __esm({
     "pages/new-tab/app/components/ShowHideButton.jsx"() {
       "use strict";
       init_ShowHide();
-      import_classnames = __toESM(require_classnames(), 1);
+      import_classnames3 = __toESM(require_classnames(), 1);
       init_Icons2();
       init_preact_module();
     }
@@ -5820,9 +6640,9 @@
     const sizeClass = displayKind === "favorite-tile" ? FaviconWithState_default.faviconLarge : FaviconWithState_default.faviconSmall;
     const imgsrc = faviconSrc ? faviconSrc + "?preferredSize=" + size : null;
     const initialState2 = (() => {
-      if (imgsrc) return states.loading_favicon_src;
-      if (etldPlusOne) return states.using_fallback_text;
-      return states.loading_fallback_img;
+      if (imgsrc) return states2.loading_favicon_src;
+      if (etldPlusOne) return states2.using_fallback_text;
+      return states2.loading_fallback_img;
     })();
     const [state, setState] = d2(
       /** @type {ImgState} */
@@ -5832,8 +6652,8 @@
       /**
        * These are the happy paths, where we are loading the favicon source and it does not 404
        */
-      case states.loading_favicon_src:
-      case states.did_load_favicon_src: {
+      case states2.loading_favicon_src:
+      case states2.did_load_favicon_src: {
         if (!imgsrc) {
           console.warn("unreachable - must have imgsrc here");
           return null;
@@ -5842,15 +6662,15 @@
           "img",
           {
             src: imgsrc,
-            class: (0, import_classnames2.default)(FaviconWithState_default.favicon, sizeClass),
+            class: (0, import_classnames4.default)(FaviconWithState_default.favicon, sizeClass),
             alt: "",
             "data-state": state,
-            onLoad: () => setState(states.did_load_favicon_src),
+            onLoad: () => setState(states2.did_load_favicon_src),
             onError: () => {
               if (etldPlusOne) {
-                setState(states.using_fallback_text);
+                setState(states2.using_fallback_text);
               } else {
-                setState(states.loading_fallback_img);
+                setState(states2.loading_fallback_img);
               }
             }
           }
@@ -5861,7 +6681,7 @@
        * if `etldPlusOne = 'example.com'`, we can display `Ex` and use the domain name
        * to select a background color.
        */
-      case states.using_fallback_text: {
+      case states2.using_fallback_text: {
         if (!etldPlusOne) {
           console.warn("unreachable - must have etld+1 here");
           return null;
@@ -5872,23 +6692,23 @@
           style = { background: fallbackColor };
         }
         const chars = etldPlusOne.slice(0, 2);
-        return /* @__PURE__ */ _("div", { class: (0, import_classnames2.default)(FaviconWithState_default.favicon, sizeClass, FaviconWithState_default.faviconText), style, "data-state": state }, /* @__PURE__ */ _("span", { "aria-hidden": true }, chars[0]), /* @__PURE__ */ _("span", { "aria-hidden": true }, chars[1]));
+        return /* @__PURE__ */ _("div", { class: (0, import_classnames4.default)(FaviconWithState_default.favicon, sizeClass, FaviconWithState_default.faviconText), style, "data-state": state }, /* @__PURE__ */ _("span", { "aria-hidden": true }, chars[0]), /* @__PURE__ */ _("span", { "aria-hidden": true }, chars[1]));
       }
       /**
        * If we get here, we couldn't load the favicon source OR the fallback text
        * So, we default to a globe icon
        */
-      case states.loading_fallback_img:
-      case states.did_load_fallback_img: {
+      case states2.loading_fallback_img:
+      case states2.did_load_fallback_img: {
         return /* @__PURE__ */ _(
           "img",
           {
             src: theme === "light" ? fallback : fallbackDark,
-            class: (0, import_classnames2.default)(FaviconWithState_default.favicon, sizeClass),
+            class: (0, import_classnames4.default)(FaviconWithState_default.favicon, sizeClass),
             alt: "",
             "data-state": state,
-            onLoad: () => setState(states.did_load_fallback_img),
-            onError: () => setState(states.fallback_img_failed)
+            onLoad: () => setState(states2.did_load_fallback_img),
+            onError: () => setState(states2.fallback_img_failed)
           }
         );
       }
@@ -5896,16 +6716,16 @@
         return null;
     }
   }
-  var import_classnames2, states;
+  var import_classnames4, states2;
   var init_FaviconWithState2 = __esm({
     "shared/components/FaviconWithState.js"() {
       "use strict";
       init_preact_module();
       init_hooks_module();
-      import_classnames2 = __toESM(require_classnames(), 1);
+      import_classnames4 = __toESM(require_classnames(), 1);
       init_FaviconWithState();
       init_getColorForString();
-      states = /** @type {Record<ImgState, ImgState>} */
+      states2 = /** @type {Record<ImgState, ImgState>} */
       {
         loading_favicon_src: "loading_favicon_src",
         did_load_favicon_src: "did_load_favicon_src",
@@ -5921,7 +6741,7 @@
   function Placeholder() {
     const id = g2();
     const { state, ref } = useItemState(`PLACEHOLDER-URL-${id}`, `PLACEHOLDER-ID-${id}`, { kind: "target" });
-    return /* @__PURE__ */ _("div", { class: Tile_default.item, ref, "data-edge": "closestEdge" in state && state.closestEdge }, /* @__PURE__ */ _("div", { class: (0, import_classnames3.default)(Tile_default.icon, Tile_default.placeholder) }, "\xA0"), state.type === "is-dragging-over" && state.closestEdge ? /* @__PURE__ */ _("div", { class: Tile_default.dropper, "data-edge": state.closestEdge }) : null);
+    return /* @__PURE__ */ _("div", { class: Tile_default.item, ref, "data-edge": "closestEdge" in state && state.closestEdge }, /* @__PURE__ */ _("div", { class: (0, import_classnames5.default)(Tile_default.icon, Tile_default.placeholder) }, "\xA0"), state.type === "is-dragging-over" && state.closestEdge ? /* @__PURE__ */ _("div", { class: Tile_default.dropper, "data-edge": state.closestEdge }) : null);
   }
   function PlusIconWrapper({ onClick }) {
     const id = g2();
@@ -5930,14 +6750,14 @@
       {}
     );
     const { state, ref } = useItemState(`PLACEHOLDER-URL-${id}`, `PLACEHOLDER-ID-${id}`, { kind: "target" });
-    return /* @__PURE__ */ _("div", { class: Tile_default.item, ref, "data-edge": "closestEdge" in state && state.closestEdge }, /* @__PURE__ */ _("button", { class: (0, import_classnames3.default)(Tile_default.icon, Tile_default.plus, Tile_default.draggable), "aria-labelledby": id, onClick }, /* @__PURE__ */ _(PlusIcon, null)), /* @__PURE__ */ _("div", { class: Tile_default.text, id }, t4("favorites_add")), state.type === "is-dragging-over" && state.closestEdge ? /* @__PURE__ */ _("div", { class: Tile_default.dropper, "data-edge": state.closestEdge }) : null);
+    return /* @__PURE__ */ _("div", { class: Tile_default.item, ref, "data-edge": "closestEdge" in state && state.closestEdge }, /* @__PURE__ */ _("button", { class: (0, import_classnames5.default)(Tile_default.icon, Tile_default.plus, Tile_default.draggable), "aria-labelledby": id, onClick }, /* @__PURE__ */ _(PlusIcon, null)), /* @__PURE__ */ _("div", { class: Tile_default.text, id }, t4("favorites_add")), state.type === "is-dragging-over" && state.closestEdge ? /* @__PURE__ */ _("div", { class: Tile_default.dropper, "data-edge": state.closestEdge }) : null);
   }
-  var import_classnames3, Tile, PlusIconMemo;
+  var import_classnames5, Tile, PlusIconMemo;
   var init_Tile2 = __esm({
     "pages/new-tab/app/favorites/components/Tile.js"() {
       "use strict";
       init_preact_module();
-      import_classnames3 = __toESM(require_classnames(), 1);
+      import_classnames5 = __toESM(require_classnames(), 1);
       init_hooks_module();
       init_compat_module();
       init_Tile();
@@ -5980,7 +6800,7 @@
               style: animateItems ? { viewTransitionName: `Tile-${id}` } : void 0,
               ref
             },
-            /* @__PURE__ */ _("div", { class: (0, import_classnames3.default)(Tile_default.icon, Tile_default.draggable) }, visibility === "visible" && /* @__PURE__ */ _(
+            /* @__PURE__ */ _("div", { class: (0, import_classnames5.default)(Tile_default.icon, Tile_default.draggable) }, visibility === "visible" && /* @__PURE__ */ _(
               FaviconWithState,
               {
                 faviconSrc,
@@ -6051,437 +6871,6 @@
           }));
         }
       );
-    }
-  });
-
-  // pages/new-tab/app/components/BackgroundReceiver.module.css
-  var BackgroundReceiver_default;
-  var init_BackgroundReceiver = __esm({
-    "pages/new-tab/app/components/BackgroundReceiver.module.css"() {
-      BackgroundReceiver_default = {
-        root: "BackgroundReceiver_root",
-        "fade-in": "BackgroundReceiver_fade-in"
-      };
-    }
-  });
-
-  // pages/new-tab/app/customizer/values.js
-  var values;
-  var init_values = __esm({
-    "pages/new-tab/app/customizer/values.js"() {
-      "use strict";
-      values = {
-        colors: {
-          color01: { hex: "#000000", colorScheme: "dark" },
-          color02: { hex: "#342e42", colorScheme: "dark" },
-          color03: { hex: "#4d5f7f", colorScheme: "dark" },
-          color04: { hex: "#9a979d", colorScheme: "dark" },
-          color05: { hex: "#dbdddf", colorScheme: "light" },
-          color06: { hex: "#577de4", colorScheme: "dark" },
-          color07: { hex: "#75b9f0", colorScheme: "light" },
-          color08: { hex: "#5552ac", colorScheme: "dark" },
-          color09: { hex: "#b79ed4", colorScheme: "light" },
-          color10: { hex: "#e4def2", colorScheme: "light" },
-          color11: { hex: "#b5e2ce", colorScheme: "light" },
-          color12: { hex: "#5bc787", colorScheme: "light" },
-          color13: { hex: "#4594a7", colorScheme: "dark" },
-          color14: { hex: "#e9dccd", colorScheme: "light" },
-          color15: { hex: "#f3bb44", colorScheme: "light" },
-          color16: { hex: "#e5724f", colorScheme: "light" },
-          color17: { hex: "#d55154", colorScheme: "dark" },
-          color18: { hex: "#f7dee5", colorScheme: "light" },
-          color19: { hex: "#e28499", colorScheme: "light" }
-        },
-        gradients: {
-          gradient01: { path: "gradients/gradient01.svg", fallback: "#f2e5d4", colorScheme: "light" },
-          gradient02: { path: "gradients/gradient02.svg", fallback: "#d5bcd1", colorScheme: "light" },
-          /**
-           * Note: the following name `gradient02.01` is used to allow migration for existing macOS users.
-           * When switching to the web-based NTP, we introduced an eight gradient to round-out the columns, but
-           * the colors in the gradient meant it needed to be wedged in between 02 and 03.
-           */
-          "gradient02.01": { path: "gradients/gradient02.01.svg", fallback: "#f4ca78", colorScheme: "light" },
-          gradient03: { path: "gradients/gradient03.svg", fallback: "#e6a356", colorScheme: "light" },
-          gradient04: { path: "gradients/gradient04.svg", fallback: "#4448ae", colorScheme: "dark" },
-          gradient05: { path: "gradients/gradient05.svg", fallback: "#a55778", colorScheme: "dark" },
-          gradient06: { path: "gradients/gradient06.svg", fallback: "#222566", colorScheme: "dark" },
-          gradient07: { path: "gradients/gradient07.svg", fallback: "#0e0e3d", colorScheme: "dark" }
-        },
-        userImages: {
-          "01": {
-            colorScheme: "dark",
-            id: "01",
-            src: "backgrounds/bg-01.jpg",
-            thumb: "backgrounds/bg-01-thumb.jpg"
-          },
-          "02": {
-            colorScheme: "light",
-            id: "02",
-            src: "backgrounds/bg-02.jpg",
-            thumb: "backgrounds/bg-02-thumb.jpg"
-          },
-          "03": {
-            colorScheme: "light",
-            id: "03",
-            src: "backgrounds/bg-03.jpg",
-            thumb: "backgrounds/bg-03-thumb.jpg"
-          }
-        }
-      };
-    }
-  });
-
-  // pages/new-tab/app/customizer/utils.js
-  function detectThemeFromHex(backgroundColor) {
-    const hex = backgroundColor.replace("#", "");
-    const r4 = parseInt(hex.slice(0, 2), 16);
-    const g6 = parseInt(hex.slice(2, 4), 16);
-    const b4 = parseInt(hex.slice(4, 6), 16);
-    const luminance = 0.2126 * r4 + 0.7152 * g6 + 0.0722 * b4;
-    return luminance < 128 ? "dark" : "light";
-  }
-  function applyDefaultStyles(defaultStyles) {
-    if (defaultStyles?.lightBackgroundColor || defaultStyles?.darkBackgroundColor) {
-      console.warn("defaultStyles is deprecated. Use themeVariant instead. This will override theme variant colors.", defaultStyles);
-    }
-    if (defaultStyles?.lightBackgroundColor) {
-      document.body.style.setProperty("--default-light-background-color", defaultStyles.lightBackgroundColor);
-    }
-    if (defaultStyles?.darkBackgroundColor) {
-      document.body.style.setProperty("--default-dark-background-color", defaultStyles.darkBackgroundColor);
-    }
-  }
-  var init_utils = __esm({
-    "pages/new-tab/app/customizer/utils.js"() {
-      "use strict";
-    }
-  });
-
-  // pages/new-tab/app/components/BackgroundProvider.js
-  function inferSchemeFrom(background, browserTheme, system) {
-    const browser = themeFromBrowser(browserTheme, system);
-    switch (background.kind) {
-      case "default":
-        return { bg: browser, browser };
-      case "color": {
-        const color = values.colors[background.value];
-        return { bg: color.colorScheme, browser };
-      }
-      case "gradient": {
-        const gradient = values.gradients[background.value];
-        return { bg: gradient.colorScheme, browser };
-      }
-      case "userImage":
-        return { bg: background.value.colorScheme, browser };
-      case "hex":
-        return { bg: detectThemeFromHex(background.value), browser };
-    }
-  }
-  function themeFromBrowser(browserTheme, system) {
-    if (browserTheme === "system") {
-      return system;
-    }
-    return browserTheme;
-  }
-  function BackgroundConsumer({ browser, variant }) {
-    const { data: data2 } = x2(CustomizerContext);
-    const background = data2.value.background;
-    useSignalEffect(() => {
-      const background2 = data2.value.background;
-      document.body.dataset.backgroundKind = background2.kind;
-      let nextBodyBackground = "";
-      if (background2.kind === "gradient") {
-        const gradient = values.gradients[background2.value];
-        nextBodyBackground = gradient.fallback;
-      }
-      if (background2.kind === "color") {
-        const color = values.colors[background2.value];
-        nextBodyBackground = color.hex;
-      }
-      if (background2.kind === "hex") {
-        nextBodyBackground = background2.value;
-      }
-      if (background2.kind === "userImage") {
-        const isDark = background2.value.colorScheme === "dark";
-        nextBodyBackground = isDark ? "var(--default-dark-background-color)" : "var(--default-light-background-color)";
-      }
-      if (background2.kind === "default") {
-        nextBodyBackground = browser.value === "dark" ? "var(--default-dark-background-color)" : "var(--default-light-background-color)";
-      }
-      document.body.style.setProperty("background-color", nextBodyBackground);
-      if (!document.body.dataset.animateBackground) {
-        requestAnimationFrame(() => {
-          document.body.dataset.animateBackground = "true";
-        });
-      }
-    });
-    useSignalEffect(() => {
-      document.body.dataset.theme = browser.value;
-    });
-    useSignalEffect(() => {
-      document.body.dataset.themeVariant = variant.value;
-    });
-    switch (background.kind) {
-      case "color":
-      case "default":
-      case "hex": {
-        return null;
-      }
-      case "userImage": {
-        const img = background.value;
-        return /* @__PURE__ */ _(ImageCrossFade, { src: img.src });
-      }
-      case "gradient": {
-        const gradient = values.gradients[background.value];
-        return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _(ImageCrossFade, { src: gradient.path }), /* @__PURE__ */ _(
-          "div",
-          {
-            className: BackgroundReceiver_default.root,
-            style: {
-              backgroundImage: `url(gradients/grain.png)`,
-              backgroundRepeat: "repeat",
-              opacity: 0.5,
-              mixBlendMode: "soft-light"
-            }
-          }
-        ));
-      }
-      default: {
-        console.warn("Unreachable!");
-        return null;
-      }
-    }
-  }
-  function ImageCrossFade_({ src }) {
-    const [state, setState] = d2({
-      /** @type {ImgState} */
-      value: states2.idle,
-      current: src,
-      next: src
-    });
-    y2(() => {
-      let img = new Image();
-      let cancelled = false;
-      setState((prev) => {
-        const nextState = prev.value === states2.idle ? states2.loadingFirst : states2.loading;
-        return { ...prev, value: nextState };
-      });
-      let handler = () => {
-        if (cancelled) return;
-        setState((prev) => {
-          if (prev.value === states2.loading) {
-            return { ...prev, value: states2.fading, next: src };
-          }
-          return prev;
-        });
-      };
-      img.addEventListener("load", handler);
-      img.src = src;
-      return () => {
-        cancelled = true;
-        if (img && handler) {
-          img.removeEventListener("load", handler);
-          img = void 0;
-          handler = void 0;
-        }
-      };
-    }, [src]);
-    switch (state.value) {
-      case states2.settled:
-      case states2.loadingFirst:
-        return /* @__PURE__ */ _("img", { class: BackgroundReceiver_default.root, "data-state": state.value, src: state.current, alt: "" });
-      case states2.loading:
-      case states2.fading:
-        return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("img", { class: BackgroundReceiver_default.root, "data-state": state.value, src: state.current, alt: "" }), /* @__PURE__ */ _(
-          "img",
-          {
-            class: BackgroundReceiver_default.root,
-            "data-state": state.value,
-            src: state.next,
-            onLoad: (e4) => {
-              const elem2 = (
-                /** @type {HTMLImageElement} */
-                e4.target
-              );
-              elem2.style.opacity = "0";
-              const anim = elem2.animate([{ opacity: "0" }, { opacity: "1" }], {
-                duration: 250,
-                iterations: 1,
-                fill: "both"
-              });
-              anim.onfinish = () => {
-                setState((prev) => {
-                  return { ...prev, value: states2.settled, current: prev.next, next: prev.next };
-                });
-              };
-            }
-          }
-        ));
-      default:
-        return null;
-    }
-  }
-  var states2, ImageCrossFade;
-  var init_BackgroundProvider = __esm({
-    "pages/new-tab/app/components/BackgroundProvider.js"() {
-      "use strict";
-      init_preact_module();
-      init_BackgroundReceiver();
-      init_values();
-      init_hooks_module();
-      init_CustomizerProvider();
-      init_utils();
-      init_signals_module();
-      init_compat_module();
-      states2 = {
-        idle: "idle",
-        loadingFirst: "loadingFirst",
-        loading: "loading",
-        fading: "fading",
-        settled: "settled"
-      };
-      ImageCrossFade = M3(ImageCrossFade_);
-    }
-  });
-
-  // pages/new-tab/app/customizer/themes.js
-  function useThemes(data2) {
-    const mq = useSignal(mediaQueryList.matches ? "dark" : "light");
-    useSignalEffect(() => {
-      const listener = (e4) => {
-        mq.value = e4.matches ? "dark" : "light";
-      };
-      mediaQueryList.addEventListener("change", listener);
-      return () => mediaQueryList.removeEventListener("change", listener);
-    });
-    const main = useComputed(() => {
-      return inferSchemeFrom(data2.value.background, data2.value.theme, mq.value).bg;
-    });
-    const browser = useComputed(() => {
-      return themeFromBrowser(data2.value.theme, mq.value);
-    });
-    const variant = useComputed(() => data2.value.themeVariant ?? "default");
-    return { main, browser, variant };
-  }
-  var THEME_QUERY2, mediaQueryList;
-  var init_themes = __esm({
-    "pages/new-tab/app/customizer/themes.js"() {
-      "use strict";
-      init_signals_module();
-      init_BackgroundProvider();
-      THEME_QUERY2 = "(prefers-color-scheme: dark)";
-      mediaQueryList = window.matchMedia(THEME_QUERY2);
-    }
-  });
-
-  // pages/new-tab/app/customizer/CustomizerProvider.js
-  function CustomizerProvider({ service, initialData, children }) {
-    const data2 = useSignal(initialData);
-    const { main, browser, variant } = useThemes(data2);
-    useSignalEffect(() => {
-      const unsub = service.onBackground((evt) => {
-        data2.value = { ...data2.value, background: evt.data.background };
-      });
-      const unsub1 = service.onTheme((evt) => {
-        const updates = { theme: evt.data.theme };
-        if (evt.data.themeVariant !== void 0) {
-          updates.themeVariant = evt.data.themeVariant;
-        }
-        data2.value = { ...data2.value, ...updates };
-      });
-      const unsub2 = service.onImages((evt) => {
-        data2.value = { ...data2.value, userImages: evt.data.userImages };
-      });
-      const unsub3 = service.onColor((evt) => {
-        data2.value = { ...data2.value, userColor: evt.data.userColor };
-      });
-      return () => {
-        unsub();
-        unsub1();
-        unsub2();
-        unsub3();
-      };
-    });
-    useSignalEffect(() => {
-      const unsub = service.onTheme((evt) => {
-        if (evt.source === "subscription") {
-          applyDefaultStyles(evt.data.defaultStyles);
-        }
-      });
-      return () => {
-        unsub();
-      };
-    });
-    const select = q2(
-      (bg) => {
-        service.setBackground(bg);
-      },
-      [service]
-    );
-    const upload = q2(() => {
-      service.upload();
-    }, [service]);
-    const setTheme = q2(
-      (theme) => {
-        service.setTheme(theme);
-      },
-      [service]
-    );
-    const deleteImage = q2(
-      (id) => {
-        service.deleteImage(id);
-      },
-      [service]
-    );
-    const customizerContextMenu = q2((params) => service.contextMenu(params), [service]);
-    return /* @__PURE__ */ _(CustomizerContext.Provider, { value: { data: data2, select, upload, setTheme, deleteImage, customizerContextMenu } }, /* @__PURE__ */ _(CustomizerThemesContext.Provider, { value: { main, browser, variant } }, children));
-  }
-  var CustomizerThemesContext, CustomizerContext;
-  var init_CustomizerProvider = __esm({
-    "pages/new-tab/app/customizer/CustomizerProvider.js"() {
-      "use strict";
-      init_preact_module();
-      init_hooks_module();
-      init_signals_module();
-      init_themes();
-      init_utils();
-      CustomizerThemesContext = Q({
-        /** @type {import("@preact/signals").Signal<'light' | 'dark'>} */
-        main: d3("light"),
-        /** @type {import("@preact/signals").Signal<'light' | 'dark'>} */
-        browser: d3("light"),
-        /** @type {import("@preact/signals").Signal<ThemeVariant>} */
-        variant: d3("default")
-      });
-      CustomizerContext = Q({
-        /** @type {import("@preact/signals").Signal<CustomizerData>} */
-        data: d3({
-          background: { kind: "default" },
-          userImages: [],
-          userColor: null,
-          theme: "system"
-        }),
-        /** @type {(bg: BackgroundData) => void} */
-        select: (_5) => {
-        },
-        upload: () => {
-        },
-        /**
-         * @type {(theme: ThemeData) => void}
-         */
-        setTheme: (_5) => {
-        },
-        /**
-         * @type {(id: string) => void}
-         */
-        deleteImage: (_5) => {
-        },
-        /**
-         * @param {UserImageContextMenu} _params
-         */
-        customizerContextMenu: (_params) => {
-        }
-      });
     }
   });
 
@@ -6924,7 +7313,7 @@
     return /* @__PURE__ */ _(
       "button",
       {
-        className: (0, import_classnames4.default)(Button_default.button, { [Button_default[`${variant}`]]: !!variant, [Button_default[size]]: size }, className),
+        className: (0, import_classnames6.default)(Button_default.button, { [Button_default[`${variant}`]]: !!variant, [Button_default[size]]: size }, className),
         type,
         onClick: (
           /**
@@ -6940,40 +7329,13 @@
       children
     );
   }
-  var import_classnames4;
+  var import_classnames6;
   var init_Button2 = __esm({
     "shared/components/Button/Button.js"() {
       "use strict";
       init_preact_module();
-      import_classnames4 = __toESM(require_classnames(), 1);
+      import_classnames6 = __toESM(require_classnames(), 1);
       init_Button();
-    }
-  });
-
-  // pages/new-tab/app/components/DismissButton.module.css
-  var DismissButton_default;
-  var init_DismissButton = __esm({
-    "pages/new-tab/app/components/DismissButton.module.css"() {
-      DismissButton_default = {
-        btn: "DismissButton_btn"
-      };
-    }
-  });
-
-  // pages/new-tab/app/components/DismissButton.jsx
-  function DismissButton({ className, onClick, buttonProps = {} }) {
-    const { t: t4 } = useTypedTranslation();
-    return /* @__PURE__ */ _("button", { class: (0, import_classnames5.default)(DismissButton_default.btn, className), onClick, "aria-label": t4("ntp_dismiss"), "data-testid": "dismissBtn", ...buttonProps }, /* @__PURE__ */ _(Cross, null));
-  }
-  var import_classnames5;
-  var init_DismissButton2 = __esm({
-    "pages/new-tab/app/components/DismissButton.jsx"() {
-      "use strict";
-      init_preact_module();
-      import_classnames5 = __toESM(require_classnames(), 1);
-      init_Icons2();
-      init_types();
-      init_DismissButton();
     }
   });
 
@@ -7169,7 +7531,7 @@
   // pages/new-tab/app/freemium-pir-banner/components/FreemiumPIRBanner.js
   function FreemiumPIRBanner({ message, action, dismiss }) {
     const processedMessageDescription = convertMarkdownToHTMLForStrongTags(message.descriptionText);
-    return /* @__PURE__ */ _("div", { id: message.id, class: (0, import_classnames6.default)(FreemiumPIRBanner_default.root, FreemiumPIRBanner_default.icon) }, /* @__PURE__ */ _("span", { class: FreemiumPIRBanner_default.iconBlock }, /* @__PURE__ */ _("img", { src: `./icons/PIR-96.svg`, alt: "" })), /* @__PURE__ */ _("div", { class: FreemiumPIRBanner_default.content }, message.titleText && /* @__PURE__ */ _("h2", { class: FreemiumPIRBanner_default.title }, message.titleText), /* @__PURE__ */ _("p", { class: FreemiumPIRBanner_default.description, dangerouslySetInnerHTML: { __html: processedMessageDescription } })), message.messageType === "big_single_action" && message?.actionText && action && /* @__PURE__ */ _("div", { class: FreemiumPIRBanner_default.btnBlock }, /* @__PURE__ */ _(Button, { variant: "standard", onClick: () => action(message.id) }, message.actionText)), message.id && dismiss && /* @__PURE__ */ _(DismissButton, { className: FreemiumPIRBanner_default.dismissBtn, onClick: () => dismiss(message.id) }));
+    return /* @__PURE__ */ _("div", { id: message.id, class: (0, import_classnames7.default)(FreemiumPIRBanner_default.root, FreemiumPIRBanner_default.icon) }, /* @__PURE__ */ _("span", { class: FreemiumPIRBanner_default.iconBlock }, /* @__PURE__ */ _("img", { src: `./icons/PIR-96.svg`, alt: "" })), /* @__PURE__ */ _("div", { class: FreemiumPIRBanner_default.content }, message.titleText && /* @__PURE__ */ _("h2", { class: FreemiumPIRBanner_default.title }, message.titleText), /* @__PURE__ */ _("p", { class: FreemiumPIRBanner_default.description, dangerouslySetInnerHTML: { __html: processedMessageDescription } })), message.messageType === "big_single_action" && message?.actionText && action && /* @__PURE__ */ _("div", { class: FreemiumPIRBanner_default.btnBlock }, /* @__PURE__ */ _(Button, { variant: "standard", onClick: () => action(message.id) }, message.actionText)), message.id && dismiss && /* @__PURE__ */ _(DismissButton, { className: FreemiumPIRBanner_default.dismissBtn, onClick: () => dismiss(message.id) }));
   }
   function FreemiumPIRBannerConsumer() {
     const { state, action, dismiss } = x2(FreemiumPIRBannerContext);
@@ -7178,11 +7540,11 @@
     }
     return null;
   }
-  var import_classnames6;
+  var import_classnames7;
   var init_FreemiumPIRBanner2 = __esm({
     "pages/new-tab/app/freemium-pir-banner/components/FreemiumPIRBanner.js"() {
       "use strict";
-      import_classnames6 = __toESM(require_classnames(), 1);
+      import_classnames7 = __toESM(require_classnames(), 1);
       init_preact_module();
       init_Button2();
       init_DismissButton2();
@@ -7513,18 +7875,18 @@
     return /* @__PURE__ */ _("div", { class: NextSteps_default.card }, /* @__PURE__ */ _("img", { src: `./icons/${message.icon}-128.svg`, alt: "", class: NextSteps_default.icon }), /* @__PURE__ */ _("h3", { class: NextSteps_default.title }, message.title), /* @__PURE__ */ _("p", { class: NextSteps_default.description }, message.summary), hasConfirmationState && !!showConfirmation ? /* @__PURE__ */ _("div", { class: NextSteps_default.confirmation }, /* @__PURE__ */ _(CheckColor, null), /* @__PURE__ */ _("p", null, message.confirmationText)) : /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames7.default)(NextSteps_default.btn, hasConfirmationState && NextSteps_default.supressActiveStateForSwitchToConfirmationText),
+        class: (0, import_classnames8.default)(NextSteps_default.btn, hasConfirmationState && NextSteps_default.supressActiveStateForSwitchToConfirmationText),
         onClick: handleClick
       },
       message.actionText
     ), /* @__PURE__ */ _(DismissButton, { className: NextSteps_default.dismissBtn, onClick: () => dismiss(message.id) }));
   }
-  var import_classnames7;
+  var import_classnames8;
   var init_NextStepsCard = __esm({
     "pages/new-tab/app/next-steps/components/NextStepsCard.js"() {
       "use strict";
       init_preact_module();
-      import_classnames7 = __toESM(require_classnames(), 1);
+      import_classnames8 = __toESM(require_classnames(), 1);
       init_hooks_module();
       init_DismissButton2();
       init_Icons2();
@@ -8097,6 +8459,7 @@
         root: "Omnibar_root",
         logo: "Omnibar_logo",
         tabSwitcherContainer: "Omnibar_tabSwitcherContainer",
+        popover: "Omnibar_popover",
         spacer: "Omnibar_spacer",
         popup: "Omnibar_popup",
         field: "Omnibar_field"
@@ -9162,198 +9525,6 @@
     }
   });
 
-  // pages/new-tab/app/components/Popover.module.css
-  var Popover_default;
-  var init_Popover = __esm({
-    "pages/new-tab/app/components/Popover.module.css"() {
-      Popover_default = {
-        popover: "Popover_popover",
-        content: "Popover_content",
-        closeButton: "Popover_closeButton",
-        heading: "Popover_heading",
-        badge: "Popover_badge",
-        title: "Popover_title",
-        description: "Popover_description",
-        arrow: "Popover_arrow"
-      };
-    }
-  });
-
-  // pages/new-tab/app/components/Popover.js
-  function Popover({ title, badge, onClose, children }) {
-    const { t: t4 } = useTypedTranslationWith(
-      /** @type {Strings} */
-      {}
-    );
-    const titleId = g2();
-    const descriptionId = g2();
-    const popoverRef = A2(
-      /** @type {HTMLDivElement|null} */
-      null
-    );
-    y2(() => {
-      popoverRef.current?.focus();
-      const handleEscapeKey = (event) => {
-        if (event.key === "Escape") {
-          onClose();
-        }
-      };
-      document.addEventListener("keydown", handleEscapeKey);
-      return () => document.removeEventListener("keydown", handleEscapeKey);
-    }, [onClose]);
-    return /* @__PURE__ */ _("div", { ref: popoverRef, class: Popover_default.popover, role: "dialog", "aria-labelledby": titleId, "aria-describedby": descriptionId, tabIndex: -1 }, /* @__PURE__ */ _("svg", { class: Popover_default.arrow, xmlns: "http://www.w3.org/2000/svg", width: "12", height: "30", viewBox: "0 0 12 30", fill: "none" }, /* @__PURE__ */ _(
-      "path",
-      {
-        d: "M9.20362 6.3927L0.510957 13.8636C-0.183621 14.4619 -0.16344 15.5367 0.531137 16.1351L9.20362 23.606C10.9677 25.1256 11.9819 27.3368 11.9819 29.6632L11.9819 30.0003L11.9819 -0.000488281V0.335449C11.9819 2.66185 10.9677 4.87302 9.20362 6.3927Z",
-        fill: "currentColor"
-      }
-    )), /* @__PURE__ */ _("div", { class: Popover_default.content }, /* @__PURE__ */ _(
-      DismissButton,
-      {
-        className: Popover_default.closeButton,
-        onClick: onClose,
-        buttonProps: { "aria-label": t4("ntp_popover_close_button") }
-      }
-    ), /* @__PURE__ */ _("h3", { id: titleId, class: Popover_default.heading }, badge && /* @__PURE__ */ _("span", { class: Popover_default.badge }, badge), /* @__PURE__ */ _("span", { class: Popover_default.title }, title)), /* @__PURE__ */ _("p", { id: descriptionId, class: Popover_default.description }, children)));
-  }
-  var init_Popover2 = __esm({
-    "pages/new-tab/app/components/Popover.js"() {
-      "use strict";
-      init_preact_module();
-      init_hooks_module();
-      init_types();
-      init_DismissButton2();
-      init_Popover();
-    }
-  });
-
-  // pages/new-tab/app/components/Drawer.js
-  function useDrawer(initial) {
-    const { isReducedMotion } = useEnv();
-    const asideRef = A2(
-      /** @type {HTMLDivElement|null} */
-      null
-    );
-    const buttonRef = A2(
-      /** @type {HTMLButtonElement|null} */
-      null
-    );
-    const buttonId = g2();
-    const drawerId = g2();
-    const visibility = useSignal(
-      /** @type {DrawerVisibility} */
-      "hidden"
-    );
-    const displayChildren = useSignal(false);
-    const animating = useSignal(false);
-    const hidden = useComputed(() => displayChildren.value === false);
-    _2(() => {
-      const controller = new AbortController();
-      const aside = asideRef.current;
-      if (!aside) return;
-      const update = (value2) => {
-        visibility.value = value2;
-        if (isReducedMotion) {
-          displayChildren.value = visibility.value === "visible";
-        }
-      };
-      const close = () => update("hidden");
-      const open = () => update("visible");
-      const toggle = () => {
-        const next = visibility.value === "hidden" ? "visible" : "hidden";
-        update(next);
-      };
-      window.addEventListener(CLOSE_DRAWER_EVENT, close, { signal: controller.signal });
-      window.addEventListener(TOGGLE_DRAWER_EVENT, toggle, { signal: controller.signal });
-      window.addEventListener(OPEN_DRAWER_EVENT, open, { signal: controller.signal });
-      aside?.addEventListener(
-        "transitionend",
-        (e4) => {
-          if (e4.target !== e4.currentTarget) return;
-          r3(() => {
-            displayChildren.value = visibility.value === "visible";
-            animating.value = false;
-            if (displayChildren.value === false) {
-              buttonRef.current?.focus?.();
-            }
-          });
-        },
-        { signal: controller.signal }
-      );
-      aside?.addEventListener(
-        "transitionstart",
-        (e4) => {
-          if (e4.target !== e4.currentTarget) return;
-          r3(() => {
-            animating.value = true;
-            displayChildren.value = true;
-          });
-        },
-        { signal: controller.signal }
-      );
-      return () => {
-        controller.abort();
-      };
-    }, [isReducedMotion, initial]);
-    const ntp = useMessaging();
-    y2(() => {
-      if (initial === "visible") {
-        _open();
-      }
-      return ntp.messaging.subscribe("customizer_autoOpen", () => {
-        _open();
-      });
-    }, [initial, ntp]);
-    return {
-      buttonRef,
-      visibility,
-      displayChildren,
-      buttonId,
-      drawerId,
-      hidden,
-      animating,
-      asideRef
-    };
-  }
-  function _toggle() {
-    window.dispatchEvent(new CustomEvent(TOGGLE_DRAWER_EVENT));
-  }
-  function _open() {
-    window.dispatchEvent(new CustomEvent(OPEN_DRAWER_EVENT));
-  }
-  function _close() {
-    window.dispatchEvent(new CustomEvent(CLOSE_DRAWER_EVENT));
-  }
-  function useDrawerEventListeners({ onOpen, onClose, onToggle }, deps = []) {
-    y2(() => {
-      const controller = new AbortController();
-      if (onOpen) window.addEventListener(OPEN_DRAWER_EVENT, onOpen, { signal: controller.signal });
-      if (onClose) window.addEventListener(CLOSE_DRAWER_EVENT, onClose, { signal: controller.signal });
-      if (onToggle) window.addEventListener(TOGGLE_DRAWER_EVENT, onToggle, { signal: controller.signal });
-      return () => controller.abort();
-    }, deps);
-  }
-  function useDrawerControls() {
-    return {
-      toggle: _toggle,
-      close: _close,
-      open: _open
-    };
-  }
-  var CLOSE_DRAWER_EVENT, TOGGLE_DRAWER_EVENT, OPEN_DRAWER_EVENT;
-  var init_Drawer = __esm({
-    "pages/new-tab/app/components/Drawer.js"() {
-      "use strict";
-      init_hooks_module();
-      init_signals_module();
-      init_EnvironmentProvider();
-      init_types();
-      CLOSE_DRAWER_EVENT = "close-drawer";
-      TOGGLE_DRAWER_EVENT = "toggle-drawer";
-      OPEN_DRAWER_EVENT = "open-drawer";
-    }
-  });
-
   // pages/new-tab/app/omnibar/components/Omnibar.js
   function Omnibar({ mode, setMode, enableAi, showCustomizePopover, tabId }) {
     const { t: t4 } = useTypedTranslationWith(
@@ -9398,8 +9569,9 @@
     return /* @__PURE__ */ _("div", { key: resetKey, class: Omnibar_default.root, "data-mode": mode }, /* @__PURE__ */ _(LogoStacked, { class: Omnibar_default.logo, "aria-label": t4("omnibar_logoAlt") }), enableAi && /* @__PURE__ */ _("div", { class: Omnibar_default.tabSwitcherContainer }, /* @__PURE__ */ _(TabSwitcher, { mode, onChange: handleChangeMode }), showCustomizePopover && /* @__PURE__ */ _(
       Popover,
       {
+        className: Omnibar_default.popover,
         title: t4("omnibar_customizePopoverTitle"),
-        badge: t4("omnibar_customizePopoverBadge"),
+        showNewBadge: true,
         onClose: handleCloseCustomizePopover
       },
       /* @__PURE__ */ _(
@@ -9792,28 +9964,6 @@
     }
   });
 
-  // pages/new-tab/app/components/NewBadge.module.css
-  var NewBadge_default;
-  var init_NewBadge = __esm({
-    "pages/new-tab/app/components/NewBadge.module.css"() {
-      NewBadge_default = {
-        badge: "NewBadge_badge"
-      };
-    }
-  });
-
-  // pages/new-tab/app/components/NewBadge.js
-  function NewBadge({ text: text2, ...rest }) {
-    return /* @__PURE__ */ _("span", { class: NewBadge_default.badge, ...rest }, text2?.toUpperCase() || "NEW");
-  }
-  var init_NewBadge2 = __esm({
-    "pages/new-tab/app/components/NewBadge.js"() {
-      "use strict";
-      init_preact_module();
-      init_NewBadge();
-    }
-  });
-
   // pages/new-tab/app/components/Tooltip/Tooltip.module.css
   var Tooltip_default;
   var init_Tooltip = __esm({
@@ -9844,7 +9994,7 @@
     return /* @__PURE__ */ _(
       "div",
       {
-        class: (0, import_classnames8.default)(Tooltip_default.tooltipContainer, className),
+        class: (0, import_classnames9.default)(Tooltip_default.tooltipContainer, className),
         role: "button",
         tabIndex: 0,
         "aria-describedby": isVisible ? tooltipId : void 0,
@@ -9858,14 +10008,14 @@
       isVisible && /* @__PURE__ */ _("div", { id: tooltipId, class: Tooltip_default.tooltip, role: "tooltip", dangerouslySetInnerHTML: { __html: content2 } })
     );
   }
-  var import_classnames8;
+  var import_classnames9;
   var init_Tooltip2 = __esm({
     "pages/new-tab/app/components/Tooltip/Tooltip.js"() {
       "use strict";
       init_preact_module();
       init_hooks_module();
       init_Tooltip();
-      import_classnames8 = __toESM(require_classnames(), 1);
+      import_classnames9 = __toESM(require_classnames(), 1);
     }
   });
 
@@ -10142,7 +10292,7 @@
     const isCpmEnabled = totalCookiePopUpsBlockedValue !== void 0 && totalCookiePopUpsBlockedValue !== null;
     const trackersBlockedHeading = animatedTrackersBlocked === 1 ? t4("stats_countBlockedSingular") : t4("stats_countBlockedPlural");
     const cookiePopUpsBlockedHeading = animatedCookiePopUpsBlocked === 1 ? t4("stats_totalCookiePopUpsBlockedSingular") : t4("stats_totalCookiePopUpsBlockedPlural");
-    return /* @__PURE__ */ _("div", { class: PrivacyStats_default.heading, "data-testid": "ProtectionsHeading", ref: headingRef }, /* @__PURE__ */ _("div", { class: (0, import_classnames9.default)(PrivacyStats_default.control, animatedTrackersBlocked === 0 && PrivacyStats_default.noTrackers) }, /* @__PURE__ */ _("span", { class: PrivacyStats_default.headingIcon }, /* @__PURE__ */ _("img", { src: "./icons/Shield-Check-Color-16.svg", alt: "Privacy Shield" })), /* @__PURE__ */ _("h2", { class: PrivacyStats_default.caption }, t4("protections_menuTitle")), /* @__PURE__ */ _(Tooltip, { content: t4("stats_protectionsReportInfo") }, /* @__PURE__ */ _(InfoIcon, { class: PrivacyStats_default.infoIcon })), canExpand && /* @__PURE__ */ _("span", { class: PrivacyStats_default.widgetExpander }, /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("div", { class: PrivacyStats_default.heading, "data-testid": "ProtectionsHeading", ref: headingRef }, /* @__PURE__ */ _("div", { class: (0, import_classnames10.default)(PrivacyStats_default.control, animatedTrackersBlocked === 0 && PrivacyStats_default.noTrackers) }, /* @__PURE__ */ _("span", { class: PrivacyStats_default.headingIcon }, /* @__PURE__ */ _("img", { src: "./icons/Shield-Check-Color-16.svg", alt: "Privacy Shield" })), /* @__PURE__ */ _("h2", { class: PrivacyStats_default.caption }, t4("protections_menuTitle")), /* @__PURE__ */ _(Tooltip, { content: t4("stats_protectionsReportInfo") }, /* @__PURE__ */ _(InfoIcon, { class: PrivacyStats_default.infoIcon })), canExpand && /* @__PURE__ */ _("span", { class: PrivacyStats_default.widgetExpander }, /* @__PURE__ */ _(
       ShowHideButtonCircle,
       {
         buttonAttrs: {
@@ -10153,16 +10303,16 @@
         onClick: onToggle,
         label: expansion === "expanded" ? t4("stats_hideLabel") : t4("stats_toggleLabel")
       }
-    ))), /* @__PURE__ */ _("div", { class: PrivacyStats_default.counterContainer, ref: counterContainerRef }, /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, animatedTrackersBlocked === 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.noRecentTitle }, t4("protections_noRecent")), animatedTrackersBlocked > 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, formatter.format(animatedTrackersBlocked), " ", /* @__PURE__ */ _("span", null, trackersBlockedHeading))), isCpmEnabled && animatedTrackersBlocked > 0 && totalCookiePopUpsBlocked > 0 && /* @__PURE__ */ _("div", { class: (0, import_classnames9.default)(PrivacyStats_default.counter, PrivacyStats_default.cookiePopUpsCounter) }, /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, formatter.format(animatedCookiePopUpsBlocked), " ", /* @__PURE__ */ _("span", null, cookiePopUpsBlockedHeading)), showProtectionsReportNewLabel && /* @__PURE__ */ _(NewBadge, { text: t4("protections_newBadge") }))));
+    ))), /* @__PURE__ */ _("div", { class: PrivacyStats_default.counterContainer, ref: counterContainerRef }, /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, animatedTrackersBlocked === 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.noRecentTitle }, t4("protections_noRecent")), animatedTrackersBlocked > 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, formatter.format(animatedTrackersBlocked), " ", /* @__PURE__ */ _("span", null, trackersBlockedHeading))), isCpmEnabled && animatedTrackersBlocked > 0 && totalCookiePopUpsBlocked > 0 && /* @__PURE__ */ _("div", { class: (0, import_classnames10.default)(PrivacyStats_default.counter, PrivacyStats_default.cookiePopUpsCounter) }, /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, formatter.format(animatedCookiePopUpsBlocked), " ", /* @__PURE__ */ _("span", null, cookiePopUpsBlockedHeading)), showProtectionsReportNewLabel && /* @__PURE__ */ _(NewBadge, null))));
   }
-  var import_classnames9;
+  var import_classnames10;
   var init_ProtectionsHeading = __esm({
     "pages/new-tab/app/protections/components/ProtectionsHeading.js"() {
       "use strict";
       init_types();
       init_PrivacyStats();
       init_ShowHideButton();
-      import_classnames9 = __toESM(require_classnames(), 1);
+      import_classnames10 = __toESM(require_classnames(), 1);
       init_preact_module();
       init_Icons2();
       init_NewBadge2();
@@ -10232,9 +10382,9 @@
         onClick: onToggle,
         label: expansion === "expanded" ? t4("stats_hideLabel") : t4("stats_toggleLabel")
       }
-    ))), /* @__PURE__ */ _("div", { class: PrivacyStatsLegacy_default.counter }, none && /* @__PURE__ */ _("h3", { class: PrivacyStatsLegacy_default.title }, t4("protections_noRecent")), some && /* @__PURE__ */ _("h3", { class: PrivacyStatsLegacy_default.title }, " ", /* @__PURE__ */ _(Trans, { str: alltimeTitle, values: { count: alltime } })), /* @__PURE__ */ _("p", { class: (0, import_classnames10.default)(PrivacyStatsLegacy_default.subtitle, PrivacyStatsLegacy_default.indented) }, t4("stats_feedCountBlockedPeriod"))));
+    ))), /* @__PURE__ */ _("div", { class: PrivacyStatsLegacy_default.counter }, none && /* @__PURE__ */ _("h3", { class: PrivacyStatsLegacy_default.title }, t4("protections_noRecent")), some && /* @__PURE__ */ _("h3", { class: PrivacyStatsLegacy_default.title }, " ", /* @__PURE__ */ _(Trans, { str: alltimeTitle, values: { count: alltime } })), /* @__PURE__ */ _("p", { class: (0, import_classnames11.default)(PrivacyStatsLegacy_default.subtitle, PrivacyStatsLegacy_default.indented) }, t4("stats_feedCountBlockedPeriod"))));
   }
-  var import_classnames10;
+  var import_classnames11;
   var init_ProtectionsHeadingLegacy = __esm({
     "pages/new-tab/app/protections/components/ProtectionsHeadingLegacy.js"() {
       "use strict";
@@ -10242,7 +10392,7 @@
       init_hooks_module();
       init_PrivacyStatsLegacy();
       init_ShowHideButton();
-      import_classnames10 = __toESM(require_classnames(), 1);
+      import_classnames11 = __toESM(require_classnames(), 1);
       init_preact_module();
       init_settings_provider();
       init_TranslationsProvider();
@@ -10301,14 +10451,14 @@
       /** @type {enStrings} */
       {}
     );
-    return /* @__PURE__ */ _("div", { class: Protections_default.body, id, "aria-hidden": hidden, "aria-expanded": showing }, expansion === "expanded" && /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("div", { class: (0, import_classnames11.default)(Protections_default.switcher, Protections_default.block) }, /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("div", { class: Protections_default.body, id, "aria-hidden": hidden, "aria-expanded": showing }, expansion === "expanded" && /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("div", { class: (0, import_classnames12.default)(Protections_default.switcher, Protections_default.block) }, /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames11.default)(Protections_default.button, feed === "privacy-stats" && Protections_default.active),
+        class: (0, import_classnames12.default)(Protections_default.button, feed === "privacy-stats" && Protections_default.active),
         onClick: () => setFeed("privacy-stats")
       },
       t4("protections_statsSwitchTitle")
-    ), /* @__PURE__ */ _("button", { class: (0, import_classnames11.default)(Protections_default.button, feed === "activity" && Protections_default.active), onClick: () => setFeed("activity") }, t4("protections_activitySwitchTitle"))), /* @__PURE__ */ _("div", { class: Protections_default.feed }, children)));
+    ), /* @__PURE__ */ _("button", { class: (0, import_classnames12.default)(Protections_default.button, feed === "activity" && Protections_default.active), onClick: () => setFeed("activity") }, t4("protections_activitySwitchTitle"))), /* @__PURE__ */ _("div", { class: Protections_default.feed }, children)));
   }
   function ProtectionsBodyLegacy({ feed, id, expansion, setFeed, children }) {
     const hidden = expansion === "collapsed";
@@ -10317,28 +10467,28 @@
       /** @type {enStrings} */
       {}
     );
-    return /* @__PURE__ */ _("div", { class: Protections_default.body, id, "aria-hidden": hidden, "aria-expanded": showing }, expansion === "expanded" && /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("div", { class: (0, import_classnames11.default)(Protections_default.switcher, Protections_default.blockLegacy) }, /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("div", { class: Protections_default.body, id, "aria-hidden": hidden, "aria-expanded": showing }, expansion === "expanded" && /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("div", { class: (0, import_classnames12.default)(Protections_default.switcher, Protections_default.blockLegacy) }, /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames11.default)(Protections_default.button, feed === "privacy-stats" && Protections_default.active),
+        class: (0, import_classnames12.default)(Protections_default.button, feed === "privacy-stats" && Protections_default.active),
         onClick: () => setFeed("privacy-stats")
       },
       t4("protections_statsSwitchTitle")
-    ), /* @__PURE__ */ _("button", { class: (0, import_classnames11.default)(Protections_default.button, feed === "activity" && Protections_default.active), onClick: () => setFeed("activity") }, t4("protections_activitySwitchTitle"))), /* @__PURE__ */ _("div", { class: Protections_default.feed }, children)));
+    ), /* @__PURE__ */ _("button", { class: (0, import_classnames12.default)(Protections_default.button, feed === "activity" && Protections_default.active), onClick: () => setFeed("activity") }, t4("protections_activitySwitchTitle"))), /* @__PURE__ */ _("div", { class: Protections_default.feed }, children)));
   }
   function ProtectionsEmpty({ children }) {
-    return /* @__PURE__ */ _("div", { class: (0, import_classnames11.default)(Protections_default.block, Protections_default.empty) }, children);
+    return /* @__PURE__ */ _("div", { class: (0, import_classnames12.default)(Protections_default.block, Protections_default.empty) }, children);
   }
   function ProtectionsEmptyLegacy({ children }) {
-    return /* @__PURE__ */ _("div", { class: (0, import_classnames11.default)(Protections_default.blockLegacy, Protections_default.empty) }, children);
+    return /* @__PURE__ */ _("div", { class: (0, import_classnames12.default)(Protections_default.blockLegacy, Protections_default.empty) }, children);
   }
-  var import_classnames11;
+  var import_classnames12;
   var init_Protections2 = __esm({
     "pages/new-tab/app/protections/components/Protections.js"() {
       "use strict";
       init_hooks_module();
       init_preact_module();
-      import_classnames11 = __toESM(require_classnames(), 1);
+      import_classnames12 = __toESM(require_classnames(), 1);
       init_Protections();
       init_ProtectionsHeading();
       init_types();
@@ -11387,7 +11537,7 @@
     return /* @__PURE__ */ _("div", { className: Activity_default.controls }, /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames12.default)(Activity_default.icon, Activity_default.controlIcon, Activity_default.disableWhenBusy),
+        class: (0, import_classnames13.default)(Activity_default.icon, Activity_default.controlIcon, Activity_default.disableWhenBusy),
         title: favoriteTitle,
         "data-action": favorite.value ? ACTION_REMOVE_FAVORITE : ACTION_ADD_FAVORITE,
         "data-title": title,
@@ -11398,7 +11548,7 @@
     ), /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames12.default)(Activity_default.icon, Activity_default.controlIcon, Activity_default.disableWhenBusy),
+        class: (0, import_classnames13.default)(Activity_default.icon, Activity_default.controlIcon, Activity_default.disableWhenBusy),
         title: secondaryTitle,
         "data-action": canBurn ? ACTION_BURN : ACTION_REMOVE,
         value: url8,
@@ -11407,13 +11557,13 @@
       canBurn ? shouldDisplayLegacyActivity ? /* @__PURE__ */ _(Fire, null) : /* @__PURE__ */ _(FireIcon, null) : /* @__PURE__ */ _(Cross, null)
     ));
   }
-  var import_classnames12, ActivityItem, ActivityItemLegacy;
+  var import_classnames13, ActivityItem, ActivityItemLegacy;
   var init_ActivityItem = __esm({
     "pages/new-tab/app/activity/components/ActivityItem.js"() {
       "use strict";
       init_preact_module();
       init_types();
-      import_classnames12 = __toESM(require_classnames(), 1);
+      import_classnames13 = __toESM(require_classnames(), 1);
       init_Activity();
       init_ActivityLegacy();
       init_FaviconWithState2();
@@ -11440,7 +11590,7 @@
          * @param {string} props.etldPlusOne
          */
         function ActivityItem2({ canBurn, documentVisibility, title, url: url8, favoriteSrc, faviconMax, etldPlusOne, children }) {
-          return /* @__PURE__ */ _("li", { key: url8, class: (0, import_classnames12.default)(Activity_default.item), "data-testid": "ActivityItem" }, /* @__PURE__ */ _("div", { class: Activity_default.heading }, /* @__PURE__ */ _("a", { class: Activity_default.title, href: url8, "data-url": url8 }, /* @__PURE__ */ _("span", { className: Activity_default.favicon, "data-url": url8 }, documentVisibility === "visible" && /* @__PURE__ */ _(
+          return /* @__PURE__ */ _("li", { key: url8, class: (0, import_classnames13.default)(Activity_default.item), "data-testid": "ActivityItem" }, /* @__PURE__ */ _("div", { class: Activity_default.heading }, /* @__PURE__ */ _("a", { class: Activity_default.title, href: url8, "data-url": url8 }, /* @__PURE__ */ _("span", { className: Activity_default.favicon, "data-url": url8 }, documentVisibility === "visible" && /* @__PURE__ */ _(
             FaviconWithState,
             {
               faviconSrc: favoriteSrc,
@@ -11468,7 +11618,7 @@
          * @param {string} props.etldPlusOne
          */
         function ActivityItem3({ canBurn, documentVisibility, title, url: url8, favoriteSrc, faviconMax, etldPlusOne, children }) {
-          return /* @__PURE__ */ _("li", { key: url8, class: (0, import_classnames12.default)(ActivityLegacy_default.item), "data-testid": "ActivityItem" }, /* @__PURE__ */ _("div", { class: ActivityLegacy_default.heading }, /* @__PURE__ */ _("a", { class: ActivityLegacy_default.title, href: url8, "data-url": url8 }, /* @__PURE__ */ _("span", { className: ActivityLegacy_default.favicon, "data-url": url8 }, documentVisibility === "visible" && /* @__PURE__ */ _(
+          return /* @__PURE__ */ _("li", { key: url8, class: (0, import_classnames13.default)(ActivityLegacy_default.item), "data-testid": "ActivityItem" }, /* @__PURE__ */ _("div", { class: ActivityLegacy_default.heading }, /* @__PURE__ */ _("a", { class: ActivityLegacy_default.title, href: url8, "data-url": url8 }, /* @__PURE__ */ _("span", { className: ActivityLegacy_default.favicon, "data-url": url8 }, documentVisibility === "visible" && /* @__PURE__ */ _(
             FaviconWithState,
             {
               faviconSrc: favoriteSrc,
@@ -27898,20 +28048,20 @@
         canceled = true;
       };
     }, [isBurning.value, isExiting.value, url8]);
-    return /* @__PURE__ */ _("div", { class: (0, import_classnames13.default)(Activity_default.anim, isBurning.value && Activity_default.burning), ref }, !isExiting.value && children, !isExiting.value && isBurning.value && showBurnAnimation && /* @__PURE__ */ _(P3, { fallback: null }, /* @__PURE__ */ _(BurnAnimationLazy, { url: url8, doneBurning })), !isExiting.value && isBurning.value && !showBurnAnimation && /* @__PURE__ */ _(NullBurner, { url: url8, doneBurning }));
+    return /* @__PURE__ */ _("div", { class: (0, import_classnames14.default)(Activity_default.anim, isBurning.value && Activity_default.burning), ref }, !isExiting.value && children, !isExiting.value && isBurning.value && showBurnAnimation && /* @__PURE__ */ _(P3, { fallback: null }, /* @__PURE__ */ _(BurnAnimationLazy, { url: url8, doneBurning })), !isExiting.value && isBurning.value && !showBurnAnimation && /* @__PURE__ */ _(NullBurner, { url: url8, doneBurning }));
   }
   function NullBurner({ url: url8, doneBurning }) {
     y2(() => doneBurning(url8), [url8]);
     return null;
   }
-  var import_classnames13, BurnAnimationLazy;
+  var import_classnames14, BurnAnimationLazy;
   var init_ActivityItemAnimationWrapper = __esm({
     "pages/new-tab/app/activity/components/ActivityItemAnimationWrapper.js"() {
       "use strict";
       init_hooks_module();
       init_BurnProvider();
       init_signals_module();
-      import_classnames13 = __toESM(require_classnames(), 1);
+      import_classnames14 = __toESM(require_classnames(), 1);
       init_Activity();
       init_compat_module();
       init_preact_module();
@@ -28021,15 +28171,15 @@
 
   // pages/new-tab/app/components/TickPill/TickPill.js
   function TickPill({ text: text2, className, displayTick = true }) {
-    return /* @__PURE__ */ _("div", { class: (0, import_classnames14.default)(TickPill_default.tickPill, className || "") }, displayTick && /* @__PURE__ */ _("span", { class: TickPill_default.iconWrapper }, /* @__PURE__ */ _(Check, null)), /* @__PURE__ */ _("span", { class: TickPill_default.text }, text2));
+    return /* @__PURE__ */ _("div", { class: (0, import_classnames15.default)(TickPill_default.tickPill, className || "") }, displayTick && /* @__PURE__ */ _("span", { class: TickPill_default.iconWrapper }, /* @__PURE__ */ _(Check, null)), /* @__PURE__ */ _("span", { class: TickPill_default.text }, text2));
   }
-  var import_classnames14;
+  var import_classnames15;
   var init_TickPill2 = __esm({
     "pages/new-tab/app/components/TickPill/TickPill.js"() {
       "use strict";
       init_preact_module();
       init_Icons2();
-      import_classnames14 = __toESM(require_classnames(), 1);
+      import_classnames15 = __toESM(require_classnames(), 1);
       init_TickPill();
     }
   });
@@ -28840,7 +28990,7 @@
   function RemoteMessagingFramework({ message, primaryAction, secondaryAction, dismiss }) {
     const { id, messageType, titleText, descriptionText } = message;
     const platform = usePlatformName();
-    return /* @__PURE__ */ _("div", { id, class: (0, import_classnames15.default)(RemoteMessagingFramework_default.root, messageType !== "small" && message.icon && RemoteMessagingFramework_default.icon) }, messageType !== "small" && message.icon && /* @__PURE__ */ _("span", { class: RemoteMessagingFramework_default.iconBlock }, /* @__PURE__ */ _("img", { src: `./icons/${message.icon}-96.svg`, alt: "" })), /* @__PURE__ */ _("div", { class: RemoteMessagingFramework_default.content }, /* @__PURE__ */ _("h2", { class: RemoteMessagingFramework_default.title }, titleText), /* @__PURE__ */ _("p", { class: RemoteMessagingFramework_default.description }, descriptionText), messageType === "big_two_action" && /* @__PURE__ */ _("div", { class: RemoteMessagingFramework_default.btnRow }, platform === "windows" ? /* @__PURE__ */ _(k, null, primaryAction && message.primaryActionText.length > 0 && /* @__PURE__ */ _(Button, { variant: "accentBrand", onClick: () => primaryAction(id) }, message.primaryActionText), secondaryAction && message.secondaryActionText.length > 0 && /* @__PURE__ */ _(Button, { variant: "standard", onClick: () => secondaryAction(id) }, message.secondaryActionText)) : /* @__PURE__ */ _(k, null, secondaryAction && message.secondaryActionText.length > 0 && /* @__PURE__ */ _(Button, { variant: "standard", onClick: () => secondaryAction(id) }, message.secondaryActionText), primaryAction && message.primaryActionText.length > 0 && /* @__PURE__ */ _(Button, { variant: "accentBrand", onClick: () => primaryAction(id) }, message.primaryActionText)))), messageType === "big_single_action" && message.primaryActionText && primaryAction && /* @__PURE__ */ _("div", { class: RemoteMessagingFramework_default.btnBlock }, /* @__PURE__ */ _(Button, { variant: "standard", onClick: () => primaryAction(id) }, message.primaryActionText)), /* @__PURE__ */ _(DismissButton, { className: RemoteMessagingFramework_default.dismissBtn, onClick: () => dismiss(id) }));
+    return /* @__PURE__ */ _("div", { id, class: (0, import_classnames16.default)(RemoteMessagingFramework_default.root, messageType !== "small" && message.icon && RemoteMessagingFramework_default.icon) }, messageType !== "small" && message.icon && /* @__PURE__ */ _("span", { class: RemoteMessagingFramework_default.iconBlock }, /* @__PURE__ */ _("img", { src: `./icons/${message.icon}-96.svg`, alt: "" })), /* @__PURE__ */ _("div", { class: RemoteMessagingFramework_default.content }, /* @__PURE__ */ _("h2", { class: RemoteMessagingFramework_default.title }, titleText), /* @__PURE__ */ _("p", { class: RemoteMessagingFramework_default.description }, descriptionText), messageType === "big_two_action" && /* @__PURE__ */ _("div", { class: RemoteMessagingFramework_default.btnRow }, platform === "windows" ? /* @__PURE__ */ _(k, null, primaryAction && message.primaryActionText.length > 0 && /* @__PURE__ */ _(Button, { variant: "accentBrand", onClick: () => primaryAction(id) }, message.primaryActionText), secondaryAction && message.secondaryActionText.length > 0 && /* @__PURE__ */ _(Button, { variant: "standard", onClick: () => secondaryAction(id) }, message.secondaryActionText)) : /* @__PURE__ */ _(k, null, secondaryAction && message.secondaryActionText.length > 0 && /* @__PURE__ */ _(Button, { variant: "standard", onClick: () => secondaryAction(id) }, message.secondaryActionText), primaryAction && message.primaryActionText.length > 0 && /* @__PURE__ */ _(Button, { variant: "accentBrand", onClick: () => primaryAction(id) }, message.primaryActionText)))), messageType === "big_single_action" && message.primaryActionText && primaryAction && /* @__PURE__ */ _("div", { class: RemoteMessagingFramework_default.btnBlock }, /* @__PURE__ */ _(Button, { variant: "standard", onClick: () => primaryAction(id) }, message.primaryActionText)), /* @__PURE__ */ _(DismissButton, { className: RemoteMessagingFramework_default.dismissBtn, onClick: () => dismiss(id) }));
   }
   function RMFConsumer() {
     const { state, primaryAction, secondaryAction, dismiss } = x2(RMFContext);
@@ -28857,12 +29007,12 @@
     }
     return null;
   }
-  var import_classnames15;
+  var import_classnames16;
   var init_RemoteMessagingFramework2 = __esm({
     "pages/new-tab/app/remote-messaging-framework/components/RemoteMessagingFramework.js"() {
       "use strict";
       init_preact_module();
-      import_classnames15 = __toESM(require_classnames(), 1);
+      import_classnames16 = __toESM(require_classnames(), 1);
       init_RemoteMessagingFramework();
       init_hooks_module();
       init_RMFProvider();
@@ -29041,7 +29191,7 @@
   // pages/new-tab/app/subscription-winback-banner/components/SubscriptionWinBackBanner.js
   function SubscriptionWinBackBanner({ message, action, dismiss }) {
     const processedMessageDescription = convertMarkdownToHTMLForStrongTags(message.descriptionText);
-    return /* @__PURE__ */ _("div", { id: message.id, class: (0, import_classnames16.default)(SubscriptionWinBackBanner_default.root, SubscriptionWinBackBanner_default.icon) }, /* @__PURE__ */ _("span", { class: SubscriptionWinBackBanner_default.iconBlock }, /* @__PURE__ */ _("img", { "aria-hidden": "true", src: `./icons/Subscription-Clock-96.svg`, alt: "" })), /* @__PURE__ */ _("div", { class: SubscriptionWinBackBanner_default.content }, message.titleText && /* @__PURE__ */ _("h2", { class: SubscriptionWinBackBanner_default.title }, message.titleText), /* @__PURE__ */ _("p", { class: SubscriptionWinBackBanner_default.description, dangerouslySetInnerHTML: { __html: processedMessageDescription } })), message.messageType === "big_single_action" && message?.actionText && action && /* @__PURE__ */ _("div", { class: SubscriptionWinBackBanner_default.btnBlock }, /* @__PURE__ */ _(Button, { size: "md", variant: "accent", onClick: () => action(message.id) }, message.actionText)), message.id && dismiss && /* @__PURE__ */ _(DismissButton, { className: SubscriptionWinBackBanner_default.dismissBtn, onClick: () => dismiss(message.id) }));
+    return /* @__PURE__ */ _("div", { id: message.id, class: (0, import_classnames17.default)(SubscriptionWinBackBanner_default.root, SubscriptionWinBackBanner_default.icon) }, /* @__PURE__ */ _("span", { class: SubscriptionWinBackBanner_default.iconBlock }, /* @__PURE__ */ _("img", { "aria-hidden": "true", src: `./icons/Subscription-Clock-96.svg`, alt: "" })), /* @__PURE__ */ _("div", { class: SubscriptionWinBackBanner_default.content }, message.titleText && /* @__PURE__ */ _("h2", { class: SubscriptionWinBackBanner_default.title }, message.titleText), /* @__PURE__ */ _("p", { class: SubscriptionWinBackBanner_default.description, dangerouslySetInnerHTML: { __html: processedMessageDescription } })), message.messageType === "big_single_action" && message?.actionText && action && /* @__PURE__ */ _("div", { class: SubscriptionWinBackBanner_default.btnBlock }, /* @__PURE__ */ _(Button, { size: "md", variant: "accent", onClick: () => action(message.id) }, message.actionText)), message.id && dismiss && /* @__PURE__ */ _(DismissButton, { className: SubscriptionWinBackBanner_default.dismissBtn, onClick: () => dismiss(message.id) }));
   }
   function SubscriptionWinBackBannerConsumer() {
     const { state, action, dismiss } = x2(SubscriptionWinBackBannerContext);
@@ -29050,11 +29200,11 @@
     }
     return null;
   }
-  var import_classnames16;
+  var import_classnames17;
   var init_SubscriptionWinBackBanner2 = __esm({
     "pages/new-tab/app/subscription-winback-banner/components/SubscriptionWinBackBanner.js"() {
       "use strict";
-      import_classnames16 = __toESM(require_classnames(), 1);
+      import_classnames17 = __toESM(require_classnames(), 1);
       init_preact_module();
       init_Button2();
       init_DismissButton2();
@@ -29215,7 +29365,7 @@
 
   // pages/new-tab/app/update-notification/components/UpdateNotification.js
   function UpdateNotification({ notes, dismiss, version }) {
-    return /* @__PURE__ */ _("div", { class: UpdateNotification_default.root, "data-reset-layout": "true" }, /* @__PURE__ */ _("div", { class: (0, import_classnames17.default)("layout-centered", UpdateNotification_default.body) }, notes.length > 0 ? /* @__PURE__ */ _(WithNotes, { notes, version }) : /* @__PURE__ */ _(WithoutNotes, { version })), /* @__PURE__ */ _(DismissButton, { onClick: dismiss, className: UpdateNotification_default.dismiss }));
+    return /* @__PURE__ */ _("div", { class: UpdateNotification_default.root, "data-reset-layout": "true" }, /* @__PURE__ */ _("div", { class: (0, import_classnames18.default)("layout-centered", UpdateNotification_default.body) }, notes.length > 0 ? /* @__PURE__ */ _(WithNotes, { notes, version }) : /* @__PURE__ */ _(WithoutNotes, { version })), /* @__PURE__ */ _(DismissButton, { onClick: dismiss, className: UpdateNotification_default.dismiss }));
   }
   function WithNotes({ notes, version }) {
     const id = g2();
@@ -29277,12 +29427,12 @@
     }
     return null;
   }
-  var import_classnames17;
+  var import_classnames18;
   var init_UpdateNotification2 = __esm({
     "pages/new-tab/app/update-notification/components/UpdateNotification.js"() {
       "use strict";
       init_preact_module();
-      import_classnames17 = __toESM(require_classnames(), 1);
+      import_classnames18 = __toESM(require_classnames(), 1);
       init_UpdateNotification();
       init_hooks_module();
       init_UpdateNotificationProvider();
@@ -29322,7 +29472,7 @@
 
   // pages/new-tab/app/components/App.js
   init_preact_module();
-  var import_classnames27 = __toESM(require_classnames(), 1);
+  var import_classnames28 = __toESM(require_classnames(), 1);
 
   // pages/new-tab/app/components/App.module.css
   var App_default = {
@@ -29684,7 +29834,8 @@
 
   // pages/new-tab/app/customizer/components/CustomizerDrawerInner.js
   init_preact_module();
-  var import_classnames26 = __toESM(require_classnames(), 1);
+  init_hooks_module();
+  var import_classnames27 = __toESM(require_classnames(), 1);
 
   // pages/new-tab/app/customizer/components/CustomizerDrawerInner.module.css
   var CustomizerDrawerInner_default = {
@@ -29720,7 +29871,7 @@
 
   // pages/new-tab/app/customizer/components/BackgroundSection.js
   init_preact_module();
-  var import_classnames18 = __toESM(require_classnames(), 1);
+  var import_classnames19 = __toESM(require_classnames(), 1);
   init_values();
   init_Icons2();
   init_signals_module();
@@ -29745,7 +29896,7 @@
     } else {
       gradient = values.gradients.gradient02;
     }
-    return /* @__PURE__ */ _("ul", { class: (0, import_classnames18.default)(CustomizerDrawerInner_default.bgList), role: "radiogroup" }, /* @__PURE__ */ _("li", { class: CustomizerDrawerInner_default.bgListItem }, /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("ul", { class: (0, import_classnames19.default)(CustomizerDrawerInner_default.bgList), role: "radiogroup" }, /* @__PURE__ */ _("li", { class: CustomizerDrawerInner_default.bgListItem }, /* @__PURE__ */ _(
       DefaultPanel,
       {
         checked: data2.value.background.kind === "default",
@@ -29779,7 +29930,7 @@
     return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames18.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.bgPanelEmpty, CustomizerDrawerInner_default.dynamicIconColor),
+        class: (0, import_classnames19.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.bgPanelEmpty, CustomizerDrawerInner_default.dynamicIconColor),
         "data-color-mode": main,
         "aria-checked": checked,
         "aria-labelledby": id,
@@ -29799,7 +29950,7 @@
     return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames18.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.dynamicIconColor),
+        class: (0, import_classnames19.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.dynamicIconColor),
         "data-color-mode": props.color.colorScheme,
         onClick: props.onClick,
         "aria-checked": props.checked,
@@ -29821,7 +29972,7 @@
       "button",
       {
         onClick: props.onClick,
-        class: (0, import_classnames18.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.dynamicIconColor),
+        class: (0, import_classnames19.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.dynamicIconColor),
         "data-color-mode": props.gradient.colorScheme,
         "aria-checked": props.checked,
         tabindex: props.checked ? -1 : 0,
@@ -29861,7 +30012,7 @@
       return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _(
         "button",
         {
-          class: (0, import_classnames18.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.bgPanelEmpty, CustomizerDrawerInner_default.dynamicIconColor),
+          class: (0, import_classnames19.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.bgPanelEmpty, CustomizerDrawerInner_default.dynamicIconColor),
           "data-color-mode": props.browserTheme,
           "aria-checked": props.checked,
           "aria-labelledby": id,
@@ -29876,7 +30027,7 @@
     return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames18.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.dynamicIconColor),
+        class: (0, import_classnames19.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.dynamicIconColor),
         "data-color-mode": scheme,
         onClick: props.onClick,
         "aria-checked": props.checked,
@@ -29902,7 +30053,7 @@
   };
 
   // pages/new-tab/app/customizer/components/BrowserThemeSection.js
-  var import_classnames19 = __toESM(require_classnames(), 1);
+  var import_classnames20 = __toESM(require_classnames(), 1);
   init_preact_module();
   init_signals_module();
   init_types();
@@ -29915,7 +30066,7 @@
     return /* @__PURE__ */ _("ul", { class: BrowserThemeSection_default.themeList }, /* @__PURE__ */ _("li", { class: BrowserThemeSection_default.themeItem }, /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames19.default)(BrowserThemeSection_default.themeButton, BrowserThemeSection_default.themeButtonLight),
+        class: (0, import_classnames20.default)(BrowserThemeSection_default.themeButton, BrowserThemeSection_default.themeButtonLight),
         role: "radio",
         type: "button",
         "aria-checked": current.value === "light",
@@ -29926,7 +30077,7 @@
     ), /* @__PURE__ */ _("span", null, t4("customizer_browser_theme_light"))), /* @__PURE__ */ _("li", { class: BrowserThemeSection_default.themeItem }, /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames19.default)(BrowserThemeSection_default.themeButton, BrowserThemeSection_default.themeButtonDark),
+        class: (0, import_classnames20.default)(BrowserThemeSection_default.themeButton, BrowserThemeSection_default.themeButtonDark),
         role: "radio",
         type: "button",
         "aria-checked": current.value === "dark",
@@ -29937,7 +30088,7 @@
     ), /* @__PURE__ */ _("span", null, t4("customizer_browser_theme_dark"))), /* @__PURE__ */ _("li", { class: BrowserThemeSection_default.themeItem }, /* @__PURE__ */ _(
       "button",
       {
-        class: (0, import_classnames19.default)(BrowserThemeSection_default.themeButton, BrowserThemeSection_default.themeButtonSystem),
+        class: (0, import_classnames20.default)(BrowserThemeSection_default.themeButton, BrowserThemeSection_default.themeButtonSystem),
         role: "radio",
         type: "button",
         "aria-checked": current.value === "system",
@@ -30047,7 +30198,7 @@
   init_CustomizerMenu();
 
   // pages/new-tab/app/customizer/components/VisibilityMenu.js
-  var import_classnames20 = __toESM(require_classnames(), 1);
+  var import_classnames21 = __toESM(require_classnames(), 1);
   init_preact_module();
   init_hooks_module();
 
@@ -30104,8 +30255,8 @@
   function EmbeddedVisibilityMenu({ rows }) {
     const platformName = usePlatformName();
     const { browser } = x2(CustomizerThemesContext);
-    return /* @__PURE__ */ _("ul", { className: (0, import_classnames20.default)(VisibilityMenu_default.list, VisibilityMenu_default.embedded) }, rows.map((row) => {
-      return /* @__PURE__ */ _("li", { key: row.id }, /* @__PURE__ */ _("div", { class: (0, import_classnames20.default)(VisibilityMenu_default.menuItemLabel, VisibilityMenu_default.menuItemLabelEmbedded) }, /* @__PURE__ */ _("span", { class: VisibilityMenu_default.svg }, row.icon), /* @__PURE__ */ _("span", { class: VisibilityMenu_default.title }, row.title ?? row.id), /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("ul", { className: (0, import_classnames21.default)(VisibilityMenu_default.list, VisibilityMenu_default.embedded) }, rows.map((row) => {
+      return /* @__PURE__ */ _("li", { key: row.id }, /* @__PURE__ */ _("div", { class: (0, import_classnames21.default)(VisibilityMenu_default.menuItemLabel, VisibilityMenu_default.menuItemLabelEmbedded) }, /* @__PURE__ */ _("span", { class: VisibilityMenu_default.svg }, row.icon), /* @__PURE__ */ _("span", { class: VisibilityMenu_default.title }, row.title ?? row.id), /* @__PURE__ */ _(
         Switch,
         {
           theme: browser.value,
@@ -30148,7 +30299,7 @@
 
   // pages/new-tab/app/customizer/components/ColorSelection.js
   init_preact_module();
-  var import_classnames21 = __toESM(require_classnames(), 1);
+  var import_classnames22 = __toESM(require_classnames(), 1);
   init_values();
   init_Icons2();
   init_signals_module();
@@ -30177,7 +30328,7 @@
       if (!(value2 in values.colors)) return console.warn("could not select color", value2);
       select({ background: { kind: "color", value: value2 } });
     }
-    return /* @__PURE__ */ _("div", null, /* @__PURE__ */ _("button", { type: "button", onClick: back, class: (0, import_classnames21.default)(CustomizerDrawerInner_default.backBtn, CustomizerDrawerInner_default.sectionTitle) }, /* @__PURE__ */ _(BackChevron, null), t4("customizer_background_selection_color")), /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.sectionBody }, /* @__PURE__ */ _(InlineErrorBoundary, { format: (message) => `Customizer section 'ColorGrid' threw an exception: ` + message }, /* @__PURE__ */ _("div", { class: (0, import_classnames21.default)(CustomizerDrawerInner_default.bgList), role: "radiogroup", onClick }, /* @__PURE__ */ _(PickerPanel, { data: data2, select }), /* @__PURE__ */ _(ColorGrid, { data: data2 })))));
+    return /* @__PURE__ */ _("div", null, /* @__PURE__ */ _("button", { type: "button", onClick: back, class: (0, import_classnames22.default)(CustomizerDrawerInner_default.backBtn, CustomizerDrawerInner_default.sectionTitle) }, /* @__PURE__ */ _(BackChevron, null), t4("customizer_background_selection_color")), /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.sectionBody }, /* @__PURE__ */ _(InlineErrorBoundary, { format: (message) => `Customizer section 'ColorGrid' threw an exception: ` + message }, /* @__PURE__ */ _("div", { class: (0, import_classnames22.default)(CustomizerDrawerInner_default.bgList), role: "radiogroup", onClick }, /* @__PURE__ */ _(PickerPanel, { data: data2, select }), /* @__PURE__ */ _(ColorGrid, { data: data2 })))));
   }
   var entries = Object.keys(values.colors);
   function ColorGrid({ data: data2 }) {
@@ -30214,7 +30365,7 @@
     return /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.bgListItem }, /* @__PURE__ */ _(
       "button",
       {
-        className: (0, import_classnames21.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.bgPanelEmpty),
+        className: (0, import_classnames22.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.bgPanelEmpty),
         type: "button",
         tabIndex: 0,
         style: { background: hex.value },
@@ -30239,12 +30390,12 @@
           }
         }
       }
-    ), /* @__PURE__ */ _("span", { class: (0, import_classnames21.default)(CustomizerDrawerInner_default.colorInputIcon, CustomizerDrawerInner_default.dynamicPickerIconColor), "data-color-mode": modeSelected }, /* @__PURE__ */ _(Picker, null)));
+    ), /* @__PURE__ */ _("span", { class: (0, import_classnames22.default)(CustomizerDrawerInner_default.colorInputIcon, CustomizerDrawerInner_default.dynamicPickerIconColor), "data-color-mode": modeSelected }, /* @__PURE__ */ _(Picker, null)));
   }
 
   // pages/new-tab/app/customizer/components/GradientSelection.js
   init_preact_module();
-  var import_classnames22 = __toESM(require_classnames(), 1);
+  var import_classnames23 = __toESM(require_classnames(), 1);
   init_values();
   init_signals_module();
   init_Icons2();
@@ -30272,12 +30423,12 @@
       if (!(value2 in values.gradients)) return console.warn("could not select gradient", value2);
       select({ background: { kind: "gradient", value: value2 } });
     }
-    return /* @__PURE__ */ _("div", null, /* @__PURE__ */ _("button", { type: "button", onClick: back, class: (0, import_classnames22.default)(CustomizerDrawerInner_default.backBtn, CustomizerDrawerInner_default.sectionTitle) }, /* @__PURE__ */ _(BackChevron, null), t4("customizer_background_selection_gradient")), /* @__PURE__ */ _("div", { className: CustomizerDrawerInner_default.sectionBody, onClick }, /* @__PURE__ */ _(InlineErrorBoundary, { format: (message) => `Customizer section 'GradientSelection' threw an exception: ` + message }, /* @__PURE__ */ _(GradientGrid, { data: data2 }))));
+    return /* @__PURE__ */ _("div", null, /* @__PURE__ */ _("button", { type: "button", onClick: back, class: (0, import_classnames23.default)(CustomizerDrawerInner_default.backBtn, CustomizerDrawerInner_default.sectionTitle) }, /* @__PURE__ */ _(BackChevron, null), t4("customizer_background_selection_gradient")), /* @__PURE__ */ _("div", { className: CustomizerDrawerInner_default.sectionBody, onClick }, /* @__PURE__ */ _(InlineErrorBoundary, { format: (message) => `Customizer section 'GradientSelection' threw an exception: ` + message }, /* @__PURE__ */ _(GradientGrid, { data: data2 }))));
   }
   var entries2 = Object.keys(values.gradients);
   function GradientGrid({ data: data2 }) {
     const selected = useComputed(() => data2.value.background.kind === "gradient" && data2.value.background.value);
-    return /* @__PURE__ */ _("ul", { className: (0, import_classnames22.default)(CustomizerDrawerInner_default.bgList) }, entries2.map((key2) => {
+    return /* @__PURE__ */ _("ul", { className: (0, import_classnames23.default)(CustomizerDrawerInner_default.bgList) }, entries2.map((key2) => {
       const entry = values.gradients[key2];
       return /* @__PURE__ */ _("li", { className: CustomizerDrawerInner_default.bgListItem, key: key2 }, /* @__PURE__ */ _(
         "button",
@@ -30305,7 +30456,7 @@
 
   // pages/new-tab/app/customizer/components/ImageSelection.js
   init_preact_module();
-  var import_classnames23 = __toESM(require_classnames(), 1);
+  var import_classnames24 = __toESM(require_classnames(), 1);
   init_signals_module();
   init_DismissButton2();
   init_Icons2();
@@ -30349,7 +30500,7 @@
         customizerContextMenu({ id, target: "userImage" });
       }
     }
-    return /* @__PURE__ */ _("div", { onContextMenu }, /* @__PURE__ */ _("button", { type: "button", onClick: back, class: (0, import_classnames23.default)(CustomizerDrawerInner_default.backBtn, CustomizerDrawerInner_default.sectionTitle) }, /* @__PURE__ */ _(BackChevron, null), t4("customizer_background_selection_image_existing")), /* @__PURE__ */ _("div", { className: CustomizerDrawerInner_default.sectionBody, onClick }, /* @__PURE__ */ _(InlineErrorBoundary, { format: (message) => `Customizer section 'ImageSelection' threw an exception: ` + message }, /* @__PURE__ */ _(ImageGrid, { data: data2, deleteImage, onUpload }))), /* @__PURE__ */ _("div", { className: CustomizerDrawerInner_default.sectionBody }, /* @__PURE__ */ _("p", null, t4("customizer_image_privacy"))));
+    return /* @__PURE__ */ _("div", { onContextMenu }, /* @__PURE__ */ _("button", { type: "button", onClick: back, class: (0, import_classnames24.default)(CustomizerDrawerInner_default.backBtn, CustomizerDrawerInner_default.sectionTitle) }, /* @__PURE__ */ _(BackChevron, null), t4("customizer_background_selection_image_existing")), /* @__PURE__ */ _("div", { className: CustomizerDrawerInner_default.sectionBody, onClick }, /* @__PURE__ */ _(InlineErrorBoundary, { format: (message) => `Customizer section 'ImageSelection' threw an exception: ` + message }, /* @__PURE__ */ _(ImageGrid, { data: data2, deleteImage, onUpload }))), /* @__PURE__ */ _("div", { className: CustomizerDrawerInner_default.sectionBody }, /* @__PURE__ */ _("p", null, t4("customizer_image_privacy"))));
   }
   function ImageGrid({ data: data2, deleteImage, onUpload }) {
     const { t: t4 } = useTypedTranslationWith(
@@ -30364,7 +30515,7 @@
     const max = 8;
     const diff = max - entries4.value.length;
     const placeholders = new Array(diff).fill(null);
-    return /* @__PURE__ */ _("ul", { className: (0, import_classnames23.default)(CustomizerDrawerInner_default.bgList) }, entries4.value.map((entry, index2) => {
+    return /* @__PURE__ */ _("ul", { className: (0, import_classnames24.default)(CustomizerDrawerInner_default.bgList) }, entries4.value.map((entry, index2) => {
       return /* @__PURE__ */ _("li", { className: CustomizerDrawerInner_default.bgListItem, key: entry.id }, /* @__PURE__ */ _(
         "button",
         {
@@ -30398,7 +30549,7 @@
         {
           type: "button",
           onClick: onUpload,
-          class: (0, import_classnames23.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.bgPanelEmpty, CustomizerDrawerInner_default.dynamicIconColor),
+          class: (0, import_classnames24.default)(CustomizerDrawerInner_default.bgPanel, CustomizerDrawerInner_default.bgPanelEmpty, CustomizerDrawerInner_default.dynamicIconColor),
           "data-color-mode": browser
         },
         /* @__PURE__ */ _(PlusIcon, null),
@@ -30409,23 +30560,24 @@
 
   // pages/new-tab/app/customizer/components/CustomizerSection.js
   init_preact_module();
-  var import_classnames24 = __toESM(require_classnames(), 1);
-  function CustomizerSection({ title, children }) {
-    return /* @__PURE__ */ _("div", { className: CustomizerDrawerInner_default.section }, title === null && children, title !== null && /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("h3", { className: CustomizerDrawerInner_default.sectionTitle }, title), /* @__PURE__ */ _("div", { className: CustomizerDrawerInner_default.sectionBody }, children)));
+  var import_classnames25 = __toESM(require_classnames(), 1);
+  init_NewBadge2();
+  function CustomizerSection({ title, showNewBadge, children }) {
+    return /* @__PURE__ */ _("div", { className: CustomizerDrawerInner_default.section }, title === null && children, title !== null && /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("h3", { className: CustomizerDrawerInner_default.sectionTitle }, /* @__PURE__ */ _("span", null, title), showNewBadge && /* @__PURE__ */ _(NewBadge, null)), /* @__PURE__ */ _("div", { className: CustomizerDrawerInner_default.sectionBody }, children)));
   }
   function BorderedSection({ children }) {
-    return /* @__PURE__ */ _("div", { class: (0, import_classnames24.default)(CustomizerDrawerInner_default.section, CustomizerDrawerInner_default.borderedSection) }, children);
+    return /* @__PURE__ */ _("div", { class: (0, import_classnames25.default)(CustomizerDrawerInner_default.section, CustomizerDrawerInner_default.borderedSection) }, children);
   }
 
   // pages/new-tab/app/customizer/components/SettingsLink.js
-  var import_classnames25 = __toESM(require_classnames(), 1);
+  var import_classnames26 = __toESM(require_classnames(), 1);
   init_preact_module();
   function SettingsLink({ title, icon, onClick }) {
     return /* @__PURE__ */ _(
       "a",
       {
         href: "duck://settings",
-        class: (0, import_classnames25.default)(CustomizerDrawerInner_default.settingsLink),
+        class: (0, import_classnames26.default)(CustomizerDrawerInner_default.settingsLink),
         onClick: (event) => {
           event.preventDefault();
           onClick();
@@ -30459,6 +30611,7 @@
   }
 
   // pages/new-tab/app/customizer/components/CustomizerDrawerInner.js
+  init_CustomizerProvider();
   function CustomizerDrawerInner({ data: data2, select, onUpload, setTheme, deleteImage, customizerContextMenu }) {
     const { close } = useDrawerControls();
     const { t: t4 } = useTypedTranslationWith(
@@ -30467,8 +30620,9 @@
     );
     const messaging2 = useMessaging();
     const { customizer } = useInitialSetupData();
+    const { showThemeNewBadge } = x2(CustomizerContext);
     const hasThemeVariants = customizer?.themeVariant !== void 0;
-    return /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.root }, /* @__PURE__ */ _("header", { class: (0, import_classnames26.default)(CustomizerDrawerInner_default.header, CustomizerDrawerInner_default.internal) }, /* @__PURE__ */ _("h2", null, t4("customizer_drawer_title")), /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.root }, /* @__PURE__ */ _("header", { class: (0, import_classnames27.default)(CustomizerDrawerInner_default.header, CustomizerDrawerInner_default.internal) }, /* @__PURE__ */ _("h2", null, t4("customizer_drawer_title")), /* @__PURE__ */ _(
       DismissButton,
       {
         onClick: close,
@@ -30486,7 +30640,14 @@
       /* @__PURE__ */ _(
         TwoCol,
         {
-          left: ({ push }) => /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.sections }, hasThemeVariants && /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_theme_variant") }, /* @__PURE__ */ _(ThemeSection, { data: data2, setTheme })), /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_background") }, /* @__PURE__ */ _(BackgroundSection, { data: data2, onNav: push, onUpload, select })), !hasThemeVariants && /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_theme") }, /* @__PURE__ */ _(BrowserThemeSection, { data: data2, setTheme })), /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_sections") }, /* @__PURE__ */ _(VisibilityMenuSection, null)), /* @__PURE__ */ _(BorderedSection, null, /* @__PURE__ */ _(
+          left: ({ push }) => /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.sections }, hasThemeVariants && /* @__PURE__ */ _(
+            CustomizerSection,
+            {
+              title: t4("customizer_section_title_theme_variant"),
+              showNewBadge: showThemeNewBadge.value
+            },
+            /* @__PURE__ */ _(ThemeSection, { data: data2, setTheme })
+          ), /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_background") }, /* @__PURE__ */ _(BackgroundSection, { data: data2, onNav: push, onUpload, select })), !hasThemeVariants && /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_theme") }, /* @__PURE__ */ _(BrowserThemeSection, { data: data2, setTheme })), /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_sections") }, /* @__PURE__ */ _(VisibilityMenuSection, null)), /* @__PURE__ */ _(BorderedSection, null, /* @__PURE__ */ _(
             SettingsLink,
             {
               title: t4("customizer_settings_link"),
@@ -30531,7 +30692,7 @@
       }
       renderedScreen.value = visibleScreen.value;
     }
-    return /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.colwrap }, /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.cols, "data-sub": visibleScreen, onTransitionEnd: transitionEnded }, /* @__PURE__ */ _("div", { class: (0, import_classnames26.default)(CustomizerDrawerInner_default.col, CustomizerDrawerInner_default.col1) }, col1.value && left2({ push })), /* @__PURE__ */ _("div", { class: (0, import_classnames26.default)(CustomizerDrawerInner_default.col, CustomizerDrawerInner_default.col2) }, renderedScreen.value !== "home" && right2({ id: renderedScreen.value, pop }))));
+    return /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.colwrap }, /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.cols, "data-sub": visibleScreen, onTransitionEnd: transitionEnded }, /* @__PURE__ */ _("div", { class: (0, import_classnames27.default)(CustomizerDrawerInner_default.col, CustomizerDrawerInner_default.col1) }, col1.value && left2({ push })), /* @__PURE__ */ _("div", { class: (0, import_classnames27.default)(CustomizerDrawerInner_default.col, CustomizerDrawerInner_default.col2) }, renderedScreen.value !== "home" && right2({ id: renderedScreen.value, pop }))));
   }
 
   // pages/new-tab/app/customizer/components/CustomizerDrawer.js
@@ -30577,7 +30738,7 @@
     const isOpen = useComputed(() => hidden.value === false);
     const { toggle } = useDrawerControls();
     const { main, browser, variant } = x2(CustomizerThemesContext);
-    return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _(BackgroundConsumer, { browser, variant }), /* @__PURE__ */ _("div", { class: App_default.layout, "data-animating": animating, "data-drawer-visibility": visibility }, /* @__PURE__ */ _("main", { class: (0, import_classnames27.default)(App_default.main, App_default.mainLayout, App_default.mainScroller), "data-main-scroller": true, "data-theme": main }, /* @__PURE__ */ _("div", { class: App_default.content }, /* @__PURE__ */ _("div", { className: App_default.tube, "data-content-tube": true, "data-platform": platformName }, /* @__PURE__ */ _(WidgetList, null)))), /* @__PURE__ */ _("div", { class: App_default.themeContext, "data-theme": main }, /* @__PURE__ */ _(CustomizerMenuPositionedFixed, null, /* @__PURE__ */ _(
+    return /* @__PURE__ */ _(k, null, /* @__PURE__ */ _(BackgroundConsumer, { browser, variant }), /* @__PURE__ */ _("div", { class: App_default.layout, "data-animating": animating, "data-drawer-visibility": visibility }, /* @__PURE__ */ _("main", { class: (0, import_classnames28.default)(App_default.main, App_default.mainLayout, App_default.mainScroller), "data-main-scroller": true, "data-theme": main }, /* @__PURE__ */ _("div", { class: App_default.content }, /* @__PURE__ */ _("div", { className: App_default.tube, "data-content-tube": true, "data-platform": platformName }, /* @__PURE__ */ _(WidgetList, null)))), /* @__PURE__ */ _("div", { class: App_default.themeContext, "data-theme": main }, /* @__PURE__ */ _(CustomizerMenuPositionedFixed, null, /* @__PURE__ */ _(
       CustomizerButton,
       {
         buttonId,
@@ -30590,7 +30751,7 @@
     ))), /* @__PURE__ */ _(
       "aside",
       {
-        class: (0, import_classnames27.default)(App_default.aside, App_default.asideLayout, App_default.asideScroller),
+        class: (0, import_classnames28.default)(App_default.aside, App_default.asideLayout, App_default.asideScroller),
         tabindex: tabIndex,
         "aria-hidden": hidden,
         "data-theme": browser,
@@ -30680,6 +30841,10 @@
         }
       ]
     },
+    newBadge: {
+      title: "New",
+      note: "Badge text indicating a new feature."
+    },
     ntp_show_less: {
       title: "Show Less",
       note: "Button that reduces the number of items or content displayed."
@@ -30703,6 +30868,14 @@
     ntp_popover_close_button: {
       title: "Close",
       note: "Button that closes the current popover."
+    },
+    customizer_themeVariantPopoverTitle: {
+      title: "Pick a color theme that suits you",
+      note: "Title for the popover that introduces the theme variant customization feature."
+    },
+    customizer_themeVariantPopoverDescription: {
+      title: "You can now choose a color for the look that you want. Give it a try!",
+      note: "Description message in the theme variant popover."
     },
     updateNotification_updated_version: {
       title: "Browser Updated to version {version}.",
@@ -30731,10 +30904,6 @@
     protections_noRecent: {
       title: "No recent tracking activity",
       note: "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
-    },
-    protections_newBadge: {
-      title: "NEW",
-      note: "Text displayed in a badge to indicate a new feature or statistic."
     },
     stats_menuTitle: {
       title: "Blocked Tracking Attempts",
@@ -30887,10 +31056,6 @@
     omnibar_customizePopoverTitle: {
       title: "Toggle between search and AI chat",
       description: "Title for the popover that introduces the search/AI toggle feature."
-    },
-    omnibar_customizePopoverBadge: {
-      title: "New",
-      description: "Badge text for the popover that introduces the search/AI toggle feature."
     },
     omnibar_customizePopoverDescription: {
       title: "Either way, your info stays private.<br />Don't want this? <button>Customize</button>",
@@ -33938,6 +34103,13 @@
         },
         { userColor: initial.userColor }
       );
+      this.showThemeVariantPopoverService = new Service(
+        {
+          // No subscribe - native doesn't push updates for this
+          // No persist - we use a dedicated notify instead
+        },
+        { showThemeVariantPopover: initial.showThemeVariantPopover ?? false }
+      );
     }
     /**
      * @internal
@@ -33947,6 +34119,7 @@
       this.themeService.destroy();
       this.imagesService.destroy();
       this.colorService.destroy();
+      this.showThemeVariantPopoverService.destroy();
     }
     /**
      * @param {(evt: {data: BackgroundData, source: 'manual' | 'subscription'}) => void} cb
@@ -33975,6 +34148,13 @@
      */
     onColor(cb) {
       return this.colorService.onData(cb);
+    }
+    /**
+     * @param {(evt: {data: ShowThemeVariantPopoverData, source: 'manual' | 'subscription'}) => void} cb
+     * @internal
+     */
+    onShowThemeVariantPopover(cb) {
+      return this.showThemeVariantPopoverService.onData(cb);
     }
     /**
      * @param {BackgroundData} bg
@@ -34022,6 +34202,15 @@
      */
     contextMenu(params) {
       this.ntp.messaging.notify("customizer_contextMenu", params);
+    }
+    /**
+     * Dismiss the theme variant onboarding popover
+     */
+    dismissThemeVariantPopover() {
+      this.showThemeVariantPopoverService.update(() => {
+        return { showThemeVariantPopover: false };
+      });
+      this.ntp.messaging.notify("customizer_dismissThemeVariantPopover");
     }
   };
 

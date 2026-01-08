@@ -620,7 +620,7 @@ final class SubscriptionTokenKeychainStorageTests: XCTestCase {
 
 // MARK: - Test Utilities (factory already provides TokenContainer creation)
 
-extension SubscriptionTokenKeychainStorageV2Tests {
+extension SubscriptionTokenKeychainStorageTests {
 
     func assertNoErrorsReported() {
         let errors = getErrorEvents()

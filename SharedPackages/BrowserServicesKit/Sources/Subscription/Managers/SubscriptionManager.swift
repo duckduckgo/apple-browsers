@@ -94,7 +94,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// Closure called when an expired refresh token is detected and the Subscription login is invalid. An attempt to automatically recover it can be performed or the app can ask the user to do it manually
     typealias TokenRecoveryHandler = () async throws -> Void
 
-    var currentStorefrontRegion: SubscriptionRegion? { get }
+    var currentStorefrontRegion: SubscriptionRegion { get }
 
     // MARK: - Features
 
@@ -590,11 +590,16 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         return confirmation.subscription
     }
 
-    public var currentStorefrontRegion: SubscriptionRegion? {
-        if #available(macOS 12.0, *) {
-            return storePurchaseManager().currentStorefrontRegion
-        } else {
-            return nil
+    public var currentStorefrontRegion: SubscriptionRegion {
+        switch currentEnvironment.purchasePlatform {
+        case .appStore:
+            if #available(macOS 12.0, *) {
+                return storePurchaseManager().currentStorefrontRegion
+            } else {
+                return .usa
+            }
+        case .stripe:
+            return .usa
         }
     }
 

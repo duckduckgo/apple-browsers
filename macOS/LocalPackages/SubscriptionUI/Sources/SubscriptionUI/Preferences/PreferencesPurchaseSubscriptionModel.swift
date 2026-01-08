@@ -155,15 +155,6 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     private func currentStorefrontRegion() -> SubscriptionRegion {
-        var region: SubscriptionRegion?
-
-        switch currentPurchasePlatform {
-        case .appStore:
-            region = subscriptionManager.currentStorefrontRegion
-        case .stripe:
-            region = .usa
-        }
-
-        return region ?? .usa
+        return subscriptionManager.currentStorefrontRegion
     }
 }

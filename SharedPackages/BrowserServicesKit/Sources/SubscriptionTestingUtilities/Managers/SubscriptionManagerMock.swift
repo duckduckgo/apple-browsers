@@ -220,5 +220,5 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         isEligibleForFreeTrialResult
     }
 
-    public var currentStorefrontRegion: SubscriptionRegion? = .usa
+    public var currentStorefrontRegion: SubscriptionRegion = .usa
 }

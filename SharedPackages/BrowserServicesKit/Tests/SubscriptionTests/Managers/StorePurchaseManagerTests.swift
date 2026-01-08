@@ -936,7 +936,7 @@ private enum MockProductError: Error {
     case fetchFailed
 }
 
-private extension StorePurchaseManagerV2Tests {
+private extension StorePurchaseManagerTests {
     func createMonthlyProduct(withTrial: Bool = false, isEligibleForFreeTrial: Bool = true) -> MockSubscriptionProduct {
         MockSubscriptionProduct(
             id: "com.test.monthly\(withTrial ? ".trial" : "")",

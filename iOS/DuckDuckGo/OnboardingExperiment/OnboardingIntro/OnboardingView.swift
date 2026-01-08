@@ -320,7 +320,7 @@ struct OnboardingView_Previews: PreviewProvider {
         func disableContextualDaxDialogs() {}
     }
 
-    static var previews: some View  {
+    static var previews: some View {
         ForEach(ColorScheme.allCases, id: \.self) {
             OnboardingView(
                 model: .init(

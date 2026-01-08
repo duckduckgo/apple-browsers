@@ -1,0 +1,100 @@
+// RMF pixels
+{
+    "m_mac_remote_message_shown_unique": {
+        "description": "Triggered when a remote message is displayed to the user for the first time",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
+    },
+    "m_mac_remote_message_shown": {
+        "description": "Triggered when a remote message is displayed to the user, regardless of whether it’s their first time seeing it",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
+    },
+    "m_mac_remote_message_dismissed": {
+        "description": "Triggered when a remote message is dismissed by the user",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
+    },
+    "m_mac_remote_message_action_clicked": {
+        "description": "Triggered when the user clicks the action button on the remote message",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
+    },
+    "m_mac_remote_message_primary_action_clicked": {
+        "description": "Triggered when the user clicks the primary action button on the remote message",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
+    },
+    "m_mac_remote_message_secondary_action_clicked": {
+        "description": "Triggered when the user clicks the secondary action button on the remote message",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
+    },
+    "m_mac_debug_remote_message_could-not-load-database": {
+        "description": "Triggered when the local database used to store remote messages cannot be initialized",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    }
+}

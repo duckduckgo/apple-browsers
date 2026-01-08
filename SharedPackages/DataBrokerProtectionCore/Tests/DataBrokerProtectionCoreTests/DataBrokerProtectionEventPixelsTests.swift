@@ -36,24 +36,30 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
     func testWhenFireNewMatchEventPixelIsCalled_thenCorrectPixelIsFired() {
         let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
+        let brokerURL = "testbroker.com"
 
-        sut.fireNewMatchEventPixel()
+        sut.fireNewMatchEventPixel(dataBrokerURL: brokerURL)
 
+        let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!
         XCTAssertEqual(
-            MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!.name,
-            DataBrokerProtectionSharedPixels.scanningEventNewMatch.name
+            lastPixel.name,
+            DataBrokerProtectionSharedPixels.scanningEventNewMatch(dataBrokerURL: brokerURL).name
         )
+        XCTAssertEqual(lastPixel.params?[DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey], brokerURL)
     }
 
     func testWhenFireReappeareanceEventPixelIsCalled_thenCorrectPixelIsFired() {
         let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
+        let brokerURL = "testbroker.com"
 
-        sut.fireReappeareanceEventPixel()
+        sut.fireReappeareanceEventPixel(dataBrokerURL: brokerURL)
 
+        let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!
         XCTAssertEqual(
-            MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!.name,
-            DataBrokerProtectionSharedPixels.scanningEventReAppearance.name
+            lastPixel.name,
+            DataBrokerProtectionSharedPixels.scanningEventReAppearance(dataBrokerURL: brokerURL).name
         )
+        XCTAssertEqual(lastPixel.params?[DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey], brokerURL)
     }
 
     func testWhenReportWasFiredInTheLastWeek_thenWeDoNotFireWeeklyPixels() {

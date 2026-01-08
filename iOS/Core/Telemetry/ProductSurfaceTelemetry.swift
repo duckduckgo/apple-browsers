@@ -81,7 +81,9 @@ public struct PixelProductSurfaceTelemetry: ProductSurfaceTelemetry {
     }
 
     public func dailyActiveUser() {
+        dailyPixelFiring.fireDailyAndCount(.debugTelemetryDAUPreFF, error: nil, withAdditionalParameters: [:])
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.debugTelemetryDAUPostFF, error: nil, withAdditionalParameters: [:])
         dailyPixelFiring.fireDaily(.productTelemeterySurfaceUsageDAU)
     }
 

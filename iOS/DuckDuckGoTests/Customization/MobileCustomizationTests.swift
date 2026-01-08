@@ -32,8 +32,7 @@ final class MobileCustomizationTests {
     @Test("Validate expected pixels with parameters are sent")
     func pixels() {
         let keyValueStore = MockThrowingKeyValueStore()
-        let customization = MobileCustomization(isFeatureEnabled: true,
-                                                keyValueStore: keyValueStore,
+        let customization = MobileCustomization(keyValueStore: keyValueStore,
                                                 isPad: false,
                                                 postChangeNotification: { _ in },
                                                 pixelFiring: PixelFiringMock.self)
@@ -65,11 +64,9 @@ final class MobileCustomizationTests {
     @Test("Validate initial state on phone when feature is enabled")
     func initialStateOnPhoneWhenFeatureIsEnabled() {
         let keyValueStore = MockThrowingKeyValueStore()
-        let customization = MobileCustomization(isFeatureEnabled: true,
-                                                keyValueStore: keyValueStore,
+        let customization = MobileCustomization(keyValueStore: keyValueStore,
                                                 isPad: false) { _ in }
 
-        #expect(customization.isFeatureEnabled)
         #expect(customization.isEnabled)
         #expect(customization.hasFireButton)
         #expect(customization.state.isEnabled)
@@ -80,26 +77,9 @@ final class MobileCustomizationTests {
     @Test("Validate initial state on ipad when feature is enabled")
     func initialStateOnPadWhenFeatureIsEnabled() {
         let keyValueStore = MockThrowingKeyValueStore()
-        let customization = MobileCustomization(isFeatureEnabled: true,
-                                                keyValueStore: keyValueStore,
+        let customization = MobileCustomization(keyValueStore: keyValueStore,
                                                 isPad: true) { _ in }
 
-        #expect(customization.isFeatureEnabled)
-        #expect(!customization.isEnabled)
-        #expect(customization.hasFireButton)
-        #expect(!customization.state.isEnabled)
-        #expect(customization.state.currentAddressBarButton == .share)
-        #expect(customization.state.currentToolbarButton == .fire)
-    }
-
-    @Test("Validate initial state on phone when feature is disable")
-    func initialStateOnPhoneWhenFeatureIsDisabled() {
-        let keyValueStore = MockThrowingKeyValueStore()
-        let customization = MobileCustomization(isFeatureEnabled: false,
-                                                keyValueStore: keyValueStore,
-                                                isPad: false) { _ in }
-
-        #expect(!customization.isFeatureEnabled)
         #expect(!customization.isEnabled)
         #expect(customization.hasFireButton)
         #expect(!customization.state.isEnabled)
@@ -113,8 +93,7 @@ final class MobileCustomizationTests {
         var posted = false
 
         let keyValueStore = MockThrowingKeyValueStore()
-        let customization = MobileCustomization(isFeatureEnabled: true,
-                                                keyValueStore: keyValueStore,
+        let customization = MobileCustomization(keyValueStore: keyValueStore,
                                                 isPad: false)  { _ in
             posted = true
         }
@@ -131,8 +110,7 @@ final class MobileCustomizationTests {
 
         let keyValueStore = MockThrowingKeyValueStore()
 
-        let customization = MobileCustomization(isFeatureEnabled: true,
-                                                keyValueStore: keyValueStore,
+        let customization = MobileCustomization(keyValueStore: keyValueStore,
                                                 isPad: false) { _ in }
 
         var state = customization.state
@@ -141,8 +119,7 @@ final class MobileCustomizationTests {
         customization.persist(state)
 
 
-        let customizationLoaded = MobileCustomization(isFeatureEnabled: true,
-                                                      keyValueStore: keyValueStore,
+        let customizationLoaded = MobileCustomization(keyValueStore: keyValueStore,
                                                       isPad: false) { _ in }
 
         let loadedState = customizationLoaded.state
@@ -156,8 +133,7 @@ final class MobileCustomizationTests {
 
         let keyValueStore = MockThrowingKeyValueStore()
 
-        let customization = MobileCustomization(isFeatureEnabled: true,
-                                                keyValueStore: keyValueStore,
+        let customization = MobileCustomization(keyValueStore: keyValueStore,
                                                 isPad: false) { _ in }
 
         customization.delegate = self
@@ -202,8 +178,7 @@ final class MobileCustomizationTests {
 
         let keyValueStore = MockThrowingKeyValueStore()
 
-        let customization = MobileCustomization(isFeatureEnabled: true,
-                                                keyValueStore: keyValueStore,
+        let customization = MobileCustomization(keyValueStore: keyValueStore,
                                                 isPad: false) { _ in }
 
         var state = customization.state
@@ -212,15 +187,12 @@ final class MobileCustomizationTests {
         customization.persist(state)
 
 
-        let customizationLoaded = MobileCustomization(isFeatureEnabled: true,
-                                                      keyValueStore: keyValueStore,
+        let customizationLoaded = MobileCustomization(keyValueStore: keyValueStore,
                                                       isPad: false) { _ in }
 
         let loadedState = customizationLoaded.state
         #expect(loadedState.currentToolbarButton == .fire)
         #expect(loadedState.currentAddressBarButton == .share)
-
-
     }
 
     deinit {

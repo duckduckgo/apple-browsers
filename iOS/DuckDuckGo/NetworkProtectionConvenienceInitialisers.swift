@@ -66,12 +66,13 @@ extension NetworkProtectionVPNSettingsViewModel {
 }
 
 extension NetworkProtectionLocationListCompositeRepository {
-    
+    // swiftlint:disable:next force_cast
     convenience init() {
         let settings = AppDependencyProvider.shared.vpnSettings
+        let tokenHandler = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge as! SubscriptionTokenHandling
         self.init(
             environment: settings.selectedEnvironment,
-            tokenHandler: AppDependencyProvider.shared.networkProtectionKeychainTokenStore,
+            tokenHandler: tokenHandler,
             errorEvents: .networkProtectionAppDebugEvents
         )
     }

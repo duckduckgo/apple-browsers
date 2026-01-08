@@ -44,7 +44,12 @@ final public class AppPrivacyConfigurationDataProvider: EmbeddedDataProvider {
     }
 
     static func loadEmbeddedAsData() -> Data {
-        let json = try? Data(contentsOf: embeddedUrl)
-        return json!
+        do {
+            return try Data(contentsOf: embeddedUrl)
+        } catch {
+            fatalError("Failed to load embedded privacy config: \(error.localizedDescription)")
+        }
     }
+
+    public init() {}
 }

@@ -2002,7 +2002,7 @@ class TabNavigationTests: UITestCase {
         app.addressBar.typeText("Bookmarked Page #20")
 
         // Command click suggestion should open in background
-        let suggestion = app.tables["SuggestionViewController.tableView"].cells.staticTexts["Bookmarked Page #20"]
+        let suggestion = app.tables["SuggestionViewController.tableView"].cells.staticTexts["Bookmarked Page #20"].firstMatch // Get the first match to differentiate from Duck.ai suggestions
         XCTAssertTrue(suggestion.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         var coordinate = suggestion.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         coordinate.hover()

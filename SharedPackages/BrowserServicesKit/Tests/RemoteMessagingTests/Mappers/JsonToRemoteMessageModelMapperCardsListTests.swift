@@ -196,9 +196,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let firstInvalidItem = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "")
         // Invalid - empty titleText
         let secondInvalidItem = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "item 2", titleText: "")
-        // Invalid - title
-        let thirdInvalidItem = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "item 3", titleText: "")
-        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [firstInvalidItem, secondInvalidItem, thirdInvalidItem])
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [firstInvalidItem, secondInvalidItem])
 
         // WHEN
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)

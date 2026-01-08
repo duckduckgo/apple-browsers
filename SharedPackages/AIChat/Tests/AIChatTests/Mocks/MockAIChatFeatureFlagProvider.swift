@@ -1,6 +1,5 @@
 //
 //  MockAIChatFeatureFlagProvider.swift
-//  AIChat
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -26,4 +25,3 @@ final class MockAIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
         return isAIChatSyncEnabledResult
     }
 }
-

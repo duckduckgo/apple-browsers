@@ -1,6 +1,5 @@
 //
 //  AIChatSyncHandlerTests.swift
-//  AIChat
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //

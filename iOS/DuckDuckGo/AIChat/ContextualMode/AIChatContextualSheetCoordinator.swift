@@ -100,9 +100,8 @@ final class AIChatContextualSheetCoordinator {
             sheetVC = AIChatContextualSheetViewController(
                 viewModel: sheetViewModel,
                 voiceSearchHelper: voiceSearchHelper,
-                webViewControllerFactory: { [weak self] in
-                    guard let self else { preconditionFailure("Coordinator deallocated unexpectedly") }
-                    return self.makeWebViewController()
+                webViewControllerFactory: { [unowned self] in
+                    self.makeWebViewController()
                 },
                 existingWebViewController: webViewController
             )

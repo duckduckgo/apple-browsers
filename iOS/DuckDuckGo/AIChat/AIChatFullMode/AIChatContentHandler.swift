@@ -201,18 +201,6 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             delegate?.aiChatContentHandlerDidReceivePromptSubmission(self)
-
-            if featureFlagger.isFeatureOn(.iOSAIChatAtb) {
-                DispatchQueue.main.async {
-                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
-                                                                        application: UIApplication.shared)
-                    self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
-                        DispatchQueue.main.async {
-                            backgroundAssertion.release()
-                        }
-                    }
-                }
-            }
         }
 
         pixelMetricHandler?.firePixelWithMetric(metric)

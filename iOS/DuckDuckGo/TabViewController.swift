@@ -1733,6 +1733,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func updatePreview() {
+        guard isTabCurrentlyPresented() else { return }
+
         preparePreview { image in
             if let image = image {
                 self.delegate?.tab(self, didUpdatePreview: image)

@@ -22,6 +22,7 @@ import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 import Foundation
+import Networking
 
 struct UnifiedFeedbackFormViewModelTests {
 
@@ -31,17 +32,16 @@ struct UnifiedFeedbackFormViewModelTests {
     }
 
     private func makeViewModel(
-        subscriptionFeatures: [Entitlement.ProductName] = [],
+        subscriptionFeatures: [SubscriptionEntitlement] = [],
         isPaidAIChatFeatureEnabled: Bool = false,
         isProTierPurchaseEnabled: Bool = false,
         source: UnifiedFeedbackFormViewModel.Source = .unknown,
         feedbackSender: MockFeedbackSender = MockFeedbackSender()
     ) -> UnifiedFeedbackFormViewModel {
-
-        let subscriptionManager = makeSubscriptionManager(features: subscriptionFeatures)
-
+        let subscriptionManger = SubscriptionManagerMockV2()
+        subscriptionManger.resultFeatures = subscriptionFeatures
         let viewModel = UnifiedFeedbackFormViewModel(
-            subscriptionManager: subscriptionManager,
+            subscriptionManager: subscriptionManger,
             vpnMetadataCollector: MockUnifiedMetadataCollector(),
             dbpMetadataCollector: MockUnifiedMetadataCollector(),
             defaultMetadatCollector: MockUnifiedMetadataCollector(),
@@ -52,27 +52,6 @@ struct UnifiedFeedbackFormViewModelTests {
         )
 
         return viewModel
-    }
-
-    private func makeSubscriptionManager(features: [Entitlement.ProductName]) -> SubscriptionManagerMock {
-        let accountManager = AccountManagerMock()
-        accountManager.accessToken = "test-token"
-
-        let manager = SubscriptionManagerMock(
-            accountManager: accountManager,
-            subscriptionEndpointService: SubscriptionEndpointServiceMock(),
-            authEndpointService: AuthEndpointServiceMock(),
-            storePurchaseManager: StorePurchaseManagerMock(),
-            currentEnvironment: SubscriptionEnvironment(
-                serviceEnvironment: .production,
-                purchasePlatform: .appStore
-            ),
-            hasAppStoreProductsAvailable: false,
-            subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock()
-        )
-
-        manager.subscriptionFeatures = features
-        return manager
     }
 
     // MARK: - Initialization Tests

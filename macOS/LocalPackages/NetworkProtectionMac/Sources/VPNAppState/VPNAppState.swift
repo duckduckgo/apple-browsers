@@ -56,22 +56,6 @@ public final class VPNAppState {
         }
     }
 
-    // MARK: - isAuthV2Enabled
-
-    public var isAuthV2Enabled: Bool {
-        get {
-            defaults.isUsingAuthV2
-        }
-
-        set {
-            defaults.isUsingAuthV2 = newValue
-        }
-    }
-
-    public func resetIsAuthV2Enabled() {
-        defaults.resetIsAuthV2Enabled()
-    }
-
     // MARK: - VPN Exclusion Suggestion when turning it OFF
 
     public var dontAskAgainExclusionSuggestion: Bool {

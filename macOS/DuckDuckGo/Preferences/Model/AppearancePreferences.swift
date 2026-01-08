@@ -247,7 +247,8 @@ final class AppearancePreferences: ObservableObject {
     struct Constants {
         static let bookmarksBarAlignmentChangedIsCenterAlignedParameter = "isCenterAligned"
         static let showTabsAndBookmarksBarOnFullScreenParameter = "showTabsAndBookmarksBarOnFullScreen"
-        static let dismissNextStepsCardsAfterDays = 9
+        static let legacyDismissNextStepsCardsAfterDays = 9
+        static let maxNextStepsCardsDemonstrationDays = 14
     }
 
     @Published var themeAppearance: ThemeAppearance {
@@ -290,6 +291,10 @@ final class AppearancePreferences: ObservableObject {
         return featureFlagger.isFeatureOn(.newTabPageOmnibar)
     }
 
+    var areThemesAvailable: Bool {
+        return featureFlagger.isFeatureOn(.themes)
+    }
+
     @Published var isOmnibarVisible: Bool {
         didSet {
             persistor.isOmnibarVisible = isOmnibarVisible
@@ -310,7 +315,15 @@ final class AppearancePreferences: ObservableObject {
         }
     }
 
-    @Published var isContinueSetUpCardsViewOutdated: Bool
+    var maxNextStepsCardsDemonstrationDays: Int {
+        featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
+    }
+
+    private var shouldHideNextStepsCards: Bool {
+       persistor.continueSetUpCardsNumberOfDaysDemonstrated >= maxNextStepsCardsDemonstrationDays
+    }
+
+    @Published var isContinueSetUpCardsViewOutdated: Bool = false
 
     @Published var continueSetUpCardsClosed: Bool {
         didSet {
@@ -342,7 +355,7 @@ final class AppearancePreferences: ObservableObject {
                 persistor.continueSetUpCardsLastDemonstrated = Date()
                 persistor.continueSetUpCardsNumberOfDaysDemonstrated += 1
 
-                if persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays {
+                if shouldHideNextStepsCards {
                     self.isContinueSetUpCardsViewOutdated = true
                 }
             }
@@ -451,7 +464,6 @@ final class AppearancePreferences: ObservableObject {
         self.featureFlagger = featureFlagger
 
         /// when adding new properties, make sure to update `reload()` to include them there.
-        isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         themeName = .init(rawValue: persistor.themeName) ?? .default
@@ -468,6 +480,7 @@ final class AppearancePreferences: ObservableObject {
         centerAlignedBookmarksBarBool = persistor.centerAlignedBookmarksBar
         showTabsAndBookmarksBarOnFullScreen = persistor.showTabsAndBookmarksBarOnFullScreen
 
+        isContinueSetUpCardsViewOutdated = shouldHideNextStepsCards
         subscribeToOmnibarFeatureFlagChanges()
     }
 
@@ -475,7 +488,7 @@ final class AppearancePreferences: ObservableObject {
     ///
     /// - Note: This is only used in the debug menu and shouldn't need to be called in the production code.
     func reload() {
-        isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
+        isContinueSetUpCardsViewOutdated = shouldHideNextStepsCards
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         themeName = .init(rawValue: persistor.themeName) ?? .default

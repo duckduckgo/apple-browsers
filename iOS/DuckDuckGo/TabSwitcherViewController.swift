@@ -363,6 +363,15 @@ class TabSwitcherViewController: UIViewController {
         // If these calls are switched it'll be immediately dismissed along with this controller.
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
+    
+    func addNewAIChatTab() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+        
+        dismiss()
+        
+        self.delegate.tabSwitcherDidRequestAIChatTab(tabSwitcher: self)
+    }
 
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {
         let tabs = self.tabsModel.tabs
@@ -711,8 +720,7 @@ extension UITapGestureRecognizer {
         // Check if the tap is below the last item.
         // Add 10px buffer to ensure it's whitespace.
         if location.y > lastItemFrame.maxY + 15 // below the bottom of the last item is definitely the end
-            || (location.x > lastItemFrame.maxX + 15 && location.y > lastItemFrame.minY) // to the right of the last item is the end as long as it's also at least below the start of the frame
-        {
+            || (location.x > lastItemFrame.maxX + 15 && location.y > lastItemFrame.minY) { // to the right of the last item is the end as long as it's also at least below the start of the frame
             // The tap is in the whitespace area at the end
            return true
         }

@@ -63,13 +63,12 @@ final class SubscriptionITPViewModel: ObservableObject {
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         isInternalUser: Bool = false,
-         isAuthV2Enabled: Bool) {
+         isInternalUser: Bool = false) {
         self.userScriptsDependencies = userScriptsDependencies
         self.itpURL = subscriptionManager.url(for: .identityTheftRestoration)
         self.manageITPURL = self.itpURL
         self.userScript = IdentityTheftRestorationPagesUserScript()
-        self.subFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: subscriptionManager, isAuthV2Enabled: isAuthV2Enabled)
+        self.subFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: subscriptionManager)
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .identityTheftRestoration),
                                                                              isInternalUser: isInternalUser)
 

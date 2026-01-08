@@ -108,13 +108,11 @@ final class VPNSubscriptionEventsHandler {
 
     @MainActor
     private func handleClientCheckFailure(error: Error, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
-        let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
         PixelKit.fire(
             VPNSubscriptionClientCheckPixel.failed(
                 isSubscriptionActive: isSubscriptionActive,
-                isAuthV2Enabled: isAuthV2Enabled,
                 trigger: trigger,
                 error: error),
             frequency: .daily)
@@ -128,21 +126,18 @@ final class VPNSubscriptionEventsHandler {
             return
         }
 
-        let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
         if hasEntitlements {
             PixelKit.fire(
                 VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     trigger: trigger),
                 frequency: .dailyAndCount)
         } else {
             PixelKit.fire(
                 VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     trigger: trigger),
                 frequency: .dailyAndCount)
         }
@@ -152,7 +147,6 @@ final class VPNSubscriptionEventsHandler {
 
     @MainActor
     private func handleEntitlementsChangeNotification(hasEntitlements: Bool, sourceObject: Any?) async {
-        let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
         // For notifications we assume they are fired on actual changes, so we want to fire
@@ -161,14 +155,12 @@ final class VPNSubscriptionEventsHandler {
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: sourceObject),
                 frequency: .dailyAndCount)
         } else {
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: sourceObject),
                 frequency: .dailyAndCount)
         }
@@ -199,13 +191,11 @@ final class VPNSubscriptionEventsHandler {
                 return
             }
 
-            let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),
                 frequency: .dailyAndCount)
         }
@@ -215,13 +205,11 @@ final class VPNSubscriptionEventsHandler {
         Task { @MainActor in
             print("[NetP Subscription] Deleted NetP auth token after signing out from Subscription")
 
-            let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),
                 frequency: .dailyAndCount)
 

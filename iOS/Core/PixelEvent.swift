@@ -874,7 +874,11 @@ extension Pixel {
         // Return user measurement
         case debugReturnUserAddATB
         case debugReturnUserUpdateATB
-        
+
+        // Feature flag validation
+        case debugTelemetryDAUPreFF
+        case debugTelemetryDAUPostFF
+
         // Errors from Bookmarks Module
         case bookmarkFolderExpected
         case bookmarksListIndexNotMatchingBookmark
@@ -1150,7 +1154,7 @@ extension Pixel {
         case subscriptionKeychainManagerDeallocatedWithBacklog
         case subscriptionKeychainManagerDataWroteFromBacklog
         case subscriptionKeychainManagerFailedToWriteDataFromBacklog
-        // AUth V2
+        // Auth
         case subscriptionInvalidRefreshTokenDetected
         case subscriptionInvalidRefreshTokenSignedOut
         case subscriptionInvalidRefreshTokenRecovered
@@ -1381,8 +1385,6 @@ extension Pixel {
         case aiChatSettingsDisplayed
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
-        case aiChatSettingsFullModeEnabled
-        case aiChatSettingsFullModeDisabled
 
         case aiChatOpen
         case aiChatMetricStartNewConversation
@@ -2224,6 +2226,13 @@ extension Pixel.Event {
         case .dbRemoteMessagingUpdateMessageStatusError: return "m_d_db_rm_update_message_status"
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
 
+        /// These debug pixels are extremely short lived.  We want to validate that the feature flag is working correctly.
+        /// To do so there should be an almost exact equal number of daily pixels, but it's possible for the count to be fairly different (though not massively).
+        /// The reason it might not be exact is that it could be the feature flag does not get enabled until "the next day" so the 'daily' part doesn't kick in.
+        /// This will let us reason about why the DAU data in Grafana is different to our ATB data (by about 15%)
+        case .debugTelemetryDAUPreFF: return "m_debug_validate_telemetry_pre-feature-flag"
+        case .debugTelemetryDAUPostFF: return "m_debug_validate_telemetry_post-feature-flag"
+
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
 
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
@@ -2595,7 +2604,7 @@ extension Pixel.Event {
         case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
         case .subscriptionKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
         case .subscriptionKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
-            // Auth V2
+            // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
@@ -2812,8 +2821,6 @@ extension Pixel.Event {
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
         case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
         case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
-        case .aiChatSettingsFullModeEnabled: return "m_aichat_settings_full_mode_enabled"
-        case .aiChatSettingsFullModeDisabled: return "m_aichat_settings_full_mode_disabled"
 
         case .aiChatOpen: return "m_aichat_open"
         case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"

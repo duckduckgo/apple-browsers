@@ -284,7 +284,13 @@
                 "key": "context.name",
                 "type": "string",
                 "description": "Context name for the flow",
-                "enum": ["funnel_onboarding_ios", "funnel_appsettings_ios"]
+                "enum": [
+                    "funnel_onboarding_ios",
+                    "funnel_appsettings_ios",
+                    "funnel_appmenu_ios",
+                    "funnel_app_ios",
+                    "funnel_app_ios__details"
+                ]
             }
         ]
     },

@@ -29,7 +29,7 @@ public final class AIChatQuickActionChipView: UIView {
 
     private enum Constants {
         static let height: CGFloat = 36
-        static let cornerRadius: CGFloat = 8
+        static let cornerRadius: CGFloat = 12
         static let iconLeadingPadding: CGFloat = 8
         static let iconTopPadding: CGFloat = 10
         static let trailingPadding: CGFloat = 12

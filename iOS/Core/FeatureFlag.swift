@@ -212,9 +212,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866613993355
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472511092
-    case mobileCustomization
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
 
@@ -272,12 +269,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
     case granularFireButtonOptions
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212281244797425?focus=true
-    case fullDuckAIModeExperimentalSetting
-    
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
     case dataImportWideEventMeasurement
-    
+
     /// Sort domain matches higher than other matches when searching saved passwords
     case autofillPasswordSearchPrioritizeDomain
 
@@ -359,7 +353,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .winBackOffer,
              .syncCreditCards,
              .unifiedURLPredictor,
-             .mobileCustomization,
              .vpnMenuItem,
              .forgetAllInSettings,
              .onboardingSearchExperience,
@@ -379,7 +372,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canPromoteAutofillExtensionInPasswordManagement,
              .autofillPasswordSearchPrioritizeDomain,
              .granularFireButtonOptions,
-             .fullDuckAIModeExperimentalSetting,
              .dataImportWideEventMeasurement,
              .ampBackgroundTaskSupport,
              .appRatingPrompt,
@@ -533,7 +525,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .personalInformationRemoval:
-            return .remoteReleasable(.feature(.dbp))
+            return .remoteReleasable(.subfeature(DBPSubfeature.pirRollout))
         case .createFireproofFaviconUpdaterSecureVaultInBackground:
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .aiFeaturesSettingsUpdate:
@@ -556,8 +548,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .mobileCustomization:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customization))
         case .vpnMenuItem:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
         case .forgetAllInSettings:
@@ -598,8 +588,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.productTelemetrySurfaceUsage))
         case .granularFireButtonOptions:
             return .disabled
-        case .fullDuckAIModeExperimentalSetting:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIModeExperimentalSetting))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .autofillPasswordSearchPrioritizeDomain:

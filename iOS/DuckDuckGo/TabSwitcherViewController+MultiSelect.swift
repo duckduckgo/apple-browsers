@@ -256,7 +256,7 @@ extension TabSwitcherViewController {
             interfaceMode = isEditing ? .editingRegularSize : .regularSize
         }
         
-        let showAIChatButton = !aichatFullModeFeature.isAvailable && aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled
+        let showAIChatButton = aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled
 
         barsHandler.update(interfaceMode,
                            selectedTabsCount: selectedTabs.count,
@@ -487,7 +487,12 @@ extension TabSwitcherViewController {
 
         barsHandler.duckChatButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.duckChatButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.aiChat, { [weak self] in
-            self?.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self!)
+            guard let self else { return }
+            if self.aichatFullModeFeature.isAvailable {
+                addNewAIChatTab()
+            } else {
+                self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)
+            }
         })
     }
 

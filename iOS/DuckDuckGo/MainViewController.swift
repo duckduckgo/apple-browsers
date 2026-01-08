@@ -486,23 +486,8 @@ class MainViewController: UIViewController {
         // Needs to be called here to established correct view hierarchy
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         applyCustomizationState()
-        subscribeToCustomizationFeatureFlagChanges()
 
         mobileCustomization.delegate = self
-    }
-
-    @MainActor
-    func subscribeToCustomizationFeatureFlagChanges() {
-        featureFlagger.updatesPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                guard let self else { return }
-                let isFeatureEnabledNow = self.featureFlagger.isFeatureOn(.mobileCustomization)
-                if mobileCustomization.isFeatureEnabled != isFeatureEnabledNow {
-                    mobileCustomization.isFeatureEnabled = isFeatureEnabledNow
-                    self.applyCustomizationState()
-                }
-            }.store(in: &settingsCancellables)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -3596,6 +3581,12 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
+    }
+    
+    func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController) {
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
+        newTab(allowingKeyboard: false)
+        openAIChat()
     }
 }
 

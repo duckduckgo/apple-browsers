@@ -104,8 +104,8 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
 
         let parameters = pixel.parameters
         XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "true")
-        XCTAssertEqual(parameters?["authVersion"], "v2")
+        XCTAssertEqual(parameters?["vpnSubscriptionActive"], "true")
+        XCTAssertEqual(parameters?["vpnAuthVersion"], "v2")
     }
 
     func testParameters_activeSubscriptionAuthV1() {
@@ -117,8 +117,8 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
 
         let parameters = pixel.parameters
         XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "true")
-        XCTAssertEqual(parameters?["authVersion"], "v1")
+        XCTAssertEqual(parameters?["vpnSubscriptionActive"], "true")
+        XCTAssertEqual(parameters?["vpnAuthVersion"], "v1")
     }
 
     func testParameters_inactiveSubscription() {
@@ -130,8 +130,8 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
 
         let parameters = pixel.parameters
         XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "false")
-        XCTAssertEqual(parameters?["authVersion"], "v2")
+        XCTAssertEqual(parameters?["vpnSubscriptionActive"], "false")
+        XCTAssertEqual(parameters?["vpnAuthVersion"], "v2")
     }
 
     func testParameters_nilSubscription() {
@@ -143,8 +143,8 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
 
         let parameters = pixel.parameters
         XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "no_subscription")
-        XCTAssertEqual(parameters?["authVersion"], "v2")
+        XCTAssertEqual(parameters?["vpnSubscriptionActive"], "no_subscription")
+        XCTAssertEqual(parameters?["vpnAuthVersion"], "v2")
     }
 
     func testParameters_failedPixel() {
@@ -158,8 +158,8 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
 
         let parameters = pixel.parameters
         XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "true")
-        XCTAssertEqual(parameters?["authVersion"], "v1")
+        XCTAssertEqual(parameters?["vpnSubscriptionActive"], "true")
+        XCTAssertEqual(parameters?["vpnAuthVersion"], "v1")
     }
 
     // MARK: - Error Handling Tests
@@ -260,13 +260,13 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
 
             let parameters = pixel.parameters
             XCTAssertNotNil(parameters, "Parameters should never be nil")
-            XCTAssertNotNil(parameters?["isSubscriptionActive"], "isSubscriptionActive should always be present")
-            XCTAssertNotNil(parameters?["authVersion"], "authVersion should always be present")
+            XCTAssertNotNil(parameters?["vpnSubscriptionActive"], "isSubscriptionActive should always be present")
+            XCTAssertNotNil(parameters?["vpnAuthVersion"], "authVersion should always be present")
 
             // Verify specific values
             let expectedSubscriptionValue = isActive != nil ? String(isActive!) : "no_subscription"
-            XCTAssertEqual(parameters?["isSubscriptionActive"], expectedSubscriptionValue)
-            XCTAssertEqual(parameters?["authVersion"], isAuthV2 ? "v2" : "v1")
+            XCTAssertEqual(parameters?["vpnSubscriptionActive"], expectedSubscriptionValue)
+            XCTAssertEqual(parameters?["vpnAuthVersion"], isAuthV2 ? "v2" : "v1")
         }
     }
 }

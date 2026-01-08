@@ -51,6 +51,7 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
 
     @Published var searchTarget: VoiceSearchTarget = .SERP {
         didSet {
+            guard !hideToggle else { return }
             storedSearchTarget = searchTarget.rawValue
         }
     }
@@ -70,13 +71,16 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
         }
     }
 
+    private let hideToggle: Bool
+
     var shouldDisplayAIChatOption: Bool {
-        aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled
+        !hideToggle && aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled
     }
 
-    internal init(speechRecognizer: SpeechRecognizerProtocol, aiChatSettings: AIChatSettingsProvider, preferredTarget: VoiceSearchTarget? = nil) {
+    internal init(speechRecognizer: SpeechRecognizerProtocol, aiChatSettings: AIChatSettingsProvider, preferredTarget: VoiceSearchTarget? = nil, hideToggle: Bool = false) {
         self.speechRecognizer = speechRecognizer
         self.aiChatSettings = aiChatSettings
+        self.hideToggle = hideToggle
 
         if let preferredTarget = preferredTarget {
             searchTarget = preferredTarget

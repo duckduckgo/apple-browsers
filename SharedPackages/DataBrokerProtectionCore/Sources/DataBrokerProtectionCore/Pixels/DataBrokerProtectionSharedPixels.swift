@@ -176,8 +176,8 @@ public enum DataBrokerProtectionSharedPixels {
     case initialScanPreStartDuration(duration: Double)
 
     // Custom stats
-    case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double)
-    case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double)
+    case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double, clickActionDelayReductionOptimization: Bool)
+    case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double, clickActionDelayReductionOptimization: Bool)
     case weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int, isAuthenticated: Bool)
 
     // UserScript
@@ -504,11 +504,13 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
         case .initialScanPreStartDuration(let duration):
             return [Consts.durationInMs: String(duration)]
-        case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate):
+        case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate, let clickActionDelayReductionOptimization):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
-                    Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
-        case .customGlobalStatsOptoutSubmit(let optOutSubmitSuccessRate):
-            return [Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
+                    Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate),
+                    Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
+        case .customGlobalStatsOptoutSubmit(let optOutSubmitSuccessRate, let clickActionDelayReductionOptimization):
+            return [Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate),
+                    Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
         case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerURL, let childParentRecordDifference, let calculatedOrphanedRecords, let isAuthenticated):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.childParentRecordDifference: String(childParentRecordDifference),

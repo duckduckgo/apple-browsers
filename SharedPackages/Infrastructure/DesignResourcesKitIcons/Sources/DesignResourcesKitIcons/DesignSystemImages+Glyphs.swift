@@ -236,6 +236,7 @@ public extension DesignSystemImages {
             public static var sortDescending: DesignSystemImage { .init(resource: .sortDescending16) }
             public static var sortManually: DesignSystemImage { .init(resource: .sortManually16) }
             public static var subscription: DesignSystemImage { .init(resource: .privacyPro16) }
+            public static var summary: DesignSystemImage { .init(resource: .summary16) }
             public static var support: DesignSystemImage { .init(resource: .support16) }
             public static var sync: DesignSystemImage { .init(resource: .sync16) }
             public static var systemTheme: DesignSystemImage { .init(resource: .systemTheme16) }

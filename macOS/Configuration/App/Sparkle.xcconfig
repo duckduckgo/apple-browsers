@@ -23,3 +23,21 @@ SPARKLE_URL_ALPHA = https:/$()/staticcdn.duckduckgo.com/macos-desktop-browser/al
 
 SPARKLE_FEED_URL = $(SPARKLE_URL_RELEASE)
 SPARKLE_FEED_URL[config=Alpha] = $(SPARKLE_URL_ALPHA)
+
+// Sparkle EdDSA public key for signature verification
+// Debug/CI/Review: debug key for testing (private key stored in company secure location)
+// Release/Alpha: production key for real updates
+SPARKLE_PUBLIC_EDKEY[config=Debug] = u4cpMVhyxFHfY8j6L2SBw8uq7LiwADdwOunvPoV7XNc=
+SPARKLE_PUBLIC_EDKEY[config=CI] = u4cpMVhyxFHfY8j6L2SBw8uq7LiwADdwOunvPoV7XNc=
+SPARKLE_PUBLIC_EDKEY[config=Review] = u4cpMVhyxFHfY8j6L2SBw8uq7LiwADdwOunvPoV7XNc=
+SPARKLE_PUBLIC_EDKEY[config=Release] = ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=
+SPARKLE_PUBLIC_EDKEY[config=Alpha] = ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=
+
+// Swift compilation flag for builds that allow unsigned updates.
+// When set, custom feed URL overrides are enabled.
+SPARKLE_SUBFEATURES[config=Debug] = SPARKLE_ALLOWS_UNSIGNED_UPDATES
+SPARKLE_SUBFEATURES[config=CI] = SPARKLE_ALLOWS_UNSIGNED_UPDATES
+SPARKLE_SUBFEATURES[config=Review] = SPARKLE_ALLOWS_UNSIGNED_UPDATES
+SPARKLE_SUBFEATURES[config=Release] =
+SPARKLE_SUBFEATURES[config=Alpha] =
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) $(SPARKLE_SUBFEATURES)

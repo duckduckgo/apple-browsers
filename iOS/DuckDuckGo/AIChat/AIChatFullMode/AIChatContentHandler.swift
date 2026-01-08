@@ -19,6 +19,8 @@
 
 import AIChat
 import BrowserServicesKit
+import Core
+import PrivacyConfig
 import Foundation
 import WebKit
 
@@ -80,6 +82,8 @@ final class AIChatContentHandler: AIChatContentHandling {
     private var payloadHandler: AIChatPayloadHandler
     private let pixelMetricHandler: (any AIChatPixelMetricHandling)?
     private let featureDiscovery: FeatureDiscovery
+    private let featureFlagger: FeatureFlagger
+    private lazy var statisticsLoader: StatisticsLoader = .shared
     
     private var userScript: AIChatUserScriptProviding?
     
@@ -90,11 +94,13 @@ final class AIChatContentHandler: AIChatContentHandling {
     init(aiChatSettings: AIChatSettingsProvider,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
          pixelMetricHandler: any AIChatPixelMetricHandling = AIChatPixelMetricHandler(),
-         featureDiscovery: FeatureDiscovery) {
+         featureDiscovery: FeatureDiscovery,
+         featureFlagger: FeatureFlagger) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
         self.featureDiscovery = featureDiscovery
+        self.featureFlagger = featureFlagger
     }
     
     /// Configures the user script and WebView for AIChat interaction.
@@ -182,6 +188,10 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
         if metric.metricName == .userDidSubmitPrompt
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+
+            if featureFlagger.isFeatureOn(.iOSAIChatAtb) {
+                statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission()
+            }
         }
         
         pixelMetricHandler?.firePixelWithMetric(metric)

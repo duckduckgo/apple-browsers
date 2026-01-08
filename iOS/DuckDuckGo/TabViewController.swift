@@ -568,7 +568,9 @@ class TabViewController: UIViewController {
         
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
-        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
+        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
+                                                         featureDiscovery: featureDiscovery,
+                                                         featureFlagger: featureFlagger)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
 
@@ -2142,11 +2144,15 @@ extension TabViewController: WKNavigationDelegate {
                     if !url.isDuckAIURL {
                         NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
                     }
-                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
-                                                                        application: UIApplication.shared)
-                    StatisticsLoader.shared.refreshSearchRetentionAtb {
-                        DispatchQueue.main.async {
-                            backgroundAssertion.release()
+
+                    let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL && featureFlagger.isFeatureOn(.iOSAIChatAtb)
+                    if !shouldSkipSearchAtbForDuckAI {
+                        let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
+                                                                            application: UIApplication.shared)
+                        StatisticsLoader.shared.refreshSearchRetentionAtb {
+                            DispatchQueue.main.async {
+                                backgroundAssertion.release()
+                            }
                         }
                     }
                     subscriptionDataReporter.saveSearchCount()

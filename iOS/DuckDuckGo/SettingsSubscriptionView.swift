@@ -64,7 +64,7 @@ struct SettingsSubscriptionView: View {
     }
 
     var currentStorefrontRegion: SubscriptionRegion {
-        return AppDependencyProvider.shared.subscriptionManager.currentStorefrontRegion ?? .usa
+        return AppDependencyProvider.shared.subscriptionManager.currentStorefrontRegion
     }
     
     private var winBackURLComponents: URLComponents? {

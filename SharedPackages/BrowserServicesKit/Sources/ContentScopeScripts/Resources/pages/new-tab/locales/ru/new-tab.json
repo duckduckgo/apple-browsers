@@ -8,6 +8,10 @@
       "instruction" : "*/note"
     }]
   },
+  "newBadge" : {
+    "title" : "Новый",
+    "note" : "Badge text indicating a new feature."
+  },
   "ntp_show_less" : {
     "title" : "Показать меньше результатов",
     "note" : "Button that reduces the number of items or content displayed."
@@ -31,6 +35,14 @@
   "ntp_popover_close_button" : {
     "title" : "Закрыть",
     "note" : "Button that closes the current popover."
+  },
+  "customizer_themeVariantPopoverTitle" : {
+    "title" : "Выберите цвет",
+    "note" : "Title for the popover that introduces the theme variant customization feature."
+  },
+  "customizer_themeVariantPopoverDescription" : {
+    "title" : "Теперь вы можете выбрать цветовую гамму на свой вкус. Попробуйте!",
+    "note" : "Description message in the theme variant popover."
   },
   "updateNotification_updated_version" : {
     "title" : "Браузер обновлен до версии {version}.",
@@ -59,10 +71,6 @@
   "protections_noRecent" : {
     "title" : "Нет недавних отслеживаний",
     "note" : "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
-  },
-  "protections_newBadge" : {
-    "title" : "Новинка",
-    "note" : "Text displayed in a badge to indicate a new feature or statistic."
   },
   "stats_menuTitle" : {
     "title" : "Заблокированные попытки отслеживания",
@@ -215,10 +223,6 @@
   "omnibar_customizePopoverTitle" : {
     "title" : "Переключатель между поиском и чатом с ИИ",
     "description" : "Title for the popover that introduces the search/AI toggle feature."
-  },
-  "omnibar_customizePopoverBadge" : {
-    "title" : "Новый",
-    "description" : "Badge text for the popover that introduces the search/AI toggle feature."
   },
   "omnibar_customizePopoverDescription" : {
     "title" : "Ваши данные в любом случае остаются в тайне.<br />Не устраивает такой вариант? <button>Настройте свой!</button>",

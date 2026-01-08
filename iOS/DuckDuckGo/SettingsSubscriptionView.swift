@@ -202,7 +202,7 @@ struct SettingsSubscriptionView: View {
 
         // Renew Subscription (Expired)
         let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
-                                                      viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                      viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                       settingsViewModel: settingsViewModel,
                                                       viewPlans: {
             subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
@@ -224,7 +224,7 @@ struct SettingsSubscriptionView: View {
         disabledFeaturesView
             // Subscribe with Win-back offer
             let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
-                                                          viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                          viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                           settingsViewModel: settingsViewModel,
                                                           takeWinBackOffer: {
                 Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
@@ -254,7 +254,7 @@ struct SettingsSubscriptionView: View {
 
         // Renew Subscription (Expired)
         let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.activating,
-                                                      viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                      viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                       settingsViewModel: settingsViewModel,
                                                       viewPlans: {
             subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
@@ -350,7 +350,7 @@ struct SettingsSubscriptionView: View {
         let isActiveTrialOffer = settingsViewModel.state.subscription.isActiveTrialOffer
         let configuration: SubscriptionSettingsViewConfiguration = isActiveTrialOffer ? .trial : .subscribed
         NavigationLink(destination: LazyView(SubscriptionSettingsViewV2(configuration: configuration,
-                                                                        viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                                        viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                                         settingsViewModel: settingsViewModel))
             .environmentObject(subscriptionNavigationCoordinator)
         ) {

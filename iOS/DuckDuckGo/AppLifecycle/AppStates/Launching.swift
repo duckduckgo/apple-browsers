@@ -57,7 +57,7 @@ struct Launching: LaunchingHandling {
         Logger.lifecycle.info("Launching: \(#function)")
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
-        
+
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
@@ -172,8 +172,7 @@ struct Launching: LaunchingHandling {
             )
         )
 
-        let mobileCustomization = MobileCustomization(isFeatureEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
-                                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let mobileCustomization = MobileCustomization(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -214,16 +213,16 @@ struct Launching: LaunchingHandling {
         systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
         remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: mainCoordinator.controller)
-        
+
         let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
-        
+
         let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager
         )
-        
+
         winBackOfferService.setURLHandler(mainCoordinator)
 
         // MARK: - App Services aggregation
@@ -253,7 +252,6 @@ struct Launching: LaunchingHandling {
                                aiChatService: AIChatService(aiChatSettings: aiChatSettings)
         )
 
-        
         // Clean up wide event data at launch
         launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
 
@@ -294,7 +292,7 @@ struct Launching: LaunchingHandling {
             appSettings: appSettings
         )
     }
-    
+
 }
 
 extension Launching {

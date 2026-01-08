@@ -1,5 +1,5 @@
 //
-//  StorePurchaseManagerV2Tests.swift
+//  StorePurchaseManagerTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import StoreKit
 import Combine
 import Networking
 
-final class StorePurchaseManagerV2Tests: XCTestCase {
+final class StorePurchaseManagerTests: XCTestCase {
 
     private var sut: DefaultStorePurchaseManager!
     private var mockCache: SubscriptionFeatureMappingCacheMock!

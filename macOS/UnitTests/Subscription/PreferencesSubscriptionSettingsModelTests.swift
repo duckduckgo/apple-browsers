@@ -1,5 +1,5 @@
 //
-//  PreferencesSubscriptionSettingsModelV2Tests.swift
+//  PreferencesSubscriptionSettingsModelTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -26,14 +26,14 @@ import PersistenceTestingUtils
 @testable import SubscriptionUI
 @testable import DuckDuckGo_Privacy_Browser
 
-final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
+final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
 
-    var sut: PreferencesSubscriptionSettingsModelV2!
+    var sut: PreferencesSubscriptionSettingsModel!
     var mockSubscriptionManager: SubscriptionManagerMock!
     var mockKeyValueStore: MockThrowingKeyValueStore!
     var mockWinBackOfferManager: MockWinBackOfferVisibilityManager!
     var mockBlackFridayCampaignProvider: MockBlackFridayCampaignProvider!
-    var userEvents: [PreferencesSubscriptionSettingsModelV2.UserEvent] = []
+    var userEvents: [PreferencesSubscriptionSettingsModel.UserEvent] = []
     var subscriptionStateSubject: PassthroughSubject<PreferencesSidebarSubscriptionState, Never>!
     var cancellables: Set<AnyCancellable> = []
     var isProTierPurchaseEnabled: Bool = false
@@ -53,14 +53,14 @@ final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
     }
 
     private func makeSUT(subscription: DuckDuckGoSubscription? = nil,
-                         purchasePlatform: SubscriptionEnvironment.PurchasePlatform = .appStore) -> PreferencesSubscriptionSettingsModelV2 {
+                         purchasePlatform: SubscriptionEnvironment.PurchasePlatform = .appStore) -> PreferencesSubscriptionSettingsModel {
         if let subscription {
             mockSubscriptionManager.resultSubscription = .success(subscription)
         } else {
             mockSubscriptionManager.resultSubscription = .failure(NSError(domain: "", code: 0, userInfo: nil))
         }
         mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: purchasePlatform)
-        return PreferencesSubscriptionSettingsModelV2(
+        return PreferencesSubscriptionSettingsModel(
             userEventHandler: { [weak self] event in
                 self?.userEvents.append(event)
             },

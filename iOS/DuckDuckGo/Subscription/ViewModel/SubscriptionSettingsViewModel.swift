@@ -1,5 +1,5 @@
 //
-//  SubscriptionSettingsViewModelV2.swift
+//  SubscriptionSettingsViewModel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -27,7 +27,7 @@ import PrivacyConfig
 import Networking
 import Persistence
 
-final class SubscriptionSettingsViewModelV2: ObservableObject {
+final class SubscriptionSettingsViewModel: ObservableObject {
 
     private let subscriptionManager: SubscriptionManager
     private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies

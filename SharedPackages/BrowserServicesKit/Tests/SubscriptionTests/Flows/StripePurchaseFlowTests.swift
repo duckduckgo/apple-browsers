@@ -1,5 +1,5 @@
 //
-//  StripePurchaseFlowV2Tests.swift
+//  StripePurchaseFlowTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import XCTest
 import SubscriptionTestingUtilities
 import Networking
 
-final class StripePurchaseFlowV2Tests: XCTestCase {
+final class StripePurchaseFlowTests: XCTestCase {
 
     private struct Constants {
         static let accessToken = UUID().uuidString

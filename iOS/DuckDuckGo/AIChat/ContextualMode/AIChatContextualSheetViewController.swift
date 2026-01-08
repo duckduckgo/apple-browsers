@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import DesignResourcesKitIcons
 import UIKit
 
@@ -57,6 +58,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     weak var delegate: AIChatContextualSheetViewControllerDelegate?
 
     private let voiceSearchHelper: VoiceSearchHelperProtocol
+    private let settings: AIChatSettingsProvider
     private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
 
     // MARK: - UI Components
@@ -116,7 +118,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var daxIcon: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = DesignSystemImages.Glyphs.Size24.duckDuckGoDaxColor
+        imageView.image = DesignSystemImages.Color.Size24.duckAI
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -125,7 +127,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.text = UserText.duckAiFeatureName
-        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        label.font = UIFont.daxHeadline()
+        label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textPrimary)
         return label
     }()
@@ -157,8 +160,9 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, settings: AIChatSettingsProvider) {
         self.voiceSearchHelper = voiceSearchHelper
+        self.settings = settings
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -203,7 +207,38 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private func showContextualInput() {
         contextualInputViewController.delegate = self
+        configureAttachActions()
         embedChildViewController(contextualInputViewController)
+
+        if settings.isAutomaticContextAttachmentEnabled {
+            attachPageContext()
+        }
+    }
+
+    private func configureAttachActions() {
+        let attachPageAction = AIChatAttachAction(
+            title: UserText.aiChatAttachPageContent,
+            icon: DesignSystemImages.Glyphs.Size16.summary
+        ) { [weak self] in
+            self?.attachPageContext()
+        }
+        contextualInputViewController.attachActions = [attachPageAction]
+    }
+
+    private func attachPageContext() {
+        // Todo: For now, use placeholder data - actual page context integration comes later
+        let placeholderTitle = "Example Page Title"
+        let placeholderFavicon: UIImage? = nil
+
+        let chipView = AIChatContextChipView()
+        chipView.configure(title: placeholderTitle, favicon: placeholderFavicon)
+        chipView.subtitle = UserText.aiChatContextChipSubtitle
+        chipView.infoText = UserText.aiChatContextChipInfoFooter
+        chipView.onRemove = { [weak self] in
+            self?.contextualInputViewController.hideContextChip()
+        }
+
+        contextualInputViewController.showContextChip(chipView)
     }
 
     private func embedChildViewController(_ childVC: UIViewController) {
@@ -234,9 +269,27 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: .AIChat, hideToggle: true)
+        voiceSearchController.delegate = self
+        voiceSearchController.modalTransitionStyle = .crossDissolve
+        voiceSearchController.modalPresentationStyle = .overFullScreen
+        present(voiceSearchController, animated: true)
     }
 
-    func contextualInputViewControllerDidTapAttach(_ viewController: AIChatContextualInputViewController) {
+    func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
+        // Todo: Handle any cleanup when context chip is removed
+    }
+}
+
+// MARK: - VoiceSearchViewControllerDelegate
+
+extension AIChatContextualSheetViewController: VoiceSearchViewControllerDelegate {
+
+    func voiceSearchViewController(_ viewController: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
+        viewController.dismiss(animated: true)
+        if let query, !query.isEmpty {
+            contextualInputViewController.setText(query)
+        }
     }
 }
 

@@ -20,7 +20,7 @@ import Foundation
 
 public extension NewTabPageDataModel {
 
-    enum CardID: String, Codable {
+    enum CardID: String, Codable, CaseIterable {
         case bringStuff
         case defaultApp
         case emailProtection

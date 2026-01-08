@@ -91,12 +91,21 @@
       }
     },
     {
+      "identity" : "opencombine",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/OpenCombine/OpenCombine.git",
+      "state" : {
+        "revision" : "8576f0d579b27020beccbccc3ea6844f3ddfc2c2",
+        "version" : "0.14.0"
+      }
+    },
+    {
       "identity" : "privacy-dashboard",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "0f8925a4fc8f2b98df6bc7294b49fc4c1561bf16",
-        "version" : "9.7.0"
+        "revision" : "196b8ccc659eb077cde0652007ecfe54216c7b7c",
+        "version" : "9.9.0"
       }
     },
     {

@@ -28,6 +28,7 @@ public struct SlidingPickerSettings {
     let cornerRadius: CGFloat
     let dividerSize: CGSize?
     let elementsPadding: CGFloat
+    let elementsMargin: CGFloat
     let sliderInset: CGFloat
     let sliderLineWidth: CGFloat
 
@@ -40,6 +41,7 @@ public struct SlidingPickerSettings {
         cornerRadius: CGFloat = 4,
         dividerSize: CGSize? = nil,
         elementsPadding: CGFloat = .zero,
+        elementsMargin: CGFloat = .zero,
         sliderInset: CGFloat = .zero,
         sliderLineWidth: CGFloat = 1)
     {
@@ -51,6 +53,7 @@ public struct SlidingPickerSettings {
         self.cornerRadius = cornerRadius
         self.dividerSize = dividerSize
         self.elementsPadding = elementsPadding
+        self.elementsMargin = elementsMargin
         self.sliderInset = sliderInset
         self.sliderLineWidth = sliderLineWidth
     }
@@ -109,6 +112,9 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
 
             // Content
             HStack(spacing: settings.elementsPadding) {
+                Spacer()
+                    .frame(width: settings.elementsMargin)
+
                 ForEach(Array(allValues.enumerated()), id: \.element) { index, appearance in
                     displayContentBuilder(appearance)
                         .contentShape(Rectangle())
@@ -126,6 +132,9 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
                             .animation(.easeInOut(duration: 0.2), value: selectedValue)
                     }
                 }
+
+                Spacer()
+                    .frame(width: settings.elementsMargin)
             }
             .coordinateSpace(name: pickerCoordinateSpaceName)
             .readFrame(coordinateSpace: .local) { frame in

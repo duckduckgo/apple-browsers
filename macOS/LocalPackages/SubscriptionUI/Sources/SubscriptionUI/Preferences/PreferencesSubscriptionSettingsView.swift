@@ -1,5 +1,5 @@
 //
-//  PreferencesSubscriptionSettingsViewV2.swift
+//  PreferencesSubscriptionSettingsView.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -22,16 +22,16 @@ import SwiftUIExtensions
 import BrowserServicesKit
 import DesignResourcesKit
 
-public struct PreferencesSubscriptionSettingsViewV2: View {
+public struct PreferencesSubscriptionSettingsView: View {
 
-    @ObservedObject var model: PreferencesSubscriptionSettingsModelV2
+    @ObservedObject var model: PreferencesSubscriptionSettingsModel
     @State private var showingRemoveConfirmationDialog = false
     @State private var showingInternalSubscriptionAlert = false
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
     private var isPaidAIChatOn: () -> Bool
 
-    public init(model: PreferencesSubscriptionSettingsModelV2, isPaidAIChatOn: @escaping (() -> Bool)) {
+    public init(model: PreferencesSubscriptionSettingsModel, isPaidAIChatOn: @escaping (() -> Bool)) {
         self.model = model
         self.isPaidAIChatOn = isPaidAIChatOn
     }

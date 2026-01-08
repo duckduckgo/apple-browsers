@@ -88,6 +88,7 @@ enum SubscriptionTransactionStatus: String {
 // https://app.asana.com/0/1205842942115003/1209254337758531/f
 public struct GetFeatureConfigurationResponse: Encodable {
     let useUnifiedFeedback: Bool = true
+    let useSubscriptionsAuthV2: Bool = true
     let usePaidDuckAi: Bool
     let useAlternateStripePaymentFlow: Bool
     let useGetSubscriptionTierOptions: Bool
@@ -113,7 +114,9 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
 
     func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable?
-    // Auth
+    // Subscription + Auth
+    func getSubscription(params: Any, original: WKScriptMessage) async -> Encodable?
+    func setSubscription(params: Any, original: WKScriptMessage) async -> Encodable?
     func setAuthTokens(params: Any, original: WKScriptMessage) async throws -> Encodable?
     func getAuthAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable?
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable?
@@ -135,7 +138,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func cleanup()
 }
 
-final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
+final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
     private let subscriptionManager: SubscriptionManager
@@ -693,7 +696,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
 // MARK: - Wide Pixel
 
-private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
+private extension DefaultSubscriptionPagesUseSubscriptionFeature {
     
     func markEmailAddressRestoreWideEventFlowAsSuccess() {
         guard let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }

@@ -1,5 +1,5 @@
 //
-//  AppStoreRestoreFlowV2Tests.swift
+//  AppStoreRestoreFlowTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import SubscriptionTestingUtilities
 import NetworkingTestingUtils
 
 @available(macOS 12.0, iOS 15.0, *)
-final class AppStoreRestoreFlowV2Tests: XCTestCase {
+final class AppStoreRestoreFlowTests: XCTestCase {
 
     private var sut: DefaultAppStoreRestoreFlow!
     private var subscriptionManagerMock: SubscriptionManagerMock!

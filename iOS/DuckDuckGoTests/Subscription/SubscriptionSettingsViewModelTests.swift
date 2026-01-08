@@ -1,5 +1,5 @@
 //
-//  SubscriptionSettingsViewModelV2Tests.swift
+//  SubscriptionSettingsViewModelTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -26,9 +26,9 @@ import Networking
 import NetworkingTestingUtils
 import Persistence
 
-final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
+final class SubscriptionSettingsViewModelTests: XCTestCase {
 
-    var sut: SubscriptionSettingsViewModelV2!
+    var sut: SubscriptionSettingsViewModel!
     var mockSubscriptionManager: SubscriptionManagerMock!
     var cancellables = Set<AnyCancellable>()
     var isProTierPurchaseEnabled: Bool = false
@@ -272,8 +272,8 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeSUT() -> SubscriptionSettingsViewModelV2 {
-        SubscriptionSettingsViewModelV2(
+    private func makeSUT() -> SubscriptionSettingsViewModel {
+        SubscriptionSettingsViewModel(
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             keyValueStorage: MockKeyValueStorage(),

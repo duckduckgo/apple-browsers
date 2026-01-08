@@ -101,14 +101,13 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
 
-        /// When the experimental address bar is enabled, the bar is always at the top.
-        /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975623943806?focus=true
-        let isExperimentalAddressBarEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
-        let isAddressBarAtBottom = !isExperimentalAddressBarEnabled && appSettings.currentAddressBarPosition == .bottom
+        let isAIChatSearchInputUserSettingsEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+        let isAddressBarAtBottom = appSettings.currentAddressBarPosition == .bottom
         self.showAskAIChat = aiChatSettings.isAIChatEnabled
         self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
                                            showMessage: historyMessageManager.shouldShow(),
-                                           showAskAIChat: showAskAIChat)
+                                           showAskAIChat: showAskAIChat,
+                                           isSwipeToDeleteEnabled: !isAIChatSearchInputUserSettingsEnabled)
 
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self

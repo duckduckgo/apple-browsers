@@ -171,14 +171,6 @@ final class AddressBarTextEditor: NSTextView {
     }
 
     override func paste(_ sender: Any?) {
-        /// Check if pasted text contains newlines and should switch to AI chat mode
-        if let pastedString = NSPasteboard.general.string(forType: .string),
-           pastedString.contains("\n"),
-           let addressBar = addressBar,
-           addressBar.handleMultilinePaste(pastedString) {
-            return
-        }
-
         // Fixes an issue when url-name instead of url is pasted
         if let url = NSPasteboard.general.url {
             super.pasteAsPlainText(url.absoluteString)

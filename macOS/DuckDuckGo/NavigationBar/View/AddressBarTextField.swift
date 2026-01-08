@@ -418,26 +418,6 @@ final class AddressBarTextField: NSTextField {
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
-    /// Handles paste of multiline text by switching to AI chat mode if conditions are met
-    /// - Parameter text: The pasted text containing newlines
-    /// - Returns: `true` if the text was handled by switching to AI chat mode, `false` otherwise
-    func handleMultilinePaste(_ text: String) -> Bool {
-        guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
-              let aiChatPreferences = aiChatPreferences,
-              aiChatPreferences.isAIFeaturesEnabled,
-              aiChatPreferences.showSearchAndDuckAIToggle,
-              let toggleControl = customToggleControl as? CustomToggleControl,
-              !toggleControl.isHidden,
-              toggleControl.isEnabled,
-              toggleControl.selectedSegment == 0 else {
-            return false
-        }
-
-        sharedTextState?.updateText(text, markInteraction: true)
-        toggleControl.selectedSegment = 1
-        return true
-    }
-
     private func navigate(suggestion: Suggestion?) {
         switch suggestion {
         case .bookmark,

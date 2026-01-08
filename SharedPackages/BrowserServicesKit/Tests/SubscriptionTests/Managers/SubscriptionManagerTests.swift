@@ -1,5 +1,5 @@
 //
-//  SubscriptionManagerV2Tests.swift
+//  SubscriptionManagerTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import Common
 import SubscriptionTestingUtilities
 import NetworkingTestingUtils
 
-class SubscriptionManagerV2Tests: XCTestCase {
+class SubscriptionManagerTests: XCTestCase {
 
     struct Constants {
         static let tld = TLD()

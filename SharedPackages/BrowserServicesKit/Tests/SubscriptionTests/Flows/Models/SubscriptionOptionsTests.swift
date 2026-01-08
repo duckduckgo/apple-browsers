@@ -1,5 +1,5 @@
 //
-//  SubscriptionOptionsV2Tests.swift
+//  SubscriptionOptionsTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import XCTest
 import SubscriptionTestingUtilities
 import Networking
 
-final class SubscriptionOptionsV2Tests: XCTestCase {
+final class SubscriptionOptionsTests: XCTestCase {
 
     func testEncoding() throws {
         let monthlySubscriptionOffer = SubscriptionOptionOffer(type: .freeTrial, id: "1", durationInDays: 7, isUserEligible: true)

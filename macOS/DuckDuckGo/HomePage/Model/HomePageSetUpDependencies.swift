@@ -24,6 +24,7 @@ final class HomePageSetUpDependencies {
     let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     let subscriptionCardPersistor: HomePageSubscriptionCardPersisting
     let continueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
+    let nextStepsCardsPersistor: NewTabPageNextStepsCardsPersisting
 
     init(subscriptionManager: SubscriptionManager, keyValueStore: ThrowingKeyValueStoring, legacyKeyValueStore: KeyValueStoring) {
         self.subscriptionCardPersistor = HomePageSubscriptionCardPersistor(keyValueStore: keyValueStore)
@@ -34,10 +35,12 @@ final class HomePageSetUpDependencies {
         self.continueSetUpModelPersistor = HomePageContinueSetUpModelPersistor(
             keyValueStore: legacyKeyValueStore
         )
+        self.nextStepsCardsPersistor = NewTabPageNextStepsCardsPersistor(keyValueStore: keyValueStore)
     }
 
     func clearAll() {
         subscriptionCardPersistor.clear()
         continueSetUpModelPersistor.clear()
+        nextStepsCardsPersistor.clear()
     }
 }

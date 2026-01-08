@@ -1,5 +1,5 @@
 //
-//  SubscriptionPagesUseSubscriptionFeatureV2Tests.swift
+//  SubscriptionPagesUseSubscriptionFeatureTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -29,9 +29,9 @@ import PixelKitTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
 
-final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
+final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
-    private var sut: SubscriptionPagesUseSubscriptionFeatureV2!
+    private var sut: SubscriptionPagesUseSubscriptionFeature!
 
     private var mockStorePurchaseManager: StorePurchaseManagerMock!
     private var subscriptionManager: SubscriptionManagerMock!
@@ -76,7 +76,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockWideEvent = WideEventMock()
         mockEventReporter = MockSubscriptionEventReporter()
 
-        sut = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
+        sut = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                         subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
                                                         stripePurchaseFlow: mockStripePurchaseFlowV2,
                                                         uiHandler: mockUIHandler,
@@ -571,7 +571,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         stripeSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
         stripeSubscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
 
-        let stripeSut = SubscriptionPagesUseSubscriptionFeatureV2(
+        let stripeSut = SubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: stripeSubscriptionManager,
             subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
             stripePurchaseFlow: mockStripePurchaseFlow,
@@ -632,7 +632,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         stripeSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
         stripeSubscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
 
-        let stripeSut = SubscriptionPagesUseSubscriptionFeatureV2(
+        let stripeSut = SubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: stripeSubscriptionManager,
             subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
             stripePurchaseFlow: mockStripePurchaseFlow,

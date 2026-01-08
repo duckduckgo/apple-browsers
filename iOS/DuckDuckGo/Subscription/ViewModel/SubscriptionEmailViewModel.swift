@@ -291,7 +291,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
             contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
         )
         self.restoreWideEventData = data
-        if let subFeatureV2 = subFeature as? DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
+        if let subFeatureV2 = subFeature as? DefaultSubscriptionPagesUseSubscriptionFeature {
             subFeatureV2.subscriptionRestoreEmailAddressWideEventData = data
         }
         data.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()

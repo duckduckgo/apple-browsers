@@ -55,7 +55,7 @@ enum Preferences {
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
         var paidAIChatModel: PreferencesPaidAIChatModel?
         var identityTheftRestorationModel: PreferencesIdentityTheftRestorationModel?
-        var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV2?
+        var subscriptionSettingsModel: PreferencesSubscriptionSettingsModel?
         let subscriptionManager: SubscriptionManager
         let subscriptionUIHandler: SubscriptionUIHandling
         let featureFlagger: FeatureFlagger
@@ -169,7 +169,7 @@ enum Preferences {
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
-                    SubscriptionUI.PreferencesSubscriptionSettingsViewV2(model: subscriptionSettingsModel!, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
+                    SubscriptionUI.PreferencesSubscriptionSettingsView(model: subscriptionSettingsModel!, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
@@ -309,8 +309,8 @@ enum Preferences {
                                                             statusUpdates: model.identityTheftRestorationUpdates)
         }
 
-        private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModelV2 {
-            let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void = { event in
+        private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModel {
+            let userEventHandler: (PreferencesSubscriptionSettingsModel.UserEvent) -> Void = { event in
                 DispatchQueue.main.async {
                     switch event {
                     case .openFeedback:
@@ -339,7 +339,7 @@ enum Preferences {
                 }
             }
 
-            return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
+            return PreferencesSubscriptionSettingsModel(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
                                                           keyValueStore: NSApp.delegateTyped.keyValueStore,

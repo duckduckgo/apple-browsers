@@ -31,10 +31,14 @@ public final class MockSubscriptionUserScriptHandler: SubscriptionUserScriptHand
     public var backToSettingsCallCount = 0
     public var openSubscriptionActivationCallCount = 0
     public var openSubscriptionPurchaseCallCount = 0
+    public var openSubscriptionUpgradeCallCount = 0
+
 
     // Parameter tracking
     public var lastOpenSubscriptionPurchaseParams: Any?
     public var lastOpenSubscriptionPurchaseMessage: (any UserScriptMessage)?
+    public var lastOpenSubscriptionUpgradeParams: Any?
+    public var lastOpenSubscriptionUpgradeMessage: (any UserScriptMessage)?
 
     // Setter method tracking
     public var lastSetBroker: UserScriptMessagePushing?
@@ -84,6 +88,13 @@ public final class MockSubscriptionUserScriptHandler: SubscriptionUserScriptHand
         lastOpenSubscriptionPurchaseParams = params
         lastOpenSubscriptionPurchaseMessage = message
         return try await openSubscriptionPurchase(params, message)
+    }
+
+    public func openSubscriptionUpgrade(params: Any, message: any UserScriptMessage) async throws -> (any Encodable)? {
+        openSubscriptionUpgradeCallCount += 1
+        lastOpenSubscriptionUpgradeParams = params
+        lastOpenSubscriptionUpgradeMessage = message
+        return nil
     }
 
     public func setBroker(_ broker: any Subscription.UserScriptMessagePushing) {

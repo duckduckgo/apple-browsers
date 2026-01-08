@@ -429,6 +429,14 @@ private extension AIChatContextualSheetViewController {
                 self?.newChatButton.isHidden = !isVisible
             }
             .store(in: &cancellables)
+
+        // Observe prompt submission from web input (via metric callback)
+        NotificationCenter.default.publisher(for: .aiChatUserDidSubmitPrompt)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.viewModel.didSubmitPrompt()
+            }
+            .store(in: &cancellables)
     }
 }
 

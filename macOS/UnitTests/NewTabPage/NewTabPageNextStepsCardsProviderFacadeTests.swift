@@ -285,4 +285,3 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         XCTAssertEqual(singleCardProviderActionHandler.cardActionsPerformed, [.subscription])
     }
 }
-

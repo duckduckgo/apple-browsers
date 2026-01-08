@@ -97,4 +97,3 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
         activeProvider.willDisplayCards(cards)
     }
 }
-

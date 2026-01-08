@@ -29,6 +29,7 @@ protocol NewTabPageNextStepsCardsPersisting {
     func incrementTimesDismissed(for card: NewTabPageDataModel.CardID)
 
     /// Clear all persisted data about next steps cards.
+    /// This is used in the Debug menu to reset the Next Steps cards for testing.
     func clear()
 }
 

@@ -315,7 +315,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         removeCurrentChildViewController()
         embedChildViewController(webVC)
         currentWebViewController = webVC
-        // Clear existingWebViewController after transition to avoid double retention
         existingWebViewController = nil
     }
 

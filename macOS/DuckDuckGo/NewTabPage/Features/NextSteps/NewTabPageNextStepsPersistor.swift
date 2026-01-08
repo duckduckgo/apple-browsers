@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Foundation
 import NewTabPage
 import Persistence
 
@@ -33,38 +34,67 @@ protocol NewTabPageNextStepsCardsPersisting {
 
 final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersisting {
     private let keyValueStore: ThrowingKeyValueStoring
+    private let lock = NSLock()
 
     init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
     }
 
     func timesShown(for card: NewTabPageDataModel.CardID) -> Int {
-        (try? keyValueStore.object(forKey: shownKey(for: card)) as? Int) ?? 0
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        return (try? keyValueStore.object(forKey: shownKey(for: card)) as? Int) ?? 0
     }
 
     func setTimesShown(_ value: Int, for card: NewTabPageDataModel.CardID) {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
         try? keyValueStore.set(value, forKey: shownKey(for: card))
     }
 
     func timesDismissed(for card: NewTabPageDataModel.CardID) -> Int {
-        (try? keyValueStore.object(forKey: dismissedKey(for: card)) as? Int) ?? 0
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        return (try? keyValueStore.object(forKey: dismissedKey(for: card)) as? Int) ?? 0
     }
 
     func setTimesDismissed(_ value: Int, for card: NewTabPageDataModel.CardID) {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
         try? keyValueStore.set(value, forKey: dismissedKey(for: card))
     }
 
     func incrementTimesShown(for card: NewTabPageDataModel.CardID) {
-        let current = timesShown(for: card)
-        setTimesShown(current + 1, for: card)
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        let current = (try? keyValueStore.object(forKey: shownKey(for: card)) as? Int) ?? 0
+        try? keyValueStore.set(current + 1, forKey: shownKey(for: card))
     }
 
     func incrementTimesDismissed(for card: NewTabPageDataModel.CardID) {
-        let current = timesDismissed(for: card)
-        setTimesDismissed(current + 1, for: card)
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        let current = (try? keyValueStore.object(forKey: dismissedKey(for: card)) as? Int) ?? 0
+        try? keyValueStore.set(current + 1, forKey: dismissedKey(for: card))
     }
 
     func clear() {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
         for card in NewTabPageDataModel.CardID.allCases {
             try? keyValueStore.removeObject(forKey: shownKey(for: card))
             try? keyValueStore.removeObject(forKey: dismissedKey(for: card))

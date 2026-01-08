@@ -58,7 +58,10 @@ extension NewTabPageActionsManager {
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
         subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
         protectionsReportModel: NewTabPageProtectionsReportModel,
-        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
+        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting,
+        nextStepsCardsPersistor: NewTabPageNextStepsCardsPersisting,
+        subscriptionCardPersistor: HomePageSubscriptionCardPersisting,
+        duckPlayerPreferences: DuckPlayerPreferencesPersistor
     ) {
         self.init(
             appearancePreferences: appearancePreferences,
@@ -84,7 +87,10 @@ extension NewTabPageActionsManager {
             newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
+            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor,
+            nextStepsCardsPersistor: nextStepsCardsPersistor,
+            subscriptionCardPersistor: subscriptionCardPersistor,
+            duckPlayerPreferences: duckPlayerPreferences
         )
     }
 
@@ -113,7 +119,10 @@ extension NewTabPageActionsManager {
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
         subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
-        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
+        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting,
+        nextStepsCardsPersistor: NewTabPageNextStepsCardsPersisting,
+        subscriptionCardPersistor: HomePageSubscriptionCardPersisting,
+        duckPlayerPreferences: DuckPlayerPreferencesPersistor
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -177,6 +186,39 @@ extension NewTabPageActionsManager {
                                                                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                                                                        pixelHandler: nextStepsPixelHandler)
 
+        let nextStepsCardsProvider = NewTabPageNextStepsCardsProvider(
+            continueSetUpModel: HomePage.Models.ContinueSetUpModel(
+                dataImportProvider: dataImportProvider,
+                subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+                persistor: homePageContinueSetUpModelPersistor,
+                pixelHandler: nextStepsPixelHandler,
+                cardActionsHandler: cardActionsHandler
+            ),
+            appearancePreferences: appearancePreferences,
+            pixelHandler: nextStepsPixelHandler
+        )
+
+        let nextStepsSingleCardProvider = NewTabPageNextStepsSingleCardProvider(
+            cardActionHandler: cardActionsHandler,
+            pixelHandler: nextStepsPixelHandler,
+            persistor: nextStepsCardsPersistor,
+            legacyPersistor: homePageContinueSetUpModelPersistor,
+            legacySubscriptionCardPersistor: subscriptionCardPersistor,
+            appearancePreferences: appearancePreferences,
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
+            dockCustomizer: DockCustomizer(),
+            dataImportProvider: dataImportProvider,
+            duckPlayerPreferences: duckPlayerPreferences,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager
+        )
+
+        // Create facade that switches between providers based on feature flag
+        let cardsProviderFacade = NewTabPageNextStepsCardsProviderFacade(
+            featureFlagger: featureFlagger,
+            singleCardProvider: nextStepsSingleCardProvider,
+            legacyProvider: nextStepsCardsProvider
+        )
+
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
                 sectionsAvailabilityProvider: availabilityProvider,
@@ -191,17 +233,7 @@ extension NewTabPageActionsManager {
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),
             NewTabPageFreemiumDBPClient(provider: freemiumDBPBannerProvider),
             NewTabPageNextStepsCardsClient(
-                model: NewTabPageNextStepsCardsProvider(
-                    continueSetUpModel: HomePage.Models.ContinueSetUpModel(
-                        dataImportProvider: dataImportProvider,
-                        subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-                        persistor: homePageContinueSetUpModelPersistor,
-                        pixelHandler: nextStepsPixelHandler,
-                        cardActionsHandler: cardActionsHandler
-                    ),
-                    appearancePreferences: appearancePreferences,
-                    pixelHandler: nextStepsPixelHandler
-                )
+                model: cardsProviderFacade
             ),
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),
             NewTabPageProtectionsReportClient(model: protectionsReportModel),

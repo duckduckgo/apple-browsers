@@ -233,7 +233,7 @@ struct SettingsRootView: View {
             SettingsAppearanceView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
-                let model = SubscriptionSettingsViewModelV2(userScriptsDependencies: viewModel.userScriptsDependencies)
+                let model = SubscriptionSettingsViewModel(userScriptsDependencies: viewModel.userScriptsDependencies)
                 SubscriptionSettingsViewV2(configuration: configuration, viewModel: model, settingsViewModel: viewModel)
                     .environmentObject(subscriptionNavigationCoordinator)
             }

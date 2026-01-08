@@ -59,6 +59,7 @@ protocol DependencyProvider {
     var persistentPixel: PersistentPixelFiring { get }
     var wideEvent: WideEventManaging { get }
     var subscriptionManager: any SubscriptionManager { get }
+    var tokenHandlerProvider: any SubscriptionTokenHandling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
 }
 
@@ -86,6 +87,7 @@ final class AppDependencyProvider: DependencyProvider {
 
     // Subscription
     var subscriptionManager: any SubscriptionManager
+    var tokenHandlerProvider: any SubscriptionTokenHandling
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
@@ -203,7 +205,7 @@ final class AppDependencyProvider: DependencyProvider {
                                                                isInternalUserEnabled: {
             ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
         })
-
+        self.tokenHandlerProvider = subscriptionManager
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager, storePurchaseManager: storePurchaseManager)
         subscriptionManager.tokenRecoveryHandler = {
             try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)

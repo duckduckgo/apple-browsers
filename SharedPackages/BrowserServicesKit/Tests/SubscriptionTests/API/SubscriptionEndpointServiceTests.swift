@@ -1,5 +1,5 @@
 //
-//  SubscriptionEndpointServiceV2Tests.swift
+//  SubscriptionEndpointServiceTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import SubscriptionTestingUtilities
 import NetworkingTestingUtils
 import Common
 
-final class SubscriptionEndpointServiceV2Tests: XCTestCase {
+final class SubscriptionEndpointServiceTests: XCTestCase {
     private var apiService: MockAPIService!
     private var endpointService: DefaultSubscriptionEndpointService!
     private let baseURL = SubscriptionEnvironment.ServiceEnvironment.staging.url

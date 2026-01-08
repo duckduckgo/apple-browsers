@@ -1,5 +1,5 @@
 //
-//  PreferencesSubscriptionSettingsModelV2.swift
+//  PreferencesSubscriptionSettingsModel.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -30,7 +30,7 @@ public enum PreferencesSubscriptionSettingsState: String {
     case subscriptionPendingActivation, subscriptionActive, subscriptionExpired, subscriptionFreeTrialActive
 }
 
-public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
+public final class PreferencesSubscriptionSettingsModel: ObservableObject {
 
     @Published var subscriptionDetails: String?
     @Published var subscriptionStatus: DuckDuckGoSubscription.Status = .unknown
@@ -85,7 +85,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     private let rebrandingDismissedKey = "hasDismissedSubscriptionRebrandingMessage"
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let blackFridayCampaignProvider: BlackFridayCampaignProviding
-    private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
+    private let userEventHandler: (PreferencesSubscriptionSettingsModel.UserEvent) -> Void
     private let isProTierPurchaseEnabled: () -> Bool
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
@@ -107,7 +107,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
              openWinBackOfferLandingPage
     }
 
-    public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
+    public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModel.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManager,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
                 keyValueStore: ThrowingKeyValueStoring,

@@ -138,7 +138,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func cleanup()
 }
 
-final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
+final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
     private let subscriptionManager: SubscriptionManager
@@ -696,7 +696,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
 // MARK: - Wide Pixel
 
-private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
+private extension DefaultSubscriptionPagesUseSubscriptionFeature {
     
     func markEmailAddressRestoreWideEventFlowAsSuccess() {
         guard let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }

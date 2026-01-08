@@ -1,5 +1,5 @@
 //
-//  SubscriptionTokenKeychainStorageV2Tests.swift
+//  SubscriptionTokenKeychainStorageTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -22,7 +22,7 @@ import NetworkingTestingUtils
 @testable import Subscription
 import SubscriptionTestingUtilities
 
-final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
+final class SubscriptionTokenKeychainStorageTests: XCTestCase {
 
     private var storage: SubscriptionTokenKeychainStorage!
     private var mockKeychain: KeychainOperationsMock!
@@ -35,7 +35,7 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         errorEvents = []
 
         // Create unique UserDefaults per test for isolation
-        let suiteName = "SubscriptionTokenKeychainStorageV2Tests-\(UUID().uuidString)"
+        let suiteName = "SubscriptionTokenKeychainStorageTests-\(UUID().uuidString)"
         testUserDefaults = UserDefaults(suiteName: suiteName)!
         testUserDefaults.removePersistentDomain(forName: suiteName)
 

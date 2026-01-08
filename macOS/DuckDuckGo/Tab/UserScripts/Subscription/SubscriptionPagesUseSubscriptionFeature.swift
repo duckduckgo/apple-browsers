@@ -1,5 +1,5 @@
 //
-//  SubscriptionPagesUseSubscriptionFeatureV2.swift
+//  SubscriptionPagesUseSubscriptionFeature.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -49,7 +49,7 @@ public struct GetFeatureValue: Encodable {
 }
 
 /// Use Subscription sub-feature
-final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
+final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     private enum OriginDomains {
         static let duckduckgo = "duckduckgo.com"
@@ -726,7 +726,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 }
 
 /// For handling subscription access actions when presented as modal VC on purchase page via "I Have a Subscription" link
-extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHandling {
+extension SubscriptionPagesUseSubscriptionFeature: SubscriptionAccessActionHandling {
 
     func subscriptionAccessActionRestorePurchases(message: WKScriptMessage) {
         if #available(macOS 12.0, *) {
@@ -755,7 +755,7 @@ extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHan
     }
 }
 
-private extension SubscriptionPagesUseSubscriptionFeatureV2 {
+private extension SubscriptionPagesUseSubscriptionFeature {
 
     /**
      Sends a subscription upgrade notification if the freemium state is activated.
@@ -797,7 +797,7 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
 
 // MARK: - Wide Event
 
-private extension SubscriptionPagesUseSubscriptionFeatureV2 {
+private extension SubscriptionPagesUseSubscriptionFeature {
 
     // Attempt to retrieve restoreEmailAppSettingsWideEventData sent from Preferences/View/PreferencesRootView.swift
     func retrieveRestoreEmailAppSettingsWideEventDataIfNeeded() {

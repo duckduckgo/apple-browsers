@@ -220,7 +220,7 @@ final class UserScripts: UserScriptsProvider {
         var delegate: Subfeature
         let subscriptionManager = Application.appDelegate.subscriptionManager
         let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
-        delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
+        delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                              stripePurchaseFlow: stripePurchaseFlow,
                                                              uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                              aiChatURL: AIChatRemoteSettings().aiChatURL,

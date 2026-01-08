@@ -1,5 +1,5 @@
 //
-//  SubscriptionManagerV2Tests+Redirect.swift
+//  SubscriptionManagerTests+Redirect.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import Common
 @testable import Subscription
 import SubscriptionTestingUtilities
 
-extension SubscriptionManagerV2Tests {
+extension SubscriptionManagerTests {
 
     func testWhenURLIsSubscriptionThenRedirectToSubscriptionBaseURL() throws {
         // GIVEN

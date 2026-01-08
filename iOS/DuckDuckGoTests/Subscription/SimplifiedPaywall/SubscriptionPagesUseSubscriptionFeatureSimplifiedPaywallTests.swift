@@ -53,7 +53,7 @@ import NetworkingTestingUtils
 //        mockInternalUserDecider = MockInternalUserDecider()
 //        mockWideEvent = WideEventMock()
 //
-//        sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+//        sut = DefaultSubscriptionPagesUseSubscriptionFeature(
 //            subscriptionManager: mockSubscriptionManager,
 //            subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
 //            subscriptionAttributionOrigin: nil,

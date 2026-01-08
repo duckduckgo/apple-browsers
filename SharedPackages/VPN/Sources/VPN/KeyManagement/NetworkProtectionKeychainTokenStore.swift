@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionKeychainTokenStoreV2.swift
+//  NetworkProtectionKeychainTokenStore.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -25,7 +25,7 @@ import os.log
 
 /// Store an auth token for NetworkProtection on behalf of the user. This key is then used to authenticate requests for registration and server fetches from the Network Protection backend servers.
 /// Writing a new auth token will replace the old one.
-public final class NetworkProtectionKeychainTokenStoreV2: AuthTokenStoring {
+public final class NetworkProtectionKeychainTokenStore: AuthTokenStoring {
     private let keychainStore: NetworkProtectionKeychainStore
     private let errorEventsHandler: EventMapping<NetworkProtectionError>?
 

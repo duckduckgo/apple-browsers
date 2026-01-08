@@ -1,5 +1,5 @@
 //
-//  SubscriptionPagesUseSubscriptionFeatureV2Tests.swift
+//  SubscriptionPagesUseSubscriptionFeatureTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -29,9 +29,9 @@ import SubscriptionTestingUtilities
 import PixelKitTestingUtilities
 import Networking
 
-final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
+final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     
-    var sut: DefaultSubscriptionPagesUseSubscriptionFeatureV2!
+    var sut: DefaultSubscriptionPagesUseSubscriptionFeature!
     var mockSubscriptionManager: SubscriptionManagerMock!
     var mockStripePurchaseFlow: StripePurchaseFlowMock!
     var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
@@ -52,7 +52,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
         mockTierEventReporter = MockSubscriptionTierEventReporter()
 
-        sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+        sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: "",
@@ -484,7 +484,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
         purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
 
-        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
@@ -527,7 +527,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
 
-        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
@@ -558,7 +558,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
 
-        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,

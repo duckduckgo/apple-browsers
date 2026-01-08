@@ -21,7 +21,7 @@ import Common
 @testable import Subscription
 import SubscriptionTestingUtilities
 
-extension SubscriptionManagerV2Tests {
+extension SubscriptionManagerTests {
 
     func testWhenCustomBaseURLIsSetAndInternalUserModeEnabledThenBaseURLIsOverriden() throws {
         // GIVEN

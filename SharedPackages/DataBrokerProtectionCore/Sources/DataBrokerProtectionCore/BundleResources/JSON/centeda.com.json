@@ -1,7 +1,7 @@
 {
   "name": "Centeda",
   "url": "centeda.com",
-  "version": "0.9.0",
+  "version": "0.90.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://centeda.com/ng/control/privacy",
   "steps": [
@@ -28,8 +28,7 @@
           "expectations": [
             {
               "type": "element",
-              "selector": ".page-title",
-              "parent": ".search-page"
+              "selector": ".container"
             }
           ],
           "id": "b4350352-85cc-461c-b520-029002683826"
@@ -37,7 +36,7 @@
         {
           "actionType": "extract",
           "id": "e779b827-702d-402d-ae79-f3681ad50008",
-          "selector": ".search-result > a",
+          "selector": ".search-result .search-item",
           "noResultsSelector": "//div[@class='no-phone-info'] | //h1[contains(text(), 'Oops')]",
           "profile": {
             "name": {

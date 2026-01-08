@@ -21,6 +21,7 @@ import os.log
 import Combine
 import BrowserServicesKit
 import Persistence
+import PrivacyConfig
 import Configuration
 import Common
 import Networking

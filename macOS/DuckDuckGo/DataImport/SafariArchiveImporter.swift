@@ -20,6 +20,7 @@ import Foundation
 import BrowserServicesKit
 import SecureStorage
 import PixelKit
+import PrivacyConfig
 import Common
 import UniformTypeIdentifiers
 

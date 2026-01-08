@@ -24,6 +24,7 @@ import Common
 import History
 import NewTabPage
 import Persistence
+import PrivacyConfig
 import PrivacyStats
 import Subscription
 
@@ -167,6 +168,14 @@ extension NewTabPageActionsManager {
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger
         )
+        let dataImportProvider = BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager)
+        let nextStepsPixelHandler = NewTabPageNextStepsCardsPixelHandler()
+        let cardActionsHandler = NewTabPageNextStepsCardsActionHandler(defaultBrowserProvider: SystemDefaultBrowserProvider(),
+                                                                       dockCustomizer: DockCustomizer(),
+                                                                       dataImportProvider: dataImportProvider,
+                                                                       tabOpener: NewTabPageTabOpener(),
+                                                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                                                                       pixelHandler: nextStepsPixelHandler)
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
@@ -184,13 +193,14 @@ extension NewTabPageActionsManager {
             NewTabPageNextStepsCardsClient(
                 model: NewTabPageNextStepsCardsProvider(
                     continueSetUpModel: HomePage.Models.ContinueSetUpModel(
-                        dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager),
-                        tabOpener: NewTabPageTabOpener(),
-                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                        dataImportProvider: dataImportProvider,
                         subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-                        persistor: homePageContinueSetUpModelPersistor
+                        persistor: homePageContinueSetUpModelPersistor,
+                        pixelHandler: nextStepsPixelHandler,
+                        cardActionsHandler: cardActionsHandler
                     ),
-                    appearancePreferences: appearancePreferences
+                    appearancePreferences: appearancePreferences,
+                    pixelHandler: nextStepsPixelHandler
                 )
             ),
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),
@@ -205,7 +215,7 @@ extension NewTabPageActionsManager {
     }
 }
 
-struct NewTabPageTabOpener: ContinueSetUpModelTabOpening {
+struct NewTabPageTabOpener: NewTabPageNextStepsCardsTabOpening {
     @MainActor
     func openTab(_ tab: Tab) {
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.insertOrAppend(tab: tab, selected: true)

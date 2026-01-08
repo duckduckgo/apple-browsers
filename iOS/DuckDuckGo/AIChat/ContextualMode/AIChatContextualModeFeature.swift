@@ -19,7 +19,7 @@
 
 import Common
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 /// Provides access to contextual Duck AI chat mode availability.
 protocol AIChatContextualModeFeatureProviding {

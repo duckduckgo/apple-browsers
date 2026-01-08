@@ -134,7 +134,7 @@ final class ConfigurationStore: ConfigurationStoring {
     func loadEmbeddedEtag(for configuration: Configuration) -> String? {
         switch configuration {
         case .trackerDataSet: return AppTrackerDataSetProvider.Constants.embeddedDataETag
-        case .privacyConfiguration: return AppPrivacyConfigurationDataProvider.Constants.embeddedDataSHA
+        case .privacyConfiguration: return AppPrivacyConfigurationDataProvider.Constants.embeddedDataETag
         default: return nil
         }
     }

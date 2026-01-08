@@ -96,6 +96,7 @@ public extension DesignSystemImages {
             public static var arrowCircleDownLeft: DesignSystemImage { .init(resource: .arrowCircleDownLeft16) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft16) }
             public static var arrowDown: DesignSystemImage { .init(resource: .arrowDown16) }
+            public static var arrowDownRight: DesignSystemImage { .init(resource: .arrowDownRight16) }
             public static var arrowUp: DesignSystemImage { .init(resource: .arrowUp16) }
             public static var arrowLeft: DesignSystemImage { .init(resource: .arrowLeft16) }
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight16) }
@@ -235,6 +236,7 @@ public extension DesignSystemImages {
             public static var sortDescending: DesignSystemImage { .init(resource: .sortDescending16) }
             public static var sortManually: DesignSystemImage { .init(resource: .sortManually16) }
             public static var subscription: DesignSystemImage { .init(resource: .privacyPro16) }
+            public static var summary: DesignSystemImage { .init(resource: .summary16) }
             public static var support: DesignSystemImage { .init(resource: .support16) }
             public static var sync: DesignSystemImage { .init(resource: .sync16) }
             public static var systemTheme: DesignSystemImage { .init(resource: .systemTheme16) }
@@ -404,6 +406,7 @@ public extension DesignSystemImages {
             public static var findSearchSmall: DesignSystemImage { .init(resource: .findSearchSmall24) }
             public static var fire: DesignSystemImage { .init(resource: .fire24) }
             public static var fireSolid: DesignSystemImage { .init(resource: .fireSolid24) }
+            public static var fireproof: DesignSystemImage { .init(resource: .fireproof24) }
             public static var fireproofSolid: DesignSystemImage { .init(resource: .fireproofSolid24) }
             public static var folder: DesignSystemImage { .init(resource: .folder24) }
             public static var folderAdd: DesignSystemImage { .init(resource: .folderAdd24) }

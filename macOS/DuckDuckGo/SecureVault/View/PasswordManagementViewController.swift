@@ -25,6 +25,7 @@ import Foundation
 import SecureStorage
 import SwiftUI
 import PixelKit
+import PrivacyConfig
 import os.log
 
 protocol PasswordManagementDelegate: AnyObject {
@@ -60,7 +61,7 @@ final class PasswordManagementViewController: NSViewController {
     @IBOutlet var itemContainer: NSView!
     @IBOutlet var addVaultItemButton: NSButton!
     @IBOutlet var moreButton: NSButton!
-    @IBOutlet var searchField: NSTextField!
+    @IBOutlet var searchField: SearchField!
     @IBOutlet var divider: NSView!
     @IBOutlet var emptyState: NSView!
     @IBOutlet var emptyStateImageView: NSImageView!
@@ -409,7 +410,7 @@ final class PasswordManagementViewController: NSViewController {
     @IBAction func onSyncClicked(_ sender: Any) {
         self.dismiss()
         let source = SyncDeviceButtonTouchpoint.passwordsEmpty
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
         DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
     }
 
@@ -1193,6 +1194,11 @@ extension PasswordManagementViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
         boxView.fillColor = colorsProvider.passwordManagerBackgroundColor
         backgroundView.backgroundColor = colorsProvider.passwordManagerLockScreenBackgroundColor
+
+        let palette = theme.palette
+        searchField.borderColor = palette.controlsBorderPrimary
+        searchField.borderHighlightColor = palette.accentPrimary
+        searchField.innerBackgroundColor = palette.surfaceTertiary
     }
 }
 

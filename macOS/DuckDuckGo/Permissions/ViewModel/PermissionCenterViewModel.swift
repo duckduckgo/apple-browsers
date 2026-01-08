@@ -17,12 +17,12 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import DesignResourcesKit
 import FeatureFlags
 import Foundation
 import PixelKit
+import PrivacyConfig
 
 /// Represents a blocked popup URL for the Permission Center
 struct BlockedPopup: Identifiable {

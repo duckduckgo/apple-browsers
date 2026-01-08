@@ -20,8 +20,9 @@
 import XCTest
 import Combine
 @testable import DuckDuckGo
-@testable import BrowserServicesKit
+import BrowserServicesKit
 @testable import Core
+import PrivacyConfig
 
 final class DuckPlayerViewModelTests: XCTestCase {
 

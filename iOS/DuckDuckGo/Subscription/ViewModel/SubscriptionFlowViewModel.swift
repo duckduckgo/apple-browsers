@@ -21,8 +21,8 @@ import Foundation
 import UserScript
 import Combine
 import Core
-import Subscription
-import BrowserServicesKit
+@preconcurrency import Subscription
+import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
 

@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import WebKit
 import Common
+import PrivacyConfig
+import WebKit
 
 public struct LinkProtection {
 
@@ -28,14 +29,12 @@ public struct LinkProtection {
 
     public init(privacyManager: PrivacyConfigurationManaging,
                 contentBlockingManager: CompiledRuleListsSource,
-                errorReporting: EventMapping<AMPProtectionDebugEvents>,
-                useBackgroundTaskProtection: Bool = false) {
+                errorReporting: EventMapping<AMPProtectionDebugEvents>) {
         linkCleaner = LinkCleaner(privacyManager: privacyManager)
         ampExtractor = AMPCanonicalExtractor(linkCleaner: linkCleaner,
                                              privacyManager: privacyManager,
                                              contentBlockingManager: contentBlockingManager,
-                                             errorReporting: errorReporting,
-                                             useBackgroundTaskProtection: useBackgroundTaskProtection)
+                                             errorReporting: errorReporting)
     }
 
     private func makeNewRequest(changingUrl url: URL, inRequest request: URLRequest) -> URLRequest {

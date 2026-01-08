@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
 import Foundation
 import MaliciousSiteProtection
@@ -320,6 +319,7 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
                              {"id": "openerContext"},
                              {"id": "userRefreshCount"},
                              {"id": "locale"},
+                             {"id": "detectorData"},
                          ]
                      });
                      """

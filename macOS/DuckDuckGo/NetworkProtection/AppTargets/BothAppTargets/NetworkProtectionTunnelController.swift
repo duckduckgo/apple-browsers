@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import SwiftUI
 import Common
@@ -67,7 +67,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Subscriptions
 
-    private let accessTokenStorage: SubscriptionTokenKeychainStorage
     private let subscriptionManagerV2: any SubscriptionManagerV2
 
     // MARK: - Extensions Support
@@ -124,9 +123,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Wide Event
 
-    private var isConnectionWideEventMeasurementEnabled: Bool {
-        featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
-    }
     private var connectionWideEventData: VPNConnectionWideEventData?
     private let connectionControllerTimeoutInterval: TimeInterval = .hours(24)
 
@@ -184,7 +180,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          defaults: UserDefaults,
          wideEvent: WideEventManaging,
          notificationCenter: NotificationCenter = .default,
-         accessTokenStorage: SubscriptionTokenKeychainStorage,
          subscriptionManagerV2: any SubscriptionManagerV2,
          vpnAppState: VPNAppState) {
 
@@ -195,7 +190,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.settings = settings
         self.defaults = defaults
         self.wideEvent = wideEvent
-        self.accessTokenStorage = accessTokenStorage
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.vpnAppState = vpnAppState
         subscribeToSettingsChanges()
@@ -760,28 +754,17 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     private func prepareStartupOptions() async throws -> [String: NSObject] {
+        Logger.networkProtection.log("Preparing startup options")
         var options = [String: NSObject]()
-
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
-        options[NetworkProtectionOptionKey.isAuthV2Enabled] = NSNumber(value: vpnAppState.isAuthV2Enabled)
-        options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] = NSNumber(value: isConnectionWideEventMeasurementEnabled)
-        if !vpnAppState.isAuthV2Enabled {
-            Logger.networkProtection.log("Using Auth V1")
-            self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
-            let authToken = try fetchAuthToken()
-            options[NetworkProtectionOptionKey.authToken] = authToken
-            self.connectionWideEventData?.oauthDuration?.complete()
-        } else {
-            Logger.networkProtection.log("Using Auth V2")
-            self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
-            let tokenContainer = try await fetchTokenContainer()
-            options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
+        self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
+        let tokenContainer = try await fetchTokenContainer()
+        options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
 
-            // It’s important to force refresh the token here to immediately branch the token used by the main app from the one sent to the system extension.
-            // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-            try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
-            self.connectionWideEventData?.oauthDuration?.complete()
-        }
+        // It’s important to force refresh the token here to immediately branch the token used by the main app from the one sent to the system extension.
+        // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
+        try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
+        self.connectionWideEventData?.oauthDuration?.complete()
 
         // Encode entire VPN settings as one unit
         let settingsSnapshot = VPNSettingsSnapshot(from: settings)
@@ -841,9 +824,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     @MainActor
     func restart() async {
-        guard vpnAppState.isAuthV2Enabled,
-            let internalManager else {
-
+        guard let internalManager else {
             // This is a temporary thing because we know this method works well
             // in case we need to roll back auth v2
             await stop(disableOnDemand: false)
@@ -939,21 +920,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
-    private func fetchAuthToken() throws -> NSString? {
-        do {
-            guard let accessToken = try accessTokenStorage.getAccessToken() else {
-                Logger.networkProtection.error("🔴 TunnelController found no token")
-                throw StartError.noAuthToken
-            }
-
-            Logger.networkProtection.log("🟢 TunnelController found token")
-            return Self.adaptAccessTokenForVPN(accessToken) as NSString
-        } catch {
-            Logger.networkProtection.fault("🔴 TunnelController failed to fetch token: \(error.localizedDescription)")
-            throw StartError.failedToFetchAuthToken(error)
-        }
-    }
-
     private func fetchTokenContainer() async throws -> TokenContainer {
         do {
             let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
@@ -981,7 +947,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 private extension NetworkProtectionTunnelController {
 
     func setupAndStartConnectionWideEvent() {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         completeAllPendingVPNConnectionPixels()
         let data = VPNConnectionWideEventData(
             extensionType: .unknown,
@@ -1016,20 +981,18 @@ private extension NetworkProtectionTunnelController {
 
     func completeAtStepWithFailure(_ step: VPNConnectionWideEventData.Step, with error: Error, description: String? = nil
     ) {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         connectionWideEventData?[keyPath: step.errorPath] = .init(error: error, description: description)
         connectionWideEventData?[keyPath: step.durationPath]?.complete()
         completeAndCleanupConnectionWideEvent(with: error, description: description)
     }
 
     func completeAndCleanupAtStepWithPartialSuccess(_ step: VPNConnectionWideEventData.Step = .controllerStart) {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         connectionWideEventData?[keyPath: step.durationPath]?.complete()
         completeAndCleanupConnectionWideEvent(successReason: VPNConnectionWideEventData.StatusReason.partialData.rawValue)
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil, successReason: String? = nil) {
-        guard isConnectionWideEventMeasurementEnabled, let data = connectionWideEventData else { return }
+        guard let data = connectionWideEventData else { return }
         data.overallDuration?.complete()
         if let error {
             data.errorData = .init(error: error, description: description)

@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 #if APPSTORE
-import XCTest
 import Combine
 import NetworkingTestingUtils
-import BrowserServicesKit
+import PrivacyConfig
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AppStoreUpdateControllerTests: XCTestCase {

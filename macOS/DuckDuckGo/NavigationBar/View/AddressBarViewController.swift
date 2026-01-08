@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Lottie
@@ -24,6 +23,7 @@ import Common
 import AIChat
 import UIComponents
 import PixelKit
+import PrivacyConfig
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
@@ -786,13 +786,18 @@ final class AddressBarViewController: NSViewController {
         self.updateMode()
         self.addressBarButtonsViewController?.updateButtons()
 
-        guard let window = view.window, window.sheets.isEmpty else {
-            // Hide suggestions when a Sheet is presented (Open panel, Fire dialog…)
-            addressBarTextField.hideSuggestionWindow()
+        guard let window = view.window else {
             return
         }
 
-        guard AppVersion.runType != .unitTests else { return }
+        guard AppVersion.runType != .unitTests else {
+            return
+        }
+
+        // Hide suggestions when a Sheet is presented (Open panel, Fire dialog…)
+        if window.sheets.isEmpty == false {
+            addressBarTextField.hideSuggestionWindow()
+        }
 
         addressBarTextField.refreshStyle()
 

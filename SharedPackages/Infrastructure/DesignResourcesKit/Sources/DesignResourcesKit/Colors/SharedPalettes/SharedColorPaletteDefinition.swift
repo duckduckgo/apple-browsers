@@ -86,6 +86,8 @@ protocol SharedColorPaletteDefinition {
     static var controlsFillPrimary: DynamicColor { get }
     static var controlsFillSecondary: DynamicColor { get }
     static var controlsFillTertiary: DynamicColor { get }
+    static var controlsRaisedBackdrop: DynamicColor { get }
+    static var controlsRaisedFillPrimary: DynamicColor { get }
 
     // MARK: - Destructive Colors
     static var destructiveContentPrimary: DynamicColor { get }
@@ -134,6 +136,7 @@ protocol SharedColorPaletteDefinition {
 
     // MARK: - Tone Colors
     static var toneShadePrimary: DynamicColor { get }
+    static var toneTintPrimary: DynamicColor { get }
 }
 
 #endif

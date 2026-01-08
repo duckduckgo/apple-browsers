@@ -105,6 +105,7 @@ public struct BrokenSiteReport {
     let privacyExperiments: String
     let isPirEnabled: Bool?
     let pageLoadTiming: WKPageLoadTiming?
+    let detectorMetrics: [String: String]?
 #if os(iOS)
     let siteType: SiteType
     let atb: String
@@ -141,7 +142,8 @@ public struct BrokenSiteReport {
         debugFlags: String,
         privacyExperiments: String,
         isPirEnabled: Bool?,
-        pageLoadTiming: WKPageLoadTiming?
+        pageLoadTiming: WKPageLoadTiming?,
+        detectorMetrics: [String: String]? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -171,6 +173,7 @@ public struct BrokenSiteReport {
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
         self.pageLoadTiming = pageLoadTiming
+        self.detectorMetrics = detectorMetrics
     }
 #endif
 
@@ -207,7 +210,8 @@ public struct BrokenSiteReport {
         debugFlags: String,
         privacyExperiments: String,
         isPirEnabled: Bool?,
-        pageLoadTiming: WKPageLoadTiming? = nil
+        pageLoadTiming: WKPageLoadTiming? = nil,
+        detectorMetrics: [String: String]? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -241,12 +245,14 @@ public struct BrokenSiteReport {
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
         self.pageLoadTiming = pageLoadTiming
+        self.detectorMetrics = detectorMetrics
     }
 #endif
 
     /// A dictionary containing all the parameters needed from the Report Broken Site Pixel
     public var requestParameters: [String: String] { getRequestParameters(forReportMode: .regular) }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func getRequestParameters(forReportMode mode: Mode) -> [String: String] {
         var result: [String: String] = [
             "siteUrl": siteUrl.trimmingQueryItemsAndFragment().absoluteString,
@@ -269,6 +275,7 @@ public struct BrokenSiteReport {
             "consentOptoutFailed": boolToStringValue(cookieConsentInfo?.optoutFailed),
             "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed),
             "consentReloadLoop": boolToStringValue(cookieConsentInfo?.consentReloadLoop),
+            "consentHeuristicEnabled": boolToStringValue(cookieConsentInfo?.consentHeuristicEnabled),
             "consentRule": cookieConsentInfo?.consentRule ?? "",
             "debugFlags": debugFlags,
             "contentScopeExperiments": privacyExperiments
@@ -311,6 +318,12 @@ public struct BrokenSiteReport {
 
         if let pageLoadTiming = pageLoadTiming {
             addPageLoadTimingParameters(to: &result, timing: pageLoadTiming)
+        }
+
+        if let detectorMetrics = detectorMetrics {
+            for (key, value) in detectorMetrics {
+                result[key] = value
+            }
         }
 
 #if os(iOS)

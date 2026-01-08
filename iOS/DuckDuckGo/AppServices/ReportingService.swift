@@ -23,6 +23,7 @@ import WidgetKit
 import BrowserServicesKit
 import AttributedMetric
 import PixelKit
+import PrivacyConfig
 import Subscription
 import Combine
 import AIChat

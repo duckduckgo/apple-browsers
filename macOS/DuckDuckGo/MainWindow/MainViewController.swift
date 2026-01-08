@@ -17,7 +17,6 @@
 //
 
 import BrokenSitePrompt
-import BrowserServicesKit
 import Cocoa
 import Carbon.HIToolbox
 import Combine
@@ -28,6 +27,7 @@ import NetworkQualityMonitor
 import os.log
 import PerformanceTest
 import PixelKit
+import PrivacyConfig
 import SwiftUI
 import VPN
 
@@ -222,7 +222,6 @@ final class MainViewController: NSViewController {
             sidebarProvider: aiChatSidebarProvider,
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatTabOpener: aiChatTabOpener,
-            featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring
         )
@@ -502,6 +501,11 @@ final class MainViewController: NSViewController {
         /// This enables TAB key navigation from AI Chat mode to the toggle
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
+        }
+
+        /// This enables TAB key navigation from toggle back to AI Chat text view
+        navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.onToggleTabPressedInAIChatMode = { [weak self] in
+            self?.aiChatOmnibarTextContainerViewController.focusTextViewWithCursorAtEnd()
         }
     }
 
@@ -1011,7 +1015,8 @@ extension MainViewController {
             let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
             buttonsViewController.toggleSearchMode()
             if isSwitchingToAIChatMode {
-                self.aiChatOmnibarTextContainerViewController.insertNewline()
+                let currentText = navigationBarViewController.addressBarViewController?.addressBarTextField.stringValueWithoutSuffix ?? ""
+                self.aiChatOmnibarTextContainerViewController.insertNewlineIfHasContent(addressBarText: currentText)
             }
             return true
         } else if flags.contains(.control),

@@ -153,12 +153,9 @@ public struct StartupOptions {
     let simulateMemoryCrash: Bool
     public let vpnSettings: StoredOption<VPNSettingsSnapshot>
 #if os(macOS)
-    public let isAuthV2Enabled: StoredOption<Bool>
-    public let authToken: StoredOption<String>
     public let tokenContainer: StoredOption<TokenContainer>
 #endif
     let enableTester: StoredOption<Bool>
-    let isConnectionWideEventMeasurementEnabled: Bool
 
     init(options: [String: Any]) {
         let startupMethod: StartupMethod = {
@@ -176,13 +173,9 @@ public struct StartupOptions {
         simulateError = options[NetworkProtectionOptionKey.tunnelFailureSimulation] as? Bool ?? false
         simulateCrash = options[NetworkProtectionOptionKey.tunnelFatalErrorCrashSimulation] as? Bool ?? false
         simulateMemoryCrash = options[NetworkProtectionOptionKey.tunnelMemoryCrashSimulation] as? Bool ?? false
-        // This is added as an emergency turnoff option. As this guards a very low risk pixel measurement, we keep it enabled as default
-        isConnectionWideEventMeasurementEnabled = options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] as? Bool ?? true
 
         let resetStoredOptionsIfNil = startupMethod == .manualByMainApp
 #if os(macOS)
-        isAuthV2Enabled = Self.readIsAuthV2Enabled(from: options, resetIfNil: resetStoredOptionsIfNil)
-        authToken = Self.readAuthToken(from: options, resetIfNil: resetStoredOptionsIfNil)
         tokenContainer = Self.readTokenContainer(from: options, resetIfNil: resetStoredOptionsIfNil)
 
 #endif
@@ -199,12 +192,9 @@ public struct StartupOptions {
             simulateMemoryCrash: \(self.simulateMemoryCrash.description),
             vpnSettings: \(self.vpnSettings.description),
             enableTester: \(self.enableTester),
-            isConnectionWideEventMeasurementEnabled: \(self.isConnectionWideEventMeasurementEnabled),
         """
 #if os(macOS)
         result += """
-            isAuthV2Enabled: \(self.isAuthV2Enabled),
-            authToken: \(self.authToken),
             tokenContainer: \(self.tokenContainer),
         """
 #endif
@@ -214,29 +204,6 @@ public struct StartupOptions {
     // MARK: - Helpers for reading stored options
 
 #if os(macOS)
-    private static func readIsAuthV2Enabled(from options: [String: Any], resetIfNil: Bool) -> StoredOption<Bool> {
-        StoredOption(resetIfNil: resetIfNil) {
-            guard let isAuthV2Enabled = options[NetworkProtectionOptionKey.isAuthV2Enabled] as? Bool else {
-                Logger.networkProtection.fault("`isAuthV2Enabled` is missing or invalid")
-                return nil
-            }
-
-            return isAuthV2Enabled
-        }
-    }
-
-    private static func readAuthToken(from options: [String: Any], resetIfNil: Bool) -> StoredOption<String> {
-        StoredOption(resetIfNil: resetIfNil) {
-            guard let authToken = options[NetworkProtectionOptionKey.authToken] as? String,
-                  !authToken.isEmpty else {
-                Logger.networkProtection.warning("`authToken` is missing or invalid")
-                return nil
-            }
-
-            return authToken
-        }
-    }
-
     private static func readTokenContainer(from options: [String: Any], resetIfNil: Bool) -> StoredOption<TokenContainer> {
         StoredOption(resetIfNil: resetIfNil) {
             guard let data = options[NetworkProtectionOptionKey.tokenContainer] as? NSData,

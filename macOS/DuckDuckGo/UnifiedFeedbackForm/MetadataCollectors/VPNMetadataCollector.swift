@@ -157,7 +157,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     func updateSettings() {
         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-        let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        let subscriptionEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         settings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
     }
 

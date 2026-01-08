@@ -18,10 +18,10 @@
 
 #if SPARKLE
 
-import BrowserServicesKit
 import Common
 import Foundation
 import PixelKit
+import PrivacyConfig
 import os.log
 
 /// Orchestrates Wide Event tracking for Sparkle update cycles.
@@ -93,7 +93,7 @@ final class SparkleUpdateWideEvent {
             updateConfiguration: areAutomaticUpdatesEnabled ? .automatic : .manual,
             isInternalUser: internalUserDecider.isInternalUser,
             contextData: WideEventContextData(name: "sparkle_update"),
-            appData: WideEventAppData(internalUser: internalUserDecider.isInternalUser),
+            appData: WideEventAppData(),
             globalData: WideEventGlobalData(id: globalID)
         )
         eventData.totalDuration = .startingNow()

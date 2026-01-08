@@ -176,7 +176,7 @@ private extension VideoPlayerCoordinator {
         player.allowsExternalPlayback = configuration.allowsExternalPlayback
     }
 
-    func performLoadAsset(url: URL, shouldLoopVideo: Bool) async throws  {
+    func performLoadAsset(url: URL, shouldLoopVideo: Bool) async throws {
         let asset = AVURLAsset(url: url)
 
         guard try await asset.load(.isPlayable) else {

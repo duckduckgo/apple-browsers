@@ -1,7 +1,7 @@
 {
   "name": "Neighbor Report",
   "url": "neighbor.report",
-  "version": "0.7.0",
+  "version": "0.9.0",
   "addedDatetime": 1703570400000,
   "optOutUrl": "https://neighbor.report/remove",
   "steps": [
@@ -116,9 +116,8 @@
           "id": "2f4f23f8-4599-48a6-a52c-3ed630114a90",
           "expectations": [
             {
-              "type": "text",
-              "selector": "body",
-              "expect": "How to remove"
+              "type": "element",
+              "selector": "#personName"
             }
           ]
         },
@@ -228,6 +227,16 @@
               "selector": ".btn-success"
             }
           ]
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "h1 .glyphicon-ok"
+            }
+          ],
+          "id": "2f6fa54b-9091-4d40-7d16-877b98af1cac"
         },
         {
           "actionType": "expectation",

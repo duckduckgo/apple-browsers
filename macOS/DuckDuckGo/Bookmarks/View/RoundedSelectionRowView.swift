@@ -20,7 +20,7 @@ import AppKit
 
 final class RoundedSelectionRowView: NSTableRowView {
 
-    private var palette: ColorPalette {
+    private var palette: ThemeColors {
         NSApp.delegateTyped.themeManager.theme.palette
     }
 
@@ -39,6 +39,12 @@ final class RoundedSelectionRowView: NSTableRowView {
         didSet {
             needsDisplay = true
         }
+    }
+
+    var disclosureButton: NSButton? {
+        subviews.first { subview in
+            subview.identifier == NSOutlineView.disclosureButtonIdentifier
+        } as? NSButton
     }
 
     var insets = NSEdgeInsets()

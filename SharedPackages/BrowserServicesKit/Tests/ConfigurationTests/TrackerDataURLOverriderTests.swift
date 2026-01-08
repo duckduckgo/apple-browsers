@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import BrowserServicesKit
+import PrivacyConfig
 import Configuration
 import Combine
 
@@ -168,11 +168,11 @@ private class MockFeatureFlaggerMockSettings: FeatureFlagger {
 
 class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
 
-    var embeddedConfigData: BrowserServicesKit.PrivacyConfigurationManager.ConfigurationData {
+    var embeddedConfigData: PrivacyConfigurationManager.ConfigurationData {
         fatalError("not implemented")
     }
 
-    var fetchedConfigData: BrowserServicesKit.PrivacyConfigurationManager.ConfigurationData? {
+    var fetchedConfigData: PrivacyConfigurationManager.ConfigurationData? {
         fatalError("not implemented")
     }
 
@@ -180,7 +180,7 @@ class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
         Data()
     }
 
-    func reload(etag: String?, data: Data?) -> BrowserServicesKit.PrivacyConfigurationManager.ReloadResult {
+    func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
         fatalError("not implemented")
     }
 
@@ -192,7 +192,7 @@ class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
 class MockPrivacyConfiguration: PrivacyConfiguration {
 
     var isSubfeatureKeyEnabled: ((any PrivacySubfeature, AppVersionProvider) -> Bool)?
-    func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
+    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         isSubfeatureKeyEnabled?(subfeature, versionProvider) ?? false
     }
 
@@ -232,7 +232,7 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
 
     func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] { exceptionsList(featureKey) }
     var isFeatureKeyEnabled: ((PrivacyFeature, AppVersionProvider) -> Bool)?
-    func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {
+    func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool {
         isFeatureKeyEnabled?(featureKey, versionProvider) ?? true
     }
     func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {

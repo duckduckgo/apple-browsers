@@ -21,7 +21,7 @@ import Foundation
 import SwiftUI
 import Core
 import AIChat
-import BrowserServicesKit
+import PrivacyConfig
 
 @MainActor
 protocol DataClearingSettingsViewModelDelegate: AnyObject {
@@ -59,10 +59,6 @@ final class DataClearingSettingsViewModel: ObservableObject {
     
     var newUIEnabled: Bool {
         featureFlagger.isFeatureOn(.granularFireButtonOptions)
-    }
-    
-    var useImprovedPicker: Bool {
-        featureFlagger.isFeatureOn(.mobileCustomization)
     }
     
     var showAIChatsToggle: Bool {

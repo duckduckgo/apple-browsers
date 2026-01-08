@@ -17,13 +17,13 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Common
 import Foundation
 import History
 import os.log
 import PixelKit
+import PrivacyConfig
 import Suggestions
 
 protocol SuggestionContainerProtocol {
@@ -281,7 +281,7 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
 
 }
 
-extension HistoryEntry: HistorySuggestion {
+extension HistoryEntry: @retroactive HistorySuggestion {
 
     public var numberOfVisits: Int {
         return numberOfTotalVisits

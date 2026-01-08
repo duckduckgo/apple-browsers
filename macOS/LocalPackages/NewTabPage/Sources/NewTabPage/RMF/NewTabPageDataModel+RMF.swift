@@ -134,8 +134,6 @@ extension NewTabPageDataModel {
                 self = .criticalUpdate
             case .appUpdate:
                 self = .appUpdate
-            case .privacyShield:
-                self = .subscription
             case .aiChat:
                 self = .duckai
             case .pir:

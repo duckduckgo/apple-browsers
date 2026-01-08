@@ -346,7 +346,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
             ("AppUpdate", .appUpdate),
             ("MacComputer", .macComputer),
             ("NewForMacAndWindows", .newForMacAndWindows),
-            ("PrivacyShield", RemotePlaceholder.privacyShield),
+            ("PrivacyShield", RemotePlaceholder.subscription),
             ("Duck.ai", RemotePlaceholder.aiChat),
             ("VisualDesignUpdate", .visualDesignUpdate),
             ("ImageAI", .imageAI),

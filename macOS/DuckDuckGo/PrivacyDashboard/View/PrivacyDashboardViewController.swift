@@ -19,12 +19,13 @@
 import Cocoa
 import WebKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import PrivacyDashboard
 import Common
 import PixelKit
 import PixelExperimentKit
 import os.log
+import FeatureFlags
 
 protocol PrivacyDashboardViewControllerSizeDelegate: AnyObject {
 
@@ -44,7 +45,7 @@ final class PrivacyDashboardViewController: NSViewController {
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let contentBlocking: ContentBlockingProtocol
 
-    private let themeManager: ThemeManaging
+    private let scriptStyleProvider: ScriptStyleProviding
     private var cancellables = Set<AnyCancellable>()
 
     public let rulesUpdateObserver: ContentBlockingRulesUpdateObserver
@@ -77,9 +78,9 @@ final class PrivacyDashboardViewController: NSViewController {
         case .reportBrokenSiteSent: domainEvent = .brokenSiteReportSent
         }
         if let parameters {
-            PixelKit.fire(NonStandardEvent(domainEvent), withAdditionalParameters: parameters)
+            PixelKit.fire(domainEvent, withAdditionalParameters: parameters, doNotEnforcePrefix: true)
         } else {
-            PixelKit.fire(NonStandardEvent(domainEvent))
+            PixelKit.fire(domainEvent, doNotEnforcePrefix: true)
         }
     }
 
@@ -100,16 +101,17 @@ final class PrivacyDashboardViewController: NSViewController {
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
 
-        self.themeManager = themeManager
+        self.scriptStyleProvider = ScriptStyleProvider(themeManager: themeManager)
         self.contentBlocking = contentBlocking
         // swiftlint:disable:next force_cast
         self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
 
         brokenSiteReporter = {
             BrokenSiteReporter(pixelHandler: { parameters in
-                PixelKit.fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
+                PixelKit.fire(NonStandardPixel.brokenSiteReport,
                               withAdditionalParameters: parameters,
-                              allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
+                              allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters,
+                              doNotEnforcePrefix: true)
             }, keyValueStoring: UserDefaults.standard)
         }()
         super.init(nibName: nil, bundle: nil)
@@ -221,14 +223,17 @@ final class PrivacyDashboardViewController: NSViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         if state.isProtected && configuration.isUserUnprotected(domain: domain) {
             configuration.userEnabledProtection(forDomain: domain)
-            PixelKit.fire(NonStandardEvent(GeneralPixel.dashboardProtectionAllowlistRemove(triggerOrigin: state.eventOrigin.screen.rawValue)))
+            PixelKit.fire(GeneralPixel.dashboardProtectionAllowlistRemove(triggerOrigin: state.eventOrigin.screen.rawValue), doNotEnforcePrefix: true)
         } else {
             configuration.userDisabledProtection(forDomain: domain)
-            PixelKit.fire(NonStandardEvent(GeneralPixel.dashboardProtectionAllowlistAdd(triggerOrigin: state.eventOrigin.screen.rawValue)))
+            PixelKit.fire(GeneralPixel.dashboardProtectionAllowlistAdd(triggerOrigin: state.eventOrigin.screen.rawValue), doNotEnforcePrefix: true)
             let tdsEtag = contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 PixelKit.fire(GeneralPixel.debugBreakageExperiment, frequency: .uniqueByName, withAdditionalParameters: parameters)
             }
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "privacyToggleUsed", conversionWindowDays: 0...1, value: "true")
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "privacyToggleUsed", conversionWindowDays: 0...5, value: "true")
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "privacyToggleUsed", conversionWindowDays: 0...10, value: "true")
         }
 
         let completionToken = contentBlocking.contentBlockingManager.scheduleCompilation()
@@ -239,18 +244,7 @@ final class PrivacyDashboardViewController: NSViewController {
 private extension PrivacyDashboardViewController {
 
     private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .removeDuplicates { old, new in
-                old.name == new.name
-            }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshDashboardStyle()
-            }
-            .store(in: &cancellables)
-
-        themeManager.effectiveAppearancePublisher
-            .removeDuplicates()
+        scriptStyleProvider.themeStylePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshDashboardStyle()
@@ -259,7 +253,7 @@ private extension PrivacyDashboardViewController {
     }
 
     private func refreshDashboardStyle() {
-        let style = PrivacyDashboardStyle(themeName: themeManager.theme.name, appearance: themeManager.effectiveAppearance)
+        let style = PrivacyDashboardStyle(theme: scriptStyleProvider.themeAppearance, themeVariant: scriptStyleProvider.themeName)
         privacyDashboardController.style = style
     }
 }
@@ -333,6 +327,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
             } catch {
                 Logger.general.error("Failed to generate or send the broken site report: \(error.localizedDescription)")
             }
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "breakageReportSent", conversionWindowDays: 0...10, value: "true")
         }
     }
 
@@ -351,6 +346,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
             } catch {
                 Logger.general.error("Failed to generate or send the broken site report: \(error.localizedDescription)")
             }
+            PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "breakageReportSent", conversionWindowDays: 0...10, value: "true")
         }
     }
 
@@ -378,17 +374,18 @@ extension PrivacyDashboardViewController {
         return webVitalsResult
     }
 
-    private func calculateExpandedWebVitals(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> PerformanceMetrics? {
-        var expandedWebVitalsResult: PerformanceMetrics?
+    private func collectBreakageReportData(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> BreakageReportData? {
+        var breakageReportData: BreakageReportData?
         if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            expandedWebVitalsResult = await withCheckedContinuation({ continuation in
+            breakageReportData = await withCheckedContinuation({ continuation in
                 guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-                breakageReportingSubfeature.notifyHandler { result in
+                breakageReportingSubfeature.notifyHandler { metrics, detectorData in
+                    let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
                     continuation.resume(returning: result)
                 }
             })
         }
-        return expandedWebVitalsResult
+        return breakageReportData
     }
 
     private func isPirEnabledAndUserHasProfile() async -> Bool {
@@ -421,8 +418,9 @@ extension PrivacyDashboardViewController {
 
         let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, privacyConfig: configuration)
 
-        let expandedWebVitals = await calculateExpandedWebVitals(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
-        let privacyAwareWebVitals = expandedWebVitals?.privacyAwareMetrics()
+        let breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
+        let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
+        let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
 
         var errors: [Error]?
         var statusCodes: [Int]?
@@ -461,7 +459,8 @@ extension PrivacyDashboardViewController {
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
                                                isPirEnabled: isPirEnabled,
-                                               pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming)
+                                               pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming,
+                                               detectorMetrics: detectorMetrics)
         return websiteBreakage
     }
 }

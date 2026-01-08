@@ -28,6 +28,7 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
+import PrivacyConfig
 import SwiftUI
 
 extension DataBrokerProtectionSettings: @retroactive AppRunTypeProviding {
@@ -49,7 +50,8 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   subscriptionManager: DataBrokerProtectionSubscriptionManaging,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View),
-                                  eventsHandler: EventMapping<JobEvent>) -> DataBrokerProtectionIOSManager? {
+                                  eventsHandler: EventMapping<JobEvent>,
+                                  isWebViewInspectable: Bool = false) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -153,7 +155,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             settings: dbpSettings,
             subscriptionManager: subscriptionManager,
             wideEvent: wideEvent,
-            eventsHandler: eventsHandler
+            eventsHandler: eventsHandler,
+            isWebViewInspectable: isWebViewInspectable
         )
     }
 }

@@ -200,9 +200,10 @@ public final class PixelKit {
                      withNamePrefix namePrefix: String? = nil,
                      allowedQueryReservedCharacters: CharacterSet? = nil,
                      includeAppVersionParameter: Bool = true,
+                     doNotEnforcePrefix: Bool = false,
                      onComplete: @escaping CompletionBlock = { _, _ in }) {
 
-        let pixelName = prefixedAndSuffixedName(for: event, namePrefix: namePrefix)
+        let pixelName = prefixedAndSuffixedName(for: event, namePrefix: namePrefix, doNotEnforcePrefix: doNotEnforcePrefix)
 
         if !dryRun {
             if frequency == .daily, pixelHasBeenFiredToday(pixelName) {
@@ -252,6 +253,7 @@ public final class PixelKit {
                             withNamePrefix namePrefix: String? = nil,
                             allowedQueryReservedCharacters: CharacterSet? = nil,
                             includeAppVersionParameter: Bool = true,
+                            doNotEnforcePrefix: Bool = false,
                             onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         Self.shared?.fire(event,
@@ -261,6 +263,7 @@ public final class PixelKit {
                           withNamePrefix: namePrefix,
                           allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                           includeAppVersionParameter: includeAppVersionParameter,
+                          doNotEnforcePrefix: doNotEnforcePrefix,
                           onComplete: onComplete)
     }
 
@@ -563,7 +566,7 @@ public final class PixelKit {
             fireRequest(pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete)
         }
 
-    private func prefixedAndSuffixedName(for event: PixelKitEvent, namePrefix: String?) -> String {
+    private func prefixedAndSuffixedName(for event: PixelKitEvent, namePrefix: String?, doNotEnforcePrefix: Bool = false) -> String {
 
         if let pixelWithCustomPrefix = event as? PixelKitEventWithCustomPrefix {
             return pixelWithCustomPrefix.namePrefix + event.name + platformSuffix
@@ -587,9 +590,9 @@ public final class PixelKit {
         } else if let debugEvent = event as? DebugEvent {
             // Is a Debug event not already prefixed
             return "m_mac_debug_\(debugEvent.name)"
-        } else if let nonStandardEvent = event as? NonStandardEvent {
-            // Special kind of pixel event that don't follow the standard naming conventions
-            return nonStandardEvent.name
+        } else if doNotEnforcePrefix {
+            // For pixels event that don't follow the standard naming conventions
+            return pixelName
         } else {
             return "m_mac_\(pixelName)"
         }

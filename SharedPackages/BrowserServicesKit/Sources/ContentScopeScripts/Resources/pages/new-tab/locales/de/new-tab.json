@@ -8,6 +8,10 @@
       "instruction" : "*/note"
     }]
   },
+  "newBadge" : {
+    "title" : "Neu",
+    "note" : "Badge text indicating a new feature."
+  },
   "ntp_show_less" : {
     "title" : "Weniger anzeigen",
     "note" : "Button that reduces the number of items or content displayed."
@@ -31,6 +35,14 @@
   "ntp_popover_close_button" : {
     "title" : "Schließen",
     "note" : "Button that closes the current popover."
+  },
+  "customizer_themeVariantPopoverTitle" : {
+    "title" : "Wähle ein Farbschema, das zu dir passt.",
+    "note" : "Title for the popover that introduces the theme variant customization feature."
+  },
+  "customizer_themeVariantPopoverDescription" : {
+    "title" : "Du kannst jetzt eine Farbe für den gewünschten Look auswählen. Probier’s doch mal aus!",
+    "note" : "Description message in the theme variant popover."
   },
   "updateNotification_updated_version" : {
     "title" : "Browser auf Version {version} aktualisiert.",
@@ -59,10 +71,6 @@
   "protections_noRecent" : {
     "title" : "Keine aktuellen Tracking-Aktivitäten",
     "note" : "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
-  },
-  "protections_newBadge" : {
-    "title" : "Neu",
-    "note" : "Text displayed in a badge to indicate a new feature or statistic."
   },
   "stats_menuTitle" : {
     "title" : "Blockierte Tracking-Versuche",
@@ -215,10 +223,6 @@
   "omnibar_customizePopoverTitle" : {
     "title" : "Wechseln zwischen Suche und KI-Chat",
     "description" : "Title for the popover that introduces the search/AI toggle feature."
-  },
-  "omnibar_customizePopoverBadge" : {
-    "title" : "Neu",
-    "description" : "Badge text for the popover that introduces the search/AI toggle feature."
   },
   "omnibar_customizePopoverDescription" : {
     "title" : "Deine Daten bleiben auf jeden Fall privat.<br />Du möchtest das nicht? <button>Anpassen</button>",
@@ -415,6 +419,46 @@
   "customizer_image_delete" : {
     "title" : "Bild {number} löschen",
     "note" : "Label text on a button that deletes an image. {number} will be replaced with a numeric reference of 1-8, eg: 'Delete image 1'"
+  },
+  "customizer_section_title_theme_variant" : {
+    "title" : "Design",
+    "note" : "Section title for theme selection including theme variants"
+  },
+  "customizer_theme_variant_grid_label" : {
+    "title" : "Designoption",
+    "note" : "Accessibility label for the grid of theme variant options (Default, Cool Grey, Slate, etc.)"
+  },
+  "customizer_theme_variant_default" : {
+    "title" : "Standard",
+    "note" : "Label for the default theme variant"
+  },
+  "customizer_theme_variant_coolGray" : {
+    "title" : "Kühles Grau",
+    "note" : "Label for the cool grey theme variant"
+  },
+  "customizer_theme_variant_slateBlue" : {
+    "title" : "Schiefer",
+    "note" : "Label for the slate blue theme variant"
+  },
+  "customizer_theme_variant_green" : {
+    "title" : "Grün",
+    "note" : "Label for the green theme variant"
+  },
+  "customizer_theme_variant_violet" : {
+    "title" : "Violett",
+    "note" : "Label for the violet theme variant"
+  },
+  "customizer_theme_variant_rose" : {
+    "title" : "Rosa",
+    "note" : "Label for the rose theme variant"
+  },
+  "customizer_theme_variant_orange" : {
+    "title" : "Orange",
+    "note" : "Label for the orange theme variant"
+  },
+  "customizer_theme_variant_desert" : {
+    "title" : "Wüste",
+    "note" : "Label for the desert theme variant"
   },
   "activity_noRecent_title" : {
     "title" : "Keine kürzliche Browsing-Aktivität",

@@ -27,6 +27,7 @@ import DesignResourcesKitIcons
 import Combine
 import DDGSync
 import AuthenticationServices
+import PrivacyConfig
 
 protocol AutofillSettingsViewModelDelegate: AnyObject {
     func navigateToPasswords(viewModel: AutofillSettingsViewModel)

@@ -18,7 +18,7 @@
 //
 
 @testable import DuckDuckGo
-import BrowserServicesKit
+import PrivacyConfig
 
 extension DefaultScriptSourceProvider.Dependencies {
 

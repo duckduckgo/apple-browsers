@@ -20,7 +20,7 @@ import Foundation
 import Combine
 import FeatureFlags
 import PrivacyDashboard
-import BrowserServicesKit
+import PrivacyConfig
 import AppKit
 
 typealias PrivacyDashboardPermissionAuthorizationState = [(permission: PermissionType, state: PermissionAuthorizationState)]

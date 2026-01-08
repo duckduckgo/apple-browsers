@@ -23,6 +23,7 @@ import ContentBlocking
 import Foundation
 import Navigation
 import PrivacyDashboard
+import PrivacyConfig
 import TrackerRadarKit
 import WebKit
 import os.log

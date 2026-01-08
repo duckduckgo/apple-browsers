@@ -28,6 +28,7 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import PrivacyConfig
 import FeatureFlags
 
 // This is to avoid exposing all the dependancies outside of the DBP package
@@ -299,7 +300,7 @@ extension DataBrokerProtectionAgentManager {
         let database = jobDependencies.database
         let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler, repository: engagementPixelRepository)
         let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
-        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler, repository: statsPixelRepository)
+        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler, featureFlagger: jobDependencies.featureFlagger, repository: statsPixelRepository)
 
         // This will fire the DAU/WAU/MAU pixels,
         engagementPixels.fireEngagementPixel(isAuthenticated: isAuthenticated)

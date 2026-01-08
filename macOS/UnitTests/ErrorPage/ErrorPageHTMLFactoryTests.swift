@@ -18,6 +18,7 @@
 
 import Foundation
 import MaliciousSiteProtection
+import PrivacyConfig
 import SpecialErrorPages
 import WebKit
 import XCTest

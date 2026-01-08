@@ -41,6 +41,11 @@ final class BookmarksOutlineView: NSOutlineView {
     private var highlightedRowView: RoundedSelectionRowView?
     private var highlightedCellView: BookmarkOutlineCellView?
 
+    private var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    private var palette: ThemeColors {
+        themeManager.theme.palette
+    }
+
     private var bookmarksDataSource: BookmarksOutlineViewDataSource? {
         dataSource as? BookmarksOutlineViewDataSource
     }
@@ -52,6 +57,7 @@ final class BookmarksOutlineView: NSOutlineView {
             }
             highlightedRowView?.highlight = false
             highlightedCellView?.highlight = false
+
             guard let row = highlightedRow, row < numberOfRows else { return }
             if case .keyDown = NSApp.currentEvent?.type {
                 scrollRowToVisible(row)
@@ -60,12 +66,22 @@ final class BookmarksOutlineView: NSOutlineView {
             let item = item(atRow: row) as? BookmarkNode
             let rowView = rowView(atRow: row, makeIfNecessary: false) as? RoundedSelectionRowView
             rowView?.highlight = item?.canBeHighlighted ?? false
-            highlightedRowView = rowView
 
             let cellView = self.view(atColumn: 0, row: row, makeIfNecessary: false) as? BookmarkOutlineCellView
             cellView?.highlight = item?.canBeHighlighted ?? false
+
+            refreshDisclosureButtonTint(previousDisclosureButton: highlightedRowView?.disclosureButton,
+                                        latestDisclosureButton: rowView?.disclosureButton,
+                                        itemAllowsHighlight: item?.canBeHighlighted ?? false)
+
+            highlightedRowView = rowView
             highlightedCellView = cellView
         }
+    }
+
+    private func refreshDisclosureButtonTint(previousDisclosureButton: NSButton?, latestDisclosureButton: NSButton?, itemAllowsHighlight: Bool) {
+        previousDisclosureButton?.contentTintColor = palette.iconsPrimary
+        latestDisclosureButton?.contentTintColor = itemAllowsHighlight ? palette.accentContentPrimary : palette.iconsPrimary
     }
 
     /// popover displaying this Bookmarks Menu

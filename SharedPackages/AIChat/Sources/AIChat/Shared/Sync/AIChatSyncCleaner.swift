@@ -84,6 +84,10 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     ///
     /// This is used to avoid deleting server-side AI Chats before a local AutoClear actually runs.
     public func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async {
+        guard canUseAIChatSyncDelete else {
+            return
+        }
+
         await state.promoteAutoClearToLastClear()
     }
 

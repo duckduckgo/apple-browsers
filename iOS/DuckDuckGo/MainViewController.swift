@@ -28,7 +28,6 @@ import Kingfisher
 import BrowserServicesKit
 import Bookmarks
 import Persistence
-//import AIChat
 import PrivacyDashboard
 import Networking
 import Suggestions

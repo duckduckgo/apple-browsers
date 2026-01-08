@@ -30,7 +30,6 @@ public protocol NewTabPageCustomBackgroundProviding: AnyObject {
 
     var theme: NewTabPageDataModel.Theme? { get set }
     var themeVariant: NewTabPageDataModel.ThemeVariant? { get set }
-    var themePopoverDismissed: Bool { get set }
     var themeStylePublisher: AnyPublisher<(NewTabPageDataModel.Theme?, NewTabPageDataModel.ThemeVariant?), Never> { get }
 
     var userImagesPublisher: AnyPublisher<[NewTabPageDataModel.UserImage], Never> { get }

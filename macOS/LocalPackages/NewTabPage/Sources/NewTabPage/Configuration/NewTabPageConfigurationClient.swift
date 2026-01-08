@@ -124,7 +124,6 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         case widgetsSetConfig = "widgets_setConfig"
         case widgetsOnConfigUpdated = "widgets_onConfigUpdated"
         case tabsOnDataUpdate = "tabs_onDataUpdate"
-        case themesPopoverDismissed = "customizer_dismissThemeVariantPopover"
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -134,7 +133,6 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             MessageName.open.rawValue: { [weak self] in try await self?.open(params: $0, original: $1) },
             MessageName.reportInitException.rawValue: { [weak self] in try await self?.reportException(params: $0, original: $1) },
             MessageName.reportPageException.rawValue: { [weak self] in try await self?.reportException(params: $0, original: $1) },
-            MessageName.themesPopoverDismissed.rawValue: { [weak self] in try await self?.themesPopoverWasDismissed(params: $0, original: $1) },
             MessageName.widgetsSetConfig.rawValue: { [weak self] in try await self?.widgetsSetConfig(params: $0, original: $1) }
         ])
     }
@@ -247,12 +245,6 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             contextMenuPresenter.showContextMenu(menu)
         }
 
-        return nil
-    }
-
-    @MainActor
-    private func themesPopoverWasDismissed(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        customBackgroundProvider.themePopoverDismissed = true
         return nil
     }
 

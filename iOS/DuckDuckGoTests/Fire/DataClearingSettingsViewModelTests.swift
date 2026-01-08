@@ -109,28 +109,6 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.newUIEnabled)
     }
 
-    func testWhenMobileCustomizationFlagIsOnThenUseImprovedPickerIsTrue() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.mobileCustomization]
-
-        // When
-        let viewModel = makeViewModel()
-
-        // Then
-        XCTAssertTrue(viewModel.useImprovedPicker)
-    }
-
-    func testWhenMobileCustomizationFlagIsOffThenUseImprovedPickerIsFalse() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
-
-        // When
-        let viewModel = makeViewModel()
-
-        // Then
-        XCTAssertFalse(viewModel.useImprovedPicker)
-    }
-
     // MARK: - AI Chat Toggle Visibility Tests
 
     func testWhenNewUIEnabledThenShowAIChatsToggleIsFalse() {

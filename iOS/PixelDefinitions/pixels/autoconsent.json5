@@ -7,13 +7,6 @@
         "suffixes": ["form_factor", "daily"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "m_autoconsent_missed-popup_ios": {
-        "description": "If heuristics detected a potential popup on a page, but autoconsent did not find anything.",
-        "owners": ["sammacbeth"],
-        "triggers": ["page_load"],
-        "suffixes": ["form_factor", "daily"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
     "m_autoconsent_error_multiple-popups_ios": {
         "description": "Autoconsent error state when multiple valid rules were matched on a page.",
         "owners": ["sammacbeth"],
@@ -116,11 +109,6 @@
             {
                 "key": "init",
                 "description": "Number of autoconsent init pixels fired.",
-                "type": "number"
-            },
-            {
-                "key": "missed-popup",
-                "description": "Number of autoconsent missed-popup pixels fired.",
                 "type": "number"
             },
             {

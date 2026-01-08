@@ -1301,7 +1301,7 @@ extension MainViewController {
     }
 
     @objc func debugShiftNewTabOpeningDateNtimes(_ sender: Any?) {
-        for _ in 0..<AppearancePreferences.Constants.dismissNextStepsCardsAfterDays {
+        for _ in 0..<NSApp.delegateTyped.appearancePreferences.maxNextStepsCardsDemonstrationDays {
             debugShiftNewTabOpeningDate(sender)
         }
     }

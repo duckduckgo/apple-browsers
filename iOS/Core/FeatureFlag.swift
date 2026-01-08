@@ -212,9 +212,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866613993355
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472511092
-    case mobileCustomization
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
 
@@ -356,7 +353,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .winBackOffer,
              .syncCreditCards,
              .unifiedURLPredictor,
-             .mobileCustomization,
              .vpnMenuItem,
              .forgetAllInSettings,
              .onboardingSearchExperience,
@@ -552,8 +548,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .mobileCustomization:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customization))
         case .vpnMenuItem:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
         case .forgetAllInSettings:

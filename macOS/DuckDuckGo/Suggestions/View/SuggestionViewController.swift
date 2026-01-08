@@ -83,7 +83,7 @@ final class SuggestionViewController: NSViewController {
 
         tableView.delegate = self
         tableView.dataSource = self
-f        setupTableView()
+        setupTableView()
         addTrackingArea()
         subscribeToSuggestionResult()
         subscribeToSelectionSync()

@@ -55,6 +55,7 @@ final class SuggestionContainerViewModel {
     private let featureFlagger: FeatureFlagger
     private let isAIFeaturesEnabled: Bool
     private var suggestionResultCancellable: AnyCancellable?
+    private var cachedRowContents: [SuggestionRowContent]?
 
     init(isHomePage: Bool,
          isBurner: Bool,
@@ -123,6 +124,10 @@ final class SuggestionContainerViewModel {
         return userInputIsURL
     }
 
+    private func invalidateRowContentsCache() {
+        cachedRowContents = nil
+    }
+
     var numberOfHeaderRows: Int {
         var count = 0
         if shouldShowVisitCell { count += 1 }
@@ -160,7 +165,11 @@ final class SuggestionContainerViewModel {
 
     /// Returns the type of content to display for the given row index.
     func rowContent(at row: Int) -> SuggestionRowContent? {
-        let contents = buildRowContents()
+        let contents = cachedRowContents ?? {
+            let built = buildRowContents()
+            cachedRowContents = built
+            return built
+        }()
         guard row >= 0, row < contents.count else { return nil }
         return contents[row]
     }
@@ -317,6 +326,7 @@ final class SuggestionContainerViewModel {
         suggestionResultCancellable = suggestionContainer.$result
             .sink { [weak self] result in
                 guard let self else { return }
+                self.invalidateRowContentsCache()
                 do {
                     try validateShouldSelectTopSuggestion(from: result)
                 } catch {
@@ -335,6 +345,7 @@ final class SuggestionContainerViewModel {
 
         let oldValue = self.userStringValue
         self.userStringValue = userStringValue
+        invalidateRowContentsCache()
 
         guard !userStringValue.isEmpty else {
             hasAutoSelectedSuggestion = false
@@ -355,6 +366,7 @@ final class SuggestionContainerViewModel {
     func clearUserStringValue() {
         self.userStringValue = nil
         hasAutoSelectedSuggestion = false
+        invalidateRowContentsCache()
         suggestionContainer.stopGettingSuggestions()
     }
 

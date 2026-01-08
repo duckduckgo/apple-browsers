@@ -32,7 +32,6 @@ protocol AppearancePreferencesPersistor {
     var showFullURL: Bool { get set }
     var themeAppearance: String { get set }
     var themeName: String { get set }
-    var themePopoverDismissed: Bool { get set }
     var syncAppIconWithTheme: Bool { get set }
     var favoritesDisplayMode: String? { get set }
     var isOmnibarVisible: Bool { get set }
@@ -83,9 +82,6 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
 
     @UserDefaultsWrapper(key: .themeName, defaultValue: ThemeName.default.rawValue)
     var themeName: String
-
-    @UserDefaultsWrapper(key: .themePopoverDismissed, defaultValue: false)
-    var themePopoverDismissed: Bool
 
     @UserDefaultsWrapper(key: .syncAppIconWithTheme, defaultValue: false)
     var syncAppIconWithTheme: Bool
@@ -265,12 +261,6 @@ final class AppearancePreferences: ObservableObject {
     @Published var themeName: ThemeName {
         didSet {
             persistor.themeName = themeName.rawValue
-        }
-    }
-
-    @Published var themePopoverDismissed: Bool {
-        didSet {
-            persistor.themePopoverDismissed = themePopoverDismissed
         }
     }
 
@@ -475,7 +465,6 @@ final class AppearancePreferences: ObservableObject {
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         themeName = .init(rawValue: persistor.themeName) ?? .default
-        themePopoverDismissed = persistor.themePopoverDismissed
         syncAppIconWithTheme = persistor.syncAppIconWithTheme
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default

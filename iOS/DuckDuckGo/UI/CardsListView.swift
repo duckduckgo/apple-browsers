@@ -98,7 +98,6 @@ extension RemoteMessagingUI {
                 .foregroundStyle(Color.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, Metrics.Section.sectionLeadingPadding)
-                .padding(.top, Metrics.Section.sectionTopPadding - Metrics.CardsList.cardsVerticalSpacing)
         }
     }
 
@@ -191,6 +190,9 @@ private extension RemoteMessagingUI.CardsListView {
                         switch items[index] {
                         case let .section(title):
                             RemoteMessagingUI.TitledListSection(title: title)
+                                .if(index > 0) { titledSection in
+                                    titledSection.padding(.top, Metrics.Section.sectionTopPadding - Metrics.CardsList.cardsVerticalSpacing)
+                                }
                         case let .twoLinesCard(cardInfo):
                             RemoteMessagingUI.TwoLinesCardView(displayModel: cardInfo)
                         }
@@ -426,6 +428,14 @@ struct CardsList_Previews: PreviewProvider {
         cardsList(items: items + sectionWithItems, shouldShowAction: true)
             .previewDisplayName("What’s New + Section - Light Mode")
             .preferredColorScheme(.light)
+
+        cardsList(items: sectionWithItems, shouldShowAction: true)
+            .previewDisplayName("What’s New + Section First Place - Light Mode")
+            .preferredColorScheme(.light)
+
+        cardsList(items: sectionWithItems, shouldShowAction: true)
+            .previewDisplayName("What’s New + Section First Place - Dark Mode")
+            .preferredColorScheme(.dark)
 
         cardsList(items: items + items + items, shouldShowAction: true)
             .previewDisplayName("What’s New - Multiple Items")

@@ -27,7 +27,7 @@ public extension RemoteMessageModel {
         placeholder: RemotePlaceholder? = nil,
         items: [RemoteMessageModelType.ListItem] = [],
         primaryActionText: String = "Done",
-        primaryAction: RemoteAction = .dismiss,
+        primaryAction: RemoteAction = .dismiss
     ) -> RemoteMessageModel {
         let content: RemoteMessageModelType = .cardsList(
             titleText: titleText,

@@ -49,7 +49,18 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
     }
 
     var isViewExpandedPublisher: AnyPublisher<Bool, Never> {
-        activeProvider.isViewExpandedPublisher
+        featureFlagger.updatesPublisher
+            .prepend(())
+            .map { [weak self] _ -> AnyPublisher<Bool, Never> in
+                guard let self else {
+                    return Empty<Bool, Never>().eraseToAnyPublisher()
+                }
+                return self.activeProvider.isViewExpandedPublisher
+                    .removeDuplicates()
+                    .eraseToAnyPublisher()
+            }
+            .switchToLatest()
+            .eraseToAnyPublisher()
     }
 
     var cards: [NewTabPageDataModel.CardID] {
@@ -57,7 +68,18 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
     }
 
     var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> {
-        activeProvider.cardsPublisher
+        featureFlagger.updatesPublisher
+            .prepend(())
+            .map { [weak self] _ -> AnyPublisher<[NewTabPageDataModel.CardID], Never> in
+                guard let self else {
+                    return Empty<[NewTabPageDataModel.CardID], Never>().eraseToAnyPublisher()
+                }
+                return self.activeProvider.cardsPublisher
+                    .removeDuplicates()
+                    .eraseToAnyPublisher()
+            }
+            .switchToLatest()
+            .eraseToAnyPublisher()
     }
 
     @MainActor

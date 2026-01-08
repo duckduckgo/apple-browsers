@@ -124,7 +124,16 @@ extension NewTabPageActionsManager {
             getLegacyIsViewExpandedSetting: UserDefaultsWrapper<Bool>(key: .homePageShowAllFavorites, defaultValue: true).wrappedValue
         )
 
-        let customizationProvider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
+        let themePopoverPersistor = ThemePopoverUserDefaultsPersistor(keyValueStore: keyValueStore)
+        let themePopoverDecider = ThemePopoverDecider(featureFlagger: featureFlagger,
+                                                      persistor: themePopoverPersistor,
+                                                      firstLaunchDate: AppDelegate.firstLaunchDate)
+
+        let customizationProvider = NewTabPageCustomizationProvider(
+            customizationModel: customizationModel,
+            appearancePreferences: appearancePreferences,
+            themePopoverDecider: themePopoverDecider
+        )
         let freemiumDBPBannerProvider = NewTabPageFreemiumDBPBannerProvider(model: freemiumDBPPromotionViewCoordinator)
         let winBackOfferBannerProvider = NewTabPageWinBackOfferBannerProvider(model: winBackOfferPromotionViewCoordinator)
 

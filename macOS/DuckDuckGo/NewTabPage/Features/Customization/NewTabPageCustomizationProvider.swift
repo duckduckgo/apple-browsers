@@ -24,10 +24,12 @@ import SwiftUI
 final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding {
     let customizationModel: NewTabPageCustomizationModel
     let appearancePreferences: AppearancePreferences
+    let themePopoverDecider: ThemePopoverDeciding
 
-    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences) {
+    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences, themePopoverDecider: ThemePopoverDeciding) {
         self.customizationModel = customizationModel
         self.appearancePreferences = appearancePreferences
+        self.themePopoverDecider = themePopoverDecider
     }
 
     var customizerOpener: NewTabPageCustomizerOpener {
@@ -37,7 +39,7 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
     var customizerData: NewTabPageDataModel.CustomizerData {
         .init(
             background: .init(customizationModel.customBackground),
-            showThemeVariantPopover: appearancePreferences.areThemesAvailable && !appearancePreferences.themePopoverDismissed,
+            showThemeVariantPopover: themePopoverDecider.shouldShowPopover,
             theme: .init(appearancePreferences.themeAppearance),
             themeVariant: appearancePreferences.areThemesAvailable ? .init(rawValue: appearancePreferences.themeName.rawValue) : nil,
             userColor: customizationModel.lastPickedCustomColor,
@@ -78,15 +80,6 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
             let newThemeName = ThemeName(newValue)
             appearancePreferences.themeName = newThemeName
             PixelKit.fire(SettingsPixel.themeNameChanged(name: newThemeName, source: .newTabPage), frequency: .standard)
-        }
-    }
-
-    var themePopoverDismissed: Bool {
-        get {
-            appearancePreferences.themePopoverDismissed
-        }
-        set {
-            appearancePreferences.themePopoverDismissed = newValue
         }
     }
 

@@ -109,6 +109,7 @@ final class BrowserTabViewController: NSViewController {
     private var duckPlayerConsentCancellable: AnyCancellable?
     private var pinnedTabsDelegatesCancellable: AnyCancellable?
     private var keyWindowSelectedTabCancellable: AnyCancellable?
+    private var contentOverlayDismissalCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
 
     private weak var previouslySelectedTab: Tab?
@@ -250,7 +251,6 @@ final class BrowserTabViewController: NSViewController {
         subscribeToTabs()
         subscribeToSelectedTabViewModel()
         addMouseMonitors()
-        subscribeToContentOverlayDismissal()
     }
 
     override func viewWillDisappear() {
@@ -1234,17 +1234,12 @@ final class BrowserTabViewController: NSViewController {
                 tld: tld
             )
             self.contentOverlayPopover = overlayPopover
-            subscribeToContentOverlayDismissal()
-            return overlayPopover
-        }()
-    }
-
-    private func subscribeToContentOverlayDismissal() {
-        guard let overlayPopover = contentOverlayPopover else { return }
-            windowControllersManager.stateChanged
+            self.contentOverlayDismissalCancellable = windowControllersManager.stateChanged
                 .sink { [weak overlayPopover] _ in
                     overlayPopover?.viewController.closeContentOverlayPopover()
-                }.store(in: &self.cancellables)
+                }
+            return overlayPopover
+        }()
     }
 
     // MARK: - Alerts

@@ -211,6 +211,47 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         XCTAssertNil(legacyCardsProviderPixelHandler.fireNextStepsCardShownPixelsCalledWith)
     }
 
+    @MainActor
+    func testWhenFeatureFlagIsOn_ThenCardsPublisher_EmitsChangesFromSingleCardProvider() {
+        featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
+        facade = NewTabPageNextStepsCardsProviderFacade(
+            featureFlagger: featureFlagger,
+            singleCardProvider: singleCardProvider,
+            legacyProvider: legacyCardsProvider
+        )
+
+        var receivedCards: [[NewTabPageDataModel.CardID]] = []
+        let cancellable = facade.cardsPublisher.sink { cards in
+            receivedCards.append(cards)
+        }
+
+        // Trigger change
+        singleCardProvider.dismiss(.defaultApp)
+        cancellable.cancel()
+
+        XCTAssertEqual(receivedCards, [NewTabPageDataModel.CardID.allCases.filter({ $0 != .defaultApp })])
+    }
+
+    func testWhenFeatureFlagIsOn_ThenIsViewExpandedPublisher_EmitsChangesSingleCardProvider() {
+        featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
+        facade = NewTabPageNextStepsCardsProviderFacade(
+            featureFlagger: featureFlagger,
+            singleCardProvider: singleCardProvider,
+            legacyProvider: legacyCardsProvider
+        )
+
+        var receivedValues: [Bool] = []
+        let cancellable = facade.isViewExpandedPublisher.sink { value in
+            receivedValues.append(value)
+        }
+
+        // Trigger change
+        singleCardProvider.isViewExpanded = true
+        cancellable.cancel()
+
+        XCTAssertEqual(receivedValues, [true])
+    }
+
     // MARK: - Dynamic Flag Switching
 
     @MainActor

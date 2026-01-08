@@ -250,6 +250,7 @@ final class BrowserTabViewController: NSViewController {
         subscribeToTabs()
         subscribeToSelectedTabViewModel()
         addMouseMonitors()
+        subscribeToContentOverlayDismissal()
     }
 
     override func viewWillDisappear() {
@@ -1233,12 +1234,17 @@ final class BrowserTabViewController: NSViewController {
                 tld: tld
             )
             self.contentOverlayPopover = overlayPopover
+            subscribeToContentOverlayDismissal()
+            return overlayPopover
+        }()
+    }
+
+    private func subscribeToContentOverlayDismissal() {
+        guard let overlayPopover = contentOverlayPopover else { return }
             windowControllersManager.stateChanged
                 .sink { [weak overlayPopover] _ in
                     overlayPopover?.viewController.closeContentOverlayPopover()
                 }.store(in: &self.cancellables)
-            return overlayPopover
-        }()
     }
 
     // MARK: - Alerts

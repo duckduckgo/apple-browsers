@@ -44,7 +44,8 @@ struct SettingsOthersView: View {
             NavigationLink(destination: AboutView().environmentObject(viewModel)) {
 #if (ALPHA && !DEBUG)
                 // The commit SHA is only set for release alpha builds, so debug alpha builds won't show it
-                let version = "v\(viewModel.state.version) (\(AppVersion.shared.commitSHAShort))"
+                let commitSuffix = AppVersion.shared.commitSHAShort.isEmpty ? "" : " (\(AppVersion.shared.commitSHAShort))"
+                let version = "v\(viewModel.state.version)\(commitSuffix)"
 #else
                 let version = "v\(viewModel.state.version)"
 #endif

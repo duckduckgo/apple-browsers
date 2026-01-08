@@ -2514,6 +2514,7 @@
 		4B6701282E3BE3660066176A /* LogViewerDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewerDataSource.swift; sourceTree = "<group>"; };
 		4B6701292E3BE3660066176A /* LogViewerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewerViewController.swift; sourceTree = "<group>"; };
 		4B6D43042F0F64E0006AB68F /* PacketTunnelProviderExperimental.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PacketTunnelProviderExperimental.entitlements; sourceTree = "<group>"; };
+		4B6D43062F0F6988006AB68F /* Info-Experimental.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-Experimental.plist"; sourceTree = "<group>"; };
 		4B6ED9442B992FE4007F5CAA /* vpn-dark-mode.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vpn-dark-mode.json"; sourceTree = "<group>"; };
 		4B74A1C02E49510400277779 /* NetworkProtectionLogViewerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionLogViewerViewController.swift; sourceTree = "<group>"; };
 		4B74A1C22E49512500277779 /* NetworkProtectionLogManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionLogManager.swift; sourceTree = "<group>"; };
@@ -6380,6 +6381,7 @@
 				85F2FFFE2215C163006BB258 /* FindInPage */,
 				809F9D142EE12CF600943E8A /* Fire */,
 				84E341A11E2F7EFB00BDBA6F /* Info.plist */,
+				4B6D43062F0F6988006AB68F /* Info-Experimental.plist */,
 				98B001B1251EABB40090EC07 /* InfoPlist.strings */,
 				85DFEDEB24C7CC7600973FE7 /* iPad */,
 				F1C5ECFA1E37B15B00C599A4 /* Main */,
@@ -13819,7 +13821,7 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HKE973VLUW;
 				ENABLE_TESTABILITY = NO;
-				INFOPLIST_FILE = DuckDuckGo/Info.plist;
+				INFOPLIST_FILE = "DuckDuckGo/Info-Experimental.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

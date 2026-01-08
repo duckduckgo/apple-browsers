@@ -30,8 +30,6 @@ public final class DataBrokerProtectionSettings {
 
     public enum Keys {
         public static let runType = "dbp.environment.run-type"
-        static let isAuthV2Enabled = "dbp.environment.isAuthV2Enabled"
-
         static let mainConfigETagKey = "dbp.mainConfigETag"
         static let serviceRootKey = "dbp.serviceRoot"
         static let lastBrokerJSONUpdateCheckTimestampKey = "dbp.lastBrokerJSONUpdateCheckTimestamp"
@@ -57,15 +55,6 @@ public final class DataBrokerProtectionSettings {
 
         set {
             defaults.dataBrokerProtectionSelectedEnvironment = newValue
-        }
-    }
-
-    public var isAuthV2Enabled: Bool {
-        get {
-            defaults.value(forKey: Keys.isAuthV2Enabled) as? Bool ?? false
-        }
-        set {
-            defaults.setValue(newValue, forKey: Keys.isAuthV2Enabled)
         }
     }
 

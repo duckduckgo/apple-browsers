@@ -220,12 +220,18 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
             allResourcesCompleteMs = Int(duration * 1000)
         }
 
+        // Pass CPM heuristic experiment cohort
+        var additionalParams: [String: String] = [:]
+        if let cohort = featureFlagger.resolveCohort(for: FeatureFlag.heuristicAction) as? FeatureFlag.HeuristicActionCohort {
+            additionalParams["consentHeuristicEnabled"] = cohort == .treatment ? "1" : "0"
+        }
+
         // Fire the updated pixel with comprehensive timing data
         pixelFiring?.fire(SiteLoadingPixel.siteLoadingTiming(
             firstVisualLayoutMs: firstVisualLayoutMs,
             firstMeaningfulPaintMs: firstMeaningfulPaintMs,
             documentCompleteMs: documentCompleteMs,
             allResourcesCompleteMs: allResourcesCompleteMs
-        ))
+        ), frequency: .standard, withAdditionalParameters: additionalParams)
     }
 }

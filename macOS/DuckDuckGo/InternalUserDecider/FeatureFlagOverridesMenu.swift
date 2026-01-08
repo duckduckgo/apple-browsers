@@ -298,7 +298,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
         submenu.addItem(NSMenuItem.separator())
 
         // "Remove Override" only if an override exists
-        let removeOverrideItem = removeOverrideSubmenuItem(for: flag)
+        let removeOverrideItem = removeExperimentOverrideSubmenuItem(for: flag)
         removeOverrideItem.isHidden = currentOverride == nil
 
         submenu.addItem(removeOverrideItem)
@@ -316,6 +316,19 @@ final class FeatureFlagOverridesMenu: NSMenu {
         )
         removeOverrideItem.representedObject = flag
         removeOverrideItem.isHidden = featureFlagger.localOverrides?.override(for: flag) == nil
+        return removeOverrideItem
+    }
+
+    private func removeExperimentOverrideSubmenuItem(for flag: FeatureFlag) -> NSMenuItem {
+        let defaultCohortString = defaultExperimentValue(for: flag)
+
+        let removeOverrideItem = NSMenuItem(
+            title: "Reset to default: \(defaultCohortString)",
+            action: #selector(resetOverride(_:)),
+            target: self
+        )
+        removeOverrideItem.representedObject = flag
+        removeOverrideItem.isHidden = featureFlagger.localOverrides?.experimentOverride(for: flag) == nil
         return removeOverrideItem
     }
 

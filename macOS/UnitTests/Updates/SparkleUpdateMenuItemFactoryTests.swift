@@ -74,33 +74,11 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
     }
 
     func testMenuItemForPendingUpdate_SetsCorrectImage() throws {
-        throw XCTSkip("Broken test")
         // When
         let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockUpdate)
 
         // Then
-        XCTAssertEqual(menuItem.image, NSImage.updateMenuItemIcon)
-    }
-
-    func testMenuItemForInstalledUpdate_SetsCorrectTitle() throws {
-        throw XCTSkip("Broken test")
-        // Given
-        let installedUpdate = Update(
-            isInstalled: true,
-            type: .regular,
-            version: "1.0.1",
-            build: "101",
-            date: Date(),
-            releaseNotes: ["Bug fixes"],
-            releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
-        )
-
-        // When
-        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: installedUpdate)
-
-        // Then
-        XCTAssertEqual(menuItem.title, UserText.updateReadyMenuItem)
+        XCTAssertEqual(menuItem.image?.pngData(), NSImage.updateMenuItemIcon.pngData())
     }
 
     func testMenuItemForInstalledUpdate_SetsCorrectAction() {
@@ -126,7 +104,6 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
     // MARK: - Critical Update Tests
 
     func testMenuItemForCriticalUpdate_SetsCorrectProperties() throws {
-        throw XCTSkip("Broken test")
         // Given
         let criticalUpdate = Update(
             isInstalled: false,
@@ -145,7 +122,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
         // Then
         XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItem)
         XCTAssertEqual(menuItem.action, #selector(SparkleUpdateController.runUpdateFromMenuItem))
-        XCTAssertEqual(menuItem.image, NSImage.updateMenuItemIcon)
+        XCTAssertEqual(menuItem.image?.pngData(), NSImage.updateMenuItemIcon.pngData())
     }
 }
 

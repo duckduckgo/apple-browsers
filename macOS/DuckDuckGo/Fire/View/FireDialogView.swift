@@ -81,6 +81,7 @@ struct FireDialogView: ModalView {
     }
 
     @ObservedObject var viewModel: FireDialogViewModel
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
@@ -182,7 +183,7 @@ struct FireDialogView: ModalView {
             footerView
                 .zIndex(11)
                 .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
-                .background(Color(designSystemColor: .surfaceSecondary))
+                .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
         }
         .readSize { size in
             // Set exact content height to avoid content shifting and animation jumping when sheet resizes

@@ -50,7 +50,7 @@ final class ThemeManagerTests: XCTestCase {
         XCTAssertEqual(updatedAppearance, .systemDefault)
     }
 
-    func testFigmaThemeSetAreRemappedToDefaultTheme() {
+    func testFigmaThemeIsRemappedToDefaultTheme() {
         let (manager, _, _) = buildThemeManager(initialTheme: "figma", initialAppearance: "dark")
 
         XCTAssertEqual(manager.theme.name, .default)
@@ -77,6 +77,8 @@ private extension ThemeManagerTests {
     func buildThemeManager(initialTheme: String, initialAppearance: String) -> (ThemeManaging, AppearancePreferences, MockFeatureFlagger) {
         let persistor = AppearancePreferencesPersistorMock(themeAppearance: initialAppearance, themeName: initialTheme)
         let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub["themes"] = true
+
         let preferences = AppearancePreferences(
             persistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),

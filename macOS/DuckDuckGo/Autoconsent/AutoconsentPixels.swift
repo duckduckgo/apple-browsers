@@ -21,7 +21,6 @@ import PixelKit
 enum AutoconsentPixel: PixelKitEvent {
 
     case acInit
-    case missedPopup
     case errorMultiplePopups
     case errorOptoutFailed
     case popupFound
@@ -48,7 +47,6 @@ enum AutoconsentPixel: PixelKitEvent {
 
     static var summaryPixels: [AutoconsentPixel] =  [
         .acInit,
-        .missedPopup,
         .errorMultiplePopups,
         .errorOptoutFailed,
         .popupFound,
@@ -74,7 +72,6 @@ enum AutoconsentPixel: PixelKitEvent {
     var name: String {
         switch self {
         case .acInit: "autoconsent_init"
-        case .missedPopup: "autoconsent_missed-popup"
         case .errorMultiplePopups: "autoconsent_error_multiple-popups"
         case .errorOptoutFailed: "autoconsent_error_optout"
         case .errorReloadLoop: "autoconsent_error_reload-loop"
@@ -124,7 +121,6 @@ enum AutoconsentPixel: PixelKitEvent {
     var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .acInit,
-                .missedPopup,
                 .errorMultiplePopups,
                 .errorOptoutFailed,
                 .errorReloadLoop,

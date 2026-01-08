@@ -71,6 +71,7 @@ extension TabBarRemoteMessagePresenting {
     /// - Parameter tabBarRemotMessage: The remote message to be displayed.
     private func showTabBarRemoteMessage(_ tabBarRemotMessage: TabBarRemoteMessage) {
         let feedbackButtonView = TabBarRemoteMessageView(
+            themeManager: NSApp.delegateTyped.themeManager,
             model: tabBarRemotMessage,
             onClose: { [weak self] in
                 guard let self = self else { return }

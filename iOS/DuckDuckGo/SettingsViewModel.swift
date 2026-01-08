@@ -37,12 +37,6 @@ import SERPSettings
 
 final class SettingsViewModel: ObservableObject {
 
-    /// There's an improved picker cell being rolled out with the feature flag below.
-    /// Once it has passed a ship review we'll move to the improved one.
-    var useImprovedPicker: Bool {
-        featureFlagger.isFeatureOn(.mobileCustomization)
-    }
-
     // Dependencies
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()

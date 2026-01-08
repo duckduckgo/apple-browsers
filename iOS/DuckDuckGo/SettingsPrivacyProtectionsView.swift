@@ -29,7 +29,7 @@ struct SettingsPrivacyProtectionsView: View {
 
     var body: some View {
         Section(header: Text("Privacy Protections")) {
-            if !viewModel.shouldShowSetAsDefaultBrowser  {
+            if !viewModel.shouldShowSetAsDefaultBrowser {
                 // Default Browser
                 SettingsCellView(label: UserText.defaultBrowser,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.defaultBrowserMobile),

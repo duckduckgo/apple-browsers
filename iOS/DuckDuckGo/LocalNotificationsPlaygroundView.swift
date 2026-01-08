@@ -39,7 +39,7 @@ struct LocalNotificationsPlaygroundView: View {
                     Text(verbatim: "The system has automatically granted the app temporary permission to post noninterruptive notifications. They will be delivered silently in control")
                         .font(.caption)
                 case .denied:
-                    VStack(alignment: .leading)  {
+                    VStack(alignment: .leading) {
                         Text(verbatim: "Ensure Notifications are Enabled in Settings")
                             .font(.caption)
                             .foregroundStyle(.red)

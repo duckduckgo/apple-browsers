@@ -8,6 +8,10 @@
       "instruction" : "*/note"
     }]
   },
+  "newBadge" : {
+    "title" : "Novo",
+    "note" : "Badge text indicating a new feature."
+  },
   "ntp_show_less" : {
     "title" : "Mostrar menos",
     "note" : "Button that reduces the number of items or content displayed."
@@ -31,6 +35,14 @@
   "ntp_popover_close_button" : {
     "title" : "Fechar",
     "note" : "Button that closes the current popover."
+  },
+  "customizer_themeVariantPopoverTitle" : {
+    "title" : "Escolhe um tema de cor que te agrade",
+    "note" : "Title for the popover that introduces the theme variant customization feature."
+  },
+  "customizer_themeVariantPopoverDescription" : {
+    "title" : "Agora podes escolher a cor para o visual que desejas. Experimenta!",
+    "note" : "Description message in the theme variant popover."
   },
   "updateNotification_updated_version" : {
     "title" : "Navegador atualizado para a versão {version}.",
@@ -59,10 +71,6 @@
   "protections_noRecent" : {
     "title" : "Nenhuma atividade de rastreamento recente",
     "note" : "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
-  },
-  "protections_newBadge" : {
-    "title" : "Novo",
-    "note" : "Text displayed in a badge to indicate a new feature or statistic."
   },
   "stats_menuTitle" : {
     "title" : "Tentativas de rastreamento bloqueadas",
@@ -215,10 +223,6 @@
   "omnibar_customizePopoverTitle" : {
     "title" : "Alterna entre pesquisa e chat com IA",
     "description" : "Title for the popover that introduces the search/AI toggle feature."
-  },
-  "omnibar_customizePopoverBadge" : {
-    "title" : "Novo",
-    "description" : "Badge text for the popover that introduces the search/AI toggle feature."
   },
   "omnibar_customizePopoverDescription" : {
     "title" : "De qualquer forma, as tuas informações permanecem privadas.<br />Não queres isto? <button>Personalizar</button>",
@@ -415,6 +419,46 @@
   "customizer_image_delete" : {
     "title" : "Eliminar imagem {number}",
     "note" : "Label text on a button that deletes an image. {number} will be replaced with a numeric reference of 1-8, eg: 'Delete image 1'"
+  },
+  "customizer_section_title_theme_variant" : {
+    "title" : "Tema",
+    "note" : "Section title for theme selection including theme variants"
+  },
+  "customizer_theme_variant_grid_label" : {
+    "title" : "Variante temática",
+    "note" : "Accessibility label for the grid of theme variant options (Default, Cool Grey, Slate, etc.)"
+  },
+  "customizer_theme_variant_default" : {
+    "title" : "Pré-definido",
+    "note" : "Label for the default theme variant"
+  },
+  "customizer_theme_variant_coolGray" : {
+    "title" : "Cinzento frio",
+    "note" : "Label for the cool grey theme variant"
+  },
+  "customizer_theme_variant_slateBlue" : {
+    "title" : "Ardósia",
+    "note" : "Label for the slate blue theme variant"
+  },
+  "customizer_theme_variant_green" : {
+    "title" : "Verde",
+    "note" : "Label for the green theme variant"
+  },
+  "customizer_theme_variant_violet" : {
+    "title" : "Violeta",
+    "note" : "Label for the violet theme variant"
+  },
+  "customizer_theme_variant_rose" : {
+    "title" : "Rosa",
+    "note" : "Label for the rose theme variant"
+  },
+  "customizer_theme_variant_orange" : {
+    "title" : "Laranja",
+    "note" : "Label for the orange theme variant"
+  },
+  "customizer_theme_variant_desert" : {
+    "title" : "Deserto",
+    "note" : "Label for the desert theme variant"
   },
   "activity_noRecent_title" : {
     "title" : "Nenhuma atividade de navegação recente",

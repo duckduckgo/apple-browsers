@@ -40,6 +40,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         ]
         let sut = DataBrokerProtectionStatsPixels(database: database,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: repository)
 
         // When
@@ -62,6 +63,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         ]
         let sut = DataBrokerProtectionStatsPixels(database: database,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: repository)
 
         // When
@@ -86,6 +88,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         ]
         let sut = DataBrokerProtectionStatsPixels(database: database,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: repository)
 
         // When
@@ -104,6 +107,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         database.brokerProfileQueryDataToReturn = BrokerProfileQueryData.queryDataMultipleBrokersVaryingSuccessRates
         let sut = DataBrokerProtectionStatsPixels(database: database,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: repository)
         let expectation = self.expectation(description: "Async task completion")
 
@@ -184,6 +188,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -223,6 +228,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -262,6 +268,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -301,6 +308,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -338,6 +346,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -378,6 +387,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -416,6 +426,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -454,6 +465,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: MockDataBrokerProtectionStatsPixelsRepository())
 
         // When
@@ -507,6 +519,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionStatsPixels(database: database,
                                                   handler: handler,
+                                                  featureFlagger: MockDBPFeatureFlagger(),
                                                   repository: repository)
 
         // When
@@ -518,6 +531,178 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         // Verify the trigger was set to fire custom stats pixels
         XCTAssertTrue(repository.didSetCustomStatsPixelsLastSentTimestamp, "Should update timestamp after firing")
+    }
+
+    // MARK: - Click Action Delay Reduction Optimization Feature Flag Tests
+
+    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOn_thenCustomDataBrokerStatsPixelIncludesClickDelayOptimizationTrue() {
+        // Given
+        handler.clear()
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository._customStatsPixelsLastSentTimestamp = Date.nowMinus(hours: 26)
+        let database = MockDatabase()
+        database.brokerProfileQueryDataToReturn = BrokerProfileQueryData.queryDataMultipleBrokersVaryingSuccessRates
+        let sut = DataBrokerProtectionStatsPixels(database: database,
+                                                  handler: handler,
+                                                  featureFlagger: featureFlagger,
+                                                  repository: repository)
+        let expectation = self.expectation(description: "Async task completion")
+
+        // When
+        sut.fireCustomStatsPixelsIfNeeded()
+
+        DispatchQueue.global().asyncAfter(deadline: .now() + 4.0) {
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 5.0) { error in
+            if let error = error {
+                XCTFail("Expectation failed with error: \(error)")
+            }
+
+            // Then
+            let dataBrokerStatsPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.filter {
+                if case .customDataBrokerStatsOptoutSubmit = $0 { return true }
+                return false
+            }
+
+            XCTAssertFalse(dataBrokerStatsPixels.isEmpty, "Should have fired customDataBrokerStatsOptoutSubmit pixels")
+
+            for pixel in dataBrokerStatsPixels {
+                XCTAssertEqual(pixel.params?["click_action_delay_reduction_optimization"], "true",
+                               "clickActionDelayReductionOptimization should be true when feature flag is ON")
+            }
+        }
+    }
+
+    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOff_thenCustomDataBrokerStatsPixelIncludesClickDelayOptimizationFalse() {
+        // Given
+        handler.clear()
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository._customStatsPixelsLastSentTimestamp = Date.nowMinus(hours: 26)
+        let database = MockDatabase()
+        database.brokerProfileQueryDataToReturn = BrokerProfileQueryData.queryDataMultipleBrokersVaryingSuccessRates
+        let sut = DataBrokerProtectionStatsPixels(database: database,
+                                                  handler: handler,
+                                                  featureFlagger: featureFlagger,
+                                                  repository: repository)
+        let expectation = self.expectation(description: "Async task completion")
+
+        // When
+        sut.fireCustomStatsPixelsIfNeeded()
+
+        DispatchQueue.global().asyncAfter(deadline: .now() + 4.0) {
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 5.0) { error in
+            if let error = error {
+                XCTFail("Expectation failed with error: \(error)")
+            }
+
+            // Then
+            let dataBrokerStatsPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.filter {
+                if case .customDataBrokerStatsOptoutSubmit = $0 { return true }
+                return false
+            }
+
+            XCTAssertFalse(dataBrokerStatsPixels.isEmpty, "Should have fired customDataBrokerStatsOptoutSubmit pixels")
+
+            for pixel in dataBrokerStatsPixels {
+                XCTAssertEqual(pixel.params?["click_action_delay_reduction_optimization"], "false",
+                               "clickActionDelayReductionOptimization should be false when feature flag is OFF")
+            }
+        }
+    }
+
+    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOn_thenCustomGlobalStatsPixelIncludesClickDelayOptimizationTrue() {
+        // Given
+        handler.clear()
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository._customStatsPixelsLastSentTimestamp = Date.nowMinus(hours: 26)
+        let database = MockDatabase()
+        database.brokerProfileQueryDataToReturn = BrokerProfileQueryData.queryDataMultipleBrokersVaryingSuccessRates
+        let sut = DataBrokerProtectionStatsPixels(database: database,
+                                                  handler: handler,
+                                                  featureFlagger: featureFlagger,
+                                                  repository: repository)
+        let expectation = self.expectation(description: "Async task completion")
+
+        // When
+        sut.fireCustomStatsPixelsIfNeeded()
+
+        DispatchQueue.global().asyncAfter(deadline: .now() + 4.0) {
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 5.0) { error in
+            if let error = error {
+                XCTFail("Expectation failed with error: \(error)")
+            }
+
+            // Then
+            let globalStatsPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.filter {
+                if case .customGlobalStatsOptoutSubmit = $0 { return true }
+                return false
+            }
+
+            XCTAssertEqual(globalStatsPixels.count, 1, "Should have fired exactly one customGlobalStatsOptoutSubmit pixel")
+
+            guard let pixel = globalStatsPixels.first else {
+                XCTFail("Expected customGlobalStatsOptoutSubmit pixel")
+                return
+            }
+
+            XCTAssertEqual(pixel.params?["click_action_delay_reduction_optimization"], "true",
+                           "clickActionDelayReductionOptimization should be true when feature flag is ON")
+        }
+    }
+
+    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOff_thenCustomGlobalStatsPixelIncludesClickDelayOptimizationFalse() {
+        // Given
+        handler.clear()
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository._customStatsPixelsLastSentTimestamp = Date.nowMinus(hours: 26)
+        let database = MockDatabase()
+        database.brokerProfileQueryDataToReturn = BrokerProfileQueryData.queryDataMultipleBrokersVaryingSuccessRates
+        let sut = DataBrokerProtectionStatsPixels(database: database,
+                                                  handler: handler,
+                                                  featureFlagger: featureFlagger,
+                                                  repository: repository)
+        let expectation = self.expectation(description: "Async task completion")
+
+        // When
+        sut.fireCustomStatsPixelsIfNeeded()
+
+        DispatchQueue.global().asyncAfter(deadline: .now() + 4.0) {
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 5.0) { error in
+            if let error = error {
+                XCTFail("Expectation failed with error: \(error)")
+            }
+
+            // Then
+            let globalStatsPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.filter {
+                if case .customGlobalStatsOptoutSubmit = $0 { return true }
+                return false
+            }
+
+            XCTAssertEqual(globalStatsPixels.count, 1, "Should have fired exactly one customGlobalStatsOptoutSubmit pixel")
+
+            guard let pixel = globalStatsPixels.first else {
+                XCTFail("Expected customGlobalStatsOptoutSubmit pixel")
+                return
+            }
+
+            XCTAssertEqual(pixel.params?["click_action_delay_reduction_optimization"], "false",
+                           "clickActionDelayReductionOptimization should be false when feature flag is OFF")
+        }
     }
 
 }

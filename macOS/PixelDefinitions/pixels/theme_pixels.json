@@ -5,6 +5,6 @@
         "owners": ["jleandroperez"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["pixelSource", "themeName"]
+        "parameters": ["appVersion", "pixelSource", "themeName"]
     }
 }

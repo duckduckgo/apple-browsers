@@ -308,17 +308,18 @@ extension PrivacyDashboardViewController {
         return webVitalsResult
     }
 
-    private func calculateExpandedWebVitals(breakageAdditionalInfo: BreakageAdditionalInfo, privacyConfig: PrivacyConfiguration) async -> PerformanceMetrics? {
-        var expandedWebVitalsResult: PerformanceMetrics?
+    private func collectBreakageReportData(breakageAdditionalInfo: BreakageAdditionalInfo, privacyConfig: PrivacyConfiguration) async -> BreakageReportData? {
+        var breakageReportData: BreakageReportData?
         if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            expandedWebVitalsResult = await withCheckedContinuation({ continuation in
+            breakageReportData = await withCheckedContinuation({ continuation in
                 guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-                breakageReportingSubfeature.notifyHandler { result in
+                breakageReportingSubfeature.notifyHandler { metrics, detectorData in
+                    let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
                     continuation.resume(returning: result)
                 }
             })
         }
-        return expandedWebVitalsResult
+        return breakageReportData
     }
 
     private func makeBrokenSiteReport(category: String = "",
@@ -333,9 +334,10 @@ extension PrivacyDashboardViewController {
         let webVitalsResult = await calculateWebVitals(breakageAdditionalInfo: breakageAdditionalInfo,
                                                        privacyConfig: privacyConfigurationManager.privacyConfig)
 
-        let expandedWebVitalsResult = await calculateExpandedWebVitals(breakageAdditionalInfo: breakageAdditionalInfo,
-                                                                       privacyConfig: privacyConfigurationManager.privacyConfig)
-        let privacyAwareWebVitals = expandedWebVitalsResult?.privacyAwareMetrics()
+        let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo,
+                                                                   privacyConfig: privacyConfigurationManager.privacyConfig)
+        let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
+        let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
 
         let blockedTrackerDomains = privacyInfo.trackerInfo.trackersBlocked.compactMap { $0.domain }
         let protectionsState = privacyConfigurationManager.privacyConfig.isFeature(.contentBlocking,
@@ -379,7 +381,8 @@ extension PrivacyDashboardViewController {
                                 cookieConsentInfo: privacyInfo.cookieConsentManaged,
                                 debugFlags: privacyInfo.debugFlags,
                                 privacyExperiments: privacyInfo.privacyExperimentCohorts,
-                                isPirEnabled: nil)
+                                isPirEnabled: nil,
+                                detectorMetrics: detectorMetrics)
     }
 
 }

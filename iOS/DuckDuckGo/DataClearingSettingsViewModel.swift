@@ -61,10 +61,6 @@ final class DataClearingSettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.enhancedDataClearingSettings)
     }
     
-    var useImprovedPicker: Bool {
-        featureFlagger.isFeatureOn(.mobileCustomization)
-    }
-    
     var showAIChatsToggle: Bool {
         return aiChatSettings.isAIChatEnabled && featureFlagger.isFeatureOn(.duckAiDataClearing)
     }

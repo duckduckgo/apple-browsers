@@ -21,8 +21,6 @@ import Networking
 
 public class MockOAuthClient: OAuthClient {
 
-    public var isV1TokenPresent: Bool = false
-
     public init() {}
     public var isUserAuthenticated: Bool {
         internalCurrentTokenContainer != nil
@@ -43,13 +41,6 @@ public class MockOAuthClient: OAuthClient {
             return success
         case .failure(let failure):
             throw failure
-        }
-    }
-
-    public var migrateV1TokenResponseError: Error?
-    public func migrateV1Token() async throws {
-        if let migrateV1TokenResponseError {
-            throw migrateV1TokenResponseError
         }
     }
 
@@ -97,16 +88,6 @@ public class MockOAuthClient: OAuthClient {
     public var refreshTokensResponse: Result<Networking.TokenContainer, Error>!
     public func refreshTokens() async throws -> Networking.TokenContainer {
         switch refreshTokensResponse! {
-        case .success(let success):
-            return success
-        case .failure(let failure):
-            throw failure
-        }
-    }
-
-    public var exchangeAccessTokenV1Response: Result<Networking.TokenContainer, Error>!
-    public func exchange(accessTokenV1: String) async throws -> Networking.TokenContainer {
-        switch exchangeAccessTokenV1Response! {
         case .success(let success):
             return success
         case .failure(let failure):

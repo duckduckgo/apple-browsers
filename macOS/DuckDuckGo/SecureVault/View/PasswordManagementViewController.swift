@@ -61,7 +61,7 @@ final class PasswordManagementViewController: NSViewController {
     @IBOutlet var itemContainer: NSView!
     @IBOutlet var addVaultItemButton: NSButton!
     @IBOutlet var moreButton: NSButton!
-    @IBOutlet var searchField: NSTextField!
+    @IBOutlet var searchField: SearchField!
     @IBOutlet var divider: NSView!
     @IBOutlet var emptyState: NSView!
     @IBOutlet var emptyStateImageView: NSImageView!
@@ -1194,6 +1194,11 @@ extension PasswordManagementViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
         boxView.fillColor = colorsProvider.passwordManagerBackgroundColor
         backgroundView.backgroundColor = colorsProvider.passwordManagerLockScreenBackgroundColor
+
+        let palette = theme.palette
+        searchField.borderColor = palette.controlsBorderPrimary
+        searchField.borderHighlightColor = palette.accentPrimary
+        searchField.innerBackgroundColor = palette.surfaceTertiary
     }
 }
 

@@ -160,9 +160,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         switch currentPurchasePlatform {
         case .appStore:
             if #available(macOS 12.0, *) {
-                if let subscriptionManagerV1 = subscriptionManager as? SubscriptionManager {
-                    region = subscriptionManagerV1.storePurchaseManager().currentStorefrontRegion
-                } else if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2 {
+                if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2 {
                     region = subscriptionManagerV2.storePurchaseManager().currentStorefrontRegion
                 }
             }

@@ -39,7 +39,12 @@ public final class PixelKitMock: PixelFiring {
     }
 
     public func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
-        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency)
+        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, additionalParameters: nil)
+        actualFireCalls.append(fireCall)
+    }
+
+    public func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, withAdditionalParameters: [String: String]) {
+        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, additionalParameters: withAdditionalParameters)
         actualFireCalls.append(fireCall)
     }
 
@@ -51,10 +56,12 @@ public final class PixelKitMock: PixelFiring {
 public struct ExpectedFireCall: Equatable {
     let pixel: PixelKitEvent
     let frequency: PixelKit.Frequency
+    let additionalParameters: [String: String]?
 
-    public init(pixel: PixelKitEvent, frequency: PixelKit.Frequency) {
+    public init(pixel: PixelKitEvent, frequency: PixelKit.Frequency, additionalParameters: [String: String]? = nil) {
         self.pixel = pixel
         self.frequency = frequency
+        self.additionalParameters = additionalParameters
     }
 
     public static func == (lhs: ExpectedFireCall, rhs: ExpectedFireCall) -> Bool {
@@ -62,5 +69,6 @@ public struct ExpectedFireCall: Equatable {
         && lhs.pixel.parameters == rhs.pixel.parameters
         && lhs.pixel.error == rhs.pixel.error
         && lhs.frequency == rhs.frequency
+        && lhs.additionalParameters == rhs.additionalParameters
     }
 }

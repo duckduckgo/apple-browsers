@@ -69,7 +69,7 @@ final class BookmarkListViewController: NSViewController {
         }
         return emptyStateView.embeddedInHostingView()
     }()
-    private lazy var searchBar = NSSearchField()
+    private lazy var searchBar = SearchField()
         .withAccessibilityIdentifier("BookmarkListViewController.searchBar")
     private var boxDividerTopConstraint = NSLayoutConstraint()
 
@@ -392,6 +392,7 @@ final class BookmarkListViewController: NSViewController {
         outlineView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
 
         subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
@@ -770,7 +771,11 @@ extension BookmarkListViewController: ThemeUpdateListening {
             return
         }
 
-        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+        let palette = theme.palette
+        contentView.backgroundColor = palette.surfaceSecondary
+        searchBar.borderColor = palette.controlsBorderPrimary
+        searchBar.borderHighlightColor = palette.accentPrimary
+        searchBar.innerBackgroundColor = palette.surfaceTertiary
     }
 }
 

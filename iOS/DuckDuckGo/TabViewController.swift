@@ -359,8 +359,7 @@ class TabViewController: UIViewController {
     private lazy var linkProtection: LinkProtection = {
         LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                       errorReporting: Self.debugEvents,
-                       useBackgroundTaskProtection: featureFlagger.isFeatureOn(.ampBackgroundTaskSupport))
+                       errorReporting: Self.debugEvents)
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {

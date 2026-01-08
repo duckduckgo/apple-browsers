@@ -106,7 +106,7 @@ final class MainMenu: NSMenu {
     let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
     let toggleWatchdogCrashMenuItem = NSMenuItem(title: "Crash on timeout", action: #selector(MainViewController.toggleWatchdogCrash))
     let alwaysShowFirstTimeQuitSurvey = NSMenuItem(title: "Always Show First-Time Quit Survey", action: #selector(MainViewController.alwaysShowFirstTimeQuitSurvey))
-    var shiftNextStepsDaysMenuItem: NSMenuItem?
+    let shiftNextStepsDaysMenuItem = NSMenuItem(title: "Shift maximum Next Steps demonstration days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
 
     // MARK: Help
 
@@ -733,7 +733,6 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
-                shiftNextStepsDaysMenuItem = NSMenuItem(title: "Shift \(appearancePreferences.maxNextStepsCardsDemonstrationDays) days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
                 shiftNextStepsDaysMenuItem
             }
             NSMenuItem(title: "CPM") {
@@ -1025,7 +1024,7 @@ final class MainMenu: NSMenu {
     }
 
     private func updateShiftNextStepsDaysMenuItem() {
-        shiftNextStepsDaysMenuItem?.title = "Shift \(appearancePreferences.maxNextStepsCardsDemonstrationDays) days"
+        shiftNextStepsDaysMenuItem.title = "Shift \(appearancePreferences.maxNextStepsCardsDemonstrationDays) days"
     }
 
     @MainActor

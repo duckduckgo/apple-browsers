@@ -181,21 +181,23 @@ public class StatisticsLoader {
     }
 
     public func refreshRetentionAtbOnDuckAIPromptSubmission(completion: @escaping Completion = {}) {
-        let group = DispatchGroup()
+        DispatchQueue.main.async {
+            let group = DispatchGroup()
 
-        group.enter()
-        group.enter()
+            group.enter()
+            group.enter()
 
-        refreshSearchRetentionAtb {
-            group.leave()
-        }
+            self.refreshSearchRetentionAtb {
+                group.leave()
+            }
 
-        refreshDuckAIRetentionAtb {
-            group.leave()
-        }
+            self.refreshDuckAIRetentionAtb {
+                group.leave()
+            }
 
-        group.notify(queue: .main) {
-            completion()
+            group.notify(queue: .main) {
+                completion()
+            }
         }
     }
 

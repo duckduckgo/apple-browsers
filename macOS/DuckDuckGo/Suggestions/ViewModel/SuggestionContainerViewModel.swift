@@ -53,7 +53,7 @@ final class SuggestionContainerViewModel {
     private let searchPreferences: SearchPreferences
     private let themeManager: ThemeManaging
     private let featureFlagger: FeatureFlagger
-    private let aiChatPreferencesStorage: AIChatPreferencesStorage
+    private let isAIFeaturesEnabled: Bool
     private var suggestionResultCancellable: AnyCancellable?
 
     init(isHomePage: Bool,
@@ -69,7 +69,7 @@ final class SuggestionContainerViewModel {
         self.searchPreferences = searchPreferences
         self.themeManager = themeManager
         self.featureFlagger = featureFlagger
-        self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.isAIFeaturesEnabled = aiChatPreferencesStorage.isAIFeaturesEnabled
         subscribeToSuggestionResult()
     }
 
@@ -234,7 +234,7 @@ final class SuggestionContainerViewModel {
 
     private var shouldShowAIChatCellBase: Bool {
         guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
-        guard aiChatPreferencesStorage.isAIFeaturesEnabled else { return false }
+        guard isAIFeaturesEnabled else { return false }
         guard let userStringValue, !userStringValue.isEmpty else { return false }
         return true
     }

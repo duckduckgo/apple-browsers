@@ -4046,6 +4046,10 @@ extension MainViewController: AIChatContentHandlingDelegate {
         guard let tab = self.currentTab?.tabModel else { return }
         self.closeTab(tab, andOpenEmptyOneAtSamePosition: false)
     }
+
+    func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
+        // No action needed for full mode - notification handles metrics
+    }
 }
 
 private extension UIBarButtonItem {

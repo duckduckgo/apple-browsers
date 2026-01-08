@@ -407,6 +407,10 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling) {
         delegate?.aiChatContextualSheetViewControllerDidRequestOpenSyncSettings(self)
     }
+
+    func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
+        viewModel.didSubmitPrompt()
+    }
 }
 
 // MARK: - ViewModel Binding
@@ -426,14 +430,6 @@ private extension AIChatContextualSheetViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isVisible in
                 self?.newChatButton.isHidden = !isVisible
-            }
-            .store(in: &cancellables)
-
-        // Observe prompt submission from web input (via metric callback)
-        NotificationCenter.default.publisher(for: .aiChatUserDidSubmitPrompt)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.viewModel.didSubmitPrompt()
             }
             .store(in: &cancellables)
     }

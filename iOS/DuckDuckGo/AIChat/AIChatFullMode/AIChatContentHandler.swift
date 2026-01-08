@@ -45,6 +45,9 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 
     /// Called when the content handler receives a request to open Sync settings.
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling)
+
+    /// Called when the user submits a prompt.
+    func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling)
 }
 
 /// Handles content initialization, payload management, and URL building for AIChat.
@@ -191,8 +194,9 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
         if metric.metricName == .userDidSubmitPrompt
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+            delegate?.aiChatContentHandlerDidReceivePromptSubmission(self)
         }
-        
+
         pixelMetricHandler?.firePixelWithMetric(metric)
     }
 }

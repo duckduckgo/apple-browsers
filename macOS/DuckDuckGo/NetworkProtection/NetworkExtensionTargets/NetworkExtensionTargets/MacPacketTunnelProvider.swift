@@ -393,7 +393,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 #if NETP_SYSTEM_EXTENSION
         "\(Bundle.main.bundleIdentifier!).authToken"
 #else
-        NetworkProtectionKeychainTokenStoreV2.Defaults.tokenStoreService
+        NetworkProtectionKeychainTokenStore.Defaults.tokenStoreService
 #endif
     }
 

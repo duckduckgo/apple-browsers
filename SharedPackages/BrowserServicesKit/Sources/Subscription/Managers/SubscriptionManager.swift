@@ -673,7 +673,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public var currentStorefrontRegion: SubscriptionRegion {
         switch currentEnvironment.purchasePlatform {
         case .appStore:
-            if #available(macOS 12.0, *) {
+            if #available(macOS 12.0, iOS 15.0, *) {
                 return storePurchaseManager().currentStorefrontRegion
             } else {
                 return .usa
@@ -730,7 +730,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         if currentEnvironment.purchasePlatform == .stripe {
             return true
         }
-        guard #available(macOS 12.0, *) else { return false }
+        guard #available(macOS 12.0, iOS 15.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 

@@ -54,4 +54,4 @@ runs:
         echo "⚠️ No preferred iOS version found, using default iOS 26.1 with iPhone 17"
         destination="platform=iOS Simulator,name=iPhone 17,OS=26.1"
         echo "destination=$destination" >> $GITHUB_OUTPUT
-        echo "ios-version=26.0" >> $GITHUB_OUTPUT
+        echo "ios-version=26.1" >> $GITHUB_OUTPUT

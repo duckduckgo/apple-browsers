@@ -1591,6 +1591,7 @@
 		C13EBC4F2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */; };
 		C13EBC512EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */; };
 		C13EBC532EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */; };
+		C1AICSVMT2F0E000200E35AD5 /* AIChatContextualSheetViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AICSVMT2F0E000300E35AD5 /* AIChatContextualSheetViewModelTests.swift */; };
 		C13EBC552EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC542EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift */; };
 		C13EEA1E2D64CFCA001D5DC3 /* DataImportViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */; };
 		C13EEA202D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */; };
@@ -1752,6 +1753,10 @@
 		C1E42C7B2C5CD8AE00509204 /* AutofillCredentialsDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E42C7A2C5CD8AD00509204 /* AutofillCredentialsDebugViewController.swift */; };
 		C1E4E9A62D0861AD00AA39AF /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C1E4E9A42D0861AD00AA39AF /* InfoPlist.strings */; };
 		C1E4E9A92D0861AD00AA39AF /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C1E4E9A72D0861AD00AA39AF /* Localizable.strings */; };
+		C1E9B8E72F0D1CFF00E845AA /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 374E76072EF56C1F00F8AADE /* PrivacyConfig */; };
+		C1E9B8E82F0D1CFF00E845AA /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E842D7416E4002FAB32 /* Common */; };
+		C1E9B8EA2F0D36C000E845AA /* AIChatContextualWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E9B8E92F0D36C000E845AA /* AIChatContextualWebViewController.swift */; };
+		C1E9B8F02F0E85C700E845AA /* TabViewControllerContextualAIChatExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E9B8EF2F0E85C700E845AA /* TabViewControllerContextualAIChatExtension.swift */; };
 		C1EA26642EB5725A006A863C /* AutofillExtensionSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EA26622EB5725A006A863C /* AutofillExtensionSettingsViewModel.swift */; };
 		C1EA26652EB5725A006A863C /* AutofillExtensionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EA26602EB5725A006A863C /* AutofillExtensionSettingsView.swift */; };
 		C1EA26662EB5725A006A863C /* AutofillExtensionSettingsActivationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EA265F2EB5725A006A863C /* AutofillExtensionSettingsActivationView.swift */; };
@@ -1769,6 +1774,7 @@
 		C1F341C92A6926920032057B /* EmailAddressPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F341C82A6926920032057B /* EmailAddressPromptViewController.swift */; };
 		C1F9D9122EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F9D9112EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift */; };
 		C1F9D9172EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F9D9162EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift */; };
+		C1AICSVM2F0E000100E35AD5 /* AIChatContextualSheetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AICSVM2F0E000000E35AD5 /* AIChatContextualSheetViewModel.swift */; };
 		C1F9D91B2EF6400000E35AD5 /* AIChatNativeInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F9D91A2EF6400000E35AD5 /* AIChatNativeInputViewController.swift */; };
 		C1F9D91D2EF6400000E35AD5 /* AIChatContextualInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F9D91C2EF6400000E35AD5 /* AIChatContextualInputViewController.swift */; };
 		C1FA13652ECFA067001392FA /* AutofillExtensionEnableCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FA13642ECFA067001392FA /* AutofillExtensionEnableCoordinator.swift */; };
@@ -3929,6 +3935,7 @@
 		C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualModeFeature.swift; sourceTree = "<group>"; };
 		C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualModeFeatureTests.swift; sourceTree = "<group>"; };
 		C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetCoordinatorTests.swift; sourceTree = "<group>"; };
+		C1AICSVMT2F0E000300E35AD5 /* AIChatContextualSheetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetViewModelTests.swift; sourceTree = "<group>"; };
 		C13EBC542EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualQuickActionTests.swift; sourceTree = "<group>"; };
 		C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportViewModelTests.swift; sourceTree = "<group>"; };
 		C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipContentSelectionViewModelTests.swift; sourceTree = "<group>"; };
@@ -4118,6 +4125,8 @@
 		C1E490592D08646400F86C5A /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sl; path = sl.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C1E4E9A52D0861AD00AA39AF /* bg */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bg; path = bg.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1E4E9A82D0861AD00AA39AF /* bg */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bg; path = bg.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C1E9B8E92F0D36C000E845AA /* AIChatContextualWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualWebViewController.swift; sourceTree = "<group>"; };
+		C1E9B8EF2F0E85C700E845AA /* TabViewControllerContextualAIChatExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerContextualAIChatExtension.swift; sourceTree = "<group>"; };
 		C1EA265F2EB5725A006A863C /* AutofillExtensionSettingsActivationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillExtensionSettingsActivationView.swift; sourceTree = "<group>"; };
 		C1EA26602EB5725A006A863C /* AutofillExtensionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillExtensionSettingsView.swift; sourceTree = "<group>"; };
 		C1EA26612EB5725A006A863C /* AutofillExtensionSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillExtensionSettingsViewController.swift; sourceTree = "<group>"; };
@@ -4139,6 +4148,7 @@
 		C1F883382D08627900DFF79A /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C1F9D9112EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetViewController.swift; sourceTree = "<group>"; };
 		C1F9D9162EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetCoordinator.swift; sourceTree = "<group>"; };
+		C1AICSVM2F0E000000E35AD5 /* AIChatContextualSheetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetViewModel.swift; sourceTree = "<group>"; };
 		C1F9D91A2EF6400000E35AD5 /* AIChatNativeInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatNativeInputViewController.swift; sourceTree = "<group>"; };
 		C1F9D91C2EF6400000E35AD5 /* AIChatContextualInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualInputViewController.swift; sourceTree = "<group>"; };
 		C1FA13642ECFA067001392FA /* AutofillExtensionEnableCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillExtensionEnableCoordinator.swift; sourceTree = "<group>"; };
@@ -5048,6 +5058,7 @@
 				C16670E32EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift */,
 				C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */,
 				C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */,
+				C1AICSVMT2F0E000300E35AD5 /* AIChatContextualSheetViewModelTests.swift */,
 				C13EBC542EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift */,
 			);
 			path = AIChat;
@@ -7966,9 +7977,11 @@
 		C13EBC4D2EE9C65F00CE5A4B /* ContextualMode */ = {
 			isa = PBXGroup;
 			children = (
+				C1E9B8E92F0D36C000E845AA /* AIChatContextualWebViewController.swift */,
 				C19888DE2EF1519F004612AD /* QuickActions */,
 				C1F9D91C2EF6400000E35AD5 /* AIChatContextualInputViewController.swift */,
 				C1F9D9162EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift */,
+				C1AICSVM2F0E000000E35AD5 /* AIChatContextualSheetViewModel.swift */,
 				C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */,
 				C1F9D9112EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift */,
 			);
@@ -9260,6 +9273,7 @@
 				CB2A7EEE283D185100885F67 /* RulesCompilationMonitor.swift */,
 				9820EAF422613CD30089094D /* WebProgressWorker.swift */,
 				C14135B42EC4BE880006F8C1 /* TabViewControllerAIChatExtension.swift */,
+				C1E9B8EF2F0E85C700E845AA /* TabViewControllerContextualAIChatExtension.swift */,
 				83004E852193E5ED00DA013C /* TabViewControllerMenuBuilderExtension.swift */,
 				83004E872193E8C700DA013C /* TabViewControllerLongPressMenuExtension.swift */,
 				8C47244F2217A14B004C9B2D /* TabViewControllerSaveBookmarkExtension.swift */,
@@ -11100,6 +11114,7 @@
 				9F0B19B42EA5E4FA001FA867 /* DefaultBrowserModalPromptProvider.swift in Sources */,
 				9FB0271D2C293619009EA190 /* OnboardingIntroViewModel.swift in Sources */,
 				C1F9D9172EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift in Sources */,
+				C1AICSVM2F0E000100E35AD5 /* AIChatContextualSheetViewModel.swift in Sources */,
 				1E1626072968413B0004127F /* ViewExtension.swift in Sources */,
 				31A42566285A0A6300049386 /* FaviconViewModel.swift in Sources */,
 				859DB8132CE6263C001F7210 /* TextZoomStorage.swift in Sources */,
@@ -11595,6 +11610,7 @@
 				9FE7E7A12EAAF4BE00AEAD83 /* WhatsNewModalPromptProvider.swift in Sources */,
 				85010502292FB1000033978F /* FireproofFaviconUpdater.swift in Sources */,
 				981CA7EA2617797500E119D5 /* MainViewController+AddFavoriteFlow.swift in Sources */,
+				C1E9B8F02F0E85C700E845AA /* TabViewControllerContextualAIChatExtension.swift in Sources */,
 				CBF259BD2D4E56E900AC63E4 /* ReportingService.swift in Sources */,
 				C13830FE2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift in Sources */,
 				365E90132E5673DF00BDB0E8 /* SearchInAppIntent.swift in Sources */,
@@ -11669,6 +11685,7 @@
 				37FCAAAB29911BF1000E420A /* WaitlistExtensions.swift in Sources */,
 				C1DA98EB2E7C653F00F8BED9 /* SyncRecoveryAlternativeView.swift in Sources */,
 				EE4BE0092A740BED00CD6AA8 /* ClearTextField.swift in Sources */,
+				C1E9B8EA2F0D36C000E845AA /* AIChatContextualWebViewController.swift in Sources */,
 				56D060282C380D83003BAEB5 /* OnboardingSuggestedSearchesProvider.swift in Sources */,
 				F44D279C27F331BB0037F371 /* AutofillLoginPromptView.swift in Sources */,
 				369E69282E5F4B9600F98A8F /* InactivityNotificationSchedulerService.swift in Sources */,
@@ -12075,6 +12092,7 @@
 				F194FAFB1F14E622009B4DF8 /* UIFontExtensionTests.swift in Sources */,
 				C13EBC512EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift in Sources */,
 				C13EBC532EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift in Sources */,
+				C1AICSVMT2F0E000200E35AD5 /* AIChatContextualSheetViewModelTests.swift in Sources */,
 				C13EBC552EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift in Sources */,
 				BBFF18B12C76448100C48D7D /* QuerySubmittedTests.swift in Sources */,
 				9FFDA8392DFA8DC2007923F7 /* VideoPlayerCoordinatorTests.swift in Sources */,

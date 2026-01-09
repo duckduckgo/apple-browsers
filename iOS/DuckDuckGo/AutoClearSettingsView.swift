@@ -42,6 +42,9 @@ struct AutoClearSettingsView: View {
         .onFirstAppear {
             Pixel.fire(pixel: .settingsDataClearingClearDataOpen)
         }
+        .onDisappear {
+            viewModel.onViewDismiss()
+        }
     }
     
     // MARK: - Section 1: Auto Clear Toggle

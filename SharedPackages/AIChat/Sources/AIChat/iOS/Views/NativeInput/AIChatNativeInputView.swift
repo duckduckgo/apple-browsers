@@ -447,11 +447,9 @@ private extension AIChatNativeInputView {
 
         submitButton.isEnabled = hasSubmittableText
         if hasSubmittableText {
-            submitButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRight, for: .normal)
             submitButtonContainer.backgroundColor = UIColor(designSystemColor: .accent)
             submitButton.tintColor = .white
         } else {
-            submitButton.setImage(DesignSystemImages.Glyphs.Size24.arrowUp, for: .normal)
             submitButtonContainer.backgroundColor = .clear
             submitButton.tintColor = UIColor(designSystemColor: .textSecondary)
         }

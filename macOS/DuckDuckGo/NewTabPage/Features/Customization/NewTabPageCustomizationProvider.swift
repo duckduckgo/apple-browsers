@@ -22,12 +22,20 @@ import PixelKit
 import SwiftUI
 
 final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding {
+    private var newTabPageDidAppearCancellable: AnyCancellable?
+    private var newTabPageDidAppear = false
+    private var newTabPageInitialized = false
+
     let customizationModel: NewTabPageCustomizationModel
     let appearancePreferences: AppearancePreferences
+    let themePopoverDecider: ThemePopoverDeciding
 
-    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences) {
+    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences, themePopoverDecider: ThemePopoverDeciding, notificationCenter: NotificationCenter = .default) {
         self.customizationModel = customizationModel
         self.appearancePreferences = appearancePreferences
+        self.themePopoverDecider = themePopoverDecider
+
+        startListeningToNewTabPageEvents(notificationCenter: notificationCenter)
     }
 
     var customizerOpener: NewTabPageCustomizerOpener {
@@ -37,6 +45,7 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
     var customizerData: NewTabPageDataModel.CustomizerData {
         .init(
             background: .init(customizationModel.customBackground),
+            showThemeVariantPopover: themePopoverDecider.shouldShowPopover,
             theme: .init(appearancePreferences.themeAppearance),
             themeVariant: appearancePreferences.areThemesAvailable ? .init(rawValue: appearancePreferences.themeName.rawValue) : nil,
             userColor: customizationModel.lastPickedCustomColor,
@@ -127,6 +136,44 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
             guard let imageID = sender.representedObject as? String else { return }
             await deleteImage(with: imageID)
         }
+    }
+
+    func processNewTabPageInitialized() {
+        newTabPageInitialized = true
+        markPopoverShownIfNeeded()
+    }
+}
+
+private extension NewTabPageCustomizationProvider {
+
+    func startListeningToNewTabPageEvents(notificationCenter: NotificationCenter) {
+        newTabPageDidAppearCancellable = notificationCenter.publisher(for: .newTabPageWebViewDidAppear)
+            .prefix(1)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.processNewTabPageAppeared()
+                self?.newTabPageDidAppearCancellable = nil
+            }
+    }
+
+    func processNewTabPageAppeared() {
+        newTabPageDidAppear = true
+        markPopoverShownIfNeeded()
+    }
+
+    func markPopoverShownIfNeeded() {
+        /// Why this is required:
+        ///     1.  NTP doesn't relay `Themes Popover appeared`, as Native has ownership of whenever NTP is rendered, and how
+        ///     2.  FE's `initialSetup` invocation may be executed, under certain circumstances, without the actual WebView ever becoming present
+        ///     3.`newTabPageWebViewDidAppear` gets posted before `initialSetup`, risking a race condition
+        ///
+        /// We must only track "Themes Popover Show" whenever both, the NTP is known to be visible, and the NTP Initialization came thru.
+        ///
+        guard newTabPageDidAppear, newTabPageInitialized else {
+            return
+        }
+
+        themePopoverDecider.markPopoverShown()
     }
 }
 

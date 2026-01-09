@@ -282,6 +282,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         let widgets = fetchWidgets()
         let widgetConfigs = fetchWidgetConfigs()
         let customizerData = customBackgroundProvider.customizerData
+        customBackgroundProvider.processNewTabPageInitialized()
+
         let tabs = stateProvider
             .getState()?
             .first(where: { $0.webView === original.webView })?

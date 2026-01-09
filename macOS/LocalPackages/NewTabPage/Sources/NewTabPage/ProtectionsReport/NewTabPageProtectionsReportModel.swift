@@ -27,12 +27,14 @@ import AutoconsentStats
 public protocol NewTabPageProtectionsReportSettingsPersisting: AnyObject {
     var activeFeed: NewTabPageDataModel.Feed { get set }
     var isViewExpanded: Bool { get set }
+    var widgetNewLabelFirstShownDate: Date? { get set }
 }
 
 final class UserDefaultsNewTabPageProtectionsReportSettingsPersistor: NewTabPageProtectionsReportSettingsPersisting {
     enum Keys {
         static let isViewExpanded = "new-tab-page.protection-report.is-view-expanded"
         static let activeFeed = "new-tab-page.protection-report.active-feed"
+        static let widgetNewLabelFirstShownDate = "new-tab-page.protection-report.widget.new-label.first-shown-date"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -55,6 +57,17 @@ final class UserDefaultsNewTabPageProtectionsReportSettingsPersistor: NewTabPage
     var activeFeed: NewTabPageDataModel.Feed {
         get { return (try? keyValueStore.object(forKey: Keys.activeFeed) as? String).flatMap(NewTabPageDataModel.Feed.init) ?? .privacyStats }
         set { try? keyValueStore.set(newValue.rawValue, forKey: Keys.activeFeed)}
+    }
+
+    var widgetNewLabelFirstShownDate: Date? {
+        get { return try? keyValueStore.object(forKey: Keys.widgetNewLabelFirstShownDate) as? Date }
+        set {
+            if let date = newValue {
+                try? keyValueStore.set(date, forKey: Keys.widgetNewLabelFirstShownDate)
+            } else {
+                try? keyValueStore.removeObject(forKey: Keys.widgetNewLabelFirstShownDate)
+            }
+        }
     }
 
     private func migrateFromLegacyIsViewExpandedSetting(using getLegacyIsViewExpanded: () -> Bool?) {
@@ -84,7 +97,13 @@ public final class NewTabPageProtectionsReportModel {
     @Published var shouldShowBurnAnimation: Bool
 
     var shouldShowProtectionsReportNewLabel: Bool {
-        return true
+        if let date = settingsPersistor.widgetNewLabelFirstShownDate {
+            return Date() <= date.advanced(by: .days(7))
+        } else {
+            let currentDate = Date()
+            settingsPersistor.widgetNewLabelFirstShownDate = currentDate
+            return true
+        }
     }
 
     @Published var isViewExpanded: Bool {

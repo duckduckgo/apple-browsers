@@ -591,6 +591,16 @@ extension AppDelegate {
         print("DEBUG: Cleared blockedCookiesPopoverSeen flag")
     }
 
+    @MainActor
+    @objc func debugResetWidgetNewLabelFirstShownDateKey(_ sender: Any?) {
+        do {
+            try keyValueStore.removeObject(forKey: "new-tab-page.protection-report.widget.new-label.first-shown-date")
+            print("DEBUG: Cleared WidgetNewLabelFirstShownDateKey flag")
+        } catch {
+            Logger.general.error("Failed to remove widget new label first shown date key: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @objc func resetDefaultGrammarChecks(_ sender: Any?) {
         UserDefaultsWrapper.clear(.spellingCheckEnabledOnce)
         UserDefaultsWrapper.clear(.grammarCheckEnabledOnce)

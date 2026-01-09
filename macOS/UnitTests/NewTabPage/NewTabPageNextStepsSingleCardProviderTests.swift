@@ -194,7 +194,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         cancellable.cancel()
 
-        XCTAssertTrue(cardsEvents.contains { $0.isEmpty })
+        XCTAssertEqual(cardsEvents.last, [])
     }
 
     @MainActor
@@ -215,8 +215,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         cancellable.cancel()
 
-        // Should have at least one empty array when outdated
-        XCTAssertTrue(cardsEvents.contains { $0.isEmpty })
+        XCTAssertEqual(cardsEvents.last, [])
     }
 
     // MARK: - Card Visibility Logic Tests

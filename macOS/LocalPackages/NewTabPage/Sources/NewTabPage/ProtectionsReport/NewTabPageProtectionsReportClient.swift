@@ -76,6 +76,20 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
             }
             .store(in: &cancellables)
 
+        model.$shouldShowProtectionsReportNewLabel
+            .dropFirst()
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
+                    let config = NewTabPageDataModel.ProtectionsConfig(expansion: expansion,
+                                                                       feed: model.activeFeed,
+                                                                       showBurnAnimation: model.shouldShowBurnAnimation,
+                                                                       showProtectionsReportNewLabel: model.shouldShowProtectionsReportNewLabel)
+                    self?.notifyConfigUpdated(config)
+                }
+            }
+            .store(in: &cancellables)
+
         model.scroller.scrollPublisher
             .sink { [weak self] webView in
                 Task { @MainActor in

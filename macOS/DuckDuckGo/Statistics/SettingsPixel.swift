@@ -64,7 +64,7 @@ enum SettingsPixel: PixelKitEvent {
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      */
-    case themeAppearanceChanged
+    case themeAppearanceChanged(source: ThemeChangeSource)
 
     /**
      * Event Trigger: Browser Theme Name settings was changed.
@@ -78,7 +78,7 @@ enum SettingsPixel: PixelKitEvent {
      * - Anomaly in this pixel may mean an increase/drop in app use.
      *
      */
-    case themeNameChanged(name: ThemeName)
+    case themeNameChanged(name: ThemeName, source: ThemeChangeSource)
 
     /**
      * Event Trigger: Website zoom setting was changed.
@@ -155,8 +155,15 @@ enum SettingsPixel: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
-        case .themeNameChanged(let name):
-            return [PixelKit.Parameters.themeName: name.rawValue]
+        case .themeAppearanceChanged(let source):
+            return [
+                PixelKit.Parameters.source: source.rawValue
+            ]
+        case .themeNameChanged(let name, let source):
+            return [
+                PixelKit.Parameters.themeName: name.rawValue,
+                PixelKit.Parameters.source: source.rawValue
+            ]
         default:
             return nil
         }
@@ -176,4 +183,10 @@ enum SettingsPixel: PixelKitEvent {
         }
     }
 
+    // MARK: - Nested Types
+
+    enum ThemeChangeSource: String {
+        case settings = "settings"
+        case newTabPage = "new-tab-page"
+    }
 }

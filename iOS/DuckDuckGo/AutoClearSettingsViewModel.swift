@@ -57,6 +57,7 @@ final class AutoClearSettingsViewModel: ObservableObject {
                     self.clearTabs = true
                     self.clearCookies = true
                     self.clearDuckAIChats = false
+                    self.selectedTiming = .termination
                 } else {
                     Pixel.fire(pixel: .settingsAutomaticallyClearDataOff)
                 }

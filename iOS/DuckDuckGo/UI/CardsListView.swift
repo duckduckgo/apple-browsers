@@ -177,7 +177,7 @@ extension RemoteMessagingUI {
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Color.secondary)
 
-                if let actionText = displayModel.actionButtonTitle, let _ = displayModel.onTapAction {
+                if let actionText = displayModel.actionButtonTitle, displayModel.onTapAction != nil {
                     actionView(title: actionText)
                 }
             }

@@ -142,8 +142,15 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
         guard let data: NewTabPageDataModel.ThemeData = DecodableHelper.decode(from: params) else {
             return nil
         }
-        model.theme = data.theme
-        model.themeVariant = data.themeVariant
+
+        if model.theme != data.theme {
+            model.theme = data.theme
+        }
+
+        if model.themeVariant != data.themeVariant {
+            model.themeVariant = data.themeVariant
+        }
+
         return nil
     }
 

@@ -177,7 +177,6 @@ private extension NewTabPageCustomizationProvider {
     }
 }
 
-
 extension NewTabPageDataModel.Background {
     init(_ customBackground: CustomBackground?) {
         switch customBackground {

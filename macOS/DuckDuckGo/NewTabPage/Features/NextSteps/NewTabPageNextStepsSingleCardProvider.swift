@@ -109,12 +109,8 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
         refreshCardList()
         observeSubscriptionCardVisibilityChanges()
-
-        NotificationCenter.default.addObserver(self, selector: #selector(windowDidBecomeKey(_:)), name: NSWindow.didBecomeKeyNotification, object: nil)
-
-        // HTML NTP doesn't refresh on appear so we have to connect to the appear signal
-        // (the notification in this case) to trigger a refresh.
-        NotificationCenter.default.addObserver(self, selector: #selector(refreshCardsForHTMLNewTabPage(_:)), name: .newTabPageWebViewDidAppear, object: nil)
+        observeKeyWindowChanges()
+        observeNewTabPageWebViewDidAppear()
     }
 
     @MainActor
@@ -187,28 +183,6 @@ private extension NewTabPageNextStepsSingleCardProvider {
         }
     }
 
-    private func observeSubscriptionCardVisibilityChanges() {
-        subscriptionCardVisibilityManager.shouldShowSubscriptionCardPublisher
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshCardList()
-            }
-            .store(in: &cancellables)
-    }
-
-    @objc private func windowDidBecomeKey(_ notification: Notification) {
-        // Async dispatch allows default browser setting to propagate
-        // after being changed in the system dialog
-        DispatchQueue.main.async {
-            self.refreshCardList()
-        }
-    }
-
-    @objc private func refreshCardsForHTMLNewTabPage(_ notification: Notification) {
-        refreshCardList()
-    }
-
     func isCardPermanentlyDismissed(_ card: NewTabPageDataModel.CardID) -> Bool {
         let dismissedLegacySetting: Bool
         switch card {
@@ -233,5 +207,35 @@ private extension NewTabPageNextStepsSingleCardProvider {
         } else {
             return persistor.timesDismissed(for: card) >= Constants.maxTimesCardDismissed
         }
+    }
+
+    func observeSubscriptionCardVisibilityChanges() {
+        subscriptionCardVisibilityManager.shouldShowSubscriptionCardPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshCardList()
+            }
+            .store(in: &cancellables)
+    }
+
+    func observeKeyWindowChanges() {
+        NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshCardList()
+            }
+            .store(in: &cancellables)
+    }
+
+    func observeNewTabPageWebViewDidAppear() {
+        // HTML New Tab Page doesn't refresh on appear so we have to connect to the appear signal
+        // (the notification in this case) to trigger a refresh.
+        NotificationCenter.default.publisher(for: .newTabPageWebViewDidAppear)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshCardList()
+            }
+            .store(in: &cancellables)
     }
 }

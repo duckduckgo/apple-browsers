@@ -153,7 +153,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         // For now, we show the visible cards in a fixed order as defined in `NewTabPageDataModel.CardID.allCases`.
         // New grouping/ordering logic will be added in https://app.asana.com/1/137249556945/project/1209825025475019/task/1212359353583684?focus=true
         // This will update the card ordering based on: defined levels (groups) of cards and how many times each card has been shown (to avoid card blindness).
-        var cards: [NewTabPageDataModel.CardID] = NewTabPageDataModel.CardID.allCases.filter(shouldShowCard)
+        let cards: [NewTabPageDataModel.CardID] = NewTabPageDataModel.CardID.allCases.filter(shouldShowCard)
         if cards.isEmpty {
             appearancePreferences.continueSetUpCardsClosed = true
         }

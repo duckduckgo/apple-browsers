@@ -35,7 +35,7 @@ public protocol NewTabPageCustomBackgroundProviding: AnyObject {
     var userImagesPublisher: AnyPublisher<[NewTabPageDataModel.UserImage], Never> { get }
 
     @MainActor func presentUploadDialog() async
-    func processedInitialSetup()
+    func processNewTabPageInitialized()
 
     func deleteImage(with imageID: String) async
 

@@ -26,7 +26,7 @@ import os.log
 ///
 protocol ThemePopoverDeciding {
     var shouldShowPopover: Bool { get }
-    func markPopoverShownIfNeeded()
+    func markPopoverShown()
 }
 
 /// Determines when the Themes Popover should be rendered:
@@ -56,7 +56,7 @@ final class ThemePopoverDecider: ThemePopoverDeciding {
         self.persistor = persistor
     }
 
-    func markPopoverShownIfNeeded() {
+    func markPopoverShown() {
         guard shouldShowPopover, persistor.themePopoverShown == false else {
             return
         }

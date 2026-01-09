@@ -134,8 +134,8 @@ struct SubscriptionNavigationCoordinatorTests {
         #expect(url.absoluteString.contains("featurePage=duckai"))
     }
 
-    @Test("navigateToSubscriptionUpgrade fetches plans URL and shows subscription tab with origin")
-    func navigateToSubscriptionUpgradeWithOrigin() async throws {
+    @Test("navigateToSubscriptionPlans fetches plans URL and shows subscription tab with origin")
+    func navigateToSubscriptionPlansWithOrigin() async throws {
         let (coordinator, mockTabShower, mockSubscriptionManager) = createCoordinator()
         let baseURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let origin = "funnel_duckai_macos__modelpicker"

@@ -64,7 +64,7 @@ final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDe
     }
 
     /// Navigates to the subscription plans flow.
-    /// Called when Duck.ai need to start a new subscription upgrade.
+    /// Called when Duck.ai needs to start a new subscription upgrade.
     func navigateToSubscriptionPlans(origin: String?, featurePage: String?) {
         let components = makeURLComponents(origin: origin, featurePage: featurePage)
         let settingsDeepLink = SettingsViewModel.SettingsDeepLinkSection.subscriptionPlanChangeFlow(redirectURLComponents: components)

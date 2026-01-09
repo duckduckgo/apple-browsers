@@ -31,9 +31,9 @@ final class WhatsNewDisplayModelMapperTests {
     func whenCardsListMessageThenDisplayModelIsCreated() throws {
         // GIVEN
         let items = [
-            RemoteMessageModelType.ListItem.makeListItem(id: "item-1", titleText: "Feature 1"),
-            RemoteMessageModelType.ListItem.makeListItem(id: "item-2", titleText: "Feature 2"),
-            RemoteMessageModelType.ListItem.makeListItem(id: "item-3", titleText: "Feature 3")
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-1", titleText: "Feature 1"),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-2", titleText: "Feature 2"),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-3", titleText: "Feature 3")
         ]
         let message = RemoteMessageModel.makeCardsListMessage(
             titleText: "What's New in DuckDuckGo",
@@ -92,7 +92,7 @@ final class WhatsNewDisplayModelMapperTests {
     func whenItemsHavePropertiesThenTheyAreMappedCorrectly() throws {
         // GIVEN
         let items = [
-            RemoteMessageModelType.ListItem.makeListItem(
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(
                 id: "item-1",
                 titleText: "Privacy Features",
                 descriptionText: "Block trackers automatically",
@@ -115,18 +115,19 @@ final class WhatsNewDisplayModelMapperTests {
 
         // THEN
         #expect(displayModel.items.count == 1)
-        #expect(displayModel.items.first?.icon == "RemoteMessageDDGAnnouncement")
-        #expect(displayModel.items.first?.title == "Privacy Features")
-        #expect(displayModel.items.first?.description == "Block trackers automatically")
+        let card = try #require(displayModel.items.first?.twoLinesCard)
+        #expect(card.icon == "RemoteMessageDDGAnnouncement")
+        #expect(card.title == "Privacy Features")
+        #expect(card.description == "Block trackers automatically")
     }
 
     @Test("Check Mapper Creates Items With And Without Actions")
     func whenSomeItemsHaveActionsThenOnlyThoseHaveOnTapAction() throws {
         // GIVEN
         let items = [
-            RemoteMessageModelType.ListItem.makeListItem(id: "item-1", action: .urlInContext(value: "https://example.com")),
-            RemoteMessageModelType.ListItem.makeListItem(id: "item-2", action: nil),
-            RemoteMessageModelType.ListItem.makeListItem(id: "item-3", action: .navigation(value: .importPasswords))
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-1", action: .urlInContext(value: "https://example.com")),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-2", action: nil),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-3", action: .navigation(value: .importPasswords))
         ]
         let message = RemoteMessageModel.makeCardsListMessage(items: items)
 
@@ -144,9 +145,9 @@ final class WhatsNewDisplayModelMapperTests {
 
         // THEN
         #expect(displayModel.items.count == 3)
-        #expect(displayModel.items[safe: 0]?.onTapAction != nil)
-        #expect(displayModel.items[safe: 1]?.onTapAction == nil)
-        #expect(displayModel.items[safe: 2]?.onTapAction != nil)
+        #expect(displayModel.items[safe: 0]?.twoLinesCard?.onTapAction != nil)
+        #expect(displayModel.items[safe: 1]?.twoLinesCard?.onTapAction == nil)
+        #expect(displayModel.items[safe: 2]?.twoLinesCard?.onTapAction != nil)
     }
 
     @Test(
@@ -161,7 +162,7 @@ final class WhatsNewDisplayModelMapperTests {
     )
     func whenItemHasActionThenDisclosureIconIsSetAccordingly(action: RemoteAction?, shouldHaveIcon: Bool) throws {
         // GIVEN
-        let item = RemoteMessageModelType.ListItem.makeListItem(id: "test-item", action: action)
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "test-item", action: action)
         let message = RemoteMessageModel.makeCardsListMessage(items: [item])
 
         // WHEN
@@ -178,9 +179,9 @@ final class WhatsNewDisplayModelMapperTests {
 
         // THEN
         if shouldHaveIcon {
-            #expect(displayModel.items.first?.disclosureIcon != nil)
+            #expect(displayModel.items.first?.twoLinesCard?.disclosureIcon != nil)
         } else {
-            #expect(displayModel.items.first?.disclosureIcon == nil)
+            #expect(displayModel.items.first?.twoLinesCard?.disclosureIcon == nil)
         }
     }
 
@@ -212,6 +213,34 @@ final class WhatsNewDisplayModelMapperTests {
 
         // THEN
         #expect(messageAppearCalled)
+    }
+
+    @Test("Check Section Items Are Mapped Correctly")
+    func whenListHasSectionThenSectionIsMapped() throws {
+        // GIVEN
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section-1", titleText: "Section Title", itemIDs: ["item-1", "item-2"]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-1"),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-2")
+        ]
+        let message = RemoteMessageModel.makeCardsListMessage(items: items)
+
+        // WHEN
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // THEN
+        #expect(displayModel.items.count == 3)
+        let section = try #require(displayModel.items[0].section)
+        #expect(section == "Section Title")
     }
 }
 
@@ -260,9 +289,9 @@ struct WhatsNewDisplayModelActionHandlingTests {
     func whenItemAppearsCallbackInvokedThenItemIdIsPassed() throws {
         // GIVEN
         let items = [
-            RemoteMessageModelType.ListItem.makeListItem(id: "item-1"),
-            RemoteMessageModelType.ListItem.makeListItem(id: "item-2"),
-            RemoteMessageModelType.ListItem.makeListItem(id: "item-3")
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-1"),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-2"),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-3")
         ]
         let message = RemoteMessageModel.makeCardsListMessage(items: items)
 
@@ -282,9 +311,9 @@ struct WhatsNewDisplayModelActionHandlingTests {
         )
 
         // WHEN - Invoke onAppear for each item
-        displayModel.items[safe: 0]?.onAppear?()
-        displayModel.items[safe: 1]?.onAppear?()
-        displayModel.items[safe: 2]?.onAppear?()
+        displayModel.items[safe: 0]?.twoLinesCard?.onAppear?()
+        displayModel.items[safe: 1]?.twoLinesCard?.onAppear?()
+        displayModel.items[safe: 2]?.twoLinesCard?.onAppear?()
 
         // THEN
         #expect(itemAppearedCalls.count == 3)
@@ -297,7 +326,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
     func whenItemActionInvokedThenItemCallbackIsCalled() async throws {
         // GIVEN
         let expectedAction = RemoteAction.navigation(value: .importPasswords)
-        let item = RemoteMessageModelType.ListItem.makeListItem(id: "1", action: expectedAction)
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "1", action: expectedAction)
         let message = RemoteMessageModel.makeCardsListMessage(items: [item])
 
         var itemActionCalled = false
@@ -320,7 +349,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
         )
 
         // WHEN
-        displayModel.items.first?.onTapAction?()
+        displayModel.items.first?.twoLinesCard?.onTapAction?()
         await Task.yield()
 
         // THEN
@@ -332,7 +361,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
     @Test("Check Item Action Does Not Invoke Dismiss")
     func whenItemActionInvokedThenDismissIsNotCalled() async throws {
         // GIVEN
-        let item = RemoteMessageModelType.ListItem.makeListItem(id: "1", action: .urlInContext(value: "https://example.com"))
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "1", action: .urlInContext(value: "https://example.com"))
         let message = RemoteMessageModel.makeCardsListMessage(items: [item])
 
         var itemActionCalled = false
@@ -354,7 +383,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
         )
 
         // WHEN
-        displayModel.items.first?.onTapAction?()
+        displayModel.items.first?.twoLinesCard?.onTapAction?()
         await Task.yield()
 
         // THEN
@@ -404,7 +433,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
     @Test("Check Multiple Action Invocations On Item Works Correctly")
     func whenActionInvokedMultipleTimesThenCallbackIsCalledEachTime() async throws {
         // GIVEN
-        let item = RemoteMessageModelType.ListItem.makeListItem(id: "1", action: .url(value: "https://example.com"))
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "1", action: .url(value: "https://example.com"))
         let message = RemoteMessageModel.makeCardsListMessage(items: [item])
 
         var callCount = 0
@@ -421,16 +450,38 @@ struct WhatsNewDisplayModelActionHandlingTests {
         ))
 
         // WHEN
-        displayModel.items.first?.onTapAction?()
+        displayModel.items.first?.twoLinesCard?.onTapAction?()
         await Task.yield()
 
-        displayModel.items.first?.onTapAction?()
+        displayModel.items.first?.twoLinesCard?.onTapAction?()
         await Task.yield()
 
-        displayModel.items.first?.onTapAction?()
+        displayModel.items.first?.twoLinesCard?.onTapAction?()
         await Task.yield()
 
         // THEN
         #expect(callCount == 3)
     }
+}
+
+private extension RemoteMessagingUI.CardsListDisplayModel.Item {
+
+    var twoLinesCard: RemoteMessagingUI.CardsListDisplayModel.Item.TwoLinesCard? {
+        switch self {
+        case .twoLinesCard(let card):
+            return card
+        case .section:
+            return nil
+        }
+    }
+
+    var section: String? {
+        switch self {
+        case .section(let title):
+            return title
+        case .twoLinesCard:
+            return nil
+        }
+    }
+
 }

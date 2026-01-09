@@ -38,14 +38,12 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
 #if os(macOS)
         let pixel = VPNSubscriptionStatusPixel.signedIn(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             sourceObject: nil
         )
         XCTAssertEqual(pixel.namePrefix, "m_mac_vpn_subs_notification_")
 #elseif os(iOS)
         let pixel = VPNSubscriptionStatusPixel.signedIn(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             sourceObject: nil
         )
         XCTAssertEqual(pixel.namePrefix, "m_vpn_subs_notification_")
@@ -57,7 +55,6 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
     func testPixelName_signedIn() {
         let pixel = VPNSubscriptionStatusPixel.signedIn(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             sourceObject: nil
         )
         XCTAssertEqual(pixel.name, "signed_in")
@@ -66,7 +63,6 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
     func testPixelName_signedOut() {
         let pixel = VPNSubscriptionStatusPixel.signedOut(
             isSubscriptionActive: false,
-            isAuthV2Enabled: true,
             sourceObject: nil
         )
         XCTAssertEqual(pixel.name, "signed_out")
@@ -75,7 +71,6 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
     func testPixelName_vpnFeatureEnabled() {
         let pixel = VPNSubscriptionStatusPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             sourceObject: nil
         )
         XCTAssertEqual(pixel.name, "vpn_feature_enabled")
@@ -84,7 +79,6 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
     func testPixelName_vpnFeatureDisabled() {
         let pixel = VPNSubscriptionStatusPixel.vpnFeatureDisabled(
             isSubscriptionActive: false,
-            isAuthV2Enabled: true,
             sourceObject: nil
         )
         XCTAssertEqual(pixel.name, "vpn_feature_disabled")
@@ -96,7 +90,6 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
         let sourceObject = TestSourceObject()
         let pixel = VPNSubscriptionStatusPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             sourceObject: sourceObject
         )
 
@@ -107,25 +100,10 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
         XCTAssertEqual(parameters?["notificationObjectClass"], "TestSourceObject")
     }
 
-    func testParameters_activeSubscriptionAuthV1() {
-        let pixel = VPNSubscriptionStatusPixel.signedIn(
-            isSubscriptionActive: true,
-            isAuthV2Enabled: false,
-            sourceObject: nil
-        )
-
-        let parameters = pixel.parameters
-        XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "true")
-        XCTAssertEqual(parameters?["authVersion"], "v1")
-        XCTAssertEqual(parameters?["notificationObjectClass"], "nil")
-    }
-
     func testParameters_inactiveSubscription() {
         let sourceObject = AnotherTestObject()
         let pixel = VPNSubscriptionStatusPixel.vpnFeatureDisabled(
             isSubscriptionActive: false,
-            isAuthV2Enabled: true,
             sourceObject: sourceObject
         )
 
@@ -139,7 +117,6 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
     func testParameters_nilSubscription() {
         let pixel = VPNSubscriptionStatusPixel.signedOut(
             isSubscriptionActive: nil,
-            isAuthV2Enabled: true,
             sourceObject: NSString(string: "test")
         )
 
@@ -205,10 +182,10 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
 
     func testError_alwaysNil() {
         let pixels = [
-            VPNSubscriptionStatusPixel.signedIn(isSubscriptionActive: true, isAuthV2Enabled: true, sourceObject: nil),
-            VPNSubscriptionStatusPixel.signedOut(isSubscriptionActive: false, isAuthV2Enabled: false, sourceObject: nil),
-            VPNSubscriptionStatusPixel.vpnFeatureEnabled(isSubscriptionActive: true, isAuthV2Enabled: true, sourceObject: nil),
-            VPNSubscriptionStatusPixel.vpnFeatureDisabled(isSubscriptionActive: false, isAuthV2Enabled: false, sourceObject: nil)
+            VPNSubscriptionStatusPixel.signedIn(isSubscriptionActive: true, sourceObject: nil),
+            VPNSubscriptionStatusPixel.signedOut(isSubscriptionActive: false, sourceObject: nil),
+            VPNSubscriptionStatusPixel.vpnFeatureEnabled(isSubscriptionActive: true, sourceObject: nil),
+            VPNSubscriptionStatusPixel.vpnFeatureDisabled(isSubscriptionActive: false, sourceObject: nil)
         ]
 
         for pixel in pixels {
@@ -227,7 +204,6 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
 
         let pixel = VPNSubscriptionStatusPixel.signedIn(
             isSubscriptionActive: true,
-            isAuthV2Enabled: true,
             sourceObject: nil
         )
 
@@ -244,7 +220,6 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
 
         let pixel = VPNSubscriptionStatusPixel.vpnFeatureDisabled(
             isSubscriptionActive: false,
-            isAuthV2Enabled: false,
             sourceObject: TestSourceObject()
         )
 
@@ -259,7 +234,7 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
         let authVersions: [Bool] = [true, false]
         let sourceObjects: [Any?] = [nil, TestSourceObject(), NSString(string: "test")]
 
-        let pixelFactories: [(Bool?, Bool, Any?) -> VPNSubscriptionStatusPixel] = [
+        let pixelFactories: [(Bool?, Any?) -> VPNSubscriptionStatusPixel] = [
             VPNSubscriptionStatusPixel.signedIn,
             VPNSubscriptionStatusPixel.signedOut,
             VPNSubscriptionStatusPixel.vpnFeatureEnabled,
@@ -268,28 +243,26 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
 
         for factory in pixelFactories {
             for subscriptionState in subscriptionStates {
-                for authV2 in authVersions {
-                    for sourceObject in sourceObjects {
-                        let pixel = factory(subscriptionState, authV2, sourceObject)
+                for sourceObject in sourceObjects {
+                    let pixel = factory(subscriptionState, sourceObject)
 
-                        // Verify parameters are always present
-                        let parameters = pixel.parameters
-                        XCTAssertNotNil(parameters, "Parameters should never be nil")
-                        XCTAssertNotNil(parameters?["isSubscriptionActive"], "isSubscriptionActive should always be present")
-                        XCTAssertNotNil(parameters?["authVersion"], "authVersion should always be present")
-                        XCTAssertNotNil(parameters?["notificationObjectClass"], "notificationObjectClass should always be present")
+                    // Verify parameters are always present
+                    let parameters = pixel.parameters
+                    XCTAssertNotNil(parameters, "Parameters should never be nil")
+                    XCTAssertNotNil(parameters?["isSubscriptionActive"], "isSubscriptionActive should always be present")
+                    XCTAssertNotNil(parameters?["authVersion"], "authVersion should always be present")
+                    XCTAssertNotNil(parameters?["notificationObjectClass"], "notificationObjectClass should always be present")
 
-                        // Verify specific values
-                        let expectedSubscriptionValue = subscriptionState != nil ? String(subscriptionState!) : "no_subscription"
-                        XCTAssertEqual(parameters?["isSubscriptionActive"], expectedSubscriptionValue)
-                        XCTAssertEqual(parameters?["authVersion"], authV2 ? "v2" : "v1")
+                    // Verify specific values
+                    let expectedSubscriptionValue = subscriptionState != nil ? String(subscriptionState!) : "no_subscription"
+                    XCTAssertEqual(parameters?["isSubscriptionActive"], expectedSubscriptionValue)
+                    XCTAssertEqual(parameters?["authVersion"], "v2")
 
-                        // Verify source object class
-                        if sourceObject == nil {
-                            XCTAssertEqual(parameters?["notificationObjectClass"], "nil")
-                        } else {
-                            XCTAssertNotEqual(parameters?["notificationObjectClass"], "nil")
-                        }
+                    // Verify source object class
+                    if sourceObject == nil {
+                        XCTAssertEqual(parameters?["notificationObjectClass"], "nil")
+                    } else {
+                        XCTAssertNotEqual(parameters?["notificationObjectClass"], "nil")
                     }
                 }
             }
@@ -311,10 +284,10 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
         let sourceObject = TestSourceObject()
 
         let pixels = [
-            VPNSubscriptionStatusPixel.signedIn(isSubscriptionActive: true, isAuthV2Enabled: false, sourceObject: sourceObject),
-            VPNSubscriptionStatusPixel.signedOut(isSubscriptionActive: true, isAuthV2Enabled: false, sourceObject: sourceObject),
-            VPNSubscriptionStatusPixel.vpnFeatureEnabled(isSubscriptionActive: true, isAuthV2Enabled: false, sourceObject: sourceObject),
-            VPNSubscriptionStatusPixel.vpnFeatureDisabled(isSubscriptionActive: true, isAuthV2Enabled: false, sourceObject: sourceObject)
+            VPNSubscriptionStatusPixel.signedIn(isSubscriptionActive: true, sourceObject: sourceObject),
+            VPNSubscriptionStatusPixel.signedOut(isSubscriptionActive: true, sourceObject: sourceObject),
+            VPNSubscriptionStatusPixel.vpnFeatureEnabled(isSubscriptionActive: true, sourceObject: sourceObject),
+            VPNSubscriptionStatusPixel.vpnFeatureDisabled(isSubscriptionActive: true, sourceObject: sourceObject)
         ]
 
         // All pixels should have the same parameter structure (keys and values) except for the pixel name

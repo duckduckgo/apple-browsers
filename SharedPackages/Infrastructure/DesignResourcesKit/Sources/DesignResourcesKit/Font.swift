@@ -91,6 +91,14 @@ public extension UIFont {
     static func daxCaption() -> UIFont {
         return UIFont.preferredFont(forTextStyle: .caption2)
     }
+
+    static func daxCaptionItalic() -> UIFont {
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .caption2)
+        guard let italicDescriptor = descriptor.withSymbolicTraits(.traitItalic) else {
+            return UIFont.preferredFont(forTextStyle: .caption2)
+        }
+        return UIFont(descriptor: italicDescriptor, size: 0)
+    }
 }
 
 #endif

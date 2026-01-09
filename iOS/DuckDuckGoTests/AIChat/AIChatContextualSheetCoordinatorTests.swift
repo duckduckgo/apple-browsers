@@ -53,12 +53,14 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var sut: AIChatContextualSheetCoordinator!
     private var mockDelegate: MockDelegate!
     private var mockPresentingVC: MockPresentingViewController!
+    private var mockSettings: MockAIChatSettingsProvider!
 
     // MARK: - Setup
 
     override func setUp() {
         super.setUp()
-        sut = AIChatContextualSheetCoordinator(voiceSearchHelper: MockVoiceSearchHelper())
+        mockSettings = MockAIChatSettingsProvider()
+        sut = AIChatContextualSheetCoordinator(voiceSearchHelper: MockVoiceSearchHelper(), settings: mockSettings)
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()
         sut.delegate = mockDelegate
@@ -68,6 +70,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         sut = nil
         mockDelegate = nil
         mockPresentingVC = nil
+        mockSettings = nil
         super.tearDown()
     }
 

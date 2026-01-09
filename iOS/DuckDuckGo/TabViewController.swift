@@ -359,8 +359,7 @@ class TabViewController: UIViewController {
     private lazy var linkProtection: LinkProtection = {
         LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                       errorReporting: Self.debugEvents,
-                       useBackgroundTaskProtection: featureFlagger.isFeatureOn(.ampBackgroundTaskSupport))
+                       errorReporting: Self.debugEvents)
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {
@@ -498,7 +497,7 @@ class TabViewController: UIViewController {
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
-        let coordinator = AIChatContextualSheetCoordinator(voiceSearchHelper: voiceSearchHelper)
+        let coordinator = AIChatContextualSheetCoordinator(voiceSearchHelper: voiceSearchHelper, settings: aiChatSettings)
         coordinator.delegate = self
         return coordinator
     }()
@@ -1733,6 +1732,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func updatePreview() {
+        guard isTabCurrentlyPresented() else { return }
+
         preparePreview { image in
             if let image = image {
                 self.delegate?.tab(self, didUpdatePreview: image)

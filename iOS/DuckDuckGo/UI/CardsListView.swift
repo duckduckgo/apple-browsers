@@ -31,13 +31,9 @@ enum RemoteMessagingUI {}
 extension RemoteMessagingUI {
 
     struct CardsListDisplayModel {
-        struct Item {
-            let icon: String
-            let title: String
-            let description: String
-            let disclosureIcon: Image?
-            let onAppear: (() -> Void)?
-            let onTapAction: (() -> Void)?
+        enum Item {
+            case section(title: String)
+            case twoLinesCard(TwoLinesCard)
         }
 
         let screenTitle: String
@@ -45,6 +41,19 @@ extension RemoteMessagingUI {
         let items: [CardsListDisplayModel.Item]
         let onAppear: (() -> Void)?
         let primaryAction: (title: String, action: () -> Void)?
+    }
+
+}
+
+extension RemoteMessagingUI.CardsListDisplayModel.Item {
+
+    struct TwoLinesCard {
+        let icon: String
+        let title: String
+        let description: String
+        let disclosureIcon: Image?
+        let onAppear: (() -> Void)?
+        let onTapAction: (() -> Void)?
     }
 
 }
@@ -80,8 +89,20 @@ extension RemoteMessagingUI {
 
 extension RemoteMessagingUI {
 
-    struct CardView: View {
-        let displayModel: CardsListDisplayModel.Item
+    struct TitledListSection: View {
+        let title: String
+
+        var body: some View {
+            Text(title)
+                .font(.system(size: Metrics.Section.titleSize, weight: .semibold))
+                .foregroundStyle(Color.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, Metrics.Section.sectionLeadingPadding)
+        }
+    }
+
+    struct TwoLinesCardView: View {
+        let displayModel: CardsListDisplayModel.Item.TwoLinesCard
 
         var body: some View {
             HStack(alignment: .top, spacing: Metrics.Card.contentHorizontalSpacing) {
@@ -166,7 +187,15 @@ private extension RemoteMessagingUI.CardsListView {
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: Metrics.CardsList.cardsVerticalSpacing) {
                     ForEach(items.indices, id: \.self) { index in
-                        RemoteMessagingUI.CardView(displayModel: items[index])
+                        switch items[index] {
+                        case let .section(title):
+                            RemoteMessagingUI.TitledListSection(title: title)
+                                .if(index > 0) { titledSection in
+                                    titledSection.padding(.top, Metrics.Section.sectionTopPadding - Metrics.CardsList.cardsVerticalSpacing)
+                                }
+                        case let .twoLinesCard(cardInfo):
+                            RemoteMessagingUI.TwoLinesCardView(displayModel: cardInfo)
+                        }
                     }
                 }
             }
@@ -288,6 +317,12 @@ private enum Metrics {
         static let buttonBottomPadding: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 12.0, iPad: 24.0).build()
     }
 
+    enum Section {
+        static let sectionTopPadding: CGFloat = 30.0
+        static let sectionLeadingPadding: CGFloat = 12.0
+        static let titleSize: CGFloat = 17.0
+    }
+
     enum Card {
         static let contentHorizontalSpacing: CGFloat = 12.0
         static let contentVerticalPadding: CGFloat = 16.0
@@ -307,76 +342,109 @@ private enum Metrics {
 
 #if DEBUG
 struct CardsList_Previews: PreviewProvider {
-    static func cardsList(shouldShowAction: Bool, repeatedItems: Bool = false) -> RemoteMessagingUI.CardsListView {
+    static func cardsList(
+        items: [RemoteMessagingUI.CardsListDisplayModel.Item],
+        shouldShowAction: Bool
+    ) -> RemoteMessagingUI.CardsListView {
         let action: (String, () -> Void)? = if shouldShowAction {
             ("Got It", {})
         } else {
             nil
         }
 
-        let listItems = if repeatedItems {
-            items.reduce(into: [RemoteMessagingUI.CardsListDisplayModel.Item]()) { partial, item in
-                partial.append(contentsOf: Array(repeating: item, count: 5))
-            }
-        } else {
-            items
-        }
-
         return .init(displayModel: .init(
             screenTitle: "What’s New",
             icon: "RemoteMessageDDGAnnouncement",
-            items: listItems,
+            items: items,
             onAppear: nil,
             primaryAction: action
         ))
     }
 
     static let items: [RemoteMessagingUI.CardsListDisplayModel.Item] = [
-        .init(
-            icon: "RemoteImageAI",
-            title: "Hide AI Images in Search",
-            description: "Easily hide AI images in your search results with the \"AI images\" search filter.",
-            disclosureIcon: chevron,
-            onAppear: nil,
-            onTapAction: nil
+        .twoLinesCard(
+            .init(
+                icon: "RemoteImageAI",
+                title: "Hide AI Images in Search",
+                description: "Easily hide AI images in your search results with the \"AI images\" search filter.",
+                disclosureIcon: chevron,
+                onAppear: nil,
+                onTapAction: nil
+            )
         ),
-        .init(
-            icon: "RemoteRadar",
-            title: "Enhanced Scam Blocker",
-            description: "Browse confidently with protection against even more sneaky online threats.",
-            disclosureIcon: chevron,
-            onAppear: nil,
-            onTapAction: nil
+        .twoLinesCard(
+            .init(
+                icon: "RemoteRadar",
+                title: "Enhanced Scam Blocker",
+                description: "Browse confidently with protection against even more sneaky online threats.",
+                disclosureIcon: chevron,
+                onAppear: nil,
+                onTapAction: nil
+            )
         ),
-        .init(
-            icon: "RemoteKeyImport",
-            title: "Import From Safari",
-            description: "Add your saved bookmarks and passwords in seconds!",
-            disclosureIcon: chevron,
-            onAppear: nil,
-            onTapAction: nil
+        .twoLinesCard(
+            .init(
+                icon: "RemoteKeyImport",
+                title: "Import From Safari",
+                description: "Add your saved bookmarks and passwords in seconds!",
+                disclosureIcon: chevron,
+                onAppear: nil,
+                onTapAction: nil
+            )
         )
+    ]
+
+    static let sectionWithItems: [RemoteMessagingUI.CardsListDisplayModel.Item] = [
+        .section(
+            title: "Become a DuckDuckPro!"
+        ),
+        .twoLinesCard(
+            .init(
+                icon: "RemoteKeyImport",
+                title: "Search Faster With Bangs",
+                description: "Did you know? Bangs are shortcuts that take you to search results on your fave sites like Wikipedia, YouTube, and more.",
+                disclosureIcon: chevron,
+                onAppear: nil,
+                onTapAction: nil
+            )
+        ),
     ]
 
     static let chevron: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall)
 
     static var previews: some View {
-        cardsList(shouldShowAction: true)
+        cardsList(items: items, shouldShowAction: true)
             .previewDisplayName("What’s New + Main Action - Light Mode")
             .preferredColorScheme(.light)
 
-        cardsList(shouldShowAction: true)
+        cardsList(items: items, shouldShowAction: true)
             .previewDisplayName("What’s New + Main Action - Dark Mode")
             .preferredColorScheme(.dark)
 
-        cardsList(shouldShowAction: true, repeatedItems: true)
+        cardsList(items: items + sectionWithItems, shouldShowAction: true)
+            .previewDisplayName("What’s New + Section - Dark Mode")
+            .preferredColorScheme(.dark)
+
+        cardsList(items: items + sectionWithItems, shouldShowAction: true)
+            .previewDisplayName("What’s New + Section - Light Mode")
+            .preferredColorScheme(.light)
+
+        cardsList(items: sectionWithItems, shouldShowAction: true)
+            .previewDisplayName("What’s New + Section First Place - Light Mode")
+            .preferredColorScheme(.light)
+
+        cardsList(items: sectionWithItems, shouldShowAction: true)
+            .previewDisplayName("What’s New + Section First Place - Dark Mode")
+            .preferredColorScheme(.dark)
+
+        cardsList(items: items + items + items, shouldShowAction: true)
             .previewDisplayName("What’s New - Multiple Items")
 
-        cardsList(shouldShowAction: false)
+        cardsList(items: items, shouldShowAction: false)
             .previewDisplayName("What’s New No Main Action - Light Mode")
             .preferredColorScheme(.light)
 
-        cardsList(shouldShowAction: false)
+        cardsList(items: items, shouldShowAction: false)
             .previewDisplayName("What’s New No Main Action - Dark Mode")
             .preferredColorScheme(.dark)
     }

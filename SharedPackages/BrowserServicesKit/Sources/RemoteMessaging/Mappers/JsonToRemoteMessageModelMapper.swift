@@ -438,23 +438,35 @@ private extension JsonToRemoteMessageModelMapper {
             let validator = MappingValidator(root: jsonListItem)
 
             let id = try validator.notEmpty(\.id)
-            let titleText = try validator.notEmpty(\.titleText)
             let jsonType = try validator.mapEnum(\.type, to: RemoteMessageResponse.JsonListItemType.self)
-            let descriptionText = jsonListItem.descriptionText ?? ""
-            let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
-            let remoteAction = try validator.compactMap(\.primaryAction) { action in
-                mapToAction(action, surveyActionMapper: surveyActionMapper)
+
+            let matchingRules: [Int]
+            let exclusionRules: [Int]
+
+            let listItemType: RemoteMessageModelType.ListItem.ListItemType
+            switch jsonType {
+            case .twoLinesItem:
+                let titleText = try validator.notEmpty(\.titleText)
+                let descriptionText = jsonListItem.descriptionText ?? ""
+                let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
+                let remoteAction = try validator.compactMap(\.primaryAction) { action in
+                    mapToAction(action, surveyActionMapper: surveyActionMapper)
+                }
+                listItemType = .twoLinesItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, action: remoteAction)
+                matchingRules = jsonListItem.matchingRules ?? []
+                exclusionRules = jsonListItem.exclusionRules ?? []
+            case .titledSection:
+                let titleText = try validator.notEmpty(\.titleText)
+                let itemIDs = try validator.notNilOrEmpty(\.itemIDs)
+                listItemType = .titledSection(titleText: titleText, itemIDs: itemIDs)
+                // Sections don't support matching/exclusion rules
+                matchingRules = []
+                exclusionRules = []
             }
-            let matchingRules = jsonListItem.matchingRules ?? []
-            let exclusionRules = jsonListItem.exclusionRules ?? []
 
             return RemoteMessageModelType.ListItem(
                 id: id,
-                type: RemoteMessageModelType.ListItem.ListItemType(from: jsonType),
-                titleText: titleText,
-                descriptionText: descriptionText,
-                placeholderImage: placeHolderImage,
-                action: remoteAction,
+                type: listItemType,
                 matchingRules: matchingRules,
                 exclusionRules: exclusionRules
             )
@@ -490,19 +502,6 @@ private extension JsonToRemoteMessageModelMapper {
             return [.newTabPage, .tabBar]
         case .cardsList:
             return [.modal, .dedicatedTab]
-        }
-    }
-
-}
-
-// MARK: - Item Helpers
-
-extension RemoteMessageModelType.ListItem.ListItemType {
-
-    init(from jsonType: RemoteMessageResponse.JsonListItemType) {
-        switch jsonType {
-        case .twoLinesItem:
-            self = .twoLinesItem
         }
     }
 

@@ -174,14 +174,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210869716452614?focus=true
-    case customization
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397873940926?focus=true
-    case ampBackgroundTaskSupport
 
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
     case productTelemetrySurfaceUsage
@@ -250,6 +244,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case foregroundRunningOnAppActive
     case foregroundRunningWhenDashboardOpen
     case clickActionDelayReductionOptimization
+    case pirRollout
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -316,9 +311,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
-
-    /// Controls showing the AI Chat as Tabs Experiment Setting in Settings -> AI Features
-    case fullDuckAIModeExperimentalSetting
 
     /// Controls different input sizes and fade out animation for toggle.
     case fadeOutOnToggle

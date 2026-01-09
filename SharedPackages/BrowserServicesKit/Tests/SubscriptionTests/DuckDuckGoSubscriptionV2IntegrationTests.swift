@@ -28,7 +28,6 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
 
     var apiService: MockAPIService!
     var tokenStorage: MockTokenStorage!
-    var legacyAccountStorage: MockLegacyTokenStorage!
     var subscriptionManager: DefaultSubscriptionManagerV2!
     var appStorePurchaseFlow: DefaultAppStorePurchaseFlowV2!
     var appStoreRestoreFlow: DefaultAppStoreRestoreFlowV2!
@@ -48,10 +47,8 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
         let authService = DefaultOAuthService(baseURL: OAuthEnvironment.staging.url, apiService: apiService)
         // keychain storage
         tokenStorage = MockTokenStorage()
-        legacyAccountStorage = MockLegacyTokenStorage()
 
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                            legacyTokenStorage: legacyAccountStorage,
                                             authService: authService,
                                             refreshEventMapping: nil)
         storePurchaseManager = StorePurchaseManagerMockV2()
@@ -79,7 +76,6 @@ final class DuckDuckGoSubscriptionV2IntegrationTests: XCTestCase {
     override func tearDownWithError() throws {
         apiService = nil
         tokenStorage = nil
-        legacyAccountStorage = nil
         subscriptionManager = nil
         appStorePurchaseFlow = nil
         appStoreRestoreFlow = nil

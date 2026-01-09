@@ -111,7 +111,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
-    private let terminationDeciderHandler = TerminationDeciderHandler()
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
@@ -1359,40 +1358,74 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // Prevent reentry if already processing termination
-        guard !terminationDeciderHandler.isTerminating else { return .terminateLater }
+        // Show quit survey for first-time quitters (new users within 14 days)
+        let decider = QuitSurveyDecider(
+            featureFlagger: featureFlagger,
+            dataClearingPreferences: dataClearingPreferences,
+            downloadManager: downloadManager,
+            installDate: AppDelegate.firstLaunchDate,
+            persistor: QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore),
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore)
+        )
 
-        // Termination deciders in order of execution
-        let deciders: [ApplicationTerminationDecider?] = [
-            {
-                let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
-                return QuitSurveyTerminationDecider(
-                    featureFlagger: featureFlagger,
-                    dataClearingPreferences: dataClearingPreferences,
-                    downloadManager: downloadManager,
-                    installDate: AppDelegate.firstLaunchDate,
-                    persistor: persistor,
-                    reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
-                    showQuitSurvey: { [weak self] in
-                        guard let self else { return }
-                        let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor)
-                        await presenter.showSurvey()
-                    }
-                )
-            }(),
-            ActiveDownloadsTerminationDecider(
-                downloadManager: downloadManager,
-                downloadListCoordinator: downloadListCoordinator
-            ),
-            updateController.map(UpdateControllerTerminationDecider.init),
-            StateRestorationTerminationDecider(stateRestorationManager: stateRestorationManager),
-            autoClearHandler,
-            PrivacyStatsTerminationDecider(privacyStats: privacyStats),
-        ]
+        if decider.shouldShowQuitSurvey {
+            decider.markQuitSurveyShown()
+            showQuitSurvey()
+            return .terminateLater
+        }
 
-        // Execute deciders sequentially
-        let result = terminationDeciderHandler.executeTerminationDeciders(deciders.compactMap { $0 }, isAsync: false)
-        return result
+        if !downloadManager.downloads.isEmpty {
+            // if there're downloads without location chosen yet (save dialog should display) - ignore them
+            let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
+            if !activeDownloads.isEmpty {
+                let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
+                let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
+                    // close alert and burn the window when all downloads finished
+                    NSApp.stopModal(withCode: .OK)
+                }
+                let response = alert.runModal()
+                downloadsFinishedCancellable.cancel()
+                if response == .cancel {
+                    return .terminateCancel
+                }
+            }
+            downloadManager.cancelAll(waitUntilDone: true)
+            downloadListCoordinator.sync()
+        }
+
+        // Cancel any active update tracking flow
+        updateController?.handleAppTermination()
+
+        stateRestorationManager?.applicationWillTerminate()
+
+        // Handling of "Burn on quit"
+        if let terminationReply = autoClearHandler.handleAppTermination() {
+            return terminationReply
+        }
+
+        tearDownPrivacyStats()
+
+        return .terminateNow
+    }
+
+    func tearDownPrivacyStats() {
+        let condition = RunLoop.ResumeCondition()
+        Task {
+            await privacyStats.handleAppTermination()
+            condition.resolve()
+        }
+        RunLoop.current.run(until: condition)
+    }
+
+    // MARK: - Quit Survey
+
+    @MainActor private func showQuitSurvey() {
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+        let presenter = QuitSurveyPresenter(windowControllersManager: windowControllersManager, persistor: persistor)
+        Task {
+            await presenter.showSurvey()
+            NSApp.reply(toApplicationShouldTerminate: true)
+        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

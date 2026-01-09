@@ -211,13 +211,3 @@ extension UpdateController {
 
 // MARK: - ApplicationTerminationDecider
 
-/// Wrapper for update controller termination logic
-@MainActor
-struct UpdateControllerTerminationDecider: ApplicationTerminationDecider {
-    let updateController: UpdateController
-
-    func shouldTerminate(isAsync: Bool) -> TerminationQuery {
-        updateController.handleAppTermination()
-        return .sync(.next)
-    }
-}

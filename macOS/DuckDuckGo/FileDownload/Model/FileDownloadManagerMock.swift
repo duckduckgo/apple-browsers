@@ -39,8 +39,9 @@ final class FileDownloadManagerMock: FileDownloadManagerProtocol, WebKitDownload
         addDownloadBlock!(download, delegate, destination)
     }
 
-    func cancelAll() async {
-        // Mock implementation - no-op
+    var cancelAllBlock: ((Bool) -> Void)?
+    func cancelAll(waitUntilDone: Bool) {
+        cancelAllBlock?(waitUntilDone)
     }
 
     func fileDownloadTaskNeedsDestinationURL(_ task: WebKitDownloadTask, suggestedFilename: String, suggestedFileType: UTType?) async -> (URL?, UTType?) {

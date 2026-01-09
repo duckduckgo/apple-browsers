@@ -33,7 +33,6 @@ public final class MockSubscriptionUserScriptHandler: SubscriptionUserScriptHand
     public var openSubscriptionPurchaseCallCount = 0
     public var openSubscriptionUpgradeCallCount = 0
 
-
     // Parameter tracking
     public var lastOpenSubscriptionPurchaseParams: Any?
     public var lastOpenSubscriptionPurchaseMessage: (any UserScriptMessage)?

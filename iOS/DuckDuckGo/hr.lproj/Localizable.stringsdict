@@ -2,6 +2,46 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Izbriši s %1$d mrežne lokacije. Možda će te odjaviti s računa.</string>
+			<key>few</key>
+			<string>Izbriši s %1$d mrežne lokacije. Možda će te odjaviti s računa.</string>
+			<key>many</key>
+			<string>Izbriši s %1$d mrežnih lokacija. Možda će te odjaviti s računa.</string>
+			<key>other</key>
+			<string>Izbriši s %1$d mrežnih lokacija. Možda će te odjaviti s računa.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvori karticu</string>
+			<key>few</key>
+			<string>Zatvori sve %1$d kartice</string>
+			<key>many</key>
+			<string>Zatvori svih %1$d kartica</string>
+			<key>other</key>
+			<string>Zatvori svih %1$d kartica</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

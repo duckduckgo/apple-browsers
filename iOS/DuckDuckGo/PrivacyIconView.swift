@@ -27,8 +27,8 @@ import Kingfisher
 // MARK: - Dax Easter Egg Logo Constants
 
 private extension PrivacyIconView {
-    /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size
-    static let daxLogoScaleFactor: CGFloat = 0.6
+    /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size (24/47 ≈ 0.51)
+    static let daxLogoScaleFactor: CGFloat = 0.51
 }
 
 enum PrivacyIcon {
@@ -54,6 +54,7 @@ class PrivacyIconView: UIView {
     private(set) var staticImageView: UIImageView!
     private(set) var shieldAnimationView: LottieAnimationView!
     private(set) var shieldDotAnimationView: LottieAnimationView!
+    private var transitionPlaceholderView: UIView!
 
     private(set) var icon: PrivacyIcon = .shield
     private(set) var daxLogoURL: URL?
@@ -118,6 +119,20 @@ class PrivacyIconView: UIView {
             shieldDotAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
 
+        transitionPlaceholderView = UIView()
+        transitionPlaceholderView.translatesAutoresizingMaskIntoConstraints = false
+        transitionPlaceholderView.backgroundColor = UIColor(designSystemColor: .surface)
+        transitionPlaceholderView.layer.cornerRadius = 12
+        transitionPlaceholderView.isHidden = true
+        addSubview(transitionPlaceholderView)
+
+        NSLayoutConstraint.activate([
+            transitionPlaceholderView.widthAnchor.constraint(equalToConstant: 24),
+            transitionPlaceholderView.heightAnchor.constraint(equalToConstant: 24),
+            transitionPlaceholderView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            transitionPlaceholderView.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+
         // Add pointer interaction
         addInteraction(UIPointerInteraction(delegate: self))
 
@@ -150,7 +165,8 @@ class PrivacyIconView: UIView {
     func updateIcon(_ newIcon: PrivacyIcon) {
         guard newIcon != icon else { return }
         icon = newIcon
-        updateShieldImageView(for: newIcon)
+        let shouldAnimateCustomLogo = newIcon == .daxLogo && daxLogoURL != nil
+        updateShieldImageView(for: newIcon, animateCustomLogo: shouldAnimateCustomLogo)
         updateAccessibilityLabels(for: newIcon)
     }
     
@@ -188,7 +204,18 @@ class PrivacyIconView: UIView {
                     } else {
                         self.staticImageView.image = PrivacyIcon.daxLogo.staticImage
                     }
-                }, completion: nil)
+                }, completion: { _ in
+                    if url != nil {
+                        self.animatePopEffect()
+                    }
+                })
+            } else if url != nil {
+                // Custom to custom transition
+                UIView.transition(with: staticImageView, duration: 0.25, options: .transitionCrossDissolve, animations: {
+                    self.staticImageView.kf.setImage(with: url, placeholder: PrivacyIcon.daxLogo.staticImage)
+                }, completion: { _ in
+                    self.animatePopEffect()
+                })
             } else {
                 updateShieldImageView(for: icon)
             }
@@ -206,7 +233,9 @@ class PrivacyIconView: UIView {
         }
     }
 
-    private func updateShieldImageView(for icon: PrivacyIcon) {
+    private func updateShieldImageView(for icon: PrivacyIcon, animateCustomLogo: Bool = false) {
+        transitionPlaceholderView.isHidden = true
+
         switch icon {
         case .daxLogo:
             staticImageView.isHidden = false
@@ -226,7 +255,11 @@ class PrivacyIconView: UIView {
                 staticImageView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
 
                 // Load original high-quality image for both display and full-screen
-                staticImageView.kf.setImage(with: url, placeholder: icon.staticImage)
+                staticImageView.kf.setImage(with: url, placeholder: icon.staticImage) { [weak self] _ in
+                    if animateCustomLogo {
+                        self?.animatePopEffect()
+                    }
+                }
             } else {
                 // PDF image (24x24) doesn't need scaleAspectFit - use natural size
                 staticImageView.contentMode = .center
@@ -276,11 +309,51 @@ class PrivacyIconView: UIView {
             accessibilityTraits = .button
         }
     }
-    
+
+    private func animatePopEffect() {
+        let baseTransform = staticImageView.transform
+        let angle: CGFloat = .pi / 10  // ~18 degrees
+
+        UIView.animateKeyframes(withDuration: 0.6, delay: 0, options: []) {
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.15) {
+                self.staticImageView.transform = baseTransform.rotated(by: angle)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.15, relativeDuration: 0.15) {
+                self.staticImageView.transform = baseTransform.rotated(by: -angle)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.15) {
+                self.staticImageView.transform = baseTransform.rotated(by: angle)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.45, relativeDuration: 0.15) {
+                self.staticImageView.transform = baseTransform.rotated(by: -angle)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.6, relativeDuration: 0.2) {
+                self.staticImageView.transform = baseTransform.rotated(by: angle * 0.4)
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.8, relativeDuration: 0.2) {
+                self.staticImageView.transform = baseTransform
+            }
+        }
+    }
+
     func refresh() {
         updateShieldImageView(for: icon)
         updateAccessibilityLabels(for: icon)
         // Keep animated views visible at frame 1 - do NOT hide them
+    }
+
+    /// Hides the static image view during full-screen transition to avoid duplicate logos.
+    func hideLogoForTransition() {
+        staticImageView.isHidden = true
+        transitionPlaceholderView.isHidden = false
+    }
+
+    /// Shows the static image view after full-screen transition completes.
+    func showLogoAfterTransition() {
+        transitionPlaceholderView.isHidden = true
+        if icon == .daxLogo || icon == .alert {
+            staticImageView.isHidden = false
+        }
     }
     
     func prepareForAnimation(for icon: PrivacyIcon) {

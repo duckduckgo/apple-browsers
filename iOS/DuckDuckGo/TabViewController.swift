@@ -359,8 +359,7 @@ class TabViewController: UIViewController {
     private lazy var linkProtection: LinkProtection = {
         LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                       errorReporting: Self.debugEvents,
-                       useBackgroundTaskProtection: featureFlagger.isFeatureOn(.ampBackgroundTaskSupport))
+                       errorReporting: Self.debugEvents)
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {
@@ -1483,18 +1482,22 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView,
                  didReceive challenge: URLAuthenticationChallenge,
                  completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic {
-            performBasicHTTPAuthentication(protectionSpace: challenge.protectionSpace, completionHandler: completionHandler)
-        } else if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
+
+        switch challenge.protectionSpace.authenticationMethod {
+        case NSURLAuthenticationMethodHTTPBasic, NSURLAuthenticationMethodHTTPDigest:
+            performHTTPAuthentication(protectionSpace: challenge.protectionSpace, completionHandler: completionHandler)
+
+        case NSURLAuthenticationMethodServerTrust:
             // Handle SSL challenge and present Special Error page if issues with SSL certificates are detected
             specialErrorPageNavigationHandler.handleWebView(webView, didReceive: challenge, completionHandler: completionHandler)
-        } else {
+
+        default:
             completionHandler(.performDefaultHandling, nil)
         }
     }
 
-    func performBasicHTTPAuthentication(protectionSpace: URLProtectionSpace,
-                                        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+    func performHTTPAuthentication(protectionSpace: URLProtectionSpace,
+                                   completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         if let urlProvidedBasicAuthCredential,
            urlProvidedBasicAuthCredential.url.matches(protectionSpace) {
 

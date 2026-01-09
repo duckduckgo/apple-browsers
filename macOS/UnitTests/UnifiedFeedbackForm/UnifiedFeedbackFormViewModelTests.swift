@@ -26,7 +26,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
     func testWhenCreatingViewModel_ThenInitialStateIsFeedbackPending() throws {
         let collector = MockVPNMetadataCollector()
         let sender = MockVPNFeedbackSender()
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMockV2(),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender,
@@ -38,7 +38,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
     func testGivenNoEmail_WhenSendingFeedbackSucceeds_ThenFeedbackIsSent() async throws {
         let collector = MockVPNMetadataCollector()
         let sender = MockVPNFeedbackSender()
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMockV2(),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender,
@@ -56,7 +56,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
     func testWhenSendingFeedbackFails_ThenFeedbackIsNotSent() async throws {
         let collector = MockVPNMetadataCollector()
         let sender = MockVPNFeedbackSender()
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMockV2(),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender,
@@ -76,7 +76,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let collector = MockVPNMetadataCollector()
         let sender = MockVPNFeedbackSender()
         let delegate = MockVPNFeedbackFormViewModelDelegate()
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMockV2(),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender,
@@ -89,8 +89,8 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
     }
 
     func disabledTestWhenDuckAiFeatureIsEnabledAndSubscriptionIncludesPaidAIChat_ThenDuckAiCategoryIsAvailable() async throws {
-        let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        let subscriptionManager = SubscriptionManagerMockV2()
+        subscriptionManager.resultFeatures = [.paidAIChat]
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.paidAIChat]
 
@@ -113,8 +113,8 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
     }
 
     func testWhenDuckAiFeatureIsDisabled_ThenDuckAiCategoryIsNotAvailable() async throws {
-        let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        let subscriptionManager = SubscriptionManagerMockV2()
+        subscriptionManager.resultFeatures = [.paidAIChat]
         let featureFlagger = MockFeatureFlagger()
 
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
@@ -128,8 +128,8 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
     }
 
     func testWhenSubscriptionDoesNotIncludePaidAIChat_ThenDuckAiCategoryIsNotAvailable() async throws {
-        let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.subscriptionFeatures = []
+        let subscriptionManager = SubscriptionManagerMockV2()
+        subscriptionManager.resultFeatures = []
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.paidAIChat]
 
@@ -144,7 +144,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
     }
 
     func testWhenSourceIsDuckAi_ThenDefaultCategoryIsDuckAi() throws {
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMockV2(),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
@@ -157,7 +157,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
     }
 
     func testWhenDuckAiCategoryIsSelected_ThenSubcategoryIsSetToPaidAIChatPrompt() throws {
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMockV2(),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
@@ -170,7 +170,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func testGivenDuckAiCategorWhenSendingFeedbackSucceeds_ThenCorrectFeedbackIsSent() async throws {
         let sender = MockVPNFeedbackSender()
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMockV2(),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      defaultMetadataCollector: MockDBPMetadataCollector(),
@@ -194,7 +194,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
 
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMockV2(),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
@@ -211,7 +211,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
     func testWhenProTierPurchaseDisabled_ThenSubscriptionSubcategoriesExcludesUnableToAccessFeatures() {
         let featureFlagger = MockFeatureFlagger()
 
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMockV2(),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
@@ -358,20 +358,4 @@ private class MockVPNFeedbackFormViewModelDelegate: UnifiedFeedbackFormViewModel
         receivedDismissedViewCallback = true
     }
 
-}
-
-extension SubscriptionManagerMock {
-
-    convenience init() {
-        let accountManager = AccountManagerMock()
-        accountManager.accessToken = "token"
-        self.init(accountManager: accountManager,
-                  subscriptionEndpointService: SubscriptionEndpointServiceMock(),
-                  authEndpointService: AuthEndpointServiceMock(),
-                  storePurchaseManager: StorePurchaseManagerMock(),
-                  currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
-                                                              purchasePlatform: .appStore),
-                  hasAppStoreProductsAvailable: false,
-                  subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
-    }
 }

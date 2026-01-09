@@ -134,7 +134,8 @@ final class FireExecutorTests: XCTestCase {
         mockBookmarkDatabaseCleaner = MockBookmarkDatabaseCleaner()
         mockDelegate = MockFireExecutorDelegate()
         mockAppSettings = AppSettingsMock()
-        mockFeatureFlagger.enabledFeatureFlags = [.granularFireButtonOptions]
+        mockAppSettings.autoClearAIChatHistory = true
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
     }
     
     override func tearDown() {
@@ -386,7 +387,7 @@ final class FireExecutorTests: XCTestCase {
     
     func testAIChatsNotClearedOnLegacyUIAndDisabledByUser() async {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [] // granularFireButtonOptions disabled
+        mockFeatureFlagger.enabledFeatureFlags = [] // enhancedDataClearingSettings disabled
         mockAppSettings.autoClearAIChatHistory = false
         let executor = makeFireExecutor()
         

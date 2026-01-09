@@ -2237,4 +2237,11 @@ public struct UserText {
         let format = Bundle.main.localizedString(forKey: "fire.confirmation.data.subtitle.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
+
+    // MARK: - Dax Easter Egg
+
+    public static let daxEasterEggFoundTitle = NSLocalizedString("dax.easter.egg.found.title", value: "You found a hidden logo!", comment: "Title shown when user taps on an easter egg logo in full screen view")
+    public static let daxEasterEggSwitchToThisLogo = NSLocalizedString("dax.easter.egg.switch.to.this.logo", value: "Switch to This Logo", comment: "Button to switch to the displayed easter egg logo")
+    public static let daxEasterEggResetToDefault = NSLocalizedString("dax.easter.egg.reset.to.default", value: "Reset Search Logo", comment: "Button to reset the search logo to the default Dax logo")
+    public static let daxEasterEggLogoSaved = NSLocalizedString("dax.easter.egg.logo.saved", value: "Logo Saved", comment: "Toast message shown when the user saves a custom logo")
 }

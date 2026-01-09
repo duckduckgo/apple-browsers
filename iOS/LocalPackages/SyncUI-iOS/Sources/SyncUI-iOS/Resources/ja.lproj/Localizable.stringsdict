@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bookmarks.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@sites@</string>
+		<key>sites</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>一部のフィールドが文字数制限を超えているため、%2$@のブックマークと他の%1$d件のサイトは同期できません。</string>
+			<key>zero</key>
+			<string>1つのフィールドが文字数制限を超えているため、%2$@のブックマークは同期できません。</string>
+		</dict>
+	</dict>
+	<key>credentials.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@sites@</string>
+		<key>sites</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>一部のフィールドが文字数制限を超えているため、%2$@のパスワードと他の%1$d件のサイトは同期できません。</string>
+			<key>zero</key>
+			<string>1つのフィールドが文字数制限を超えているため、%2$@のパスワードは同期できません。</string>
+		</dict>
+	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>一部のフィールドが文字数制限を超えているため、クレジットカード%2$@と他の%1$d枚のカードは同期できません。</string>
+			<key>zero</key>
+			<string>1つのフィールドが文字数制限を超えているため、クレジットカード%2$@は同期できません。</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

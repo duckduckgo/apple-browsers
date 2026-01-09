@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Včera";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Nacházíš skryté logo!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo uloženo";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Resetovat logo vyhledávání";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Přepnout na tohle logo";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Upozornění! Nedokážeme zabránit, aby %1$@ viděli vaši aktivitu na %2$@.\n\nAle procházejte s námi a budeme moci omezit, co o vás celkově %1$@ ví zablokováním jejich trackerů na mnoha jiných stránkách.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkce AI u DuckDuckGo jsou soukromé a volitelné. Tvoje data se nepoužívají k trénování umělé inteligence.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Shrnout tuhle stránku";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Zobrazí tlačítka a odkazy Duck.ai ve výsledcích vyhledávání DuckDuckGo.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Vyhledávání na stránce";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Smazat všechny chaty";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Chaty Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Může tě to odhlásit z účtů";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Soubory cookie a data webu";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Karty";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Vyber, co chceš smazat";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Vzdušný proud";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavení vyhledávání s funkcí Assist";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Zobrazovat nové chaty Duck.ai jako karty v prohlížeči";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Automaticky odesílat kontext stránky do Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Režim karet Duck.ai";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Automatické odesílání kontextu";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skrýt obrázky vygenerované umělou inteligencí";
@@ -3574,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Plány předplatného";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Dokončuji nákup...";
 
@@ -3663,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Bezplatná zkušební verze je aktivní";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Zobrazit všechny tarify";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Upozornění SwiftUI";

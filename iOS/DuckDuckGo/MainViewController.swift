@@ -234,7 +234,6 @@ class MainViewController: UIViewController {
 
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore)
 
-    let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
@@ -245,6 +244,7 @@ class MainViewController: UIViewController {
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
+    private let daxEasterEggLogoStore: DaxEasterEggLogoStoring
 
     private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
     private let launchSourceManager: LaunchSourceManaging
@@ -291,7 +291,8 @@ class MainViewController: UIViewController {
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
-        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
+        daxEasterEggPresenter: DaxEasterEggPresenting? = nil,
+        daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
@@ -338,12 +339,12 @@ class MainViewController: UIViewController {
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
-        self.isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         self.keyValueStore = keyValueStore
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
-        self.daxEasterEggPresenter = daxEasterEggPresenter
+        self.daxEasterEggLogoStore = daxEasterEggLogoStore
+        self.daxEasterEggPresenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
         self.launchSourceManager = launchSourceManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
@@ -461,6 +462,7 @@ class MainViewController: UIViewController {
         subscribeToAIChatSettingsEvents()
         subscribeToRefreshButtonSettingsEvents()
         subscribeToCustomizationSettingsEvents()
+        subscribeToDaxEasterEggLogoChanges()
 
         checkSubscriptionEntitlements()
 
@@ -1523,9 +1525,8 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.resetPrivacyIcon(for: tab.url)
         }
 
-        // Restore the Dax Easter Egg logo URL for the current tab
-        Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
-        viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
+        let logoURL = logoURLForCurrentPage(tab: tab)
+        viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
         if aichatFullModeFeature.isAvailable && tab.isAITab {
             viewCoordinator.omniBar.enterAIChatMode()
@@ -2172,13 +2173,11 @@ class MainViewController: UIViewController {
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),
                 frequency: .dailyAndCount)
             tunnelDefaults.resetEntitlementMessaging()
@@ -2193,7 +2192,6 @@ class MainViewController: UIViewController {
     private func performClientCheck(trigger: VPNSubscriptionClientCheckPixel.Trigger) {
         Task {
             do {
-                let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
                 let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
                 let hasEntitlement = try await subscriptionManager.isFeatureEnabled(.networkProtection)
 
@@ -2201,7 +2199,6 @@ class MainViewController: UIViewController {
                     PixelKit.fire(
                         VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
                             isSubscriptionActive: isSubscriptionActive,
-                            isAuthV2Enabled: isAuthV2Enabled,
                             trigger: trigger),
                         frequency: .dailyAndCount)
                     
@@ -2210,7 +2207,6 @@ class MainViewController: UIViewController {
                     PixelKit.fire(
                         VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
                             isSubscriptionActive: isSubscriptionActive,
-                            isAuthV2Enabled: isAuthV2Enabled,
                             trigger: trigger),
                         frequency: .dailyAndCount)
                     
@@ -2223,13 +2219,11 @@ class MainViewController: UIViewController {
     }
 
     private func handleClientCheckFailure(error: Error, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
-        let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
         
         PixelKit.fire(
             VPNSubscriptionClientCheckPixel.failed(
                 isSubscriptionActive: isSubscriptionActive,
-                isAuthV2Enabled: isAuthV2Enabled,
                 trigger: trigger,
                 error: error),
             frequency: .daily)
@@ -2251,21 +2245,18 @@ class MainViewController: UIViewController {
 
             let userInitiatedSignOut = (userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] as? Bool) ?? false
             let hasVPNEntitlements = payload.entitlements.contains(.networkProtection)
-            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             if hasVPNEntitlements {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
             } else {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                         isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
@@ -2290,13 +2281,11 @@ class MainViewController: UIViewController {
     private func onNetworkProtectionAccountSignOut(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),
                 frequency: .dailyAndCount)
 
@@ -3293,17 +3282,21 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            Logger.daxEasterEgg.debug("Tab received logo - Tab [\(tab.tabModel.uid)] Logo: \(logoURL ?? "nil"), IsCurrent: \(self.currentTab == tab)")
-            
             tab.tabModel.daxEasterEggLogoURL = logoURL
-            
-            // Only update omnibar if this is the currently active tab
             if self.currentTab == tab {
-                Logger.daxEasterEgg.debug("Setting omnibar logo: \(logoURL ?? "nil")")
-                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
+                let finalLogoURL = self.logoURLForCurrentPage(tab: tab)
+                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(finalLogoURL)
             }
-            // If this is NOT the current tab, the logo will be restored when the tab becomes active via refreshOmniBar()
         }
+    }
+
+    private func logoURLForCurrentPage(tab: TabViewController) -> String? {
+        guard let url = tab.url, url.isDuckDuckGoSearch else { return nil }
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return nil }
+        if featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo) {
+            return daxEasterEggLogoStore.logoURL ?? tab.tabModel.daxEasterEggLogoURL
+        }
+        return tab.tabModel.daxEasterEggLogoURL
     }
 
     func tabDidRequestReportBrokenSite(tab: TabViewController) {
@@ -4190,6 +4183,15 @@ extension MainViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.applyCustomizationState()
+            }
+            .store(in: &settingsCancellables)
+    }
+
+    private func subscribeToDaxEasterEggLogoChanges() {
+        NotificationCenter.default.publisher(for: .logoDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
             }
             .store(in: &settingsCancellables)
     }

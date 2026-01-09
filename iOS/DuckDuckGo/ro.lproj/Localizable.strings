@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Ieri";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Ai găsit un logo ascuns!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo salvat";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Resetează logoul de căutare";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Comută la acest logo";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Atenție! Nu pot împiedica %1$@ să îți vadă activitatea pe %2$@.\n\nDar navighează cu mine și pot reduce ceea ce %1$@ cunoaște despre tine în general, blocând instrumentele lor de urmărire pe o mulțime de alte site-uri.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funcțiile AI ale DuckDuckGo sunt private și opționale. Datele tale nu sunt folosite pentru a antrena AI.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Rezumă această pagină";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Afișează butoanele și linkurile Duck.ai în rezultatele căutării DuckDuckGo.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Găsire în pagină";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Șterge toate chaturile";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Chaturi Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Te poate deconecta de la conturi";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Date privind modulele cookie și site-ul";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "File";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Alege ce să ștergi";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Curent de aer";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Setări Search Assist";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Afișează noile chaturi Duck.ai ca file în browser";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Trimite automat contextul paginii către Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Modul de file Duck.ai";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Trimite automat contextul";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ascunde imaginile generate de IA";
@@ -3574,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Tipuri de abonament";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Se finalizează achiziția...";
 
@@ -3663,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Perioada de încercare gratuită este activă";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Vezi toate planurile";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alertă SwiftUI";

@@ -1157,7 +1157,7 @@ extension Pixel {
         case subscriptionKeychainManagerDeallocatedWithBacklog
         case subscriptionKeychainManagerDataWroteFromBacklog
         case subscriptionKeychainManagerFailedToWriteDataFromBacklog
-        // AUth V2
+        // Auth
         case subscriptionInvalidRefreshTokenDetected
         case subscriptionInvalidRefreshTokenSignedOut
         case subscriptionInvalidRefreshTokenRecovered
@@ -1541,6 +1541,8 @@ extension Pixel {
         // MARK: - Dax Easter Egg
         case daxEasterEggLogoDisplayed
         case daxEasterEggLogoTapped
+        case daxEasterEggLogoSetAsPermanent
+        case daxEasterEggLogoResetToDefault
 
         // MARK: - Product surface telemetery
         case productTelemeterySurfaceUsageMenu
@@ -2610,7 +2612,7 @@ extension Pixel.Event {
         case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
         case .subscriptionKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
         case .subscriptionKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
-            // Auth V2
+            // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
@@ -3032,6 +3034,8 @@ extension Pixel.Event {
         // MARK: - Dax Easter Egg
         case .daxEasterEggLogoDisplayed: return "m_dax_easter_egg_logo_displayed"
         case .daxEasterEggLogoTapped: return "m_dax_easter_egg_logo_tapped"
+        case .daxEasterEggLogoSetAsPermanent: return "m_dax_easter_egg_logo_set_as_permanent"
+        case .daxEasterEggLogoResetToDefault: return "m_dax_easter_egg_logo_reset_to_default"
 
         // MARK: - Product surface telemetery
         case .productTelemeterySurfaceUsageMenu: return "m_product_telemetry_surface_usage_menu"

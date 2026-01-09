@@ -71,8 +71,6 @@ final class SettingsViewModel: ObservableObject {
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
 
     // Subscription Dependencies
-    let isAuthV2Enabled: Bool
-    let subscriptionManagerV1: (any SubscriptionManager)?
     let subscriptionManagerV2: (any SubscriptionManagerV2)?
     let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
@@ -105,6 +103,7 @@ final class SettingsViewModel: ObservableObject {
     // App Data State Notification Observer
     private var textZoomObserver: Any?
     private var appForegroundObserver: Any?
+    private var aiChatSettingsObserver: Any?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let keyValueStore: ThrowingKeyValueStoring
@@ -620,8 +619,6 @@ final class SettingsViewModel: ObservableObject {
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
-         isAuthV2Enabled: Bool,
-         subscriptionManagerV1: (any SubscriptionManager)?,
          subscriptionManagerV2: (any SubscriptionManagerV2)?,
          subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -655,8 +652,6 @@ final class SettingsViewModel: ObservableObject {
 
         self.state = SettingsState.defaults
         self.legacyViewProvider = legacyViewProvider
-        self.isAuthV2Enabled = isAuthV2Enabled
-        self.subscriptionManagerV1 = subscriptionManagerV1
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.subscriptionAuthV1toV2Bridge = subscriptionAuthV1toV2Bridge
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -697,6 +692,7 @@ final class SettingsViewModel: ObservableObject {
     deinit {
         subscriptionSignOutObserver = nil
         textZoomObserver = nil
+        aiChatSettingsObserver = nil
         if #available(iOS 18.2, *) {
             appForegroundObserver = nil
         }
@@ -1279,6 +1275,15 @@ extension SettingsViewModel {
             guard let self = self else { return }
             self.state.textZoom = SettingsState.TextZoom(level: self.appSettings.defaultTextZoomLevel)
         })
+        
+        aiChatSettingsObserver = NotificationCenter.default.addObserver(forName: .aiChatSettingsChanged,
+                                                                  object: nil,
+                                                                  queue: .main, using: { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.refreshAutoClearOptionsIfNeeded()
+            }
+        })
 
         if #available(iOS 18.2, *) {
             appForegroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
@@ -1295,57 +1300,7 @@ extension SettingsViewModel {
     }
 
     func restoreAccountPurchase() async {
-        if !isAuthV2Enabled {
-            await restoreAccountPurchaseV1()
-        } else {
-            await restoreAccountPurchaseV2()
-        }
-    }
-
-    func restoreAccountPurchaseV1() async {
-        guard let subscriptionManagerV1 else {
-            assertionFailure("Missing dependency: subscriptionManagerV1")
-            return
-        }
-
-        DispatchQueue.main.async { self.state.subscription.isRestoring = true }
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManagerV1.accountManager,
-                                                             storePurchaseManager: subscriptionManagerV1.storePurchaseManager(),
-                                                             subscriptionEndpointService: subscriptionManagerV1.subscriptionEndpointService,
-                                                             authEndpointService: subscriptionManagerV1.authEndpointService)
-        let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
-        switch result {
-        case .success:
-            DispatchQueue.main.async {
-                self.state.subscription.isRestoring = false
-            }
-            await self.setupSubscriptionEnvironment()
-            
-        case .failure(let restoreFlowError):
-            DispatchQueue.main.async {
-                self.state.subscription.isRestoring = false
-                self.state.subscription.shouldDisplayRestoreSubscriptionError = true
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    self.state.subscription.shouldDisplayRestoreSubscriptionError = false
-                }
-            }
-
-            switch restoreFlowError {
-            case .missingAccountOrTransactions:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorMissingAccountOrTransactions)
-            case .pastTransactionAuthenticationError:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError)
-            case .failedToObtainAccessToken:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToObtainAccessToken)
-            case .failedToFetchAccountDetails:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchAccountDetails)
-            case .failedToFetchSubscriptionDetails:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails)
-            case .subscriptionExpired:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorSubscriptionExpired)
-            }
-        }
+        await restoreAccountPurchaseV2()
     }
 
     func restoreAccountPurchaseV2() async {
@@ -1397,11 +1352,7 @@ extension SettingsViewModel {
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
     private func isUserEligibleForTrialOffer() async -> Bool {
-        if isAuthV2Enabled {
-            return await subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
-        } else {
-            return await subscriptionManagerV1?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
-        }
+        return subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
     }
 
 }
@@ -1507,7 +1458,18 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
     }
 
     func navigateToAutoClearData() {
-        presentLegacyView(.autoclearData)
+        if featureFlagger.isFeatureOn(.enhancedDataClearingSettings) {
+            let viewModel = AutoClearSettingsViewModel(
+                appSettings: appSettings,
+                aiChatSettings: aiChatSettings
+            )
+            let view = AutoClearSettingsView(viewModel: viewModel)
+                .environmentObject(self)
+            let hostingController = UIHostingController(rootView: view)
+            pushViewController(hostingController)
+        } else {
+            presentLegacyView(.autoclearData)
+        }
     }
 
     func presentFireConfirmation() {
@@ -1516,6 +1478,12 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
         }, {
             // Cancelled - no action needed
         })
+    }
+    
+    private func refreshAutoClearOptionsIfNeeded() {
+        if !aiChatSettings.isAIChatEnabled {
+            appSettings.autoClearAction = appSettings.autoClearAction.subtracting(.aiChats)
+        }
     }
 }
 

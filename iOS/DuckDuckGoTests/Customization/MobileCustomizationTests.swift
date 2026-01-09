@@ -94,7 +94,7 @@ final class MobileCustomizationTests {
 
         let keyValueStore = MockThrowingKeyValueStore()
         let customization = MobileCustomization(keyValueStore: keyValueStore,
-                                                isPad: false)  { _ in
+                                                isPad: false) { _ in
             posted = true
         }
 

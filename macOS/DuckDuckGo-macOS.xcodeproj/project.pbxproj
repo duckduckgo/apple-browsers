@@ -12238,7 +12238,7 @@
 				CBCCF59F2996681700C02DFE /* Assert Xcode version */,
 				378E2798296F6D1D00FCADA2 /* Validate PRODUCT_NAME */,
 				3706FA79293F65D500E42796 /* Check Embedded Config URLs */,
-				6A8856B31B2BC5078B61ED81 /* Run swiftlint */,
+				6A8856B31B2BC5078B61ED81 /* SwiftLint */,
 				3706FA7A293F65D500E42796 /* Sources */,
 				3706FCA6293F65D500E42796 /* Frameworks */,
 				3706FCB1293F65D500E42796 /* Resources */,
@@ -12782,7 +12782,7 @@
 			buildPhases = (
 				CBCCF59E299667B700C02DFE /* Assert Xcode version */,
 				3705272528992C8A000C06A2 /* Check Embedded Config URLs */,
-				28003FDBDB96625F1630CFF2 /* Run swiftlint */,
+				28003FDBDB96625F1630CFF2 /* SwiftLint */,
 				AA585D7A248FD31100E9A3E2 /* Sources */,
 				AA585D7B248FD31100E9A3E2 /* Frameworks */,
 				AA585D7C248FD31100E9A3E2 /* Resources */,
@@ -13466,7 +13466,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		28003FDBDB96625F1630CFF2 /* Run swiftlint */ = {
+		28003FDBDB96625F1630CFF2 /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -13476,14 +13476,14 @@
 			);
 			inputPaths = (
 			);
-			name = "Run swiftlint";
+			name = SwiftLint;
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo \"SwiftLint disabled for now\"\n";
+			shellScript = "\"${SRCROOT}/../scripts/swiftlint.sh\"\n";
 		};
 		3121F62B2B64266A002F706A /* Copy Swift Package resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -13618,7 +13618,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# Embeds login items for the App Store build.\n\n# Skip login item embedding for release builds until they're ready to go live.\nif [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Alpha\" ]; then\n    PIR_AGENT_NAME=\"${DBP_BACKGROUND_AGENT_RELEASE_PRODUCT_NAME}\"\nelse\n    PIR_AGENT_NAME=\"${DBP_BACKGROUND_AGENT_PRODUCT_NAME}\"\nfi\n\nVPN_AGENT_NAME=\"${AGENT_PRODUCT_NAME}\"\n\nif [ -z \"$VPN_AGENT_NAME\" ]; then\n    echo \"VPN_AGENT_NAME is empty.\"\n    exit 1\nelif [ -z \"$PIR_AGENT_NAME\" ]; then\n    echo \"PIR_AGENT_NAME is empty.\"\n    exit 1\nelse\n    echo \"Both VPN_AGENT_NAME and PIR_AGENT_NAME are set.\"\n    echo \"VPN_AGENT_NAME is set to '$VPN_AGENT_NAME'.\"\n    echo \"PIR_AGENT_NAME is set to '$PIR_AGENT_NAME'.\"\nfi\n\nVPN_AGENT_ORIGIN=$(readlink -f \"${CONFIGURATION_BUILD_DIR}/${VPN_AGENT_NAME}.app\")\nPIR_AGENT_ORIGIN=$(readlink -f \"${CONFIGURATION_BUILD_DIR}/${PIR_AGENT_NAME}.app\")\nAGENT_DESTINATION=\"${CONFIGURATION_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Library/LoginItems\"\n    \n# Make sure that Library/LoginItems exists before copying\nmkdir -p \"$AGENT_DESTINATION\"\n    \necho \"Copying VPN agent from $VPN_AGENT_ORIGIN to $AGENT_DESTINATION\"\nrsync -r --links \"$VPN_AGENT_ORIGIN\" \"$AGENT_DESTINATION\"\n    \necho \"Copying Personal Information Removal agent from $PIR_AGENT_ORIGIN to $AGENT_DESTINATION\"\nrsync -r --links \"$PIR_AGENT_ORIGIN\" \"$AGENT_DESTINATION\"\n";
 		};
-		6A8856B31B2BC5078B61ED81 /* Run swiftlint */ = {
+		6A8856B31B2BC5078B61ED81 /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -13628,14 +13628,14 @@
 			);
 			inputPaths = (
 			);
-			name = "Run swiftlint";
+			name = SwiftLint;
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo \"SwiftLint disabled for now\"\n";
+			shellScript = "\"${SRCROOT}/../scripts/swiftlint.sh\"\n";
 		};
 		7B2E361D2D6DE89600A08CB7 /* Embed System Network Extension */ = {
 			isa = PBXShellScriptBuildPhase;

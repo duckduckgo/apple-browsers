@@ -150,7 +150,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
             id: "message-1",
             titleText: "What's New",
             items: [
-                RemoteMessageModelType.ListItem.makeListItem(
+                RemoteMessageModelType.ListItem.makeTwoLinesListItem(
                     id: "item-1",
                     titleText: "Feature 1",
                     descriptionText: "Description 1"

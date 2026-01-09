@@ -244,6 +244,3 @@ final class AppStateRestorationManager: NSObject {
         }
     }
 }
-
-// MARK: - ApplicationTerminationDecider
-

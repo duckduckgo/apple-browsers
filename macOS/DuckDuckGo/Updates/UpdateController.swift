@@ -208,6 +208,3 @@ extension UpdateController {
         PixelKit.fire(UpdateFlowPixels.updateNotificationShown)
     }
 }
-
-// MARK: - ApplicationTerminationDecider
-

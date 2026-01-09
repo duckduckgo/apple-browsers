@@ -1332,23 +1332,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         // Show quit survey for first-time quitters (new users within 14 days)
-        let decider = QuitSurveyDecider(
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+        let quitSurveyDecider = QuitSurveyTerminationDecider(
             featureFlagger: featureFlagger,
             dataClearingPreferences: dataClearingPreferences,
             downloadManager: downloadManager,
             installDate: AppDelegate.firstLaunchDate,
-            persistor: QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore),
-            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore)
+            persistor: persistor,
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+            showQuitSurvey: { [weak self] in
+                guard let self else { return }
+                let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor)
+                await presenter.showSurvey()
+            }
         )
 
-        if decider.shouldShowQuitSurvey {
-            decider.markQuitSurveyShown()
-            showQuitSurvey()
+        if let surveyTask = quitSurveyDecider.presentQuitSurveyIfNeeded() {
+            Task {
+                await surveyTask.value
+                NSApp.reply(toApplicationShouldTerminate: true)
+            }
             return .terminateLater
         }
 
         if !downloadManager.downloads.isEmpty {
-            // if there're downloads without location chosen yet (save dialog should display) - ignore them
+            // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
             let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
             if !activeDownloads.isEmpty {
                 let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
@@ -1388,17 +1396,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             condition.resolve()
         }
         RunLoop.current.run(until: condition)
-    }
-
-    // MARK: - Quit Survey
-
-    @MainActor private func showQuitSurvey() {
-        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let presenter = QuitSurveyPresenter(windowControllersManager: windowControllersManager, persistor: persistor)
-        Task {
-            await presenter.showSurvey()
-            NSApp.reply(toApplicationShouldTerminate: true)
-        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -1667,6 +1664,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()
+            autoClearHandler.onAutoClearCompleted = {
+                NSApplication.shared.reply(toApplicationShouldTerminate: true)
+            }
         }
     }
 

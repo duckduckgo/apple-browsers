@@ -90,9 +90,8 @@ excluded:
   - iOS/PacketTunnelProvider/ProxyServer
   
   # Copy files
-  - iOS/DuckDuckGo/UserText.swift
-  - macOS/DuckDuckGo/Common/Localizables/UserText.swift
-  
+  - "**/UserText.swift"
+
   # Specific files to exclude
   - SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift
   - SharedPackages/BrowserServicesKit/Sources/Common/Concurrency/AsyncStream.swift

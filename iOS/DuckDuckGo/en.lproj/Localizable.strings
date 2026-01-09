@@ -3037,7 +3037,7 @@ Take back control of your personal information with the browser designed for dat
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Import Passwords";
 
-/* Copy for badge on settings item to show an item is new */
+/* Copy for budge on settings item to show an item is new */
 "settings.item.badge.new" = "New";
 
 /* Settings screen cell for Keyboard */

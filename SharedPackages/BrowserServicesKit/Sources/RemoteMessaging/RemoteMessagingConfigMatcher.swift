@@ -63,11 +63,15 @@ public struct RemoteMessagingConfigMatcher {
                 let filteredItems = items.filter { item in
                     rulesEvaluator(item.id, item.matchingRules, item.exclusionRules)
                 }
-                // Skip message if no items remain after filtering.
-                guard !filteredItems.isEmpty else { return nil }
+
+                // Remove sections whose itemIds no longer exist after filtering
+                let sanitisedItemsAndSections = filteredItems.removingSectionsWithoutValidItems()
+
+                // Skip message if no items remain after filtering
+                guard !sanitisedItemsAndSections.isEmpty else { return nil }
 
                 // If items have been filtered return new content with items otherwise return the same message.
-                return items != filteredItems ? message.withFilteredItems(filteredItems) : message
+                return items != sanitisedItemsAndSections ? message.withFilteredItems(sanitisedItemsAndSections) : message
             }
             .first
     }
@@ -204,6 +208,35 @@ private extension RemoteMessageModelType {
             return self
         case let .cardsList(titleText, placeholder, _, primaryActionText, primaryAction):
             return .cardsList(titleText: titleText, placeholder: placeholder, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        }
+    }
+
+}
+
+private extension [RemoteMessageModelType.ListItem] {
+
+    // Removes sections whose referenced itemIds no longer exist in the filtered list.
+    // This ensures that sections without valid items are not displayed.
+    func removingSectionsWithoutValidItems() -> [RemoteMessageModelType.ListItem] {
+        // Build a set of all valid item IDs
+        let validItemIds = Set(self.compactMap { item -> String? in
+            switch item.type {
+            case .twoLinesItem:
+                return item.id
+            case .titledSection:
+                return nil
+            }
+        })
+
+        // Filter out sections that have no valid items
+        return self.filter { item in
+            switch item.type {
+            case .twoLinesItem:
+                return true
+            case .titledSection(_, let itemIDs):
+                // Keep section only if at least one of its itemIds exists in validItemIds
+                return !validItemIds.isDisjoint(with: itemIDs)
+            }
         }
     }
 

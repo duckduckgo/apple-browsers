@@ -110,9 +110,9 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
 
     func testThatCardsListTranslatesListItems() {
         // GIVEN
-        let item1 = listItem(id: "item1", titleText: "Original Title 1", descriptionText: "Original Description 1")
-        let item2 = listItem(id: "item2", titleText: "Original Title 2", descriptionText: "Original Description 2")
-        var message = cardsListMessage(id: "test", titleText: "Original Title", items: [item1, item2], primaryActionText: "Original Primary Action")
+        let item1 = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", titleText: "Original Title 1", descriptionText: "Original Description 1")
+        let item2 = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", titleText: "Original Title 2", descriptionText: "Original Description 2")
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Original Title", items: [item1, item2], primaryActionText: "Original Primary Action")
 
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "item1": RemoteMessageResponse.JsonListItemTranslation(
@@ -146,9 +146,9 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
 
     func testThatCardsListPreservesUntranslatedItemsWhenNoTranslationProvided() {
         // GIVEN
-        let item1 = listItem(id: "item1", titleText: "Original Item Title 1", descriptionText: "Original Item Description 1")
-        let item2 = listItem(id: "item2", titleText: "Original Item Title 2", descriptionText: "Original Item Description 2")
-        var message = cardsListMessage(id: "test", titleText: "Original Title", items: [item1, item2], primaryActionText: "Original Primary Action")
+        let item1 = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", titleText: "Original Item Title 1", descriptionText: "Original Item Description 1")
+        let item2 = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", titleText: "Original Item Title 2", descriptionText: "Original Item Description 2")
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Original Title", items: [item1, item2], primaryActionText: "Original Primary Action")
         // Translate only item1, not item2
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "item1": RemoteMessageResponse.JsonListItemTranslation(
@@ -178,8 +178,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
 
     func testThatCardsListFallsBackToOriginalTitleAndDescriptionWhenTranslationNil() {
         // GIVEN
-        let item = listItem(id: "item1", titleText: "Original Item Title", descriptionText: "Original Item Description")
-        var message = cardsListMessage(id: "test", titleText: "Original Title", items: [item], primaryActionText: "Original Primary Action")
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", titleText: "Original Item Title", descriptionText: "Original Item Description")
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Original Title", items: [item], primaryActionText: "Original Primary Action")
         // Translation with nil titleText and descriptionText
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "item1": RemoteMessageResponse.JsonListItemTranslation(
@@ -204,8 +204,8 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
 
     func testThatCardsListPreservesNonTranslatableFields() throws {
         // GIVEN
-        let item = listItem(id: "item1", titleText: "Original Title", descriptionText: "Original Description")
-        var message = cardsListMessage(id: "test", titleText: "Original Title", items: [item], primaryActionText: "Original Primary Action")
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", titleText: "Original Title", descriptionText: "Original Description", placeholder: .keyImport, action: .urlInContext(value: "www.duckduckgo.com"), matchingRules: [5], exclusionRules: [6])
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Original Title", placeholder: .ddgAnnounce, items: [item], primaryActionText: "Original Primary Action", primaryAction: .dismiss)
         let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
             "item1": RemoteMessageResponse.JsonListItemTranslation(
                 titleText: "Translated Title",
@@ -218,68 +218,201 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, placeholder, items, _, primaryAction) = message.content else {
+        guard case let .cardsList(titleText, placeholder, items, primaryActionText, primaryAction) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
 
-        // Text should be translated
+        // Message preserved fields
+        XCTAssertEqual(titleText, "Original Title")
         XCTAssertEqual(placeholder, .ddgAnnounce)
+        XCTAssertEqual(primaryActionText, "Original Primary Action")
         XCTAssertEqual(primaryAction, .dismiss)
 
+        // Message Item fields
         let firstItem = try XCTUnwrap(items.first)
         XCTAssertEqual(firstItem.id, "item1")
-        XCTAssertEqual(firstItem.titleText, "Translated Title")
-        XCTAssertEqual(firstItem.descriptionText, "Translated Description")
-        XCTAssertEqual(firstItem.type, .twoLinesItem)
-        XCTAssertEqual(firstItem.placeholderImage, .keyImport)
-        XCTAssertEqual(firstItem.action, .urlInContext(value: "www.duckduckgo.com"))
+        XCTAssertEqual(
+            firstItem.type,
+            .twoLinesItem(
+                titleText: "Translated Title",
+                descriptionText: "Translated Description",
+                placeholderImage: .keyImport,
+                action: .urlInContext(value: "www.duckduckgo.com")
+            )
+        )
         XCTAssertEqual(firstItem.matchingRules, [5])
         XCTAssertEqual(firstItem.exclusionRules, [6])
+    }
+
+    // MARK: - TitledSection Translation Tests
+
+    func testThatTitledSectionTranslatesTitleCorrectly() {
+        // GIVEN
+        let section = RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Original Section Title")
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Original Title", items: [section], primaryActionText: "Done")
+
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "section1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Section Title",
+                descriptionText: nil
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+
+        XCTAssertEqual(items.first?.titleText, "Translated Section Title")
+    }
+
+    func testThatTitledSectionFallsBackToOriginalWhenTranslationIsNil() {
+        // GIVEN
+        let section = RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Original Section Title")
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Original Title", items: [section], primaryActionText: "Done")
+
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "section1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: nil,
+                descriptionText: nil
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+
+        XCTAssertEqual(items.first?.titleText, "Original Section Title")
+    }
+
+    func testThatTitledSectionPreservesNonTranslatableFields() throws {
+        // GIVEN
+        let section = RemoteMessageModelType.ListItem.makeTitledSectionListItem(
+            id: "section1",
+            titleText: "Original Section Title",
+            itemIDs: ["item1"]
+        )
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Original Title", items: [section], primaryActionText: "Done")
+
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "section1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Section Title",
+                descriptionText: nil
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+
+        let firstItem = try XCTUnwrap(items.first)
+        XCTAssertEqual(firstItem.id, "section1")
+        XCTAssertEqual(firstItem.type, .titledSection(titleText: "Translated Section Title", itemIDs: ["item1"]))
+    }
+
+    func testThatMixedListWithBothItemTypesTranslatesCorrectly() throws {
+        // GIVEN
+        let section = RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Original Section")
+        let item1 = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", titleText: "Original Item 1", descriptionText: "Original Description 1")
+        let item2 = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", titleText: "Original Item 2", descriptionText: "Original Description 2")
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Original Title", items: [section, item1, item2], primaryActionText: "Done")
+
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "section1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Section",
+                descriptionText: nil
+            ),
+            "item1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Item 1",
+                descriptionText: "Translated Description 1"
+            ),
+            "item2": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Item 2",
+                descriptionText: "Translated Description 2"
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+
+        XCTAssertEqual(items.count, 3)
+        let resultSection = try XCTUnwrap(items[safe: 0])
+        let resultItem1 = try XCTUnwrap(items[safe: 1])
+        let resultItem2 = try XCTUnwrap(items[safe: 2])
+
+        // Verify section
+        XCTAssertEqual(resultSection.titleText, "Translated Section")
+        XCTAssertNil(resultSection.descriptionText, "Section should not have description")
+
+        // Verify items
+        XCTAssertEqual(resultItem1.titleText, "Translated Item 1")
+        XCTAssertEqual(resultItem1.descriptionText, "Translated Description 1")
+        XCTAssertEqual(resultItem2.titleText, "Translated Item 2")
+        XCTAssertEqual(resultItem2.descriptionText, "Translated Description 2")
+    }
+
+    func testThatMixedListWithPartialTranslationWorks() {
+        // GIVEN
+        let section = RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Original Section")
+        let item1 = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", titleText: "Original Item 1", descriptionText: "Original Description 1")
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Original Title", items: [section, item1], primaryActionText: "Done")
+
+        // Only translate the section, not the item
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "section1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Section",
+                descriptionText: nil
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+
+        XCTAssertEqual(items.count, 2)
+
+        // Section should be translated
+        XCTAssertEqual(items.first?.titleText, "Translated Section")
+
+        // Item should remain original
+        XCTAssertEqual(items.last?.titleText, "Original Item 1")
+        XCTAssertEqual(items.last?.descriptionText, "Original Description 1")
     }
 
 }
 
 extension JsonToRemoteMessageModelMapperTests {
-
-    func listItem(
-        id: String,
-        titleText: String,
-        descriptionText: String
-    ) -> RemoteMessageModelType.ListItem {
-        RemoteMessageModelType.ListItem(
-            id: id,
-            type: .twoLinesItem,
-            titleText: titleText,
-            descriptionText: descriptionText,
-            placeholderImage: .keyImport,
-            action: .urlInContext(value: "www.duckduckgo.com"),
-            matchingRules: [5],
-            exclusionRules: [6]
-        )
-    }
-
-    func cardsListMessage(
-        id: String,
-        titleText: String,
-        items: [RemoteMessageModelType.ListItem],
-        primaryActionText: String
-    ) -> RemoteMessageModel {
-        RemoteMessageModel(
-            id: id,
-            surfaces: .modal,
-            content: .cardsList(
-                titleText: titleText,
-                placeholder: .ddgAnnounce,
-                items: items,
-                primaryActionText: primaryActionText,
-                primaryAction: .dismiss
-            ),
-            matchingRules: [],
-            exclusionRules: [],
-            isMetricsEnabled: true
-        )
-    }
 
     func jsonTranslation(
         titleText: String? = nil,

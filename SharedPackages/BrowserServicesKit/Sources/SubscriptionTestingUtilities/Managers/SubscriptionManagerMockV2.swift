@@ -264,4 +264,6 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     public func isUserEligibleForFreeTrial() -> Bool {
         isEligibleForFreeTrialResult
     }
+
+    public var currentStorefrontRegion: SubscriptionRegion? = .usa
 }

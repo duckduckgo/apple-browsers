@@ -55,6 +55,14 @@ Fetches and updates certificates and provisioning profiles for Ad-Hoc distributi
 
 Fetches and updates certificates and provisioning profiles for Experimental distribution
 
+### ios sync_signing_experimental_adhoc
+
+```sh
+[bundle exec] fastlane ios sync_signing_experimental_adhoc
+```
+
+Fetches and updates certificates and provisioning profiles for Experimental Ad-Hoc distribution
+
 ### ios adhoc
 
 ```sh
@@ -78,6 +86,14 @@ Makes Ad-Hoc build with a specified name and release bundle ID in a given direct
 ```
 
 Makes Ad-Hoc build for alpha with a specified name and alpha bundle ID in a given directory
+
+### ios experimental_adhoc
+
+```sh
+[bundle exec] fastlane ios experimental_adhoc
+```
+
+Makes Ad-Hoc build for experimental with a specified name and experimental bundle ID in a given directory
 
 ### ios promote_latest_testflight_to_appstore
 

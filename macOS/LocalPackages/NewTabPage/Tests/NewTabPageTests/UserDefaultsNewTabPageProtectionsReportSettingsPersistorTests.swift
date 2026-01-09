@@ -127,13 +127,15 @@ final class UserDefaultsNewTabPageProtectionsReportSettingsPersistorTests: XCTes
         let testDate = Date()
         persistor.widgetNewLabelFirstShownDate = testDate
         let storedDate = try keyValueStore.object(forKey: UserDefaultsNewTabPageProtectionsReportSettingsPersistor.Keys.widgetNewLabelFirstShownDate) as? Date
-        XCTAssertEqual(storedDate?.timeIntervalSince1970, testDate.timeIntervalSince1970, accuracy: 0.001)
+        XCTAssertNotNil(storedDate)
+        XCTAssertEqual(storedDate!.timeIntervalSince1970, testDate.timeIntervalSince1970, accuracy: 0.001)
     }
 
     func testWhenWidgetNewLabelFirstShownDateIsRetrievedThenStoredValueIsReturned() throws {
         let testDate = Date()
         try keyValueStore.set(testDate, forKey: UserDefaultsNewTabPageProtectionsReportSettingsPersistor.Keys.widgetNewLabelFirstShownDate)
-        XCTAssertEqual(persistor.widgetNewLabelFirstShownDate?.timeIntervalSince1970, testDate.timeIntervalSince1970, accuracy: 0.001)
+        XCTAssertNotNil(persistor.widgetNewLabelFirstShownDate)
+        XCTAssertEqual(persistor.widgetNewLabelFirstShownDate!.timeIntervalSince1970, testDate.timeIntervalSince1970, accuracy: 0.001)
     }
 
     func testWhenWidgetNewLabelFirstShownDateIsSetToNilThenValueIsRemoved() throws {

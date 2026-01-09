@@ -78,7 +78,6 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
     weak var broker: UserScriptMessageBroker?
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    private let isAuthV2Enabled: Bool
 
     let featureName = "useIdentityTheftRestoration"
     lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
@@ -86,11 +85,9 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
     ])
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
-         isAuthV2Enabled: Bool) {
+         subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
-        self.isAuthV2Enabled = isAuthV2Enabled
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -123,7 +120,9 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         /// Note that the `useAlternateStripePaymentFlow` value is not used on the IDTR page, and so we can set the value to false here.
-        return GetFeatureValue(useSubscriptionsAuthV2: isAuthV2Enabled, usePaidDuckAi: false, useAlternateStripePaymentFlow: false, useGetSubscriptionTierOptions: false)
+        return GetFeatureValue(usePaidDuckAi: false,
+                               useAlternateStripePaymentFlow: false,
+                               useGetSubscriptionTierOptions: false)
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {

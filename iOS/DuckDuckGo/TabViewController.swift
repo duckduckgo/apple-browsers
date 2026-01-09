@@ -359,8 +359,7 @@ class TabViewController: UIViewController {
     private lazy var linkProtection: LinkProtection = {
         LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                       errorReporting: Self.debugEvents,
-                       useBackgroundTaskProtection: featureFlagger.isFeatureOn(.ampBackgroundTaskSupport))
+                       errorReporting: Self.debugEvents)
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {
@@ -1735,6 +1734,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func updatePreview() {
+        guard isTabCurrentlyPresented() else { return }
+
         preparePreview { image in
             if let image = image {
                 self.delegate?.tab(self, didUpdatePreview: image)

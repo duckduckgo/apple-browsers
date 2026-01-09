@@ -95,23 +95,14 @@ final class PreferencesViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        if !Application.appDelegate.isUsingAuthV2 {
-            let prefRootView = Preferences.RootView(model: model,
-                                                    subscriptionManager: Application.appDelegate.subscriptionManagerV1!,
-                                                    subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
-            let host = NSHostingView(rootView: prefRootView)
-            view.addAndLayout(host)
-        } else {
-            let prefRootView = Preferences.RootViewV2(model: model,
-                                                      subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
-                                                      subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
-                                                      featureFlagger: featureFlagger,
-                                                      aiChatURLSettings: aiChatRemoteSettings,
-                                                      wideEvent: Application.appDelegate.wideEvent)
-            let host = NSHostingView(rootView: prefRootView)
-            view.addAndLayout(host)
-        }
+        let prefRootView = Preferences.RootViewV2(model: model,
+                                                  subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
+                                                  subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
+                                                  featureFlagger: featureFlagger,
+                                                  aiChatURLSettings: aiChatRemoteSettings,
+                                                  wideEvent: Application.appDelegate.wideEvent)
+        let host = NSHostingView(rootView: prefRootView)
+        view.addAndLayout(host)
     }
 
     override func viewWillAppear() {

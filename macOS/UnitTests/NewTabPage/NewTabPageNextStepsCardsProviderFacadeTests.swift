@@ -192,8 +192,7 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         XCTAssertFalse(singleCardProvider.isViewExpanded)
 
         // Test cards
-        let cards = facade.cards
-        XCTAssertEqual(cards, NewTabPageDataModel.CardID.allCases)
+        XCTAssertEqual(facade.cards, Self.allSingleCardProviderCards)
 
         // Test handleAction - verify single card provider's action handler is called
         facade.handleAction(for: .subscription)
@@ -229,7 +228,7 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         singleCardProvider.dismiss(.defaultApp)
         cancellable.cancel()
 
-        XCTAssertEqual(receivedCards, [NewTabPageDataModel.CardID.allCases.filter({ $0 != .defaultApp })])
+        XCTAssertEqual(receivedCards, [Self.allSingleCardProviderCards.filter({ $0 != .defaultApp })])
     }
 
     func testWhenFeatureFlagIsOn_ThenIsViewExpandedPublisher_EmitsChangesSingleCardProvider() {
@@ -284,4 +283,14 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         XCTAssertEqual(legacyCardsProviderActionHandler.cardActionsPerformed, [.defaultApp, .emailProtection])
         XCTAssertEqual(singleCardProviderActionHandler.cardActionsPerformed, [.subscription])
     }
+}
+
+private extension NewTabPageNextStepsCardsProviderFacadeTests {
+    static let allSingleCardProviderCards: [NewTabPageDataModel.CardID] = {
+#if APPSTORE
+        NewTabPageDataModel.CardID.allCases.filter { $0 != .addAppToDockMac }
+#else
+        NewTabPageDataModel.CardID.allCases
+#endif
+    }()
 }

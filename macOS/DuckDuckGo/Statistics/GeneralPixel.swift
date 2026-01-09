@@ -231,6 +231,7 @@ enum GeneralPixel: PixelKitEvent {
     case remoteMessageActionClicked
     case remoteMessagePrimaryActionClicked
     case remoteMessageSecondaryActionClicked
+    case remoteMessageDebugCouldNotLoadDatabase
 
     // DataBroker Protection Waitlist
     case dataBrokerProtectionWaitlistUserActive
@@ -910,6 +911,7 @@ enum GeneralPixel: PixelKitEvent {
         case .remoteMessageActionClicked: return "m_mac_remote_message_action_clicked"
         case .remoteMessagePrimaryActionClicked: return "m_mac_remote_message_primary_action_clicked"
         case .remoteMessageSecondaryActionClicked: return "m_mac_remote_message_secondary_action_clicked"
+        case .remoteMessageDebugCouldNotLoadDatabase: return "m_mac_debug_remote_message_could-not-load-database"
 
         case .dataBrokerProtectionWaitlistUserActive:
             return "m_mac_dbp_waitlist_user_active"
@@ -1642,6 +1644,7 @@ enum GeneralPixel: PixelKitEvent {
                 .remoteMessageActionClicked,
                 .remoteMessagePrimaryActionClicked,
                 .remoteMessageSecondaryActionClicked,
+                .remoteMessageDebugCouldNotLoadDatabase,
                 .dataBrokerProtectionWaitlistUserActive,
                 .dataBrokerProtectionWaitlistEntryPointMenuItemDisplayed,
                 .dataBrokerProtectionWaitlistIntroDisplayed,

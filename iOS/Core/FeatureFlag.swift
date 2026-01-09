@@ -218,9 +218,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397873940926?focus=true
-    case ampBackgroundTaskSupport
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470156149
     case duckAiDataClearing
     
@@ -306,7 +303,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .migrateKeychainAccessibility,
              .dataImportWideEventMeasurement,
              .browsingMenuSheetPresentation,
-             .ampBackgroundTaskSupport,
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
              .showWhatsNewPromptOnDemand:
@@ -373,7 +369,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillPasswordSearchPrioritizeDomain,
              .granularFireButtonOptions,
              .dataImportWideEventMeasurement,
-             .ampBackgroundTaskSupport,
              .appRatingPrompt,
              .contextualDuckAIMode,
              .aiChatSync,
@@ -552,8 +547,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
         case .forgetAllInSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
-        case .ampBackgroundTaskSupport:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.ampBackgroundTaskSupport))
         case .duckAiDataClearing:
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:

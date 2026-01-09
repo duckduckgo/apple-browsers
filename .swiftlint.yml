@@ -71,26 +71,27 @@ file_header:
                     \/\/  limitations under the License\.
                     \/\/
 
-# General Config
+# General Config - Single config for all platforms
 excluded:
-  - SharedPackages/*/Package.swift
-  - SharedPackages/*/.build
-  - SharedPackages/BrowserServicesKit/scripts/
+  # Build artifacts
+  - "**/DerivedData"
+  - "**/.build"
+  - "**/vendor"
+  - "**/.ruby-lsp"
+  - "**/release"
+  
+  # Generated/tooling files
+  - "**/Package.swift"
+  - "**/fastlane/**"
+  - "**/scripts/**"
+  
+  # Third-party/vendored code
+  - "**/Carthage/**"
+  - iOS/PacketTunnelProvider/ProxyServer
+  
+  # Copy files
+  - "**/UserText.swift"
+
+  # Specific files to exclude
   - SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift
   - SharedPackages/BrowserServicesKit/Sources/Common/Concurrency/AsyncStream.swift
-  - iOS/DerivedData
-  - iOS/DuckDuckGo/UserText.swift
-  - iOS/fastlane/SnapshotHelper.swift
-  - iOS/LocalPackages/*/Package.swift
-  - iOS/LocalPackages/*/.build
-  - iOS/PacketTunnelProvider/ProxyServer
-  - iOS/scripts
-  - iOS/.ruby-lsp
-  - macOS/DuckDuckGo/Common/Localizables/UserText.swift
-  - macOS/LocalPackages/*/Package.swift
-  - macOS/LocalPackages/*/.build
-  - macOS/scripts
-  - macOS/DerivedData
-  - macOS/release
-  - macOS/.ruby-lsp
-  - macOS/vendor

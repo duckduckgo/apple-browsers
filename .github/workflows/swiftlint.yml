@@ -12,17 +12,29 @@ jobs:
     name: SwiftLint
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - name: SwiftLint
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Cache Mint packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.mint
+          key: ${{ runner.os }}-mint-${{ hashFiles('Mintfile') }}
+          restore-keys: |
+            ${{ runner.os }}-mint-
+
+      - name: Install Mint
+        run: brew install mint
+
+      - name: Install SwiftLint from Mintfile
+        run: mint bootstrap
+
+      - name: Run SwiftLint
         run: |
           set -o pipefail
-          docker run --rm \
-            -v "$(pwd):/workspace" \
-            -w /workspace \
-            norionomura/swiftlint:0.59.1_swift-5.9.0 \
-            swiftlint --reporter github-actions-logging --strict --quiet \
-            | tee >(grep -oP 'file=[^,]+,line=\d+' \
+          mint run swiftlint lint --reporter github-actions-logging --strict --quiet \
+            | tee >(grep -oE 'file=[^,]+,line=[0-9]+' \
             | sed -E 's/file=([^,]+),line=([0-9]+)/\1:\2/' >&2 || true)

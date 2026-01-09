@@ -147,28 +147,16 @@ struct SettingsRootView: View {
     }
 
     @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
-        if viewModel.isAuthV2Enabled {
-            SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
-                                                                 navigationCoordinator: subscriptionNavigationCoordinator,
-                                                                 subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
-                                                                 subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                                 subscriptionDataReporter: viewModel.subscriptionDataReporter,
-                                                                 userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                                 tld: AppDependencyProvider.shared.storageCache.tld,
-                                                                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                                 dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                                 wideEvent: AppDependencyProvider.shared.wideEvent)
-        } else {
-            SubscriptionContainerViewFactory.makeSubscribeFlow(redirectURLComponents: redirectURLComponents,
-                                                               navigationCoordinator: subscriptionNavigationCoordinator,
-                                                               subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
-                                                               subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                               subscriptionDataReporter: viewModel.subscriptionDataReporter,
-                                                               userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                               tld: AppDependencyProvider.shared.storageCache.tld,
-                                                               internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                               dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider)
-        }
+        SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
+                                                             navigationCoordinator: subscriptionNavigationCoordinator,
+                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                             subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                             subscriptionDataReporter: viewModel.subscriptionDataReporter,
+                                                             userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                             tld: AppDependencyProvider.shared.storageCache.tld,
+                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                             dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                             wideEvent: AppDependencyProvider.shared.wideEvent)
     }
 
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
@@ -183,26 +171,15 @@ struct SettingsRootView: View {
     }
 
     @ViewBuilder func emailFlowNavigationDestination() -> some View {
-        if viewModel.isAuthV2Enabled {
-            SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
-                                                             subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                             userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                             emailFlow: .restoreFlow,
-                                                             dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                             wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                             onDisappear: {})
-        } else {
-            SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                           subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
-                                                           subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                           userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                           internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                           emailFlow: .restoreFlow,
-                                                           dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                           onDisappear: {})
-        }
+        SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
+                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                         subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                         userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                         emailFlow: .restoreFlow,
+                                                         dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                         wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                         onDisappear: {})
     }
 
     /// Determines the subscription settings view configuration based on current subscription state
@@ -232,7 +209,7 @@ struct SettingsRootView: View {
 
     /// Checks if navigation to subscription settings is valid
     private func canNavigateToSubscriptionSettings() -> Bool {
-        return subscriptionSettingsConfiguration() != nil && viewModel.isAuthV2Enabled
+        return subscriptionSettingsConfiguration() != nil
     }
 
     /// Navigation Views for DeepLink and programmatic navigation
@@ -248,8 +225,7 @@ struct SettingsRootView: View {
         case .itr:
             let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                  userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
-                                                 isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)
+                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)
             SubscriptionITPView(viewModel: model)
         case let .subscriptionFlow(redirectURLComponents):
             subscriptionFlowNavigationDestination(redirectURLComponents: redirectURLComponents)

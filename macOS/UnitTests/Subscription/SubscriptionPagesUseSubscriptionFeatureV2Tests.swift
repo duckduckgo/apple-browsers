@@ -119,7 +119,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+
         XCTAssertTrue(featureValue.usePaidDuckAi)
     }
 
@@ -137,7 +137,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+
         XCTAssertFalse(featureValue.usePaidDuckAi)
     }
 
@@ -155,7 +155,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+
         XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
     }
 
@@ -173,7 +173,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+
         XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
 
@@ -192,7 +192,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+
         XCTAssertTrue(featureValue.usePaidDuckAi)
         XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
     }
@@ -212,7 +212,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+
         XCTAssertFalse(featureValue.usePaidDuckAi)
         XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
@@ -231,7 +231,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+
         XCTAssertTrue(featureValue.useGetSubscriptionTierOptions)
     }
 
@@ -249,7 +249,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+
         XCTAssertFalse(featureValue.useGetSubscriptionTierOptions)
     }
 

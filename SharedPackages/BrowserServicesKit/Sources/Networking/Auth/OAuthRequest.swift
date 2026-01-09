@@ -346,26 +346,6 @@ public struct OAuthRequest {
         return OAuthRequest(apiRequest: request, httpErrorCodes: [.unauthorized, .internalServerError])
     }
 
-    // MARK: Exchange token
-
-    static func exchangeToken(baseURL: URL, accessTokenV1: String, authSessionID: String) -> OAuthRequest? {
-        guard !accessTokenV1.isEmpty, !authSessionID.isEmpty else { return nil }
-
-        let path = "/api/auth/v2/exchange"
-        guard let domain = baseURL.host,
-              let cookie = Self.ddgAuthSessionCookie(domain: domain, path: path, authSessionID: authSessionID)
-        else { return nil }
-
-        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
-                                         method: .post,
-                                         headers: APIRequestV2.HeadersV2(cookies: [cookie], authToken: accessTokenV1)) else { // we don't want to retry: https://app.asana.com/1/137249556945/task/1210411170978663/comment/1210411574944338?focus=true
-            return nil
-        }
-        return OAuthRequest(apiRequest: request,
-                            httpSuccessCode: .found,
-                            httpErrorCodes: [.badRequest, .internalServerError])
-    }
-
     // MARK: JWKs
 
     /// This endpoint is where the Auth service will publish public keys for consuming services and clients to use to independently verify access tokens. Tokens should be downloaded and cached for an hour upon first use. When rotating private keys for signing JWTs, the Auth service will publish new public keys 24 hours in advance of starting to sign new JWTs with them. This should provide consuming services with plenty of time to invalidate their public key cache and have the new key available before they can expect to start receiving JWTs signed with the old key. The old key will remain published until the next key rotation, so there should generally be two public keys available through this endpoint. The response format is a standard JWKS response, as documented in RFC 7517.

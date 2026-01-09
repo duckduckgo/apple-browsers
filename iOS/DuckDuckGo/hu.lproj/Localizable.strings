@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Tegnap";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Rejtett logót találtál!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logó mentve";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Keresési logó visszaállítása";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Váltás erre a logóra";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Figyelem! Nem tudom megakadályozni, hogy %1$@ láthassa a tevékenységedet itt: %2$@.\n\nHa azonban velem böngészel, a sok más weboldalon is használt nyomkövetőjük blokkolásával korlátozni tudom azt, amit %1$@ megtudhat rólad.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "A DuckDuckGo AI-funkciói privátak és opcionálisak. Az adataidat nem használjuk fel az AI tanítására.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Oldal összefoglalása";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Duck.ai-gombok és -linkek megjelenítése a DuckDuckGo keresési eredményeiben.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Keresés az oldalon";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Minden csevegés törlése";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai-csevegések";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Fiókokból való kijelentkezést eredményezhet";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Sütik és webhelyadatok";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Lapok";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Törlendő elemek kiválasztása";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Levegő";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Keresési asszisztens beállításai";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Az új Duck.ai-csevegések megjelenítése böngészőlapként";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Oldal kontextusának automatikus küldése a Duck.ai részére";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Duck.ai lap mód";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Kontextus automatikus küldése";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI által generált képek elrejtése";
@@ -3574,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Előfizetési csomagok";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "A vásárlás befejezése…";
 
@@ -3663,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Az ingyenes próbaidőszak aktív";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Összes csomag megtekintése";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-figyelmeztetés";

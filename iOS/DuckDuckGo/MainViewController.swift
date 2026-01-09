@@ -244,6 +244,7 @@ class MainViewController: UIViewController {
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
+    private let daxEasterEggLogoStore: DaxEasterEggLogoStoring
 
     private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
     private let launchSourceManager: LaunchSourceManaging
@@ -290,7 +291,8 @@ class MainViewController: UIViewController {
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
-        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
+        daxEasterEggPresenter: DaxEasterEggPresenting? = nil,
+        daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
@@ -341,7 +343,8 @@ class MainViewController: UIViewController {
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
-        self.daxEasterEggPresenter = daxEasterEggPresenter
+        self.daxEasterEggLogoStore = daxEasterEggLogoStore
+        self.daxEasterEggPresenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
         self.launchSourceManager = launchSourceManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
@@ -459,6 +462,7 @@ class MainViewController: UIViewController {
         subscribeToAIChatSettingsEvents()
         subscribeToRefreshButtonSettingsEvents()
         subscribeToCustomizationSettingsEvents()
+        subscribeToDaxEasterEggLogoChanges()
 
         checkSubscriptionEntitlements()
 
@@ -1521,9 +1525,8 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.resetPrivacyIcon(for: tab.url)
         }
 
-        // Restore the Dax Easter Egg logo URL for the current tab
-        Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
-        viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
+        let logoURL = logoURLForCurrentPage(tab: tab)
+        viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
         if aichatFullModeFeature.isAvailable && tab.isAITab {
             viewCoordinator.omniBar.enterAIChatMode()
@@ -3279,17 +3282,21 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            Logger.daxEasterEgg.debug("Tab received logo - Tab [\(tab.tabModel.uid)] Logo: \(logoURL ?? "nil"), IsCurrent: \(self.currentTab == tab)")
-            
             tab.tabModel.daxEasterEggLogoURL = logoURL
-            
-            // Only update omnibar if this is the currently active tab
             if self.currentTab == tab {
-                Logger.daxEasterEgg.debug("Setting omnibar logo: \(logoURL ?? "nil")")
-                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
+                let finalLogoURL = self.logoURLForCurrentPage(tab: tab)
+                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(finalLogoURL)
             }
-            // If this is NOT the current tab, the logo will be restored when the tab becomes active via refreshOmniBar()
         }
+    }
+
+    private func logoURLForCurrentPage(tab: TabViewController) -> String? {
+        guard let url = tab.url, url.isDuckDuckGoSearch else { return nil }
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return nil }
+        if featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo) {
+            return daxEasterEggLogoStore.logoURL ?? tab.tabModel.daxEasterEggLogoURL
+        }
+        return tab.tabModel.daxEasterEggLogoURL
     }
 
     func tabDidRequestReportBrokenSite(tab: TabViewController) {
@@ -4176,6 +4183,15 @@ extension MainViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.applyCustomizationState()
+            }
+            .store(in: &settingsCancellables)
+    }
+
+    private func subscribeToDaxEasterEggLogoChanges() {
+        NotificationCenter.default.publisher(for: .logoDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
             }
             .store(in: &settingsCancellables)
     }

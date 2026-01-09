@@ -1317,7 +1317,8 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func didReceive(_ challenge: URLAuthenticationChallenge, for navigation: Navigation?) async -> AuthChallengeDisposition? {
-        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic else { return nil }
+        let supportedMethods = [NSURLAuthenticationMethodHTTPBasic, NSURLAuthenticationMethodHTTPDigest]
+        guard supportedMethods.contains(challenge.protectionSpace.authenticationMethod) else { return nil }
 
         // send this event only when we're interrupting loading and showing extra UI to the user
         webViewDidReceiveUserInteractiveChallengePublisher.send()

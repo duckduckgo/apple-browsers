@@ -274,7 +274,9 @@ final class AppearancePreferencesTests: XCTestCase {
 
     // MARK: - Pixel firing tests
 
-    func testWhenCurrentThemeIsUpdatedThenPixelIsFired() {
+    func testWhenCurrentThemeIsUpdatedThenNoPixelIsFiredFromModel() {
+        // Pixel firing has been moved to the call sites (Settings view and NTP customizer)
+        // to track the source of the change. The model itself no longer fires pixels.
         let pixelFiringMock = PixelKitMock()
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
@@ -288,12 +290,11 @@ final class AppearancePreferencesTests: XCTestCase {
         model.themeAppearance = ThemeAppearance.dark
         model.themeAppearance = ThemeAppearance.systemDefault
 
-        pixelFiringMock.expectedFireCalls = [
-            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
-            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
-            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
-            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard)
-        ]
+        model.themeName = ThemeName.default
+        model.themeName = ThemeName.green
+
+        // No pixel should be fired from the model - pixels are fired at call sites
+        pixelFiringMock.expectedFireCalls = []
 
         pixelFiringMock.verifyExpectations()
     }

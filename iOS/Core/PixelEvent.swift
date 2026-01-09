@@ -1245,6 +1245,7 @@ extension Pixel {
         case settingsDataClearingClearDataOpen
         case settingsAutomaticallyClearDataOn
         case settingsAutomaticallyClearDataOff
+        case settingsAutomaticDataClearingOptionsUpdated
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
@@ -1541,6 +1542,8 @@ extension Pixel {
         // MARK: - Dax Easter Egg
         case daxEasterEggLogoDisplayed
         case daxEasterEggLogoTapped
+        case daxEasterEggLogoSetAsPermanent
+        case daxEasterEggLogoResetToDefault
 
         // MARK: - Product surface telemetery
         case productTelemeterySurfaceUsageMenu
@@ -1647,6 +1650,7 @@ extension Pixel.Event {
         case .settingsDataClearingClearDataOpen: return "m_settings_data_clearing_clear_data_open"
         case .settingsAutomaticallyClearDataOn: return "m_settings_automatically_clear_data_on"
         case .settingsAutomaticallyClearDataOff: return "m_settings_automatically_clear_data_off"
+        case .settingsAutomaticDataClearingOptionsUpdated: return "m_automatic_data_clearing_options_updated"
         case .settingsNextStepsAddAppToDock: return "m_settings_next_steps_add_app_to_dock"
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
@@ -3032,6 +3036,8 @@ extension Pixel.Event {
         // MARK: - Dax Easter Egg
         case .daxEasterEggLogoDisplayed: return "m_dax_easter_egg_logo_displayed"
         case .daxEasterEggLogoTapped: return "m_dax_easter_egg_logo_tapped"
+        case .daxEasterEggLogoSetAsPermanent: return "m_dax_easter_egg_logo_set_as_permanent"
+        case .daxEasterEggLogoResetToDefault: return "m_dax_easter_egg_logo_reset_to_default"
 
         // MARK: - Product surface telemetery
         case .productTelemeterySurfaceUsageMenu: return "m_product_telemetry_surface_usage_menu"

@@ -47,5 +47,32 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_automatic_data_clearing_options_updated": {
+        "description": "Fired when user updates the automatic data clearing options (tabs, data, chats toggles) in Settings",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "tabs",
+                "description": "Whether tabs clearing is enabled",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "data",
+                "description": "Whether data clearing is enabled",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "chats",
+                "description": "Whether Duck.ai chats clearing is enabled",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
     }
 }

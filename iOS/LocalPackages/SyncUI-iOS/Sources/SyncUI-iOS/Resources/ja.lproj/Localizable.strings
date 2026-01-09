@@ -1,0 +1,321 @@
+/* No comment provided by engineer. */
+"A device password is required to use Sync & Backup." = "Sync & Backupを使用するには、デバイスのパスワードが必要です。";
+
+/* Standard Buttons - Back Button */
+"back.button" = "戻る";
+
+/* Do not translate - stringsdict entry */
+"bookmarks.invalid.objects.present.description" = "bookmarks.invalid.objects.present.description";
+
+/* Alert title for invalid bookmarks being filtered out of synced data */
+"bookmarks.invalid.objects.present.title" = "特定のフィールドのコンテンツが長すぎるため、一部のブックマークが同期されません。";
+
+/* Camera View - Go to Settings Button */
+"camera.go.to.settings.button" = "設定に移動";
+
+/* Camera View - Unavailable Title */
+"camera.is.unavailable.title" = "カメラは利用できません";
+
+/* Camera View - Permission Instructions */
+"camera.permission.instructions" = "デバイスの設定に移動し、このアプリがカメラにアクセスする許可を付与してください。";
+
+/* Camera View - Permission Required */
+"camera.permission.required" = "カメラの許可が必要です";
+
+/* Camera View - Point Camera Indication */
+"camera.point.camera.indication" = "QRコードにカメラを向けて同期します";
+
+/* No comment provided by engineer. */
+"Cancel" = "キャンセル";
+
+/* Standard Buttons - Cancel Button */
+"cancel.button" = "キャンセル";
+
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "同期とバックアップをオンにする";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1" = "これにより、ブックマークと自動入力データの暗号化されたバックアップがDuckDuckGoの安全なサーバー上に作成され、他のデバイスと同期できるようになります。";
+
+/* Connect With Server Sheet - Description Part 2 */
+"connect.with.server.sheet.description.part2" = "暗号化キーはデバイスにのみ保存され、DuckDuckGoはアクセスできません。";
+
+/* Connect With Server Sheet - Footer */
+"connect.with.server.sheet.footer" = "後で他のデバイスと同期できます。";
+
+/* Connect With Server Sheet - Title */
+"connect.with.server.sheet.title" = "このデバイスの同期とバックアップ";
+
+/* Standard Buttons - Copy Button */
+"copy.button" = "コピー";
+
+/* Do not translate - stringsdict entry */
+"credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
+
+/* Alert title for invalid logins being filtered out of synced data */
+"credentials.invalid.objects.present.title" = "特定のフィールドの内容が長すぎるため、一部のパスワードが同期されません。";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "一部のクレジットカードは、特定のフィールドの内容が長すぎるために同期されていません。";
+
+/* Delete Server Data - Button */
+"delete.server.data" = "サーバーデータをオフにして削除...";
+
+/* No comment provided by engineer. */
+"Dev environment" = "開発環境";
+
+/* Device SyncedSheet Button to go get DuckDuckGo on other devices */
+"device.synced.sheet.button.get.other.devices" = "他のデバイスでDuckDuckGoを入手";
+
+/* Device SyncedSheet - Title */
+"device.synced.sheet.title" = "データが同期されました！";
+
+/* Standard Buttons - Done Button */
+"done.button" = "完了";
+
+/* Edit Device View - Header */
+"edit.device.header" = "デバイス名";
+
+/* Edit Device View - Title */
+"edit.device.title" = "%@を編集";
+
+/* Fetch Favicons Onboarding - Button Title */
+"fetch.favicons.onboarding.button.title" = "ブックマークアイコンを最新の状態に保つ";
+
+/* Fetch Favicons Onboarding - Message */
+"fetch.favicons.onboarding.message" = "このデバイスで、他のデバイスから同期された新しいブックマークのアイコンを自動的にダウンロードしますか？これにより、ブックマークが同期されるたびにダウンロードがネットワークに公開されます。";
+
+/* Fetch Favicons Onboarding - Title */
+"fetch.favicons.onboarding.title" = "不足しているアイコンをダウンロードしますか？";
+
+/* Options - Fetch Favicons Description */
+"fetch.favicons.option.caption" = "同期されたブックマークのアイコンを自動的にダウンロードします。アイコンのダウンロードはネットワークに公開されます。";
+
+/* Options - Fetch Favicons Title */
+"fetch.favicons.option.title" = "アイコンを自動ダウンロード";
+
+/* No comment provided by engineer. */
+"Go to Settings" = "設定に移動";
+
+/* No comment provided by engineer. */
+"Keep Development" = "開発環境で継続";
+
+/* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
+"manually.enter.code.instruction.attributed" = "%1$@に移動し、同期された別のデバイスのDuckDuckGoアプリで%2$@を選択し、コードをここに貼り付けてこのデバイスを同期します。";
+
+/* Manually Enter Code View - Title */
+"manually.enter.code.title" = "コードを手動で入力する";
+
+/* Manually Enter Code View - Validating Code Action */
+"manually.enter.code.validating.code.action" = "コードを検証中";
+
+/* Manually Enter Code View - Validating Code Failed Action */
+"manually.enter.code.validating.code.failed.action" = "無効なコードです。";
+
+/* Standard Buttons - Next Button */
+"next.button" = "次へ";
+
+/* Standard Buttons - Not Now Button */
+"not.now.button" = "後で";
+
+/* Options - Section Header */
+"options.section.header" = "オプション";
+
+/* Section header for other syncing options */
+"other.options.section.header" = "その他のオプション";
+
+/* Standard Buttons - Paste Button */
+"paste.button" = "貼り付ける";
+
+/* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
+"prefrences.sync.bookmarks-limit-exceeded-action" = "ブックマークを管理する";
+
+/* Button title for sync credentials limits exceeded warning to go to manage passwords */
+"prefrences.sync.credentials-limit-exceeded-action" = "パスワードを管理...";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "クレジットカードを管理...";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description" = "ブックマークと自動入力データの同期が準備中です。これにはほんの少し時間がかかります。";
+
+/* Preparing To Sync Sheet - Footer */
+"preparing.to.sync.sheet.footer" = "接続中...";
+
+/* Preparing To Sync Sheet - Title */
+"preparing.to.sync.sheet.title" = "同期とバックアップの設定";
+
+/* Link label for recovering synced data */
+"recover.synced.data.link" = "同期データを復元";
+
+/* Recover Synced Data Sheet - Button */
+"recover.synced.data.sheet.button" = "開始";
+
+/* Recover Synced Data Sheet - Description */
+"recover.synced.data.sheet.description" = "同期したデータを復元するには、同期を初めて設定したときに保存したリカバリーコードが必要です。このコードは、同期設定に最初に使用したデバイスにPDFとして保存されている可能性があります。";
+
+/* Recover Synced Data Sheet - Title */
+"recover.synced.data.sheet.title" = "同期されたデータを復元";
+
+/* Remove Device View - Button */
+"remove.device.button" = "デバイスを削除";
+
+/* Remove Device View - Message */
+"remove.device.message" = "「%@」は同期されたデータにアクセスできなくなります。";
+
+/* Remove Device View - Title */
+"remove.device.title" = "デバイスを削除しますか？";
+
+/* Save Recovery Code Sheet - Copy Code Toast */
+"save.recovery.code.code.copied.button" = "リカバリーコードがクリップボードにコピーされました";
+
+/* Save Recovery Code Sheet - Copy Code Button */
+"save.recovery.code.copy.code.button" = "コードをコピー";
+
+/* Save Recovery Code Sheet - Save as PDF Button */
+"save.recovery.code.save.as.pdf.button" = "PDFとして保存";
+
+/* Save Recovery Code Sheet - Description */
+"save.recovery.code.sheet.description" = "デバイスにアクセスできなくなった場合は、同期されたデータを回復するためにこのコードが必要になります。";
+
+/* Save Recovery Code Sheet - Footer */
+"save.recovery.code.sheet.footer" = "このコードにアクセスできる人は誰でも同期されたデータにアクセスできるため、安全な場所に保管してください。";
+
+/* Save Recovery Code Sheet - Title */
+"save.recovery.code.sheet.title" = "回復コードを保存";
+
+/* Save RecoveryPDF - Button */
+"save.recovery.pdf.button" = "回復PDFを保存";
+
+/* Save RecoveryPDF - Footer */
+"save.recovery.pdf.footer" = "デバイスを紛失した場合、同期されたデータを復元するためにこのリカバリーコードが必要になります。";
+
+/* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
+"scan.code.to.recover.synced.data.enter.code.link" = "テキストコードを手動で入力する";
+
+/* Scan Or Enter Code To Recover Synced Data View - Explanation */
+"scan.code.to.recover.synced.data.explanation" = "データを復元するには、リカバリーPDFまたは同期した別のデバイスでQRコードをスキャンしてください。";
+
+/* Scan Or Enter Code To Recover Synced Data View - Footer */
+"scan.code.to.recover.synced.data.footer" = "スキャンできませんか？";
+
+/* Scan Or Enter Code To Recover Synced Data View - Title */
+"scan.code.to.recover.synced.data.title" = "同期データを復元";
+
+/* Scan or See Code View - Footer */
+"scan.or.see.code.footer" = "スキャンできませんか？";
+
+/* Scan or See Code View - Instruction */
+"scan.or.see.code.instruction" = "別のデバイスのDuckDuckGoブラウザで「設定 › Sync & Backup」に進み、「別のデバイスと同期」を選択します。";
+
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.instruction.attributed" = "別のデバイスのDuckDuckGoブラウザで%@に移動し、「別のデバイスと同期」を選択します。";
+
+/* Scan or See Code View - Manually Enter Code Link */
+"scan.or.see.code.manually.enter.code.link" = "コードを手動で入力する";
+
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.other.device.instruction.attributed" = "他のデバイスでDuckDuckGoアプリを開き、%@に移動します。";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.instructions.body" = "このコードを別のデバイスでスキャンして同期します。";
+
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.instructions.title" = "モバイルからモバイルへ？";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.qr.instructions.body" = "他のデバイスでDuckDuckGoを開き、このコードをスキャンして同期します。";
+
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "または、他のデバイスでDuckDuckGoでスキャンします";
+
+/* Scan or See Code View - Share Code Link */
+"scan.or.see.code.share.code.link" = "テキストコードを共有";
+
+/* Scan or See Code View - Title */
+"scan.or.see.code.title" = "QRコードをスキャン";
+
+/* No comment provided by engineer. */
+"Secure Your Device to Use Sync & Backup" = "デバイスを保護してSync & Backupを使用";
+
+/* No comment provided by engineer. */
+"Switch to Production" = "本番環境に切り替え";
+
+/* Link label for syncing and backing up the device */
+"sync.and.backup.this.device.link" = "このデバイスの同期とバックアップ";
+
+/* Button to get DuckDuckGo on other devices */
+"sync.get.other.devices" = "他のデバイスでDuckDuckGoを入手";
+
+/* Button title to share link for downloading DuckDuckGo on other devices */
+"sync.get.other.devices.card.button.title" = "ダウンロードリンクを共有";
+
+/* Message before share link for downloading DuckDuckGo on other devices */
+"sync.get.other.devices.card.message" = "DuckDuckGoをデスクトップまたは他のモバイルデバイスにダウンロードするには、次のサイトにアクセスしてください。";
+
+/* Title of card with share links for users to download DuckDuckGo on other devices */
+"sync.get.other.devices.card.title" = "他のデバイスでもDuckDuckGoを入手してこのデバイスと同期";
+
+/* Title of screen with share links for users to download DuckDuckGo on other devices */
+"sync.get.other.devices.screen.title" = "DuckDuckGoを入手";
+
+/* Message included when sharing a url via the system share sheet */
+"sync.get.other.devices.share.link.message" = "お使いのデバイスにDuckDuckGoブラウザをインストールし、ブックマークと自動入力データの安全な同期を開始します。";
+
+/* Sync Menu Path */
+"sync.menu.path" = "設定 > Sync & Backup > 別のデバイスと同期";
+
+/* Sync & Backup Title */
+"sync.title" = "Sync & Backup";
+
+/* Data syncing unavailable warning message */
+"sync.warning.data.syncing.disabled" = "申し訳ありませんが、Sync & Backupは現在利用できません。時間を置いてもう一度お試しください。";
+
+/* Data syncing unavailable warning message */
+"sync.warning.data.syncing.disabled.upgrade.required" = "申し訳ありませんが、Sync & Backupはこのアプリバージョンでは利用できなくなりました。続行するには、DuckDuckGoを最新バージョンに更新してください。";
+
+/* Title of the warning message */
+"sync.warning.sync.unavailable" = "Sync & Backupが利用できません";
+
+/* Button label for syncing with another device */
+"sync.with.another.device.button" = "別のデバイスと同期";
+
+/* Footer message for syncing with another device */
+"sync.with.another.device.footer" = "データはエンドツーエンドで暗号化されており、DuckDuckGoは暗号化キーにアクセスできません。";
+
+/* Message for syncing with another device */
+"sync.with.another.device.message" = "デバイス間でブックマークとパスワードを安全に同期します。";
+
+/* Title for syncing with another device */
+"sync.with.another.device.title" = "同期を開始";
+
+/* Synced Devices - Section Header */
+"synced.devices.section.header" = "同期されたデバイス";
+
+/* Synced Devices - Sync with Another Device Label */
+"synced.devices.sync.with.another.device.label" = "別のデバイスと同期";
+
+/* Synced Devices - This Device Label */
+"synced.devices.this.device.label" = "このデバイス";
+
+/* Turn Sync Off - Button */
+"turn.sync.off" = "Sync & Backupをオフにします...";
+
+/* Turn Sync Off - Section Header */
+"turn.sync.off.section.header" = "同期が有効";
+
+/* Options - Unify Favorites Instruction */
+"unified.favorites.instruction" = "すべてのデバイスで同じお気に入りのブックマークを使用します。モバイルとデスクトップのお気に入りを別々にしておくには、オフにしておきます。";
+
+/* Options - Unify Favorites Title */
+"unified.favorites.title" = "デバイス間でお気に入りを統合する";
+
+/* View Text Code menu item */
+"view.text.code.menu.item" = "テキストコードを表示";
+
+/* No comment provided by engineer. */
+"You're using Sync Development environment" = "Sync Development環境を使用しています";
+

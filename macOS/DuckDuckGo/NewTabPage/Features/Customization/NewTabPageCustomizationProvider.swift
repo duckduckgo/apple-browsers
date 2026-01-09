@@ -22,14 +22,17 @@ import PixelKit
 import SwiftUI
 
 final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding {
+    private var ntpWebViewDidAppearCancellable: AnyCancellable?
     let customizationModel: NewTabPageCustomizationModel
     let appearancePreferences: AppearancePreferences
     let themePopoverDecider: ThemePopoverDeciding
 
-    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences, themePopoverDecider: ThemePopoverDeciding) {
+    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences, themePopoverDecider: ThemePopoverDeciding, notificationCenter: NotificationCenter = .default) {
         self.customizationModel = customizationModel
         self.appearancePreferences = appearancePreferences
         self.themePopoverDecider = themePopoverDecider
+
+        startListeningToNewTabPageEvents(notificationCenter: notificationCenter)
     }
 
     var customizerOpener: NewTabPageCustomizerOpener {
@@ -130,6 +133,23 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
             guard let imageID = sender.representedObject as? String else { return }
             await deleteImage(with: imageID)
         }
+    }
+}
+
+private extension NewTabPageCustomizationProvider {
+
+    func startListeningToNewTabPageEvents(notificationCenter: NotificationCenter) {
+        ntpWebViewDidAppearCancellable = notificationCenter.publisher(for: .newTabPageWebViewDidAppear)
+            .prefix(1)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.newTabPageWebViewDidAppear()
+            }
+    }
+
+    func newTabPageWebViewDidAppear() {
+        themePopoverDecider.markPopoverShownIfNeeded()
+        ntpWebViewDidAppearCancellable = nil
     }
 }
 

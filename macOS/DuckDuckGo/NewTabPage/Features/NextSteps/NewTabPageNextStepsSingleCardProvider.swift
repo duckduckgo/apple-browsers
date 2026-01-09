@@ -150,26 +150,19 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 private extension NewTabPageNextStepsSingleCardProvider {
 
     private func refreshCardList() {
-        var cards: [NewTabPageDataModel.CardID] = []
-        appendCards(&cards)
+        // For now, we show the visible cards in a fixed order as defined in `NewTabPageDataModel.CardID.allCases`.
+        // New grouping/ordering logic will be added in https://app.asana.com/1/137249556945/project/1209825025475019/task/1212359353583684?focus=true
+        // This will update the card ordering based on: defined levels (groups) of cards and how many times each card has been shown (to avoid card blindness).
+        var cards: [NewTabPageDataModel.CardID] = NewTabPageDataModel.CardID.allCases.filter(shouldShowCard)
         if cards.isEmpty {
             appearancePreferences.continueSetUpCardsClosed = true
         }
         cardList = cards
     }
 
-    private func appendCards(_ cards: inout [NewTabPageDataModel.CardID]) {
-        // For now, we append the visible cards in a fixed order as defined in `NewTabPageDataModel.CardID.allCases`.
-        // New grouping/ordering logic will be added in https://app.asana.com/1/137249556945/project/1209825025475019/task/1212359353583684?focus=true
-        // This will update the card ordering based on: defined levels (groups) of cards and how many times each card has been shown (to avoid card blindness).
-        for card in NewTabPageDataModel.CardID.allCases where shouldAppendCard(card) {
-            cards.append(card)
-        }
-    }
-
-    /// Returns whether the card should be appended to the list of visible cards.
+    /// Returns whether the card should be shown in the list of visible cards.
     /// This checks both if the card has been permanently dismissed and if the card's specific visibility conditions are met.
-    private func shouldAppendCard(_ card: NewTabPageDataModel.CardID) -> Bool {
+    private func shouldShowCard(_ card: NewTabPageDataModel.CardID) -> Bool {
         guard !isCardPermanentlyDismissed(card) else {
             return false
         }

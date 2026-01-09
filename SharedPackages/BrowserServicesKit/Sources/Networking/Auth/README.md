@@ -126,6 +126,108 @@ The framework provides several token retrieval policies:
 - Multiple concurrent refresh requests share the same refresh task to avoid redundant network calls
 - Refresh operations emit events via `OAuthClientRefreshEvent` if `refreshEventMapping` is provided
 
+## Token Container Lifecycle
+
+Understanding the lifecycle of a `TokenContainer` helps clarify when and how tokens are created, refreshed, and invalidated.
+
+### 1. Creation
+
+A `TokenContainer` is created in one of two ways:
+
+**Account Creation:**
+- User initiates account creation via `getTokens(policy: .createIfNeeded)` or `activate(withPlatformSignature:)`
+- OAuth authorization flow generates authorization code
+- Authorization code is exchanged for access token and refresh token
+- Both tokens are decoded and verified using server-provided JWKS keys
+- `TokenContainer` is created with both tokens and their decoded representations
+- Container is stored in `AuthTokenStoring` implementation (typically Keychain)
+
+**Account Activation:**
+- User activates existing account with platform signature (e.g., App Store receipt)
+- Similar flow to creation, but uses login endpoint instead of create endpoint
+- New `TokenContainer` is created and stored
+
+### 2. Storage
+
+- `TokenContainer` is persisted via `AuthTokenStoring` (injected dependency)
+- Storage is typically Keychain-based for security
+- Both access token and refresh token are stored together
+- Decoded token representations are also stored (for quick expiry checks without re-decoding)
+
+### 3. Usage
+
+- Applications request tokens via `getTokens(policy:)` with appropriate policy
+- `.localValid` policy automatically checks expiry and refreshes if needed
+- Access token is used for authenticated API requests
+- Refresh token remains stored and is only used for token refresh operations
+
+### 4. Refresh
+
+When access token expires or is about to expire (within 45 seconds):
+
+1. **Detection**: `getTokens(policy: .localValid)` detects expiry from decoded token
+2. **Deduplication**: If refresh already in progress, concurrent requests await same task
+3. **Refresh Request**: Refresh token is sent to server to obtain new access token
+4. **JWKS Fetch**: Server's public keys are fetched for token verification
+5. **Verification**: Both new access token and refresh token are verified using JWKS
+6. **Storage**: New `TokenContainer` replaces old one in storage
+7. **Return**: New container is returned to caller
+
+**Important**: The refresh token may also be rotated (new refresh token issued), so the entire `TokenContainer` is replaced, not just the access token.
+
+### 5. Expiration
+
+**Access Token Expiration:**
+- Access tokens expire after 4 hours (4 minutes in Staging)
+- Expired access tokens cannot be used for API requests
+- Framework automatically refreshes before expiration (45-second buffer)
+- If refresh fails, user must re-authenticate
+
+**Refresh Token Expiration:**
+- Refresh tokens expire after 30 days
+- Once expired, cannot be used to obtain new access tokens
+- User must create new account or re-authenticate
+- Expired refresh token results in `invalidTokenRequest` or `unknownAccount` error
+
+### 6. Invalidation
+
+Tokens can be invalidated in two ways:
+
+**Logout (`logout()`):**
+- Access token is invalidated server-side via logout API
+- `TokenContainer` is removed from local storage
+- User must create new account or activate existing account to continue
+
+**Local Removal (`removeLocalAccount()`):**
+- `TokenContainer` is removed from local storage only
+- Server-side token remains valid (can be security risk if token is compromised)
+- Typically used for local cleanup without server invalidation
+
+### 7. Error Recovery
+
+When token operations fail:
+
+- **`missingTokenContainer`**: No tokens stored → Create new account or activate
+- **`invalidTokenRequest`**: Refresh token invalid → User must re-authenticate
+- **`unknownAccount`**: Account no longer exists → User must create new account
+- **`unauthenticated`**: Authentication state lost → User must re-authenticate
+
+### Lifecycle Summary
+
+```
+Creation → Storage → Usage → [Refresh Loop] → Expiration/Invalidation
+   ↓         ↓         ↓            ↓                    ↓
+OAuth     Keychain   API      Auto-refresh        Logout/Remove
+Flow      Storage    Calls    (every 4h)          or Expiry
+```
+
+**Key Points:**
+- Tokens are ephemeral - access tokens last 4 hours, refresh tokens 30 days
+- Framework handles refresh automatically when using `.localValid` policy
+- Storage is abstracted via `AuthTokenStoring` protocol
+- Server-side invalidation requires explicit `logout()` call
+- Failed refresh requires user re-authentication
+
 ## Public API Methods
 
 ### Token Retrieval

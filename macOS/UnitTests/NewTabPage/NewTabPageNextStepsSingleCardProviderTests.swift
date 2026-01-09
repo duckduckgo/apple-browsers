@@ -218,6 +218,66 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(cardsEvents.last, [])
     }
 
+    func testWhenSubscriptionVisibilityChangesThenCardListRefreshes() {
+        appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        subscriptionCardVisibilityManager.shouldShowSubscriptionCard = true
+        XCTAssertTrue(provider.cards.contains(.subscription))
+
+        var cardsEvents = [[NewTabPageDataModel.CardID]]()
+        let expectation = XCTestExpectation(description: "Cards publisher emits when subscription visibility changes")
+        let cancellable = provider.cardsPublisher
+            .sink { cards in
+                cardsEvents.append(cards)
+                expectation.fulfill()
+            }
+
+        // Change subscription card visibility
+        subscriptionCardVisibilityManager.shouldShowSubscriptionCard = false
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
+
+        XCTAssertEqual(cardsEvents.last?.contains(.subscription), false)
+    }
+
+    func testWhenWindowBecomesKeyThenCardListRefreshes() {
+        appearancePreferences.isContinueSetUpCardsViewOutdated = false
+
+        var cardsEvents = [[NewTabPageDataModel.CardID]]()
+        let expectation = XCTestExpectation(description: "Cards publisher emits on window key notification")
+        let cancellable = provider.cardsPublisher
+            .sink { cards in
+                cardsEvents.append(cards)
+                expectation.fulfill()
+            }
+
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
+
+        XCTAssertFalse(cardsEvents.isEmpty)
+    }
+
+    func testWhenNewTabPageWebViewAppearsThenCardListRefreshes() {
+        appearancePreferences.isContinueSetUpCardsViewOutdated = false
+
+        var cardsEvents = [[NewTabPageDataModel.CardID]]()
+        let expectation = XCTestExpectation(description: "Cards publisher emits when New Tab Page WebView appears")
+        let cancellable = provider.cardsPublisher
+            .sink { cards in
+                cardsEvents.append(cards)
+                expectation.fulfill()
+            }
+
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
+
+        XCTAssertFalse(cardsEvents.isEmpty)
+    }
+
     // MARK: - Card Visibility Logic Tests
 
     // Default App Card

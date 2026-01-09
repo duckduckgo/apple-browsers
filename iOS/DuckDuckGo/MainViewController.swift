@@ -104,7 +104,7 @@ class MainViewController: UIViewController {
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
-    let fireExecutor: FireExecutor
+    var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
@@ -191,7 +191,6 @@ class MainViewController: UIViewController {
 
     var postClear: (() -> Void)?
     var clearInProgress = false
-    var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
 
     required init?(coder: NSCoder) {
         fatalError("Use init?(code:")
@@ -235,7 +234,6 @@ class MainViewController: UIViewController {
 
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore)
 
-    let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
@@ -300,7 +298,7 @@ class MainViewController: UIViewController {
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         productSurfaceTelemetry: ProductSurfaceTelemetry,
-        fireExecutor: FireExecutor,
+        fireExecutor: FireExecuting,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
         syncAiChatsCleaner: SyncAIChatsCleaning,
@@ -339,7 +337,6 @@ class MainViewController: UIViewController {
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
-        self.isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         self.keyValueStore = keyValueStore
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
@@ -487,23 +484,8 @@ class MainViewController: UIViewController {
         // Needs to be called here to established correct view hierarchy
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         applyCustomizationState()
-        subscribeToCustomizationFeatureFlagChanges()
 
         mobileCustomization.delegate = self
-    }
-
-    @MainActor
-    func subscribeToCustomizationFeatureFlagChanges() {
-        featureFlagger.updatesPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                guard let self else { return }
-                let isFeatureEnabledNow = self.featureFlagger.isFeatureOn(.mobileCustomization)
-                if mobileCustomization.isFeatureEnabled != isFeatureEnabledNow {
-                    mobileCustomization.isFeatureEnabled = isFeatureEnabledNow
-                    self.applyCustomizationState()
-                }
-            }.store(in: &settingsCancellables)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -2188,13 +2170,11 @@ class MainViewController: UIViewController {
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),
                 frequency: .dailyAndCount)
             tunnelDefaults.resetEntitlementMessaging()
@@ -2209,7 +2189,6 @@ class MainViewController: UIViewController {
     private func performClientCheck(trigger: VPNSubscriptionClientCheckPixel.Trigger) {
         Task {
             do {
-                let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
                 let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
                 let hasEntitlement = try await subscriptionManager.isFeatureEnabled(.networkProtection)
 
@@ -2217,7 +2196,6 @@ class MainViewController: UIViewController {
                     PixelKit.fire(
                         VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
                             isSubscriptionActive: isSubscriptionActive,
-                            isAuthV2Enabled: isAuthV2Enabled,
                             trigger: trigger),
                         frequency: .dailyAndCount)
                     
@@ -2226,7 +2204,6 @@ class MainViewController: UIViewController {
                     PixelKit.fire(
                         VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
                             isSubscriptionActive: isSubscriptionActive,
-                            isAuthV2Enabled: isAuthV2Enabled,
                             trigger: trigger),
                         frequency: .dailyAndCount)
                     
@@ -2239,13 +2216,11 @@ class MainViewController: UIViewController {
     }
 
     private func handleClientCheckFailure(error: Error, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
-        let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
         
         PixelKit.fire(
             VPNSubscriptionClientCheckPixel.failed(
                 isSubscriptionActive: isSubscriptionActive,
-                isAuthV2Enabled: isAuthV2Enabled,
                 trigger: trigger,
                 error: error),
             frequency: .daily)
@@ -2267,21 +2242,18 @@ class MainViewController: UIViewController {
 
             let userInitiatedSignOut = (userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] as? Bool) ?? false
             let hasVPNEntitlements = payload.entitlements.contains(.networkProtection)
-            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             if hasVPNEntitlements {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
             } else {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                         isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
@@ -2306,13 +2278,11 @@ class MainViewController: UIViewController {
     private func onNetworkProtectionAccountSignOut(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),
                 frequency: .dailyAndCount)
 
@@ -3584,7 +3554,8 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
         Task {
-            await self.forgetTabs()
+            let options = FireOptions.tabs
+            await fireExecutor.burn(options: options, applicationState: .unknown, fireContext: .manualFire)
             tabSwitcher.dismiss()
         }
     }
@@ -3596,6 +3567,12 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
+    }
+    
+    func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController) {
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
+        newTab(allowingKeyboard: false)
+        openAIChat()
     }
 }
 
@@ -3653,7 +3630,9 @@ extension MainViewController: GestureToolbarButtonDelegate {
     
 }
 
-extension MainViewController: AutoClearWorker {
+// MARK: - Fire Button Logic
+
+extension MainViewController {
 
     func clearNavigationStack() {
         dismissOmniBar()
@@ -3665,55 +3644,6 @@ extension MainViewController: AutoClearWorker {
         }
     }
 
-    func forgetTabs() async {
-        let options: FireOptions = .tabs
-        await fireExecutor.burn(options: options)
-    }
-
-    func refreshUIAfterClear() {
-        showBars()
-        attachHomeScreen()
-        tabsBarController?.refresh(tabsModel: tabManager.model)
-
-        if !autoClearInProgress {
-            // We don't need to refresh tabs if autoclear is in progress as nothing has happened yet
-            swipeTabsCoordinator?.refresh(tabsModel: tabManager.model)
-        }
-    }
-
-    @MainActor
-    func willStartClearing(_: AutoClear) {
-        autoClearInProgress = true
-    }
-
-    @MainActor
-    func autoClearDidFinishClearing(_: AutoClear, isLaunching: Bool) {
-        autoClearInProgress = false
-        if autoClearShouldRefreshUIAfterClear && isLaunching == false {
-            refreshUIAfterClear()
-        }
-
-        autoClearShouldRefreshUIAfterClear = true
-    }
-
-    @MainActor
-    func forgetData() async {
-        var options: FireOptions = .data
-        if appSettings.autoClearAIChatHistory {
-            options.insert(.aiChats)
-        }
-        await fireExecutor.burn(options: options)
-    }
-
-    @MainActor
-    func forgetData(applicationState: DataStoreWarmup.ApplicationState) async {
-        var options: FireOptions = .data
-        if appSettings.autoClearAIChatHistory {
-            options.insert(.aiChats)
-        }
-        await fireExecutor.burn(options: options, applicationState: applicationState)
-    }
-
     func forgetAllWithAnimation(options: FireOptions,
                                 transitionCompletion: (() -> Void)? = nil,
                                 showNextDaxDialog: Bool = false) {
@@ -3721,11 +3651,11 @@ extension MainViewController: AutoClearWorker {
         Pixel.fire(pixel: .forgetAllExecuted)
         DailyPixel.fire(pixel: .forgetAllExecutedDaily)
         productSurfaceTelemetry.dataClearingUsed()
-
+        
         fireExecutor.prepare(for: options)
         
         fireButtonAnimator.animate {
-            await self.fireExecutor.burn(options: options)
+            await self.fireExecutor.burn(options: options, applicationState: .unknown, fireContext: .manualFire)
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: {
@@ -3749,6 +3679,17 @@ extension MainViewController: AutoClearWorker {
             }
 
             self.daxDialogsManager.clearedBrowserData()
+        }
+    }
+    
+    private func refreshUIAfterClear() {
+        showBars()
+        attachHomeScreen()
+        tabsBarController?.refresh(tabsModel: tabManager.model)
+
+        if !autoClearInProgress {
+            // We don't need to refresh tabs if autoclear is in progress as nothing has happened yet
+            swipeTabsCoordinator?.refresh(tabsModel: tabManager.model)
         }
     }
     
@@ -3781,40 +3722,70 @@ extension MainViewController: AutoClearWorker {
 }
 
 extension MainViewController: FireExecutorDelegate {
-    func willStartBurningTabs() {
+    
+    func willStartBurning(fireContext: FireContext) {
+        switch fireContext {
+        case .manualFire:
+            return
+        case .autoClearOnLaunch:
+            autoClearInProgress = true
+        case .autoClearOnForeground:
+            autoClearInProgress = true
+            clearNavigationStack()
+        }
+    }
+    
+    func willStartBurningTabs(fireContext: FireContext) {
         omniBar.endEditing()
         findInPageView?.done()
     }
-
-    func didFinishBurningTabs() {
+    
+    func didFinishBurningTabs(fireContext: FireContext) {
+        guard fireContext == .manualFire else { return }
         refreshUIAfterClear()
     }
-
-    func willStartBurningData() {
+    
+    func willStartBurningData(fireContext: FireContext) {
         self.clearInProgress = true
     }
-
-    func didFinishBurningData() {
+    
+    func didFinishBurningData(fireContext: FireContext) {
         self.clearInProgress = false
         self.postClear?()
         self.postClear = nil
     }
 
-    func willStartBurningAIHistory() {
+    func willStartBurningAIHistory(fireContext: FireContext) {
         if autoClearInProgress {
             syncAIChatsCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
         } else {
             syncAIChatsCleaner.recordLocalClear(date: Date())
         }
     }
-
-    func didFinishBurningAIHistory() {
+    
+    func didFinishBurningAIHistory(fireContext: FireContext) {
         Task {
             await aiChatViewControllerManager.killSessionAndResetTimer()
         }
 
         if syncService.authState != .inactive {
             syncService.scheduler.requestSyncImmediately()
+        }
+    }
+    
+    func didFinishBurning(fireContext: FireContext) {
+        switch fireContext {
+        case .manualFire:
+            return
+        case .autoClearOnLaunch:
+            autoClearInProgress = false
+            autoClearShouldRefreshUIAfterClear = true
+        case .autoClearOnForeground:
+            autoClearInProgress = false
+            if autoClearShouldRefreshUIAfterClear {
+                refreshUIAfterClear()
+            }
+            autoClearShouldRefreshUIAfterClear = true
         }
     }
 }

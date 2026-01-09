@@ -24,7 +24,7 @@ public extension NewTabPageDataModel {
     struct CustomizerData: Encodable, Equatable {
         public let background: Background
         public let theme: Theme?
-        public let themeVariant: ThemeVariant
+        public let themeVariant: ThemeVariant?
         public let userColor: Background?
         public let userImages: [UserImage]
 
@@ -35,7 +35,7 @@ public extension NewTabPageDataModel {
                     userImages: [UserImage]) {
             self.background = background
             self.theme = theme
-            self.themeVariant = themeVariant ?? .default
+            self.themeVariant = themeVariant
             self.userImages = userImages
 
             if let hex = userColor?.hex() {
@@ -57,7 +57,7 @@ public extension NewTabPageDataModel {
             var container: KeyedEncodingContainer<CodingKeys> = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(self.background, forKey: CodingKeys.background)
             try container.encode(self.theme?.rawValue ?? "system", forKey: CodingKeys.theme)
-            try container.encode(self.themeVariant, forKey: CodingKeys.themeVariant)
+            try container.encodeIfPresent(self.themeVariant, forKey: CodingKeys.themeVariant)
             try container.encode(self.userColor, forKey: CodingKeys.userColor)
             try container.encode(self.userImages, forKey: CodingKeys.userImages)
         }

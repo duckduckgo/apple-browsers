@@ -42,7 +42,7 @@ public struct AccessTokenValue: Encodable {
 // https://app.asana.com/0/1205842942115003/1209254337758531/f
 public struct GetFeatureValue: Encodable {
     let useUnifiedFeedback: Bool = true
-    let useSubscriptionsAuthV2: Bool
+    let useSubscriptionsAuthV2: Bool = true
     let usePaidDuckAi: Bool
     let useAlternateStripePaymentFlow: Bool
     let useGetSubscriptionTierOptions: Bool
@@ -204,11 +204,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureValue(
-            useSubscriptionsAuthV2: true,
-            usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
-            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled,
-            useGetSubscriptionTierOptions: subscriptionFeatureAvailability.isTierMessagingEnabled
+        return GetFeatureValue(usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
+                               useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled,
+                               useGetSubscriptionTierOptions: subscriptionFeatureAvailability.isTierMessagingEnabled
         )
     }
 

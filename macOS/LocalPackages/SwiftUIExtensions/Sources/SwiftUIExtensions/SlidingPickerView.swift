@@ -28,6 +28,7 @@ public struct SlidingPickerSettings {
     let cornerRadius: CGFloat
     let dividerSize: CGSize?
     let elementsPadding: CGFloat
+    let elementsMargin: CGFloat
     let sliderInset: CGFloat
     let sliderLineWidth: CGFloat
 
@@ -40,6 +41,7 @@ public struct SlidingPickerSettings {
         cornerRadius: CGFloat = 4,
         dividerSize: CGSize? = nil,
         elementsPadding: CGFloat = .zero,
+        elementsMargin: CGFloat = .zero,
         sliderInset: CGFloat = .zero,
         sliderLineWidth: CGFloat = 1)
     {
@@ -51,6 +53,7 @@ public struct SlidingPickerSettings {
         self.cornerRadius = cornerRadius
         self.dividerSize = dividerSize
         self.elementsPadding = elementsPadding
+        self.elementsMargin = elementsMargin
         self.sliderInset = sliderInset
         self.sliderLineWidth = sliderLineWidth
     }
@@ -92,7 +95,7 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
                     RoundedRectangle(cornerRadius: settings.cornerRadius)
                         .stroke(settings.borderColor)
                 )
-                .frame(width: contentSize.width)
+                .frame(maxWidth: contentSize.width)
 
             // Slider
             RoundedRectangle(cornerRadius: settings.cornerRadius)
@@ -103,11 +106,15 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
                         .stroke(settings.selectionBorderColor, lineWidth: settings.sliderLineWidth)
                 )
                 .offset(x: highlightOffset)
-                .frame(width: highlightSize.width, height: highlightSize.height)
+                .frame(height: highlightSize.height)
+                .frame(maxWidth: highlightSize.width)
                 .animation(sliderAnimation, value: highlightOffset)
 
             // Content
             HStack(spacing: settings.elementsPadding) {
+                Spacer()
+                    .frame(width: settings.elementsMargin)
+
                 ForEach(Array(allValues.enumerated()), id: \.element) { index, appearance in
                     displayContentBuilder(appearance)
                         .contentShape(Rectangle())
@@ -125,17 +132,20 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
                             .animation(.easeInOut(duration: 0.2), value: selectedValue)
                     }
                 }
+
+                Spacer()
+                    .frame(width: settings.elementsMargin)
             }
             .coordinateSpace(name: pickerCoordinateSpaceName)
             .readFrame(coordinateSpace: .local) { frame in
                 contentSize = frame.size
-                refreshHighlight()
+                refreshHighlight(allowsAnimations: false)
             }
             .onChange(of: selectedValue) { _ in
                 refreshHighlight()
             }
             .onChange(of: buttonFrames) { _ in
-                refreshHighlight()
+                refreshHighlight(allowsAnimations: false)
             }
         }
     }
@@ -157,13 +167,13 @@ private extension SlidingPickerView {
         index < allValues.count - 1
     }
 
-    func refreshHighlight() {
+    func refreshHighlight(allowsAnimations: Bool = true) {
         guard let buttonFrame = buttonFrames[selectedIndex] else {
             return
         }
 
         // Note: Avoid animating from Zero Size -> Actual Size
-        animationsEnabled = highlightSize != .zero && settings.animationsEnabled
+        animationsEnabled = highlightSize != .zero && settings.animationsEnabled && allowsAnimations
 
         // Note: Our Highlight with Zero Offset appears at the center of the ZStack
         highlightOffset = buttonFrame.minX - (contentSize.width - buttonFrame.width) * 0.5

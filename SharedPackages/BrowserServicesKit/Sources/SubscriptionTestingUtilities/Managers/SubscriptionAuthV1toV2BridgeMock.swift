@@ -110,4 +110,6 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
     public func isUserEligibleForFreeTrial() -> Bool {
         isEligibleForFreeTrialResult
     }
+
+    public var currentStorefrontRegion: SubscriptionRegion? = .usa
 }

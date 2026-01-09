@@ -51,6 +51,8 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
 
     /// Checks if the user is eligible for a free trial.
     func isUserEligibleForFreeTrial() -> Bool
+
+    var currentStorefrontRegion: SubscriptionRegion? { get }
 }
 
 public extension SubscriptionAuthV1toV2Bridge {
@@ -66,70 +68,6 @@ public extension SubscriptionAuthV1toV2Bridge {
         case .stripe:
             return true
         }
-    }
-}
-
-extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
-
-    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
-        try await currentSubscriptionFeatures().contains(feature)
-    }
-
-    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool {
-        let result = await accountManager.hasEntitlement(forProductName: feature, cachePolicy: .returnCacheDataElseLoad)
-        switch result {
-        case .success(let hasEntitlements):
-            return hasEntitlements
-        case .failure(let error):
-            switch error {
-            case APIServiceError.invalidToken:
-                return false
-            default:
-                throw error
-            }
-        }
-    }
-
-    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
-        accountManager.signOut(skipNotification: !notifyUI, userInitiated: userInitiated)
-    }
-
-    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
-        if let accessToken = accountManager.accessToken {
-            let subscriptionResult = await subscriptionEndpointService.getSubscription(accessToken: accessToken, cachePolicy: cachePolicy.apiCachePolicy)
-            if case let .success(subscription) = subscriptionResult {
-                return subscription
-            } else {
-                throw SubscriptionEndpointServiceError.noData
-            }
-        } else {
-            throw SubscriptionEndpointServiceError.noData
-        }
-    }
-
-    public var email: String? {
-        accountManager.email
-    }
-
-    public func isSubscriptionPresent() -> Bool {
-        accountManager.isUserAuthenticated
-    }
-
-    /// Checks if the user is eligible for a free trial.
-    ///
-    /// Returns `true` for Stripe-based purchases (on all macOS versions)
-    /// or delegates to the store purchase manager for App Store purchases (requires macOS 12.0+).
-    ///
-    /// - Returns: 
-    ///   - `true` for Stripe platform regardless of macOS version
-    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store on macOS 12.0+
-    ///   - `false` for App Store on macOS < 12.0
-    public func isUserEligibleForFreeTrial() -> Bool {
-        if currentEnvironment.purchasePlatform == .stripe {
-            return true
-        }
-        guard #available(macOS 12.0, *) else { return false }
-        return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 }
 
@@ -174,6 +112,14 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
         }
         guard #available(macOS 12.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
+    }
+
+    public var currentStorefrontRegion: SubscriptionRegion? {
+        if currentEnvironment.purchasePlatform == .stripe {
+            return nil
+        }
+        guard #available(macOS 12.0, iOS 15.0, *) else { return nil }
+        return storePurchaseManager().currentStorefrontRegion
     }
 }
 

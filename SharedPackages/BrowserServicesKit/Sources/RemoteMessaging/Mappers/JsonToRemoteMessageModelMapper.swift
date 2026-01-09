@@ -421,12 +421,12 @@ private extension JsonToRemoteMessageModelMapper {
         } else {
             nil
         }
-        let listItems = try validator.compactMap(\.listItems) { items throws(MappingError) in
+        let listItems = try validator.mapRequired(\.listItems) { items throws(MappingError) in
             let mappedItems = try mapToListItems(items, surveyActionMapper: surveyActionMapper)
             return try validator.notEmpty(mappedItems, keyPath: \RemoteMessageResponse.JsonContent.listItems)
         }
         let primaryActionText = try validator.notNilOrEmpty(\.primaryActionText)
-        let primaryAction = try validator.compactMap(\.primaryAction) { action in
+        let primaryAction = try validator.mapRequired(\.primaryAction) { action in
             mapToAction(action, surveyActionMapper: surveyActionMapper)
         }
         return .cardsList(titleText: titleText, placeholder: placeHolderImage, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
@@ -438,23 +438,45 @@ private extension JsonToRemoteMessageModelMapper {
             let validator = MappingValidator(root: jsonListItem)
 
             let id = try validator.notEmpty(\.id)
-            let titleText = try validator.notEmpty(\.titleText)
             let jsonType = try validator.mapEnum(\.type, to: RemoteMessageResponse.JsonListItemType.self)
-            let descriptionText = jsonListItem.descriptionText ?? ""
-            let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
-            let remoteAction = try validator.compactMap(\.primaryAction) { action in
-                mapToAction(action, surveyActionMapper: surveyActionMapper)
+
+            let matchingRules: [Int]
+            let exclusionRules: [Int]
+
+            let listItemType: RemoteMessageModelType.ListItem.ListItemType
+            switch jsonType {
+            case .featuredTwoLinesSingleActionItem:
+                let titleText = try validator.notEmpty(\.titleText)
+                let descriptionText = try validator.notNilOrEmpty(\.descriptionText)
+                let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
+                let primaryRemoteAction = jsonListItem.primaryAction.flatMap { action in
+                    mapToAction(action, surveyActionMapper: surveyActionMapper)
+                }
+                listItemType = .featuredTwoLinesSingleActionItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, primaryActionText: jsonListItem.primaryActionText, primaryAction: primaryRemoteAction)
+                matchingRules = jsonListItem.matchingRules ?? []
+                exclusionRules = jsonListItem.exclusionRules ?? []
+            case .twoLinesItem:
+                let titleText = try validator.notEmpty(\.titleText)
+                let descriptionText = jsonListItem.descriptionText ?? ""
+                let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
+                let remoteAction = jsonListItem.primaryAction.flatMap { action in
+                    mapToAction(action, surveyActionMapper: surveyActionMapper)
+                }
+                listItemType = .twoLinesItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, action: remoteAction)
+                matchingRules = jsonListItem.matchingRules ?? []
+                exclusionRules = jsonListItem.exclusionRules ?? []
+            case .titledSection:
+                let titleText = try validator.notEmpty(\.titleText)
+                let itemIDs = try validator.notNilOrEmpty(\.itemIDs)
+                listItemType = .titledSection(titleText: titleText, itemIDs: itemIDs)
+                // Sections don't support matching/exclusion rules
+                matchingRules = []
+                exclusionRules = []
             }
-            let matchingRules = jsonListItem.matchingRules ?? []
-            let exclusionRules = jsonListItem.exclusionRules ?? []
 
             return RemoteMessageModelType.ListItem(
                 id: id,
-                type: RemoteMessageModelType.ListItem.ListItemType(from: jsonType),
-                titleText: titleText,
-                descriptionText: descriptionText,
-                placeholderImage: placeHolderImage,
-                action: remoteAction,
+                type: listItemType,
                 matchingRules: matchingRules,
                 exclusionRules: exclusionRules
             )
@@ -468,6 +490,10 @@ private extension JsonToRemoteMessageModelMapper {
                 // Check we have not mapped already an item with the same id and discard it
                 guard !mappedIDs.contains(jsonListItem.id) else { throw MappingError.duplicateValue(\RemoteMessageResponse.JsonListItem.id) }
                 let item = try mapToListItem(jsonListItem, surveyActionMapper: surveyActionMapper)
+                // Check we have not mapped already a featured card (Only one can exist per list).
+                if item.type.isFeaturedItem, items.contains(where: \.type.isFeaturedItem) {
+                    throw MappingError.duplicateValue(\RemoteMessageResponse.JsonListItem.type)
+                }
                 // Only insert ID after successful parsing
                 mappedIDs.insert(jsonListItem.id)
                 items.append(item)
@@ -490,19 +516,6 @@ private extension JsonToRemoteMessageModelMapper {
             return [.newTabPage, .tabBar]
         case .cardsList:
             return [.modal, .dedicatedTab]
-        }
-    }
-
-}
-
-// MARK: - Item Helpers
-
-extension RemoteMessageModelType.ListItem.ListItemType {
-
-    init(from jsonType: RemoteMessageResponse.JsonListItemType) {
-        switch jsonType {
-        case .twoLinesItem:
-            self = .twoLinesItem
         }
     }
 

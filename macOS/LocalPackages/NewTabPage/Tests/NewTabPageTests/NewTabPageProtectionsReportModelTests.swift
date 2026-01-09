@@ -26,19 +26,23 @@ import XCTest
 final class NewTabPageProtectionsReportModelTests: XCTestCase {
     private var model: NewTabPageProtectionsReportModel!
     private var privacyStats: CapturingPrivacyStats!
+    private var autoconsentStats: CapturingAutoconsentStats!
     private var settingsPersistor: MockNewTabPageProtectionsReportSettingsPersistor!
 
     override func setUp() async throws {
         try await super.setUp()
 
         privacyStats = CapturingPrivacyStats()
+        autoconsentStats = CapturingAutoconsentStats()
         settingsPersistor = MockNewTabPageProtectionsReportSettingsPersistor()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-                                                 autoconsentStats: CapturingAutoconsentStats(),
+                                                 autoconsentStats: autoconsentStats,
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
                                                  showBurnAnimation: true,
                                                  isAutoconsentEnabled: { true })
+        // Wait for eager initialization to complete
+        try await Task.sleep(nanoseconds: 10_000_000) // 10ms
     }
 
     // MARK: - Initialization Tests
@@ -54,7 +58,7 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         settingsPersistor.activeFeed = .activity
 
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-                                                 autoconsentStats: CapturingAutoconsentStats(),
+                                                 autoconsentStats: autoconsentStats,
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
                                                  showBurnAnimation: true,
@@ -162,10 +166,24 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
 
     // MARK: - Widget New Label Tests
 
-    func testWhenNoWidgetNewLabelDateIsStoredThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+    func testWhenNoWidgetNewLabelDateIsStoredAndCookiePopUpsBlockedThenShouldShowProtectionsReportNewLabelReturnsTrue() async {
         settingsPersistor.widgetNewLabelFirstShownDate = nil
+        autoconsentStats.totalCookiePopUpsBlocked = 5
+        autoconsentStats.statsUpdateSubject.send()
+        // Wait for cache to update
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
         XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
         XCTAssertNotNil(settingsPersistor.widgetNewLabelFirstShownDate, "Should store current date when first accessed")
+    }
+
+    func testWhenNoWidgetNewLabelDateIsStoredAndNoCookiePopUpsBlockedThenShouldShowProtectionsReportNewLabelReturnsFalse() async {
+        settingsPersistor.widgetNewLabelFirstShownDate = nil
+        autoconsentStats.totalCookiePopUpsBlocked = 0
+        autoconsentStats.statsUpdateSubject.send()
+        // Wait for cache to update
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        XCTAssertFalse(model.shouldShowProtectionsReportNewLabel)
+        XCTAssertNil(settingsPersistor.widgetNewLabelFirstShownDate, "Should not store date when no cookie popups blocked")
     }
 
     func testWhenWidgetNewLabelDateIsWithinSevenDaysThenShouldShowProtectionsReportNewLabelReturnsTrue() {

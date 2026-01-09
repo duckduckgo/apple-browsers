@@ -145,15 +145,15 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     }
 }
 
-// MARK: Assemble card list
+// MARK: Assemble & refresh card list
 
 private extension NewTabPageNextStepsSingleCardProvider {
 
-    private func refreshCardList() {
+    func refreshCardList() {
         // For now, we show the visible cards in a fixed order as defined in `NewTabPageDataModel.CardID.allCases`.
         // New grouping/ordering logic will be added in https://app.asana.com/1/137249556945/project/1209825025475019/task/1212359353583684?focus=true
         // This will update the card ordering based on: defined levels (groups) of cards and how many times each card has been shown (to avoid card blindness).
-        let cards: [NewTabPageDataModel.CardID] = NewTabPageDataModel.CardID.allCases.filter(shouldShowCard)
+        let cards = NewTabPageDataModel.CardID.allCases.filter(shouldShowCard)
         if cards.isEmpty {
             appearancePreferences.continueSetUpCardsClosed = true
         }
@@ -162,7 +162,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
 
     /// Returns whether the card should be shown in the list of visible cards.
     /// This checks both if the card has been permanently dismissed and if the card's specific visibility conditions are met.
-    private func shouldShowCard(_ card: NewTabPageDataModel.CardID) -> Bool {
+    func shouldShowCard(_ card: NewTabPageDataModel.CardID) -> Bool {
         guard !isCardPermanentlyDismissed(card) else {
             return false
         }

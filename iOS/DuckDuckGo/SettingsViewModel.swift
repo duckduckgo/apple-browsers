@@ -103,6 +103,7 @@ final class SettingsViewModel: ObservableObject {
     // App Data State Notification Observer
     private var textZoomObserver: Any?
     private var appForegroundObserver: Any?
+    private var aiChatSettingsObserver: Any?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let keyValueStore: ThrowingKeyValueStoring
@@ -691,6 +692,7 @@ final class SettingsViewModel: ObservableObject {
     deinit {
         subscriptionSignOutObserver = nil
         textZoomObserver = nil
+        aiChatSettingsObserver = nil
         if #available(iOS 18.2, *) {
             appForegroundObserver = nil
         }
@@ -1273,6 +1275,15 @@ extension SettingsViewModel {
             guard let self = self else { return }
             self.state.textZoom = SettingsState.TextZoom(level: self.appSettings.defaultTextZoomLevel)
         })
+        
+        aiChatSettingsObserver = NotificationCenter.default.addObserver(forName: .aiChatSettingsChanged,
+                                                                  object: nil,
+                                                                  queue: .main, using: { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.refreshAutoClearOptionsIfNeeded()
+            }
+        })
 
         if #available(iOS 18.2, *) {
             appForegroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
@@ -1467,6 +1478,12 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
         }, {
             // Cancelled - no action needed
         })
+    }
+    
+    private func refreshAutoClearOptionsIfNeeded() {
+        if !aiChatSettings.isAIChatEnabled {
+            appSettings.autoClearAction = appSettings.autoClearAction.subtracting(.aiChats)
+        }
     }
 }
 

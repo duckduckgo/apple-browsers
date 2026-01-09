@@ -601,6 +601,17 @@ extension AppDelegate {
         }
     }
 
+    @MainActor
+    @objc func debugSetWidgetNewLabelFirstShownDateTo10DaysAgo(_ sender: Any?) {
+        do {
+            let tenDaysAgo = Date().addingTimeInterval(-TimeInterval.days(10))
+            try keyValueStore.set(tenDaysAgo, forKey: "new-tab-page.protection-report.widget.new-label.first-shown-date")
+            print("DEBUG: Set WidgetNewLabelFirstShownDateKey to 10 days ago")
+        } catch {
+            Logger.general.error("Failed to set widget new label first shown date key: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @objc func resetDefaultGrammarChecks(_ sender: Any?) {
         UserDefaultsWrapper.clear(.spellingCheckEnabledOnce)
         UserDefaultsWrapper.clear(.grammarCheckEnabledOnce)

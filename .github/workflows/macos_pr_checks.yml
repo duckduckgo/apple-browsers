@@ -557,7 +557,13 @@ jobs:
     runs-on: ubuntu-latest
 
     needs: should-run-checks
-    if: github.event_name == 'pull_request' && needs.should-run-checks.outputs.should_run == 'true'
+    # Only run for PRs targeting main, release/*, or hotfix/* branches
+    if: >
+      github.event_name == 'pull_request' &&
+      needs.should-run-checks.outputs.should_run == 'true' &&
+      (github.base_ref == 'main' ||
+       startsWith(github.base_ref, 'release/macos/') ||
+       startsWith(github.base_ref, 'hotfix/macos/'))
 
     defaults:
       run:

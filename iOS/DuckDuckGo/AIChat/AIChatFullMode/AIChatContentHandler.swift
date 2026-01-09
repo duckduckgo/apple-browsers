@@ -147,7 +147,6 @@ final class AIChatContentHandler: AIChatContentHandling {
         return components.url ?? aiChatSettings.aiChatURL
     }
     
-    /// Submits a prompt to the AI Chat.
     func submitPrompt(_ prompt: String) {
         userScript?.submitPrompt(prompt)
     }

@@ -64,7 +64,6 @@ public extension PixelKit {
 
         // Themes
         public static let themeName = "themeName"
-        public static let source = "source"
 
         // VPN
         public static let vpnBreakageCategory = "breakageCategory"

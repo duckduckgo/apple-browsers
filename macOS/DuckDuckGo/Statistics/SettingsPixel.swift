@@ -157,12 +157,12 @@ enum SettingsPixel: PixelKitEvent {
         switch self {
         case .themeAppearanceChanged(let source):
             return [
-                PixelKit.Parameters.source: source.rawValue
+                ParameterKey.themeChangeSource.rawValue: source.rawValue
             ]
         case .themeNameChanged(let name, let source):
             return [
                 PixelKit.Parameters.themeName: name.rawValue,
-                PixelKit.Parameters.source: source.rawValue
+                ParameterKey.themeChangeSource.rawValue: source.rawValue
             ]
         default:
             return nil
@@ -184,6 +184,10 @@ enum SettingsPixel: PixelKitEvent {
     }
 
     // MARK: - Nested Types
+
+    private enum ParameterKey: String {
+        case themeChangeSource = "themeChangeSource"
+    }
 
     enum ThemeChangeSource: String {
         case settings = "settings"

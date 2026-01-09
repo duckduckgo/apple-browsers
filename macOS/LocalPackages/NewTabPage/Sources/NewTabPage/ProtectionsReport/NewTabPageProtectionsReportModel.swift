@@ -96,15 +96,10 @@ public final class NewTabPageProtectionsReportModel {
 
     @Published var shouldShowBurnAnimation: Bool
 
-    private var cachedTotalCookiePopUpsBlocked: Int64 = 0
-
     var shouldShowProtectionsReportNewLabel: Bool {
         if let date = settingsPersistor.widgetNewLabelFirstShownDate {
             return Date() <= date.advanced(by: .days(7))
         } else {
-            guard cachedTotalCookiePopUpsBlocked > 0 else {
-                return false
-            }
             let currentDate = Date()
             settingsPersistor.widgetNewLabelFirstShownDate = currentDate
             return true
@@ -187,27 +182,12 @@ public final class NewTabPageProtectionsReportModel {
             }
             .store(in: &cancellables)
 
-        autoconsentStats.statsUpdatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    guard let self = self else { return }
-                    self.cachedTotalCookiePopUpsBlocked = await self.autoconsentStats.fetchTotalCookiePopUpsBlocked()
-                }
-            }
-            .store(in: &cancellables)
-
         burnAnimationSettingChanges
             .receive(on: DispatchQueue.main)
             .sink { [weak self] shouldShowBurnAnimation in
                 self?.shouldShowBurnAnimation = shouldShowBurnAnimation
             }
             .store(in: &cancellables)
-
-        Task { @MainActor [weak self] in
-            guard let self = self else { return }
-            self.cachedTotalCookiePopUpsBlocked = await self.autoconsentStats.fetchTotalCookiePopUpsBlocked()
-        }
     }
 
     func calculateTotalCount() async -> Int64 {

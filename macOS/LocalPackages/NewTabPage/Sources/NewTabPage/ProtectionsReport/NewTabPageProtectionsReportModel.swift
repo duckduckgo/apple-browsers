@@ -83,6 +83,10 @@ public final class NewTabPageProtectionsReportModel {
 
     @Published var shouldShowBurnAnimation: Bool
 
+    var shouldShowProtectionsReportNewLabel: Bool {
+        return true
+    }
+
     @Published var isViewExpanded: Bool {
         didSet {
             settingsPersistor.isViewExpanded = self.isViewExpanded

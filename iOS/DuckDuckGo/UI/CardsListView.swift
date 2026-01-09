@@ -177,8 +177,8 @@ extension RemoteMessagingUI {
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Color.secondary)
 
-                if let actionText = displayModel.actionButtonTitle, let action = displayModel.onTapAction {
-                    actionButton(title: actionText, action: action)
+                if let actionText = displayModel.actionButtonTitle, let _ = displayModel.onTapAction {
+                    actionView(title: actionText)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .center)
@@ -198,19 +198,17 @@ extension RemoteMessagingUI {
             }
         }
 
-        private func actionButton(title: String, action: @escaping () -> Void) -> some View {
+        private func actionView(title: String) -> some View {
             HStack(spacing: Metrics.Card.FeaturedTwoLines.buttonHorizontalSpacing) {
-                Button(action: action) {
-                    Text(title)
-                        .font(.system(size: Metrics.Card.FeaturedTwoLines.buttonTitleSize))
-                        .underline(true)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Color(designSystemColor: .accent))
-                }
-                .frame(height: Metrics.Card.FeaturedTwoLines.buttonHeight)
+                Text(title)
+                    .font(.system(size: Metrics.Card.FeaturedTwoLines.buttonTitleSize))
+                    .underline(true)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color(designSystemColor: .accent))
 
                 Image(uiImage: DesignSystemImages.Glyphs.Size16.chevronMediumRight)
             }
+            .frame(height: Metrics.Card.FeaturedTwoLines.buttonHeight)
             .foregroundStyle(Color.init(designSystemColor: .accent))
         }
     }

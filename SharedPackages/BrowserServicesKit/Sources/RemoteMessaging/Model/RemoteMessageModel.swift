@@ -210,7 +210,7 @@ public extension RemoteMessageModelType.ListItem {
         ///   - titleText: The main title of the card (required, translatable)
         ///   - descriptionText: Supporting description text (required, translatable)
         ///   - placeholderImage: Image to display alongside the text
-        ///   - primaryActionText:Optional title for the action triggered when the card is tapped
+        ///   - primaryActionText: Optional title for the action triggered when the card is tapped
         ///   - primaryAction: Optional action triggered when the card is tapped
         case featuredTwoLinesSingleActionItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, primaryActionText: String?, primaryAction: RemoteAction?)
 

@@ -297,11 +297,6 @@ jobs:
 
         mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
-    - name: Reset TCC permissions for test app
-      run: |
-        tccutil reset Camera com.duckduckgo.macos.browser.review || true
-        tccutil reset Microphone com.duckduckgo.macos.browser.review || true
-
     - name: Run UI Tests
       id: run-ui-tests
       working-directory: macOS

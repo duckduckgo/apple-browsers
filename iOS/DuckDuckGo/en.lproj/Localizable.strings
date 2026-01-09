@@ -1243,6 +1243,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Yesterday";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "You found a hidden logo!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo Saved";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Reset Search Logo";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Switch to This Logo";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Heads up! I can’t stop %1$@ from seeing your activity on %2$@.\n\nBut browse with me, and I can reduce what %1$@ knows about you overall by blocking their trackers on lots of other sites.";
 

@@ -63,11 +63,15 @@ public struct RemoteMessagingConfigMatcher {
                 let filteredItems = items.filter { item in
                     rulesEvaluator(item.id, item.matchingRules, item.exclusionRules)
                 }
-                // Skip message if no items remain after filtering.
-                guard !filteredItems.isEmpty else { return nil }
+
+                // Remove sections whose itemIds no longer exist after filtering
+                let sanitisedItemsAndSections = filteredItems.removingSectionsWithoutValidItems()
+
+                // Skip message if no items remain after filtering
+                guard !sanitisedItemsAndSections.isEmpty else { return nil }
 
                 // If items have been filtered return new content with items otherwise return the same message.
-                return items != filteredItems ? message.withFilteredItems(filteredItems) : message
+                return items != sanitisedItemsAndSections ? message.withNewItems(sanitisedItemsAndSections) : message
             }
             .first
     }
@@ -181,13 +185,13 @@ private extension RemoteMessagingConfigMatcher {
 
 }
 
-private extension RemoteMessageModel {
+extension RemoteMessageModel {
 
-    func withFilteredItems(_ items: [RemoteMessageModelType.ListItem]) -> RemoteMessageModel {
+    func withNewItems(_ items: [RemoteMessageModelType.ListItem]) -> RemoteMessageModel {
         RemoteMessageModel(
             id: self.id,
             surfaces: self.surfaces,
-            content: content?.withFilteredItems(items),
+            content: content?.withNewItems(items),
             matchingRules: self.matchingRules,
             exclusionRules: self.exclusionRules,
             isMetricsEnabled: self.isMetricsEnabled
@@ -196,14 +200,43 @@ private extension RemoteMessageModel {
 
 }
 
-private extension RemoteMessageModelType {
+extension RemoteMessageModelType {
 
-    func withFilteredItems(_ items: [ListItem]) -> Self {
+    func withNewItems(_ items: [ListItem]) -> Self {
         switch self {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
             return self
         case let .cardsList(titleText, placeholder, _, primaryActionText, primaryAction):
             return .cardsList(titleText: titleText, placeholder: placeholder, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        }
+    }
+
+}
+
+private extension [RemoteMessageModelType.ListItem] {
+
+    // Removes sections whose referenced itemIds no longer exist in the filtered list.
+    // This ensures that sections without valid items are not displayed.
+    func removingSectionsWithoutValidItems() -> [RemoteMessageModelType.ListItem] {
+        // Build a set of all valid item IDs
+        let validItemIds = Set(self.compactMap { item -> String? in
+            switch item.type {
+            case .twoLinesItem:
+                return item.id
+            case .titledSection, .featuredTwoLinesSingleActionItem: // Featured Items cannot appear in sections
+                return nil
+            }
+        })
+
+        // Filter out sections that have no valid items
+        return self.filter { item in
+            switch item.type {
+            case .twoLinesItem, .featuredTwoLinesSingleActionItem:
+                return true
+            case .titledSection(_, let itemIDs):
+                // Keep section only if at least one of its itemIds exists in validItemIds
+                return !validItemIds.isDisjoint(with: itemIDs)
+            }
         }
     }
 

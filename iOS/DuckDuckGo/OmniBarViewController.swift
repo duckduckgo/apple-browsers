@@ -479,11 +479,13 @@ class OmniBarViewController: UIViewController, OmniBar {
     
     func setDaxEasterEggLogoURL(_ logoURL: String?) {
         let url = logoURL.flatMap { URL(string: $0) }
-        
+
         barView.privacyInfoContainer.privacyIcon.setDaxEasterEggLogoURL(url) {
-            DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoDisplayed)
+            if url != nil {
+                DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoDisplayed)
+            }
         }
-        
+
         // Set up delegate if not already done
         if barView.privacyInfoContainer.delegate == nil {
             barView.privacyInfoContainer.delegate = self
@@ -910,10 +912,21 @@ extension OmniBarViewController: UITextFieldDelegate {
         self.omniDelegate?.onDidEndEditing()
     }
     
-    /// Get the current frame of the logo, accounting for device rotation and scale transforms
+    /// Returns the current frame of the logo in window coordinates.
     func getCurrentLogoFrame() -> CGRect? {
-        // Dax logo easter eggs no longer supported
-        return nil
+        guard let privacyIcon = barView.privacyInfoContainer.privacyIcon,
+              !privacyIcon.staticImageView.isHidden else { return nil }
+        return privacyIcon.staticImageView.convert(privacyIcon.staticImageView.bounds, to: nil)
+    }
+
+    /// Hides the logo for full-screen transition to avoid duplicate logos.
+    func hideLogoForTransition() {
+        barView.privacyInfoContainer.privacyIcon.hideLogoForTransition()
+    }
+
+    /// Shows the logo after full-screen transition completes.
+    func showLogoAfterTransition() {
+        barView.privacyInfoContainer.privacyIcon.showLogoAfterTransition()
     }
 }
 
@@ -941,7 +954,7 @@ extension OmniBarViewController {
 extension OmniBarViewController: PrivacyInfoContainerViewDelegate {
     func privacyInfoContainerViewDidTapDaxLogo(_ view: PrivacyInfoContainerView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect) {
         DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoTapped)
-        
+
         dependencies.daxEasterEggPresenter.presentFullScreen(
             from: self,
             logoURL: logoURL,

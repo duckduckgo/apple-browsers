@@ -80,6 +80,7 @@ public enum PrivacyFeature: String {
     case disableFireAnimation
     case htmlNewTabPage
     case daxEasterEggLogos
+    case daxEasterEggPermanentLogo
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport

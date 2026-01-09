@@ -91,6 +91,8 @@
 		1EA51376286596A000493C6A /* PrivacyIconLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA51375286596A000493C6A /* PrivacyIconLogic.swift */; };
 		1EC458462948932500CB2B13 /* UIHostingControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC458452948932500CB2B13 /* UIHostingControllerExtension.swift */; };
 		1EDE39D22705D4A200C99C72 /* FileSizeDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EDE39D12705D4A100C99C72 /* FileSizeDebugViewController.swift */; };
+		1EDF0CF72F1101AA003B997F /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 374E76072EF56C1F00F8AADE /* PrivacyConfig */; };
+		1EDF0CF82F1101AA003B997F /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E842D7416E4002FAB32 /* Common */; };
 		1EE411F728587AC50003FE64 /* PrivacyIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1EE411F628587AC50003FE64 /* PrivacyIcon.xcassets */; };
 		1EE52ABB28FB1D6300B750C1 /* UIImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC51CD828D8C0DF00E9D05A /* UIImageExtension.swift */; };
 		1EE7C299294227EC0026C8CB /* AutoconsentSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EE7C298294227EC0026C8CB /* AutoconsentSettingsViewController.swift */; };
@@ -1659,6 +1661,8 @@
 		C1935A222C89CA9F001AD72D /* AutofillSurveyManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A212C89CA9F001AD72D /* AutofillSurveyManagerTests.swift */; };
 		C1935A242C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A232C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift */; };
 		C1963863283794A000298D4D /* BookmarksCachingSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1963862283794A000298D4D /* BookmarksCachingSearch.swift */; };
+		C19888EA2EF166CB004612AD /* DaxEasterEggLogoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19888E92EF166CB004612AD /* DaxEasterEggLogoStore.swift */; };
+		C19888EC2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19888EB2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift */; };
 		C19D90D12CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */; };
 		C1A1AEDC2EBCF97400D49A2F /* AutofillExtensionPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A1AEDA2EBCF97400D49A2F /* AutofillExtensionPromptViewController.swift */; };
 		C1A1AEDD2EBCF97400D49A2F /* AutofillExtensionPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A1AEDB2EBCF97400D49A2F /* AutofillExtensionPromptViewModel.swift */; };
@@ -2168,13 +2172,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 84E341911E2F7EFB00BDBA6F;
 			remoteInfo = DuckDuckGo;
-		};
-		B6DFE6D72BC7E49800A9CE59 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 84E3418A1E2F7EFB00BDBA6F /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = B6DFE6CE2BC7E47500A9CE59;
-			remoteInfo = SwiftLintToolBundle;
 		};
 		C1CAAA7D2CF8C8ED00C37EE6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -3854,8 +3851,6 @@
 		B6BA95C228891E33004ABA20 /* BrowsingMenuAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingMenuAnimator.swift; sourceTree = "<group>"; };
 		B6BA95C428894A28004ABA20 /* BrowsingMenuViewController.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = BrowsingMenuViewController.storyboard; sourceTree = "<group>"; };
 		B6BA95E728924730004ABA20 /* JSAlertController.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = JSAlertController.storyboard; sourceTree = "<group>"; };
-		B6DFE6CF2BC7E47500A9CE59 /* SwiftLintTool.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftLintTool.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
-		B6DFE6D92BC7E61B00A9CE59 /* SwiftLintToolBundleConfiguration.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = SwiftLintToolBundleConfiguration.xcconfig; sourceTree = "<group>"; };
 		BB10B2A12EABF99D0005F174 /* SERPSettingsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsProvider.swift; sourceTree = "<group>"; };
 		BB1D99D62EB9F3710050D8CF /* MockWinBackOfferPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWinBackOfferPresenter.swift; sourceTree = "<group>"; };
 		BB1D99DC2EB9F3860050D8CF /* MockWinBackOfferCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWinBackOfferCoordinator.swift; sourceTree = "<group>"; };
@@ -4022,6 +4017,8 @@
 		C1935A212C89CA9F001AD72D /* AutofillSurveyManagerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillSurveyManagerTests.swift; sourceTree = "<group>"; };
 		C1935A232C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillHeaderViewFactoryTests.swift; sourceTree = "<group>"; };
 		C1963862283794A000298D4D /* BookmarksCachingSearch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksCachingSearch.swift; sourceTree = "<group>"; };
+		C19888E92EF166CB004612AD /* DaxEasterEggLogoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggLogoStore.swift; sourceTree = "<group>"; };
+		C19888EB2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggLogoStoreTests.swift; sourceTree = "<group>"; };
 		C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginListSectionType.swift; sourceTree = "<group>"; };
 		C1A001092D08635100372C87 /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1A0010A2D08635100372C87 /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -4521,6 +4518,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1EDF0CF72F1101AA003B997F /* PrivacyConfig in Frameworks */,
 				85C298522E968FC300C35DD0 /* FoundationExtensions in Frameworks */,
 				9FB6272E2E08251D00CBDEED /* SetDefaultBrowserUI in Frameworks */,
 				315C77822CFA41A400699683 /* AIChat in Frameworks */,
@@ -4683,13 +4681,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B6DFE6CC2BC7E47500A9CE59 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		C1EF5B1E2CC0457B002980E6 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -4710,6 +4701,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1EDF0CF82F1101AA003B997F /* Common in Frameworks */,
 				4BC95E812D7416D7002FAB32 /* Bookmarks in Frameworks */,
 				CB6CC7E42CD2529000320907 /* BrokenSitePrompt in Frameworks */,
 				4BC95EA12D741767002FAB32 /* PixelKit in Frameworks */,
@@ -6281,7 +6273,6 @@
 				EE3B98EB2A963515002F63A0 /* WidgetsExtensionAlpha.entitlements */,
 				6FB030C7234331B400A10DB9 /* Configuration.xcconfig */,
 				EEB8FDB92A990AEE00EBEDCF /* Configuration-Alpha.xcconfig */,
-				B6DFE6D92BC7E61B00A9CE59 /* SwiftLintToolBundleConfiguration.xcconfig */,
 				84E341941E2F7EFB00BDBA6F /* DuckDuckGo */,
 				F143C2E51E4A4CD400CFDE3A /* Core */,
 				8390446D20BDCE10006461CD /* ShareExtension */,
@@ -6318,7 +6309,6 @@
 				85D33FCB25C97B6E002B91A6 /* IntegrationTests.xctest */,
 				9825F9D7293F2DE900F220F2 /* PerformanceTests.xctest */,
 				02025662298818B100E694E7 /* PacketTunnelProvider.appex */,
-				B6DFE6CF2BC7E47500A9CE59 /* SwiftLintTool.bundle */,
 				C1EF5B212CC0457B002980E6 /* AutofillCredentialProvider.appex */,
 				98424AA92CED4F430071C7DB /* WebViewUnitTests.xctest */,
 				98E5643E2DE8DDA200E6E75F /* SharedStateTests.xctest */,
@@ -7942,6 +7932,7 @@
 		C10C39932E44E185001410EA /* DaxEasterEggLogos */ = {
 			isa = PBXGroup;
 			children = (
+				C19888EB2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift */,
 				C10C39942E44E1B7001410EA /* DaxEasterEggHandlerTests.swift */,
 				C14CA6482E589F6A0060FA7B /* DaxEasterEggLogoCacheTests.swift */,
 			);
@@ -8533,6 +8524,7 @@
 		C1ED4DAA2E44AFD1003298A5 /* DaxEasterEggLogos */ = {
 			isa = PBXGroup;
 			children = (
+				C19888E92EF166CB004612AD /* DaxEasterEggLogoStore.swift */,
 				C17023A92E589C6E00090178 /* DaxEasterEggLogoCache.swift */,
 				C11D666A2E48BD4300934CB5 /* DaxEasterEggPresenter.swift */,
 				C106BAC42E4628DD00DDF54A /* DaxEasterEggZoomTransitionAnimator.swift */,
@@ -9988,7 +9980,7 @@
 				0A991F5B239418D100AA1F64 /* Prevent Version Override */,
 				98B0CE69251C937D003FB601 /* Update Localizable.strings */,
 				84E3418E1E2F7EFB00BDBA6F /* Sources */,
-				B6409DC62BC7D9BF00D66F9E /* Run swiftlint */,
+				B6409DC62BC7D9BF00D66F9E /* SwiftLint */,
 				84E3418F1E2F7EFB00BDBA6F /* Frameworks */,
 				84E341901E2F7EFB00BDBA6F /* Resources */,
 				F143C2F01E4A4CD400CFDE3A /* Embed Frameworks */,
@@ -10001,7 +9993,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				B6DFE6D82BC7E49800A9CE59 /* PBXTargetDependency */,
 				F143C2EA1E4A4CD400CFDE3A /* PBXTargetDependency */,
 				8390447520BDCE10006461CD /* PBXTargetDependency */,
 				85482D932462DCD100EDEDD1 /* PBXTargetDependency */,
@@ -10280,24 +10271,6 @@
 			productReference = 98E5643E2DE8DDA200E6E75F /* SharedStateTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		B6DFE6CE2BC7E47500A9CE59 /* SwiftLintToolBundle */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = B6DFE6D02BC7E47500A9CE59 /* Build configuration list for PBXNativeTarget "SwiftLintToolBundle" */;
-			buildPhases = (
-				B6DFE6CB2BC7E47500A9CE59 /* Sources */,
-				B6DFE6CC2BC7E47500A9CE59 /* Frameworks */,
-				B6DFE6CD2BC7E47500A9CE59 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				B6DFE6D62BC7E47F00A9CE59 /* PBXTargetDependency */,
-			);
-			name = SwiftLintToolBundle;
-			productName = SwiftLintToolBundle;
-			productReference = B6DFE6CF2BC7E47500A9CE59 /* SwiftLintTool.bundle */;
-			productType = "com.apple.product-type.bundle";
-		};
 		C1EF5B202CC0457B002980E6 /* AutofillCredentialProvider */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C1EF5B332CC0457B002980E6 /* Build configuration list for PBXNativeTarget "AutofillCredentialProvider" */;
@@ -10421,9 +10394,6 @@
 						CreatedOnToolsVersion = 16.2;
 						TestTargetID = 84E341911E2F7EFB00BDBA6F;
 					};
-					B6DFE6CE2BC7E47500A9CE59 = {
-						CreatedOnToolsVersion = 15.3;
-					};
 					C1EF5B202CC0457B002980E6 = {
 						CreatedOnToolsVersion = 15.4;
 					};
@@ -10443,15 +10413,11 @@
 				Base,
 				es,
 				fi,
-				id,
 				ja,
-				ko,
 				pt,
 				ru,
 				sv,
 				tr,
-				"zh-Hans",
-				"zh-Hant",
 				fr,
 				bg,
 				hr,
@@ -10503,7 +10469,6 @@
 				84E341A51E2F7EFB00BDBA6F /* UnitTests */,
 				85D33FCA25C97B6E002B91A6 /* IntegrationTests */,
 				9825F9CB293F2DE900F220F2 /* PerformanceTests */,
-				B6DFE6CE2BC7E47500A9CE59 /* SwiftLintToolBundle */,
 				984249BD2CED4F430071C7DB /* WebViewUnitTests */,
 				98E5643D2DE8DDA200E6E75F /* SharedStateTests */,
 			);
@@ -10703,13 +10668,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B6DFE6CD2BC7E47500A9CE59 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		C1EF5B1F2CC0457B002980E6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -10836,7 +10794,7 @@
 			shellPath = /bin/sh;
 			shellScript = "if [ $ENABLE_PREVIEWS == \"YES\" ]\nthen\n  exit 0\nelse\n  \"$SOURCE_ROOT/scripts/loc_update.sh\"\nfi\n";
 		};
-		B6409DC62BC7D9BF00D66F9E /* Run swiftlint */ = {
+		B6409DC62BC7D9BF00D66F9E /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -10846,14 +10804,14 @@
 			);
 			inputPaths = (
 			);
-			name = "Run swiftlint";
+			name = SwiftLint;
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo \"SwiftLint disabled for now\"\n";
+			shellScript = "\"${SRCROOT}/../scripts/swiftlint.sh\"\n";
 		};
 		CBCCF59B29940C3800C02DFE /* Assert Xcode version */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -11158,6 +11116,7 @@
 				4BEEEA992E24670800B0BE00 /* DBPDebugWebViewWindowManager.swift in Sources */,
 				D6D95CE32B6D9F8800960317 /* AsyncHeadlessWebViewModel.swift in Sources */,
 				9F03113A2DF7C6B700AC4DB5 /* Logger+VideoPlayer.swift in Sources */,
+				C19888EA2EF166CB004612AD /* DaxEasterEggLogoStore.swift in Sources */,
 				C185ED612BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift in Sources */,
 				F1849C6B2D6E3C98000589A4 /* DebugScreen.swift in Sources */,
 				F1849C6C2D6E3C98000589A4 /* DebugScreensViewModel.swift in Sources */,
@@ -12088,6 +12047,7 @@
 				9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */,
 				9F387DFD2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
 				56A3CDE52DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */,
+				C19888EC2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift in Sources */,
 				98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E564002DE8B32D00E6E75F /* MockTimer.swift in Sources */,
 				9FB099162EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift in Sources */,
@@ -12634,13 +12594,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B6DFE6CB2BC7E47500A9CE59 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		C1EF5B1D2CC0457B002980E6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -12863,15 +12816,6 @@
 			isa = PBXTargetDependency;
 			target = 84E341911E2F7EFB00BDBA6F /* DuckDuckGo */;
 			targetProxy = 98E564422DE8DDA200E6E75F /* PBXContainerItemProxy */;
-		};
-		B6DFE6D62BC7E47F00A9CE59 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = B6DFE6D52BC7E47F00A9CE59 /* SwiftLintTool */;
-		};
-		B6DFE6D82BC7E49800A9CE59 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = B6DFE6CE2BC7E47500A9CE59 /* SwiftLintToolBundle */;
-			targetProxy = B6DFE6D72BC7E49800A9CE59 /* PBXContainerItemProxy */;
 		};
 		C1CAAA7E2CF8C8ED00C37EE6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -14506,34 +14450,6 @@
 			};
 			name = Release;
 		};
-		B6DFE6D12BC7E47500A9CE59 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = B6DFE6D92BC7E61B00A9CE59 /* SwiftLintToolBundleConfiguration.xcconfig */;
-			buildSettings = {
-			};
-			name = Debug;
-		};
-		B6DFE6D22BC7E47500A9CE59 /* Alpha Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = B6DFE6D92BC7E61B00A9CE59 /* SwiftLintToolBundleConfiguration.xcconfig */;
-			buildSettings = {
-			};
-			name = "Alpha Debug";
-		};
-		B6DFE6D32BC7E47500A9CE59 /* Alpha */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = B6DFE6D92BC7E61B00A9CE59 /* SwiftLintToolBundleConfiguration.xcconfig */;
-			buildSettings = {
-			};
-			name = Alpha;
-		};
-		B6DFE6D42BC7E47500A9CE59 /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = B6DFE6D92BC7E61B00A9CE59 /* SwiftLintToolBundleConfiguration.xcconfig */;
-			buildSettings = {
-			};
-			name = Release;
-		};
 		C1EF5B2F2CC0457B002980E6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -15623,17 +15539,6 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B6DFE6D02BC7E47500A9CE59 /* Build configuration list for PBXNativeTarget "SwiftLintToolBundle" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				B6DFE6D12BC7E47500A9CE59 /* Debug */,
-				B6DFE6D22BC7E47500A9CE59 /* Alpha Debug */,
-				B6DFE6D32BC7E47500A9CE59 /* Alpha */,
-				B6DFE6D42BC7E47500A9CE59 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		C1EF5B332CC0457B002980E6 /* Build configuration list for PBXNativeTarget "AutofillCredentialProvider" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -16210,11 +16115,6 @@
 		9FE59CD92E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SystemSettingsPiPTutorialTestSupport;
-		};
-		B6DFE6D52BC7E47F00A9CE59 /* SwiftLintTool */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B6F997C22B8F374300476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */;
-			productName = SwiftLintTool;
 		};
 		BB631D152DE0D9020099977D /* DesignResourcesKitIcons */ = {
 			isa = XCSwiftPackageProductDependency;

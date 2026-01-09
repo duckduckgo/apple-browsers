@@ -72,7 +72,7 @@ struct MappingValidator<Root> {
         return result
     }
 
-    func compactMap<T, U>(_ keyPath: KeyPath<Root, T?>, _ transform: (T) throws(MappingError) -> U?) throws(MappingError) -> U {
+    func mapRequired<T, U>(_ keyPath: KeyPath<Root, T?>, _ transform: (T) throws(MappingError) -> U?) throws(MappingError) -> U {
         let wrappedValue = try notNil(keyPath)
         guard let mappedValue = try transform(wrappedValue) else { throw .invalidValue(keyPath) }
         return mappedValue

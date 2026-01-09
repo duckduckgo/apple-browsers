@@ -22,6 +22,7 @@ on:
         options:
            - Alpha
            - Release
+           - Experimental
 
 jobs:
   make-adhoc:

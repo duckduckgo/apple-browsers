@@ -126,6 +126,7 @@ final class BookmarkManagementSidebarViewController: NSViewController {
         outlineView.allowsEmptySelection = false
         outlineView.allowsExpansionToolTips = true
         outlineView.allowsMultipleSelection = false
+        outlineView.allowsDisclosureButtonHighlight = false
         outlineView.backgroundColor = .clear
         outlineView.indentationPerLevel = 13
         outlineView.rowHeight = 28

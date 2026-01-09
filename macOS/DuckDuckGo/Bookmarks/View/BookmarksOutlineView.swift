@@ -50,6 +50,8 @@ final class BookmarksOutlineView: NSOutlineView {
         dataSource as? BookmarksOutlineViewDataSource
     }
 
+    var allowsDisclosureButtonHighlight = true
+
     @PublishedAfter var highlightedRow: Int? {
         didSet {
             defer {
@@ -81,7 +83,7 @@ final class BookmarksOutlineView: NSOutlineView {
 
     private func refreshDisclosureButtonTint(previousDisclosureButton: NSButton?, latestDisclosureButton: NSButton?, itemAllowsHighlight: Bool) {
         previousDisclosureButton?.contentTintColor = palette.iconsPrimary
-        latestDisclosureButton?.contentTintColor = itemAllowsHighlight ? palette.accentContentPrimary : palette.iconsPrimary
+        latestDisclosureButton?.contentTintColor = allowsDisclosureButtonHighlight && itemAllowsHighlight ? palette.accentContentPrimary : palette.iconsPrimary
     }
 
     /// popover displaying this Bookmarks Menu

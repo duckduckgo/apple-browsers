@@ -160,6 +160,38 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         XCTAssertFalse(model.isRecentActivityVisible)
     }
 
+    // MARK: - Widget New Label Tests
+
+    func testWhenNoWidgetNewLabelDateIsStoredThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        settingsPersistor.widgetNewLabelFirstShownDate = nil
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+        XCTAssertNotNil(settingsPersistor.widgetNewLabelFirstShownDate, "Should store current date when first accessed")
+    }
+
+    func testWhenWidgetNewLabelDateIsWithinSevenDaysThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        let recentDate = Date().addingTimeInterval(-6 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = recentDate
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+    }
+
+    func testWhenWidgetNewLabelDateIsExactlySevenDaysAgoThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        let sevenDaysAgo = Date().addingTimeInterval(-7 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = sevenDaysAgo
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+    }
+
+    func testWhenWidgetNewLabelDateIsOlderThanSevenDaysThenShouldShowProtectionsReportNewLabelReturnsFalse() {
+        let eightDaysAgo = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = eightDaysAgo
+        XCTAssertFalse(model.shouldShowProtectionsReportNewLabel)
+    }
+
+    func testWhenWidgetNewLabelDateIsInTheFutureThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        let futureDate = Date().addingTimeInterval(24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = futureDate
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+    }
+
     // MARK: - Burn Animation Tests
 
     func testWhenInitializedWithShowBurnAnimationTrueThenShouldShowBurnAnimationIsTrue() {

@@ -87,6 +87,19 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
         XCTAssertTrue(config.showBurnAnimation)
     }
 
+    func testWhenModelShouldShowProtectionsReportNewLabelIsTrueThenGetConfigReturnsShowProtectionsReportNewLabelTrue() async throws {
+        settingsPersistor.widgetNewLabelFirstShownDate = Date()
+        let config: NewTabPageDataModel.ProtectionsConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertTrue(config.showProtectionsReportNewLabel)
+    }
+
+    func testWhenModelShouldShowProtectionsReportNewLabelIsFalseThenGetConfigReturnsShowProtectionsReportNewLabelFalse() async throws {
+        let eightDaysAgo = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = eightDaysAgo
+        let config: NewTabPageDataModel.ProtectionsConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertFalse(config.showProtectionsReportNewLabel)
+    }
+
     // MARK: - setConfig
 
     func testWhenSetConfigContainsExpandedStateThenModelSettingIsSetToExpanded() async throws {

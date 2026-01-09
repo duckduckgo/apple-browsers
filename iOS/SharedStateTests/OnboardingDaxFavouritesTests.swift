@@ -85,7 +85,8 @@ import Combine
                                                                               privacyConfigurationManager: mockConfigManager,
                                                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
                                                                               fireproofing: fireproofing,
-                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager())
+                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager(),
+                                                                              internalUserDecider: MockInternalUserDecider())
 
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,

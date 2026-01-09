@@ -948,6 +948,91 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         XCTAssertNil(result, "Message with only sections (no actual items) should return nil")
     }
 
+    // MARK: - Featured Item Section Reference Tests
+
+    func testWhenSectionReferencesOnlyFeaturedItems_AndFeaturedItemIsFiltered_ThenSectionIsRemoved() throws {
+        // GIVEN - Section references featured item that gets filtered out
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Featured Section", itemIDs: ["featured1"]),
+            RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured1", titleText: "Featured Feature", matchingRules: [2]),  // Will be filtered
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1])   // Will pass
+        ]
+        let expectedItems = [items[2]]  // Only item1 remains
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be removed when the featured item it references is filtered out")
+    }
+
+    func testWhenSectionReferencesOnlyFeaturedItem_ThenSectionIsRemoved() throws {
+        // GIVEN - Section that only references a featured item should be removed
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Featured Section", itemIDs: ["featured1"]),
+            RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured1", titleText: "Featured Feature", matchingRules: []),  // Featured item
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [])   // Regular item
+        ]
+        let expectedItems = [
+            items[1],  // featured1 (kept, not filtered)
+            items[2]   // item1 (kept)
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [], exclusionRules: [], items: items)], rules: [])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be removed when it only references featured items")
+    }
+
+    func testWhenSectionReferencesBothFeaturedAndRegularItems_ThenSectionIsKeptWithOnlyRegularItemReference() throws {
+        // GIVEN - Section references both featured and regular items, only regular item should count
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Mixed Section", itemIDs: ["featured1", "item1"]),
+            RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured1", titleText: "Featured Feature", matchingRules: [1]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1])
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be kept when at least one regular (non-featured) item exists")
+    }
+
+    func testWhenSectionReferencesMixOfFeaturedAndRegularItems_AndRegularItemsFiltered_ThenSectionIsRemoved() throws {
+        // GIVEN - Section references both featured and regular items, but regular items are filtered
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Mixed Section", itemIDs: ["featured1", "item1"]),
+            RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured1", titleText: "Featured Feature", matchingRules: [1]),  // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]),   // Will be filtered
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [1])    // Will pass (not in section)
+        ]
+        let expectedItems = [
+            items[1],  // featured1
+            items[3]   // item2
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be removed when only featured items remain in its itemIDs after filtering")
+    }
+
 }
 
 private extension RemoteMessagingConfigMatcherTests {

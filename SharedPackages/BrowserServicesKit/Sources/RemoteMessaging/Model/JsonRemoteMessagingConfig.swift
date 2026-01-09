@@ -72,6 +72,7 @@ public enum RemoteMessageResponse {
         let titleText: String
         let descriptionText: String?
         let placeholder: String?
+        let primaryActionText: String?
         let primaryAction: JsonMessageAction?
         let matchingRules: [Int]?
         let exclusionRules: [Int]?
@@ -83,6 +84,7 @@ public enum RemoteMessageResponse {
     }
 
     enum JsonListItemType: String, CaseIterable {
+        case featuredTwoLinesSingleActionItem = "featured_two_line_single_action_list_item"
         case twoLinesItem = "two_line_list_item"
         case titledSection = "section_title"
     }
@@ -113,6 +115,7 @@ public enum RemoteMessageResponse {
     struct JsonListItemTranslation: Decodable {
         let titleText: String?
         let descriptionText: String?
+        let primaryActionText: String?
     }
 
     struct JsonTargetPercentile: Decodable {

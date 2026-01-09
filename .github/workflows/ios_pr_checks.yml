@@ -334,6 +334,41 @@ jobs:
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
+  translation-check:
+    name: Translated Strings
+
+    runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    # Only run for PRs targeting main, release/*, or hotfix/* branches
+    if: >
+      github.event_name == 'pull_request' &&
+      needs.should-run-checks.outputs.should_run == 'true' &&
+      (github.base_ref == 'main' ||
+       startsWith(github.base_ref, 'release/ios/') ||
+       startsWith(github.base_ref, 'hotfix/ios/'))
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Allows scripts to diff against the base branch
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify string extraction
+        run: python3 scripts/translation-pr-checks/verify_string_extraction.py --platform iOS
+
+      - name: Check translations
+        run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform iOS
+
   create-asana-task:
     name: Create Asana Task
     needs: [unit-tests, shellcheck, release-build]

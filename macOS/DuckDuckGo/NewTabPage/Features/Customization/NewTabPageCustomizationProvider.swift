@@ -18,6 +18,7 @@
 
 import Combine
 import NewTabPage
+import PixelKit
 import SwiftUI
 
 final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding {
@@ -64,6 +65,7 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
         }
         set {
             appearancePreferences.themeAppearance = .init(newValue)
+            PixelKit.fire(SettingsPixel.themeAppearanceChanged(source: .newTabPage), frequency: .standard)
         }
     }
 
@@ -72,7 +74,9 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
             .init(appearancePreferences.themeName)
         }
         set {
-            appearancePreferences.themeName = .init(newValue)
+            let newThemeName = ThemeName(newValue)
+            appearancePreferences.themeName = newThemeName
+            PixelKit.fire(SettingsPixel.themeNameChanged(name: newThemeName, source: .newTabPage), frequency: .standard)
         }
     }
 

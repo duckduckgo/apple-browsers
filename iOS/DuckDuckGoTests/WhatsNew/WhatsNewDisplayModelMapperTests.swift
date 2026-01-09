@@ -241,6 +241,128 @@ final class WhatsNewDisplayModelMapperTests {
         #expect(displayModel.items.count == 3)
         let section = try #require(displayModel.items[0].section)
         #expect(section == "Section Title")
+
+    }
+
+    // MARK: - Featured Item Mapping Tests
+
+    @Test("Check Mapper Correctly Maps Featured Item Properties")
+    func whenFeaturedItemHasPropertiesThenTheyAreMappedCorrectly() throws {
+        // GIVEN
+        let items = [
+            RemoteMessageModelType.ListItem.makeFeaturedItem(
+                id: "featured-1",
+                titleText: "Featured Feature",
+                descriptionText: "This is a featured feature",
+                placeholder: .visualDesignUpdate,
+                primaryActionText: "Learn More",
+            )
+        ]
+        let message = RemoteMessageModel.makeCardsListMessage(items: items)
+
+        // WHEN
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // THEN
+        #expect(displayModel.items.count == 1)
+        let card = try #require(displayModel.items.first?.featuredTwoLinesCard)
+        #expect(card.icon == "RemoteVisualDesignUpdate")
+        #expect(card.title == "Featured Feature")
+        #expect(card.description == "This is a featured feature")
+        #expect(card.actionButtonTitle == "Learn More")
+    }
+
+    @Test("Check Featured Item With Action Is Mapped Correctly")
+    func whenFeaturedItemHasActionThenOnTapActionIsSet() throws {
+        // GIVEN
+        let featuredItem = RemoteMessageModelType.ListItem.makeFeaturedItem(
+            id: "featured-1",
+            primaryActionText: "Get Started",
+            primaryAction: .navigation(value: .settings)
+        )
+        let message = RemoteMessageModel.makeCardsListMessage(items: [featuredItem])
+
+        // WHEN
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // THEN
+        #expect(displayModel.items.count == 1)
+        let card = try #require(displayModel.items.first?.featuredTwoLinesCard)
+        #expect(card.onTapAction != nil)
+    }
+
+    @Test("Check Featured Item Without Action Is Mapped Correctly")
+    func whenFeaturedItemHasNoActionThenOnTapActionIsNil() throws {
+        // GIVEN
+        let featuredItem = RemoteMessageModelType.ListItem.makeFeaturedItem(
+            id: "featured-1",
+            primaryAction: nil
+        )
+        let message = RemoteMessageModel.makeCardsListMessage(items: [featuredItem])
+
+        // WHEN
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // THEN
+        #expect(displayModel.items.count == 1)
+        let card = try #require(displayModel.items.first?.featuredTwoLinesCard)
+        #expect(card.onTapAction == nil)
+    }
+
+    @Test("Check Mixed List With Featured And Regular Items Is Mapped Correctly")
+    func whenListHasFeaturedAndRegularItemsThenBothAreMapped() throws {
+        // GIVEN
+        let items = [
+            RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured-1", titleText: "Featured"),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-1", titleText: "Regular Item 1"),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-2", titleText: "Regular Item 2")
+        ]
+        let message = RemoteMessageModel.makeCardsListMessage(items: items)
+
+        // WHEN
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // THEN
+        #expect(displayModel.items.count == 3)
+        #expect(displayModel.items[safe: 0]?.featuredTwoLinesCard != nil)
+        #expect(displayModel.items[safe: 1]?.twoLinesCard != nil)
+        #expect(displayModel.items[safe: 2]?.twoLinesCard != nil)
     }
 }
 
@@ -462,6 +584,74 @@ struct WhatsNewDisplayModelActionHandlingTests {
         // THEN
         #expect(callCount == 3)
     }
+
+    @Test("Check Featured Item Action Invokes Callback")
+    func whenFeaturedItemActionInvokedThenItemCallbackIsCalled() async throws {
+        // GIVEN
+        let expectedAction = RemoteAction.navigation(value: .settings)
+        let featuredItem = RemoteMessageModelType.ListItem.makeFeaturedItem(
+            id: "featured-1",
+            primaryActionText: "Open Settings",
+            primaryAction: expectedAction
+        )
+        let message = RemoteMessageModel.makeCardsListMessage(items: [featuredItem])
+
+        var itemActionCalled = false
+        var capturedAction: RemoteAction?
+        var capturedItemId: String?
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { action, itemId in
+                    itemActionCalled = true
+                    capturedAction = action
+                    capturedItemId = itemId
+                },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // WHEN
+        displayModel.items.first?.featuredTwoLinesCard?.onTapAction?()
+        await Task.yield()
+
+        // THEN
+        #expect(itemActionCalled)
+        #expect(capturedAction == expectedAction)
+        #expect(capturedItemId == "featured-1")
+    }
+
+    @Test("Check Featured Item Appear Callback Invokes With Correct Item ID")
+    func whenFeaturedItemAppearsCallbackInvokedThenItemIdIsPassed() throws {
+        // GIVEN
+        let featuredItem = RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured-1")
+        let message = RemoteMessageModel.makeCardsListMessage(items: [featuredItem])
+
+        var itemAppearedId: String?
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { itemId in
+                    itemAppearedId = itemId
+                },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // WHEN
+        displayModel.items.first?.featuredTwoLinesCard?.onAppear?()
+
+        // THEN
+        #expect(itemAppearedId == "featured-1")
+    }
 }
 
 private extension RemoteMessagingUI.CardsListDisplayModel.Item {
@@ -470,7 +660,7 @@ private extension RemoteMessagingUI.CardsListDisplayModel.Item {
         switch self {
         case .twoLinesCard(let card):
             return card
-        case .section:
+        case .section, .featuredTwoLinesCard:
             return nil
         }
     }
@@ -479,7 +669,16 @@ private extension RemoteMessagingUI.CardsListDisplayModel.Item {
         switch self {
         case .section(let title):
             return title
-        case .twoLinesCard:
+        case .twoLinesCard, .featuredTwoLinesCard:
+            return nil
+        }
+    }
+
+    var featuredTwoLinesCard: RemoteMessagingUI.CardsListDisplayModel.Item.FeaturedTwoLinesCard? {
+        switch self {
+        case .featuredTwoLinesCard(let card):
+            return card
+        case .section, .twoLinesCard:
             return nil
         }
     }

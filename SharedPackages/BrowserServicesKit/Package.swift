@@ -731,6 +731,7 @@ let package = Package(
             ],
             resources: [
                 .copy("Resources/remote-messaging-config-example.json"),
+                .copy("Resources/remote-messaging-config-featured-items.json"),
                 .copy("Resources/remote-messaging-config-malformed.json"),
                 .copy("Resources/remote-messaging-config-metrics.json"),
                 .copy("Resources/remote-messaging-config-unsupported-items.json"),

@@ -2,6 +2,46 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ištrinti iš 1 svetainės. Gali jus atjungti nuo paskyrų.</string>
+			<key>few</key>
+			<string>Ištrinti iš %1$d svetainių. Gali jus atjungti nuo paskyrų.</string>
+			<key>many</key>
+			<string>Ištrinti iš %1$d svetainės. Gali jus atjungti nuo paskyrų.</string>
+			<key>other</key>
+			<string>Ištrinti iš %1$d svetainių. Gali jus atjungti nuo paskyrų.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uždaryti skirtuką</string>
+			<key>few</key>
+			<string>Uždaryti visus %1$d skirtukus</string>
+			<key>many</key>
+			<string>Uždaryti visus %1$d skirtukus</string>
+			<key>other</key>
+			<string>Uždaryti visus %1$d skirtukų</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

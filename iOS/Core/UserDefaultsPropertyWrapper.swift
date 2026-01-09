@@ -189,6 +189,9 @@ public struct UserDefaultsWrapper<T> {
 
         // AI Chat
         case autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
+        
+        // Dax Easter Egg Logo
+        case daxEasterEggLogoURL = "com.duckduckgo.ios.daxEasterEggLogoURL"
 
         // Debug keys
         case debugWebViewStateRestorationEnabledKey = "com.duckduckgo.ios.debug.webViewStateRestorationEnabled"

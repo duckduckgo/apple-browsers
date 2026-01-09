@@ -85,6 +85,30 @@ public extension RemoteMessageModelType.ListItem {
             exclusionRules: []
         )
     }
+
+    static func makeFeaturedItem(
+        id: String = "featured-1",
+        titleText: String = "Featured Item",
+        descriptionText: String = "Featured Description",
+        placeholder: RemotePlaceholder = .announce,
+        primaryActionText: String? = nil,
+        primaryAction: RemoteAction? = nil,
+        matchingRules: [Int] = [],
+        exclusionRules: [Int] = []
+    ) -> RemoteMessageModelType.ListItem {
+        RemoteMessageModelType.ListItem(
+            id: id,
+            type: .featuredTwoLinesSingleActionItem(
+                titleText: titleText,
+                descriptionText: descriptionText,
+                placeholderImage: placeholder,
+                primaryActionText: primaryActionText,
+                primaryAction: primaryAction
+            ),
+            matchingRules: matchingRules,
+            exclusionRules: exclusionRules
+        )
+    }
 }
 
 public extension RemoteMessageModelType.ListItem {
@@ -95,6 +119,8 @@ public extension RemoteMessageModelType.ListItem {
             return titleText
         case let .twoLinesItem(titleText, _, _, _):
             return titleText
+        case let .featuredTwoLinesSingleActionItem(titleText, _, _, _, _):
+            return titleText
         }
     }
 
@@ -103,6 +129,8 @@ public extension RemoteMessageModelType.ListItem {
         case .titledSection:
             return nil
         case let .twoLinesItem(_, descriptionText, _, _):
+            return descriptionText
+        case let .featuredTwoLinesSingleActionItem(_, descriptionText, _, _, _):
             return descriptionText
         }
     }
@@ -113,6 +141,17 @@ public extension RemoteMessageModelType.ListItem {
             return nil
         case let .twoLinesItem(_, _, placeholderImage, _):
             return placeholderImage
+        case let .featuredTwoLinesSingleActionItem(_, _, placeholderImage, _, _):
+            return placeholderImage
+        }
+    }
+
+    var primaryActionText: String? {
+        switch type {
+        case.titledSection, .twoLinesItem:
+            return nil
+        case let .featuredTwoLinesSingleActionItem(_, _, _, primaryActionText, _):
+            return primaryActionText
         }
     }
 
@@ -121,6 +160,8 @@ public extension RemoteMessageModelType.ListItem {
         case .titledSection:
             return nil
         case let .twoLinesItem(_, _, _, action):
+            return action
+        case let .featuredTwoLinesSingleActionItem(_, _, _, _, action):
             return action
         }
     }

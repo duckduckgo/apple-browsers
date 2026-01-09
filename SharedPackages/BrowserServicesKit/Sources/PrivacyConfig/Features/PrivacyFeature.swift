@@ -80,12 +80,14 @@ public enum PrivacyFeature: String {
     case disableFireAnimation
     case htmlNewTabPage
     case daxEasterEggLogos
+    case daxEasterEggPermanentLogo
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport
     case duckAiDataClearing
     case serp
     case popupBlocking
+    case combinedPermissionView
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -136,10 +138,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
 
-    /// New permission center
-    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
-    case newPermissionView
-
     /// Tab closing event recreation feature flag (failsafe for removing private API)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
@@ -179,9 +177,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
     case productTelemetrySurfaceUsage
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
-    case granularFireButtonOptions
 
     /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211661206210892?focus=true
     case experimentalBrowsingMenu

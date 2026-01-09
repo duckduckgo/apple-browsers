@@ -36,20 +36,23 @@ protocol ThemePopoverDeciding {
 ///     - At least two days must have elapsed since the Install Date
 ///
 final class ThemePopoverDecider: ThemePopoverDeciding {
+    private let appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
-    private var persistor: ThemePopoverPersistor
     private let firstLaunchDate: Date
+    private var persistor: ThemePopoverPersistor
 
     var shouldShowPopover: Bool {
         featureFlagger.isFeatureOn(.themes)
+            && appearancePreferences.themeName == .default
             && persistor.themePopoverShown == false
             && firstLaunchDate.daysSinceNow() >= 2
     }
 
-    init(featureFlagger: FeatureFlagger, persistor: ThemePopoverPersistor, firstLaunchDate: Date) {
+    init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, firstLaunchDate: Date, persistor: ThemePopoverPersistor) {
+        self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
-        self.persistor = persistor
         self.firstLaunchDate = firstLaunchDate
+        self.persistor = persistor
     }
 
     func markPopoverShownIfNeeded() {

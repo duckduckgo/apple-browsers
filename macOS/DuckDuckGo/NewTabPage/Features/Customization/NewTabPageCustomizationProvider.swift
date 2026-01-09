@@ -22,17 +22,14 @@ import PixelKit
 import SwiftUI
 
 final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding {
-    private var ntpWebViewDidAppearCancellable: AnyCancellable?
     let customizationModel: NewTabPageCustomizationModel
     let appearancePreferences: AppearancePreferences
     let themePopoverDecider: ThemePopoverDeciding
 
-    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences, themePopoverDecider: ThemePopoverDeciding, notificationCenter: NotificationCenter = .default) {
+    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences, themePopoverDecider: ThemePopoverDeciding) {
         self.customizationModel = customizationModel
         self.appearancePreferences = appearancePreferences
         self.themePopoverDecider = themePopoverDecider
-
-        startListeningToNewTabPageEvents(notificationCenter: notificationCenter)
     }
 
     var customizerOpener: NewTabPageCustomizerOpener {
@@ -134,22 +131,9 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
             await deleteImage(with: imageID)
         }
     }
-}
 
-private extension NewTabPageCustomizationProvider {
-
-    func startListeningToNewTabPageEvents(notificationCenter: NotificationCenter) {
-        ntpWebViewDidAppearCancellable = notificationCenter.publisher(for: .newTabPageWebViewDidAppear)
-            .prefix(1)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.newTabPageWebViewDidAppear()
-            }
-    }
-
-    func newTabPageWebViewDidAppear() {
+    func processedInitialSetup() {
         themePopoverDecider.markPopoverShownIfNeeded()
-        ntpWebViewDidAppearCancellable = nil
     }
 }
 

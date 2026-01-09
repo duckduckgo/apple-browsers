@@ -794,7 +794,6 @@ h2 {
   --switch-handle-color: var(--color-white-at-84);
   --track-bg-color-checked: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-dark-accent-primary));
   --track-border-color-checked: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-dark-accent-primary));
-  --switch-handle-color-checked: #CECECE;
   --track-bg-color-checked-active: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-dark-accent-secondary));
   --track-border-color-checked-active: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-dark-accent-secondary));
 }

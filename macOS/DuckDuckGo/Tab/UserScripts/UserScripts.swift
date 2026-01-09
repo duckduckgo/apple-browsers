@@ -218,36 +218,21 @@ final class UserScripts: UserScriptsProvider {
         }
 
         var delegate: Subfeature
-        if !Application.appDelegate.isUsingAuthV2 {
-            guard let subscriptionManager = Application.appDelegate.subscriptionManagerV1 else {
-                assertionFailure("SubscriptionManager is not available")
-                return
-            }
-
-            let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                               authEndpointService: subscriptionManager.authEndpointService,
-                                                               accountManager: subscriptionManager.accountManager)
-            delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                               stripePurchaseFlow: stripePurchaseFlow,
-                                                               uiHandler: Application.appDelegate.subscriptionUIHandler)
-        } else {
-            guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
-                assertionFailure("subscriptionManager is not available")
-                return
-            }
-            let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
-            delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
-                                                                 stripePurchaseFlow: stripePurchaseFlow,
-                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler,
-                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL,
-                                                                 wideEvent: WideEvent())
+        guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
+            assertionFailure("subscriptionManager is not available")
+            return
         }
+        let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
+        delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
+                                                             stripePurchaseFlow: stripePurchaseFlow,
+                                                             uiHandler: Application.appDelegate.subscriptionUIHandler,
+                                                             aiChatURL: AIChatRemoteSettings().aiChatURL,
+                                                             wideEvent: WideEvent())
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
 
-        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                                                        isAuthV2Enabled: Application.appDelegate.isUsingAuthV2)
+        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }

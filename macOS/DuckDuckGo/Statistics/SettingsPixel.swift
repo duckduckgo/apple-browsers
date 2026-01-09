@@ -186,7 +186,7 @@ enum SettingsPixel: PixelKitEvent {
     // MARK: - Nested Types
 
     private enum ParameterKey: String {
-        case themeChangeSource = "themeChangeSource"
+        case themeChangeSource
     }
 
     enum ThemeChangeSource: String {

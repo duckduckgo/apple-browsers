@@ -216,11 +216,7 @@ extension SubscriptionManager {
     public func signOut(notifyUI: Bool) async {
         await signOut(notifyUI: notifyUI, userInitiated: false)
     }
-
-//    public func currentSubscriptionFeatures() async throws -> [SubscriptionEntitlement] {
-//        try await currentSubscriptionFeatures(forceRefresh: false)
-//    }
-
+    
     /// Checks whether the user is eligible to purchase the subscription, regardless of purchase platform.
     public var isSubscriptionPurchaseEligible: Bool {
         switch currentEnvironment.purchasePlatform {

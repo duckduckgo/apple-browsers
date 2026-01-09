@@ -111,8 +111,8 @@ struct SubscriptionNavigationCoordinatorTests {
         #expect(url.absoluteString.contains("featurePage=duckai"))
     }
 
-    @Test("navigateToSubscriptionUpgrade fetches plans URL and shows subscription tab")
-    func navigateToSubscriptionUpgrade() async throws {
+    @Test("navigateToSubscriptionPlans fetches plans URL and shows subscription tab")
+    func navigateToSubscriptionPlans() async throws {
         let (coordinator, mockTabShower, mockSubscriptionManager) = createCoordinator()
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions")!
         mockSubscriptionManager.urls[.plans] = expectedURL

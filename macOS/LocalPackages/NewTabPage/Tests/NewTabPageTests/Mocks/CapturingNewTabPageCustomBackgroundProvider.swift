@@ -50,7 +50,7 @@ final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgro
         $userImages.dropFirst().removeDuplicates().eraseToAnyPublisher()
     }
 
-    func processedInitialSetup() {
+    func processNewTabPageInitialized() {
         // NO-OP
     }
 

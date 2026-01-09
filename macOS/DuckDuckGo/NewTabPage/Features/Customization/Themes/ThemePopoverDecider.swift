@@ -57,7 +57,7 @@ final class ThemePopoverDecider: ThemePopoverDeciding {
     }
 
     func markPopoverShown() {
-        guard shouldShowPopover, persistor.themePopoverShown == false else {
+        guard persistor.themePopoverShown == false else {
             return
         }
 

@@ -1355,25 +1355,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return .terminateLater
         }
 
-        if !downloadManager.downloads.isEmpty {
-            // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
-            let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
-            if !activeDownloads.isEmpty {
-                let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
-                let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
-                    // close alert and burn the window when all downloads finished
-                    NSApp.stopModal(withCode: .OK)
-                }
-                let response = alert.runModal()
-                downloadsFinishedCancellable.cancel()
-                if response == .cancel {
-                    return .terminateCancel
+        let downloadsDecider = ActiveDownloadsTerminationDecider(
+            downloadManager: downloadManager,
+            downloadListCoordinator: downloadListCoordinator
+        )
+        if let downloadsTask = downloadsDecider.handleTermination() {
+            Task {
+                let shouldContinue = await downloadsTask.value
+                if shouldContinue {
+                    let reply = continueTerminationAfterAsyncDeciders()
+                    NSApp.reply(toApplicationShouldTerminate: reply == .terminateNow)
+                } else {
+                    NSApp.reply(toApplicationShouldTerminate: false)
                 }
             }
-            downloadManager.cancelAll(waitUntilDone: true)
-            downloadListCoordinator.sync()
+            return .terminateLater
         }
 
+        return continueTerminationAfterAsyncDeciders()
+    }
+
+    @MainActor
+    private func continueTerminationAfterAsyncDeciders() -> NSApplication.TerminateReply {
         // Cancel any active update tracking flow
         updateController?.handleAppTermination()
 

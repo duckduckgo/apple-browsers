@@ -321,7 +321,7 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
         purchaseFeaturePage = featurePage
     }
 
-    func navigateToSubscriptionUpgrade(origin: String?, featurePage: String?) {
+    func navigateToSubscriptionPlans(origin: String?, featurePage: String?) {
         navigateToSubscriptionUpgradeCalled = true
         purchaseOrigin = origin
         purchaseFeaturePage = featurePage

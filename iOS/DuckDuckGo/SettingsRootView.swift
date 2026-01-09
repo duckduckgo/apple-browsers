@@ -171,6 +171,17 @@ struct SettingsRootView: View {
         }
     }
 
+    @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
+        SubscriptionContainerViewFactory.makePlansFlowV2(redirectURLComponents: redirectURLComponents,
+                                                         navigationCoordinator: subscriptionNavigationCoordinator,
+                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                         subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                         userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                         dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                         wideEvent: AppDependencyProvider.shared.wideEvent)
+    }
+
     @ViewBuilder func emailFlowNavigationDestination() -> some View {
         if viewModel.isAuthV2Enabled {
             SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
@@ -242,6 +253,9 @@ struct SettingsRootView: View {
             SubscriptionITPView(viewModel: model)
         case let .subscriptionFlow(redirectURLComponents):
             subscriptionFlowNavigationDestination(redirectURLComponents: redirectURLComponents)
+                .environmentObject(subscriptionNavigationCoordinator)
+        case let .subscriptionPlanChangeFlow(redirectURLComponents):
+            subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: redirectURLComponents)
                 .environmentObject(subscriptionNavigationCoordinator)
         case .restoreFlow:
             emailFlowNavigationDestination()

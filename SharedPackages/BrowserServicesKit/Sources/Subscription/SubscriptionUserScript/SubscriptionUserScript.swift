@@ -63,7 +63,7 @@ public protocol SubscriptionUserScriptNavigationDelegate: AnyObject {
     @MainActor func navigateToSettings()
     @MainActor func navigateToSubscriptionActivation()
     @MainActor func navigateToSubscriptionPurchase(origin: String?, featurePage: String?)
-    @MainActor func navigateToSubscriptionUpgrade(origin: String?, featurePage: String?)
+    @MainActor func navigateToSubscriptionPlans(origin: String?, featurePage: String?)
 }
 
 ///
@@ -184,7 +184,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
             return nil
         }()
 
-        navigationDelegate?.navigateToSubscriptionUpgrade(origin: upgradeParams?.origin, featurePage: "duckai")
+        navigationDelegate?.navigateToSubscriptionPlans(origin: upgradeParams?.origin, featurePage: "duckai")
 
         return nil
     }

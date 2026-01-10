@@ -65,7 +65,7 @@ public final class WideEvent: WideEventManaging {
     private let sendPOSTEnabled: () -> Bool
 
     public init(storage: WideEventStoring = WideEventUserDefaultsStorage(),
-                sender: WideEventSending = DefaultWideEventSending(),
+                sender: WideEventSending = DefaultWideEventSender(),
                 sampler: WideEventSampling? = nil,
                 failureEventMapping: EventMapping<WideEventFailureEvent>? = WideEventFailureEvent.eventMapping,
                 sendPOSTEnabled: @escaping () -> Bool = { true }) {

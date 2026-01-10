@@ -28,7 +28,7 @@ public protocol WideEventSending {
     )
 }
 
-public final class DefaultWideEventSending: WideEventSending {
+public final class DefaultWideEventSender: WideEventSending {
 
     public typealias POSTRequestHandler = (URL, Data, [String: String], @escaping (Bool, Error?) -> Void) -> Void
 
@@ -37,7 +37,6 @@ public final class DefaultWideEventSending: WideEventSending {
 
     private let pixelKitProvider: () -> PixelKit?
     private let postRequestHandler: POSTRequestHandler
-    private let isUsingCustomHandler: Bool
 
     public init(
         pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
@@ -45,7 +44,6 @@ public final class DefaultWideEventSending: WideEventSending {
     ) {
         self.pixelKitProvider = pixelKitProvider
         self.postRequestHandler = postRequestHandler ?? Self.defaultPOSTRequestHandler
-        self.isUsingCustomHandler = postRequestHandler != nil
     }
 
     public func send<T: WideEventData>(
@@ -158,13 +156,6 @@ public final class DefaultWideEventSending: WideEventSending {
         let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
         Self.logger.info("Wide event POST request:\nEndpoint: \(Self.postEndpoint.absoluteString, privacy: .public)\nPayload: \(jsonString, privacy: .public)")
 
-#if DEBUG
-        if !isUsingCustomHandler {
-            Self.logger.debug("Wide event POST request skipped (debug mode)")
-            return
-        }
-#endif
-
         let headers = ["Content-Type": "application/json"]
 
         postRequestHandler(Self.postEndpoint, jsonData, headers) { success, error in
@@ -217,6 +208,10 @@ public final class DefaultWideEventSending: WideEventSending {
         headers: [String: String],
         onComplete: @escaping (Bool, Error?) -> Void
     ) {
+#if DEBUG
+        onComplete(true, nil)
+        return
+#else
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = body
@@ -226,5 +221,6 @@ public final class DefaultWideEventSending: WideEventSending {
             let success = (response as? HTTPURLResponse)?.statusCode == 200
             onComplete(success, error)
         }.resume()
+#endif
     }
 }

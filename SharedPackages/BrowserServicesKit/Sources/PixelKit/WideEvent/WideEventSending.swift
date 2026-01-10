@@ -146,7 +146,7 @@ public final class DefaultWideEventSender: WideEventSending {
     }
 
     private func sendPOSTRequest<T: WideEventData>(data: T, status: WideEventStatus) {
-        let parameters = generateFinalParameters(from: data, status: status)
+        let parameters = generateTypedParameters(from: data, status: status)
 
         guard let jsonData = buildJSONPayload(from: parameters) else {
             Self.logger.error("Failed to build JSON payload for wide event POST request")
@@ -167,12 +167,36 @@ public final class DefaultWideEventSender: WideEventSending {
         }
     }
 
-    private func buildJSONPayload(from parameters: [String: String]) -> Data? {
+    private func generateTypedParameters<T: WideEventData>(from data: T, status: WideEventStatus) -> [String: Any] {
+        var parameters: [String: Any] = [:]
+
+        parameters.merge(data.globalData.typedParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(data.appData.typedParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(data.contextData.typedParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(data.typedParameters(), uniquingKeysWith: { _, new in new })
+
+        if let errorData = data.errorData {
+            parameters.merge(errorData.typedParameters(), uniquingKeysWith: { _, new in new })
+        }
+
+        parameters[WideEventParameter.Feature.status] = status.description
+
+        switch status {
+        case .success(let reason?), .unknown(let reason):
+            parameters[WideEventParameter.Feature.statusReason] = reason
+        case .failure, .cancelled, .success(nil):
+            break
+        }
+
+        return parameters
+    }
+
+    private func buildJSONPayload(from parameters: [String: Any]) -> Data? {
         let nested = nestedDictionary(from: parameters)
         return try? JSONSerialization.data(withJSONObject: nested, options: [])
     }
 
-    private func nestedDictionary(from parameters: [String: String]) -> [String: Any] {
+    private func nestedDictionary(from parameters: [String: Any]) -> [String: Any] {
         var root: [String: Any] = [:]
 
         for key in parameters.keys.sorted() {
@@ -187,7 +211,7 @@ public final class DefaultWideEventSender: WideEventSending {
         return root
     }
 
-    private func assign(value: String, path: [String], dict: inout [String: Any]) {
+    private func assign(value: Any, path: [String], dict: inout [String: Any]) {
         guard let first = path.first else {
             return
         }

@@ -21,11 +21,10 @@ import Foundation
 public protocol WideEventParameterProviding {
     func pixelParameters() -> [String: String]
     func jsonParameters() throws -> String
+    func typedParameters() -> [String: Any]
 }
 
 extension WideEventParameterProviding {
-    // Wide events will eventually support being sent as JSON to a POST endpoint.
-    // This extension can be used for all wide event data objects to handle this.
     public func jsonParameters() throws -> String {
         let object = nestedDictionary(from: pixelParameters())
         let data = try JSONSerialization.data(withJSONObject: object, options: [])
@@ -36,6 +35,10 @@ extension WideEventParameterProviding {
         }
 
         return json
+    }
+
+    public func typedParameters() -> [String: Any] {
+        return pixelParameters().mapValues { $0 as Any }
     }
 
     private func nestedDictionary(from parameters: [String: String]) -> [String: Any] {

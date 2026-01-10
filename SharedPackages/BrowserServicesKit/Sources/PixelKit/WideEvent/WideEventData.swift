@@ -138,6 +138,16 @@ extension WideEventGlobalData: WideEventParameterProviding {
 
         return parameters
     }
+
+    public func typedParameters() -> [String: Any] {
+        var parameters: [String: Any] = [:]
+
+        parameters[WideEventParameter.Global.platform] = platform
+        parameters[WideEventParameter.Global.type] = type
+        parameters[WideEventParameter.Global.sampleRate] = Int(sampleRate)
+
+        return parameters
+    }
 }
 
 // MARK: - WideEventAppData

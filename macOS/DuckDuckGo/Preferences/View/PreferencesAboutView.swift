@@ -46,9 +46,6 @@ extension Preferences {
         var body: some View {
             PreferencePane {
                 VStack(alignment: .leading) {
-#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
-                    customFeedURLWarning
-#endif
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
                     if let warning = model.osSupportWarning {
@@ -61,6 +58,11 @@ extension Preferences {
                     #if SPARKLE
                     UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
                     #endif
+
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+                    Spacer(minLength: 20)
+                    customFeedURLWarning
+#endif
                 }
             }.task {
                 if autoUpdatesEnabled && model.mustCheckForUpdatesBeforeUserCanTakeAction {

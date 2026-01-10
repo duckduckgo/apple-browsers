@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Combine
-import BrowserServicesKit
+import Foundation
+import PrivacyConfig
 
 protocol MaliciousSiteProtectionPreferencesPersistor {
     var isEnabled: Bool { get set }

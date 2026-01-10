@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Včera";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Našiel si skryté logo!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo bolo uložené";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Obnovenie loga vyhľadávania";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Prepnúť na toto logo";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Hlavu hore! Nemôžem zabrániť službe %1$@ v tom, aby videla vašu aktivitu na %2$@.\n\nPrehliadajte so mnou a môžem obmedziť to, čo o vás služba %1$@ celkovo vie, zablokovaním jej sledovacích zariadení na mnohých ďalších stránkach.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcie DuckDuckGo AI sú súkromné a voliteľné. Tvoje údaje sa nepoužívajú na trénovanie AI.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Zhrň túto stránku";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Zobraziť tlačidlá a odkazy Duck.ai vo výsledkoch vyhľadávania DuckDuckGo.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Hľadať na stránke";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Zmazať všetky čety";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Chaty Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Môže ťa to odhlásiť z účtov";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Súbory cookie a údaje o lokalite";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Karty";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Vyber, čo chceš odstrániť";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Prúd vzduchu";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavenia Assist vyhľadávania";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Zobraziť nové Duck.ai čety ako karty v prehliadači";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Automaticky odoslať kontext stránky do Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Režim kariet Duck.ai";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Automatické odosielanie kontextu";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skryť obrázky generované umelou inteligenciou";
@@ -2968,18 +3001,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Poloha riadku s adresou";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Experimentálna ponuka prehliadača";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otvárať odkazy v pridružených aplikáciách";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Zakážte a zabráňte tak automatickému otváraniu odkazov v iných nainštalovaných aplikáciách.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Odstráň všetky údaje stránok vrátane navštívených stránok. Môže ťa to odhlásiť z účtov.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Súbory cookie a údaje o lokalite";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Odstráň všetky čety vrátane pripnutých četov";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Chaty Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Vymazať";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Vymazať karty a údaje";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Vymazať karty, údaje a chaty Duck.ai";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Zatvor všetky otvorené karty";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Karty";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Ukončiť 15 minút neaktívnu aplikáciu";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Aplikácia bola zatvorená po 1 hodine neaktívnosti";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Ukončiť 30 minút neaktívnu aplikáciu";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Ukončiť 5 minút neaktívnu aplikáciu";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Iba ukončiť aplikáciu";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Uzatvorenie aplikácie je rozpoznané potiahnutím aplikácie na jej uzatvorenie, zatiaľ čo nečinnosť nastane, keď je aplikácia na pozadí.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Požadované načasovanie";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Údaje sa vymažú po reštartovaní aplikácie.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Návrhy na vyhľadávanie";
 
@@ -2998,6 +3077,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ak je povolená funkcia Touch ID, Face ID alebo systémový prístupový kód, pri otvorení aplikácie sa zobrazí výzva na odomknutie.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatické vymazávanie údajov";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Spätná väzba prehliadača";
 
@@ -3007,6 +3088,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Vymazať chaty Duck.ai";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Vymaž údaje o prehliadaní";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automaticky vymazať údaje";
 
@@ -3034,6 +3117,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Vymazanie údajov";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Odstránenie údajov môže pomôcť chrániť tvoje súkromie online. Pomocou tlačidla Fire Button môžeš údaje vymazať manuálne alebo nastaviť automatické vymazanie.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Predvolený prehliadač";
 
@@ -3079,6 +3164,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Zabezpečené stránky";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Stránky s ochranou Fireproof";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Všeobecné";
 
@@ -3334,6 +3421,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Prehliadač DuckDuckGo poskytuje ochrany proti sledovaniu, ktoré sú vždy aktívne. [Viac informácií](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Novinky";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Zobrazuje záznamy z poslednej minúty, ktoré pomôžu pri diagnostike problémov hneď po obnovení.";
 
@@ -3517,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Plány predplatného";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Dokončujem nákup...";
 
@@ -3606,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Bezplatná skúšobná verzia je aktívna";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Zobraziť všetky plány";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Upozornenie SwiftUI";

@@ -1243,6 +1243,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Yesterday";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "You found a hidden logo!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo Saved";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Reset Search Logo";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Switch to This Logo";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Heads up! I can’t stop %1$@ from seeing your activity on %2$@.\n\nBut browse with me, and I can reduce what %1$@ knows about you overall by blocking their trackers on lots of other sites.";
 
@@ -1339,8 +1351,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Player's functionality has been affected by recent changes to YouTube. We’re working to fix these issues and appreciate your understanding.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Attach Page Content";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Sent with your message to Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Page Content";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Summarize this Page";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Show Duck.ai buttons and links in DuckDuckGo search results.";
@@ -1893,6 +1917,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Find in Page";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Delete all chats";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai Chats";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "May sign you out of accounts";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookies and Site Data";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Tabs";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Choose What To Delete";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
@@ -2752,9 +2794,9 @@ https://duckduckgo.com/mac";
 /* About page template with placeholder for subscription sentence */
 "settings.about.text.template" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.
 
-We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. 
+We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data.
 
-%@ 
+%@
 
 Take back control of your personal information with the browser designed for data protection, not data collection.";
 
@@ -2800,11 +2842,11 @@ Take back control of your personal information with the browser designed for dat
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Show new Duck.ai Chats as tabs in the browser";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Automatically send page context to Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Duck.ai Tabs Mode";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Automatically Send Context";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
@@ -2830,11 +2872,56 @@ Take back control of your personal information with the browser designed for dat
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Disable to prevent links from automatically opening in other installed apps.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Delete all site data, including visited sites. May sign you out of accounts.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookies and Site Data";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Delete all chats, including pinned chats";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai Chats";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Clear";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Clear Tabs and Data";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data and Duck.ai Chats";
+"settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data, and Duck.ai Chats";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Close all open tabs";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Tabs";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "App Exit, Inactive for 15 Minutes";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "App Exit, Inactive for 1 Hour";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "App Exit, Inactive for 30 Minutes";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "App Exit, Inactive for 5 Minutes";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "App Exit Only";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "App exit is defined by swiping the app to close it while inactivity is when the app is in the background.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Desired Timing";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Data will be deleted upon restart of the app.";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Search Suggestions";
@@ -2854,6 +2941,9 @@ Take back control of your personal information with the browser designed for dat
 /* Section footer Autolock description */
 "settings.autolock.description" = "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatic Data Clearing";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browser Feedback";
 
@@ -2862,6 +2952,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Clear Duck.ai Chats";
+
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Clear Browsing Data";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automatically Clear Data";
@@ -2889,6 +2982,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Data Clearing";
+
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Deleting your data can help protect your privacy online. Use the Fire Button to clear data manually, or set up automatic clearing.";
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Default Browser";
@@ -2935,6 +3031,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Fireproof Sites";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproofed Sites";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "General";
 
@@ -2952,9 +3051,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "New";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Preview";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";
@@ -3190,6 +3286,9 @@ Take back control of your personal information with the browser designed for dat
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "The DuckDuckGo browser provides tracking protections, which are always active. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "What’s New";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Select the option that best describes the problem you experienced.";
 
@@ -3358,6 +3457,9 @@ Take back control of your personal information with the browser designed for dat
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Subscription Plans";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Completing purchase...";
 
@@ -3447,6 +3549,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Free Trial Active";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "View All Plans";
 
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Recovery code copied to clipboard";

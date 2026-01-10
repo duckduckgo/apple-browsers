@@ -102,23 +102,29 @@ extension TabSwitcherViewController {
     }
 
     func burn(sender: AnyObject) {
-        func presentForgetDataAlert() {
-            let alert = ForgetDataAlert.buildAlert(forgetTabsAndDataHandler: { [weak self] in
-                self?.forgetAll()
-            })
-
-            if let view = sender as? UIView {
-                self.present(controller: alert, fromView: view)
-            } else if let button = sender as? UIBarButtonItem {
-                self.present(controller: alert, fromButtonItem: button)
-            } else {
-                assertionFailure("Unexpected sender")
-            }
+        func presentFireConfirmation() {
+            let presenter = FireConfirmationPresenter(tabsModel: tabsModel,
+                                                      featureFlagger: featureFlagger,
+                                                      historyManager: historyManager,
+                                                      fireproofing: fireproofing,
+                                                      aiChatSettings: aiChatSettings,
+                                                      keyValueFilesStore: keyValueStore)
+            presenter.presentFireConfirmation(
+                on: self,
+                attachPopoverTo: sender,
+                onConfirm: { [weak self] fireOptions in
+                    self?.forgetAll(fireOptions)
+                },
+                onCancel: {
+                    // TODO: - Maybe add pixel
+                }
+            )
         }
 
         Pixel.fire(pixel: .forgetAllPressedTabSwitching)
+        DailyPixel.fire(pixel: .forgetAllPressedTabSwitcherDaily)
         ViewHighlighter.hideAll()
-        presentForgetDataAlert()
+        presentFireConfirmation()
     }
 
     func transitionToMultiSelect() {
@@ -250,7 +256,7 @@ extension TabSwitcherViewController {
             interfaceMode = isEditing ? .editingRegularSize : .regularSize
         }
         
-        let showAIChatButton = !aichatFullModeFeature.isAvailable && aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled
+        let showAIChatButton = aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled
 
         barsHandler.update(interfaceMode,
                            selectedTabsCount: selectedTabs.count,
@@ -481,7 +487,12 @@ extension TabSwitcherViewController {
 
         barsHandler.duckChatButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.duckChatButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.aiChat, { [weak self] in
-            self?.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self!)
+            guard let self else { return }
+            if self.aichatFullModeFeature.isAvailable {
+                addNewAIChatTab()
+            } else {
+                self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)
+            }
         })
     }
 

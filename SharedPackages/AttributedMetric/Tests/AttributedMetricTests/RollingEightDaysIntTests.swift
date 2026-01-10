@@ -23,6 +23,8 @@ import AttributedMetricTestsUtils
 final class RollingEightDaysIntTests: XCTestCase {
 
     private var rollingInt: RollingEightDaysInt!
+    /// Fixed reference date for all tests: January 15, 2025, 12:00 Eastern
+    private let referenceDate = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 15, hour: 12))!
 
     override func setUp() {
         super.setUp()
@@ -42,18 +44,13 @@ final class RollingEightDaysIntTests: XCTestCase {
     }
 
     func testIncrementFirstTime() {
-        let beforeDate = Date()
+        let timeMachine = TimeMachine(date: referenceDate)
 
-        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: timeMachine)
 
-        let afterDate = Date()
-
-        // Should set lastDay to current date
+        // Should set lastDay to current date from TimeMachine
         XCTAssertNotNil(rollingInt.lastDay)
-        if let lastDay = rollingInt.lastDay {
-            XCTAssertGreaterThanOrEqual(lastDay, beforeDate)
-            XCTAssertLessThanOrEqual(lastDay, afterDate)
-        }
+        XCTAssertEqual(rollingInt.lastDay, referenceDate)
 
         // Should append 1 to the array
         XCTAssertEqual(rollingInt.allValues, [1])
@@ -62,13 +59,15 @@ final class RollingEightDaysIntTests: XCTestCase {
     }
 
     func testIncrementSameDay() {
+        let timeMachine = TimeMachine(date: referenceDate)
+
         // Set up initial state
-        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: timeMachine)
         let initialLastDay = rollingInt.lastDay
 
         // Call increment again on same day
-        rollingInt.increment(dateProvider: DefaultDateProvider())
-        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: timeMachine)
+        rollingInt.increment(dateProvider: timeMachine)
 
         // Should increment the last value, not add new entries
         XCTAssertEqual(rollingInt.count, 1)
@@ -78,26 +77,26 @@ final class RollingEightDaysIntTests: XCTestCase {
     }
 
     func testIncrementDifferentDay() {
-        // Set up initial state with a past date
-        let pastDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let timeMachine = TimeMachine(date: referenceDate)
+
+        // Set up initial state with a past date (day before reference)
+        let pastDate = Calendar.eastern.date(byAdding: .day, value: -1, to: referenceDate)!
         rollingInt.lastDay = pastDate
         rollingInt.append(5)
 
         let initialCount = rollingInt.count
 
         // Call increment (should be different day)
-        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: timeMachine)
 
         // Should increment count and append new value
         XCTAssertEqual(rollingInt.count, initialCount + 1)
         XCTAssertEqual(rollingInt.allValues, [5, 1])
         XCTAssertEqual(rollingInt.last, 1)
 
-        // Should update lastDay to current date
+        // Should update lastDay to current date from TimeMachine
         XCTAssertNotNil(rollingInt.lastDay)
-        if let lastDay = rollingInt.lastDay {
-            XCTAssertTrue(Calendar.current.isDateInToday(lastDay))
-        }
+        XCTAssertEqual(rollingInt.lastDay, referenceDate)
     }
 
     func testPast7DaysAverageEmptyArray() {
@@ -179,7 +178,7 @@ final class RollingEightDaysIntTests: XCTestCase {
     }
 
     func testMultipleDaysSequenceWithIncrements() {
-        let currentDate = Date()
+        let timeMachine = TimeMachine(date: referenceDate)
 
         // Simulate multiple days with different increment counts
         let dailyIncrements = [3, 1, 5, 2, 4, 1, 3, 2, 1]
@@ -187,12 +186,12 @@ final class RollingEightDaysIntTests: XCTestCase {
         for (dayIndex, increments) in dailyIncrements.enumerated() {
             // Set lastDay to simulate different days
             if dayIndex > 0 {
-                rollingInt.lastDay = currentDate.addingTimeInterval(-.day)
+                rollingInt.lastDay = Calendar.eastern.date(byAdding: .day, value: -1, to: timeMachine.now())!
             }
 
             // Perform multiple increments on same day
             for _ in 0..<increments {
-                rollingInt.increment(dateProvider: DefaultDateProvider())
+                rollingInt.increment(dateProvider: timeMachine)
             }
 
             // Verify the last value matches expected increments
@@ -200,6 +199,9 @@ final class RollingEightDaysIntTests: XCTestCase {
 
             // Verify count doesn't exceed 8 (rolling behavior)
             XCTAssertLessThanOrEqual(rollingInt.count, 8)
+
+            // Advance time machine for next iteration
+            timeMachine.travel(by: .day, value: 1)
         }
 
         // Should have exactly 8 values (due to rolling)
@@ -212,30 +214,31 @@ final class RollingEightDaysIntTests: XCTestCase {
 
     func testIsSameDayFunctionality() {
         // Test inherited isSameDay functionality
-        XCTAssertFalse(rollingInt.isSameDay(Date()))
+        XCTAssertFalse(rollingInt.isSameDay(referenceDate))
 
-        let testDate = Date()
-        rollingInt.lastDay = testDate
+        rollingInt.lastDay = referenceDate
 
-        XCTAssertTrue(rollingInt.isSameDay(testDate))
+        XCTAssertTrue(rollingInt.isSameDay(referenceDate))
 
-        let differentDay = Calendar.current.date(byAdding: .day, value: 1, to: testDate)!
+        let differentDay = Calendar.eastern.date(byAdding: .day, value: 1, to: referenceDate)!
         XCTAssertFalse(rollingInt.isSameDay(differentDay))
     }
 
     func testIncrementWithMissingDays() {
+        let timeMachine = TimeMachine(date: referenceDate)
+
         // Set up initial state with day 1
-        let day1 = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 15))!
+        let day1 = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 12))!
         rollingInt.lastDay = day1
         rollingInt.append(5)
 
         // Set lastDay to 3 days ago to simulate missing days
-        rollingInt.lastDay = Calendar.eastern.date(byAdding: .day, value: -3, to: Date())!
+        rollingInt.lastDay = Calendar.eastern.date(byAdding: .day, value: -3, to: referenceDate)!
         let initialValue = 7
         rollingInt.append(initialValue)
 
         // Now increment (should add 2 unknown days and then 1)
-        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: timeMachine)
 
         // Verify structure: should have removed oldest values and added unknowns
         // The last value should be 1 (new day)
@@ -249,17 +252,20 @@ final class RollingEightDaysIntTests: XCTestCase {
     }
 
     func testIncrementMultipleMissingDays() {
+        let timeMachine = TimeMachine(date: referenceDate)
+
         // Day 1: Add value
-        rollingInt.increment(dateProvider: DefaultDateProvider())
-        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: timeMachine)
+        rollingInt.increment(dateProvider: timeMachine)
         XCTAssertEqual(rollingInt.last, 2)
         XCTAssertEqual(rollingInt.count, 1) // Only one day with data
 
-        // Simulate missing 5 days
-        rollingInt.lastDay = Calendar.eastern.date(byAdding: .day, value: -5, to: Date())!
+        // Advance time machine by 5 days to simulate missing days
+        // lastDay is still referenceDate, and now timeMachine.now() is referenceDate + 5 days
+        timeMachine.travel(by: .day, value: 5)
 
-        // Day 7: Increment
-        rollingInt.increment(dateProvider: DefaultDateProvider())
+        // Day 6: Increment (5 days gap from day 1)
+        rollingInt.increment(dateProvider: timeMachine)
 
         // Should have: [2, unknown, unknown, unknown, unknown, 1]
         XCTAssertEqual(rollingInt.last, 1)
@@ -280,15 +286,17 @@ final class RollingEightDaysIntTests: XCTestCase {
     }
 
     func testIncrementSameDayDoesNotAddUnknowns() {
+        let timeMachine = TimeMachine(date: referenceDate)
+
         // Day 1: First increment
-        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: timeMachine)
         XCTAssertEqual(rollingInt.last, 1)
 
         let initialValuesCount = rollingInt.values.count
 
         // Day 1: Same day increments
-        rollingInt.increment(dateProvider: DefaultDateProvider())
-        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: timeMachine)
+        rollingInt.increment(dateProvider: timeMachine)
 
         // Should increment value without adding unknowns
         XCTAssertEqual(rollingInt.last, 3)
@@ -380,6 +388,8 @@ final class RollingEightDaysIntTests: XCTestCase {
     }
 
     func testIncrementAfterDecodingWithoutLastDayBehavesCorrectly() throws {
+        let timeMachine = TimeMachine(date: referenceDate)
+
         // Create state without lastDay (old data format)
         rollingInt.append(10)
 
@@ -395,8 +405,9 @@ final class RollingEightDaysIntTests: XCTestCase {
         XCTAssertNil(decoded.lastDay)
 
         // First increment should initialize lastDay
-        decoded.increment(dateProvider: DefaultDateProvider())
+        decoded.increment(dateProvider: timeMachine)
         XCTAssertNotNil(decoded.lastDay)
+        XCTAssertEqual(decoded.lastDay, referenceDate)
         XCTAssertEqual(decoded.last, 1) // New value added
         XCTAssertEqual(decoded.count, 2) // Original value + new value
     }

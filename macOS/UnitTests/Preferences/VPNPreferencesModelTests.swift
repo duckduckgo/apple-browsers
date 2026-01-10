@@ -16,27 +16,32 @@
 //  limitations under the License.
 //
 
-import XCTest
-import VPN
+import Common
+import Combine
 import NetworkProtectionIPC
 import NetworkProtectionProxy
-import Common
+import PrivacyConfig
+import VPN
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-import Combine
 
 final class VPNPreferencesModelTests: XCTestCase {
 
+    private static let defaultsSuiteName = "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType).vpnpreferencesmodeltests"
+    private static let sharedUserDefaults = UserDefaults(suiteName: defaultsSuiteName)!
+
     var model: VPNPreferencesModel!
-    var userDefaults: UserDefaults! = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
     var vpnSettings: VPNSettings!
     var xpsClient: VPNControllerXPCClient!
     var proxySettings: TransparentProxySettings!
 
     override func setUpWithError() throws {
-        vpnSettings = VPNSettings(defaults: userDefaults)
+        Self.sharedUserDefaults.removePersistentDomain(forName: Self.defaultsSuiteName)
+
+        vpnSettings = VPNSettings(defaults: Self.sharedUserDefaults)
         xpsClient = VPNControllerXPCClient()
-        proxySettings = TransparentProxySettings(defaults: userDefaults)
-        model = VPNPreferencesModel(vpnXPCClient: xpsClient, settings: vpnSettings, proxySettings: proxySettings, pinningManager: MockPinningManager(), defaults: userDefaults, featureFlagger: MockFeatureFlagger())
+        proxySettings = TransparentProxySettings(defaults: Self.sharedUserDefaults)
+        model = VPNPreferencesModel(vpnXPCClient: xpsClient, settings: vpnSettings, proxySettings: proxySettings, pinningManager: MockPinningManager(), defaults: Self.sharedUserDefaults, featureFlagger: MockFeatureFlagger())
     }
 
     override func tearDownWithError() throws {
@@ -44,7 +49,6 @@ final class VPNPreferencesModelTests: XCTestCase {
         xpsClient = nil
         proxySettings = nil
         model = nil
-        userDefaults = nil
     }
 
     func test_WhenUpdateDNSSettingsToCustomThenPropagatesToVpnSettings() {

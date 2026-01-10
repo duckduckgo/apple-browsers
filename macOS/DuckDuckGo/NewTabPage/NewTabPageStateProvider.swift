@@ -25,7 +25,7 @@ import os.log
 import PixelKit
 import Combine
 import WebKit
-import BrowserServicesKit
+import PrivacyConfig
 
 final class NewTabPageStateProvider: NewTabPageStateProviding {
 

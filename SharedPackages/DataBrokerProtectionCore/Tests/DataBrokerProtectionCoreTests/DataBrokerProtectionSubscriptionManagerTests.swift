@@ -35,8 +35,7 @@ final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
         mockRunTypeProvider = MockAppRunTypeProvider()
         subscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: mockSubscriptionBridge,
-            runTypeProvider: mockRunTypeProvider,
-            isAuthV2Enabled: false
+            runTypeProvider: mockRunTypeProvider
         )
     }
 

@@ -27,6 +27,7 @@ import History
 import HistoryView
 import os.log
 import PixelKit
+import PrivacyConfig
 import Subscription
 import SwiftUI
 import Utilities
@@ -710,6 +711,16 @@ extension AppDelegate {
         UserDefaults.standard.set(Date.monthAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }
 
+    @objc func resetQuitSurveyWasShown(_ sender: Any?) {
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.hasQuitAppBefore = false
+    }
+
+    @objc func resetThemesPopoverWasShown(_ sender: Any?) {
+        let persistor = ThemePopoverUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.themePopoverShown = false
+    }
+
     @objc func resetTipKit(_ sender: Any?) {
         TipKitDebugOptionsUIActionHandler().resetTipKitTapped()
     }
@@ -1295,7 +1306,7 @@ extension MainViewController {
     }
 
     @objc func debugShiftNewTabOpeningDateNtimes(_ sender: Any?) {
-        for _ in 0..<AppearancePreferences.Constants.dismissNextStepsCardsAfterDays {
+        for _ in 0..<NSApp.delegateTyped.appearancePreferences.maxNextStepsCardsDemonstrationDays {
             debugShiftNewTabOpeningDate(sender)
         }
     }
@@ -1377,6 +1388,11 @@ extension MainViewController {
                       webViewSize: .zero)
 
         WindowsManager.openPopUpWindow(with: tab, origin: nil, contentSize: nil)
+    }
+
+    @objc func alwaysShowFirstTimeQuitSurvey(_ sender: Any?) {
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.alwaysShowQuitSurvey = !persistor.alwaysShowQuitSurvey
     }
 
     @objc func removeUserScripts(_ sender: Any?) {

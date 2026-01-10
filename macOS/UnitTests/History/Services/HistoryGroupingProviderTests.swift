@@ -18,6 +18,7 @@
 
 import Common
 import History
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

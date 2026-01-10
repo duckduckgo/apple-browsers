@@ -17,8 +17,8 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import History
+import PrivacyConfig
 
 final class HistoryDebugMenu: NSMenu {
 

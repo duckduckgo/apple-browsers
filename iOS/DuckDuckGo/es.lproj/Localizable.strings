@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Ayer";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "¡Has encontrado un logo oculto!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo guardado";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Logotipo de Restablecer búsqueda";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Cambiar a este logotipo";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "¡Advertencia! No puedo evitar que %1$@ vea tu actividad en %2$@.\n\nPero si navegas conmigo, puedo reducir lo que %1$@ sabe de ti en general bloqueando sus rastreadores en muchos otros sitios web.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Las funciones de IA de DuckDuckGo son privadas y opcionales. Tus datos no se utilizan para entrenar a la IA.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Resumir esta página";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Muestra botones y enlaces de Duck.ai en los resultados de búsqueda de DuckDuckGo.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Buscar en la página";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Eliminar todos los chats";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Chats de Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Puede que cierre sesión en tus cuentas";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookies y datos del sitio";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Pestañas";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Elige qué eliminar";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Corriente de aire";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Configuración de Asistente de búsqueda";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Mostrar los nuevos chats de Duck.ai como pestañas en el navegador";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Envía automáticamente el contexto de la página a Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Modo de pestañas de Duck.ai";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Enviar contexto automáticamente";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ocultar imágenes generadas por IA";
@@ -2968,18 +3001,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Posición de la barra de direcciones";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Menú del navegador experimental";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Abrir enlaces en aplicaciones asociadas";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Desactivar para evitar que los enlaces se abran automáticamente en otras aplicaciones instaladas.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Elimina todos los datos del sitio, incluidos los sitios visitados. Puede que cierre sesión en tus cuentas.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookies y datos del sitio";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Elimina todos los chats, incluidos los chats fijados";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Chats de Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Borrar";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Borrar datos y pestañas";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Borra pestañas, datos y chats de Duck.ai";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Cierra todas las pestañas";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Pestañas";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Salir de la aplicación (15 minutos de inactividad)";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Salir de la aplicación (1 hora de inactividad)";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Salir de la aplicación (30 minutos de inactividad)";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Salir de la aplicación (5 minutos de inactividad)";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Salir de la aplicación";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "La salida de la aplicación consiste en deslizar para cerrar la aplicación mientras que la inactividad es cuando la aplicación está en segundo plano.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Tiempo deseado";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Los datos se borrarán al reiniciar la aplicación.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugerencias de búsqueda";
 
@@ -2998,6 +3077,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Si se habilita Touch ID, Face ID o un código de acceso del sistema, se te pedirá que desbloquees la aplicación al abrirla.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Borrado automático de datos";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Comentarios sobre el navegador";
 
@@ -3007,6 +3088,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Borra chats de Duck.ai";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Borrar datos de navegación";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Borrar datos automáticamente";
 
@@ -3034,6 +3117,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Eliminación de datos";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Eliminar tus datos puede ayudar a proteger tu privacidad en línea. Usa el Fire Button para borrar los datos manualmente o configura el borrado automático.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Navegador predeterminado";
 
@@ -3079,6 +3164,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Sitios web a prueba de fuego";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Sitios Fireproof";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "General";
 
@@ -3334,6 +3421,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "El navegador DuckDuckGo proporciona protecciones de rastreo que están siempre activas. [Más información](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Novedades";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Muestra los registros del último minuto para ayudar a diagnosticar problemas inmediatamente después de una actualización.";
 
@@ -3517,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Planes de suscripción";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Completando compra...";
 
@@ -3606,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Prueba gratuita activa";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Ver todos los planes";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alerta de SwiftUI";

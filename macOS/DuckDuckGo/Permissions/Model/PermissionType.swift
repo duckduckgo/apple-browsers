@@ -17,11 +17,11 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import CommonObjCExtensions
 import DesignResourcesKitIcons
 import FeatureFlags
 import Foundation
+import PrivacyConfig
 import WebKit
 
 enum PermissionType: Hashable {
@@ -74,7 +74,7 @@ enum PermissionType: Hashable {
 extension PermissionType {
 
     static var permissionsUpdatedExternally: [PermissionType] {
-        return [.camera, .microphone, .geolocation]
+        return [.camera, .microphone, .geolocation, .notification]
     }
 
     func canPersistGrantedDecision(featureFlagger: FeatureFlagger) -> Bool {
@@ -143,7 +143,7 @@ extension PermissionType {
         }
     }
 
-    /// Solid/filled icon for when permission is active (camera, microphone, geolocation, notification only)
+    /// Solid/filled icon for when permission is active (camera, microphone, geolocation only)
     var solidIcon: NSImage? {
         switch self {
         case .camera:
@@ -152,9 +152,7 @@ extension PermissionType {
             return DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
         case .geolocation:
             return DesignSystemImages.Glyphs.Size16.permissionsLocationSolid
-        case .notification:
-            return DesignSystemImages.Glyphs.Size16.permissionsNotificationSolid
-        case .popups, .externalScheme:
+        case .notification, .popups, .externalScheme:
             return nil
         }
     }
@@ -162,9 +160,9 @@ extension PermissionType {
     /// Whether this permission type requires system-level permission to be enabled
     var requiresSystemPermission: Bool {
         switch self {
-        case .geolocation:
+        case .geolocation, .notification:
             return true
-        case .camera, .microphone, .popups, .notification, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme:
             return false
         }
     }

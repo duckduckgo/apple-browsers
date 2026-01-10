@@ -26,7 +26,7 @@ import Bookmarks
 import Persistence
 import os.log
 import SwiftUI
-import BrowserServicesKit
+import PrivacyConfig
 import AIChat
 import Combine
 
@@ -117,7 +117,10 @@ class TabSwitcherViewController: UIViewController {
 
     let featureFlagger: FeatureFlagger
     let tabManager: TabManager
+    let historyManager: HistoryManaging
+    let fireproofing: Fireproofing
     let aiChatSettings: AIChatSettingsProvider
+    let keyValueStore: ThrowingKeyValueStoring
     var tabsModel: TabsModel {
         tabManager.model
     }
@@ -140,16 +143,22 @@ class TabSwitcherViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
                    aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-                   productSurfaceTelemetry: ProductSurfaceTelemetry) {
+                   productSurfaceTelemetry: ProductSurfaceTelemetry,
+                   historyManager: HistoryManaging,
+                   fireproofing: Fireproofing,
+                   keyValueStore: ThrowingKeyValueStoring) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
+        self.keyValueStore = keyValueStore
         self.favicons = favicons
         self.tabManager = tabManager
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
         self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.historyManager = historyManager
+        self.fireproofing = fireproofing
         super.init(coder: coder)
     }
 
@@ -354,6 +363,15 @@ class TabSwitcherViewController: UIViewController {
         // If these calls are switched it'll be immediately dismissed along with this controller.
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
+    
+    func addNewAIChatTab() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+        
+        dismiss()
+        
+        self.delegate.tabSwitcherDidRequestAIChatTab(tabSwitcher: self)
+    }
 
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {
         let tabs = self.tabsModel.tabs
@@ -403,8 +421,8 @@ class TabSwitcherViewController: UIViewController {
         burn(sender: sender)
     }
 
-    func forgetAll() {
-        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self)
+    func forgetAll(_ options: FireOptions) {
+        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self, fireOptions: options)
     }
 
     func dismiss() {
@@ -702,8 +720,7 @@ extension UITapGestureRecognizer {
         // Check if the tap is below the last item.
         // Add 10px buffer to ensure it's whitespace.
         if location.y > lastItemFrame.maxY + 15 // below the bottom of the last item is definitely the end
-            || (location.x > lastItemFrame.maxX + 15 && location.y > lastItemFrame.minY) // to the right of the last item is the end as long as it's also at least below the start of the frame
-        {
+            || (location.x > lastItemFrame.maxX + 15 && location.y > lastItemFrame.minY) { // to the right of the last item is the end as long as it's also at least below the start of the frame
             // The tap is in the whitespace area at the end
            return true
         }

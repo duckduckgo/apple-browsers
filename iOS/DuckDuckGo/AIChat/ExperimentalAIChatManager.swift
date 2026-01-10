@@ -20,28 +20,27 @@
 import Foundation
 import Core
 import Common
-import BrowserServicesKit
+import PrivacyConfig
 
 struct ExperimentalAIChatManager {
     private let featureFlagger: FeatureFlagger
     private let userDefaults: UserDefaults
     private let experimentalAIChatSettingsKey = "experimentalAIChatSettingsEnabled"
     private let devicePlatform: DevicePlatformProviding.Type
+    private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          userDefaults: UserDefaults = .standard,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()) {
         self.featureFlagger = featureFlagger
         self.userDefaults = userDefaults
         self.devicePlatform = devicePlatform
+        self.aiChatContextualModeFeature = aiChatContextualModeFeature
     }
 
     var isExperimentalAIChatFeatureFlagEnabled: Bool {
         featureFlagger.isFeatureOn(for: FeatureFlag.experimentalAddressBar, allowOverride: true)
-    }
-    
-    var fullDuckAIModeExperimentalSettingFlagEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.fullDuckAIModeExperimentalSetting, allowOverride: true) && devicePlatform.isIphone
     }
 
     var isExperimentalAIChatSettingsEnabled: Bool {
@@ -55,6 +54,10 @@ struct ExperimentalAIChatManager {
 
     var isStandaloneMigrationSupported: Bool {
         featureFlagger.isFeatureOn(.standaloneMigration)
+    }
+    
+    var isContextualDuckAIModeEnabled: Bool {
+        aiChatContextualModeFeature.isAvailable
     }
 
     mutating func toggleExperimentalTheming() {

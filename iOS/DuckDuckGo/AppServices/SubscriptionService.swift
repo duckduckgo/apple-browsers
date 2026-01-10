@@ -20,6 +20,7 @@
 import Subscription
 import Combine
 import BrowserServicesKit
+import PrivacyConfig
 import WebKit
 import Core
 import WKAbstractions
@@ -27,9 +28,7 @@ import WKAbstractions
 final class SubscriptionService {
 
     let subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability
-    private let subscriptionManagerV1 = AppDependencyProvider.shared.subscriptionManager
     private let subscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2
-    private let subscriptionAuthMigrator = AppDependencyProvider.shared.subscriptionAuthMigrator
     private var cancellables: Set<AnyCancellable> = []
 
     init(application: UIApplication = UIApplication.shared,
@@ -41,21 +40,11 @@ final class SubscriptionService {
                     featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
                 )
         Task {
-            await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()
         }
     }
 
     // MARK: - Resume
 
-    func resume() {
-        subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in // only for v1
-            if isSubscriptionActive {
-                DailyPixel.fire(pixel: .subscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v1.rawValue])
-            }
-        }
-        Task {
-            await subscriptionAuthMigrator.migrateAuthV1toAuthV2IfNeeded()
-        }
-    }
+    func resume() {}
 }

@@ -19,7 +19,7 @@
 
 import AIChat
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import PersistenceTestingUtils
 import UIKit
 @testable import DuckDuckGo
@@ -37,8 +37,8 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
          aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
          appSettings: AppSettings = AppSettingsMock(),
-         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
-         mobileCustomization: MobileCustomization = MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore())) {
+         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(logoStore: DaxEasterEggLogoStore(), featureFlagger: MockFeatureFlagger()),
+         mobileCustomization: MobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore())) {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings

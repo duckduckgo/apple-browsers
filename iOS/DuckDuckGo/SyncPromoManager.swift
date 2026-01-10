@@ -19,7 +19,7 @@
 
 import Foundation
 import Bookmarks
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 import Core
 import Persistence

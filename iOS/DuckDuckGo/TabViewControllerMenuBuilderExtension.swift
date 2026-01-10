@@ -217,6 +217,7 @@ extension TabViewController {
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChat : DesignSystemImages.Glyphs.Size24.aiChat,
                  action: { [weak self] in
             self?.openAIChat()
+            Pixel.fire(pixel: .browsingMenuAIChat)
         })
     }
     
@@ -327,14 +328,14 @@ extension TabViewController {
         
         if isFireproofed {
             return BrowsingMenuEntry.regular(name: UserText.disablePreservingLogins,
-                                             image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireSolid,
+                                             image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireproofSolid,
                                              action: { [weak self] in
                                                 self?.disableFireproofingForDomain(domain)
                                              })
         }
 
         return BrowsingMenuEntry.regular(name: UserText.enablePreservingLogins,
-                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireproofSolid : DesignSystemImages.Glyphs.Size24.fireproofSolid,
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireproofSolid : DesignSystemImages.Glyphs.Size24.fireproof,
                                          action: { [weak self] in
                                             self?.enableFireproofingForDomain(domain)
                                          })
@@ -475,6 +476,7 @@ extension TabViewController {
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChatAdd : DesignSystemImages.Glyphs.Size24.aiChatAdd,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
+            Pixel.fire(pixel: .browsingMenuAIChat)
             self?.openNewChatInNewTab()
         })
     }
@@ -578,6 +580,7 @@ extension TabViewController {
 
         return BrowsingMenuEntry.regular(name: title, image: image) { [weak self] in
             (self?.parent as? MainViewController)?.newEmailAddress()
+            Pixel.fire(pixel: .browsingMenuNewDuckAddress)
         }
     }
 
@@ -784,6 +787,7 @@ extension TabViewController {
                                          showNotificationDot: showNotificationDot,
                                          customDotColor: customDotColor) { [weak self] in
             self?.onOpenVPNAction(with: vpnPromoHelper)
+            Pixel.fire(pixel: .browsingMenuVPN)
         }
     }
 

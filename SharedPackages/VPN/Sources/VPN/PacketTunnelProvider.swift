@@ -262,7 +262,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private lazy var serverSelectionResolver: VPNServerSelectionResolving = {
         let locationRepository = NetworkProtectionLocationListCompositeRepository(
             environment: settings.selectedEnvironment,
-            tokenHandler: tokenHandlerProvider(),
+            tokenHandler: tokenHandlerProvider,
             errorEvents: debugEvents
         )
         return VPNServerSelectionResolver(locationListRepository: locationRepository, vpnSettings: settings)
@@ -290,17 +290,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     private var keyStore: NetworkProtectionKeyStore
 
-    public let tokenHandlerProvider: () -> any SubscriptionTokenHandling
-    @objc
-    public static var isUsingAuthV2: Bool {
-        get {
-            UserDefaults.standard.bool(forKey: #keyPath(isUsingAuthV2))
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: #keyPath(isUsingAuthV2))
-        }
-    }
-
+    public let tokenHandlerProvider: any SubscriptionTokenHandling
     private func resetRegistrationKey() {
         Logger.networkProtectionKeyManagement.log("Resetting the current registration key")
         keyStore.resetCurrentKeyPair()
@@ -390,7 +380,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - WideEvent
 
     private var wideEvent: WideEventManaging
-    private var isConnectionWideEventMeasurementEnabled: Bool = false
     private var connectionWideEventData: VPNConnectionWideEventData?
     private let connectionTunnelTimeoutInterval: TimeInterval = .minutes(15)
 
@@ -418,7 +407,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 wireGuardInterface: WireGuardGoInterface,
                 keychainType: KeychainType,
                 keyStore: NetworkProtectionKeyStore? = nil,
-                tokenHandlerProvider: @escaping () -> any SubscriptionTokenHandling,
+                tokenHandlerProvider: any SubscriptionTokenHandling,
                 debugEvents: EventMapping<NetworkProtectionError>,
                 providerEvents: EventMapping<Event>,
                 settings: VPNSettings,
@@ -459,14 +448,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         self.deviceManager = deviceManager ?? NetworkProtectionDeviceManager(
             environment: settings.selectedEnvironment,
-            tokenHandler: tokenHandlerProvider(),
+            tokenHandler: tokenHandlerProvider,
             keyStore: keyStore,
             errorEvents: debugEvents
         )
 
         self.serverStatusMonitor = serverStatusMonitor ?? NetworkProtectionServerStatusMonitor(
             networkClient: NetworkProtectionBackendClient(environment: settings.selectedEnvironment),
-            tokenHandler: tokenHandlerProvider()
+            tokenHandler: tokenHandlerProvider
         )
 
         self.wireGuardAdapterEventHandler = WireGuardAdapterEventHandler(
@@ -670,7 +659,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         let startupOptions = StartupOptions(options: options ?? [:])
         Logger.networkProtection.log("Starting tunnel with options: \(startupOptions.description, privacy: .public)")
-        isConnectionWideEventMeasurementEnabled = startupOptions.isConnectionWideEventMeasurementEnabled
         setupAndStartConnectionWideEvent(with: startupOptions.startupMethod)
 
         // Reset snooze if the VPN is restarting.
@@ -681,7 +669,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
 
 #if os(iOS)
-            if (try? await tokenHandlerProvider().getToken()) == nil {
+            if (try? await tokenHandlerProvider.getToken()) == nil {
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: nil)
             }
 #endif
@@ -1211,7 +1199,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         resetRegistrationKey()
         Task {
 #if os(macOS)
-            try? await tokenHandlerProvider().removeToken()
+            try? await tokenHandlerProvider.removeToken()
 #endif
 
             completionHandler?(nil)
@@ -1597,7 +1585,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             await stopMonitors()
 
             // If the extension process restarts we don't want it to attempt to reconnect
-            try? await self.tokenHandlerProvider().removeToken()
+            try? await self.tokenHandlerProvider.removeToken()
 
             // We show some visual indication that something's off, so the user can chose to
             // manually stop the VPN.
@@ -1894,7 +1882,6 @@ extension WireGuardAdapterError: LocalizedError, CustomDebugStringConvertible {
 extension PacketTunnelProvider {
 
     func setupAndStartConnectionWideEvent(with startupMethod: StartupOptions.StartupMethod) {
-        guard isConnectionWideEventMeasurementEnabled else { return }
         completeAllPendingVPNConnectionPixels()
         // Already measured
         guard startupMethod != .manualByMainApp else { return }
@@ -1913,7 +1900,7 @@ extension PacketTunnelProvider {
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
-        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        guard let data = self.connectionWideEventData else { return }
         data.tunnelStartDuration?.complete()
         data.overallDuration?.complete()
         if let error {

@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Bookmarks
 import Configuration
+import ContentBlocking
 import DDGSync
 import MaliciousSiteProtection
 import PixelKit
@@ -62,6 +63,10 @@ extension Pixel {
         case forgetAllPressedSettings
         case forgetAllExecuted
         case forgetAllDataCleared
+        
+        case forgetAllPressedBrowsingDaily
+        case forgetAllPressedTabSwitcherDaily
+        case forgetAllExecutedDaily
         
         case privacyDashboardOpened
         case privacyDashboardFirstTimeOpenedUnique
@@ -138,9 +143,14 @@ extension Pixel {
         case experimentalBrowsingMenuUsed
         case experimentalBrowsingMenuDisplayed
         case experimentalBrowsingMenuDisplayedNTP
+        case experimentalBrowsingMenuDisplayedAIChat
+        case experimentalBrowsingMenuDisplayedError
+        case experimentalBrowsingMenuDismissed
 
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
+        case browsingMenuOpenedError
+        case browsingMenuDismissed
         case browsingMenuNewTab
         case browsingMenuAddToBookmarks
         case browsingMenuEditBookmark
@@ -162,6 +172,9 @@ extension Pixel {
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
         case browsingMenuRefreshPage
+        case browsingMenuNewDuckAddress
+        case browsingMenuVPN
+        case browsingMenuAIChat
 
         case addressBarShare
         case addressBarSettings
@@ -864,7 +877,11 @@ extension Pixel {
         // Return user measurement
         case debugReturnUserAddATB
         case debugReturnUserUpdateATB
-        
+
+        // Feature flag validation
+        case debugTelemetryDAUPreFF
+        case debugTelemetryDAUPostFF
+
         // Errors from Bookmarks Module
         case bookmarkFolderExpected
         case bookmarksListIndexNotMatchingBookmark
@@ -1140,12 +1157,10 @@ extension Pixel {
         case subscriptionKeychainManagerDeallocatedWithBacklog
         case subscriptionKeychainManagerDataWroteFromBacklog
         case subscriptionKeychainManagerFailedToWriteDataFromBacklog
-        // AUth V2
+        // Auth
         case subscriptionInvalidRefreshTokenDetected
         case subscriptionInvalidRefreshTokenSignedOut
         case subscriptionInvalidRefreshTokenRecovered
-        case subscriptionAuthV2MigrationFailed2
-        case subscriptionAuthV2MigrationSucceeded
         case subscriptionAuthV2GetTokensError2
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
@@ -1230,11 +1245,13 @@ extension Pixel {
         case settingsDataClearingClearDataOpen
         case settingsAutomaticallyClearDataOn
         case settingsAutomaticallyClearDataOff
+        case settingsAutomaticDataClearingOptionsUpdated
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
+        case settingsWhatsNewOpen
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
         case settingsOpenAssistSettings
@@ -1372,8 +1389,6 @@ extension Pixel {
         case aiChatSettingsDisplayed
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
-        case aiChatSettingsFullModeEnabled
-        case aiChatSettingsFullModeDisabled
 
         case aiChatOpen
         case aiChatMetricStartNewConversation
@@ -1395,7 +1410,14 @@ extension Pixel {
         
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
-        
+
+        // MARK: AI Chat Sync
+
+        case aiChatSyncScopedSyncTokenError
+        case aiChatSyncEncryptionError
+        case aiChatSyncDecryptionError
+        case aiChatSyncHistoryEnabledError
+
         // MARK: New Address Bar Picker
         case aiChatNewAddressBarPickerDisplayed
         case aiChatNewAddressBarPickerConfirmed
@@ -1498,7 +1520,14 @@ extension Pixel {
         // MARK: - Push Notifications
         case inactiveUserProvisionalPushNotificationTapped
         case userNotificationAuthorizationStatusDaily
-        
+
+        // MARK: - Data Broker Protection Notifications
+        case dbpNotificationOpenedFirstScanComplete
+        case dbpNotificationOpenedFirstFreemiumScanComplete
+        case dbpNotificationOpenedFirstRemoval
+        case dbpNotificationOpenedAllRecordsRemoved
+        case dbpNotificationOpened1WeekCheckIn
+
         // MARK: - App Intent
         case appIntentPerformed
 
@@ -1513,6 +1542,8 @@ extension Pixel {
         // MARK: - Dax Easter Egg
         case daxEasterEggLogoDisplayed
         case daxEasterEggLogoTapped
+        case daxEasterEggLogoSetAsPermanent
+        case daxEasterEggLogoResetToDefault
 
         // MARK: - Product surface telemetery
         case productTelemeterySurfaceUsageMenu
@@ -1565,6 +1596,10 @@ extension Pixel.Event {
         case .forgetAllPressedSettings: return "m_forget-all-pressed_settings"
         case .forgetAllExecuted: return "mf"
         case .forgetAllDataCleared: return "mf_dc"
+        
+        case .forgetAllPressedBrowsingDaily: return "m_forget-all-pressed_browsing_daily"
+        case .forgetAllPressedTabSwitcherDaily: return "m_forget-all-pressed_tab-switcher_daily"
+        case .forgetAllExecutedDaily: return "m_forget-all-executed_daily"
             
         case .privacyDashboardOpened: return "mp"
         case .privacyDashboardFirstTimeOpenedUnique: return "m_privacy_dashboard_first_time_used_unique"
@@ -1615,20 +1650,27 @@ extension Pixel.Event {
         case .settingsDataClearingClearDataOpen: return "m_settings_data_clearing_clear_data_open"
         case .settingsAutomaticallyClearDataOn: return "m_settings_automatically_clear_data_on"
         case .settingsAutomaticallyClearDataOff: return "m_settings_automatically_clear_data_off"
+        case .settingsAutomaticDataClearingOptionsUpdated: return "m_automatic_data_clearing_options_updated"
         case .settingsNextStepsAddAppToDock: return "m_settings_next_steps_add_app_to_dock"
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
-            
+        case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
+
         case .experimentalBrowsingMenuEnabled: return "m_experimental-browsing-menu_enabled"
         case .experimentalBrowsingMenuDisabled: return "m_experimental-browsing-menu_disabled"
         case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"
         case .experimentalBrowsingMenuDisplayed: return "m_experimental-browsing-menu_displayed"
         case .experimentalBrowsingMenuDisplayedNTP: return "m_experimental-browsing-menu_displayed_ntp"
+        case .experimentalBrowsingMenuDisplayedAIChat: return "m_experimental-browsing-menu_displayed_aichat"
+        case .experimentalBrowsingMenuDisplayedError: return "m_experimental-browsing-menu_displayed_error"
+        case .experimentalBrowsingMenuDismissed: return "m_experimental-browsing-menu_dismissed"
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
+        case .browsingMenuOpenedError: return "m_nav_menu_error"
+        case .browsingMenuDismissed: return "m_menu_dismissed"
         case .browsingMenuNewTab: return "mb_tb"
         case .browsingMenuAddToBookmarks: return "mb_abk"
         case .browsingMenuEditBookmark: return "mb_ebk"
@@ -1647,6 +1689,9 @@ extension Pixel.Event {
         case .browsingMenuFireproof: return "mb_f"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
         case .browsingMenuRefreshPage: return "m_menu_refresh_page"
+        case .browsingMenuNewDuckAddress: return "m_menu_new_duck_address"
+        case .browsingMenuVPN: return "m_menu_vpn"
+        case .browsingMenuAIChat: return "m_menu_aichat"
 
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"
@@ -2191,6 +2236,13 @@ extension Pixel.Event {
         case .dbRemoteMessagingUpdateMessageStatusError: return "m_d_db_rm_update_message_status"
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
 
+        /// These debug pixels are extremely short lived.  We want to validate that the feature flag is working correctly.
+        /// To do so there should be an almost exact equal number of daily pixels, but it's possible for the count to be fairly different (though not massively).
+        /// The reason it might not be exact is that it could be the feature flag does not get enabled until "the next day" so the 'daily' part doesn't kick in.
+        /// This will let us reason about why the DAU data in Grafana is different to our ATB data (by about 15%)
+        case .debugTelemetryDAUPreFF: return "m_debug_validate_telemetry_pre-feature-flag"
+        case .debugTelemetryDAUPostFF: return "m_debug_validate_telemetry_post-feature-flag"
+
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
 
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
@@ -2562,12 +2614,10 @@ extension Pixel.Event {
         case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
         case .subscriptionKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
         case .subscriptionKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
-            // Auth V2
+            // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .subscriptionAuthV2MigrationFailed2: return "m_privacy-pro_auth_v2_migration_failure2"
-        case .subscriptionAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
 
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
@@ -2781,8 +2831,6 @@ extension Pixel.Event {
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
         case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
         case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
-        case .aiChatSettingsFullModeEnabled: return "m_aichat_settings_full_mode_enabled"
-        case .aiChatSettingsFullModeDisabled: return "m_aichat_settings_full_mode_disabled"
 
         case .aiChatOpen: return "m_aichat_open"
         case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"
@@ -2838,6 +2886,13 @@ extension Pixel.Event {
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
         case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
+
+        // MARK: AI Chat Sync
+
+        case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"
+        case .aiChatSyncEncryptionError: return "m_aichat_sync_internal_encryption-error"
+        case .aiChatSyncDecryptionError: return "m_aichat_sync_internal_decryption-error"
+        case .aiChatSyncHistoryEnabledError: return "m_aichat_sync_internal_history_enabled-error"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -2953,7 +3008,14 @@ extension Pixel.Event {
         // MARK: Push Notification
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
-            
+
+        // MARK: Data Broker Protection Notifications
+        case .dbpNotificationOpenedFirstScanComplete: return "m_ios_dbp_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_ios_dbp_freemium_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstRemoval: return "m_ios_dbp_notification_opened_first_removal"
+        case .dbpNotificationOpenedAllRecordsRemoved: return "m_ios_dbp_notification_opened_all_records_removed"
+        case .dbpNotificationOpened1WeekCheckIn: return "m_ios_dbp_notification_opened_1_week_check_in"
+
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"
 
@@ -2974,6 +3036,8 @@ extension Pixel.Event {
         // MARK: - Dax Easter Egg
         case .daxEasterEggLogoDisplayed: return "m_dax_easter_egg_logo_displayed"
         case .daxEasterEggLogoTapped: return "m_dax_easter_egg_logo_tapped"
+        case .daxEasterEggLogoSetAsPermanent: return "m_dax_easter_egg_logo_set_as_permanent"
+        case .daxEasterEggLogoResetToDefault: return "m_dax_easter_egg_logo_reset_to_default"
 
         // MARK: - Product surface telemetery
         case .productTelemeterySurfaceUsageMenu: return "m_product_telemetry_surface_usage_menu"

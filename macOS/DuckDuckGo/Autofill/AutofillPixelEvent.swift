@@ -47,10 +47,6 @@ enum AutofillPixelKitEvent: PixelKitEvent {
         nil
     }
 
-    var withoutMacPrefix: NonStandardEvent {
-        NonStandardEvent(self)
-    }
-
     var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .importCredentialsFlowStarted,

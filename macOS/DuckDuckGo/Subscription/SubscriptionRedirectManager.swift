@@ -17,9 +17,9 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Common
 import Foundation
+import PrivacyConfig
 import Subscription
 
 protocol SubscriptionRedirectManaging: AnyObject {

@@ -304,8 +304,21 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         view.window?.makeFirstResponder(textView)
     }
 
+    func focusTextViewWithCursorAtEnd() {
+        focusTextView()
+        let textLength = textView.string.count
+        textView.selectedRange = NSRange(location: textLength, length: 0)
+    }
+
     func insertNewline() {
         textView.insertNewlineIgnoringFieldEditor(nil)
+    }
+
+    func insertNewlineIfHasContent(addressBarText: String) {
+        guard !addressBarText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+        insertNewline()
     }
 
     func updateScrollingBehavior(maxHeight: CGFloat) {

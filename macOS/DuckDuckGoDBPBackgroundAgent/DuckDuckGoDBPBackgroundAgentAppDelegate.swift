@@ -93,19 +93,14 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     override init() {
 
         // Configure Subscription
-        if !settings.isAuthV2Enabled {
-            Logger.dbpBackgroundAgent.log("Configuring subscription V1")
-            subscriptionManager = DefaultSubscriptionManager(pixelHandlingSource: .dbp)
-        } else {
-            Logger.dbpBackgroundAgent.log("Configuring subscription V2")
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-            let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
-            subscriptionManager = DefaultSubscriptionManagerV2(keychainType: .dataProtection(.named(subscriptionAppGroup)),
-                                                               environment: subscriptionEnvironment,
-                                                               userDefaults: subscriptionUserDefaults,
-                                                               pixelHandlingSource: .dbp)
-        }
+        Logger.dbpBackgroundAgent.log("Configuring subscription")
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let subscriptionEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        subscriptionManager = DefaultSubscriptionManagerV2(keychainType: .dataProtection(.named(subscriptionAppGroup)),
+                                                           environment: subscriptionEnvironment,
+                                                           userDefaults: subscriptionUserDefaults,
+                                                           pixelHandlingSource: .dbp)
     }
 
     @MainActor

@@ -20,11 +20,13 @@ import XCTest
 import Combine
 import Common
 import PixelKitTestingUtilities
-@testable import Subscription
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SubscriptionUI
 import SubscriptionTestingUtilities
 import PreferencesUI_macOS
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Subscription
 
 @MainActor
 final class PreferencesSidebarModelTests: XCTestCase {
@@ -102,7 +104,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
-            isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
             downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
@@ -132,7 +133,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             notificationCenter: testNotificationCenter,
             featureFlagger: mockFeatureFlagger,
-            isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
             downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
@@ -155,7 +155,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
     private func createPreferencesSidebarModelWithDefaults(
         includeDuckPlayer: Bool = false,
         includeAIChat: Bool = false,
-        isUsingAuthV2: Bool = false
     ) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         let loadSections = { currentSubscriptionFeatures in
             return PreferencesSection.defaultSections(
@@ -175,7 +174,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
             syncService: mockSyncService,
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
-            isUsingAuthV2: isUsingAuthV2,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
             downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
@@ -284,7 +282,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
 
         // When
-        let model = createPreferencesSidebarModelWithDefaults(includeAIChat: true, isUsingAuthV2: true)
+        let model = createPreferencesSidebarModelWithDefaults(includeAIChat: true)
         model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
         try await Task.sleep(interval: 0.1)
 

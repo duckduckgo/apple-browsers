@@ -75,10 +75,6 @@ enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
         nil
     }
 
-    var withoutMacPrefix: NonStandardEvent {
-        NonStandardEvent(self)
-    }
-
     var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .syncAskUserToSwitchAccount,
@@ -121,10 +117,6 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
     var parameters: [String: String]? {
         guard let source else { return nil }
         return [ParameterKey.source: source.rawValue]
-    }
-
-    var withoutMacPrefix: NonStandardEvent {
-        NonStandardEvent(self)
     }
 
     private var source: SyncSetupSource? {

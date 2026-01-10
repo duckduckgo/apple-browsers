@@ -76,7 +76,8 @@ struct BrokerProfileScanSubJob {
                                                  pixelHandler: dependencies.pixelHandler,
                                                  parentURL: brokerProfileQueryData.dataBroker.parent,
                                                  vpnConnectionState: vpnConnectionState,
-                                                 vpnBypassStatus: vpnBypassStatus)
+                                                 vpnBypassStatus: vpnBypassStatus,
+                                                 featureFlagger: dependencies.featureFlagger)
         let eventPixels = scanContext.eventPixels
         let stageCalculator = scanContext.stageCalculator
 
@@ -138,6 +139,7 @@ struct BrokerProfileScanSubJob {
                                           database: dependencies.database,
                                           pixelHandler: dependencies.pixelHandler,
                                           eventsHandler: dependencies.eventsHandler,
+                                          featureFlagger: dependencies.featureFlagger,
                                           markRemovedAndNotify: markSavedProfilesAsRemovedAndNotifyUser)
             } else {
                 try updateDatesAfterNoRemovals(brokerId: brokerId,
@@ -191,7 +193,8 @@ struct BrokerProfileScanSubJob {
                                          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                          parentURL: String?,
                                          vpnConnectionState: String,
-                                         vpnBypassStatus: String) -> ScanStageContext {
+                                         vpnBypassStatus: String,
+                                         featureFlagger: DBPFeatureFlagging) -> ScanStageContext {
         // 2. Set up dependencies used to report the status of the scan job:
         let eventPixels = DataBrokerProtectionEventPixels(database: database,
                                                           handler: pixelHandler)
@@ -202,7 +205,8 @@ struct BrokerProfileScanSubJob {
             isImmediateOperation: isManual,
             parentURL: parentURL,
             vpnConnectionState: vpnConnectionState,
-            vpnBypassStatus: vpnBypassStatus
+            vpnBypassStatus: vpnBypassStatus,
+            featureFlagger: featureFlagger
         )
 
         return ScanStageContext(eventPixels: eventPixels, stageCalculator: stageCalculator)
@@ -307,13 +311,15 @@ struct BrokerProfileScanSubJob {
                                         database: DataBrokerProtectionRepository,
                                         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                         eventsHandler: EventMapping<JobEvent>,
+                                        featureFlagger: DBPFeatureFlagging,
                                         markRemovedAndNotify: ([ExtractedProfile],
                                                                Int64,
                                                                Int64,
                                                                BrokerProfileQueryData,
                                                                DataBrokerProtectionRepository,
                                                                EventMapping<DataBrokerProtectionSharedPixels>,
-                                                               EventMapping<JobEvent>) throws -> Void) throws {
+                                                               EventMapping<JobEvent>,
+                                                               DBPFeatureFlagging) throws -> Void) throws {
         // 7a. If there were removed profiles, update their state and notify the user:
         try markRemovedAndNotify(removedProfiles,
                                  brokerId,
@@ -321,7 +327,8 @@ struct BrokerProfileScanSubJob {
                                  brokerProfileQueryData,
                                  database,
                                  pixelHandler,
-                                 eventsHandler)
+                                 eventsHandler,
+                                 featureFlagger)
     }
 
     internal func updateDatesAfterNoRemovals(brokerId: Int64,
@@ -461,7 +468,8 @@ struct BrokerProfileScanSubJob {
         brokerProfileQueryData: BrokerProfileQueryData,
         database: DataBrokerProtectionRepository,
         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-        eventsHandler: EventMapping<JobEvent>
+        eventsHandler: EventMapping<JobEvent>,
+        featureFlagger: DBPFeatureFlagging
     ) throws {
         var shouldSendProfileRemovedEvent = false
         for removedProfile in removedProfiles {
@@ -511,7 +519,8 @@ struct BrokerProfileScanSubJob {
                                                      parent: brokerProfileQueryData.dataBroker.parent ?? "",
                                                      brokerType: brokerProfileQueryData.dataBroker.type,
                                                      vpnConnectionState: vpnConnectionState,
-                                                     vpnBypassStatus: vpnBypassStatus))
+                                                     vpnBypassStatus: vpnBypassStatus,
+                                                     clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
                 }
             }
         }

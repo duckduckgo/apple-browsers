@@ -20,7 +20,7 @@
 import Foundation
 import SwiftUI
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 
 struct FeatureFlagsMenuView: View {
     @ObservedObject var viewModel: FeatureFlagsSettingViewModel = FeatureFlagsSettingViewModel()

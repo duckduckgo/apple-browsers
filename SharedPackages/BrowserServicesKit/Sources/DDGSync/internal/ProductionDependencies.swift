@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
 import Foundation
 import Persistence
+import PrivacyConfig
 
 struct ProductionDependencies: SyncDependencies {
 
@@ -107,6 +107,14 @@ struct ProductionDependencies: SyncDependencies {
 
     func createExchangeRecoveryKeyTransmitter(exchangeMessage: ExchangeMessage) throws -> any ExchangeRecoveryKeyTransmitting {
         return ExchangeRecoveryKeyTransmitter(endpoints: endpoints, api: api, crypter: crypter, storage: secureStore, exchangeMessage: exchangeMessage)
+    }
+
+    func createTokenRescope() -> TokenRescoping {
+        return TokenRescope(api: api, endpoints: endpoints)
+    }
+
+    func createAIChats() -> AIChatsHandling {
+        AIChats(api: api, endpoints: endpoints)
     }
 
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment) {

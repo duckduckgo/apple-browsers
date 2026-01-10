@@ -81,6 +81,7 @@ struct FireDialogView: ModalView {
     }
 
     @ObservedObject var viewModel: FireDialogViewModel
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
@@ -182,7 +183,7 @@ struct FireDialogView: ModalView {
             footerView
                 .zIndex(11)
                 .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
-                .background(Color(designSystemColor: .surfaceSecondary))
+                .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
         }
         .readSize { size in
             // Set exact content height to avoid content shifting and animation jumping when sheet resizes
@@ -233,7 +234,7 @@ struct FireDialogView: ModalView {
             selectedSegmentTopStroke: Color(designSystemColor: .highlightPrimary),
             hoverSegmentBackground: Color(designSystemColor: .controlsFillPrimary),
             pressedSegmentBackground: Color(designSystemColor: .controlsFillSecondary),
-            hoverOverlay: Color(designSystemColor: .controlsFillPrimary)
+            hoverOverlay: Color(designSystemColor: .toneTintPrimary)
         )
         .frame(height: 84)
         .accessibilityIdentifier("FireDialogView.segmentedControl")
@@ -354,7 +355,13 @@ struct FireDialogView: ModalView {
                             .resizable()
                             .frame(width: 12, height: 12)
                     }
-                    .buttonStyle(StandardButtonStyle(topPadding: 6, bottomPadding: 6, horizontalPadding: 6))
+                    .buttonStyle(
+                        StandardButtonStyle(topPadding: 6,
+                                            bottomPadding: 6,
+                                            horizontalPadding: 6,
+                                            backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                            backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+                    )
                     .clipShape(Circle())
                     .accessibilityLabel(UserText.close)
                     .accessibilityIdentifier("FireDialogView.sitesOverlayCloseButton")

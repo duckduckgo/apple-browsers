@@ -92,6 +92,10 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestSettingsToVPN(_ tab: DuckDuckGo.TabViewController) {}
 
+    func tabDidRequestSettingsToAIChat(_ tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestSettingsToSync(_ tab: DuckDuckGo.TabViewController) {}
+
     func tabDidRequestFindInPage(tab: DuckDuckGo.TabViewController) {}
 
     func closeFindInPage(tab: DuckDuckGo.TabViewController) {}
@@ -169,7 +173,8 @@ extension TabViewController {
             keyValueStore: try! MockKeyValueFileStore(),
             daxDialogsManager: DummyDaxDialogsManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
-            productSurfaceTelemetry: MockProductSurfaceTelemetry()
+            productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+            voiceSearchHelper: MockVoiceSearchHelper()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab

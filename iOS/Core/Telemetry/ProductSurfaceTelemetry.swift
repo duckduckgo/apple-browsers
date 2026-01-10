@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 
 /// Product surface telemetry sends anonymous pixels about areas of the app that are being used so that we can we make future product decisions.  These pixels are not linked to any identifiable data.  The pixels are also enabled / disabled by config and we only enable them during the periods of product roadmap development in order to assist decision making.
 public protocol ProductSurfaceTelemetry {
@@ -81,7 +81,9 @@ public struct PixelProductSurfaceTelemetry: ProductSurfaceTelemetry {
     }
 
     public func dailyActiveUser() {
+        dailyPixelFiring.fireDailyAndCount(.debugTelemetryDAUPreFF, error: nil, withAdditionalParameters: [:])
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.debugTelemetryDAUPostFF, error: nil, withAdditionalParameters: [:])
         dailyPixelFiring.fireDaily(.productTelemeterySurfaceUsageDAU)
     }
 

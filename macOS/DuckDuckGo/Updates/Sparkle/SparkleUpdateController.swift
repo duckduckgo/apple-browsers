@@ -22,10 +22,10 @@ import Foundation
 import Common
 import Combine
 import Sparkle
-import BrowserServicesKit
 import Persistence
 import SwiftUIExtensions
 import PixelKit
+import PrivacyConfig
 import SwiftUI
 import os.log
 
@@ -120,6 +120,11 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
     var updateValidityStartDate: Date?
+
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+    @UserDefaultsWrapper(key: .debugSparkleCustomFeedURL)
+    private var customFeedURL: String?
+#endif
 
     private let keyValueStore: ThrowingKeyValueStoring
 
@@ -555,9 +560,29 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     func handleAppTermination() {
         updateWideEvent.handleAppTermination()
     }
+
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+    // MARK: - Debug: Custom Feed URL
+
+    func setCustomFeedURL(_ urlString: String) {
+        customFeedURL = urlString
+    }
+
+    func resetFeedURLToDefault() {
+        customFeedURL = nil
+    }
+#endif
 }
 
 extension SparkleUpdateController: SPUUpdaterDelegate {
+
+    func feedURLString(for updater: SPUUpdater) -> String? {
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+        return customFeedURL
+#else
+        return nil
+#endif
+    }
 
     func allowedChannels(for updater: SPUUpdater) -> Set<String> {
         if internalUserDecider.isInternalUser {

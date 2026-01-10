@@ -60,8 +60,7 @@ struct SubscriptionFlowView: View {
         
         NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                                                      userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
-                                                                                                     isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)).navigationViewStyle(.stack)),
+                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
         if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
@@ -84,7 +83,7 @@ struct SubscriptionFlowView: View {
                     backButton
                 }
                 ToolbarItem(placement: .principal) {
-                    if viewModel.state.viewTitle == UserText.subscriptionTitle {
+                    if viewModel.flowType.showsDaxLogo && viewModel.state.viewTitle == viewModel.flowType.navigationTitle {
                         DaxLogoNavbarTitle()
                     } else {
                         Text(viewModel.state.viewTitle).bold()

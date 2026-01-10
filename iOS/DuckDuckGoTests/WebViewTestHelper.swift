@@ -21,6 +21,8 @@ import Foundation
 import WebKit
 import XCTest
 import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import TrackerRadarKit
 import ContentBlocking
 @testable import Core
@@ -63,18 +65,6 @@ class MockSurrogatesUserScriptDelegate: NSObject, SurrogatesUserScriptDelegate {
                               withSurrogate host: String) {
         detectedSurrogates.insert(tracker)
         onSurrogateDetected?(tracker, host)
-    }
-}
-
-class MockDomainsProtectionStore: DomainsProtectionStore {
-    var unprotectedDomains = Set<String>()
-
-    func disableProtection(forDomain domain: String) {
-        unprotectedDomains.remove(domain)
-    }
-
-    func enableProtection(forDomain domain: String) {
-        unprotectedDomains.insert(domain)
     }
 }
 

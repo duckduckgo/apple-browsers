@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Χθες";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Βρήκατε ένα κρυφό λογότυπο!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Το λογότυπο αποθηκεύτηκε";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Επαναφορά λογότυπου αναζήτησης";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Εναλλαγή σε αυτό το λογότυπο";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Προσοχή! Δεν μπορώ να εμποδίσω το δίκτυο %1$@ από το να δει τη δραστηριότητά σας στο %2$@.\n\nΑλλά περιηγηθείτε μαζί μου και θα μπορώ να περιορίσω το τι θα γνωρίζει το δίκτυο %1$@ για σας συνολικά, αποκλείοντας τις εφαρμογές παρακολούθησης σε πλήθος άλλων ιστότοπων.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Συνοψίστε αυτήν τη σελίδα";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Εμφάνιση κουμπιών και συνδέσμων του Duck.ai στα αποτελέσματα αναζήτησης του DuckDuckGo.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Εύρεση στη σελίδα";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Διαγραφή όλων των συνομιλιών";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Συνομιλίες Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Μπορεί να σας αποσυνδέσει από τους λογαριασμούς";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookie και δεδομένα ιστότοπου";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Καρτέλες";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Επιλέξτε τι να διαγράψετε";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ρεύμα αέρα";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Ρυθμίσεις αναζήτησης Assist";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Εμφάνιση νέων Συνομιλιών Duck.ai ως καρτέλες στο πρόγραμμα περιήγησης";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Αυτόματη αποστολή περιεχομένου σελίδας στο Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Λειτουργία καρτελών Duck.ai";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Αυτόματη αποστολή περιεχομένου";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Απόκρυψη εικόνων που δημιουργήθηκαν με τεχνητή νοημοσύνη";
@@ -2968,18 +3001,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Θέση γραμμής διευθύνσεων";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Πειραματικό μενού προγράμματος περιήγησης";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ανοίξτε τους συνδέσμους στις σχετικές εφαρμογές";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Απενεργοποιήστε για να αποτρέψετε το αυτόματο άνοιγμα συνδέσμων σε άλλες εγκατεστημένες εφαρμογές.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Διαγράψτε όλα τα δεδομένα των ιστοτόπων, συμπεριλαμβανομένων των ιστοτόπων που επισκεφτήκατε. Μπορεί να σας αποσυνδέσει από τους λογαριασμούς.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookie και δεδομένα ιστότοπου";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Διαγραφή όλων των συνομιλιών, συμπεριλαμβανομένων των καρφιτσωμένων συνομιλιών";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Συνομιλίες Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Διαγραφή";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Εκκαθάριση καρτελών και δεδομένων";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Εκκαθάριση καρτελών, δεδομένων και συνομιλιών Duck.ai";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Κλείσιμο όλων των ανοιχτών καρτελών";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Καρτέλες";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Έξοδος εφαρμογής, ανενεργή για 15 λεπτά";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Έξοδος εφαρμογής, ανενεργή για 1 ώρα";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Έξοδος εφαρμογής, ανενεργή για 30 λεπτά";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Έξοδος εφαρμογής, ανενεργή για 5 λεπτά";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Μόνο έξοδος εφαρμογής";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Η έξοδος από την εφαρμογή ορίζεται σύροντας την εφαρμογή για να κλείσει, ενώ είναι σε αδράνεια όταν η εφαρμογή βρίσκεται στο παρασκήνιο.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Επιθυμητός χρονισμός";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Τα δεδομένα θα διαγραφούν κατά την επανεκκίνηση της εφαρμογής.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Προτάσεις αναζήτησης";
 
@@ -2998,6 +3077,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Εάν έχει ενεργοποιηθεί το Touch ID, το Face ID ή ο κωδικός πρόσβασης συστήματος, θα σας ζητηθεί να ξεκλειδώσετε την εφαρμογή κατά το άνοιγμά της.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Αυτόματη εκκαθάριση δεδομένων";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Σχόλια για το πρόγραμμα περιήγησης";
 
@@ -3007,6 +3088,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Εκκαθάριση συνομιλιών Duck.ai";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Εκκαθάριση δεδομένων περιήγησης";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Αυτόματη απαλοιφή δεδομένων";
 
@@ -3034,6 +3117,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Διαγραφή δεδομένων";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Η διαγραφή των δεδομένων σας μπορεί να βοηθήσει στην προστασία του απορρήτου σας στο διαδίκτυο. Χρησιμοποιήστε το Fire Button για να διαγράψετε τα δεδομένα μη αυτόματα ή για να ρυθμίσετε την αυτόματη εκκαθάριση.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Προεπιλεγμένο πρόγραμμα περιήγησης";
 
@@ -3079,6 +3164,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Ασφαλείς ιστότοποι";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Ασφαλείς ιστότοποι";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Γενικά";
 
@@ -3334,6 +3421,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Το πρόγραμμα περιήγησης DuckDuckGo παρέχει προστασίες παρακολούθησης, οι οποίες είναι πάντα ενεργές. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Τι νέο υπάρχει";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Εμφανίζει αρχεία καταγραφής από το τελευταίο λεπτό, για να βοηθήσει στη διάγνωση προβλημάτων αμέσως μετά από μια ανανέωση.";
 
@@ -3517,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Προγράμματα συνδρομής";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Ολοκλήρωση της αγοράς...";
 
@@ -3606,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Η δωρεάν δοκιμή είναι ενεργή";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Δείτε όλα τα προγράμματα";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Ειδοποίηση SwiftUI";

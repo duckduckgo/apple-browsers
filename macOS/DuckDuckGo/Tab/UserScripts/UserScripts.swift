@@ -75,13 +75,17 @@ final class UserScripts: UserScriptsProvider {
             storage: DefaultAIChatPreferencesStorage(),
             windowControllersManager: sourceProvider.windowControllersManager,
             pixelFiring: PixelKit.shared,
-            statisticsLoader: StatisticsLoader.shared
+            statisticsLoader: StatisticsLoader.shared,
+            // ToDo: do we have better way of passing this?
+            syncHandler: AIChatSyncHandler(sync: NSApp.delegateTyped.syncService!),
+            featureFlagger: sourceProvider.featureFlagger
         )
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
+        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
-            paidAIChatFlagStatusProvider: { sourceProvider.featureFlagger.isFeatureOn(.paidAIChat) },
+            featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
@@ -100,8 +104,8 @@ final class UserScripts: UserScriptsProvider {
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
                                            currentCohorts: currentCohorts)
         do {
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -114,12 +118,16 @@ final class UserScripts: UserScriptsProvider {
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             management: sourceProvider.autoconsentManagement,
-            preferences: sourceProvider.cookiePopupProtectionPreferences
+            preferences: sourceProvider.cookiePopupProtectionPreferences,
+            featureFlagger: sourceProvider.featureFlagger
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
+        let themeManager = NSApp.delegateTyped.themeManager
+
         specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(for: lenguageCode),
-                                                                languageCode: lenguageCode)
+                                                                languageCode: lenguageCode,
+                                                                styleProvider: ScriptStyleProvider(themeManager: themeManager))
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
 
@@ -210,36 +218,21 @@ final class UserScripts: UserScriptsProvider {
         }
 
         var delegate: Subfeature
-        if !Application.appDelegate.isUsingAuthV2 {
-            guard let subscriptionManager = Application.appDelegate.subscriptionManagerV1 else {
-                assertionFailure("SubscriptionManager is not available")
-                return
-            }
-
-            let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                               authEndpointService: subscriptionManager.authEndpointService,
-                                                               accountManager: subscriptionManager.accountManager)
-            delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                               stripePurchaseFlow: stripePurchaseFlow,
-                                                               uiHandler: Application.appDelegate.subscriptionUIHandler)
-        } else {
-            guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
-                assertionFailure("subscriptionManager is not available")
-                return
-            }
-            let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
-            delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
-                                                                 stripePurchaseFlow: stripePurchaseFlow,
-                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler,
-                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL,
-                                                                 wideEvent: WideEvent())
+        guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
+            assertionFailure("subscriptionManager is not available")
+            return
         }
+        let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
+        delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
+                                                             stripePurchaseFlow: stripePurchaseFlow,
+                                                             uiHandler: Application.appDelegate.subscriptionUIHandler,
+                                                             aiChatURL: AIChatRemoteSettings().aiChatURL,
+                                                             wideEvent: WideEvent())
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
 
-        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                                                        isAuthV2Enabled: Application.appDelegate.isUsingAuthV2)
+        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }

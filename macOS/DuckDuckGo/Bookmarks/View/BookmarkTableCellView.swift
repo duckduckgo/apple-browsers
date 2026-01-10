@@ -51,7 +51,7 @@ final class BookmarkTableCellView: NSTableCellView {
     }
 
     private var theme: ThemeStyleProviding
-    private var palette: ColorPalette {
+    private var palette: ThemeColors {
         theme.palette
     }
 
@@ -248,12 +248,13 @@ final class BookmarkTableCellView: NSTableCellView {
     }
 
     private func updateColors() {
-        let isThemesEnabled = isThemeFeatureEnabled
+        let iconTintColor = isSelected ? palette.accentContentPrimary : palette.iconsPrimary
 
-        titleLabel.textColor = isThemesEnabled ? themedTextColor : legacyTextColor
-        menuButton.contentTintColor = isSelected ? .white : .button
-        faviconImageView.contentTintColor = isSelected ? .white : .suggestionIcon
-        accessoryImageView.contentTintColor = isSelected ? .white : .suggestionIcon
+        menuButton.contentTintColor = iconTintColor
+        faviconImageView.contentTintColor = iconTintColor
+        accessoryImageView.contentTintColor = iconTintColor
+
+        titleLabel.textColor = isThemeFeatureEnabled ? themedTextColor : legacyTextColor
     }
 
     private func ensureTrackingArea() {

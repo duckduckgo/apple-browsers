@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Vakar";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Tu atradi slēpto logotipu!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Saglabāts logotips";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Atiestatīt meklēšanas logotipu";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Pārslēgties uz šo logotipu";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Mazs brīdinājums! Es nevaru liegt %1$@ skatīt tavas darbības domēnā %2$@.\n\nTaču pārlūko kopā ar mani, jo es varu ierobežot to, ko %1$@ zina par tevi kopumā, bloķējot viņu izsekotājus daudzās citās vietnēs.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo MI funkcijas ir privātas un nav obligātas. Tavi dati netiek izmantoti mākslīgā intelekta apmācībai.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Apkopot šo lapu";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Rādīt Duck.ai pogas un saites DuckDuckGo meklēšanas rezultātos.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Atrast lapā";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Dzēst visas tērzēšanas sarunas";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai tērzēšanas";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Var izrakstīt tevi no kontiem";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Sīkfaili un vietnes dati";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Cilnes";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Izvēlies, ko dzēst";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Gaisa plūsma";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Meklēšanas Assist iestatījumi";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Rādīt jaunas Duck.ai tērzēšanas kā cilnes pārlūkprogrammā";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Automātiski nosūtīt lapas kontekstu uz Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Duck.ai cilņu režīms";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Automātiski nosūtīt kontekstu";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Paslēpt MI ģenerētus attēlus";
@@ -2968,18 +3001,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreses joslas pozīcija";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentāla pārlūka izvēlne";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atvērt saites saistītajās lietotnēs";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Atspējo, lai novērstu saišu automātisku atvēršanu citās instalētajās lietotnēs.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Dzēs visus vietnes datus, tostarp apmeklētās vietnes. Var izrakstīt tevi no kontiem.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Sīkfaili un vietnes dati";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Dzēs visas tērzēšanas sarunas, ieskaitot piespraustās tērzēšanas";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai tērzēšanas";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Notīrīt";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Notīrīt cilnes un datus";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Notīrīt cilnes, datus un Duck.ai tērzēšanu";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Aizvērt visas atvērtās cilnes";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Cilnes";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Iziešana no lietotnes, neaktīva 15 minūtes";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Iziešana no lietotnes, neaktīva 1 stundu";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Iziešana no lietotnes, neaktīva 30 minūtes";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Iziešana no lietotnes, neaktīva 5 minūtes";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Tikai iziešana no lietotnes";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Iziešana no lietotnes tiek veikta, pavelkot lietotni, lai to aizvērtu, un lietotne nav aktīva tad, kad tā darbojas fonā.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Vēlamais laiks";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Dati tiks dzēsti, restartējot lietotni.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Meklēšanas ieteikumi";
 
@@ -2998,6 +3077,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ja ir iespējots Touch ID, Face ID vai sistēmas piekļuves kods, atverot lietotni, tev tā būs jāatbloķē.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automātiskā datu dzēšana";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Atsauksmes par pārlūkprogrammu";
 
@@ -3007,6 +3088,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Notīrīt Duck.ai tērzēšanas sarunas";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Izdzēst pārlūkošanas datus";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automātiski notīrīt datus";
 
@@ -3034,6 +3117,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datu notīrīšana";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Tavu datu dzēšana var palīdzēt aizsargāt tavu privātumu tiešsaistē. Izmanto Fire Button, lai manuāli notīrītu datus, vai arī iestatītu automātisku notīrīšanu.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Noklusējuma pārlūks";
 
@@ -3079,6 +3164,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Ugunsdrošas vietnes";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Ugunsdrošas vietnes";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Vispārīgi";
 
@@ -3334,6 +3421,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo pārlūkprogramma nodrošina izsekošanas aizsardzības, kas vienmēr ir aktīvas. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Kas jauns";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Rāda žurnālus no pēdējās minūtes, lai palīdzētu diagnosticēt problēmas uzreiz pēc atsvaidzināšanas.";
 
@@ -3517,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Abonēšanas plāni";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Pabeidz pirkumu...";
 
@@ -3606,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Bezmaksas izmēģinājuma periods ir aktīvs";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Skatīt visus plānus";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI brīdinājums";

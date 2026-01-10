@@ -5,7 +5,7 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"],
-        "expires": "2026-01-12"
+        "expires": "2026-01-19"
     },
     "m_experimental-browsing-menu_displayed": {
         "description": "Fires when the experimental browsing menu is displayed to the user",
@@ -13,7 +13,7 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
-        "expires": "2026-01-12"
+        "expires": "2026-01-19"
     },
     "m_experimental-browsing-menu_displayed_ntp": {
         "description": "Fires when the experimental browsing menu is displayed to the user on the new tab page",
@@ -21,7 +21,7 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
-        "expires": "2026-01-12"
+        "expires": "2026-01-19"
     },
     "m_experimental-browsing-menu_disabled": {
         "description": "Fires when the experimental browsing menu feature is disabled",
@@ -29,7 +29,7 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"],
-        "expires": "2026-01-12"
+        "expires": "2026-01-19"
     },
     "m_experimental-browsing-menu_enabled": {
         "description": "Fires when the experimental browsing menu feature is enabled",
@@ -37,6 +37,30 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"],
-        "expires": "2026-01-12"
+        "expires": "2026-01-19"
+    },
+    "m_experimental-browsing-menu_displayed_aichat": {
+        "description": "Fires when the experimental browsing menu is displayed to the user on the AI Chat page",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-01-19"
+    },
+    "m_experimental-browsing-menu_displayed_error": {
+        "description": "Fires when the experimental browsing menu is displayed to the user on an error page",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-01-19"
+    },
+    "m_experimental-browsing-menu_dismissed": {
+        "description": "Fires when the experimental browsing menu is dismissed by the user",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-01-19"
     }
 }

@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
 import Combine
 import Foundation
@@ -25,6 +24,8 @@ import NewTabPage
 import WebKit
 import UserScript
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 enum DuckPlayerMode: Equatable, Codable {
     case enabled, alwaysAsk, disabled
@@ -280,8 +281,8 @@ final class DuckPlayer {
 
     public func handleYoutubeError(params: Any, message: UserScriptMessage) -> Encodable? {
         let (volumePixel, dailyPixel) = getPixelsForYouTubeErrorParams(params)
-        PixelKit.fire(NonStandardEvent(dailyPixel), frequency: .legacyDaily)
-        PixelKit.fire(NonStandardEvent(volumePixel))
+        PixelKit.fire(dailyPixel, frequency: .legacyDaily, doNotEnforcePrefix: true)
+        PixelKit.fire(volumePixel, doNotEnforcePrefix: true)
         return nil
     }
 

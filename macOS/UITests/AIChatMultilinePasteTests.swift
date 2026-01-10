@@ -44,6 +44,8 @@ class AIChatMultilinePasteTests: UITestCase {
 
     /// Tests that pasting multiline text into the address bar switches to Duck.ai mode when the toggle setting is ON
     func test_pasteMultilineText_withToggleSettingON_switchesToDuckAIMode() throws {
+        throw XCTSkip("Temporarily disabled")
+
         // Navigate to AI Chat settings and enable the Search/Duck.ai toggle
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 

@@ -17,9 +17,9 @@
 //
 
 import Cocoa
-import SwiftUI
-import BrowserServicesKit
 import FeatureFlags
+import PrivacyConfig
+import SwiftUI
 
 final class PopupBlockedPopover: NSPopover {
 

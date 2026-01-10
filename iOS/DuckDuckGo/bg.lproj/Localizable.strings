@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Вчера";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Намери скрито лого!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Логото е запазено";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Нулиране на търсене на лого";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Превключване към това лого";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Внимание! Не мога да направя така, че %1$@ да не вижда вашата активност на %2$@.\n\nНо ако сърфирате с мен, като цяло мога да намаля информацията, която %1$@ научава за вас, като блокирам неговите тракери на много други сайтове.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Функциите на DuckDuckGo AI са поверителни и незадължителни. Вашите данни не се използват за обучение на изкуствен интелект.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Обобщи тази страница";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Показвай бутоните и връзките на Duck.ai в резултатите от търсенето на DuckDuckGo.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Намери в страницата";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Изтриване на всички чатове";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Чатове с Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Може да те отпише от акаунтите";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Бисквитки и данни за сайта";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Раздели";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Избери какво да изтриеш";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Въздушна струя";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Настройки за Assist при търсене";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Показване на новите чатове на Duck.ai като раздели в браузъра";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Автоматично изпращане на контекста на страницата до Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Режим на раздели на Duck.ai";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Автоматично изпращане на контекст";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скриване на изображения, генерирани от изкуствен интелект";
@@ -2968,18 +3001,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Позиция на адресната лента";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Експериментално меню на браузъра";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Отваряне на връзките в свързаните приложения";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Деактивирайте, за да предотвратите автоматично отваряне на връзки в други инсталирани приложения.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Изтрива всички данни от сайта, включително посетени сайтове. Може да Ви отпише от акаунтите.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Бисквитки и данни за сайта";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Изтриване на всички чатове, включително закачените чатове";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Чатове с Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Ясно";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Изчистване на раздели и данни";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Изчистване на раздели, данни и чатове с Duck.ai";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Затваряне на всички отворени раздели";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Раздели";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Изход от приложението, 15 минути без активност";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Изход от приложението, 1 час без активност";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Изход от приложението, 30 минути без активност";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Изход от приложението, 5 минути без активност";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Само при изход от приложението";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Определен е изход от приложението чрез плъзгане за затваряне на приложението, а липсата на активност е когато приложението е във фонов режим.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Желан период";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Данните ще бъдат изтрити при рестартиране на приложението.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Предложения за търсене";
 
@@ -2998,6 +3077,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ако сте активирали пръстов отпечатък, лицево разпознаване или системна парола, ще бъдете приканени да отключите приложението при отваряне.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Автоматично изчистване на данни";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Отзив за браузъра";
 
@@ -3007,6 +3088,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Изчистване на чатовете с Duck.ai";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Изчистване на данните за сърфиране";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Автоматично изчистване на данните";
 
@@ -3034,6 +3117,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Изчистване на данни";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Изтриването на данните може да помогне за защитата на поверителността ти онлайн. Използвай Fire Button, за да изчистиш данните ръчно, или задай автоматично изчистване.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузър по подразбиране";
 
@@ -3079,6 +3164,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Огнеустойчиви сайтове";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Огнеустойчиви сайтове";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Общо";
 
@@ -3334,6 +3421,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Браузърът DuckDuckGo предоставя защити от проследяване, които винаги са активни. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Ново";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Показва регистрите от последната минута, за да помогне за диагностициране на проблеми веднага след обновяване.";
 
@@ -3517,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Абонаментни планове";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Завършване на покупката...";
 
@@ -3606,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Безплатна пробна версия е активна";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Виж всички планове";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Известие за SwiftUI";

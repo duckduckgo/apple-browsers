@@ -25,6 +25,7 @@ import Combine
 import os.log
 import FeatureFlags
 import PixelKit
+import PrivacyConfig
 import enum UserScript.UserScriptError
 
 struct ExtractedAddress: Codable {
@@ -182,6 +183,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
             // Not relevant to macOS
             return false
+        }
+
+        var isClickActionDelayReductionOptimizationOn: Bool {
+            featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
         }
 
         init(privacyConfigManager: PrivacyConfigurationManaging) {

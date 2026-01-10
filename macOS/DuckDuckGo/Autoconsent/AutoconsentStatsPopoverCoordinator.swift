@@ -26,6 +26,7 @@ import SwiftUIExtensions
 import FeatureFlags
 import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 import os.log
 
 @MainActor

@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import AIChat
 import Foundation
 import Core
@@ -131,9 +131,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         keyValueStore.bool(.showAIChatExperimentalSearchInputKey, defaultValue: .showAIChatExperimentalSearchInputDefaultValue)
                             && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalAddressBar)
     }
-    
-    var isAIChatFullModeEnabled: Bool {
-        keyValueStore.bool(.isAIChatFullModeEnabledKey, defaultValue: .isAIChatFullModeEnabledDefaultValue)
+
+    var isAutomaticContextAttachmentEnabled: Bool {
+        keyValueStore.bool(.isAIChatAutomaticContextAttachmentEnabledKey, defaultValue: .isAIChatAutomaticContextAttachmentDefaultValue)
     }
 
     func enableAIChat(enable: Bool) {
@@ -207,16 +207,10 @@ final class AIChatSettings: AIChatSettingsProvider {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOff)
         }
     }
-
-    func enableAIChatFullModeSetting(enable: Bool) {
-        keyValueStore.set(enable, forKey: .isAIChatFullModeEnabledKey)
+    
+    func enableAutomaticContextAttachment(enable: Bool) {
+        keyValueStore.set(enable, forKey: .isAIChatAutomaticContextAttachmentEnabledKey)
         triggerSettingsChangedNotification()
-        
-        if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsFullModeEnabled)
-        } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsFullModeDisabled)
-        }
     }
     
     /// Process the settings view funnels step
@@ -256,7 +250,7 @@ private extension String {
     static let showAIChatVoiceSearchKey = "aichat.settings.showAIChatVoiceSearch"
     static let showAIChatTabSwitcherKey = "aichat.settings.showAIChatTabSwitcher"
     static let showAIChatExperimentalSearchInputKey = "aichat.settings.showAIChatExperimentalSearchInput"
-    static let isAIChatFullModeEnabledKey = "aichat.settings.isAIChatFullModeEnabled"
+    static let isAIChatAutomaticContextAttachmentEnabledKey = "aichat.settings.isAIChatAutomaticContextAttachmentEnabled"
 }
 
 enum LegacyAiChatUserDefaultsKeys {
@@ -280,7 +274,7 @@ private extension Bool {
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
     static let showAIChatExperimentalSearchInputDefaultValue = false
-    static let isAIChatFullModeEnabledDefaultValue = false
+    static let isAIChatAutomaticContextAttachmentDefaultValue = true
 
 }
 

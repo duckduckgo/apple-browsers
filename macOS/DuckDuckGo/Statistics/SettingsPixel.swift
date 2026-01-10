@@ -53,9 +53,9 @@ enum SettingsPixel: PixelKitEvent {
     case showFullURLSettingToggled
 
     /**
-     * Event Trigger: Browser theme settings was changed.
+     * Event Trigger: Browser Theme Appearance settings was changed.
      *
-     * > Note: This is a unique pixel.
+     * > Note: This pixel will be fired everytime the setting is changed (non uniqued).
      *
      * > Related links:
      * [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210380019277469?focus=true)
@@ -64,7 +64,21 @@ enum SettingsPixel: PixelKitEvent {
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      */
-    case themeSettingChanged
+    case themeAppearanceChanged(source: ThemeChangeSource)
+
+    /**
+     * Event Trigger: Browser Theme Name settings was changed.
+     *
+     * > Note: This pixel will be fired everytime the setting is changed (non uniqued).
+     *
+     * > Related links:
+     * [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1212520579673409?focus=true)
+     *
+     * Anomaly Investigation:
+     * - Anomaly in this pixel may mean an increase/drop in app use.
+     *
+     */
+    case themeNameChanged(name: ThemeName, source: ThemeChangeSource)
 
     /**
      * Event Trigger: Website zoom setting was changed.
@@ -130,7 +144,8 @@ enum SettingsPixel: PixelKitEvent {
                 return "settings_paid_ai_chat_opened"
             }
         case .showFullURLSettingToggled: return "settings_full_url_toggled_u"
-        case .themeSettingChanged: return "settings_theme_changed_u"
+        case .themeAppearanceChanged: return "settings_theme_appearance_changed"
+        case .themeNameChanged: return "settings_theme_name_changed"
         case .websiteZoomSettingChanged: return "settings_zoom_changed_u"
         case .dataClearingSettingToggled: return "settings_auto_clear_toggled_u"
         case .syncAppIconWithThemeTurnedOn: return "settings_sync_app_icon_with_theme_turned_on"
@@ -139,14 +154,27 @@ enum SettingsPixel: PixelKitEvent {
     }
 
     var parameters: [String: String]? {
-        nil
+        switch self {
+        case .themeAppearanceChanged(let source):
+            return [
+                ParameterKey.themeChangeSource.rawValue: source.rawValue
+            ]
+        case .themeNameChanged(let name, let source):
+            return [
+                PixelKit.Parameters.themeName: name.rawValue,
+                ParameterKey.themeChangeSource.rawValue: source.rawValue
+            ]
+        default:
+            return nil
+        }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .settingsPaneOpened,
                 .showFullURLSettingToggled,
-                .themeSettingChanged,
+                .themeAppearanceChanged,
+                .themeNameChanged,
                 .websiteZoomSettingChanged,
                 .dataClearingSettingToggled,
                 .syncAppIconWithThemeTurnedOn,
@@ -155,4 +183,14 @@ enum SettingsPixel: PixelKitEvent {
         }
     }
 
+    // MARK: - Nested Types
+
+    private enum ParameterKey: String {
+        case themeChangeSource
+    }
+
+    enum ThemeChangeSource: String {
+        case settings = "settings"
+        case newTabPage = "new-tab-page"
+    }
 }

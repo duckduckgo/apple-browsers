@@ -17,13 +17,13 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Common
 import ContentBlocking
 import FeatureFlags
 import Navigation
 import OSLog
+import PrivacyConfig
 import TrackerRadarKit
 import WebKit
 
@@ -49,7 +49,11 @@ final class PopupHandlingTabExtension {
     private var cancellables = Set<AnyCancellable>()
 
     /// The last user interaction event from the publisher (contains timestamp)
-    @MainActor private var lastUserInteractionEvent: NSEvent?
+    @MainActor private var lastUserInteractionEvent: NSEvent? {
+        didSet {
+            Logger.navigation.debug("PopupHandlingTabExtension.lastUserInteractionEvent.didSet: \(self.lastUserInteractionEvent ??? "<nil>")")
+        }
+    }
 
     /// Whether pop-ups were allowed by the user for the current page (until next navigation)
     @MainActor private(set) var popupsTemporarilyAllowedForCurrentPage = false {
@@ -100,12 +104,14 @@ final class PopupHandlingTabExtension {
 
         interactionEventsPublisher
             .filter { event in
-                Logger.navigation.debug("PopupHandlingTabExtension.interactionEventsPublisher.filter: event: \(String(describing: event))")
-                guard featureFlagger.isFeatureOn(.popupBlocking),
-                      featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout) else { return false }
-
                 switch event {
-                case .mouseDown, .keyDown, .middleMouseDown: return true
+                case .mouseDown, .keyDown, .middleMouseDown:
+                    guard featureFlagger.isFeatureOn(.popupBlocking),
+                          featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout) else {
+                        return false
+                    }
+                    Logger.navigation.debug("PopupHandlingTabExtension.interactionEventsPublisher.filter: event: \(String(describing: event))")
+                    return true
                 case .scrollWheel: return false
                 }
             }
@@ -445,7 +451,7 @@ extension PopupHandlingTabExtension: NavigationResponder {
         } else {
             NSApp.currentEvent
         }
-        Logger.navigation.debug("PopupHandlingTabExtension.decidePolicy: userInteractionEvent: \(userInteractionEvent ??? "<nil>") currentEvent: \(NSApp.currentEvent ??? "<nil>")")
+        Logger.navigation.debug("PopupHandlingTabExtension.decidePolicyFor: \(String(describing: navigationAction)) userInteractionEvent: \(userInteractionEvent ??? "<nil>") currentEvent: \(NSApp.currentEvent ??? "<nil>")")
 
         let linkOpenBehavior = LinkOpenBehavior(button: navigationAction.navigationType.isMiddleButtonClick ? .middle : .left,
                                                 modifierFlags: userInteractionEvent?.modifierFlags ?? [],

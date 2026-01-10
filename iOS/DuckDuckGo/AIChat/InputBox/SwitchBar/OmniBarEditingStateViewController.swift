@@ -20,7 +20,7 @@
 import UIKit
 import DesignResourcesKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import Bookmarks
 import Persistence
 import History

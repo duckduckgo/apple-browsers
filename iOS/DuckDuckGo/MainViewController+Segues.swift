@@ -202,7 +202,10 @@ extension MainViewController {
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
                                       appSettings: self.appSettings,
-                                      productSurfaceTelemetry: self.productSurfaceTelemetry)
+                                      productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                      historyManager: self.historyManager,
+                                      fireproofing: self.fireproofing,
+                                      keyValueStore: self.keyValueStore)
         }) else {
             assertionFailure()
             return
@@ -246,6 +249,14 @@ extension MainViewController {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .netP)
         }, deepLinkTarget: .netP)
+    }
+
+    func segueToDataBrokerProtection() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .dbp)
+        }, deepLinkTarget: .dbp)
     }
 
     func segueToDebugSettings() {
@@ -349,10 +360,15 @@ extension MainViewController {
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
                                                         featureFlagger: featureFlagger)
+        let whatsNewCoordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: whatsNewRepository,
+            remoteMessageActionHandler: remoteMessagingActionHandler,
+            isIPad: UIDevice.current.userInterfaceIdiom == .pad,
+            pixelReporter: nil,
+            userScriptsDependencies: userScriptsDependencies)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
-                                                  isAuthV2Enabled: isAuthV2Enabled,
-                                                  subscriptionManagerV1: AppDependencyProvider.shared.subscriptionManager,
                                                   subscriptionManagerV2: AppDependencyProvider.shared.subscriptionManagerV2,
                                                   subscriptionAuthV1toV2Bridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                   subscriptionFeatureAvailability: subscriptionFeatureAvailability,
@@ -375,7 +391,8 @@ extension MainViewController {
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
-                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore))
+                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore),
+                                                  whatsNewCoordinator: whatsNewCoordinator)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)

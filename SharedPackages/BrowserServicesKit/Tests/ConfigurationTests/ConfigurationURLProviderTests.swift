@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
-@testable import Configuration
 import Combine
-import Testing
 import Foundation
+import PrivacyConfig
+import Testing
+@testable import Configuration
 
 final class ConfigurationURLProviderTests {
 

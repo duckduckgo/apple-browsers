@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import Subscription
-import SubscriptionTestingUtilities
 import Common
-import BrowserServicesKit
+import PrivacyConfig
+import SubscriptionTestingUtilities
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Subscription
 
 final class SubscriptionRedirectManagerTests: XCTestCase {
 
@@ -30,7 +30,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
         static let redirectURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
     }
 
-    var subscriptionManager: SubscriptionManagerMock!
+    var subscriptionManager: SubscriptionManagerMockV2!
 
     private var mockInternalUserStoring: MockInternalUserStoring! = MockInternalUserStoring()
 
@@ -38,7 +38,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager = SubscriptionManagerMockV2()
         subscriptionManager.currentEnvironment = Constants.environment
 
         mockInternalUserStoring.isInternalUser = false

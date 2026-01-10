@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import Persistence
 
 final class DefaultBrowserAndDockPromptService {

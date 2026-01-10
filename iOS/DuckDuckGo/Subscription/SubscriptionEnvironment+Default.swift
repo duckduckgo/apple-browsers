@@ -32,7 +32,7 @@ extension SubscriptionEnvironment {
     }
 }
 
-extension DefaultSubscriptionManager {
+extension DefaultSubscriptionManagerV2 {
 
     static public func getSavedOrDefaultEnvironment(userDefaults: UserDefaults) -> SubscriptionEnvironment {
         if let savedEnvironment = loadEnvironmentFrom(userDefaults: userDefaults) {

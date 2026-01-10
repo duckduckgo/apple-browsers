@@ -44,7 +44,7 @@ on:
         required: true
       ASANA_ACCESS_TOKEN:
         required: true
-      GH_RO_PAT:
+      APPLE_GH_RO_PAT:
         required: true
       MATCH_PASSWORD:
         required: true
@@ -334,6 +334,41 @@ jobs:
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
+  translation-check:
+    name: Translated Strings
+
+    runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    # Only run for PRs targeting main, release/*, or hotfix/* branches
+    if: >
+      github.event_name == 'pull_request' &&
+      needs.should-run-checks.outputs.should_run == 'true' &&
+      (github.base_ref == 'main' ||
+       startsWith(github.base_ref, 'release/ios/') ||
+       startsWith(github.base_ref, 'hotfix/ios/'))
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Allows scripts to diff against the base branch
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify string extraction
+        run: python3 scripts/translation-pr-checks/verify_string_extraction.py --platform iOS
+
+      - name: Check translations
+        run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform iOS
+
   create-asana-task:
     name: Create Asana Task
     needs: [unit-tests, shellcheck, release-build]
@@ -353,7 +388,7 @@ jobs:
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
           pr-reviewers: ${{ needs.unit-tests.outputs.pr_reviewers }}
-          github-token: ${{ secrets.GH_RO_PAT }}
+          github-token: ${{ secrets.APPLE_GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
@@ -372,4 +407,4 @@ jobs:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
-          github-token: ${{ secrets.GH_RO_PAT }}
+          github-token: ${{ secrets.APPLE_GH_RO_PAT }}

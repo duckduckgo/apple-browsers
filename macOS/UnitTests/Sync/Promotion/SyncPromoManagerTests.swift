@@ -17,6 +17,8 @@
 //
 
 import XCTest
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import BrowserServicesKit
 @testable import DDGSync
 @testable import DuckDuckGo_Privacy_Browser
@@ -32,7 +34,7 @@ final class SyncPromoManagerTests: XCTestCase {
 
         UserDefaultsWrapper<Any>.clearAll()
 
-        privacyConfigurationManager.mockPrivacyConfig = config
+        privacyConfigurationManager.privacyConfig = config
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
     }
 
@@ -45,7 +47,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     func testWhenAllConditionsMetThenShouldPresentPromoForBookmarks() {
-        config.isSubfeatureKeyEnabled = { _, _ in
+        config.isSubfeatureEnabledCheck = { _, _ in
             return true
         }
         syncService.authState = .inactive
@@ -57,7 +59,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     func testWhenSyncPromotionBookmarksFeatureFlagDisabledThenShouldNotPresentPromoForBookmarks() {
-        config.isSubfeatureKeyEnabled = { subfeature, _ in
+        config.isSubfeatureEnabledCheck = { subfeature, _ in
             if subfeature.rawValue == SyncSubfeature.level0ShowSync.rawValue {
                 return true
             }
@@ -72,7 +74,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     func testWhenSyncFeatureFlagDisabledThenShouldNotPresentPromoForBookmarks() {
-        config.isSubfeatureKeyEnabled = { subfeature, _ in
+        config.isSubfeatureEnabledCheck = { subfeature, _ in
             if subfeature.rawValue == SyncPromotionSubfeature.bookmarks.rawValue {
                 return true
             }
@@ -87,7 +89,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     func testWhenSyncServiceAuthStateActiveThenShouldNotPresentPromoForBookmarks() {
-        config.isSubfeatureKeyEnabled = { _, _ in
+        config.isSubfeatureEnabledCheck = { _, _ in
             return true
         }
         syncService.authState = .active
@@ -99,7 +101,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     func testWhenSyncPromoBookmarksDismissedThenShouldNotPresentPromoForBookmarks() {
-        config.isSubfeatureKeyEnabled = { _, _ in
+        config.isSubfeatureEnabledCheck = { _, _ in
             return true
         }
         syncService.authState = .inactive
@@ -112,7 +114,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     func testWhenAllConditionsMetThenShouldPresentPromoForPasswords() {
-        config.isSubfeatureKeyEnabled = { _, _ in
+        config.isSubfeatureEnabledCheck = { _, _ in
             return true
         }
         syncService.authState = .inactive
@@ -124,7 +126,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     func testWhenSyncPromotionPasswordsFeatureFlagDisabledThenShouldNotPresentPromoForPasswords() {
-        config.isSubfeatureKeyEnabled = { subfeature, _ in
+        config.isSubfeatureEnabledCheck = { subfeature, _ in
             if subfeature.rawValue == SyncPromotionSubfeature.passwords.rawValue {
                 return false
             }
@@ -139,7 +141,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     func testWhenSyncFeatureFlagDisabledThenShouldNotPresentPromoForPasswords() {
-        config.isSubfeatureKeyEnabled = { subfeature, _ in
+        config.isSubfeatureEnabledCheck = { subfeature, _ in
             if subfeature.rawValue == SyncSubfeature.level0ShowSync.rawValue {
                 return false
             }
@@ -154,7 +156,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     func testWhenSyncServiceAuthStateActiveThenShouldNotPresentPromoForPasswords() {
-        config.isSubfeatureKeyEnabled = { _, _ in
+        config.isSubfeatureEnabledCheck = { _, _ in
             return true
         }
         syncService.authState = .active
@@ -166,7 +168,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     func testWhenSyncPromoPasswordsDismissedThenShouldNotPresentPromoForPasswords() {
-        config.isSubfeatureKeyEnabled = { _, _ in
+        config.isSubfeatureEnabledCheck = { _, _ in
             return true
         }
         syncService.authState = .inactive

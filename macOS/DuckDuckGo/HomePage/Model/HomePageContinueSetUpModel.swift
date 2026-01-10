@@ -21,26 +21,10 @@ import BrowserServicesKit
 import Combine
 import Common
 import Foundation
+import NewTabPage
 import PixelKit
+import PrivacyConfig
 import Subscription
-import FeatureFlags
-
-import VPN
-import NetworkProtectionUI
-
-protocol ContinueSetUpModelTabOpening {
-    @MainActor
-    func openTab(_ tab: Tab)
-}
-
-struct TabCollectionViewModelTabOpener: ContinueSetUpModelTabOpening {
-    let tabCollectionViewModel: TabCollectionViewModel
-
-    @MainActor
-    func openTab(_ tab: Tab) {
-        tabCollectionViewModel.insertOrAppend(tab: tab, selected: true)
-    }
-}
 
 extension HomePage.Models {
 
@@ -60,21 +44,15 @@ extension HomePage.Models {
         let itemsPerRow = Const.featuresPerRow
         let itemsRowCountWhenCollapsed = Const.featureRowCountWhenCollapsed
         let gridWidth = FeaturesGridDimensions.width
-        let privacyConfigurationManager: PrivacyConfigurationManaging
-
-        var duckPlayerURL: String {
-            let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
-            return duckPlayerSettings["tryDuckPlayerLink"] as? String ?? "https://www.youtube.com/watch?v=yKWIA-Pys4c"
-        }
 
         private let defaultBrowserProvider: DefaultBrowserProvider
         private let dockCustomizer: DockCustomization
         private let dataImportProvider: DataImportStatusProviding
-        private let tabOpener: ContinueSetUpModelTabOpening
         private let emailManager: EmailManager
         private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
         private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
-        private let pixelHandler: (PixelKitEvent, Bool) -> Void
+        private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
+        private let cardActionsHandler: NewTabPageNextStepsCardsActionHandling
 
         @UserDefaultsWrapper(key: .homePageShowAllFeatures, defaultValue: false)
         var shouldShowAllFeatures: Bool {
@@ -110,23 +88,21 @@ extension HomePage.Models {
         init(defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
              dockCustomizer: DockCustomization = DockCustomizer(),
              dataImportProvider: DataImportStatusProviding,
-             tabOpener: ContinueSetUpModelTabOpening,
              emailManager: EmailManager = EmailManager(),
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
-             privacyConfigurationManager: PrivacyConfigurationManaging,
              subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
              persistor: HomePageContinueSetUpModelPersisting,
-             pixelHandler: @escaping (PixelKitEvent, Bool) -> Void = { PixelKit.fire($0, includeAppVersionParameter: $1) }) {
+             pixelHandler: NewTabPageNextStepsCardsPixelHandling,
+             cardActionsHandler: NewTabPageNextStepsCardsActionHandling) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer
             self.dataImportProvider = dataImportProvider
-            self.tabOpener = tabOpener
             self.emailManager = emailManager
             self.duckPlayerPreferences = duckPlayerPreferences
-            self.privacyConfigurationManager = privacyConfigurationManager
             self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
             self.pixelHandler = pixelHandler
+            self.cardActionsHandler = cardActionsHandler
             self.persistor = persistor
 
             shouldShowAllFeaturesPublisher = shouldShowAllFeaturesSubject.removeDuplicates().eraseToAnyPublisher()
@@ -144,66 +120,14 @@ extension HomePage.Models {
         }
 
         @MainActor func performAction(for featureType: FeatureType) {
-            switch featureType {
-            case .defaultBrowser:
-                performDefaultBrowserAction()
-            case .dock:
-                performDockAction()
-            case .importBookmarksAndPasswords:
-                performImportBookmarksAndPasswordsAction()
-            case .duckplayer:
-                performDuckPlayerAction()
-            case .emailProtection:
-                performEmailProtectionAction()
-            case .subscription:
-                performSubscriptionAction()
+            let card = NewTabPageDataModel.CardID(featureType)
+            cardActionsHandler.performAction(for: card) { [weak self] in
+                self?.refreshFeaturesMatrix()
             }
-        }
-
-        private func performDefaultBrowserAction() {
-            do {
-                pixelHandler(GeneralPixel.defaultRequestedFromHomepageSetupView, true)
-                try defaultBrowserProvider.presentDefaultBrowserPrompt()
-            } catch {
-                defaultBrowserProvider.openSystemPreferences()
-            }
-        }
-
-        private func performImportBookmarksAndPasswordsAction() {
-            dataImportProvider.showImportWindow(customTitle: nil, completion: { self.refreshFeaturesMatrix() })
-        }
-
-        @MainActor
-        private func performDuckPlayerAction() {
-            if let videoUrl = URL(string: duckPlayerURL) {
-                let tab = Tab(content: .url(videoUrl, source: .link), shouldLoadInBackground: true)
-                tabOpener.openTab(tab)
-            }
-        }
-
-        @MainActor
-        private func performEmailProtectionAction() {
-            let tab = Tab(content: .url(EmailUrls().emailProtectionLink, source: .ui), shouldLoadInBackground: true)
-            tabOpener.openTab(tab)
-        }
-
-        func performDockAction() {
-            pixelHandler(GeneralPixel.userAddedToDockFromNewTabPageCard, false)
-            dockCustomizer.addToDock()
-        }
-
-        @MainActor
-        private func performSubscriptionAction() {
-            pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked, true)
-            guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.newTabPageNextStepsCard.rawValue)?.url else {
-                return
-            }
-
-            let tab = Tab(content: .url(url, source: .link), shouldLoadInBackground: true)
-            tabOpener.openTab(tab)
         }
 
         func removeItem(for featureType: FeatureType) {
+            fireNextStepsCardDismissedPixel(for: featureType)
             switch featureType {
             case .defaultBrowser:
                 persistor.shouldShowMakeDefaultSetting = false
@@ -216,10 +140,17 @@ extension HomePage.Models {
             case .emailProtection:
                 persistor.shouldShowEmailProtectionSetting = false
             case .subscription:
-                pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed, true)
+                pixelHandler.fireSubscriptionCardDismissedPixel()
                 subscriptionCardVisibilityManager.dismissSubscriptionCard()
             }
             refreshFeaturesMatrix()
+        }
+
+        // MARK: - Pixel Firing
+
+        private func fireNextStepsCardDismissedPixel(for featureType: FeatureType) {
+            let card = NewTabPageDataModel.CardID(featureType)
+            pixelHandler.fireNextStepsCardDismissedPixel(card)
         }
 
         private func observeSubscriptionCardVisibilityChanges() {

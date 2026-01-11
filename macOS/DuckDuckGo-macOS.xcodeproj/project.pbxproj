@@ -2902,6 +2902,8 @@
 		B541A3552E858041004AEAAD /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541A3532E858041004AEAAD /* ThemeColors.swift */; };
 		B541E9582EF5AB8C002A633E /* ThemePixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541E9572EF5AB8C002A633E /* ThemePixels.swift */; };
 		B541E9592EF5AB8C002A633E /* ThemePixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541E9572EF5AB8C002A633E /* ThemePixels.swift */; };
+		B546599D2F105847000009DE /* ThemePopoverDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B546599C2F105847000009DE /* ThemePopoverDecider.swift */; };
+		B546599E2F105847000009DE /* ThemePopoverDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B546599C2F105847000009DE /* ThemePopoverDecider.swift */; };
 		B55C8F742E81A8730024B421 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C8F732E81A8730024B421 /* ThemeManager.swift */; };
 		B55C8F752E81A8730024B421 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C8F732E81A8730024B421 /* ThemeManager.swift */; };
 		B55D8E5E2EE77688009083D9 /* BundleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55D8E5D2EE77688009083D9 /* BundleExtension.swift */; };
@@ -2912,6 +2914,8 @@
 		B568715F2EC528950075A270 /* CABasicAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B568715D2EC528950075A270 /* CABasicAnimationExtension.swift */; };
 		B56871612EC528CF0075A270 /* CATransitionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56871602EC528CF0075A270 /* CATransitionExtension.swift */; };
 		B56871622EC528CF0075A270 /* CATransitionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56871602EC528CF0075A270 /* CATransitionExtension.swift */; };
+		B58D635B2F1158FE00AAB218 /* ThemePopoverDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B58D635A2F1158FE00AAB218 /* ThemePopoverDeciderTests.swift */; };
+		B58D635C2F1158FE00AAB218 /* ThemePopoverDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B58D635A2F1158FE00AAB218 /* ThemePopoverDeciderTests.swift */; };
 		B59AB6442EFB179F00C2F87A /* SearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59AB6432EFB179F00C2F87A /* SearchField.swift */; };
 		B59AB6452EFB179F00C2F87A /* SearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59AB6432EFB179F00C2F87A /* SearchField.swift */; };
 		B5AE99532E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
@@ -5731,12 +5735,14 @@
 		B53F4E912EA917AB0043B5EF /* LetterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterView.swift; sourceTree = "<group>"; };
 		B541A3532E858041004AEAAD /* ThemeColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColors.swift; sourceTree = "<group>"; };
 		B541E9572EF5AB8C002A633E /* ThemePixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePixels.swift; sourceTree = "<group>"; };
+		B546599C2F105847000009DE /* ThemePopoverDecider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePopoverDecider.swift; sourceTree = "<group>"; };
 		B55C8F732E81A8730024B421 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		B55D8E5D2EE77688009083D9 /* BundleExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleExtension.swift; sourceTree = "<group>"; };
 		B56776742ED778C600303198 /* FaviconImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconImageView.swift; sourceTree = "<group>"; };
 		B568715D2EC528950075A270 /* CABasicAnimationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CABasicAnimationExtension.swift; sourceTree = "<group>"; };
 		B56871602EC528CF0075A270 /* CATransitionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CATransitionExtension.swift; sourceTree = "<group>"; };
 		B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabFaviconView.swift; sourceTree = "<group>"; };
+		B58D635A2F1158FE00AAB218 /* ThemePopoverDeciderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePopoverDeciderTests.swift; sourceTree = "<group>"; };
 		B59AB6432EFB179F00C2F87A /* SearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchField.swift; sourceTree = "<group>"; };
 		B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
 		B5AE99522E84A5D900F45912 /* ThemeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeName.swift; sourceTree = "<group>"; };
@@ -7279,8 +7285,9 @@
 		370C23172C77C47700A80A3E /* Customization */ = {
 			isa = PBXGroup;
 			children = (
-				371E1D662D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift */,
 				376731892C7F32B700EB097B /* CustomBackgrounds */,
+				B546599F2F107405000009DE /* Themes */,
+				371E1D662D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift */,
 				3797C7A22C62C38800DA77FB /* NewTabPageCustomizationModel.swift */,
 				379026D02C650CCD00A089E8 /* UserBackgroundImagesManager.swift */,
 				370C23102C7747E200A80A3E /* ImageProcessor.swift */,
@@ -7436,6 +7443,7 @@
 				37A756ED2DD6108E0003C8C9 /* NewTabPageCoordinatorTests.swift */,
 				37697D7F2D4A0D0F004C0CBB /* NewTabPageShownPixelSenderTests.swift */,
 				370E70A22D46914A0077D4F3 /* RecentActivityProviderTests.swift */,
+				B58D635A2F1158FE00AAB218 /* ThemePopoverDeciderTests.swift */,
 				3730F20E2D2E725A00239F96 /* NewTabPageCustomizationProviderTests.swift */,
 				CC26B6742F0D269D00D380B6 /* NewTabPageNextStepsCardsActionHandlerTests.swift */,
 				CC8E70D22F0EC0A2008C8070 /* NewTabPageNextStepsCardsPersistorTests.swift */,
@@ -11070,6 +11078,14 @@
 				B5E7B6BF2ED4A52C00094EDF /* TitleDisplayPolicy.swift */,
 			);
 			path = Tools;
+			sourceTree = "<group>";
+		};
+		B546599F2F107405000009DE /* Themes */ = {
+			isa = PBXGroup;
+			children = (
+				B546599C2F105847000009DE /* ThemePopoverDecider.swift */,
+			);
+			path = Themes;
 			sourceTree = "<group>";
 		};
 		B5E197EA2E8C645500C447CC /* VisualRefresh */ = {
@@ -15028,6 +15044,7 @@
 				3758A38C2D108233001CEAA1 /* NewTabPageFreemiumDBPBannerProvider.swift in Sources */,
 				379858012D72D831008773F6 /* HistoryBurning.swift in Sources */,
 				4B9DB02D2A983B24000927DB /* WaitlistKeychainStorage.swift in Sources */,
+				B546599E2F105847000009DE /* ThemePopoverDecider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -15245,6 +15262,7 @@
 				3706FE31293F661700E42796 /* TabCollectionViewModelDelegateMock.swift in Sources */,
 				3706FE32293F661700E42796 /* BookmarksHTMLReaderTests.swift in Sources */,
 				B53D46B22E9D9710000D59F7 /* ThemeUpdateListeningTests.swift in Sources */,
+				B58D635C2F1158FE00AAB218 /* ThemePopoverDeciderTests.swift in Sources */,
 				CCD899FB2ECDCF7D008E738B /* MockDefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */,
 				9F0FFFBC2BCCAEC2007C87DD /* AddEditBookmarkFolderDialogViewModelMock.swift in Sources */,
 				CC6E897C2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift in Sources */,
@@ -15919,6 +15937,7 @@
 				AAC30A2E268F1EE300D2D9CD /* CrashReportPromptPresenter.swift in Sources */,
 				1D2DC00629016798008083A1 /* BWCredential.swift in Sources */,
 				EEA3EEB12B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift in Sources */,
+				B546599D2F105847000009DE /* ThemePopoverDecider.swift in Sources */,
 				316913232BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift in Sources */,
 				37AFCE8727DA334800471A10 /* PreferencesRootView.swift in Sources */,
 				B684590825C9027900DC17B6 /* AppStateChangedPublisher.swift in Sources */,
@@ -17237,6 +17256,7 @@
 				1D7693FF2BE3A1AA0016A22B /* DockCustomizerMock.swift in Sources */,
 				4B8AD0B127A86D9200AE44D6 /* WKWebsiteDataStoreExtensionTests.swift in Sources */,
 				376731872C7EF9C200EB097B /* ColorSchemeLosslessStringConvertibleExtensionTests.swift in Sources */,
+				B58D635B2F1158FE00AAB218 /* ThemePopoverDeciderTests.swift in Sources */,
 				9FA5A0B02BC9039200153786 /* BookmarkFolderStoreMock.swift in Sources */,
 				F1F861152C1B25D4005DB446 /* SubscriptionUIHandlerMock.swift in Sources */,
 				B69B50472726C5C200758A2B /* VariantManagerTests.swift in Sources */,

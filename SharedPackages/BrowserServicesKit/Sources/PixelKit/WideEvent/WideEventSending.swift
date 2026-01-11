@@ -120,9 +120,9 @@ public final class DefaultWideEventSender: WideEventSending {
             includeAppVersionParameter: true,
             onComplete: { success, error in
                 if success {
-                    Self.logger.info("Daily wide event pixel fired successfully: \(pixelName, privacy: .public)")
+                    Self.logger.info("Daily wide event pixel sent successfully: \(pixelName, privacy: .public)")
                 } else {
-                    Self.logger.error("Daily wide event failed to fire: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
+                    Self.logger.error("Daily wide event failed to send: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
                 }
             }
         )
@@ -136,7 +136,7 @@ public final class DefaultWideEventSender: WideEventSending {
             includeAppVersionParameter: true,
             onComplete: { success, error in
                 if success {
-                    Self.logger.info("Wide event fired successfully: \(pixelName, privacy: .public)")
+                    Self.logger.info("Wide event sent successfully: \(pixelName, privacy: .public)")
                 } else {
                     Self.logger.error("Wide event failed to fire: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
                 }
@@ -233,6 +233,8 @@ public final class DefaultWideEventSender: WideEventSending {
         onComplete: @escaping (Bool, Error?) -> Void
     ) {
 #if DEBUG
+        // Avoid sending real POST events when running debug mode, since we can't talk to the staging environment from
+        // the client environment directly:
         onComplete(true, nil)
         return
 #else

@@ -818,7 +818,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
     }
 
     func testSendFiresDailyAndStandardPixels() {
-        let sender = DefaultWideEventSending(
+        let sender = DefaultWideEventSender(
             pixelKitProvider: { PixelKit.shared },
             postRequestHandler: { _, _, _, onComplete in onComplete(true, nil) }
         )
@@ -844,7 +844,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
     func testSendFiresPOSTWhenEnabled() {
         var postRequestFired = false
 
-        let sender = DefaultWideEventSending(
+        let sender = DefaultWideEventSender(
             pixelKitProvider: { PixelKit.shared },
             postRequestHandler: { url, body, headers, onComplete in
                 postRequestFired = true
@@ -870,7 +870,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
     func testSendSkipsPOSTWhenDisabled() {
         var postRequestFired = false
 
-        let sender = DefaultWideEventSending(
+        let sender = DefaultWideEventSender(
             pixelKitProvider: { PixelKit.shared },
             postRequestHandler: { _, _, _, onComplete in
                 postRequestFired = true
@@ -890,7 +890,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
     }
 
     func testPOSTBodyContainsNestedJSON() {
-        let sender = DefaultWideEventSending(
+        let sender = DefaultWideEventSender(
             pixelKitProvider: { PixelKit.shared },
             postRequestHandler: { url, body, headers, onComplete in
                 self.capturedPOSTRequests.append((url: url, body: body, headers: headers))
@@ -932,7 +932,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
     func testSendReturnsErrorWhenPixelKitNotInitialized() {
         PixelKit.tearDown()
 
-        let sender = DefaultWideEventSending(
+        let sender = DefaultWideEventSender(
             pixelKitProvider: { nil },
             postRequestHandler: { _, _, _, onComplete in onComplete(true, nil) }
         )
@@ -955,7 +955,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
     }
 
     func testSendGeneratesCorrectParameters() {
-        let sender = DefaultWideEventSending(
+        let sender = DefaultWideEventSender(
             pixelKitProvider: { PixelKit.shared },
             postRequestHandler: { _, _, _, onComplete in onComplete(true, nil) }
         )

@@ -65,13 +65,14 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // MockFeatureFlagger is already initialized with .aiChatDeepLink enabled
 
         // When
-        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:]))  as? AIChatNativeConfigValues
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
 
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.isAIChatHandoffEnabled, true)
         XCTAssertEqual(configValues?.platform, "ios")
         XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
+        XCTAssertEqual(configValues?.supportsAIChatSync, false)
     }
     
     func testGetAIChatNativeConfigValuesWithFullModeFeatureAvailable() {
@@ -134,6 +135,203 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         }
         await fulfillment(of: [expectation])
     }
+
+    // MARK: - Sync
+
+    func testGetSyncStatusPassesFeatureFlagToSyncHandler() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockAIChatSyncHandler.syncStatus = AIChatSyncHandler.SyncStatus(syncAvailable: false)
+
+        // When
+        let response = aiChatUserScriptHandler.getSyncStatus(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertEqual(mockAIChatSyncHandler.getSyncStatusFeatureAvailableCalls, [false])
+        XCTAssertNotNil(response as? AIChatPayloadResponse)
+    }
+
+    func testGetSyncStatusReturnsPayloadFromSyncHandler() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSync]
+        mockAIChatSyncHandler.syncStatus = AIChatSyncHandler.SyncStatus(syncAvailable: true,
+                                                                        userId: "user",
+                                                                        deviceId: "device",
+                                                                        deviceName: "My Device",
+                                                                        deviceType: "iPhone")
+
+        // When
+        let response = aiChatUserScriptHandler.getSyncStatus(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertEqual(mockAIChatSyncHandler.getSyncStatusFeatureAvailableCalls, [true])
+        let payloadResponse = try XCTUnwrap(response as? AIChatPayloadResponse)
+        let status = try XCTUnwrap(payloadResponse.payload as? AIChatSyncHandler.SyncStatus)
+        XCTAssertTrue(payloadResponse.ok)
+        XCTAssertTrue(status.syncAvailable)
+        XCTAssertEqual(status.userId, "user")
+        XCTAssertEqual(status.deviceId, "device")
+        XCTAssertEqual(status.deviceName, "My Device")
+        XCTAssertEqual(status.deviceType, "iPhone")
+    }
+
+    func testGetScopedSyncAuthTokenReturnsSyncDisabledWhenFeatureOff() async throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        // When
+        let response = await aiChatUserScriptHandler.getScopedSyncAuthToken(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        let errorResponse = try XCTUnwrap(response as? AIChatErrorResponse)
+        XCTAssertEqual(errorResponse.reason, "sync disabled")
+        XCTAssertEqual(mockAIChatSyncHandler.getScopedTokenCallCount, 0)
+    }
+
+    func testGetScopedSyncAuthTokenReturnsTokenPayloadWhenFeatureOn() async throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSync]
+        mockAIChatSyncHandler.scopedToken = AIChatSyncHandler.SyncToken(token: "scoped-token")
+
+        // When
+        let response = await aiChatUserScriptHandler.getScopedSyncAuthToken(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertEqual(mockAIChatSyncHandler.getScopedTokenCallCount, 1)
+        let payloadResponse = try XCTUnwrap(response as? AIChatPayloadResponse)
+        let tokenPayload = try XCTUnwrap(payloadResponse.payload as? AIChatSyncHandler.SyncToken)
+        XCTAssertEqual(tokenPayload.token, "scoped-token")
+    }
+
+    func testEncryptWithSyncMasterKeyReturnsSyncDisabledWhenFeatureOff() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockAIChatSyncHandler.syncTurnedOn = true
+
+        // When
+        let response = aiChatUserScriptHandler.encryptWithSyncMasterKey(
+            params: ["data": "plain"],
+            message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        let errorResponse = try XCTUnwrap(response as? AIChatErrorResponse)
+        XCTAssertEqual(errorResponse.reason, "sync disabled")
+        XCTAssertTrue(mockAIChatSyncHandler.encryptCalls.isEmpty)
+    }
+
+    func testEncryptWithSyncMasterKeyReturnsSyncOffWhenSyncNotTurnedOn() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSync]
+        mockAIChatSyncHandler.syncTurnedOn = false
+
+        // When
+        let response = aiChatUserScriptHandler.encryptWithSyncMasterKey(
+            params: ["data": "plain"],
+            message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        let errorResponse = try XCTUnwrap(response as? AIChatErrorResponse)
+        XCTAssertEqual(errorResponse.reason, "sync off")
+        XCTAssertTrue(mockAIChatSyncHandler.encryptCalls.isEmpty)
+    }
+
+    func testEncryptWithSyncMasterKeyReturnsEncryptedPayloadWhenSyncOn() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSync]
+        mockAIChatSyncHandler.syncTurnedOn = true
+
+        // When
+        let response = aiChatUserScriptHandler.encryptWithSyncMasterKey(
+            params: ["data": "plain"],
+            message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        let payloadResponse = try XCTUnwrap(response as? AIChatPayloadResponse)
+        let encryptedPayload = try XCTUnwrap(payloadResponse.payload as? AIChatSyncHandler.EncryptedData)
+        XCTAssertEqual(encryptedPayload.encryptedData, "encrypted_plain")
+        XCTAssertEqual(mockAIChatSyncHandler.encryptCalls, ["plain"])
+    }
+
+    func testDecryptWithSyncMasterKeyReturnsSyncDisabledWhenFeatureOff() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockAIChatSyncHandler.syncTurnedOn = true
+
+        // When
+        let response = aiChatUserScriptHandler.decryptWithSyncMasterKey(
+            params: ["data": "encrypted_plain"],
+            message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        let errorResponse = try XCTUnwrap(response as? AIChatErrorResponse)
+        XCTAssertEqual(errorResponse.reason, "sync disabled")
+        XCTAssertTrue(mockAIChatSyncHandler.decryptCalls.isEmpty)
+    }
+
+    func testDecryptWithSyncMasterKeyReturnsSyncOffWhenSyncNotTurnedOn() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSync]
+        mockAIChatSyncHandler.syncTurnedOn = false
+
+        // When
+        let response = aiChatUserScriptHandler.decryptWithSyncMasterKey(
+            params: ["data": "encrypted_plain"],
+            message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        let errorResponse = try XCTUnwrap(response as? AIChatErrorResponse)
+        XCTAssertEqual(errorResponse.reason, "sync off")
+        XCTAssertTrue(mockAIChatSyncHandler.decryptCalls.isEmpty)
+    }
+
+    func testDecryptWithSyncMasterKeyReturnsDecryptedPayloadWhenSyncOn() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSync]
+        mockAIChatSyncHandler.syncTurnedOn = true
+
+        // When
+        let response = aiChatUserScriptHandler.decryptWithSyncMasterKey(
+            params: ["data": "encrypted_plain"],
+            message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        let payloadResponse = try XCTUnwrap(response as? AIChatPayloadResponse)
+        let decryptedPayload = try XCTUnwrap(payloadResponse.payload as? AIChatSyncHandler.DecryptedData)
+        XCTAssertEqual(decryptedPayload.decryptedData, "plain")
+        XCTAssertEqual(mockAIChatSyncHandler.decryptCalls, ["encrypted_plain"])
+    }
+
+    func testSendToSyncSettingsReturnsOKResponse() throws {
+        // When
+        let response = aiChatUserScriptHandler.sendToSyncSettings(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        let okResponse = try XCTUnwrap(response as? AIChatOKResponse)
+        XCTAssertTrue(okResponse.ok)
+    }
+
+    func testSendToSetupSyncReturnsOKResponse() throws {
+        // When
+        let response = aiChatUserScriptHandler.sendToSetupSync(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        let okResponse = try XCTUnwrap(response as? AIChatOKResponse)
+        XCTAssertTrue(okResponse.ok)
+    }
+
+    func testSetAIChatHistoryEnabledCallsSyncHandler() throws {
+        // Given
+        XCTAssertTrue(mockAIChatSyncHandler.setAIChatHistoryEnabledCalls.isEmpty)
+
+        // When
+        let response = aiChatUserScriptHandler.setAIChatHistoryEnabled(
+            params: ["enabled": true],
+            message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertNil(response)
+        XCTAssertEqual(mockAIChatSyncHandler.setAIChatHistoryEnabledCalls, [true])
+    }
 }
 
 struct MockUserScriptMessage: UserScriptMessage {
@@ -172,15 +370,13 @@ final class MockAIChatSyncHandling: AIChatSyncHandling {
 
     var syncTurnedOn = false
 
-    var syncStatus: AIChatSyncHandler.SyncStatus = AIChatSyncHandler.SyncStatus(syncAvailable: false,
-                                                                                userId: nil,
-                                                                                deviceId: nil,
-                                                                                deviceName: nil,
-                                                                                deviceType: nil)
+    var syncStatus: AIChatSyncHandler.SyncStatus = AIChatSyncHandler.SyncStatus(syncAvailable: false)
     var scopedToken: AIChatSyncHandler.SyncToken = AIChatSyncHandler.SyncToken(token: "token")
     var encryptValue: (String) throws -> String = { "encrypted_\($0)" }
     var decryptValue: (String) throws -> String = { $0.dropping(prefix: "encrypted_") }
 
+    private(set) var getSyncStatusFeatureAvailableCalls: [Bool] = []
+    private(set) var getScopedTokenCallCount: Int = 0
     private(set) var encryptCalls: [String] = []
     private(set) var decryptCalls: [String] = []
     private(set) var setAIChatHistoryEnabledCalls: [Bool] = []
@@ -190,11 +386,13 @@ final class MockAIChatSyncHandling: AIChatSyncHandling {
     }
 
     func getSyncStatus(featureAvailable: Bool) throws -> AIChatSyncHandler.SyncStatus {
-        syncStatus
+        getSyncStatusFeatureAvailableCalls.append(featureAvailable)
+        return syncStatus
     }
 
     func getScopedToken() async throws -> AIChatSyncHandler.SyncToken {
-        scopedToken
+        getScopedTokenCallCount += 1
+        return scopedToken
     }
 
     func encrypt(_ string: String) throws -> AIChatSyncHandler.EncryptedData {

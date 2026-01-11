@@ -53,7 +53,7 @@ jobs:
       uses: ./.github/actions/ios-simulator-logs
       with:
         action: boot
-        device-name: iPhone 16
+        device-name: iPhone 17
         ios-version: ${{ steps.select-simulator.outputs.ios-version }}
 
     - name: Build and test

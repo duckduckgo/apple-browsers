@@ -28,6 +28,7 @@ import Networking
 import Subscription
 import os.log
 import Configuration
+import FeatureFlags
 
 @objc(Application)
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
@@ -119,12 +120,17 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
         let dbpFeatureFlagger = DBPFeatureFlagger(configurationManager: configurationManager,
                                                   privacyConfigurationManager: privacyConfigurationManager)
 
+        let wideEvent = WideEvent(sendPOSTEnabled: { [weak dbpFeatureFlagger] in
+            guard let dbpFeatureFlagger else { return false }
+            return dbpFeatureFlagger.isWideEventPOSTEndpointOn
+        })
+
         manager = DataBrokerProtectionAgentManagerProvider.agentManager(
             authenticationManager: authenticationManager,
             configurationManager: configurationManager,
             privacyConfigurationManager: privacyConfigurationManager,
             featureFlagger: dbpFeatureFlagger,
-            wideEvent: WideEvent(),
+            wideEvent: wideEvent,
             vpnBypassService: VPNBypassService()
         )
         manager?.agentFinishedLaunching()

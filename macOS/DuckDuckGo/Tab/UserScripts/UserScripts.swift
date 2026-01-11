@@ -76,8 +76,7 @@ final class UserScripts: UserScriptsProvider {
             windowControllersManager: sourceProvider.windowControllersManager,
             pixelFiring: PixelKit.shared,
             statisticsLoader: StatisticsLoader.shared,
-            // ToDo: do we have better way of passing this?
-            syncHandler: AIChatSyncHandler(sync: NSApp.delegateTyped.syncService!),
+            syncServiceProvider: sourceProvider.syncServiceProvider,
             featureFlagger: sourceProvider.featureFlagger
         )
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)

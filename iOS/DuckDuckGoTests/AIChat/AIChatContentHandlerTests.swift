@@ -291,12 +291,19 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var delegateSet = false
     var webViewSet = false
     var payloadHandlerSet = false
+    var submitPromptCallCount = 0
+    var lastSubmittedPrompt: String?
     var submitStartChatActionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true
+    }
+
+    func submitPrompt(_ prompt: String) {
+        submitPromptCallCount += 1
+        lastSubmittedPrompt = prompt
     }
 
     func submitStartChatAction() {

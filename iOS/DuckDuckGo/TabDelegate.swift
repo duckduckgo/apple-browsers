@@ -94,6 +94,10 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestSettingsToVPN(_ tab: TabViewController)
 
+    func tabDidRequestSettingsToAIChat(_ tab: TabViewController)
+
+    func tabDidRequestSettingsToSync(_ tab: TabViewController)
+
     func tabDidRequestFindInPage(tab: TabViewController)
     func closeFindInPage(tab: TabViewController)
 

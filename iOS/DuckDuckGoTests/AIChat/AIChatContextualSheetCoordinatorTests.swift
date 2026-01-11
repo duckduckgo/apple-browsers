@@ -18,6 +18,9 @@
 //
 
 import XCTest
+import BrowserServicesKit
+import BrowserServicesKitTestsUtils
+import Combine
 @testable import DuckDuckGo
 
 final class AIChatContextualSheetCoordinatorTests: XCTestCase {
@@ -26,14 +29,24 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     private final class MockDelegate: AIChatContextualSheetCoordinatorDelegate {
         var didRequestToLoadURLs: [URL] = []
-        var didRequestExpandCount = 0
+        var didRequestExpandURLs: [URL] = []
+        var openSettingsCallCount = 0
+        var openSyncSettingsCallCount = 0
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL) {
             didRequestToLoadURLs.append(url)
         }
 
-        func aiChatContextualSheetCoordinatorDidRequestExpand(_ coordinator: AIChatContextualSheetCoordinator) {
-            didRequestExpandCount += 1
+        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {
+            didRequestExpandURLs.append(url)
+        }
+
+        func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator) {
+            openSettingsCallCount += 1
+        }
+
+        func aiChatContextualSheetCoordinatorDidRequestOpenSyncSettings(_ coordinator: AIChatContextualSheetCoordinator) {
+            openSyncSettingsCallCount += 1
         }
     }
 
@@ -54,13 +67,21 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockDelegate: MockDelegate!
     private var mockPresentingVC: MockPresentingViewController!
     private var mockSettings: MockAIChatSettingsProvider!
+    private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
 
     // MARK: - Setup
 
     override func setUp() {
         super.setUp()
         mockSettings = MockAIChatSettingsProvider()
-        sut = AIChatContextualSheetCoordinator(voiceSearchHelper: MockVoiceSearchHelper(), settings: mockSettings)
+        contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
+        sut = AIChatContextualSheetCoordinator(
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            settings: mockSettings,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery()
+        )
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()
         sut.delegate = mockDelegate
@@ -71,6 +92,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockDelegate = nil
         mockPresentingVC = nil
         mockSettings = nil
+        contentBlockingSubject = nil
         super.tearDown()
     }
 
@@ -152,24 +174,26 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [testURL])
     }
 
-    func testDelegateReceivesExpandRequest() {
+    func testDelegateReceivesExpandRequestWithURL() {
         // Given
         sut.presentSheet(from: mockPresentingVC)
+        let expandURL = URL(string: "https://duck.ai/chat/abc123")!
 
         // When
-        sut.aiChatContextualSheetViewControllerDidRequestExpand(sut.sheetViewController!)
+        sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL)
 
         // Then
-        XCTAssertEqual(mockDelegate.didRequestExpandCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestExpandURLs, [expandURL])
     }
 
     func testExpandRequestClearsActiveChat() {
         // Given
         sut.presentSheet(from: mockPresentingVC)
         XCTAssertNotNil(sut.sheetViewController)
+        let expandURL = URL(string: "https://duck.ai/chat/abc123")!
 
         // When
-        sut.aiChatContextualSheetViewControllerDidRequestExpand(sut.sheetViewController!)
+        sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL)
 
         // Then
         XCTAssertNil(sut.sheetViewController)

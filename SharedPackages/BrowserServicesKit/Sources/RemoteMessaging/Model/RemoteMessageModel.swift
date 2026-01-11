@@ -100,6 +100,14 @@ public struct RemoteMessageModel: Equatable, Codable {
 
                 let translatedItemType: RemoteMessageModelType.ListItem.ListItemType
                 switch item.type {
+                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, primaryActionText, primaryAction):
+                    translatedItemType = .featuredTwoLinesSingleActionItem(
+                        titleText: translatedItem.titleText ?? titleText,
+                        descriptionText: translatedItem.descriptionText ?? descriptionText,
+                        placeholderImage: placeholderImage,
+                        primaryActionText: translatedItem.primaryActionText ?? primaryActionText,
+                        primaryAction: primaryAction
+                    )
                 case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):
                     translatedItemType = .twoLinesItem(
                         titleText: translatedItem.titleText ?? titleText,
@@ -197,6 +205,15 @@ public extension RemoteMessageModelType {
 public extension RemoteMessageModelType.ListItem {
 
     enum ListItemType: Codable, Equatable {
+        /// Represents a featured two-line card with an icon, title, description, and optional action with title.
+        /// - Parameters:
+        ///   - titleText: The main title of the card (required, translatable)
+        ///   - descriptionText: Supporting description text (required, translatable)
+        ///   - placeholderImage: Image to display alongside the text
+        ///   - primaryActionText: Optional title for the action triggered when the card is tapped
+        ///   - primaryAction: Optional action triggered when the card is tapped
+        case featuredTwoLinesSingleActionItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, primaryActionText: String?, primaryAction: RemoteAction?)
+
         /// Represents a standard two-line card with an icon, title, description, and optional action.
         /// - Parameters:
         ///   - titleText: The main title of the card (required, translatable)
@@ -210,6 +227,15 @@ public extension RemoteMessageModelType.ListItem {
         ///   - titleText: The section header text (required, translatable)
         ///   - itemIDs: Array of item IDs that belong to this section. Used to determine if the section should be displayed after filtering.
         case titledSection(titleText: String, itemIDs: [String])
+
+        var isFeaturedItem: Bool {
+            switch self {
+            case .featuredTwoLinesSingleActionItem:
+                return true
+            case .titledSection, .twoLinesItem:
+                return false
+            }
+        }
     }
 
 }

@@ -27,6 +27,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    func submitPrompt(_ prompt: String)
     func submitStartChatAction()
     func submitOpenSettingsAction()
     func submitToggleSidebarAction()
@@ -44,6 +45,9 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 
     /// Called when the content handler receives a request to open Sync settings.
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling)
+
+    /// Called when the user submits a prompt.
+    func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling)
 }
 
 /// Handles content initialization, payload management, and URL building for AIChat.
@@ -60,15 +64,18 @@ protocol AIChatContentHandling {
     /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
     func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL
     
+    /// Submits a prompt to the AI Chat.
+    func submitPrompt(_ prompt: String)
+
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction()
-    
+
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction()
-    
+
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction()
-    
+
     /// Fires 'chat open' pixel and sets the AI Chat features as 'used before'
     func fireChatOpenPixelAndSetWasUsed()
 }
@@ -140,6 +147,10 @@ final class AIChatContentHandler: AIChatContentHandling {
         return components.url ?? aiChatSettings.aiChatURL
     }
     
+    func submitPrompt(_ prompt: String) {
+        userScript?.submitPrompt(prompt)
+    }
+
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction() {
         userScript?.submitStartChatAction()
@@ -182,8 +193,9 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
         if metric.metricName == .userDidSubmitPrompt
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+            delegate?.aiChatContentHandlerDidReceivePromptSubmission(self)
         }
-        
+
         pixelMetricHandler?.firePixelWithMetric(metric)
     }
 }

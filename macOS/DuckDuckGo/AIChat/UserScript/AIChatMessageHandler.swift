@@ -97,6 +97,7 @@ extension AIChatMessageHandler {
                                         supportsFullChatRestoration: true,
                                         supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext),
                                         supportsAIChatFullMode: false,
+                                        supportsAIChatContextualMode: false,
                                         appVersion: appVersion,
                                         supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
                                         supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,

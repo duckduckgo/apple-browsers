@@ -34,6 +34,7 @@ extension RemoteMessagingUI {
         enum Item {
             case section(title: String)
             case twoLinesCard(TwoLinesCard)
+            case featuredTwoLinesCard(FeaturedTwoLinesCard)
         }
 
         let screenTitle: String
@@ -52,6 +53,15 @@ extension RemoteMessagingUI.CardsListDisplayModel.Item {
         let title: String
         let description: String
         let disclosureIcon: Image?
+        let onAppear: (() -> Void)?
+        let onTapAction: (() -> Void)?
+    }
+
+    struct FeaturedTwoLinesCard {
+        let icon: String
+        let title: String
+        let description: String
+        let actionButtonTitle: String?
         let onAppear: (() -> Void)?
         let onTapAction: (() -> Void)?
     }
@@ -105,21 +115,21 @@ extension RemoteMessagingUI {
         let displayModel: CardsListDisplayModel.Item.TwoLinesCard
 
         var body: some View {
-            HStack(alignment: .top, spacing: Metrics.Card.contentHorizontalSpacing) {
+            HStack(alignment: .top, spacing: Metrics.Card.TwoLines.contentHorizontalSpacing) {
                 VStack(alignment: .leading) {
                     Image(displayModel.icon)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: Metrics.Card.iconSize.width, height: Metrics.Card.iconSize.height)
+                        .frame(width: Metrics.Card.TwoLines.iconSize.width, height: Metrics.Card.TwoLines.iconSize.height)
                 }
 
-                VStack(alignment: .leading, spacing: Metrics.Card.copyVerticalSpacing) {
+                VStack(alignment: .leading, spacing: Metrics.Card.TwoLines.copyVerticalSpacing) {
                     Text(verbatim: displayModel.title)
-                        .font(.system(size: Metrics.Card.titleSize, weight: .semibold))
+                        .font(.system(size: Metrics.Card.TwoLines.titleSize, weight: .semibold))
                         .foregroundStyle(Color.primary)
 
                     Text(verbatim: displayModel.description)
-                        .font(.system(size: Metrics.Card.descriptionSize))
+                        .font(.system(size: Metrics.Card.TwoLines.descriptionSize))
                         .foregroundStyle(Color.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -130,8 +140,8 @@ extension RemoteMessagingUI {
                     }
                 }
             }
-            .padding([.bottom, .top], Metrics.Card.contentVerticalPadding)
-            .padding([.trailing, .leading], Metrics.Card.contentHorizontalPadding)
+            .padding(.vertical, Metrics.Card.TwoLines.contentVerticalPadding)
+            .padding(.horizontal, Metrics.Card.TwoLines.contentHorizontalPadding)
             .background(Color(designSystemColor: .surface))
             .cornerRadius(Metrics.Card.contentCornerRadius)
             .overlay {
@@ -146,6 +156,63 @@ extension RemoteMessagingUI {
             }
         }
     }
+
+    struct FeaturedTwoLinesCardView: View {
+        let displayModel: CardsListDisplayModel.Item.FeaturedTwoLinesCard
+
+        var body: some View {
+            VStack(alignment: .center, spacing: Metrics.Card.FeaturedTwoLines.contentVerticalSpacing) {
+                Image(displayModel.icon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: Metrics.Card.FeaturedTwoLines.iconSize.width, height: Metrics.Card.FeaturedTwoLines.iconSize.height)
+
+                Text(verbatim: displayModel.title)
+                    .font(.system(size: Metrics.Card.FeaturedTwoLines.titleSize, weight: .bold))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.primary)
+
+                Text(verbatim: displayModel.description)
+                    .font(.system(size: Metrics.Card.FeaturedTwoLines.descriptionSize))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.secondary)
+
+                if let actionText = displayModel.actionButtonTitle, displayModel.onTapAction != nil {
+                    actionView(title: actionText)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, Metrics.Card.FeaturedTwoLines.contentVerticalPadding)
+            .padding(.horizontal, Metrics.Card.FeaturedTwoLines.contentHorizontalSpacing)
+            .background(Color(designSystemColor: .surface))
+            .cornerRadius(Metrics.Card.contentCornerRadius)
+            .overlay {
+                RoundedRectangle(cornerRadius: Metrics.Card.contentCornerRadius)
+                    .strokeBorder(.black.opacity(Metrics.Card.borderOpacity), lineWidth: Metrics.Card.borderWidth)
+            }
+            .onTapGesture {
+                displayModel.onTapAction?()
+            }
+            .onFirstAppear {
+                displayModel.onAppear?()
+            }
+        }
+
+        private func actionView(title: String) -> some View {
+            HStack(spacing: Metrics.Card.FeaturedTwoLines.buttonHorizontalSpacing) {
+                Text(title)
+                    .font(.system(size: Metrics.Card.FeaturedTwoLines.buttonTitleSize))
+                    .underline(true)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color(designSystemColor: .accent))
+
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.chevronMediumRight)
+            }
+            .frame(height: Metrics.Card.FeaturedTwoLines.buttonHeight)
+            .foregroundStyle(Color.init(designSystemColor: .accent))
+        }
+    }
+
 
 }
 
@@ -195,6 +262,8 @@ private extension RemoteMessagingUI.CardsListView {
                                 }
                         case let .twoLinesCard(cardInfo):
                             RemoteMessagingUI.TwoLinesCardView(displayModel: cardInfo)
+                        case let .featuredTwoLinesCard(cardInfo):
+                            RemoteMessagingUI.FeaturedTwoLinesCardView(displayModel: cardInfo)
                         }
                     }
                 }
@@ -324,16 +393,31 @@ private enum Metrics {
     }
 
     enum Card {
-        static let contentHorizontalSpacing: CGFloat = 12.0
-        static let contentVerticalPadding: CGFloat = 16.0
-        static let contentHorizontalPadding: CGFloat = 12.0
-        static let iconSize = CGSize(width: 48.0, height: 48.0)
-        static let copyVerticalSpacing: CGFloat = 4.0
-        static let titleSize: CGFloat = 15.0
-        static let descriptionSize: CGFloat = 13.0
         static let contentCornerRadius: CGFloat = 12.0
         static let borderOpacity: CGFloat = 0.05
         static let borderWidth: CGFloat = 1
+
+        enum TwoLines {
+            static let contentHorizontalSpacing: CGFloat = 12.0
+            static let contentVerticalPadding: CGFloat = 16.0
+            static let contentHorizontalPadding: CGFloat = 12.0
+            static let iconSize = CGSize(width: 48.0, height: 48.0)
+            static let copyVerticalSpacing: CGFloat = 4.0
+            static let titleSize: CGFloat = 15.0
+            static let descriptionSize: CGFloat = 13.0
+        }
+
+        enum FeaturedTwoLines {
+            static let contentHorizontalSpacing: CGFloat = 42.0
+            static let contentVerticalPadding: CGFloat = 16.0
+            static let contentVerticalSpacing: CGFloat = 8.0
+            static let iconSize = CGSize(width: 128.0, height: 96.0)
+            static let titleSize: CGFloat = 22.0
+            static let descriptionSize: CGFloat = 13.0
+            static let buttonHorizontalSpacing: CGFloat = 4.0
+            static let buttonTitleSize: CGFloat = 13.0
+            static let buttonHeight: CGFloat = 44.0
+        }
     }
 
 }
@@ -410,6 +494,18 @@ struct CardsList_Previews: PreviewProvider {
         ),
     ]
 
+    static let featuredItem: RemoteMessagingUI.CardsListDisplayModel.Item = .featuredTwoLinesCard(
+        .init(
+            icon: "RemoteImageAI",
+            title: "If You Want More AI",
+            description: "Explore new chat models recently added to Duck.ai for a more personalized chat experience that suits your style!",
+            actionButtonTitle: "Get Started",
+            onAppear: nil,
+            onTapAction: {}
+        )
+    )
+
+
     static let chevron: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall)
 
     static var previews: some View {
@@ -447,6 +543,14 @@ struct CardsList_Previews: PreviewProvider {
         cardsList(items: items, shouldShowAction: false)
             .previewDisplayName("What’s New No Main Action - Dark Mode")
             .preferredColorScheme(.dark)
+
+        cardsList(items: [featuredItem] + items, shouldShowAction: true)
+            .previewDisplayName("What’s New Big Card - Dark Mode")
+            .preferredColorScheme(.dark)
+
+        cardsList(items: [featuredItem] + items, shouldShowAction: true)
+            .previewDisplayName("What’s New Big Card - Light Mode")
+            .preferredColorScheme(.light)
     }
 }
 #endif

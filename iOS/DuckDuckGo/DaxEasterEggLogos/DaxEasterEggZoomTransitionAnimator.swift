@@ -60,18 +60,20 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
             transitionContext.completeTransition(false)
             return
         }
-        
+
         let containerView = transitionContext.containerView
         let finalFrame = transitionContext.finalFrame(for: toViewController)
-        
+
+        toViewController.hideSourceLogo()
+
         // Add the destination view controller's view
         toViewController.view.frame = finalFrame
         toViewController.view.alpha = 0
-        
+
         // Ensure container view also has clear background for the transition
         containerView.backgroundColor = .clear
         containerView.addSubview(toViewController.view)
-        
+
         // Create a temporary image view for animation with better quality
         let tempImageView = UIImageView(image: sourceImage)
         tempImageView.contentMode = .scaleAspectFit
@@ -84,7 +86,7 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
         let finalImageFrame = DaxEasterEggLayout.calculateLogoFrame(
             for: sourceImage?.size ?? CGSize(width: 100, height: 100),
             in: finalFrame,
-            safeAreaInsets: toViewController.view.safeAreaInsets
+            safeAreaInsets: containerView.safeAreaInsets
         )
         
         // Animate the transition using spring with high damping to prevent overshoot
@@ -104,16 +106,15 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
             transitionContext.completeTransition(false)
             return
         }
-        
+
         let containerView = transitionContext.containerView
-        let finalFrame = transitionContext.finalFrame(for: fromViewController)
-        
+
         // Get the current image from the full-screen view controller
         let currentImage = fromViewController.getCurrentImage()
-        
+
         let calculatedImageFrame = DaxEasterEggLayout.calculateLogoFrame(
             for: currentImage?.size ?? CGSize(width: 100, height: 100),
-            in: finalFrame,
+            in: fromViewController.view.frame,
             safeAreaInsets: fromViewController.view.safeAreaInsets
         )
         
@@ -132,6 +133,7 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
             tempImageView.frame = self.sourceFrame
         } completion: { _ in
             tempImageView.removeFromSuperview()
+            fromViewController.showSourceLogo()
             transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
         }
     }

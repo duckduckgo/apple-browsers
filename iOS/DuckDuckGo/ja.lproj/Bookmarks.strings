@@ -1,0 +1,45 @@
+/* Class = "UILabel"; text = "Label"; ObjectID = "7VM-DV-W3e"; */
+"7VM-DV-W3e.text" = "ラベル";
+
+/* Class = "UILabel"; text = "Label"; ObjectID = "061-pX-T9z"; */
+"061-pX-T9z.text" = "ラベル";
+
+/* Class = "UILabel"; text = "Label"; ObjectID = "cV4-pj-JNb"; */
+"cV4-pj-JNb.text" = "ラベル";
+
+/* Class = "UILabel"; text = "Delete"; ObjectID = "hEJ-T8-Tdl"; */
+"hEJ-T8-Tdl.text" = "削除";
+
+/* Class = "UILabel"; text = "No matches found"; ObjectID = "hqG-b3-Fq3"; */
+"hqG-b3-Fq3.text" = "一致するものが見つかりませんでした";
+
+/* Class = "UILabel"; text = "Label"; ObjectID = "K2O-E5-pyF"; */
+"K2O-E5-pyF.text" = "ラベル";
+
+/* Class = "UILabel"; text = "Add Folder"; ObjectID = "K8e-rz-6qx"; */
+"K8e-rz-6qx.text" = "フォルダーを追加";
+
+/* Class = "UITextField"; placeholder = "Title"; ObjectID = "KiU-Wb-7jj"; */
+"KiU-Wb-7jj.placeholder" = "タイトル";
+
+/* Class = "UIBarButtonItem"; title = "Edit"; ObjectID = "Ksa-Pd-Mv5"; */
+"Ksa-Pd-Mv5.title" = "編集";
+
+/* Class = "UILabel"; text = "Favorite"; ObjectID = "mRK-XI-Rr8"; */
+"mRK-XI-Rr8.text" = "お気に入り";
+
+/* Class = "UINavigationItem"; title = "Bookmarks"; ObjectID = "oMv-60-GGW"; */
+"oMv-60-GGW.title" = "ブックマーク";
+
+/* Class = "UINavigationItem"; title = "Add Folder"; ObjectID = "qaZ-4Z-o70"; */
+"qaZ-4Z-o70.title" = "フォルダーを追加";
+
+/* Class = "UITextField"; placeholder = "Title"; ObjectID = "rT4-Yr-P8D"; */
+"rT4-Yr-P8D.placeholder" = "タイトル";
+
+/* Class = "UIBarButtonItem"; title = "Done"; ObjectID = "RuZ-zV-tu8"; */
+"RuZ-zV-tu8.title" = "完了";
+
+/* Class = "UITextField"; placeholder = "URL"; ObjectID = "YqY-sP-hhb"; */
+"YqY-sP-hhb.placeholder" = "URL";
+

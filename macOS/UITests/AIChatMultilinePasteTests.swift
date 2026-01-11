@@ -42,61 +42,9 @@ class AIChatMultilinePasteTests: UITestCase {
         app.terminate()
     }
 
-    /// Tests that pasting multiline text into the address bar switches to Duck.ai mode when the toggle setting is ON
-    func test_pasteMultilineText_withToggleSettingON_switchesToDuckAIMode() throws {
-        throw XCTSkip("Temporarily disabled")
-
-        // Navigate to AI Chat settings and enable the Search/Duck.ai toggle
-        addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
-
-        let toggleSetting = app.checkBoxes[AccessibilityIdentifiers.showSearchAndDuckAIToggle]
-        XCTAssertTrue(toggleSetting.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Search/Duck.ai toggle setting should exist")
-
-        // Ensure the toggle is ON
-        if toggleSetting.value as? Bool == false {
-            toggleSetting.click()
-        }
-        XCTAssertEqual(toggleSetting.value as? Bool, true, "Search/Duck.ai toggle should be ON")
-
-        // Close settings and go to a new tab
-        app.typeKey("w", modifierFlags: .command)
-        app.openNewTab()
-
-        // Focus the address bar using keyboard shortcut to ensure it's in editing mode
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
-        // Copy multiline text to clipboard
-        let multilineText = "Hello\nWorld\nThis is a test"
-        copyTextToClipboard(multilineText)
-
-        // Paste into address bar (Cmd+V)
-        app.typeKey("v", modifierFlags: .command)
-
-        // Verify the Duck.ai panel appeared by checking for the container view
-        let aiChatContainerView = app.windows.firstMatch.descendants(matching: .any)[AccessibilityIdentifiers.aiChatOmnibarContainerView]
-        XCTAssertTrue(
-            aiChatContainerView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Duck.ai container view should appear after pasting multiline text with toggle ON"
-        )
-    }
-
-    /// Tests that pasting multiline text into the address bar does NOT switch to Duck.ai mode when the toggle setting is OFF
-    func test_pasteMultilineText_withToggleSettingOFF_doesNotSwitchToDuckAIMode() throws {
-        // Navigate to AI Chat settings and disable the Search/Duck.ai toggle
-        addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
-
-        let toggleSetting = app.checkBoxes[AccessibilityIdentifiers.showSearchAndDuckAIToggle]
-        XCTAssertTrue(toggleSetting.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Search/Duck.ai toggle setting should exist")
-
-        // Ensure the toggle is OFF
-        if toggleSetting.value as? Bool == true {
-            toggleSetting.click()
-        }
-        XCTAssertEqual(toggleSetting.value as? Bool, false, "Search/Duck.ai toggle should be OFF")
-
-        // Close settings and go to a new tab
-        app.typeKey("w", modifierFlags: .command)
+    /// Tests that pasting multiline text into the address bar does NOT switch to Duck.ai mode
+    func test_pasteMultilineText_doesNotSwitchToDuckAIMode() throws {
+        // Open a new tab
         app.openNewTab()
 
         // Focus the address bar using keyboard shortcut to ensure it's in editing mode
@@ -116,52 +64,14 @@ class AIChatMultilinePasteTests: UITestCase {
         let appeared = aiChatContainerView.waitForExistence(timeout: 0.5)
         XCTAssertFalse(
             appeared,
-            "Duck.ai container view should NOT appear after pasting multiline text with toggle OFF"
+            "Duck.ai container view should NOT appear after pasting multiline text"
         )
 
         // The text should be in the address bar (newlines replaced with spaces)
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(
             addressBarValue.contains("Hello") || addressBarValue.contains("World"),
-            "Address bar should contain the pasted text when toggle is OFF"
-        )
-    }
-
-    /// Tests that pasting single-line text does NOT trigger Duck.ai mode switch
-    func test_pasteSingleLineText_doesNotSwitchToDuckAIMode() throws {
-        // Navigate to AI Chat settings and enable the Search/Duck.ai toggle
-        addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
-
-        let toggleSetting = app.checkBoxes[AccessibilityIdentifiers.showSearchAndDuckAIToggle]
-        XCTAssertTrue(toggleSetting.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Search/Duck.ai toggle setting should exist")
-
-        // Ensure the toggle is ON
-        if toggleSetting.value as? Bool == false {
-            toggleSetting.click()
-        }
-
-        // Close settings and go to a new tab
-        app.typeKey("w", modifierFlags: .command)
-        app.openNewTab()
-
-        // Focus the address bar using keyboard shortcut to ensure it's in editing mode
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
-        // Copy single-line text to clipboard (no newlines)
-        let singleLineText = "Hello World This is a test"
-        copyTextToClipboard(singleLineText)
-
-        // Paste into address bar (Cmd+V)
-        app.typeKey("v", modifierFlags: .command)
-
-        // Verify the Duck.ai panel did NOT appear
-        let aiChatContainerView = app.windows.firstMatch.descendants(matching: .any)[AccessibilityIdentifiers.aiChatOmnibarContainerView]
-        // Wait briefly to ensure no mode switch occurs
-        let appeared = aiChatContainerView.waitForExistence(timeout: 0.5)
-        XCTAssertFalse(
-            appeared,
-            "Duck.ai container view should NOT appear after pasting single-line text"
+            "Address bar should contain the pasted text"
         )
     }
 

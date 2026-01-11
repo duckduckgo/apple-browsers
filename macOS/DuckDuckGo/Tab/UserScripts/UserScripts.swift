@@ -227,7 +227,7 @@ final class UserScripts: UserScriptsProvider {
                                                              stripePurchaseFlow: stripePurchaseFlow,
                                                              uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                              aiChatURL: AIChatRemoteSettings().aiChatURL,
-                                                             wideEvent: WideEvent())
+                                                             wideEvent: Application.appDelegate.wideEvent)
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)

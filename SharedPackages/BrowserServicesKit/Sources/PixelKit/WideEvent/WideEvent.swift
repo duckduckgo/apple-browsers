@@ -68,7 +68,7 @@ public final class WideEvent: WideEventManaging {
                 sender: WideEventSending = DefaultWideEventSender(),
                 sampler: WideEventSampling? = nil,
                 failureEventMapping: EventMapping<WideEventFailureEvent>? = WideEventFailureEvent.eventMapping,
-                sendPOSTEnabled: @escaping () -> Bool = { true }) {
+                sendPOSTEnabled: @escaping () -> Bool) {
         self.storage = storage
         self.sender = sender
         self.sampler = sampler ?? DefaultWideEventSampler()

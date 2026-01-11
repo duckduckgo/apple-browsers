@@ -31,6 +31,7 @@ import Subscription
 import VPN
 import WidgetKit
 import WireGuard
+import PrivacyConfig
 
 final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
@@ -40,7 +41,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     private let subscriptionManager: (any SubscriptionManagerV2)?
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
-    private let wideEvent: WideEventManaging = WideEvent()
+    private let wideEvent: WideEventManaging
 
     // MARK: - PacketTunnelProvider.Event reporting
 
@@ -437,6 +438,16 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         // Load cached config (if any)
         privacyConfigurationManager.reload(etag: configurationStore.loadEtag(for: .privacyConfiguration), data: configurationStore.loadData(for: .privacyConfiguration))
 
+        let featureFlagger = DefaultFeatureFlagger(
+            internalUserDecider: privacyConfigurationManager.internalUserDecider,
+            privacyConfigManager: privacyConfigurationManager,
+            experimentManager: nil
+        )
+
+        self.wideEvent = WideEvent(sendPOSTEnabled: { [featureFlagger] in
+            featureFlagger.isFeatureOn(.wideEventPostEndpoint)
+        })
+
         // Align Subscription environment to the VPN environment
         var subscriptionEnvironment = SubscriptionEnvironment.default
         switch settings.selectedEnvironment {
@@ -473,7 +484,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
-                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: {
+                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
 #if DEBUG
             return true // Allow the refresh event when using staging in debug mode, for easier testing
 #else
@@ -491,7 +502,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                                subscriptionEnvironment: subscriptionEnvironment,
                                                                pixelHandler: pixelHandler,
                                                                initForPurchase: false,
-                                                               wideEvent: self.wideEvent,
+                                                               wideEvent: wideEvent,
                                                                isAuthV2WideEventEnabled: {
 #if DEBUG
             return true // Allow the refresh event when using staging in debug mode, for easier testing
@@ -536,6 +547,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    providerEvents: Self.packetTunnelProviderEvents,
                    settings: settings,
                    defaults: .networkProtectionGroupDefaults,
+                   wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck)
         startMonitoringMemoryPressureEvents()
         observeServerChanges()

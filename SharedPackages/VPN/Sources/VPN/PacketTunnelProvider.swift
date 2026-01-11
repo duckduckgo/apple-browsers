@@ -412,7 +412,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 providerEvents: EventMapping<Event>,
                 settings: VPNSettings,
                 defaults: UserDefaults,
-                wideEvent: WideEventManaging = WideEvent(),
+                wideEvent: WideEventManaging = WideEvent(sendPOSTEnabled: { true }),
                 bandwidthAnalyzer: BandwidthAnalyzing? = nil,
                 latencyMonitor: LatencyMonitoring = NetworkProtectionLatencyMonitor(),
                 entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),

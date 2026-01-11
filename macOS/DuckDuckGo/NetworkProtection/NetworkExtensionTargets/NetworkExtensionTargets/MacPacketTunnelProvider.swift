@@ -120,7 +120,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     }
 
     private let notificationCenter: NetworkProtectionNotificationCenter = DistributedNotificationCenter.default()
-    private let wideEvent: WideEventManaging = WideEvent()
+    private let wideEvent: WideEventManaging = WideEvent(sendPOSTEnabled: { true })
 
     // MARK: - PacketTunnelProvider.Event reporting
 
@@ -497,6 +497,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    providerEvents: Self.packetTunnelProviderEvents,
                    settings: settings,
                    defaults: defaults,
+                   wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck)
 
         setupPixels()

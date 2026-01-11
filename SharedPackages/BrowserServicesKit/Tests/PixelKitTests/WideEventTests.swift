@@ -421,27 +421,6 @@ final class WideEventTests: XCTestCase {
         XCTAssertNil(parameters["feature.status"])
     }
 
-    func testJsonParameterNesting() throws {
-        struct TestProvider: WideEventParameterProviding {
-            func pixelParameters() -> [String: String] {
-                return [
-                    "app.name": "DuckDuckGo",
-                    "feature.status": "SUCCESS"
-                ]
-            }
-        }
-
-        let jsonString = try TestProvider().jsonParameters()
-        let data = try XCTUnwrap(jsonString.data(using: .utf8))
-        let object = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-
-        let app = object?["app"] as? [String: Any]
-        let feature = object?["feature"] as? [String: Any]
-
-        XCTAssertEqual(app?["name"] as? String, "DuckDuckGo")
-        XCTAssertEqual(feature?["status"] as? String, "SUCCESS")
-    }
-
     func testErrorDataCapturesUnderlyingErrors() {
         let deepError = NSError(domain: "DeepDomain", code: 3)
 

@@ -24,6 +24,7 @@ import UserScript
 import WebKit
 @testable import AIChat
 
+// swiftlint:disable inclusive_language
 class AIChatUserScriptHandlerTests: XCTestCase {
     var aiChatUserScriptHandler: AIChatUserScriptHandler!
     var mockFeatureFlagger: MockFeatureFlagger!
@@ -359,6 +360,7 @@ struct MockUserScriptMessage: UserScriptMessage {
         self.messageWebView = nil // Default value
     }
 }
+// swiftlint: enable inclusive_language
 
 /// Mock implementation of AIChatFullModeFeatureProviding for testing
 final class MockAIChatFullModeFeatureProviding: AIChatFullModeFeatureProviding {

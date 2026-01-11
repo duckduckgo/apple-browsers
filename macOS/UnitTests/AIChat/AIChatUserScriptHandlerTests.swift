@@ -57,6 +57,7 @@ final class MockAIChatMessageHandler: AIChatMessageHandling {
     }
 }
 
+// swiftlint:disable inclusive_language
 struct AIChatUserScriptHandlerTests {
     private var storage = MockAIChatPreferencesStorage()
     private var messageHandler = MockAIChatMessageHandler()
@@ -574,7 +575,6 @@ struct AIChatUserScriptHandlerTests {
         #expect(syncService.setAIChatHistoryEnabledCalls.isEmpty)
     }
 
-
     // MARK: - Sync helpers
 
     private func makeFeatureFlagger(aiChatSyncEnabled: Bool) -> MockFeatureFlagger {
@@ -603,4 +603,4 @@ struct AIChatUserScriptHandlerTests {
         )
     }
 }
-
+// swiftlint:enable inclusive_language

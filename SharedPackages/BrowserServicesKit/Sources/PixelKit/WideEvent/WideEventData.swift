@@ -144,7 +144,7 @@ extension WideEventGlobalData: WideEventParameterProviding {
 
         parameters[WideEventParameter.Global.platform] = platform
         parameters[WideEventParameter.Global.type] = type
-        parameters[WideEventParameter.Global.sampleRate] = Int(sampleRate)
+        parameters[WideEventParameter.Global.sampleRate] = sampleRate
 
         return parameters
     }

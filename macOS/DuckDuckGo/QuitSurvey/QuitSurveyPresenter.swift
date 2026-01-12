@@ -83,4 +83,52 @@ final class QuitSurveyPresenter {
             }
         }
     }
+
+    /// Shows the quit survey using the original synchronous pattern (fallback).
+    /// This version directly calls `NSApp.reply(toApplicationShouldTerminate: true)` when the user quits.
+    func showSurveySyncFallback() {
+        var quitSurveyWindow: NSWindow?
+
+        let surveyView = QuitSurveyFlowView(
+            persistor: persistor,
+            onQuit: {
+                if let parentWindow = quitSurveyWindow?.sheetParent {
+                    parentWindow.endSheet(quitSurveyWindow!)
+                } else {
+                    quitSurveyWindow?.close()
+                }
+                NSApp.reply(toApplicationShouldTerminate: true)
+            },
+            onResize: { width, height in
+                guard let window = quitSurveyWindow else { return }
+                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
+                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+                window.setFrame(newFrame, display: true, animate: false)
+            }
+        )
+
+        let controller = QuitSurveyViewController(rootView: surveyView)
+        quitSurveyWindow = NSWindow(contentViewController: controller)
+
+        guard let window = quitSurveyWindow else { return }
+
+        window.styleMask.remove(.resizable)
+        let windowRect = NSRect(
+            x: 0,
+            y: 0,
+            width: QuitSurveyViewController.Constants.initialWidth,
+            height: QuitSurveyViewController.Constants.initialHeight
+        )
+        window.setFrame(windowRect, display: true)
+
+        // Show as sheet on the main window, or as standalone window if no main window
+        if let parentWindowController = windowControllersManager.lastKeyMainWindowController,
+           let parentWindow = parentWindowController.window {
+            parentWindow.beginSheet(window) { _ in }
+        } else {
+            // Fallback: show as a centered window
+            window.center()
+            window.makeKeyAndOrderFront(nil)
+        }
+    }
 }

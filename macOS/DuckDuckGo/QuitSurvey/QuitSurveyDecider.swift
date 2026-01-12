@@ -122,12 +122,12 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
     }
 }
 
-// MARK: - Termination Decider
+// MARK: - App Termination Decider
 
 /// Handles quit survey presentation during app termination.
 /// Returns a task if the survey needs to be presented, nil otherwise.
 @MainActor
-struct QuitSurveyTerminationDecider {
+struct QuitSurveyAppTerminationDecider {
     let featureFlagger: FeatureFlagger
     let dataClearingPreferences: DataClearingPreferences
     let downloadManager: FileDownloadManagerProtocol

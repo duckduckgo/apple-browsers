@@ -20,7 +20,7 @@ import AppKit
 import Combine
 import Foundation
 
-final class AutoClearHandler {
+final class AutoClearHandler: ApplicationTerminationDecider {
 
     private let dataClearingPreferences: DataClearingPreferences
     private let startupPreferences: StartupPreferences
@@ -46,30 +46,35 @@ final class AutoClearHandler {
         resetTheCorrectTerminationFlag()
     }
 
-    var onAutoClearCompleted: (() -> Void)?
+    // MARK: - ApplicationTerminationDecider
 
     @MainActor
-    func handleAppTermination() -> NSApplication.TerminateReply? {
-        guard dataClearingPreferences.isAutoClearEnabled else { return nil }
+    func shouldTerminate(isAsync: Bool) -> TerminationQuery {
+        guard dataClearingPreferences.isAutoClearEnabled else { return .sync(.next) }
 
         if dataClearingPreferences.isWarnBeforeClearingEnabled {
             switch confirmAutoClear() {
             case .alertFirstButtonReturn:
                 // Clear and Quit
-                performAutoClear()
-                return .terminateLater
+                return .async(Task {
+                    await performAutoClear()
+                    return .next
+                })
             case .alertSecondButtonReturn:
                 // Quit without Clearing Data
                 appTerminationHandledCorrectly = true
-                return .terminateNow
+                return .sync(.next)
             default:
                 // Cancel
-                return .terminateCancel
+                return .sync(.cancel)
             }
         }
 
-        performAutoClear()
-        return .terminateLater
+        // Autoclear without warning
+        return .async(Task {
+            await performAutoClear()
+            return .next
+        })
     }
 
     func resetTheCorrectTerminationFlag() {
@@ -85,13 +90,49 @@ final class AutoClearHandler {
     }
 
     @MainActor
-    private func performAutoClear() {
+    private func performAutoClear() async {
+        if dataClearingPreferences.isAutoClearAIChatHistoryEnabled {
+            syncAIChatsCleaner?.recordLocalClear(date: Date())
+        }
+        await fireViewModel.fire.burnAll(isBurnOnExit: true, includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
+        appTerminationHandledCorrectly = true
+    }
+
+   // MARK: - Fallback (Old Synchronous Pattern - To be removed)
+
+    @MainActor
+    func handleAppTerminationFallback() -> NSApplication.TerminateReply? {
+        guard dataClearingPreferences.isAutoClearEnabled else { return nil }
+
+        if dataClearingPreferences.isWarnBeforeClearingEnabled {
+            switch confirmAutoClear() {
+            case .alertFirstButtonReturn:
+                // Clear and Quit
+                performAutoClearSyncFallback()
+                return .terminateLater
+            case .alertSecondButtonReturn:
+                // Quit without Clearing Data
+                appTerminationHandledCorrectly = true
+                return .terminateNow
+            default:
+                // Cancel
+                return .terminateCancel
+            }
+        }
+
+        // Autoclear without warning
+        performAutoClearSyncFallback()
+        return .terminateLater
+    }
+
+    @MainActor
+    private func performAutoClearSyncFallback() {
         if dataClearingPreferences.isAutoClearAIChatHistoryEnabled {
             syncAIChatsCleaner?.recordLocalClear(date: Date())
         }
         fireViewModel.fire.burnAll(isBurnOnExit: true, includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled) { [weak self] in
             self?.appTerminationHandledCorrectly = true
-            self?.onAutoClearCompleted?()
+            NSApp.reply(toApplicationShouldTerminate: true)
         }
     }
 

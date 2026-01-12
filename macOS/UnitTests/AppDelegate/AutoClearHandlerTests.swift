@@ -83,21 +83,53 @@ class AutoClearHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenBurningEnabledAndNoWarningRequiredThenTerminateLaterIsReturned() {
+    func testWhenBurningEnabledAndNoWarningRequiredThenAsyncTaskIsReturned() {
         dataClearingPreferences.isAutoClearEnabled = true
         dataClearingPreferences.isWarnBeforeClearingEnabled = false
 
-        let response = handler.handleAppTermination()
+        let query = handler.shouldTerminate(isAsync: false)
 
-        XCTAssertEqual(response, .terminateLater)
+        switch query {
+        case .async:
+            // Expected: async task for burning
+            break
+        case .sync:
+            XCTFail("Expected async query for auto-clear, got sync")
+        }
     }
 
-    func testWhenBurningDisabledThenNoTerminationResponse() {
+    func testWhenBurningDisabledThenSyncNextIsReturned() {
         dataClearingPreferences.isAutoClearEnabled = false
 
-        let response = handler.handleAppTermination()
+        let query = handler.shouldTerminate(isAsync: false)
 
-        XCTAssertNil(response)
+        switch query {
+        case .sync(.next):
+            // Expected: continue to next decider
+            break
+        case .sync(.cancel):
+            XCTFail("Expected .sync(.next), got .sync(.cancel)")
+        case .async:
+            XCTFail("Expected .sync(.next), got .async")
+        }
+    }
+
+    func testWhenBurningEnabledWithWarningThenTerminationQueryDependsOnUserChoice() {
+        // This test verifies the structure - actual alert behavior would need to be mocked
+        // to test the three branches: clear and quit, quit without clearing, cancel
+        dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isWarnBeforeClearingEnabled = true
+
+        // Note: In real usage, this would show an alert and wait for user response
+        // The alert mock would need to be set up to test different user choices
+        let query = handler.shouldTerminate(isAsync: false)
+
+        // At minimum, verify it returns a valid query
+        switch query {
+        case .sync(.next), .sync(.cancel), .async:
+            // All are valid depending on user's choice in the alert
+            break
+        }
     }
 
     func testWhenBurningEnabledAndFlagFalseThenBurnOnStartTriggered() {

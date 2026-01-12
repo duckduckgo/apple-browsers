@@ -28,6 +28,7 @@ import XCTest
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     private var provider: NewTabPageNextStepsSingleCardProvider!
     private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
@@ -45,6 +46,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     private var duckPlayerPreferences: DuckPlayerPreferencesPersistorMock!
     private var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
     private var syncService: MockDDGSyncing!
+    private var syncLauncher: MockSyncDeviceFlowLauncher!
 
     @MainActor
     override func setUp() async throws {
@@ -69,6 +71,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         duckPlayerPreferences = DuckPlayerPreferencesPersistorMock()
         subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
         syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
+        syncLauncher = MockSyncDeviceFlowLauncher()
 
         keyValueStore = try MockKeyValueFileStore()
         legacyKeyValueStore = MockKeyValueStore()
@@ -86,7 +89,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-            syncService: syncService
+            syncService: syncService,
+            syncLauncher: syncLauncher
         )
     }
 
@@ -107,6 +111,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         duckPlayerPreferences = nil
         subscriptionCardVisibilityManager = nil
         syncService = nil
+        syncLauncher = nil
         super.tearDown()
     }
 
@@ -411,10 +416,11 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     // Sync Card
-    func testWhenSyncCardShouldShowThenSyncCardIsVisible() {
+    func testWhenSyncCardShouldShowThenSyncCardIsVisibleAndSyncLauncherIsSet() {
         let testProvider = createProvider(syncConnected: false)
 
         XCTAssertTrue(testProvider.cards.contains(.sync))
+        XCTAssertNotNil(actionHandler.syncLauncher)
     }
 
     func testWhenSyncCardShouldNotShowThenSyncCardIsNotVisible() {
@@ -748,7 +754,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             emailManager: testEmailManager,
             duckPlayerPreferences: testDuckPlayerPreferences,
             subscriptionCardVisibilityManager: testSubscriptionCardVisibilityManager,
-            syncService: testSyncService
+            syncService: testSyncService,
+            syncLauncher: syncLauncher
         )
     }
 

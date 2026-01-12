@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Foundation
 import NewTabPage
+import os.log
 import PrivacyConfig
 import Subscription
 
@@ -28,6 +29,9 @@ protocol NewTabPageNextStepsCardsActionHandling {
     ///   - card: The identifier of the card for which to perform the action.
     ///   - completion: A closure to be called upon completion of the action, if needed to refresh the cards state.
     @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?)
+
+    /// Sets the sync launcher to use when performing sync actions.
+    func setSyncLauncher(_ syncLauncher: SyncDeviceFlowLaunching)
 }
 
 protocol NewTabPageNextStepsCardsTabOpening {
@@ -43,7 +47,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let tabOpener: NewTabPageNextStepsCardsTabOpening
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
     private let newTabPageNavigator: NewTabPageNavigator
-    private let syncLauncher: SyncDeviceFlowLaunching?
+    private var syncLauncher: SyncDeviceFlowLaunching?
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
@@ -89,6 +93,10 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         case .sync:
             performSyncAction(completion: refreshCardsAction)
         }
+    }
+
+    func setSyncLauncher(_ syncLauncher: SyncDeviceFlowLaunching) {
+        self.syncLauncher = syncLauncher
     }
 }
 
@@ -142,7 +150,12 @@ private extension NewTabPageNextStepsCardsActionHandler {
 
     @MainActor
     func performSyncAction(completion: (() -> Void)?) {
-        let syncLauncher = syncLauncher ?? DeviceSyncCoordinator()
-        syncLauncher?.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
+        guard let syncLauncher else {
+            Logger.sync.error("Sync card action triggered but sync launcher is not available")
+            completion?()
+            return
+        }
+
+        syncLauncher.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
     }
 }

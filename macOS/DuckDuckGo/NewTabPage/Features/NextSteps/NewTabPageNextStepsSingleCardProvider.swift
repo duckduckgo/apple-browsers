@@ -41,6 +41,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     private let syncService: DDGSyncing?
+    private let syncLauncher: SyncDeviceFlowLaunching?
 
     enum Constants {
         /// Maximum times a card can be dismissed before it is permanently hidden.
@@ -84,6 +85,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
             .eraseToAnyPublisher()
     }
 
+    @MainActor
     init(cardActionHandler: NewTabPageNextStepsCardsActionHandling,
          pixelHandler: NewTabPageNextStepsCardsPixelHandling,
          persistor: NewTabPageNextStepsCardsPersisting,
@@ -96,7 +98,8 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          emailManager: EmailManager = EmailManager(),
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
-         syncService: DDGSyncing?) {
+         syncService: DDGSyncing?,
+         syncLauncher: SyncDeviceFlowLaunching? = nil) {
         self.cardActionHandler = cardActionHandler
         self.pixelHandler = pixelHandler
         self.persistor = persistor
@@ -110,6 +113,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.duckPlayerPreferences = duckPlayerPreferences
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
         self.syncService = syncService
+        self.syncLauncher = syncLauncher
 
         refreshCardList()
         observeSubscriptionCardVisibilityChanges()
@@ -149,6 +153,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
 private extension NewTabPageNextStepsSingleCardProvider {
 
+    @MainActor
     func refreshCardList() {
         // For now, we show the visible cards in a fixed order as defined in `NewTabPageDataModel.CardID.allCases`.
         // New grouping/ordering logic will be added in https://app.asana.com/1/137249556945/project/1209825025475019/task/1212359353583684?focus=true
@@ -162,6 +167,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
 
     /// Returns whether the card should be shown in the list of visible cards.
     /// This checks both if the card has been permanently dismissed and if the card's specific visibility conditions are met.
+    @MainActor
     func shouldShowCard(_ card: NewTabPageDataModel.CardID) -> Bool {
         guard !isCardPermanentlyDismissed(card) else {
             return false
@@ -187,7 +193,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .personalizeBrowser:
             return !appearancePreferences.didOpenCustomizationSettings
         case .sync:
-            return syncService?.authState == .inactive
+            return syncFeatureVisibility.shouldShowSyncFeature
         }
     }
 
@@ -224,7 +230,9 @@ private extension NewTabPageNextStepsSingleCardProvider {
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshCardList()
+                Task { @MainActor in
+                    self?.refreshCardList()
+                }
             }
             .store(in: &cancellables)
     }
@@ -233,7 +241,9 @@ private extension NewTabPageNextStepsSingleCardProvider {
         NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshCardList()
+                Task { @MainActor in
+                    self?.refreshCardList()
+                }
             }
             .store(in: &cancellables)
     }
@@ -244,8 +254,27 @@ private extension NewTabPageNextStepsSingleCardProvider {
         NotificationCenter.default.publisher(for: .newTabPageWebViewDidAppear)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshCardList()
+                Task { @MainActor in
+                    self?.refreshCardList()
+                }
             }
             .store(in: &cancellables)
+    }
+
+    /// Determines the visibility of the Sync feature card based on the sync service state.
+    ///
+    /// This also instantiates the device sync launcher and sets it in the card action handler if needed.
+    /// This is done at the point where the visibility is checked, and not passed as a dependency (except for testing),
+    /// to give time for the core Sync dependencies to be ready.
+    @MainActor
+    private var syncFeatureVisibility: SyncFeatureVisibility {
+        if syncService?.featureFlags.contains(.all) == true,
+            case .inactive = syncService?.authState,
+            let deviceSyncLauncher = syncLauncher ?? DeviceSyncCoordinator() {
+            cardActionHandler.setSyncLauncher(deviceSyncLauncher)
+            return .show(syncLauncher: deviceSyncLauncher)
+        } else {
+            return .hide
+        }
     }
 }

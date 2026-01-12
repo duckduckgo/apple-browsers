@@ -185,7 +185,7 @@ public final actor Watchdog {
         Self.logger.info("Watchdog resumed")
 
         // Reset the heartbeat and state to start fresh after resume
-        await monitor.resetHeartbeat()
+        monitor.resetHeartbeat()
         resetHangState()
 
         start()
@@ -200,7 +200,7 @@ public final actor Watchdog {
     // MARK: - Monitoring
 
     private func runMonitoringLoop() async {
-        await monitor.resetHeartbeat()
+        monitor.resetHeartbeat()
 
         while !Task.isCancelled {
             heartbeatUpdateTask?.cancel()
@@ -221,7 +221,7 @@ public final actor Watchdog {
             }
 
             // Check if the heartbeat was actually updated
-            let timeSinceLastHeartbeat = await monitor.timeSinceLastHeartbeat()
+            let timeSinceLastHeartbeat = monitor.timeSinceLastHeartbeat()
             handleHangDetection(timeSinceLastHeartbeat: timeSinceLastHeartbeat)
         }
     }
@@ -375,7 +375,7 @@ private final class RecoveryState {
 }
 
 /// Actor that manages the heartbeat timestamp in a thread-safe way
-private actor WatchdogMonitor {
+private class WatchdogMonitor {
     private var lastHeartbeat = Date()
 
     func resetHeartbeat() {

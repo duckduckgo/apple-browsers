@@ -78,15 +78,10 @@ final class DefaultBrowserAndDockPromptService {
     }
 
     func applicationDidBecomeActive() {
-        guard shouldRecordActivity() else { return }
         userActivityManager.recordActivity()
     }
 
     func handleNotificationResponse(_ response: DefaultBrowserAndDockPromptNotificationIdentifier) async {
         await notificationPresenter.handleNotificationResponse(for: response)
-    }
-
-    private func shouldRecordActivity() -> Bool {
-        featureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled
     }
 }

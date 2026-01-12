@@ -25,19 +25,6 @@ struct DefaultBrowserAndDockPromptFeatureFlaggerTests {
     let privacyConfigManagerMock = MockPrivacyConfigurationManager()
     let featureFlaggerMock = MockFeatureFlagger()
 
-    @Test("Check Feature Flag For Inactive Users Returns The Correct Value", arguments: [true, false])
-    func isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
-        // GIVEN
-        featureFlaggerMock.enabledFeatureFlags = isEnabled ? [.scheduledDefaultBrowserAndDockPromptsInactiveUser] : []
-        let sut = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManagerMock, featureFlagger: featureFlaggerMock)
-
-        // WHEN
-        let result = sut.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled
-
-        // THEN
-        #expect(result == isEnabled)
-    }
-
     @Test("Check Remote Subfeature Settings Are Returned Correctly")
     func checkRemoteSettingsAreReturnedCorrectly() throws {
         // GIVEN

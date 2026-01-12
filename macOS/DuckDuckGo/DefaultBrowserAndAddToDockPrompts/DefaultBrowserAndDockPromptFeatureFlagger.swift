@@ -20,14 +20,6 @@ import Foundation
 import PrivacyConfig
 import FeatureFlags
 
-public protocol DefaultBrowserAndDockPromptInactiveUserFeatureFlagProvider {
-    /// A Boolean value indicating whether Set Default Browser (SAD) and Add To Dock (ATT) are enabled for inactive users.
-    /// - Returns: `true` if the feature is enabled; otherwise, `false`.
-    var isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled: Bool { get }
-}
-
-public typealias DefaultBrowserAndDockPromptFeatureFlagProvider = DefaultBrowserAndDockPromptInactiveUserFeatureFlagProvider
-
 public protocol DefaultBrowserAndDockPromptActiveUserFeatureFlagsSettingsProvider {
     /// The number of days to wait after app installation before showing the first popover
     var firstPopoverDelayDays: Int { get }
@@ -44,7 +36,7 @@ public protocol DefaultBrowserAndDockPromptInactiveUserFeatureFlagsSettingsProvi
     var inactiveModalNumberOfInactiveDays: Int { get }
 }
 
-public typealias DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider = DefaultBrowserAndDockPromptActiveUserFeatureFlagsSettingsProvider & DefaultBrowserAndDockPromptInactiveUserFeatureFlagsSettingsProvider
+public typealias DefaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptActiveUserFeatureFlagsSettingsProvider & DefaultBrowserAndDockPromptInactiveUserFeatureFlagsSettingsProvider
 
 /// An enum representing the different settings for Set Default Browser (SAD) and Add to Dock (ATT) feature flag.
 public enum DefaultBrowserAndDockPromptFeatureSettings: String {
@@ -70,8 +62,6 @@ public enum DefaultBrowserAndDockPromptFeatureSettings: String {
     }
 }
 
-typealias DefaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptFeatureFlagProvider & DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider
-
 final class DefaultBrowserAndDockPromptFeatureFlag {
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let featureFlagger: FeatureFlagger
@@ -86,19 +76,9 @@ final class DefaultBrowserAndDockPromptFeatureFlag {
     }
 }
 
-// MARK: - DefaultBrowserAndDockPromptFeatureFlagger
-
-extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagProvider {
-
-    public var isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.scheduledDefaultBrowserAndDockPromptsInactiveUser)
-    }
-
-}
-
 // MARK: - DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider
 
-extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider {
+extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagger {
 
     public var firstPopoverDelayDays: Int {
         getSettings(.firstPopoverDelayDays)

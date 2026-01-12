@@ -27,7 +27,7 @@ final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
 
     private enum Constants {
         static let topPadding: CGFloat = 0
-        static let horizontalPadding: CGFloat = 16
+        static let horizontalPadding: CGFloat = 14
         static let bottomPadding: CGFloat = 0
     }
 

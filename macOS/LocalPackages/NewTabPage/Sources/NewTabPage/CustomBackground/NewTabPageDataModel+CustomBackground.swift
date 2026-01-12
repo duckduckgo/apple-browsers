@@ -23,17 +23,20 @@ public extension NewTabPageDataModel {
 
     struct CustomizerData: Encodable, Equatable {
         public let background: Background
+        public let showThemeVariantPopover: Bool
         public let theme: Theme?
         public let themeVariant: ThemeVariant?
         public let userColor: Background?
         public let userImages: [UserImage]
 
         public init(background: Background,
+                    showThemeVariantPopover: Bool,
                     theme: Theme?,
                     themeVariant: ThemeVariant?,
                     userColor: NSColor?,
                     userImages: [UserImage]) {
             self.background = background
+            self.showThemeVariantPopover = showThemeVariantPopover
             self.theme = theme
             self.themeVariant = themeVariant
             self.userImages = userImages
@@ -47,6 +50,7 @@ public extension NewTabPageDataModel {
 
         enum CodingKeys: CodingKey {
             case background
+            case showThemeVariantPopover
             case theme
             case themeVariant
             case userColor
@@ -56,6 +60,7 @@ public extension NewTabPageDataModel {
         public func encode(to encoder: any Encoder) throws {
             var container: KeyedEncodingContainer<CodingKeys> = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(self.background, forKey: CodingKeys.background)
+            try container.encode(self.showThemeVariantPopover, forKey: CodingKeys.showThemeVariantPopover)
             try container.encode(self.theme?.rawValue ?? "system", forKey: CodingKeys.theme)
             try container.encodeIfPresent(self.themeVariant, forKey: CodingKeys.themeVariant)
             try container.encode(self.userColor, forKey: CodingKeys.userColor)

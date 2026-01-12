@@ -50,6 +50,8 @@ final class BookmarksOutlineView: NSOutlineView {
         dataSource as? BookmarksOutlineViewDataSource
     }
 
+    var allowsDisclosureButtonHighlight = true
+
     @PublishedAfter var highlightedRow: Int? {
         didSet {
             defer {
@@ -58,7 +60,12 @@ final class BookmarksOutlineView: NSOutlineView {
             highlightedRowView?.highlight = false
             highlightedCellView?.highlight = false
 
-            guard let row = highlightedRow, row < numberOfRows else { return }
+            refreshDisclosureButtonTint(disclosureButton: highlightedRowView?.disclosureButton, highlighted: false)
+
+            guard let row = highlightedRow, row < numberOfRows else {
+                return
+            }
+
             if case .keyDown = NSApp.currentEvent?.type {
                 scrollRowToVisible(row)
             }
@@ -70,18 +77,15 @@ final class BookmarksOutlineView: NSOutlineView {
             let cellView = self.view(atColumn: 0, row: row, makeIfNecessary: false) as? BookmarkOutlineCellView
             cellView?.highlight = item?.canBeHighlighted ?? false
 
-            refreshDisclosureButtonTint(previousDisclosureButton: highlightedRowView?.disclosureButton,
-                                        latestDisclosureButton: rowView?.disclosureButton,
-                                        itemAllowsHighlight: item?.canBeHighlighted ?? false)
+            refreshDisclosureButtonTint(disclosureButton: rowView?.disclosureButton, highlighted: item?.canBeHighlighted ?? false)
 
             highlightedRowView = rowView
             highlightedCellView = cellView
         }
     }
 
-    private func refreshDisclosureButtonTint(previousDisclosureButton: NSButton?, latestDisclosureButton: NSButton?, itemAllowsHighlight: Bool) {
-        previousDisclosureButton?.contentTintColor = palette.iconsPrimary
-        latestDisclosureButton?.contentTintColor = itemAllowsHighlight ? palette.accentContentPrimary : palette.iconsPrimary
+    private func refreshDisclosureButtonTint(disclosureButton: NSButton?, highlighted: Bool) {
+        disclosureButton?.contentTintColor = allowsDisclosureButtonHighlight && highlighted ? palette.accentContentPrimary : palette.iconsPrimary
     }
 
     /// popover displaying this Bookmarks Menu

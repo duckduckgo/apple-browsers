@@ -3359,6 +3359,14 @@ extension MainViewController: TabDelegate {
         segueToVPN()
     }
 
+    func tabDidRequestSettingsToAIChat(_ tab: TabViewController) {
+        segueToSettingsAIChat()
+    }
+
+    func tabDidRequestSettingsToSync(_ tab: TabViewController) {
+        segueToSettingsSync()
+    }
+
     func tabContentProcessDidTerminate(tab: TabViewController) {
         findInPageView.done()
         tabManager.invalidateCache(forController: tab)
@@ -4037,6 +4045,10 @@ extension MainViewController: AIChatContentHandlingDelegate {
                                                         AIChatContentHandling) {
         guard let tab = self.currentTab?.tabModel else { return }
         self.closeTab(tab, andOpenEmptyOneAtSamePosition: false)
+    }
+
+    func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
+        // No action needed for full mode - notification handles metrics
     }
 }
 

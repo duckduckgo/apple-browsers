@@ -1245,6 +1245,7 @@ extension Pixel {
         case settingsDataClearingClearDataOpen
         case settingsAutomaticallyClearDataOn
         case settingsAutomaticallyClearDataOff
+        case settingsAutomaticDataClearingOptionsUpdated
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
@@ -1649,6 +1650,7 @@ extension Pixel.Event {
         case .settingsDataClearingClearDataOpen: return "m_settings_data_clearing_clear_data_open"
         case .settingsAutomaticallyClearDataOn: return "m_settings_automatically_clear_data_on"
         case .settingsAutomaticallyClearDataOff: return "m_settings_automatically_clear_data_off"
+        case .settingsAutomaticDataClearingOptionsUpdated: return "m_automatic_data_clearing_options_updated"
         case .settingsNextStepsAddAppToDock: return "m_settings_next_steps_add_app_to_dock"
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"

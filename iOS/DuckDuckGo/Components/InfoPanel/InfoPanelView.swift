@@ -45,7 +45,7 @@ struct InfoPanelView: View {
     let model: Model
 
     var body: some View {
-        HStack(spacing: Constants.contentSpacing) {
+        HStack(alignment: .top, spacing: Constants.contentSpacing) {
             Image(uiImage: model.icon)
                 .resizable()
                 .frame(width: Constants.iconSize, height: Constants.iconSize)
@@ -54,7 +54,6 @@ struct InfoPanelView: View {
             (Text(model.title).fontWeight(.semibold) + Text(" " + model.subtitle))
                 .font(.system(.subheadline, design: .rounded))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-                .lineLimit(1)
             Spacer()
 
             Button(action: { model.onInfo() }, label: {

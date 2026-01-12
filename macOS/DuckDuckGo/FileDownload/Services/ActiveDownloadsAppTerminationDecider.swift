@@ -1,5 +1,5 @@
 //
-//  ActiveDownloadsTerminationDecider.swift
+//  ActiveDownloadsAppTerminationDecider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -22,7 +22,7 @@ import Combine
 /// Handles active downloads during app termination.
 /// Prompts user if there are active downloads and waits for their decision.
 @MainActor
-struct ActiveDownloadsTerminationDecider {
+struct ActiveDownloadsAppTerminationDecider {
     let downloadManager: FileDownloadManagerProtocol
     let downloadListCoordinator: DownloadListCoordinator
 

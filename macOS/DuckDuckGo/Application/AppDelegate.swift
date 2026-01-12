@@ -1359,7 +1359,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return .terminateLater
         }
 
-        let downloadsDecider = ActiveDownloadsTerminationDecider(
+        let downloadsDecider = ActiveDownloadsAppTerminationDecider(
             downloadManager: downloadManager,
             downloadListCoordinator: downloadListCoordinator
         )

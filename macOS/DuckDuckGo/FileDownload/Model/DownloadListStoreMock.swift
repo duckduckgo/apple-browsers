@@ -37,6 +37,9 @@ final class DownloadListStoreMock: DownloadListStoring {
     }
 
     var syncBlock: (() -> Void)?
+    func sync() {
+        syncBlock?()
+    }
     func sync() async {
         syncBlock?()
     }

@@ -30,6 +30,7 @@ protocol DownloadListStoring {
     func fetch(completionHandler: @escaping @MainActor (Result<[DownloadListItem], Error>) -> Void)
     func save(_ item: DownloadListItem, completionHandler: ((Error?) -> Void)?)
     func remove(_ item: DownloadListItem, completionHandler: ((Error?) -> Void)?)
+    func sync()
     func sync() async
 
 }
@@ -162,6 +163,14 @@ final class DownloadListStore: DownloadListStoring {
             } catch {
                 mainQueueCompletion(error)
             }
+        }
+    }
+
+    func sync() {
+        let condition = RunLoop.ResumeCondition()
+        context?.perform {
+            condition.resolve()
+            RunLoop.current.run(until: condition)
         }
     }
 

@@ -600,6 +600,10 @@ final class DownloadListCoordinator {
         await store.sync()
     }
 
+    func sync() {
+        store.sync()
+    }
+
 }
 
 private extension DownloadListItem {

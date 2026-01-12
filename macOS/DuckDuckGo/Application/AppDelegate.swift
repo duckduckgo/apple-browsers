@@ -1352,7 +1352,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         if let surveyTask = quitSurveyDecider.presentQuitSurveyIfNeeded() {
-            Task {
+            Task { @MainActor in
                 await surveyTask.value
                 NSApp.reply(toApplicationShouldTerminate: true)
             }

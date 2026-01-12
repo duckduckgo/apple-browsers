@@ -100,7 +100,7 @@ public final class NewTabPageProtectionsReportModel {
 
     @Published var shouldShowBurnAnimation: Bool
 
-    @Published var shouldShowProtectionsReportNewLabel: Bool = false
+    @Published private(set) var shouldShowProtectionsReportNewLabel: Bool = false
 
     @Published var isViewExpanded: Bool {
         didSet {

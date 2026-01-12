@@ -61,12 +61,7 @@ enum AutoconsentPixel: PixelKitEvent {
         .detectedOnlyRules,
         .selfTestOk,
         .selfTestFail,
-        .errorReloadLoop,
-        .popoverShown,
-        .popoverClosed,
-        .popoverClicked,
-        .popoverNewTabOpened,
-        .popoverAutoDismissed
+        .errorReloadLoop
     ]
 
     var name: String {

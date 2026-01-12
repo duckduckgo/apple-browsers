@@ -17,6 +17,7 @@
 //
 
 import Bookmarks
+import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -71,6 +72,9 @@ extension Preferences {
                     )
                 }
             }
+            .onChange(of: model.themeAppearance) { _ in
+                PixelKit.fire(SettingsPixel.themeAppearanceChanged(source: .settings), frequency: .standard)
+            }
         }
 
         private func isThemeSelected(_ theme: ThemeAppearance) -> Binding<Bool> {
@@ -120,6 +124,9 @@ extension Preferences {
                 )
             }
             .frame(height: 32)
+            .onChange(of: model.themeAppearance) { _ in
+                PixelKit.fire(SettingsPixel.themeAppearanceChanged(source: .settings), frequency: .standard)
+            }
         }
     }
 
@@ -215,6 +222,9 @@ extension Preferences {
                 )
             }
             .frame(height: 32)
+            .onChange(of: model.themeName) { newValue in
+                PixelKit.fire(SettingsPixel.themeNameChanged(name: newValue, source: .settings), frequency: .standard)
+            }
         }
     }
 

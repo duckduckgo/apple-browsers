@@ -26,7 +26,7 @@ import WebKit
 
 enum ErrorPageHTMLFactory {
 
-    static func html(for error: WKError, header: String? = nil, featureFlagger: FeatureFlagger, themeName: ThemeName) -> String {
+    static func html(for error: WKError, header: String? = nil, themeName: ThemeName) -> String {
         buildHTML(for: error, header: header)
             .replaceThemePlaceholder(themeName: themeName)
     }

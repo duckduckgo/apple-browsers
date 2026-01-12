@@ -1379,7 +1379,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 case .terminateLater:
                     break // autoClearHandler.onAutoClearCompleted will call `NSApp.reply(toApplicationShouldTerminate: true)`
                 @unknown default:
-                    NSApp.reply(toApplicationShouldTerminate: false)
+                    NSApp.reply(toApplicationShouldTerminate: true)
                 }
             }
             return .terminateLater

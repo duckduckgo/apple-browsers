@@ -1361,11 +1361,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         if let downloadsTask = downloadsDecider.handleTermination() {
             Task {
-                let shouldContinue = await downloadsTask.value
-                if shouldContinue {
-                    let reply = continueTerminationAfterAsyncDeciders()
-                    NSApp.reply(toApplicationShouldTerminate: reply == .terminateNow)
-                } else {
+                let shouldContinueTermination = await downloadsTask.value
+                guard shouldContinueTermination else {
+                    NSApp.reply(toApplicationShouldTerminate: false)
+                    return
+                }
+                let reply = continueTerminationAfterAsyncDeciders()
+                switch reply {
+                case .terminateCancel:
+                    NSApp.reply(toApplicationShouldTerminate: false)
+                case .terminateNow:
+                    NSApp.reply(toApplicationShouldTerminate: true)
+                case .terminateLater:
+                    break // autoClearHandler.onAutoClearCompleted will call `NSApp.reply(toApplicationShouldTerminate: true)`
+                @unknown default:
                     NSApp.reply(toApplicationShouldTerminate: false)
                 }
             }

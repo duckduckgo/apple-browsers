@@ -30,14 +30,18 @@ struct ActiveDownloadsTerminationDecider {
     /// - Returns: A task that completes with `true` to continue termination or `false` to cancel,
     ///            or `nil` if there are no active downloads.
     func handleTermination() -> Task<Bool, Never>? {
-        guard !downloadManager.downloads.isEmpty else {
-            return nil
-        }
+        guard !downloadManager.downloads.isEmpty else { return nil }
 
-        // if there're downloads without location chosen yet (save dialog should display) - ignore them
+        // if there're downloads without location chosen yet (save dialog should display) - cancel them
         let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
         guard !activeDownloads.isEmpty else {
-            return nil
+            return Task {
+                // Cancel .initial state downloads
+                await downloadManager.cancelAll()
+                await downloadListCoordinator.sync()
+
+                return true // Continue termination
+            }
         }
 
         return Task { @MainActor in

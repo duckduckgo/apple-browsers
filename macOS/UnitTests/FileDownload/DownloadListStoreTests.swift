@@ -63,6 +63,7 @@ final class DownloadListStoreTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
     }
 
+    @MainActor
     func testWhenSyncIsCalledThenItemsAreWaitedToGetSaved() async throws {
         store.save(.testItem)
         await store.sync()

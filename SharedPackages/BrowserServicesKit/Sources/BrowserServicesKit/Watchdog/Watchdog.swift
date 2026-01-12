@@ -222,6 +222,10 @@ public final actor Watchdog {
 
             // Check if the heartbeat was actually updated
             let timeSinceLastHeartbeat = monitor.timeSinceLastHeartbeat()
+            if Task.isCancelled {
+                break
+            }
+
             handleHangDetection(timeSinceLastHeartbeat: timeSinceLastHeartbeat)
         }
     }

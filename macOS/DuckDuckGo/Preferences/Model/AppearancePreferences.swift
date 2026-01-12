@@ -255,14 +255,12 @@ final class AppearancePreferences: ObservableObject {
         didSet {
             persistor.themeAppearance = themeAppearance.rawValue
             updateUserInterfaceStyle()
-            pixelFiring?.fire(SettingsPixel.themeAppearanceChanged, frequency: .standard)
         }
     }
 
     @Published var themeName: ThemeName {
         didSet {
             persistor.themeName = themeName.rawValue
-            pixelFiring?.fire(SettingsPixel.themeNameChanged(name: themeName), frequency: .standard)
         }
     }
 

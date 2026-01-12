@@ -497,7 +497,13 @@ class TabViewController: UIViewController {
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
-        let coordinator = AIChatContextualSheetCoordinator(voiceSearchHelper: voiceSearchHelper, settings: aiChatSettings)
+        let coordinator = AIChatContextualSheetCoordinator(
+            voiceSearchHelper: voiceSearchHelper,
+            settings: aiChatSettings,
+            privacyConfigurationManager: privacyConfigurationManager,
+            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+            featureDiscovery: featureDiscovery
+        )
         coordinator.delegate = self
         return coordinator
     }()
@@ -577,7 +583,8 @@ class TabViewController: UIViewController {
 
         // Reload AI Chat when subscription state changes
         subscriptionAIChatStateHandler.onSubscriptionStateChanged = { [weak self] in
-            self?.reloadAIChatIfNeeded()
+            self?.reloadFullModeAIChatIfNeeded()
+            self?.reloadContextualAIChatIfNeeded()
         }
 
         // Assign itself as tabNavigationHandler for DuckPlayer

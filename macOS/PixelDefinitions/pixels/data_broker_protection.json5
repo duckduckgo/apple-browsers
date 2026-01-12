@@ -898,31 +898,19 @@
         "description": "Fired daily for active PIR users",
         "owners": ["quanganhdo"],
         "triggers": ["scheduled"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpIsAuthenticated"
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated"]
     },
     "m_mac_dbp_engagement_wau": {
         "description": "Fired weekly for active PIR users",
         "owners": ["quanganhdo"],
         "triggers": ["scheduled"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpIsAuthenticated"
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated"]
     },
     "m_mac_dbp_engagement_mau": {
         "description": "Fired monthly for active PIR users",
         "owners": ["quanganhdo"],
         "triggers": ["scheduled"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpIsAuthenticated"
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated"]
     },
     "m_mac_dbp_weekly_child-broker_orphaned-optouts": {
         "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",

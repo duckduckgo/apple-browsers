@@ -34,10 +34,12 @@ final class QuitSurveyPresenter {
     func showSurvey() async {
         await withCheckedContinuation { continuation in
             var quitSurveyWindow: NSWindow?
-
+            var isResumed = false
             let surveyView = QuitSurveyFlowView(
                 persistor: persistor,
                 onQuit: {
+                    guard !isResumed else { return }
+                    isResumed = true
                     if let parentWindow = quitSurveyWindow?.sheetParent {
                         parentWindow.endSheet(quitSurveyWindow!)
                     } else {

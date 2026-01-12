@@ -84,8 +84,6 @@ public enum FeatureFlag: String {
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710146121
     case duckPlayerNativeUI
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710942922
-    case sslCertificatesBypass
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468307995
     case syncPromotionBookmarks
@@ -403,7 +401,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .autoconsentOnByDefault,
                .duckPlayer,
                .duckPlayerOpenInNewTab,
-               .sslCertificatesBypass,
                .syncPromotionBookmarks,
                .syncPromotionPasswords,
                .autofillSurveys,
@@ -470,8 +467,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DuckPlayerSubfeature.openInNewTab))
         case .duckPlayerNativeUI:
             return .remoteReleasable(.subfeature(DuckPlayerSubfeature.nativeUI))
-        case .sslCertificatesBypass:
-            return .remoteReleasable(.subfeature(SslCertificatesSubfeature.allowBypass))
         case .syncPromotionBookmarks:
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.bookmarks))
         case .syncPromotionPasswords:

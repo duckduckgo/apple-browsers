@@ -48,7 +48,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
         }
     }
 
-    var isViewExpandedPublisher: AnyPublisher<Bool, Never> {
+    private(set) lazy var isViewExpandedPublisher: AnyPublisher<Bool, Never> = {
         featureFlagger.updatesPublisher
             .prepend(())
             .map { [weak self] _ -> AnyPublisher<Bool, Never> in
@@ -60,14 +60,15 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
                     .eraseToAnyPublisher()
             }
             .switchToLatest()
+            .share()
             .eraseToAnyPublisher()
-    }
+    }()
 
     var cards: [NewTabPageDataModel.CardID] {
         activeProvider.cards
     }
 
-    var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> {
+    private(set) lazy var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> = {
         featureFlagger.updatesPublisher
             .prepend(())
             .map { [weak self] _ -> AnyPublisher<[NewTabPageDataModel.CardID], Never> in
@@ -79,8 +80,9 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
                     .eraseToAnyPublisher()
             }
             .switchToLatest()
+            .share()
             .eraseToAnyPublisher()
-    }
+    }()
 
     @MainActor
     func handleAction(for card: NewTabPageDataModel.CardID) {

@@ -89,7 +89,7 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
 
     func testWhenModelShouldShowProtectionsReportNewLabelIsTrueThenGetConfigReturnsShowProtectionsReportNewLabelTrue() async throws {
         settingsPersistor.widgetNewLabelFirstShownDate = Date()
-        
+
         model = NewTabPageProtectionsReportModel(
             privacyStats: privacyStats,
             autoconsentStats: autoconsentStats,
@@ -100,7 +100,7 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
         )
         client = NewTabPageProtectionsReportClient(model: model)
         client.registerMessageHandlers(for: userScript)
-        
+
         let config: NewTabPageDataModel.ProtectionsConfig = try await messageHelper.handleMessage(named: .getConfig)
         XCTAssertTrue(config.showProtectionsReportNewLabel)
     }
@@ -108,7 +108,7 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
     func testWhenModelShouldShowProtectionsReportNewLabelIsFalseThenGetConfigReturnsShowProtectionsReportNewLabelFalse() async throws {
         let eightDaysAgo = Date().addingTimeInterval(-8 * 24 * 60 * 60)
         settingsPersistor.widgetNewLabelFirstShownDate = eightDaysAgo
-        
+
         model = NewTabPageProtectionsReportModel(
             privacyStats: privacyStats,
             autoconsentStats: autoconsentStats,
@@ -119,7 +119,7 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
         )
         client = NewTabPageProtectionsReportClient(model: model)
         client.registerMessageHandlers(for: userScript)
-        
+
         let config: NewTabPageDataModel.ProtectionsConfig = try await messageHelper.handleMessage(named: .getConfig)
         XCTAssertFalse(config.showProtectionsReportNewLabel)
     }

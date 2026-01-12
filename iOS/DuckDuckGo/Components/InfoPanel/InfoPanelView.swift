@@ -45,7 +45,7 @@ struct InfoPanelView: View {
     let model: Model
 
     var body: some View {
-        HStack(alignment: .top, spacing: Constants.contentSpacing) {
+        HStack(alignment: .center, spacing: Constants.contentSpacing) {
             Image(uiImage: model.icon)
                 .resizable()
                 .frame(width: Constants.iconSize, height: Constants.iconSize)

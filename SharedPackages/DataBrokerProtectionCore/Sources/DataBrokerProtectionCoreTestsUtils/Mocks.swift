@@ -1987,6 +1987,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
     public var featureFlagger: DBPFeatureFlagging
     public var wideEvent: WideEventManaging?
+    public var isAuthenticatedUserProvider: () async -> Bool = { true }
 
     public var mockScanRunner = MockScanSubJobWebRunner()
     public var mockOptOutRunner = MockOptOutSubJobWebRunner()
@@ -2017,6 +2018,9 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
         return mockOptOutRunner
     }
 
+    public func isAuthenticatedUser() async -> Bool {
+        await isAuthenticatedUserProvider()
+    }
 }
 
 public final class MockDataBrokerOperationsCreator: BrokerProfileJobProviding {

@@ -157,7 +157,8 @@ public class DataBrokerProtectionAgentManagerProvider {
             captchaService: captchaService,
             featureFlagger: featureFlagger,
             vpnBypassService: vpnBypassService,
-            wideEvent: wideEvent)
+            wideEvent: wideEvent,
+            isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated })
 
         return DataBrokerProtectionAgentManager(
             eventsHandler: eventsHandler,

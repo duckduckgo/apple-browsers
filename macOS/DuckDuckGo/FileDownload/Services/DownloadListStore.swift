@@ -170,8 +170,8 @@ final class DownloadListStore: DownloadListStoring {
         let condition = RunLoop.ResumeCondition()
         context?.perform {
             condition.resolve()
-            RunLoop.current.run(until: condition)
         }
+        RunLoop.current.run(until: condition)
     }
 
     func sync() async {

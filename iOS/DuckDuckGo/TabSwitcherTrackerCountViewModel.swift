@@ -21,6 +21,7 @@ import Foundation
 import Combine
 import BrowserServicesKit
 import Core
+import PrivacyConfig
 
 @MainActor
 final class TabSwitcherTrackerCountViewModel: ObservableObject {

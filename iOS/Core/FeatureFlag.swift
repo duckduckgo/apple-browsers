@@ -180,9 +180,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866467213996
     case createFireproofFaviconUpdaterSecureVaultInBackground
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609233733
-    case aiFeaturesSettingsUpdate
-
     /// Adds kbg=-1 parameter to search URLs when DuckAI is disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714302194
     case duckAISearchParameter
@@ -295,7 +292,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canInterceptSyncSetupUrls,
              .supportsAlternateStripePaymentFlow,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
-             .aiFeaturesSettingsUpdate,
              .duckAISearchParameter,
              .daxEasterEggLogos,
              .daxEasterEggPermanentLogo,
@@ -413,7 +409,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .syncSeamlessAccountSwitching,
                .experimentalAddressBar,
                .aiChatKeepSession,
-               .aiFeaturesSettingsUpdate,
                .widgetReporting,
                .canPromoteImportPasswordsInBrowser,
                .canPromoteImportPasswordsInPasswordManagement,
@@ -528,8 +523,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.pirRollout))
         case .createFireproofFaviconUpdaterSecureVaultInBackground:
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
-        case .aiFeaturesSettingsUpdate:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.aiFeaturesSettingsUpdate))
         case .duckAISearchParameter:
             return .remoteReleasable(.subfeature(AIChatSubfeature.duckAISearchParameter))
         case .inactivityNotification:

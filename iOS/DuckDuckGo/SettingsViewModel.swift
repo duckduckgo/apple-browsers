@@ -149,10 +149,6 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    var isUpdatedAIFeaturesSettingsEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
-    }
-
     var shouldShowHideAIGeneratedImagesSection: Bool {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }

@@ -1432,7 +1432,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if !activeDownloads.isEmpty {
                 let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
                 let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
-                    // close alert and burn the window when all downloads finished
+                    // close alert and quit when all downloads finished
                     NSApp.stopModal(withCode: .OK)
                 }
                 let response = alert.runModal()

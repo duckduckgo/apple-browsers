@@ -1031,7 +1031,7 @@ final class MainMenu: NSMenu {
     @MainActor
     private func updateWatchdogMenuItems() {
        Task {
-            let isRunning = NSApp.delegateTyped.watchdog.isRunning
+            let isRunning = await NSApp.delegateTyped.watchdog.isRunning
             let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
 
             toggleWatchdogMenuItem.state = isRunning ? .on : .off

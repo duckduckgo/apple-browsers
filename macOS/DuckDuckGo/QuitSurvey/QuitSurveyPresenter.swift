@@ -35,17 +35,22 @@ final class QuitSurveyPresenter {
         await withCheckedContinuation { continuation in
             var quitSurveyWindow: NSWindow?
             var isResumed = false
+
+            let resumeContinuation = {
+                guard !isResumed else { return }
+                isResumed = true
+                continuation.resume()
+            }
+
             let surveyView = QuitSurveyFlowView(
                 persistor: persistor,
                 onQuit: {
-                    guard !isResumed else { return }
-                    isResumed = true
                     if let parentWindow = quitSurveyWindow?.sheetParent {
                         parentWindow.endSheet(quitSurveyWindow!)
                     } else {
                         quitSurveyWindow?.close()
                     }
-                    continuation.resume()
+                    resumeContinuation()
                 },
                 onResize: { width, height in
                     guard let window = quitSurveyWindow else { return }
@@ -62,6 +67,12 @@ final class QuitSurveyPresenter {
                 continuation.resume()
                 return
             }
+
+            // Set up window close observation to resume continuation if window is closed via close button
+            let windowDelegate = QuitSurveyWindowDelegate(onWindowWillClose: resumeContinuation)
+            window.delegate = windowDelegate
+            // Retain the delegate to prevent it from being deallocated
+            objc_setAssociatedObject(window, "quitSurveyDelegate", windowDelegate, .OBJC_ASSOCIATION_RETAIN)
 
             window.styleMask.remove(.resizable)
             let windowRect = NSRect(
@@ -88,6 +99,13 @@ final class QuitSurveyPresenter {
     /// This version directly calls `NSApp.reply(toApplicationShouldTerminate: true)` when the user quits.
     func showSurveySyncFallback() {
         var quitSurveyWindow: NSWindow?
+        var hasReplied = false
+
+        let replyToTerminate = {
+            guard !hasReplied else { return }
+            hasReplied = true
+            NSApp.reply(toApplicationShouldTerminate: true)
+        }
 
         let surveyView = QuitSurveyFlowView(
             persistor: persistor,
@@ -97,7 +115,7 @@ final class QuitSurveyPresenter {
                 } else {
                     quitSurveyWindow?.close()
                 }
-                NSApp.reply(toApplicationShouldTerminate: true)
+                replyToTerminate()
             },
             onResize: { width, height in
                 guard let window = quitSurveyWindow else { return }
@@ -111,6 +129,12 @@ final class QuitSurveyPresenter {
         quitSurveyWindow = NSWindow(contentViewController: controller)
 
         guard let window = quitSurveyWindow else { return }
+
+        // Set up window close observation to reply if window is closed via close button
+        let windowDelegate = QuitSurveyWindowDelegate(onWindowWillClose: replyToTerminate)
+        window.delegate = windowDelegate
+        // Retain the delegate to prevent it from being deallocated
+        objc_setAssociatedObject(window, "quitSurveyDelegate", windowDelegate, .OBJC_ASSOCIATION_RETAIN)
 
         window.styleMask.remove(.resizable)
         let windowRect = NSRect(
@@ -130,5 +154,21 @@ final class QuitSurveyPresenter {
             window.center()
             window.makeKeyAndOrderFront(nil)
         }
+    }
+}
+
+// MARK: - Window Delegate
+
+@MainActor
+private final class QuitSurveyWindowDelegate: NSObject, NSWindowDelegate {
+    private let onWindowWillClose: () -> Void
+
+    init(onWindowWillClose: @escaping () -> Void) {
+        self.onWindowWillClose = onWindowWillClose
+        super.init()
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        onWindowWillClose()
     }
 }

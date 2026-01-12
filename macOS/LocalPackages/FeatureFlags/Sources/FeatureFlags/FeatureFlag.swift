@@ -19,7 +19,7 @@
 import Foundation
 import PrivacyConfig
 
-public enum FeatureFlag: String, CaseIterable {                                             
+public enum FeatureFlag: String, CaseIterable {                                       
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715841970
     case maliciousSiteProtection
 

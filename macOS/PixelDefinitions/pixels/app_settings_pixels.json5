@@ -19,13 +19,13 @@
         "owners": ["jleandroperez"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "themeChangeSource"]
     },
     "m_mac_settings_theme_name_changed": {
         "description": "Fired when Browser Theme Name setting is changed",
         "owners": ["jleandroperez"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "themeName"]
+        "parameters": ["appVersion", "pixelSource", "themeChangeSource", "themeName"]
     }
 }

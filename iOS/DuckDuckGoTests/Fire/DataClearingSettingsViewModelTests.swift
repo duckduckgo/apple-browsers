@@ -87,9 +87,9 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     // MARK: - Feature Flag Tests
 
-    func testWhenGranularFireButtonOptionsFlagIsOnThenNewUIEnabledIsTrue() {
+    func testWhenEnhancedDataClearingSettingsFlagIsOnThenNewUIEnabledIsTrue() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.granularFireButtonOptions]
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
 
         // When
         let viewModel = makeViewModel()
@@ -98,7 +98,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.newUIEnabled)
     }
 
-    func testWhenGranularFireButtonOptionsFlagIsOffThenNewUIEnabledIsFalse() {
+    func testWhenEnhancedDataClearingSettingsFlagIsOffThenNewUIEnabledIsFalse() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
 
@@ -110,18 +110,6 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
     }
 
     // MARK: - AI Chat Toggle Visibility Tests
-
-    func testWhenNewUIEnabledThenShowAIChatsToggleIsFalse() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.granularFireButtonOptions, .duckAiDataClearing]
-        mockAIChatSettings.isAIChatEnabled = true
-
-        // When
-        let viewModel = makeViewModel()
-
-        // Then
-        XCTAssertFalse(viewModel.showAIChatsToggle, "AI Chat toggle should be hidden when new UI is enabled")
-    }
 
     func testWhenAIChatDisabledThenShowAIChatsToggleIsFalse() {
         // Given
@@ -151,7 +139,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenNoFireproofedSitesThenSubtitleShowsZeroCount() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.granularFireButtonOptions]
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
         mockFireproofing.fireproofedDomains = []
 
         // When
@@ -163,7 +151,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenFireproofedSitesExistThenSubtitleShowsCount() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.granularFireButtonOptions]
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
         mockFireproofing.fireproofedDomains = ["example.com"]
 
         // When

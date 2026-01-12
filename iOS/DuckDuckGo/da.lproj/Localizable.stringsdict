@@ -2,6 +2,38 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Slet fra 1 websted. Du kan blive logget ud af konti.</string>
+			<key>other</key>
+			<string>Slet fra %1$d websteder. Du kan blive logget ud af konti.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Luk fane</string>
+			<key>other</key>
+			<string>Luk alle %1$d faner</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Вчера";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Намери скрито лого!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Логото е запазено";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Нулиране на търсене на лого";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Превключване към това лого";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Внимание! Не мога да направя така, че %1$@ да не вижда вашата активност на %2$@.\n\nНо ако сърфирате с мен, като цяло мога да намаля информацията, която %1$@ научава за вас, като блокирам неговите тракери на много други сайтове.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Функциите на DuckDuckGo AI са поверителни и незадължителни. Вашите данни не се използват за обучение на изкуствен интелект.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Обобщи тази страница";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Показвай бутоните и връзките на Duck.ai в резултатите от търсенето на DuckDuckGo.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Намери в страницата";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Изтриване на всички чатове";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Чатове с Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Може да те отпише от акаунтите";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Бисквитки и данни за сайта";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Раздели";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Избери какво да изтриеш";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Въздушна струя";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Настройки за Assist при търсене";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Показване на новите чатове на Duck.ai като раздели в браузъра";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Автоматично изпращане на контекста на страницата до Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Режим на раздели на Duck.ai";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Автоматично изпращане на контекст";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скриване на изображения, генерирани от изкуствен интелект";
@@ -3574,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Абонаментни планове";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Завършване на покупката...";
 
@@ -3663,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Безплатна пробна версия е активна";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Виж всички планове";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Известие за SwiftUI";

@@ -83,7 +83,7 @@ if [ "$MODIFIED_ONLY" = true ]; then
   # SwiftLint scans the working directory to build its file index even when given specific files, which causes ~50s overhead.
   ABSOLUTE_FILES=$(echo "$ALL_FILES" | sed "s|^|${REPO_ROOT}/|")
   cd /tmp || exit 0
-  echo "$ABSOLUTE_FILES" | xargs "$MINT" run --mintfile "${REPO_ROOT}/Mintfile" swiftlint lint --quiet --config "${REPO_ROOT}/.swiftlint.yml" || true
+  echo "$ABSOLUTE_FILES" | xargs "$MINT" run --mintfile "${REPO_ROOT}/Mintfile" swiftlint lint --quiet --working-directory "${REPO_ROOT}" || true
 else
   "$MINT" run swiftlint lint --quiet || true
 fi

@@ -10825,7 +10825,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/../scripts/swiftlint.sh\"\n";
+			shellScript = "\"${SRCROOT}/../scripts/swiftlint.sh\" --modified-only\n";
 		};
 		CBCCF59B29940C3800C02DFE /* Assert Xcode version */ = {
 			isa = PBXShellScriptBuildPhase;

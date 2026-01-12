@@ -555,7 +555,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webNotifications:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications))
         case .newPermissionView:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.newPermissionView))
+            return .remoteReleasable(.feature(.combinedPermissionView))
         case .tabClosingEventRecreation:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         case .firstTimeQuitSurvey:

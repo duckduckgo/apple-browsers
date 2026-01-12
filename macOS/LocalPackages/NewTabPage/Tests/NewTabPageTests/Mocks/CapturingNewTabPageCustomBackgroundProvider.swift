@@ -22,7 +22,7 @@ import NewTabPage
 final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgroundProviding {
     var customizerOpener: NewTabPageCustomizerOpener = NewTabPageCustomizerOpener()
 
-    var customizerData: NewTabPageDataModel.CustomizerData = .init(background: .default, theme: .none, themeVariant: nil, userColor: nil, userImages: [])
+    var customizerData: NewTabPageDataModel.CustomizerData = .init(background: .default, showThemeVariantPopover: false, theme: .none, themeVariant: nil, userColor: nil, userImages: [])
 
     @Published
     var background: NewTabPageDataModel.Background = .default
@@ -48,6 +48,10 @@ final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgro
 
     var userImagesPublisher: AnyPublisher<[NewTabPageDataModel.UserImage], Never> {
         $userImages.dropFirst().removeDuplicates().eraseToAnyPublisher()
+    }
+
+    func processNewTabPageInitialized() {
+        // NO-OP
     }
 
     func presentUploadDialog() async {

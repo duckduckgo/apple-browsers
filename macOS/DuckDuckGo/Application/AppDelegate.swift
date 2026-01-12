@@ -1331,9 +1331,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig
+            .isSubfeatureEnabled(MacOSBrowserConfigSubfeature.terminationDeciderSequence, defaultValue: true)
+        else {
+            return applicationShouldTerminateFallback()
+        }
+
         // Show quit survey for first-time quitters (new users within 14 days)
         let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let quitSurveyDecider = QuitSurveyTerminationDecider(
+        let quitSurveyDecider = QuitSurveyAppTerminationDecider(
             featureFlagger: featureFlagger,
             dataClearingPreferences: dataClearingPreferences,
             downloadManager: downloadManager,
@@ -1352,6 +1358,61 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await surveyTask.value
                 NSApp.reply(toApplicationShouldTerminate: true)
             }
+            return .terminateLater
+        }
+
+        if !downloadManager.downloads.isEmpty {
+            // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
+            let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
+            if !activeDownloads.isEmpty {
+                let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
+                let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
+                    // close alert and burn the window when all downloads finished
+                    NSApp.stopModal(withCode: .OK)
+                }
+                let response = alert.runModal()
+                downloadsFinishedCancellable.cancel()
+                if response == .cancel {
+                    return .terminateCancel
+                }
+            }
+            downloadManager.cancelAll(waitUntilDone: true)
+            downloadListCoordinator.sync()
+        }
+
+        // Cancel any active update tracking flow
+        updateController?.handleAppTermination()
+
+        stateRestorationManager?.applicationWillTerminate()
+
+        // Handling of "Burn on quit"
+        if let terminationReply = autoClearHandler.handleAppTermination() {
+            return terminationReply
+        }
+
+        tearDownPrivacyStats()
+
+        return .terminateNow
+    }
+
+    // Original Termination Handler (Fallback - To be removed)
+    @MainActor
+    private func applicationShouldTerminateFallback() -> NSApplication.TerminateReply {
+        // Show quit survey for first-time quitters (new users within 14 days)
+        let decider = QuitSurveyDecider(
+            featureFlagger: featureFlagger,
+            dataClearingPreferences: dataClearingPreferences,
+            downloadManager: downloadManager,
+            installDate: AppDelegate.firstLaunchDate,
+            persistor: QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore),
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore)
+        )
+
+        if decider.shouldShowQuitSurvey {
+            decider.markQuitSurveyShown()
+            let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+            let presenter = QuitSurveyPresenter(windowControllersManager: windowControllersManager, persistor: persistor)
+            presenter.showSurveySyncFallback()
             return .terminateLater
         }
 

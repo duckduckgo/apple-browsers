@@ -150,6 +150,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
 
+    /// Feature Flag for the modular termination decider pattern
+    /// https://app.asana.com/0/137249556945/1212471831531072
+    case terminationDeciderSequence
+
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications

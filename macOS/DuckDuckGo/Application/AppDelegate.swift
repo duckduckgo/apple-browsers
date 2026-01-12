@@ -1331,9 +1331,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig
-            .isSubfeatureEnabled(MacOSBrowserConfigSubfeature.terminationDeciderSequence, defaultValue: true)
-        else {
+        guard featureFlagger.isFeatureOn(.terminationDeciderSequence) else {
             return applicationShouldTerminateFallback()
         }
 

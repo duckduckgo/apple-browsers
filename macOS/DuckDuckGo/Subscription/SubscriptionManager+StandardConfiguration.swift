@@ -46,7 +46,7 @@ extension DefaultSubscriptionManagerV2 {
                           frequency: .legacyDailyAndCount)
         }
 
-        let wideEvent: WideEventManaging = WideEvent(sendPOSTEnabled: { featureFlagger?.isFeatureOn(.wideEventPostEndpoint) ?? true })
+        let wideEvent: WideEventManaging = WideEvent(sendPOSTEnabled: { featureFlagger?.isFeatureOn(.wideEventPostEndpoint) ?? false })
         let authRefreshEventMapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
 #if DEBUG
             return true // Allow the refresh event when using staging in debug mode, for easier testing

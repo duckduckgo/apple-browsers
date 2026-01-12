@@ -245,7 +245,8 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                 properties: ContentScopeProperties,
                 scriptContext: ContentScopeScriptContext = .contentScope,
                 allowedNonisolatedFeatures: [String] = [],
-                privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
+                privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?,
+                surrogatesText: String? = nil
     ) throws {
         self.scriptContext = scriptContext
         self.allowedNonisolatedFeatures = allowedNonisolatedFeatures
@@ -259,7 +260,8 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             properties: properties,
             scriptContext: scriptContext,
             config: broker.messagingConfig(),
-            privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
+            privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator,
+            surrogatesText: surrogatesText
         )
     }
 
@@ -267,7 +269,8 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                                       properties: ContentScopeProperties,
                                       scriptContext: ContentScopeScriptContext,
                                       config: WebkitMessagingConfig,
-                                      privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
+                                      privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?,
+                                      surrogatesText: String? = nil
     ) throws -> String {
         let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
@@ -280,12 +283,64 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             return ""
         }
 
+        // Convert surrogates.txt to JS object literal with function values
+        let surrogatesJS = surrogatesText.map { createSurrogateFunctions($0) } ?? "{}"
+
         return try loadJS(scriptContext.fileName, from: ContentScopeScripts.Bundle, withReplacements: [
             "$CONTENT_SCOPE$": privacyConfigJson,
             "$USER_UNPROTECTED_DOMAINS$": userUnprotectedDomainsString,
             "$USER_PREFERENCES$": jsonPropertiesString,
-            "$WEBKIT_MESSAGING_CONFIG$": jsonConfigString
+            "$WEBKIT_MESSAGING_CONFIG$": jsonConfigString,
+            "$SURROGATES$": surrogatesJS
         ])
+    }
+
+    /// Converts raw surrogates.txt format into a JavaScript object literal with function values.
+    ///
+    /// Input format (surrogates.txt):
+    /// ```
+    /// googlesyndication.com/adsbygoogle.js application/javascript
+    /// (() => { window.adsbygoogle = { loaded: true }; })();
+    /// ```
+    ///
+    /// Output format (JS object literal):
+    /// ```javascript
+    /// { 'adsbygoogle.js': function() { ... } }
+    /// ```
+    private static func createSurrogateFunctions(_ surrogates: String) -> String {
+        // Remove comment lines
+        let commentlessSurrogates = surrogates
+            .split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+            .filter { !$0.starts(with: "#") }
+            .joined(separator: "\n")
+
+        // Split into individual surrogate blocks (separated by blank lines)
+        let surrogateScripts = commentlessSurrogates.components(separatedBy: "\n\n")
+
+        // Convert each block into a function definition
+        var functions: [String] = []
+        for surrogate in surrogateScripts {
+            var codeLines = surrogate.split(separator: "\n", omittingEmptySubsequences: false)
+            if codeLines.isEmpty { continue }
+
+            // First line contains path and content-type: "domain.com/script.js application/javascript"
+            let instructionsRow = codeLines.removeFirst()
+            guard let path = instructionsRow.split(separator: " ").first,
+                  let pattern = path.split(separator: "/").last else {
+                continue
+            }
+
+            // Remaining lines are the function body
+            let functionBody = codeLines.joined(separator: "\n")
+            if functionBody.isEmpty { continue }
+
+            // Escape the pattern for use as object key and wrap code in function
+            let escapedPattern = pattern.replacingOccurrences(of: "'", with: "\\'")
+            functions.append("'\(escapedPattern)': function() { \(functionBody) }")
+        }
+
+        // Return as a JavaScript object literal
+        return "{ \(functions.joined(separator: ", ")) }"
     }
 
     private static func encodeProperties(_ properties: ContentScopeProperties, messagingContextName: String) throws -> String {

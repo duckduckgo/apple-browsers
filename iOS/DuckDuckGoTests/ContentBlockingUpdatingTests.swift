@@ -52,6 +52,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           sync: MockDDGSyncing(),
                                                                           privacyConfigurationManager: configManager,
                                                                           contentBlockingManager: rulesManager,
+                                                                          configStorage: ConfigurationStore(),
                                                                           fireproofing: FireproofingMock(),
                                                                           contentScopeExperimentsManager: MockContentScopeExperimentManager()))
     }

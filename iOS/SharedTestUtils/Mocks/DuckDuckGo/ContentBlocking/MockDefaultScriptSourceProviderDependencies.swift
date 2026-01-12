@@ -18,7 +18,9 @@
 //
 
 @testable import DuckDuckGo
+@testable import Configuration
 import PrivacyConfig
+import Foundation
 
 extension DefaultScriptSourceProvider.Dependencies {
 
@@ -27,6 +29,7 @@ extension DefaultScriptSourceProvider.Dependencies {
              sync: MockDDGSyncing(),
              privacyConfigurationManager: PrivacyConfigurationManagerMock(),
              contentBlockingManager: ContentBlockerRulesManagerMock(),
+             configStorage: ConfigurationStoreMock(),
              fireproofing: MockFireproofing(),
              contentScopeExperimentsManager: MockContentScopeExperimentManager())
     }
@@ -36,7 +39,18 @@ extension DefaultScriptSourceProvider.Dependencies {
              sync: MockDDGSyncing(),
              privacyConfigurationManager: privacyConfig,
              contentBlockingManager: ContentBlockerRulesManagerMock(),
+             configStorage: ConfigurationStoreMock(),
              fireproofing: MockFireproofing(),
              contentScopeExperimentsManager: MockContentScopeExperimentManager())
     }
+}
+
+// Mock ConfigurationStore for tests
+class ConfigurationStoreMock: ConfigurationStoring {
+    func loadData(for configuration: Configuration) -> Data? { return nil }
+    func loadEtag(for configuration: Configuration) -> String? { return nil }
+    func loadEmbeddedEtag(for configuration: Configuration) -> String? { return nil }
+    func saveData(_ data: Data, for configuration: Configuration) throws {}
+    func saveEtag(_ etag: String, for configuration: Configuration) throws {}
+    func fileUrl(for configuration: Configuration) -> URL { return URL(fileURLWithPath: "") }
 }

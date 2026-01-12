@@ -94,8 +94,6 @@ let package = Package(
                 "PixelKit"
             ],
             resources: [
-                .process("ContentBlocking/UserScripts/contentblockerrules.js"),
-                .process("ContentBlocking/UserScripts/surrogates.js"),
                 .process("SmarterEncryption/Store/HTTPSUpgrade.xcdatamodeld"),
                 .copy("../../PrivacyInfo.xcprivacy")
             ],

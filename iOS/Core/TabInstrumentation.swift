@@ -19,8 +19,9 @@
 
 import Foundation
 import os.signpost
+import BrowserServicesKit
 
-public class TabInstrumentation {
+public class TabInstrumentation: DebugLogInstrumentation {
 
     static let tabsLog = OSLog(subsystem: "com.duckduckgo.instrumentation",
                                category: "TabInstrumentation")

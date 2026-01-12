@@ -173,6 +173,8 @@ class TabViewController: UIViewController {
     private var refreshCountSinceLoad: Int = 0
     private var performanceMetrics: PerformanceMetricsSubfeature?
     private var breakageReportingSubfeature: BreakageReportingSubfeature?
+    private var trackerStatsSubfeature: TrackerStatsSubfeature?
+    private var debugLogSubfeature: DebugLogSubfeature?
 
     private var detectedLoginURL: URL?
     private var fireproofingWorker: FireproofingWorking?
@@ -2940,9 +2942,6 @@ extension TabViewController: UserContentControllerDelegate {
     private var findInPageScript: FindInPageUserScript? {
         userScripts?.findInPageScript
     }
-    private var contentBlockerUserScript: ContentBlockerRulesUserScript? {
-        userScripts?.contentBlockerUserScript
-    }
     private var autofillUserScript: AutofillUserScript? {
         userScripts?.autofillUserScript
     }
@@ -2953,9 +2952,6 @@ extension TabViewController: UserContentControllerDelegate {
                                updateEvent: ContentBlockerRulesManager.UpdateEvent) {
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
-        userScripts.debugScript.instrumentation = instrumentation
-        userScripts.surrogatesScript.delegate = self
-        userScripts.contentBlockerUserScript.delegate = self
         userScripts.autofillUserScript.emailDelegate = emailManager
         userScripts.autofillUserScript.vaultDelegate = vaultManager
         userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
@@ -2993,6 +2989,14 @@ extension TabViewController: UserContentControllerDelegate {
         
         breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: breakageReportingSubfeature!)
+        
+        // Register tracker stats subfeature for surrogate injection handling
+        trackerStatsSubfeature = TrackerStatsSubfeature(delegate: self)
+        userScripts.contentScopeUserScript.registerTrackerStatsSubfeature(trackerStatsSubfeature!)
+        
+        // Register debug log subfeature for native log routing
+        debugLogSubfeature = DebugLogSubfeature(instrumentation: instrumentation)
+        userScripts.contentScopeUserScript.registerDebugLogSubfeature(debugLogSubfeature!)
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         
@@ -3008,63 +3012,6 @@ extension TabViewController: UserContentControllerDelegate {
 
             reload()
         }
-    }
-
-}
-
-// MARK: - ContentBlockerRulesUserScriptDelegate
-extension TabViewController: ContentBlockerRulesUserScriptDelegate {
-    
-    func contentBlockerRulesUserScriptShouldProcessTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
-        return privacyInfo?.isFor(self.url) ?? false
-    }
-    
-    func contentBlockerRulesUserScriptShouldProcessCTLTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
-        return false
-    }
-
-    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript,
-                                       detectedTracker tracker: DetectedRequest) {
-        userScriptDetectedTracker(tracker)
-    }
-    
-    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript,
-                                       detectedThirdPartyRequest request: DetectedRequest) {
-        privacyInfo?.trackerInfo.add(detectedThirdPartyRequest: request)
-    }
-
-    fileprivate func userScriptDetectedTracker(_ tracker: DetectedRequest) {
-        guard let url = url else { return }
-        
-        adClickAttributionLogic.onRequestDetected(request: tracker)
-        
-        if tracker.isBlocked && fireWoFollowUp {
-            fireWoFollowUp = false
-            Pixel.fire(pixel: .daxDialogsWithoutTrackersFollowUp)
-        }
-
-        privacyInfo?.trackerInfo.addDetectedTracker(tracker, onPageWithURL: url)
-    }
-}
-
-// MARK: - SurrogatesUserScriptDelegate
-extension TabViewController: SurrogatesUserScriptDelegate {
-
-    func surrogatesUserScriptShouldProcessTrackers(_ script: SurrogatesUserScript) -> Bool {
-        return privacyInfo?.isFor(self.url) ?? false
-    }
-
-    func surrogatesUserScriptShouldProcessCTLTrackers(_ script: SurrogatesUserScript) -> Bool {
-        false
-    }
-
-    func surrogatesUserScript(_ script: SurrogatesUserScript,
-                              detectedTracker tracker: DetectedRequest,
-                              withSurrogate host: String) {
-        guard let url = url else { return }
-        
-        privacyInfo?.trackerInfo.addInstalledSurrogateHost(host, for: tracker, onPageWithURL: url)
-        userScriptDetectedTracker(tracker)
     }
 
 }
@@ -3087,6 +3034,109 @@ extension TabViewController: ContentScopeUserScriptDelegate {
     }
 }
 
+// MARK: - TrackerStatsSubfeatureDelegate
+extension TabViewController: TrackerStatsSubfeatureDelegate {
+
+    func trackerStats(_ subfeature: TrackerStatsSubfeature,
+                      didDetectTracker tracker: TrackerStatsSubfeature.TrackerDetection) {
+        guard privacyInfo?.isFor(self.url) ?? false else { return }
+        guard let currentPageUrl = url else { return }
+
+        let allowReason = allowReason(from: tracker)
+        let state: BlockingState = tracker.blocked ? .blocked : .allowed(reason: allowReason)
+
+        let trackerHost = URL(string: tracker.url)?.host
+
+        let knownTrackerOwner: KnownTracker.Owner? = tracker.ownerName.map { ownerName in
+            KnownTracker.Owner(name: ownerName, displayName: ownerName, ownedBy: nil)
+        }
+
+        let knownTracker: KnownTracker? = (trackerHost != nil || knownTrackerOwner != nil || tracker.category != nil) ? KnownTracker(
+            domain: trackerHost ?? tracker.url,
+            defaultAction: tracker.blocked ? .block : .ignore,
+            owner: knownTrackerOwner,
+            prevalence: tracker.prevalence ?? 0,
+            subdomains: nil,
+            categories: tracker.category.map { [$0] },
+            rules: nil
+        ) : nil
+
+        let entity: Entity? = tracker.entityName.map { entityName in
+            Entity(displayName: entityName, domains: trackerHost.map { [$0] } ?? [], prevalence: tracker.prevalence ?? 0)
+        }
+
+        let detectedRequest = DetectedRequest(
+            url: tracker.url,
+            eTLDplus1: trackerHost,
+            knownTracker: knownTracker,
+            entity: entity,
+            state: state,
+            pageUrl: tracker.pageUrl
+        )
+
+        if tracker.isSurrogate, let trackerHost {
+            privacyInfo?.trackerInfo.addInstalledSurrogateHost(trackerHost, for: detectedRequest, onPageWithURL: currentPageUrl)
+        }
+
+        userScriptDetectedTracker(detectedRequest)
+    }
+
+    func trackerStats(_ subfeature: TrackerStatsSubfeature,
+                      didInjectSurrogate surrogate: TrackerStatsSubfeature.SurrogateInjection) {
+        // Surrogate injection is logged for debugging
+        // The actual surrogate execution happens in C-S-S tracker-stats feature
+    }
+
+    func trackerStatsShouldEnableCTL(_ subfeature: TrackerStatsSubfeature) -> Bool {
+        // Match legacy iOS behavior (CTL surrogates were not processed here).
+        return false
+    }
+
+    func trackerStatsShouldProcessTrackers(_ subfeature: TrackerStatsSubfeature) -> Bool {
+        // Match legacy behavior: only process detections for the current page.
+        return privacyInfo?.isFor(self.url) ?? false
+    }
+
+    fileprivate func userScriptDetectedTracker(_ tracker: DetectedRequest) {
+        guard let url = url else { return }
+
+        adClickAttributionLogic.onRequestDetected(request: tracker)
+
+        if tracker.isBlocked && fireWoFollowUp {
+            fireWoFollowUp = false
+            Pixel.fire(pixel: .daxDialogsWithoutTrackersFollowUp)
+        }
+
+        privacyInfo?.trackerInfo.addDetectedTracker(tracker, onPageWithURL: url)
+    }
+
+    private func allowReason(from tracker: TrackerStatsSubfeature.TrackerDetection) -> AllowReason {
+        if tracker.isAllowlisted == true {
+            return .ruleException
+        }
+
+        let reason = tracker.reason?.lowercased() ?? ""
+
+        if reason.contains("ad") && reason.contains("attribution") {
+            return .adClickAttribution
+        }
+
+        if reason.contains("rule") || reason.contains("exception") || reason.contains("allowlist") {
+            return .ruleException
+        }
+
+        if reason.contains("first") || reason.contains("owned") {
+            return .ownedByFirstParty
+        }
+
+        if reason.contains("third") && reason.contains("party") {
+            return .otherThirdPartyRequest
+        }
+
+        return .protectionDisabled
+    }
+}
+
 // MARK: - AutoconsentUserScriptDelegate
 extension TabViewController: AutoconsentUserScriptDelegate {
     
@@ -3106,12 +3156,9 @@ extension TabViewController: AdClickAttributionLogicDelegate {
         guard privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking)
         else {
             userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
-            contentBlockerUserScript?.currentAdClickAttributionVendor = nil
-            contentBlockerUserScript?.supplementaryTrackerData = []
             return
         }
 
-        contentBlockerUserScript?.currentAdClickAttributionVendor = vendor
         if let rules = rules {
 
             let globalListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
@@ -3124,10 +3171,6 @@ extension TabViewController: AdClickAttributionLogicDelegate {
                 userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
                 try? userContentController.enableGlobalContentRuleList(withIdentifier: globalAttributionListName)
             }
-
-            contentBlockerUserScript?.supplementaryTrackerData = [rules.trackerData]
-        } else {
-            contentBlockerUserScript?.supplementaryTrackerData = []
         }
     }
 

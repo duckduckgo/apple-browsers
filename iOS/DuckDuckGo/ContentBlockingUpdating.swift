@@ -23,7 +23,7 @@ import Core
 import Combine
 import WebKit
 
-protocol ContentBlockerRulesManagerProtocol: CompiledRuleListsSource {
+public protocol ContentBlockerRulesManagerProtocol: CompiledRuleListsSource {
     var updatesPublisher: AnyPublisher<ContentBlockerRulesManager.UpdateEvent, Never> { get }
 }
 extension ContentBlockerRulesManager: ContentBlockerRulesManagerProtocol {}

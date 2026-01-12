@@ -84,15 +84,13 @@ struct HeadlessWebView: UIViewRepresentable {
     private func makeUserContentController() -> WKUserContentController {
         let userContentController = WKUserContentController()
         
-        // Enable content blocking rules
+        // Enable content scope scripts
         if let userScriptsDependencies = settings.userScriptsDependencies {
             let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
-            let contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
             do {
                 let contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                     properties: sourceProvider.contentScopeProperties,
                                                                     privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-                userContentController.addUserScript(contentBlockerUserScript.makeWKUserScriptSync())
                 userContentController.addUserScript(contentScopeUserScript.makeWKUserScriptSync())
             } catch {
                 if let error = error as? UserScriptError {

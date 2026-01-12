@@ -1327,7 +1327,7 @@
   function isGloballyDisabled(args) {
     return args.site.allowlisted || args.site.isBroken;
   }
-  var platformSpecificFeatures = ["navigatorInterface", "windowsPermissionUsage", "messageBridge", "favicon"];
+  var platformSpecificFeatures = ["navigatorInterface", "windowsPermissionUsage", "messageBridge", "favicon", "trackerStats"];
   function isPlatformSpecificFeature(featureName) {
     return platformSpecificFeatures.includes(featureName);
   }
@@ -1389,11 +1389,12 @@
       "autofillImport",
       "favicon",
       "webTelemetry",
-      "pageContext"
+      "pageContext",
+      "trackerStats"
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "pageContext"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "pageContext", "trackerStats"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -4068,6 +4069,7 @@
        *   messagingConfig?: import('@duckduckgo/messaging').MessagingConfig,
        *   messagingContextName: string,
        *   currentCohorts?: Array<{feature: string, cohort: string, subfeature: string}>,
+       *   surrogates?: Record<string, () => void>,
        * } | null}
        */
       __privateAdd(this, _args);
@@ -4488,31 +4490,81 @@
       return this.isDebug;
     }
     /**
-     * Logging utility for this feature (Stolen some inspo from DuckPlayer logger, will unify in the future)
+     * Whether to route logs to native on Apple platforms
+     * When true, logs go ONLY to native (not browser console)
+     * When false, logs go ONLY to browser console
+     * @returns {boolean}
+     */
+    get _shouldRouteToNative() {
+      const platformName = this.platform?.name;
+      const shouldLogNative = false;
+      return shouldLogNative && (platformName === "ios" || platformName === "macos");
+    }
+    /**
+     * Route log to native webkit handler for Xcode visibility (Apple DX enhancement)
+     * @param {string} level - Log level (info, warn, error)
+     * @param {any[]} args - Log arguments
+     */
+    _routeLogToNative(level, args) {
+      if (!this._messaging) return;
+      try {
+        this._messaging.notify("debugLog", {
+          level,
+          feature: this.name,
+          timestamp: Date.now(),
+          args: args.map((arg) => {
+            if (arg instanceof Error) {
+              return { type: "error", message: arg.message, stack: arg.stack };
+            }
+            if (typeof arg === "object") {
+              try {
+                return JSON.stringify(arg);
+              } catch {
+                return String(arg);
+              }
+            }
+            return String(arg);
+          })
+        });
+      } catch {
+      }
+    }
+    /**
+     * Logging utility for this feature
+     *
+     * Choose between browser console (with correct line numbers) OR native console:
+     * - When _shouldRouteToNative is false: logs go to browser console only
+     * - When _shouldRouteToNative is true: logs go to native console only (no browser console)
+     *
+     * Note: Returns bound console functions directly to preserve caller's line numbers.
      */
     get log() {
       const shouldLog = this.shouldLog;
       const prefix = `${this.name.padEnd(20, " ")} |`;
+      const routeToNative = this._shouldRouteToNative;
+      const routeLog = this._routeLogToNative.bind(this);
       return {
-        // These are getters to have the call site be the reported line number.
         get info() {
-          if (!shouldLog) {
-            return () => {
-            };
+          if (!shouldLog) return () => {
+          };
+          if (routeToNative) {
+            return (...args) => routeLog("info", args);
           }
           return consoleLog.bind(console, prefix);
         },
         get warn() {
-          if (!shouldLog) {
-            return () => {
-            };
+          if (!shouldLog) return () => {
+          };
+          if (routeToNative) {
+            return (...args) => routeLog("warn", args);
           }
           return consoleWarn.bind(console, prefix);
         },
         get error() {
-          if (!shouldLog) {
-            return () => {
-            };
+          if (!shouldLog) return () => {
+          };
+          if (routeToNative) {
+            return (...args) => routeLog("error", args);
           }
           return consoleError.bind(console, prefix);
         }
@@ -9917,6 +9969,541 @@ ${iframeContent}
   _cachedTimestamp = new WeakMap();
   _delayedRecheckTimer = new WeakMap();
 
+  // src/features/tracker-stats.js
+  init_define_import_meta_trackerLookup();
+
+  // src/features/tracker-stats/tracker-resolver.js
+  init_define_import_meta_trackerLookup();
+  var TrackerResolver = class {
+    /**
+     * @param {object} config
+     * @param {TrackerData} config.trackerData
+     * @param {Record<string, () => void>} config.surrogates
+     * @param {Record<string, object[]>} [config.allowlist]
+     * @param {string[]} [config.unprotectedDomains]
+     */
+    constructor(config) {
+      this._trackerData = null;
+      this._surrogateList = {};
+      this._allowlist = {};
+      this._unprotectedDomains = [];
+      if (config.trackerData) {
+        this._trackerData = this._processTrackerData(config.trackerData);
+      }
+      if (config.surrogates) {
+        this._surrogateList = config.surrogates;
+      }
+      if (config.allowlist) {
+        this._allowlist = config.allowlist;
+      }
+      if (config.unprotectedDomains) {
+        this._unprotectedDomains = config.unprotectedDomains;
+      }
+    }
+    /**
+     * Pre-process tracker rules into RegExp objects
+     * @param {TrackerData} data
+     */
+    _processTrackerData(data) {
+      for (const name in data.trackers) {
+        const tracker = data.trackers[name];
+        if (tracker.rules) {
+          for (const rule of tracker.rules) {
+            if (typeof rule.rule === "string") {
+              rule.rule = new RegExp(rule.rule, "ig");
+            }
+          }
+        }
+      }
+      return data;
+    }
+    /**
+     * Extract hostname from URL
+     * @param {string} url
+     * @param {boolean} [keepWWW]
+     */
+    _extractHost(url, keepWWW = false) {
+      try {
+        let hostname = new URL(url.startsWith("//") ? "http:" + url : url).hostname;
+        if (!keepWWW) {
+          hostname = hostname.replace(/^www\./, "");
+        }
+        return hostname;
+      } catch {
+        return "";
+      }
+    }
+    /**
+     * Parse URL and extract domain info
+     * @param {string} url
+     */
+    _parseUrl(url) {
+      if (url.startsWith("//")) {
+        url = "http:" + url;
+      }
+      try {
+        const parsed = new URL(url);
+        return { domain: parsed.hostname, hostname: parsed.hostname };
+      } catch {
+        return { domain: "", hostname: "" };
+      }
+    }
+    /**
+     * Get tracker data for a URL
+     * @param {string} urlToCheck - The resource URL being checked
+     * @param {string} siteUrl - The page URL
+     * @param {{ type?: string }} [request] - Request metadata
+     * @returns {TrackerMatch | null}
+     */
+    getTrackerData(urlToCheck, siteUrl, request = {}) {
+      if (!this._trackerData) {
+        return null;
+      }
+      const requestData = {
+        request,
+        siteUrl,
+        siteDomain: this._parseUrl(siteUrl).domain,
+        siteUrlSplit: this._extractHost(siteUrl).split("."),
+        urlToCheck,
+        urlToCheckDomain: this._parseUrl(urlToCheck).domain,
+        urlToCheckSplit: this._extractHost(urlToCheck).split(".")
+      };
+      const tracker = this._findTracker(requestData);
+      if (!tracker) {
+        return null;
+      }
+      const matchedRule = this._findRule(tracker, requestData);
+      const hasSurrogate = matchedRule?.surrogate ? Boolean(this._surrogateList[matchedRule.surrogate]) : false;
+      const matchedRuleException = matchedRule ? this._matchesRuleDefinition(matchedRule, "exceptions", requestData) : false;
+      const trackerOwner = this._findTrackerOwner(requestData.urlToCheckDomain);
+      const websiteOwner = this._findWebsiteOwner(requestData);
+      const firstParty = trackerOwner && websiteOwner ? trackerOwner === websiteOwner : false;
+      const fullTrackerDomain = requestData.urlToCheckSplit.join(".");
+      const { action, reason } = this._getAction({
+        firstParty,
+        matchedRule,
+        matchedRuleException,
+        defaultAction: tracker.default,
+        redirectUrl: hasSurrogate
+      });
+      return {
+        action,
+        reason,
+        firstParty,
+        matchedRule,
+        matchedRuleException,
+        tracker,
+        fullTrackerDomain
+      };
+    }
+    /**
+     * Find a tracker definition by walking up the domain hierarchy
+     */
+    _findTracker(requestData) {
+      const urlList = [...requestData.urlToCheckSplit];
+      while (urlList.length > 1) {
+        const trackerDomain = urlList.join(".");
+        urlList.shift();
+        const matchedTracker = this._trackerData?.trackers[trackerDomain];
+        if (matchedTracker) {
+          return matchedTracker;
+        }
+      }
+      return null;
+    }
+    /**
+     * Find tracker entity owner
+     * @param {string} domain
+     */
+    _findTrackerOwner(domain) {
+      if (!this._trackerData?.domains) return null;
+      const parts = domain.split(".");
+      while (parts.length > 1) {
+        const entityName = this._trackerData.domains[parts.join(".")];
+        if (entityName) {
+          return entityName;
+        }
+        parts.shift();
+      }
+      return null;
+    }
+    /**
+     * Find the entity owning the website
+     */
+    _findWebsiteOwner(requestData) {
+      if (!this._trackerData?.domains) return null;
+      const siteUrlList = [...requestData.siteUrlSplit];
+      while (siteUrlList.length > 1) {
+        const siteToCheck = siteUrlList.join(".");
+        siteUrlList.shift();
+        const entityName = this._trackerData.domains[siteToCheck];
+        if (entityName) {
+          return entityName;
+        }
+      }
+      return null;
+    }
+    /**
+     * Find matching rule for a tracker
+     */
+    _findRule(tracker, requestData) {
+      if (!tracker.rules?.length) return null;
+      return tracker.rules.find((ruleObj) => {
+        if (requestData.urlToCheck.match(ruleObj.rule)) {
+          if (ruleObj.options) {
+            return this._matchesRuleDefinition(ruleObj, "options", requestData);
+          }
+          return true;
+        }
+        return false;
+      });
+    }
+    /**
+     * Check if rule options/exceptions match request
+     */
+    _matchesRuleDefinition(rule, type, requestData) {
+      if (!rule[type]) return false;
+      const def = rule[type];
+      const matchTypes = def.types?.length ? def.types.includes(requestData.request?.type) : true;
+      const matchDomains = def.domains?.length ? def.domains.some((d) => d.match(requestData.siteDomain)) : true;
+      return matchTypes && matchDomains;
+    }
+    /**
+     * Determine blocking action and reason
+     * @param {object} params
+     * @param {boolean} params.firstParty
+     * @param {object} [params.matchedRule]
+     * @param {boolean} params.matchedRuleException
+     * @param {string} [params.defaultAction]
+     * @param {boolean} params.redirectUrl - whether a surrogate redirect is available
+     * @returns {{ action: 'block' | 'ignore' | 'redirect', reason: string }}
+     */
+    _getAction({ firstParty, matchedRule, matchedRuleException, defaultAction, redirectUrl }) {
+      if (firstParty) {
+        return { action: "ignore", reason: "first party" };
+      }
+      if (matchedRuleException) {
+        return { action: "ignore", reason: "matched rule - exception" };
+      }
+      if (!matchedRule && defaultAction === "ignore") {
+        return { action: "ignore", reason: "default ignore" };
+      }
+      if (matchedRule?.action === "ignore") {
+        return { action: "ignore", reason: "matched rule - ignore" };
+      }
+      if (!matchedRule && defaultAction === "block") {
+        return { action: "block", reason: "default block" };
+      }
+      if (matchedRule) {
+        if (redirectUrl) {
+          return { action: "redirect", reason: "matched rule - surrogate" };
+        }
+        return { action: "block", reason: "matched rule - block" };
+      }
+      return { action: "ignore", reason: "no match" };
+    }
+    /**
+     * Check if URL is in tracker allowlist
+     * @param {string} siteUrl - The page URL
+     * @param {string} requestUrl - The tracker URL
+     */
+    isAllowlisted(siteUrl, requestUrl) {
+      if (!Object.keys(this._allowlist).length) {
+        return false;
+      }
+      const parsedRequest = this._parseUrl(requestUrl);
+      const requestDomainParts = parsedRequest.domain.split(".");
+      let allowListEntry = null;
+      while (requestDomainParts.length > 1) {
+        const requestDomain = requestDomainParts.join(".");
+        allowListEntry = this._allowlist[requestDomain];
+        if (allowListEntry) break;
+        requestDomainParts.shift();
+      }
+      if (!allowListEntry) return false;
+      for (const entry of allowListEntry) {
+        if (requestUrl.match(entry.rule)) {
+          if (entry.domains.includes("<all>")) return true;
+          try {
+            const siteHost = new URL(siteUrl).host;
+            const siteDomainParts = siteHost.split(".");
+            while (siteDomainParts.length > 1) {
+              if (entry.domains.includes(siteDomainParts.join("."))) {
+                return true;
+              }
+              siteDomainParts.shift();
+            }
+          } catch {
+          }
+        }
+      }
+      return false;
+    }
+    /**
+     * Check if domain is unprotected
+     * @param {string} domain
+     */
+    isUnprotectedDomain(domain) {
+      const parts = domain.split(".");
+      while (parts.length > 1) {
+        if (this._unprotectedDomains.includes(parts.join("."))) {
+          return true;
+        }
+        parts.shift();
+      }
+      return false;
+    }
+    /**
+     * Get surrogate function for a pattern
+     * @param {string} pattern
+     * @returns {(() => void) | undefined}
+     */
+    getSurrogate(pattern) {
+      return this._surrogateList[pattern];
+    }
+  };
+
+  // src/features/tracker-stats.js
+  var CTL_SURROGATES = ["fb-sdk.js"];
+  function getTabURL() {
+    let framingOrigin = null;
+    try {
+      framingOrigin = globalThis.top?.location.href;
+    } catch {
+      framingOrigin = globalThis.document.referrer;
+    }
+    if ("ancestorOrigins" in globalThis.location && globalThis.location.ancestorOrigins.length) {
+      framingOrigin = globalThis.location.ancestorOrigins.item(globalThis.location.ancestorOrigins.length - 1);
+    }
+    try {
+      return framingOrigin ? new URL(framingOrigin) : null;
+    } catch {
+      return null;
+    }
+  }
+  var TrackerStats = class extends ContentFeature {
+    init() {
+      this._resolver = null;
+      this._loadedSurrogates = /* @__PURE__ */ new Set();
+      this._seenUrls = /* @__PURE__ */ new Set();
+      this._topLevelUrl = null;
+      this._blockingEnabled = true;
+      this._isUnprotectedDomain = false;
+      this._observer = null;
+      this._topLevelUrl = getTabURL();
+      if (!this._topLevelUrl) {
+        this.log.warn("Could not determine top-level URL");
+        return;
+      }
+      this._blockingEnabled = this.getFeatureSetting("blockingEnabled") !== false;
+      if (!this._blockingEnabled) {
+        this.log.info("Tracker blocking disabled via config");
+        return;
+      }
+      const surrogates = this.args?.surrogates || {};
+      let trackerData = this.getFeatureSetting("trackerData");
+      if (typeof trackerData === "string") {
+        try {
+          trackerData = JSON.parse(trackerData);
+        } catch (e) {
+          this.log.warn("Failed to parse trackerData:", e);
+          trackerData = null;
+        }
+      }
+      if (!trackerData) {
+        this.log.warn("No tracker data available");
+        return;
+      }
+      this._resolver = new TrackerResolver({
+        trackerData,
+        surrogates,
+        allowlist: this.getFeatureSetting("allowlist"),
+        unprotectedDomains: [
+          ...this.getFeatureSetting("tempUnprotectedDomains") || [],
+          ...this.getFeatureSetting("userUnprotectedDomains") || []
+        ]
+      });
+      this._isUnprotectedDomain = this._resolver.isUnprotectedDomain(this._topLevelUrl.host);
+      if (this._isUnprotectedDomain) {
+        this.log.info("Domain is unprotected:", this._topLevelUrl.host);
+      }
+      this._setupInterception();
+    }
+    /**
+     * Set up resource interception for tracker detection
+     */
+    _setupInterception() {
+      this._observer = new MutationObserver((records) => {
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            if (node instanceof HTMLScriptElement && node.src) {
+              this._checkAndBlock(node.src, "script", node);
+            }
+          }
+          if (record.target instanceof HTMLScriptElement && record.attributeName === "src") {
+            this._checkAndBlock(record.target.src, "script", record.target);
+          }
+        }
+      });
+      const rootElement = document.body || document.documentElement;
+      this._observer.observe(rootElement, {
+        childList: true,
+        subtree: true,
+        attributeFilter: ["src"]
+      });
+      this._processExistingScripts();
+      window.addEventListener(
+        "load",
+        () => {
+          this._processPage();
+        },
+        { once: true }
+      );
+      if (document.readyState === "loading") {
+        document.addEventListener(
+          "DOMContentLoaded",
+          () => {
+            this._processPage();
+          },
+          { once: true }
+        );
+      }
+      this.log.info("Tracker interception initialized");
+    }
+    /**
+     * Process scripts that might already exist in the DOM at initialization time
+     */
+    _processExistingScripts() {
+      if (!this._seenUrls) return;
+      const seenUrls = this._seenUrls;
+      const scripts = [...document.scripts].filter((el) => el.src && !seenUrls.has(el.src));
+      for (const script of scripts) {
+        this._checkAndBlock(script.src, "script", script);
+      }
+    }
+    /**
+     * Process existing page elements for tracker detection
+     */
+    _processPage() {
+      if (!this._seenUrls) return;
+      const seenUrls = this._seenUrls;
+      const scripts = [...document.scripts].filter((el) => el.src && !seenUrls.has(el.src));
+      for (const script of scripts) {
+        this._checkAndBlock(script.src, "script", script);
+      }
+    }
+    /**
+     * Check URL and potentially block/surrogate it
+     * @param {string} url
+     * @param {string} resourceType
+     * @param {HTMLElement | null} element
+     */
+    async _checkAndBlock(url, resourceType, element = null) {
+      if (!url || !this._resolver || !this._seenUrls || this._seenUrls.has(url)) {
+        return false;
+      }
+      this._seenUrls.add(url);
+      if (!this._blockingEnabled) {
+        return false;
+      }
+      const topUrl = this._topLevelUrl?.toString() || "";
+      const result = this._resolver.getTrackerData(url, topUrl, { type: resourceType });
+      if (!result) {
+        return false;
+      }
+      let blocked = false;
+      if (this._isUnprotectedDomain) {
+        result.reason = "unprotectedDomain";
+      } else if (result.action !== "ignore") {
+        blocked = true;
+      }
+      const isSurrogate = Boolean(result.matchedRule?.surrogate);
+      const isAllowlisted = this._resolver.isAllowlisted(topUrl, url);
+      if (result.tracker) {
+        const trackerData = {
+          url,
+          blocked,
+          reason: result.reason || null,
+          isSurrogate: isSurrogate && blocked && !isAllowlisted,
+          pageUrl: this._topLevelUrl?.href || "",
+          entityName: result.tracker.owner?.displayName || null,
+          ownerName: result.tracker.owner?.name || null,
+          category: result.tracker.categories?.[0] || null,
+          prevalence: result.tracker.owner?.prevalence || null,
+          isAllowlisted
+        };
+        this.notify("trackerDetected", trackerData);
+        this.log.info("Tracker detected:", url, blocked ? "(blocked)" : "(allowed)");
+      }
+      if (blocked && isSurrogate && !isAllowlisted) {
+        const surrogateName = result.matchedRule.surrogate;
+        if (CTL_SURROGATES.includes(surrogateName)) {
+          try {
+            const ctlEnabled = await this.request("isCTLEnabled", {});
+            if (!ctlEnabled) {
+              this.log.info("CTL disabled, skipping surrogate:", surrogateName);
+              return false;
+            }
+          } catch {
+          }
+        }
+        this._loadSurrogate(surrogateName, element);
+        this.notify("surrogateInjected", {
+          url,
+          blocked: true,
+          reason: result.reason,
+          isSurrogate: true,
+          pageUrl: this._topLevelUrl?.href || ""
+        });
+        this.log.info("Surrogate injected:", surrogateName, "for", url);
+        return true;
+      }
+      return blocked;
+    }
+    /**
+     * Load a surrogate script.
+     *
+     * Surrogates are pre-injected by native as actual JS functions in window.__ddgSurrogates.
+     * This avoids CSP issues since we're not using new Function() or eval().
+     *
+     * @param {string} pattern - Surrogate pattern (e.g., "adsbygoogle.js")
+     * @param {HTMLElement | null} targetElement - Original element being replaced
+     */
+    _loadSurrogate(pattern, targetElement) {
+      if (!this._loadedSurrogates || !this._resolver) {
+        return;
+      }
+      if (this._loadedSurrogates.has(pattern)) {
+        return;
+      }
+      const surrogateFn = this._resolver.getSurrogate(pattern);
+      if (typeof surrogateFn !== "function") {
+        this.log.warn("Surrogate not found:", pattern);
+        return;
+      }
+      try {
+        if (targetElement && "onerror" in targetElement) {
+          targetElement.onerror = null;
+        }
+        surrogateFn();
+        this._loadedSurrogates.add(pattern);
+        if (targetElement && "onload" in targetElement && typeof targetElement.onload === "function") {
+          targetElement.onload(new Event("load"));
+        }
+      } catch (e) {
+        this.log.error("Surrogate execution failed:", pattern, e);
+      }
+    }
+    /**
+     * Clean up on feature destroy
+     */
+    destroy() {
+      this._observer?.disconnect();
+      this._observer = null;
+    }
+  };
+  var tracker_stats_default = TrackerStats;
+
   // ddg:platformFeatures:ddg:platformFeatures
   var ddg_platformFeatures_default = {
     ddg_feature_webCompat: web_compat_default,
@@ -9935,7 +10522,8 @@ ${iframeContent}
     ddg_feature_exceptionHandler: ExceptionHandler,
     ddg_feature_apiManipulation: ApiManipulation,
     ddg_feature_webInterferenceDetection: WebInterferenceDetection,
-    ddg_feature_pageContext: PageContext
+    ddg_feature_pageContext: PageContext,
+    ddg_feature_trackerStats: tracker_stats_default
   };
 
   // src/url-change.js
@@ -10070,12 +10658,14 @@ ${iframeContent}
     const config = $CONTENT_SCOPE$;
     const userUnprotectedDomains = $USER_UNPROTECTED_DOMAINS$;
     const userPreferences = $USER_PREFERENCES$;
+    const surrogates = $SURROGATES$;
     const processedConfig = processConfig(config, userUnprotectedDomains, userPreferences, platformSpecificFeatures);
     processedConfig.messagingConfig = new WebkitMessagingConfig({
       webkitMessageHandlerNames: [processedConfig.messagingContextName],
       secret: "",
       hasModernWebkitAPI: true
     });
+    processedConfig.surrogates = surrogates;
     load(getLoadArgs(processedConfig));
     init(processedConfig);
   }

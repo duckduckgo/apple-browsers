@@ -71,9 +71,7 @@ final class ContentBlockingTabExtension: NSObject {
     init(fbBlockingEnabledProvider: FbBlockingEnabledProvider,
          userContentControllerFuture: some Publisher<some ContentBlockingAssetsInstalling, Never>,
          cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?,
-         privacyConfigurationManager: PrivacyConfigurationManaging,
-         contentBlockerRulesUserScriptPublisher: some Publisher<ContentBlockerRulesUserScript?, Never>,
-         surrogatesUserScriptPublisher: some Publisher<SurrogatesUserScript?, Never>) {
+         privacyConfigurationManager: PrivacyConfigurationManaging) {
 
         self.cbaTimeReporter = cbaTimeReporter
         self.fbBlockingEnabledProvider = fbBlockingEnabledProvider
@@ -82,12 +80,6 @@ final class ContentBlockingTabExtension: NSObject {
 
         userContentControllerFuture.sink { [weak self] userContentController in
             self?.userContentController = userContentController
-        }.store(in: &cancellables)
-        contentBlockerRulesUserScriptPublisher.sink { [weak self] contentBlockerRulesUserScript in
-            contentBlockerRulesUserScript?.delegate = self
-        }.store(in: &cancellables)
-        surrogatesUserScriptPublisher.sink { [weak self] surrogatesUserScript in
-            surrogatesUserScript?.delegate = self
         }.store(in: &cancellables)
     }
 
@@ -138,46 +130,9 @@ extension ContentBlockingTabExtension: NavigationResponder {
 
 }
 
-extension ContentBlockingTabExtension: ContentBlockerRulesUserScriptDelegate {
-
-    func contentBlockerRulesUserScriptShouldProcessTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
-        return true
-    }
-
-    func contentBlockerRulesUserScriptShouldProcessCTLTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
-        return fbBlockingEnabledProvider.fbBlockingEnabled
-    }
-
-    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript, detectedTracker tracker: DetectedRequest) {
-        trackersSubject.send(DetectedTracker(request: tracker, type: .tracker))
-        if tracker.state == BlockingState.blocked && tracker.ownerName == fbBlockingEnabledProvider.fbEntity {
-            fbBlockingEnabledProvider.trackerDetected()
-        }
-    }
-
-    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript, detectedThirdPartyRequest request: DetectedRequest) {
-        trackersSubject.send(DetectedTracker(request: request, type: .thirdPartyRequest))
-    }
-
-}
-
-extension ContentBlockingTabExtension: SurrogatesUserScriptDelegate {
-
-    func surrogatesUserScriptShouldProcessTrackers(_ script: SurrogatesUserScript) -> Bool {
-        return true
-    }
-
-    func surrogatesUserScriptShouldProcessCTLTrackers(_ script: SurrogatesUserScript) -> Bool {
-        fbBlockingEnabledProvider.fbBlockingEnabled
-    }
-
-    func surrogatesUserScript(_ script: SurrogatesUserScript, detectedTracker tracker: DetectedRequest, withSurrogate host: String) {
-        trackersSubject.send(DetectedTracker(request: tracker, type: .trackerWithSurrogate(host: host)))
-    }
-}
-
 protocol ContentBlockingExtensionProtocol: AnyObject, NavigationResponder {
     var trackersPublisher: AnyPublisher<DetectedTracker, Never> { get }
+    func sendDetectedTracker(_ tracker: DetectedTracker)
 }
 
 extension ContentBlockingTabExtension: TabExtension, ContentBlockingExtensionProtocol {
@@ -187,6 +142,10 @@ extension ContentBlockingTabExtension: TabExtension, ContentBlockingExtensionPro
 
     var trackersPublisher: AnyPublisher<DetectedTracker, Never> {
         trackersSubject.eraseToAnyPublisher()
+    }
+
+    func sendDetectedTracker(_ tracker: DetectedTracker) {
+        trackersSubject.send(tracker)
     }
 }
 

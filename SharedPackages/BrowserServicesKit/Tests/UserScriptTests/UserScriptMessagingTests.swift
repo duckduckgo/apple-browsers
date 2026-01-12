@@ -185,6 +185,65 @@ class UserScriptMessagingTests: XCTestCase {
             XCTAssertEqual(error.localizedDescription, "The incoming message was not valid - one or more of 'featureName', 'method'  or 'context' was missing")
         }
     }
+
+    /// Ensure that debugLog messages are routed to the 'debug' feature regardless of originating feature
+    /// This tests the cross-cutting concern routing for debug messages
+    func testDebugLogRoutedToDebugFeature() async {
+        // Create broker and register both a regular feature and debug feature
+        let testee = UserScriptMessageBroker(context: "contentScopeScripts")
+        testee.registerSubfeature(delegate: TestDelegate())
+        testee.registerSubfeature(delegate: TestDebugDelegate())
+
+        // Create a debugLog message from 'fooBarFeature' (which doesn't have a debugLog handler)
+        let msg = MockMsg(name: testee.context, body: [
+            "context": "contentScopeScripts",
+            "featureName": "fooBarFeature",
+            "method": "debugLog",
+            "params": [
+                "level": "info",
+                "feature": "fooBarFeature",
+                "timestamp": 1234567890.0,
+                "args": ["test message"]
+            ]
+        ])
+
+        let action = testee.messageHandlerFor(msg)
+
+        // Verify the action is a notify (not an error)
+        if case .notify = action {
+            // Success - the message was routed to debug feature
+            let json = try? await testee.execute(action: action, original: msg)
+            XCTAssertEqual("{}", json)
+        } else {
+            XCTFail("Expected notify action, got \(action)")
+        }
+    }
+
+    /// Ensure that signpost messages are also routed to the 'debug' feature
+    func testSignpostRoutedToDebugFeature() async {
+        let testee = UserScriptMessageBroker(context: "contentScopeScripts")
+        testee.registerSubfeature(delegate: TestDelegate())
+        testee.registerSubfeature(delegate: TestDebugDelegate())
+
+        let msg = MockMsg(name: testee.context, body: [
+            "context": "contentScopeScripts",
+            "featureName": "someOtherFeature",
+            "method": "signpost",
+            "params": [
+                "event": "start",
+                "url": "https://example.com"
+            ]
+        ])
+
+        let action = testee.messageHandlerFor(msg)
+
+        if case .notify = action {
+            let json = try? await testee.execute(action: action, original: msg)
+            XCTAssertEqual("{}", json)
+        } else {
+            XCTFail("Expected notify action for signpost")
+        }
+    }
 }
 
 class HostnameMatchingRuleTests: XCTestCase {
@@ -302,6 +361,33 @@ struct TestDelegate: Subfeature {
     func responseExample(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let person = Person(name: "Kittie")
         return person
+    }
+}
+
+/// Test delegate for the 'debug' feature to test cross-cutting debug routing
+struct TestDebugDelegate: Subfeature {
+    weak var broker: UserScriptMessageBroker?
+
+    var featureName = "debug"
+    var messageOriginPolicy: MessageOriginPolicy = .all
+
+    func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        switch methodName {
+        case "debugLog": return handleDebugLog
+        case "signpost": return handleSignpost
+        default:
+            return nil
+        }
+    }
+
+    func handleDebugLog(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        // Just acknowledge receipt
+        return nil
+    }
+
+    func handleSignpost(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        // Just acknowledge receipt
+        return nil
     }
 }
 

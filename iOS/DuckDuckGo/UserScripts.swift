@@ -19,6 +19,7 @@
 
 import AIChat
 import BrowserServicesKit
+import Configuration
 import Core
 import Foundation
 import SpecialErrorPages
@@ -32,8 +33,6 @@ import PrivacyConfig
 
 final class UserScripts: UserScriptsProvider {
 
-    let contentBlockerUserScript: ContentBlockerRulesUserScript
-    let surrogatesScript: SurrogatesUserScript
     let autofillUserScript: AutofillUserScript
     let loginFormDetectionScript: LoginFormDetectionUserScript?
     let contentScopeUserScript: ContentScopeUserScript
@@ -58,28 +57,46 @@ final class UserScripts: UserScriptsProvider {
     private(set) var findInPageScript = FindInPageUserScript()
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var printingUserScript = PrintingUserScript()
-    private(set) var debugScript = DebugUserScript()
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
-        contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
-        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
+        
+        // Create tracker stats data source for C-S-S
+        let trackerStatsDataSource = DefaultTrackerStatsDataSource(
+            contentBlockingManager: sourceProvider.contentBlockingManager
+        )
+        
+        // Load surrogates for injection into C-S-S via $SURROGATES$ placeholder
+        // Surrogates are JavaScript functions that can't be serialized to JSON
+        let surrogatesText: String? = if let surrogatesData = sourceProvider.configStorage.loadData(for: .surrogates) {
+            String(data: surrogatesData, encoding: .utf8)
+        } else {
+            nil
+        }
+        
         do {
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                trackerStatsDataSource: trackerStatsDataSource
+            )
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
                                                                 scriptContext: .contentScope,
-                                                                privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+                                                                privacyConfigurationJSONGenerator: configGenerator,
+                                                                surrogatesText: surrogatesText)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,
                                                                         scriptContext: .contentScopeIsolated,
-                                                                        privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+                                                                        privacyConfigurationJSONGenerator: configGenerator,
+                                                                        surrogatesText: surrogatesText)
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -120,11 +137,8 @@ final class UserScripts: UserScriptsProvider {
     }
 
     lazy var userScripts: [UserScript] = [
-        debugScript,
         autoconsentUserScript,
         findInPageScript,
-        surrogatesScript,
-        contentBlockerUserScript,
         faviconScript,
         fullScreenVideoScript,
         autofillUserScript,

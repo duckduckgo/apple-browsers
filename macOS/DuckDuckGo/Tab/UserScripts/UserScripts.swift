@@ -35,15 +35,13 @@ final class UserScripts: UserScriptsProvider {
     let contextMenuScript = ContextMenuUserScript()
     let printingUserScript = PrintingUserScript()
     let hoverUserScript = HoverUserScript()
-    let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
     let clickToLoadScript: ClickToLoadUserScript
 
-    let contentBlockerRulesScript: ContentBlockerRulesUserScript
-    let surrogatesScript: SurrogatesUserScript
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
+    var trackerStatsSubfeature: TrackerStatsSubfeature?
     let autofillScript: WebsiteAutofillUserScript
     let specialPages: SpecialPagesUserScript?
     let autoconsentUserScript: UserScriptWithAutoconsent
@@ -68,8 +66,7 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding, contentScopePreferences: ContentScopePreferences) {
         self.contentScopePreferences = contentScopePreferences
         clickToLoadScript = ClickToLoadUserScript()
-        contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
-        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
+
         let aiChatDebugURLSettings = AIChatDebugURLSettings()
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
@@ -103,9 +100,28 @@ final class UserScripts: UserScriptsProvider {
                                            debug: contentScopePreferences.isDebugStateEnabled,
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
                                            currentCohorts: currentCohorts)
+
+        // Create tracker stats data source for C-S-S
+        let trackerStatsDataSource = DefaultTrackerStatsDataSource(
+            contentBlockingManager: sourceProvider.contentBlockingManager
+        )
+        let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+            featureFlagger: sourceProvider.featureFlagger,
+            privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+            trackerStatsDataSource: trackerStatsDataSource
+        )
+
+        // Load surrogates for injection into C-S-S via $SURROGATES$ placeholder
+        // Surrogates are JavaScript functions that can't be serialized to JSON
+        let surrogatesText: String? = if let surrogatesData = sourceProvider.configStorage.loadData(for: .surrogates) {
+            String(data: surrogatesData, encoding: .utf8)
+        } else {
+            nil
+        }
+
         do {
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", "trackerStats"], privacyConfigurationJSONGenerator: configGenerator, surrogatesText: surrogatesText)
+            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: configGenerator, surrogatesText: surrogatesText)
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -238,10 +254,7 @@ final class UserScripts: UserScriptsProvider {
     }
 
     lazy var userScripts: [UserScript] = [
-        debugScript,
         contextMenuScript,
-        surrogatesScript,
-        contentBlockerRulesScript,
         pageObserverScript,
         printingUserScript,
         hoverUserScript,

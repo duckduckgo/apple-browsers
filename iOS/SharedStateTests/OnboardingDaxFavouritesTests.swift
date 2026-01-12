@@ -80,12 +80,7 @@ import Combine
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let mockConfigManager = MockPrivacyConfigurationManager()
 
-        let mockScriptDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: AppSettingsMock(),
-                                                                              sync: MockDDGSyncing(),
-                                                                              privacyConfigurationManager: mockConfigManager,
-                                                                              contentBlockingManager: ContentBlockerRulesManagerMock(),
-                                                                              fireproofing: fireproofing,
-                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager())
+        let mockScriptDependencies = DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockConfigManager)
 
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,

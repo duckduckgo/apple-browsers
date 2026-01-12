@@ -167,27 +167,39 @@ public final class UserScriptMessageBroker: NSObject {
 
         /// first, check that the incoming message is roughly in the correct shape
         guard let dict = message.messageBody as? [String: Any],
-              let featureName = dict["featureName"] as? String,
+              var featureName = dict["featureName"] as? String,
               let context = dict["context"] as? String,
               let method = dict["method"] as? String
         else {
+            Logger.general.error("UserScriptMessaging: Invalid message params")
             return .error(.invalidParams)
         }
 
-        /// Now try to match the message to a registered delegate
-        guard let delegate = callbacks[featureName] else {
-            return .error(.notFoundFeature(featureName))
+        /// Special handling for cross-cutting debug methods
+        /// Route debugLog and signpost to the 'debug' feature regardless of originating feature
+        /// This allows features to send debug logs without implementing their own handlers
+        if method == "debugLog" || method == "signpost" {
+            featureName = "debug"
         }
 
-        /// Check if the selected delegate accepts messages from this origin
-        guard delegate.messageOriginPolicy.isAllowed(hostProvider.hostForMessage(message)) else {
-            return .error(.policyRestriction)
-        }
+    /// Now try to match the message to a registered delegate
+    guard let delegate = callbacks[featureName] else {
+        Logger.general.error("UserScriptMessaging: Feature '\(featureName, privacy: .public)' not found in callbacks. Available features: \(self.callbacks.keys.joined(separator: ", "), privacy: .public)")
+        return .error(.notFoundFeature(featureName))
+    }
 
-        /// Now ask the delegate to provide the handler
-        guard let handler = delegate.handler(forMethodNamed: method) else {
-            return .error(.notFoundHandler(feature: featureName, method: method))
-        }
+    /// Check if the selected delegate accepts messages from this origin
+    let messageHost = hostProvider.hostForMessage(message)
+    guard delegate.messageOriginPolicy.isAllowed(messageHost) else {
+        Logger.general.error("UserScriptMessaging: Message from host '\(messageHost ?? "nil", privacy: .public)' not allowed by policy for feature '\(featureName, privacy: .public)'")
+        return .error(.policyRestriction)
+    }
+
+    /// Now ask the delegate to provide the handler
+    guard let handler = delegate.handler(forMethodNamed: method) else {
+        Logger.general.error("UserScriptMessaging: No handler found for method '\(method, privacy: .public)' in feature '\(featureName, privacy: .public)'")
+        return .error(.notFoundHandler(feature: featureName, method: method))
+    }
 
         /// just send empty params if absent
         var methodParams: Any = [String: Any]()
@@ -220,15 +232,15 @@ public final class UserScriptMessageBroker: NSObject {
             do {
                 _=try await handler(notification.params, original)
             } catch {
-                Logger.general.error("UserScriptMessaging: unhandled exception \(error.localizedDescription, privacy: .public)")
+                Logger.general.error("UserScriptMessaging: unhandled exception \(error.localizedDescription, privacy: .public) for method '\(notification.method, privacy: .public)'")
             }
             return "{}"
 
-            /// Here the client will be expecting a response, so we always to produce one
-            /// We catch errors from handlers so that we can forward the response to clients with the correct context
-            ///
-            /// Most of the logic here is around ensuring we send either `result` or `error` in the response
-            /// Since that's how the Javascript side determines if the request was successful or not.
+        /// Here the client will be expecting a response, so we always to produce one
+        /// We catch errors from handlers so that we can forward the response to clients with the correct context
+        ///
+        /// Most of the logic here is around ensuring we send either `result` or `error` in the response
+        /// Since that's how the Javascript side determines if the request was successful or not.
         case .respond(let handler, let request):
             do {
                 let encodableResponse = try await handler(request.params, original)

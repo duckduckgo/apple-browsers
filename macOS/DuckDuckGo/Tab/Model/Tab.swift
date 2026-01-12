@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import ContentBlocking
 import FeatureFlags
 import Foundation
 import History
@@ -30,6 +31,7 @@ import PageRefreshMonitor
 import PixelKit
 import PrivacyConfig
 import SpecialErrorPages
+import TrackerRadarKit
 import UserScript
 import WebKit
 import SERPSettings
@@ -98,7 +100,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private var themeCancellable: AnyCancellable?
 
     private var extensions: TabExtensions
-    // accesing TabExtensions‘ Public Protocols projecting tab.extensions.extensionName to tab.extensionName
+    // accessing TabExtensions' Public Protocols projecting tab.extensions.extensionName to tab.extensionName
     // allows extending Tab functionality while maintaining encapsulation
     subscript<Extension>(dynamicMember keyPath: KeyPath<TabExtensions, Extension?>) -> Extension? {
         self.extensions[keyPath: keyPath]
@@ -603,7 +605,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     /// see https://github.com/mozilla-mobile/firefox-ios/wiki/WKWebView-navigation-and-security-considerations
     @Published private(set) var securityOrigin: SecurityOrigin = .empty
 
-    /// Set to true when the Tab‘s first navigation is committed
+    /// Set to true when the Tab's first navigation is committed
     @Published var hasCommittedContent = false
 
     @discardableResult
@@ -806,12 +808,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         updateCanGoBackForward(withCurrentNavigation: navigationDelegate.currentNavigation)
     }
 
-    // published $currentNavigation emits nil before actual currentNavigation property is set to nil, that‘s why default `= nil` argument can‘t be used here
+    // published $currentNavigation emits nil before actual currentNavigation property is set to nil, that's why default `= nil` argument can't be used here
     @MainActor(unsafe)
     private func updateCanGoBackForward(withCurrentNavigation currentNavigation: Navigation?) {
         dispatchPrecondition(condition: .onQueue(.main))
 
-        // “freeze” back-forward buttons updates when current backForwardListItem is being popped..
+        // "freeze" back-forward buttons updates when current backForwardListItem is being popped..
         if webView.canGoForward
             // coming back to the same backForwardList item from where started
             && (webView.backForwardList.currentItem?.identity == currentNavigation?.navigationAction.fromHistoryItemIdentity
@@ -921,7 +923,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
 
         guard let backForwardNavigation else {
-            Logger.navigation.error("item `\(item.title ?? "") – \(item.url?.absoluteString ?? "")` is not in the backForwardList")
+            Logger.navigation.error("item `\(item.title ?? "") - \(item.url?.absoluteString ?? "")` is not in the backForwardList")
             return nil
         }
 
@@ -1033,7 +1035,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         let source = content.source
         if url.isFileURL {
-            // WebKit won‘t load local page‘s external resouces even with `allowingReadAccessTo` provided
+            // WebKit won't load local page's external resouces even with `allowingReadAccessTo` provided
             // this could be fixed using a custom scheme handler loading local resources in future.
             let readAccessScopeURL = url
             return webView.navigator(distributedNavigationDelegate: navigationDelegate)
@@ -1068,7 +1070,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 // reload when showing error due to connection failure
                 return true
             default:
-                // don‘t autoreload on other kinds of errors
+                // don't autoreload on other kinds of errors
                 return false
             }
 
@@ -1275,14 +1277,88 @@ extension Tab: UserContentControllerDelegate {
         Logger.contentBlocking.info("didInstallContentRuleLists")
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
-        userScripts.debugScript.instrumentation = instrumentation
         userScripts.pageObserverScript.delegate = self
         userScripts.printingUserScript.delegate = self
         userScripts.serpSettingsUserScript?.delegate = self
         userScripts.serpSettingsUserScript?.webView = self.webView
         specialPagesUserScript = nil
+
+        // Register tracker stats subfeature for surrogate injection handling
+        userScripts.trackerStatsSubfeature = TrackerStatsSubfeature(delegate: self)
+        if let trackerStatsSubfeature = userScripts.trackerStatsSubfeature {
+            userScripts.contentScopeUserScript.registerTrackerStatsSubfeature(trackerStatsSubfeature)
+        }
     }
 
+}
+
+// MARK: - TrackerStatsSubfeatureDelegate
+extension Tab: TrackerStatsSubfeatureDelegate {
+
+    func trackerStats(_ subfeature: TrackerStatsSubfeature, didDetectTracker tracker: TrackerStatsSubfeature.TrackerDetection) {
+        // Convert C-S-S tracker detection to DetectedRequest format for existing infrastructure
+        let state: BlockingState = tracker.blocked ? .blocked : .allowed(reason: determineAllowReason(tracker))
+        let eTLDplus1 = URL(string: tracker.url).flatMap { privacyFeatures.contentBlocking.tld.eTLDplus1(forStringURL: $0.absoluteString) }
+
+        let detectedRequest = DetectedRequest(
+            url: tracker.url,
+            eTLDplus1: eTLDplus1,
+            knownTracker: nil, // C-S-S already provides entity/category data
+            entity: nil,
+            state: state,
+            pageUrl: tracker.pageUrl
+        )
+
+        // Determine tracker type based on surrogate flag
+        let detectedTracker: DetectedTracker
+        if tracker.isSurrogate, let host = URL(string: tracker.url)?.host {
+            detectedTracker = DetectedTracker(request: detectedRequest, type: .trackerWithSurrogate(host: host))
+        } else {
+            detectedTracker = DetectedTracker(request: detectedRequest, type: .tracker)
+        }
+
+        // Send to content blocking extension which publishes to Privacy Dashboard, Stats, etc.
+        self.contentBlockingAndSurrogates?.sendDetectedTracker(detectedTracker)
+    }
+
+    func trackerStats(_ subfeature: TrackerStatsSubfeature, didInjectSurrogate surrogate: TrackerStatsSubfeature.SurrogateInjection) {
+        // Handle surrogate injection - create a tracker event with surrogate type
+        guard let host = URL(string: surrogate.url)?.host else { return }
+
+        let state: BlockingState = surrogate.blocked ? .blocked : .allowed(reason: .otherThirdPartyRequest)
+        let eTLDplus1 = privacyFeatures.contentBlocking.tld.eTLDplus1(forStringURL: surrogate.url)
+
+        let detectedRequest = DetectedRequest(
+            url: surrogate.url,
+            eTLDplus1: eTLDplus1,
+            knownTracker: nil,
+            entity: nil,
+            state: state,
+            pageUrl: surrogate.pageUrl
+        )
+
+        let detectedTracker = DetectedTracker(request: detectedRequest, type: .trackerWithSurrogate(host: host))
+        self.contentBlockingAndSurrogates?.sendDetectedTracker(detectedTracker)
+    }
+
+    func trackerStatsShouldEnableCTL(_ subfeature: TrackerStatsSubfeature) -> Bool {
+        privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .clickToLoad)
+    }
+
+    func trackerStatsShouldProcessTrackers(_ subfeature: TrackerStatsSubfeature) -> Bool {
+        guard let host = url?.host else { return true }
+        return privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig.isProtected(domain: host)
+    }
+
+    private func determineAllowReason(_ tracker: TrackerStatsSubfeature.TrackerDetection) -> AllowReason {
+        if let isAllowlisted = tracker.isAllowlisted, isAllowlisted {
+            return .ruleException
+        }
+        if tracker.reason?.contains("ownedByFirstParty") == true {
+            return .ownedByFirstParty
+        }
+        return .otherThirdPartyRequest
+    }
 }
 
 extension Tab: PageObserverUserScriptDelegate {
@@ -1358,7 +1434,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
             navigation.navigationAction.sourceFrame.securityOrigin
         }
         if !securityOrigin.isEmpty || self.hasCommittedContent {
-            // don‘t reset the initially passed parent tab SecurityOrigin to an empty one for "about:blank" page
+            // don't reset the initially passed parent tab SecurityOrigin to an empty one for "about:blank" page
             self.securityOrigin = securityOrigin
         }
 
@@ -1479,7 +1555,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         guard !error.isNavigationCancelled, /* user stopped loading */
               !error.isFrameLoadInterrupted /* navigation cancelled by a Navigation Responder */ else { return }
 
-        // don‘t show an error page if the error was already handled
+        // don't show an error page if the error was already handled
         // (by SearchNonexistentDomainNavigationResponder) or another navigation was triggered by `setContent`.
         // When comparing URL, also try removing text fragment, because WebKit may drop it from the URL on failed loads.
         guard self.content.urlForWebView == url || self.content.urlForWebView?.removingTextFragment() == url
@@ -1490,7 +1566,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
         self.error = error
 
-        // when already displaying the error page and reload navigation fails again: don‘t navigate, just update page HTML
+        // when already displaying the error page and reload navigation fails again: don't navigate, just update page HTML
         let shouldPerformAlternateNavigation = navigation.url != webView.url || navigation.navigationAction.targetFrame?.url != .error
         loadErrorHTML(error, header: UserText.errorPageHeader, forUnreachableURL: url, alternate: shouldPerformAlternateNavigation)
     }

@@ -18,6 +18,7 @@
 //
 
 import ContentBlocking
+import Configuration
 import PrivacyConfig
 import Core
 import DDGSync
@@ -32,7 +33,8 @@ final class ContentBlockingService {
          contentBlocking: ContentBlocking,
          sync: DDGSyncing,
          fireproofing: Fireproofing,
-         contentScopeExperimentsManager: ContentScopeExperimentsManaging) {
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
+         configStorage: ConfigurationStoring = ConfigurationStore()) {
 
         common = contentBlocking
 
@@ -40,6 +42,7 @@ final class ContentBlockingService {
                                                                            sync: sync,
                                                                            privacyConfigurationManager: common.privacyConfigurationManager,
                                                                            contentBlockingManager: common.contentBlockingManager,
+                                                                           configStorage: configStorage,
                                                                            fireproofing: fireproofing,
                                                                            contentScopeExperimentsManager: contentScopeExperimentsManager)
 

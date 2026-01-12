@@ -552,7 +552,7 @@ class TrackerResolverTests: XCTestCase {
         XCTAssertEqual(result?.state, BlockingState.allowed(reason: .protectionDisabled))
     }
 
-    // This also covers the scenario when tracker is on domain with disabled contentBlocking feature (through temporaryUnprotectedDomains inside ContentBlockerRulesUserScript)
+    // This also covers the scenario when tracker is on domain with disabled contentBlocking feature (through temporaryUnprotectedDomains in privacy config)
     func testWhenTrackerIsOnDomainWithDisabledContentBlockingFeatureItIsNotBlocked() {
         let tracker = KnownTracker(domain: "tracker.com",
                                    defaultAction: .block,

@@ -141,7 +141,7 @@ final class SuggestionTrayManager: NSObject {
             controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             controller.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            // Bottom constraint does not appear to be required and causes a problem with iPad in portrait mode
+            controller.view.bottomAnchor.constraint(lessThanOrEqualTo: containerView.safeAreaLayoutGuide.bottomAnchor)
         ])
 
         controller.autocompleteDelegate = self

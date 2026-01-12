@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import NewTabPage
+import PrivacyConfigTestsUtils
 import WebKit
 import XCTest
 

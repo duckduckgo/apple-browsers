@@ -488,6 +488,16 @@
                ReferencedContainer = "container:../SharedPackages/SERPSettings">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AttributedMetricTests"
+               BuildableName = "AttributedMetricTests"
+               BlueprintName = "AttributedMetricTests"
+               ReferencedContainer = "container:../SharedPackages/AttributedMetric">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

@@ -16,13 +16,13 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import DDGSyncCrypto
-import Persistence
 import Foundation
 import os.log
+import Persistence
+import PrivacyConfig
 
 // ToDo: make it generic
 private extension Data {

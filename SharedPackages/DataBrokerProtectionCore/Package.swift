@@ -34,7 +34,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
-        .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.19"),
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
         .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.0"),
     ],
     targets: [
@@ -42,8 +42,10 @@ let package = Package(
             name: "DataBrokerProtectionCore",
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "Subscription", package: "BrowserServicesKit"),
                 "ZIPFoundation",
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],

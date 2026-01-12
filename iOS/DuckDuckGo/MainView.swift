@@ -18,7 +18,7 @@
 //
 
 import UIKit
-import BrowserServicesKit
+import PrivacyConfig
 import AIChat
 import Bookmarks
 import Persistence
@@ -49,15 +49,18 @@ class MainViewFactory {
                                     featureFlagger: FeatureFlagger,
                                     suggestionTrayDependencies: SuggestionTrayDependencies? = nil,
                                     appSettings: AppSettings,
-                                    daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
+                                    daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
+                                    daxEasterEggPresenter: DaxEasterEggPresenting? = nil,
                                     mobileCustomization: MobileCustomization) -> MainViewCoordinator {
+
+        let presenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
                                                       suggestionTrayDependencies: suggestionTrayDependencies,
                                                       appSettings: appSettings,
-                                                      daxEasterEggPresenter: daxEasterEggPresenter,
+                                                      daxEasterEggPresenter: presenter,
                                                       mobileCustomization: mobileCustomization)
 
         let factory = MainViewFactory(parentController: parentController,

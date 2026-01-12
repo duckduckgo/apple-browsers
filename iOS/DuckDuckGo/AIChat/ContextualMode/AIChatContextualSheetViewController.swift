@@ -17,23 +17,33 @@
 //  limitations under the License.
 //
 
+import AIChat
+import Combine
+import Core
 import DesignResourcesKitIcons
+import OSLog
 import UIKit
 
 /// Delegate protocol for contextual sheet related actions
 protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
-    
+
     /// Called when the user requests to load a URL externally (e.g., tapping a link)
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestToLoad url: URL)
 
     /// Called when the sheet should be dismissed
     func aiChatContextualSheetViewControllerDidRequestDismiss(_ viewController: AIChatContextualSheetViewController)
 
-    /// Called when the user taps expand to open duck.ai in a new tab
-    func aiChatContextualSheetViewControllerDidRequestExpand(_ viewController: AIChatContextualSheetViewController)
-    
-    /// Called when the user taps new chat to start a new contextual chat
-    func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController)
+    /// Called when the user taps expand to open duck.ai in a new tab with the current chat URL
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL)
+
+    /// Called when a new web view controller is created (for storing on the tab for persistence)
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didCreateWebViewController webVC: AIChatContextualWebViewController)
+
+    /// Called when the user requests to open AI Chat settings
+    func aiChatContextualSheetViewControllerDidRequestOpenSettings(_ viewController: AIChatContextualSheetViewController)
+
+    /// Called when the user requests to open sync settings
+    func aiChatContextualSheetViewControllerDidRequestOpenSyncSettings(_ viewController: AIChatContextualSheetViewController)
 }
 
 /// Contextual sheet view controller. Configures UX and actions.
@@ -52,12 +62,30 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let contentTopPadding: CGFloat = 8
     }
 
+    // MARK: - Types
+
+    /// Factory closure for creating web view controllers, eliminating prop drilling
+    typealias WebViewControllerFactory = () -> AIChatContextualWebViewController
+
     // MARK: - Properties
 
     weak var delegate: AIChatContextualSheetViewControllerDelegate?
 
+    private let viewModel: AIChatContextualSheetViewModel
     private let voiceSearchHelper: VoiceSearchHelperProtocol
+    private let webViewControllerFactory: WebViewControllerFactory
+
     private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
+    private var cancellables = Set<AnyCancellable>()
+
+    /// Existing web view controller passed in for an active chat session
+    private var existingWebViewController: AIChatContextualWebViewController?
+
+    /// Preloaded web view controller, created when sheet opens to reduce loading time on submit
+    private var preloadedWebViewController: AIChatContextualWebViewController?
+
+    /// The current active web view controller showing the chat
+    private weak var currentWebViewController: AIChatContextualWebViewController?
 
     // MARK: - UI Components
 
@@ -116,7 +144,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var daxIcon: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = DesignSystemImages.Glyphs.Size24.duckDuckGoDaxColor
+        imageView.image = DesignSystemImages.Color.Size24.duckAI
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -125,7 +153,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.text = UserText.duckAiFeatureName
-        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        label.font = UIFont.daxHeadline()
+        label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textPrimary)
         return label
     }()
@@ -157,8 +186,14 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol) {
+    init(viewModel: AIChatContextualSheetViewModel,
+         voiceSearchHelper: VoiceSearchHelperProtocol,
+         webViewControllerFactory: @escaping WebViewControllerFactory,
+         existingWebViewController: AIChatContextualWebViewController? = nil) {
+        self.viewModel = viewModel
         self.voiceSearchHelper = voiceSearchHelper
+        self.webViewControllerFactory = webViewControllerFactory
+        self.existingWebViewController = existingWebViewController
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -172,7 +207,19 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        showContextualInput()
+        bindViewModel()
+
+        if let existingWebVC = existingWebViewController {
+            existingWebVC.delegate = self
+            existingWebVC.aiChatContentHandlingDelegate = self
+            // Set contextualChatURL from existing webVC if available
+            viewModel.setInitialContextualChatURL(existingWebVC.currentContextualChatURL)
+            transitionToWebView(existingWebVC)
+            expandToLargeDetent()
+        } else {
+            showContextualInput()
+            preloadWebViewController()
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -188,11 +235,14 @@ final class AIChatContextualSheetViewController: UIViewController {
     // MARK: - Actions
 
     @objc private func expandButtonTapped() {
-        delegate?.aiChatContextualSheetViewControllerDidRequestExpand(self)
+        let url = viewModel.expandURL()
+        Logger.aiChat.debug("[AIChatContextual] Expand tapped with URL: \(url.absoluteString)")
+        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
     }
 
     @objc private func newChatButtonTapped() {
-        delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
+        viewModel.didStartNewChat()
+        currentWebViewController?.startNewChat()
     }
 
     @objc private func closeButtonTapped() {
@@ -203,7 +253,27 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private func showContextualInput() {
         contextualInputViewController.delegate = self
+        configureAttachActions()
         embedChildViewController(contextualInputViewController)
+
+        if viewModel.isAutomaticContextAttachmentEnabled {
+            attachPageContext()
+        }
+    }
+
+    private func configureAttachActions() {
+        let attachActions = viewModel.createAttachActions { [weak self] in
+            self?.attachPageContext()
+        }
+        contextualInputViewController.attachActions = attachActions
+    }
+
+    private func attachPageContext() {
+        guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
+            self?.contextualInputViewController.hideContextChip()
+        }) else { return }
+
+        contextualInputViewController.showContextChip(chipView)
     }
 
     private func embedChildViewController(_ childVC: UIViewController) {
@@ -220,6 +290,55 @@ final class AIChatContextualSheetViewController: UIViewController {
 
         childVC.didMove(toParent: self)
     }
+
+    private func removeCurrentChildViewController() {
+        children.forEach { child in
+            child.willMove(toParent: nil)
+            child.view.removeFromSuperview()
+            child.removeFromParent()
+        }
+    }
+
+    // MARK: - Web View Preloading
+
+    private func preloadWebViewController() {
+        let webVC = webViewControllerFactory()
+        webVC.delegate = self
+        webVC.aiChatContentHandlingDelegate = self
+        preloadedWebViewController = webVC
+        webVC.loadViewIfNeeded()
+    }
+
+    // MARK: - Web View Transition
+
+    private func transitionToWebView(_ webVC: AIChatContextualWebViewController) {
+        removeCurrentChildViewController()
+        embedChildViewController(webVC)
+        currentWebViewController = webVC
+        existingWebViewController = nil
+    }
+
+    private func showWebViewWithPrompt(_ prompt: String) {
+        guard let webVC = preloadedWebViewController else { return }
+
+        viewModel.didSubmitPrompt()
+
+        transitionToWebView(webVC)
+        view.layoutIfNeeded()
+        expandToLargeDetent()
+
+        webVC.submitPrompt(prompt)
+        delegate?.aiChatContextualSheetViewController(self, didCreateWebViewController: webVC)
+
+        preloadedWebViewController = nil
+    }
+
+    private func expandToLargeDetent() {
+        guard let sheet = sheetPresentationController else { return }
+        sheet.animateChanges {
+            sheet.selectedDetentIdentifier = .large
+        }
+    }
 }
 
 // MARK: - AIChatContextualInputViewControllerDelegate
@@ -227,16 +346,92 @@ final class AIChatContextualSheetViewController: UIViewController {
 extension AIChatContextualSheetViewController: AIChatContextualInputViewControllerDelegate {
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {
+        showWebViewWithPrompt(prompt)
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
-        contextualInputViewController(viewController, didSubmitPrompt: action.prompt)
+        showWebViewWithPrompt(action.prompt)
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: .AIChat, hideToggle: true)
+        voiceSearchController.delegate = self
+        voiceSearchController.modalTransitionStyle = .crossDissolve
+        voiceSearchController.modalPresentationStyle = .overFullScreen
+        present(voiceSearchController, animated: true)
     }
 
-    func contextualInputViewControllerDidTapAttach(_ viewController: AIChatContextualInputViewController) {
+    func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
+        // TODO: Handle any cleanup when context chip is removed
+    }
+}
+
+// MARK: - VoiceSearchViewControllerDelegate
+
+extension AIChatContextualSheetViewController: VoiceSearchViewControllerDelegate {
+
+    func voiceSearchViewController(_ viewController: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
+        viewController.dismiss(animated: true)
+        if let query, !query.isEmpty {
+            contextualInputViewController.setText(query)
+        }
+    }
+}
+
+// MARK: - AIChatContextualWebViewControllerDelegate
+
+extension AIChatContextualSheetViewController: AIChatContextualWebViewControllerDelegate {
+
+    func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestToLoad url: URL) {
+        delegate?.aiChatContextualSheetViewController(self, didRequestToLoad: url)
+    }
+
+    func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?) {
+        Logger.aiChat.debug("[AIChatContextual] Received contextual chat URL update: \(String(describing: url?.absoluteString))")
+        viewModel.didUpdateContextualChatURL(url)
+    }
+}
+
+// MARK: - AIChatContentHandlingDelegate
+
+extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
+
+    func aiChatContentHandlerDidReceiveOpenSettingsRequest(_ handler: AIChatContentHandling) {
+        delegate?.aiChatContextualSheetViewControllerDidRequestOpenSettings(self)
+    }
+
+    func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler: AIChatContentHandling) {
+        delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
+    }
+
+    func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling) {
+        delegate?.aiChatContextualSheetViewControllerDidRequestOpenSyncSettings(self)
+    }
+
+    func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
+        viewModel.didSubmitPrompt()
+    }
+}
+
+// MARK: - ViewModel Binding
+
+private extension AIChatContextualSheetViewController {
+
+    func bindViewModel() {
+        viewModel.$isExpandEnabled
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isEnabled in
+                Logger.aiChat.debug("[AIChatContextual] Expand button state: enabled=\(isEnabled)")
+                self?.expandButton.isEnabled = isEnabled
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isNewChatButtonVisible
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isVisible in
+                self?.newChatButton.isHidden = !isVisible
+            }
+            .store(in: &cancellables)
     }
 }
 

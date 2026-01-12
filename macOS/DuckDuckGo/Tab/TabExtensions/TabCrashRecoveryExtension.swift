@@ -16,13 +16,13 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import Foundation
 import Navigation
 import WebKit
 import PixelKit
+import PrivacyConfig
 
 /// This enum describes the type of crash that can be reported by the extension,
 /// judging by the time since the last occurrence.

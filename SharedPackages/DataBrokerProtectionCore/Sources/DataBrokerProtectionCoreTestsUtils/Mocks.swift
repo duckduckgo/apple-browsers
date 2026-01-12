@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import Common
 import Foundation
@@ -186,7 +187,7 @@ public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManagin
 
     public var updatesPublisher: AnyPublisher<Void, Never> = .init(Just(()))
 
-    public var privacyConfig: BrowserServicesKit.PrivacyConfiguration = PrivacyConfigurationMock()
+    public var privacyConfig: PrivacyConfiguration = PrivacyConfigurationMock()
 
     public var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: InternalUserDeciderStoreMock())
 
@@ -206,7 +207,7 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
 
     public var tempUnprotectedDomains = [String]()
 
-    public var trackerAllowlist = BrowserServicesKit.PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
+    public var trackerAllowlist = PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
     public var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
 
@@ -218,19 +219,19 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
         false
     }
 
-    public func stateFor(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
+    public func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
         .disabled(.disabledInConfig)
     }
 
-    public func stateFor(_ subfeature: any PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
+    public func stateFor(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {
         .disabled(.disabledInConfig)
     }
 
-    public func exceptionsList(forFeature featureKey: BrowserServicesKit.PrivacyFeature) -> [String] {
+    public func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] {
         [String]()
     }
 
-    public func isFeature(_ feature: BrowserServicesKit.PrivacyFeature, enabledForDomain: String?) -> Bool {
+    public func isFeature(_ feature: PrivacyFeature, enabledForDomain: String?) -> Bool {
         false
     }
 
@@ -246,15 +247,15 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
         false
     }
 
-    public func isInExceptionList(domain: String?, forFeature featureKey: BrowserServicesKit.PrivacyFeature) -> Bool {
+    public func isInExceptionList(domain: String?, forFeature featureKey: PrivacyFeature) -> Bool {
         false
     }
 
-    public func settings(for feature: BrowserServicesKit.PrivacyFeature) -> BrowserServicesKit.PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
+    public func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         [String: Any]()
     }
 
-    public func settings(for subfeature: any BrowserServicesKit.PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
+    public func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
         return nil
     }
 
@@ -916,7 +917,14 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
 public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
 
-    public static var lastPixelsFired = [DataBrokerProtectionSharedPixels]()
+    private static let queue = DispatchQueue(label: "MockDataBrokerProtectionPixelsHandler.queue")
+    private static var _lastPixelsFired = [DataBrokerProtectionSharedPixels]()
+
+    public static var lastPixelsFired: [DataBrokerProtectionSharedPixels] {
+        get { queue.sync { _lastPixelsFired } }
+        set { queue.sync { _lastPixelsFired = newValue } }
+    }
+
     public var lastFiredEvent: DataBrokerProtectionSharedPixels?
     public var lastPassedParameters: [String: String]?
 
@@ -930,7 +938,9 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
         mockMapping = { [weak self] event, _, params, _ in
             self?.lastFiredEvent = event
             self?.lastPassedParameters = params
-            MockDataBrokerProtectionPixelsHandler.lastPixelsFired.append(event)
+            MockDataBrokerProtectionPixelsHandler.queue.sync {
+                MockDataBrokerProtectionPixelsHandler._lastPixelsFired.append(event)
+            }
         }
     }
 
@@ -939,7 +949,9 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
     }
 
     public func clear() {
-        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.removeAll()
+        MockDataBrokerProtectionPixelsHandler.queue.sync {
+            MockDataBrokerProtectionPixelsHandler._lastPixelsFired.removeAll()
+        }
         lastFiredEvent = nil
         lastPassedParameters = nil
     }

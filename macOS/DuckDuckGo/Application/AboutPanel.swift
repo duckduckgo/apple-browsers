@@ -18,7 +18,7 @@
 
 import SwiftUI
 import AppKit
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 
 // SwiftUI view for the About panel

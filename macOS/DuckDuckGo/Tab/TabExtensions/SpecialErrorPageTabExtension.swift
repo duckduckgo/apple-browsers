@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import ContentScopeScripts
@@ -25,6 +24,7 @@ import MaliciousSiteProtection
 import Navigation
 import os
 import PixelKit
+import PrivacyConfig
 import SpecialErrorPages
 import WebKit
 

@@ -20,7 +20,18 @@
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpAttemptId",
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "boolean"
+            }
+        ]
     },
     "m_mac_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",
@@ -104,7 +115,12 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "boolean"
+            }
         ]
     },
     "m_mac_dbp_optout_stage_email-receive": {
@@ -256,6 +272,11 @@
                 "description": "VPN bypass status when the attempt succeeded",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
+            },
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "boolean"
             }
         ]
     },
@@ -315,6 +336,11 @@
                 "description": "VPN bypass status when the failure happened",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
+            },
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "boolean"
             }
         ]
     },
@@ -584,10 +610,12 @@
         "description": "Fired when a data broker JSON update has failed.",
         "owners": ["edulpn"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
+            "errorDomain",
+            "errorCode",
             {
                 "key": "data_broker_json_file",
                 "description": "The JSON file name for the data broker that this action was operating on",
@@ -885,6 +913,61 @@
                 "description": "Whether the user is authenticated",
                 "type": "string",
                 "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_mac_dbp_event_scanning-events_new-match": {
+        "description": "Fired when a new matching profile is found during a scan",
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+    },
+    "m_mac_dbp_event_scanning-events_re-appearance": {
+        "description": "Fired when a previously removed profile re-appears on a data broker during a scan",
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+    },
+    "m_mac_dbp_databroker_custom_stats_optoutsubmit": {
+        "description": "Fired daily with per-broker opt-out submission success rate stats.",
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "triggers": ["scheduled"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            {
+                "key": "optout_submit_success_rate",
+                "description": "The opt-out submission success rate for this broker",
+                "type": "number"
+            },
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_mac_dbp_custom_stats_optoutsubmit": {
+        "description": "Fired daily with global opt-out submission success rate stats.",
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "triggers": ["scheduled"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "optout_submit_success_rate",
+                "description": "The global opt-out submission success rate",
+                "type": "number"
+            },
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "boolean"
             }
         ]
     }

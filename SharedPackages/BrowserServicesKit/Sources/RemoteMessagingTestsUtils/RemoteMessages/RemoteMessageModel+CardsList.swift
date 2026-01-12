@@ -51,23 +51,119 @@ public extension RemoteMessageModel {
 
 public extension RemoteMessageModelType.ListItem {
 
-    static func makeListItem(
+    static func makeTwoLinesListItem(
         id: String = "item-1",
-        type: ListItemType = .twoLinesItem,
         titleText: String = "Item Title",
         descriptionText: String = "Item Description",
         placeholder: RemotePlaceholder = .announce,
-        action: RemoteAction? = nil
+        action: RemoteAction? = nil,
+        matchingRules: [Int] = [],
+        exclusionRules: [Int] = []
     ) -> RemoteMessageModelType.ListItem {
-        return RemoteMessageModelType.ListItem(
+        RemoteMessageModelType.ListItem(
             id: id,
-            type: type,
-            titleText: titleText,
-            descriptionText: descriptionText,
-            placeholderImage: placeholder,
-            action: action,
+            type: .twoLinesItem(
+                titleText: titleText,
+                descriptionText: descriptionText,
+                placeholderImage: placeholder,
+                action: action
+            ),
+            matchingRules: matchingRules,
+            exclusionRules: exclusionRules
+        )
+    }
+
+    static func makeTitledSectionListItem(
+        id: String = "section-1",
+        titleText: String = "Section Title",
+        itemIDs: [String] = []
+    ) -> RemoteMessageModelType.ListItem {
+        RemoteMessageModelType.ListItem(
+            id: id,
+            type: .titledSection(titleText: titleText, itemIDs: itemIDs),
             matchingRules: [],
             exclusionRules: []
         )
     }
+
+    static func makeFeaturedItem(
+        id: String = "featured-1",
+        titleText: String = "Featured Item",
+        descriptionText: String = "Featured Description",
+        placeholder: RemotePlaceholder = .announce,
+        primaryActionText: String? = nil,
+        primaryAction: RemoteAction? = nil,
+        matchingRules: [Int] = [],
+        exclusionRules: [Int] = []
+    ) -> RemoteMessageModelType.ListItem {
+        RemoteMessageModelType.ListItem(
+            id: id,
+            type: .featuredTwoLinesSingleActionItem(
+                titleText: titleText,
+                descriptionText: descriptionText,
+                placeholderImage: placeholder,
+                primaryActionText: primaryActionText,
+                primaryAction: primaryAction
+            ),
+            matchingRules: matchingRules,
+            exclusionRules: exclusionRules
+        )
+    }
+}
+
+public extension RemoteMessageModelType.ListItem {
+
+    var titleText: String? {
+        switch type {
+        case let .titledSection(titleText, _):
+            return titleText
+        case let .twoLinesItem(titleText, _, _, _):
+            return titleText
+        case let .featuredTwoLinesSingleActionItem(titleText, _, _, _, _):
+            return titleText
+        }
+    }
+
+    var descriptionText: String? {
+        switch type {
+        case .titledSection:
+            return nil
+        case let .twoLinesItem(_, descriptionText, _, _):
+            return descriptionText
+        case let .featuredTwoLinesSingleActionItem(_, descriptionText, _, _, _):
+            return descriptionText
+        }
+    }
+
+    var placeholderImage: RemotePlaceholder? {
+        switch type {
+        case .titledSection:
+            return nil
+        case let .twoLinesItem(_, _, placeholderImage, _):
+            return placeholderImage
+        case let .featuredTwoLinesSingleActionItem(_, _, placeholderImage, _, _):
+            return placeholderImage
+        }
+    }
+
+    var primaryActionText: String? {
+        switch type {
+        case.titledSection, .twoLinesItem:
+            return nil
+        case let .featuredTwoLinesSingleActionItem(_, _, _, primaryActionText, _):
+            return primaryActionText
+        }
+    }
+
+    var action: RemoteAction? {
+        switch type {
+        case .titledSection:
+            return nil
+        case let .twoLinesItem(_, _, _, action):
+            return action
+        case let .featuredTwoLinesSingleActionItem(_, _, _, _, action):
+            return action
+        }
+    }
+
 }

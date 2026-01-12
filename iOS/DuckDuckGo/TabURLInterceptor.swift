@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 import Subscription
 import AIChat

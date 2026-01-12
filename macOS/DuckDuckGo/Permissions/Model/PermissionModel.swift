@@ -17,12 +17,12 @@
 //
 
 import AVFoundation
-import BrowserServicesKit
 import Combine
 import CoreLocation
 import FeatureFlags
 import Foundation
 import Navigation
+import PrivacyConfig
 import UserNotifications
 import WebKit
 import os.log

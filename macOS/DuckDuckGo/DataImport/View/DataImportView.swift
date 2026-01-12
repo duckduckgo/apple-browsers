@@ -20,6 +20,7 @@ import AppKit
 import SwiftUI
 import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 import DesignResourcesKitIcons
 import UniformTypeIdentifiers
 import SwiftUIExtensions
@@ -116,6 +117,12 @@ struct DataImportView: ModalView {
                 )
             case .moreInfo:
                 NewImportMoreInfoView()
+            case .getReadPermission(let url):
+                RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
+                    model.initiateImport()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
             case .passwordEntryHelp:
                 PasswordEntryRetryPromptView(
                     onRetry: {

@@ -92,6 +92,10 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestSettingsToVPN(_ tab: DuckDuckGo.TabViewController) {}
 
+    func tabDidRequestSettingsToAIChat(_ tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestSettingsToSync(_ tab: DuckDuckGo.TabViewController) {}
+
     func tabDidRequestFindInPage(tab: DuckDuckGo.TabViewController) {}
 
     func closeFindInPage(tab: DuckDuckGo.TabViewController) {}

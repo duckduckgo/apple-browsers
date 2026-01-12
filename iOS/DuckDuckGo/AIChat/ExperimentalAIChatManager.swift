@@ -20,7 +20,7 @@
 import Foundation
 import Core
 import Common
-import BrowserServicesKit
+import PrivacyConfig
 
 struct ExperimentalAIChatManager {
     private let featureFlagger: FeatureFlagger
@@ -41,10 +41,6 @@ struct ExperimentalAIChatManager {
 
     var isExperimentalAIChatFeatureFlagEnabled: Bool {
         featureFlagger.isFeatureOn(for: FeatureFlag.experimentalAddressBar, allowOverride: true)
-    }
-    
-    var fullDuckAIModeExperimentalSettingFlagEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.fullDuckAIModeExperimentalSetting, allowOverride: true) && devicePlatform.isIphone
     }
 
     var isExperimentalAIChatSettingsEnabled: Bool {

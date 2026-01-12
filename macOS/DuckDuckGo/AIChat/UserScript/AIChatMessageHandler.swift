@@ -17,9 +17,9 @@
 //
 
 import AIChat
-import BrowserServicesKit
-import UserScript
 import Common
+import PrivacyConfig
+import UserScript
 
 enum AIChatMessageType {
     case nativeConfigValues
@@ -87,37 +87,21 @@ extension AIChatMessageHandler {
     private func getNativeConfigValues() -> Encodable? {
         let appVersion = AppVersion.shared.versionAndBuildNumber
         let defaults = AIChatNativeConfigValues.defaultValues
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
-                                            supportsClosingAIChat: true,
-                                            supportsOpeningSettings: true,
-                                            supportsNativePrompt: true,
-                                            supportsStandaloneMigration: featureFlagger.isFeatureOn(.standaloneMigration),
-                                            supportsNativeChatInput: false,
-                                            supportsURLChatIDRestoration: true,
-                                            supportsFullChatRestoration: true,
-                                            supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext),
-                                            supportsAIChatFullMode: false,
-                                            appVersion: appVersion,
-                                            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
-                                            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
-                                            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync))
-        } else {
-            return AIChatNativeConfigValues(isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
-                                            supportsClosingAIChat: defaults.supportsClosingAIChat,
-                                            supportsOpeningSettings: defaults.supportsOpeningSettings,
-                                            supportsNativePrompt: defaults.supportsNativePrompt,
-                                            supportsStandaloneMigration: defaults.supportsStandaloneMigration,
-                                            supportsNativeChatInput: defaults.supportsNativeChatInput,
-                                            supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
-                                            supportsFullChatRestoration: defaults.supportsFullChatRestoration,
-                                            supportsPageContext: defaults.supportsPageContext,
-                                            supportsAIChatFullMode: defaults.supportsAIChatFullMode,
-                                            appVersion: appVersion,
-                                            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
-                                            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
-                                            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync))
-        }
+        return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
+                                        supportsClosingAIChat: true,
+                                        supportsOpeningSettings: true,
+                                        supportsNativePrompt: true,
+                                        supportsStandaloneMigration: featureFlagger.isFeatureOn(.standaloneMigration),
+                                        supportsNativeChatInput: false,
+                                        supportsURLChatIDRestoration: true,
+                                        supportsFullChatRestoration: true,
+                                        supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext),
+                                        supportsAIChatFullMode: false,
+                                        supportsAIChatContextualMode: false,
+                                        appVersion: appVersion,
+                                        supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
+                                        supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
+                                        supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync))
     }
 
     private func getNativeHandoffData() -> Encodable? {

@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import Navigation
@@ -24,6 +23,7 @@ import Foundation
 import UserScript
 import WebKit
 import PixelKit
+import PrivacyConfig
 
 /**
  * This is a wrapper class for a hardcoded script evaluated on the Internal Feedback Form page.

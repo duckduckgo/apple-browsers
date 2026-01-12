@@ -24,6 +24,7 @@ import Suggestions
 import Persistence
 import History
 import BrowserServicesKit
+import PrivacyConfig
 import UIComponents
 import AIChat
 
@@ -268,7 +269,7 @@ class SuggestionTrayViewController: UIViewController {
     private func displayFavoritesIfNeeded(animated: Bool, onInstall: @escaping () -> Void = {}) {
         if newTabPage == nil {
             installNewTabPage(animated: animated, onInstall: onInstall)
-        } else  {
+        } else {
             onInstall()
         }
     }

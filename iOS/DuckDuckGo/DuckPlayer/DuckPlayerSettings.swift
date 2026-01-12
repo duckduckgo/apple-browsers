@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Core
+import PrivacyConfig
 
 /// Represents the different modes for Duck Player operation.
 enum DuckPlayerMode: Equatable, Codable, CustomStringConvertible, CaseIterable {

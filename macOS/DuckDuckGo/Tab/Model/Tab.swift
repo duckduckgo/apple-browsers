@@ -28,6 +28,7 @@ import Onboarding
 import os.log
 import PageRefreshMonitor
 import PixelKit
+import PrivacyConfig
 import SpecialErrorPages
 import UserScript
 import WebKit
@@ -169,7 +170,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             faviconManager = FaviconManager(
                 cacheType: .inMemory,
                 bookmarkManager: NSApp.delegateTyped.bookmarkManager,
-                fireproofDomains: fireproofDomains)
+                fireproofDomains: fireproofDomains,
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager)
         }
 
         self.init(id: id,
@@ -1315,7 +1317,8 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func didReceive(_ challenge: URLAuthenticationChallenge, for navigation: Navigation?) async -> AuthChallengeDisposition? {
-        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic else { return nil }
+        let supportedMethods = [NSURLAuthenticationMethodHTTPBasic, NSURLAuthenticationMethodHTTPDigest]
+        guard supportedMethods.contains(challenge.protectionSpace.authenticationMethod) else { return nil }
 
         // send this event only when we're interrupting loading and showing extra UI to the user
         webViewDidReceiveUserInteractiveChallengePublisher.send()

@@ -20,7 +20,7 @@
 import Foundation
 import UIKit
 import SwiftUI
-import BrowserServicesKit
+import PrivacyConfig
 import Common
 import Core
 import AIChat
@@ -40,11 +40,19 @@ struct FireConfirmationPresenter {
                                  attachPopoverTo source: AnyObject,
                                  onConfirm: @escaping (FireOptions) -> Void,
                                  onCancel: @escaping () -> Void) {
-        guard featureFlagger.isFeatureOn(.granularFireButtonOptions) else {
-            presentLegacyConfirmationAlert(on: viewController, from: source, onConfirm: onConfirm, onCancel: onCancel)
-            return
-        }
-        
+        presentLegacyConfirmationAlert(on: viewController, from: source, onConfirm: onConfirm, onCancel: onCancel)
+    }
+    
+    /// Presents a SwiftUI-based confirmation sheet as an alternative UI for the "Fire" action.
+    /// 
+    /// This function builds a FireConfirmationView hosted in a UIHostingController and presents it
+    /// as either a sheet or popover, depending on the device. Currently, this function is unused but
+    /// demonstrates an alternate UI flow for fire confirmation.
+    @MainActor
+    private func presentConfirmationSheet(on viewController: UIViewController,
+                                          attachPopoverTo source: AnyObject,
+                                          onConfirm: @escaping (FireOptions) -> Void,
+                                          onCancel: @escaping () -> Void) {
         let viewModel = makeViewModel(dismissing: viewController,
                                       onConfirm: onConfirm,
                                       onCancel: onCancel)

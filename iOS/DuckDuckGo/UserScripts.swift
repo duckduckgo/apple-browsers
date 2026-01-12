@@ -28,6 +28,7 @@ import UserScript
 import WebKit
 import SERPSettings
 import Persistence
+import PrivacyConfig
 
 final class UserScripts: UserScriptsProvider {
 
@@ -88,10 +89,13 @@ final class UserScripts: UserScriptsProvider {
         autoconsentUserScript = AutoconsentUserScript(config: sourceProvider.privacyConfigurationManager.privacyConfig)
 
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
-        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager, syncHandler: AIChatSyncHandler(sync: sourceProvider.sync), featureFlagger: featureFlagger)
+        let aiChatSettings = AIChatSettings()
+        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
+                                                          syncHandler: AIChatSyncHandler(sync: sourceProvider.sync),
+                                                          featureFlagger: featureFlagger)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
-        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: AIChatSettings(), featureFlagger: featureFlagger))
+        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)

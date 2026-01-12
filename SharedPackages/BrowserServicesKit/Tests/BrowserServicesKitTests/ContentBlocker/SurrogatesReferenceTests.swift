@@ -19,12 +19,13 @@
 // Tests are disabled on iOS due to WKWebView stability issues on the iOS 17.5+ simulator.
 #if os(macOS)
 
-import XCTest
-@testable import TrackerRadarKit
-import os.log
-import WebKit
 import BrowserServicesKit
 import Common
+import PrivacyConfig
+import os.log
+@testable import TrackerRadarKit
+import WebKit
+import XCTest
 
 final class SurrogatesReferenceTests: XCTestCase {
     private let schemeHandler = TestSchemeHandler()

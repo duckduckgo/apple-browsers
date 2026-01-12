@@ -24,31 +24,11 @@ import Subscription
 import BrowserServicesKit
 import Networking
 
-extension NetworkProtectionKeychainTokenStore {
-    convenience init() {
-        self.init(useAccessTokenProvider: true)
-    }
-
-    convenience init(useAccessTokenProvider: Bool) { // only used in AuthV1
-        let accessTokenProvider: AccessTokenProvider = { Application.appDelegate.subscriptionManagerV1?.accountManager.accessToken }
-        self.init(keychainType: .default,
-                  errorEvents: .networkProtectionAppDebugEvents,
-                  useAccessTokenProvider: useAccessTokenProvider,
-                  accessTokenProvider: accessTokenProvider)
-    }
-}
-
 extension NetworkProtectionLocationListCompositeRepository {
     convenience init() {
         let settings = Application.appDelegate.vpnSettings
-
-        var tokenHandler: any SubscriptionTokenHandling
-        if !Application.appDelegate.isUsingAuthV2 {
-            tokenHandler = NetworkProtectionKeychainTokenStore()
-        } else {
-            // swiftlint:disable:next force_cast
-            tokenHandler = Application.appDelegate.subscriptionManagerV2 as! DefaultSubscriptionManagerV2
-        }
+        // swiftlint:disable:next force_cast
+        var tokenHandler: any SubscriptionTokenHandling = Application.appDelegate.subscriptionManagerV2 as! DefaultSubscriptionManagerV2
         self.init(
             environment: settings.selectedEnvironment,
             tokenHandler: tokenHandler,

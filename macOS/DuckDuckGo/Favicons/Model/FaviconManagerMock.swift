@@ -22,6 +22,7 @@ import Common
 import Combine
 import Foundation
 import History
+import WebKit
 
 final class FaviconManagerMock: FaviconManagement {
 
@@ -39,7 +40,7 @@ final class FaviconManagerMock: FaviconManagement {
 
     // MARK: - FaviconManagement
 
-    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon? {
+    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> Favicon? {
         nil
     }
 

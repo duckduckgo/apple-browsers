@@ -42,6 +42,16 @@
         "type": "number",
         "description": "NSError code"
     },
+    "themeName": {
+        "key": "themeName",
+        "enum": ["default", "coolGray", "desert", "green", "orange", "rose", "slateBlue", "violet"],
+        "description": "The name of the active Theme"
+    },
+    "themeChangeSource": {
+        "key": "themeChangeSource",
+        "enum": ["new-tab-page", "settings"],
+        "description": "Interface from which the Theme Name or Appearance were updated"
+    },
     "underlyingErrorCode": {
         "keyPattern": "^ue[0-9]?$",
         "type": "number",

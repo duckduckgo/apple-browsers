@@ -20,7 +20,7 @@ import Foundation
 import AppKit
 import DesignResourcesKit
 
-struct ThemeColors: ColorPalette {
+struct ThemeColors {
     let accentAltContentPrimary: NSColor
     let accentAltContentSecondary: NSColor
     let accentAltContentTertiary: NSColor
@@ -41,6 +41,10 @@ struct ThemeColors: ColorPalette {
     let accentTextPrimary: NSColor
     let accentTextSecondary: NSColor
     let accentTextTertiary: NSColor
+    let controlsBorderPrimary: NSColor
+    let controlsBorderSecondary: NSColor
+    let controlsBorderTertiary: NSColor
+    let controlsBorderQuaternary: NSColor
     let controlsFillPrimary: NSColor
     let controlsFillSecondary: NSColor
     let controlsFillTertiary: NSColor
@@ -100,6 +104,10 @@ extension ThemeColors {
         accentTextPrimary = NSColor(designSystemColor: .accentTextPrimary, palette: palette)
         accentTextSecondary = NSColor(designSystemColor: .accentTextSecondary, palette: palette)
         accentTextTertiary = NSColor(designSystemColor: .accentTextTertiary, palette: palette)
+        controlsBorderPrimary = NSColor(designSystemColor: .controlsBorderPrimary, palette: palette)
+        controlsBorderSecondary = NSColor(designSystemColor: .controlsBorderSecondary, palette: palette)
+        controlsBorderTertiary = NSColor(designSystemColor: .controlsBorderTertiary, palette: palette)
+        controlsBorderQuaternary = NSColor(designSystemColor: .controlsBorderQuaternary, palette: palette)
         controlsFillPrimary = NSColor(designSystemColor: .controlsFillPrimary, palette: palette)
         controlsFillSecondary = NSColor(designSystemColor: .controlsFillSecondary, palette: palette)
         controlsFillTertiary = NSColor(designSystemColor: .controlsFillTertiary, palette: palette)

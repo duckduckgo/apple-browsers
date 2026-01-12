@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import BrowserServicesKit
+import PrivacyConfig
 
 @testable import DuckDuckGo
 @testable import Core

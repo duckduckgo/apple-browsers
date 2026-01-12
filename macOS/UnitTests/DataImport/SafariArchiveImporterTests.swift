@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Bookmarks
-import SecureStorage
+import BrowserServicesKit
 import Combine
 import Common
+import PrivacyConfig
+import SecureStorage
+import XCTest
 import ZIPFoundation
-@testable import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SafariArchiveImporterTests: XCTestCase {

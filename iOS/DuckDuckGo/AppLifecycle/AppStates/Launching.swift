@@ -122,7 +122,8 @@ struct Launching: LaunchingHandling {
                                                             configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                                             syncService: syncService.sync,
                                                             winBackOfferService: winBackOfferService,
-                                                            subscriptionDataReporter: reportingService.subscriptionDataReporter)
+                                                            subscriptionDataReporter: reportingService.subscriptionDataReporter,
+                                                            dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
@@ -171,8 +172,7 @@ struct Launching: LaunchingHandling {
             )
         )
 
-        let mobileCustomization = MobileCustomization(isFeatureEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
-                                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let mobileCustomization = MobileCustomization(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller

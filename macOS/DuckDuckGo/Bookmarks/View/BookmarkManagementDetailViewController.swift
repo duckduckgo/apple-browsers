@@ -52,7 +52,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private lazy var sortItemsButton = MouseOverButton(title: Self.thinSpace + UserText.bookmarksSort.capitalized, target: self, action: #selector(sortBookmarks))
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.sortItemsButton")
 
-    lazy var searchBar = NSSearchField()
+    lazy var searchBar = SearchField()
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.searchBar")
     private lazy var separator = NSBox()
     private lazy var scrollView = NSScrollView()
@@ -64,7 +64,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             self?.onImport()
         }, onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }))
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -297,6 +297,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
         reloadData()
         subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     override func viewDidAppear() {
@@ -404,7 +405,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             self?.onImport()
         }, onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         })
         emptyStateHostingView.isHidden = false
@@ -540,7 +541,11 @@ extension BookmarkManagementDetailViewController: ThemeUpdateListening {
             return
         }
 
-        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+        let palette = theme.palette
+        contentView.backgroundColor = palette.surfaceCanvas
+        searchBar.borderColor = palette.controlsBorderPrimary
+        searchBar.borderHighlightColor = palette.accentPrimary
+        searchBar.innerBackgroundColor = palette.surfaceTertiary
     }
 }
 

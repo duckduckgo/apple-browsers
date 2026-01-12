@@ -153,8 +153,6 @@ public struct StartupOptions {
     let simulateMemoryCrash: Bool
     public let vpnSettings: StoredOption<VPNSettingsSnapshot>
 #if os(macOS)
-    public let isAuthV2Enabled: StoredOption<Bool>
-    public let authToken: StoredOption<String>
     public let tokenContainer: StoredOption<TokenContainer>
 #endif
     let enableTester: StoredOption<Bool>
@@ -178,8 +176,6 @@ public struct StartupOptions {
 
         let resetStoredOptionsIfNil = startupMethod == .manualByMainApp
 #if os(macOS)
-        isAuthV2Enabled = Self.readIsAuthV2Enabled(from: options, resetIfNil: resetStoredOptionsIfNil)
-        authToken = Self.readAuthToken(from: options, resetIfNil: resetStoredOptionsIfNil)
         tokenContainer = Self.readTokenContainer(from: options, resetIfNil: resetStoredOptionsIfNil)
 
 #endif
@@ -199,8 +195,6 @@ public struct StartupOptions {
         """
 #if os(macOS)
         result += """
-            isAuthV2Enabled: \(self.isAuthV2Enabled),
-            authToken: \(self.authToken),
             tokenContainer: \(self.tokenContainer),
         """
 #endif
@@ -210,29 +204,6 @@ public struct StartupOptions {
     // MARK: - Helpers for reading stored options
 
 #if os(macOS)
-    private static func readIsAuthV2Enabled(from options: [String: Any], resetIfNil: Bool) -> StoredOption<Bool> {
-        StoredOption(resetIfNil: resetIfNil) {
-            guard let isAuthV2Enabled = options[NetworkProtectionOptionKey.isAuthV2Enabled] as? Bool else {
-                Logger.networkProtection.fault("`isAuthV2Enabled` is missing or invalid")
-                return nil
-            }
-
-            return isAuthV2Enabled
-        }
-    }
-
-    private static func readAuthToken(from options: [String: Any], resetIfNil: Bool) -> StoredOption<String> {
-        StoredOption(resetIfNil: resetIfNil) {
-            guard let authToken = options[NetworkProtectionOptionKey.authToken] as? String,
-                  !authToken.isEmpty else {
-                Logger.networkProtection.warning("`authToken` is missing or invalid")
-                return nil
-            }
-
-            return authToken
-        }
-    }
-
     private static func readTokenContainer(from options: [String: Any], resetIfNil: Bool) -> StoredOption<TokenContainer> {
         StoredOption(resetIfNil: resetIfNil) {
             guard let data = options[NetworkProtectionOptionKey.tokenContainer] as? NSData,

@@ -15,9 +15,10 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-import BrowserServicesKit
-import FeatureFlags
+
 import Combine
+import FeatureFlags
+import PrivacyConfig
 
 protocol VisualizeFireSettingsDecider {
     /// Fire animation setting

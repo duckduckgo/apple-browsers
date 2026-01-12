@@ -35,7 +35,7 @@ let package = Package(
         .target(
             name: "AttributedMetric",
             dependencies: [
-                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit")
             ]
         ),

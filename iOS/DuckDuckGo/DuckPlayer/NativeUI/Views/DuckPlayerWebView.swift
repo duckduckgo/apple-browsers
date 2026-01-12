@@ -24,6 +24,7 @@ import os.log
 import Combine
 import UserScript
 import BrowserServicesKit
+import PrivacyConfig
 
 struct DuckPlayerWebView: UIViewRepresentable {
     let viewModel: DuckPlayerViewModel

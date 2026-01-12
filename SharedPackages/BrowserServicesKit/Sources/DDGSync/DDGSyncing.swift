@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import DDGSyncCrypto
 import Foundation

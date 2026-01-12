@@ -76,7 +76,8 @@ struct BrokerProfileScanSubJob {
                                                  pixelHandler: dependencies.pixelHandler,
                                                  parentURL: brokerProfileQueryData.dataBroker.parent,
                                                  vpnConnectionState: vpnConnectionState,
-                                                 vpnBypassStatus: vpnBypassStatus)
+                                                 vpnBypassStatus: vpnBypassStatus,
+                                                 featureFlagger: dependencies.featureFlagger)
         let eventPixels = scanContext.eventPixels
         let stageCalculator = scanContext.stageCalculator
 
@@ -138,6 +139,7 @@ struct BrokerProfileScanSubJob {
                                           database: dependencies.database,
                                           pixelHandler: dependencies.pixelHandler,
                                           eventsHandler: dependencies.eventsHandler,
+                                          featureFlagger: dependencies.featureFlagger,
                                           markRemovedAndNotify: markSavedProfilesAsRemovedAndNotifyUser)
             } else {
                 try updateDatesAfterNoRemovals(brokerId: brokerId,
@@ -191,7 +193,8 @@ struct BrokerProfileScanSubJob {
                                          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                          parentURL: String?,
                                          vpnConnectionState: String,
-                                         vpnBypassStatus: String) -> ScanStageContext {
+                                         vpnBypassStatus: String,
+                                         featureFlagger: DBPFeatureFlagging) -> ScanStageContext {
         // 2. Set up dependencies used to report the status of the scan job:
         let eventPixels = DataBrokerProtectionEventPixels(database: database,
                                                           handler: pixelHandler)
@@ -202,7 +205,8 @@ struct BrokerProfileScanSubJob {
             isImmediateOperation: isManual,
             parentURL: parentURL,
             vpnConnectionState: vpnConnectionState,
-            vpnBypassStatus: vpnBypassStatus
+            vpnBypassStatus: vpnBypassStatus,
+            featureFlagger: featureFlagger
         )
 
         return ScanStageContext(eventPixels: eventPixels, stageCalculator: stageCalculator)
@@ -307,13 +311,15 @@ struct BrokerProfileScanSubJob {
                                         database: DataBrokerProtectionRepository,
                                         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                         eventsHandler: EventMapping<JobEvent>,
+                                        featureFlagger: DBPFeatureFlagging,
                                         markRemovedAndNotify: ([ExtractedProfile],
                                                                Int64,
                                                                Int64,
                                                                BrokerProfileQueryData,
                                                                DataBrokerProtectionRepository,
                                                                EventMapping<DataBrokerProtectionSharedPixels>,
-                                                               EventMapping<JobEvent>) throws -> Void) throws {
+                                                               EventMapping<JobEvent>,
+                                                               DBPFeatureFlagging) throws -> Void) throws {
         // 7a. If there were removed profiles, update their state and notify the user:
         try markRemovedAndNotify(removedProfiles,
                                  brokerId,
@@ -321,7 +327,8 @@ struct BrokerProfileScanSubJob {
                                  brokerProfileQueryData,
                                  database,
                                  pixelHandler,
-                                 eventsHandler)
+                                 eventsHandler,
+                                 featureFlagger)
     }
 
     internal func updateDatesAfterNoRemovals(brokerId: Int64,
@@ -393,7 +400,7 @@ struct BrokerProfileScanSubJob {
                                                          brokerId: brokerId,
                                                          profileQueryId: profileQueryId,
                                                          type: .reAppearence)
-                    eventPixels.fireReappeareanceEventPixel()
+                    eventPixels.fireReappeareanceEventPixel(dataBrokerURL: brokerProfileQueryData.dataBroker.url)
                     try database.add(reAppearanceEvent)
                     try database.updateRemovedDate(nil, on: id)
                 }
@@ -418,8 +425,8 @@ struct BrokerProfileScanSubJob {
         // If it's a new found profile, we'd like to opt-out ASAP
         // If this broker has a parent opt out, we set the preferred date to nil, as we will only perform the operation
         // within the parent.
-        eventPixels.fireNewMatchEventPixel()
         let broker = brokerProfileQueryData.dataBroker
+        eventPixels.fireNewMatchEventPixel(dataBrokerURL: broker.url)
         let preferredRunOperation: Date? = broker.performsOptOutWithinParent() ? nil : Date()
 
         // If profile does not exist we insert the new profile and we create the opt-out operation
@@ -461,7 +468,8 @@ struct BrokerProfileScanSubJob {
         brokerProfileQueryData: BrokerProfileQueryData,
         database: DataBrokerProtectionRepository,
         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-        eventsHandler: EventMapping<JobEvent>
+        eventsHandler: EventMapping<JobEvent>,
+        featureFlagger: DBPFeatureFlagging
     ) throws {
         var shouldSendProfileRemovedEvent = false
         for removedProfile in removedProfiles {
@@ -511,7 +519,8 @@ struct BrokerProfileScanSubJob {
                                                      parent: brokerProfileQueryData.dataBroker.parent ?? "",
                                                      brokerType: brokerProfileQueryData.dataBroker.type,
                                                      vpnConnectionState: vpnConnectionState,
-                                                     vpnBypassStatus: vpnBypassStatus))
+                                                     vpnBypassStatus: vpnBypassStatus,
+                                                     clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
                 }
             }
         }

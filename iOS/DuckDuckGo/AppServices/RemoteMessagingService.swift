@@ -23,8 +23,10 @@ import Configuration
 import RemoteMessaging
 import Core
 import Persistence
+import PrivacyConfig
 import BackgroundTasks
 import DDGSync
+import DataBrokerProtection_iOS
 
 final class RemoteMessagingService: RemoteMessagingDebugHandling {
 
@@ -47,7 +49,8 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
          configurationURLProvider: ConfigurationURLProviding,
          syncService: DDGSyncing,
          winBackOfferService: WinBackOfferService,
-         subscriptionDataReporter: SubscriptionDataReporting
+         subscriptionDataReporter: SubscriptionDataReporting,
+         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         remoteMessagingActionHandler = RemoteMessagingActionHandler(
             lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher()
@@ -71,7 +74,8 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
             duckPlayerStorage: DefaultDuckPlayerStorage(),
             configurationURLProvider: configurationURLProvider,
             syncService: syncService,
-            winBackOfferService: winBackOfferService
+            winBackOfferService: winBackOfferService,
+            dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()
 

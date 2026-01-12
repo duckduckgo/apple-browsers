@@ -18,7 +18,7 @@
 
 import AIChat
 import AppKit
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import PixelKit
 
@@ -70,7 +70,6 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     private let sidebarProvider: AIChatSidebarProviding
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatTabOpener: AIChatTabOpening
-    private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pixelFiring: PixelFiring?
     private let sidebarPresenceWillChangeSubject = PassthroughSubject<AIChatSidebarPresenceChange, Never>()
@@ -83,7 +82,6 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         sidebarProvider: AIChatSidebarProviding,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatTabOpener: AIChatTabOpening,
-        featureFlagger: FeatureFlagger,
         windowControllersManager: WindowControllersManagerProtocol,
         pixelFiring: PixelFiring?
     ) {
@@ -91,7 +89,6 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         self.sidebarProvider = sidebarProvider
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatTabOpener = aiChatTabOpener
-        self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
 
@@ -111,7 +108,6 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     }
 
     func toggleSidebar() {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
         guard !isAnimatingSidebarTransition,
               let currentTabID = sidebarHost.currentTabID else { return }
 
@@ -126,7 +122,6 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     }
 
     func isSidebarOpen(for tabID: TabIdentifier) -> Bool {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return false }
         return sidebarProvider.isShowingSidebar(for: tabID)
     }
 
@@ -197,7 +192,6 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     }
 
     func presentSidebar(for prompt: AIChatNativePrompt) {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
         if let sidebarViewController = sidebarProvider.getSidebarViewController(for: currentTabID) {
@@ -211,7 +205,6 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     }
 
     private func handleAIChatHandoff(with payload: AIChatPayload) {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
         let isShowingSidebar = sidebarProvider.isShowingSidebar(for: currentTabID)

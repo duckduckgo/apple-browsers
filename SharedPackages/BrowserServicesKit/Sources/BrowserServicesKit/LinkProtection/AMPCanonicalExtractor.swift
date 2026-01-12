@@ -19,6 +19,7 @@
 import Foundation
 import WebKit
 import Common
+import PrivacyConfig
 
 #if canImport(UIKit)
 import UIKit
@@ -61,7 +62,6 @@ public final class AMPCanonicalExtractor: NSObject {
     private let privacyManager: PrivacyConfigurationManaging
     private let contentBlockingManager: CompiledRuleListsSource
     private let errorReporting: EventMapping<AMPProtectionDebugEvents>?
-    private let useBackgroundTaskProtection: Bool
 
     private var privacyConfig: PrivacyConfiguration { privacyManager.privacyConfig }
 
@@ -71,13 +71,11 @@ public final class AMPCanonicalExtractor: NSObject {
     public init(linkCleaner: LinkCleaner,
                 privacyManager: PrivacyConfigurationManaging,
                 contentBlockingManager: CompiledRuleListsSource,
-                errorReporting: EventMapping<AMPProtectionDebugEvents>? = nil,
-                useBackgroundTaskProtection: Bool = false) {
+                errorReporting: EventMapping<AMPProtectionDebugEvents>? = nil) {
         self.linkCleaner = linkCleaner
         self.privacyManager = privacyManager
         self.contentBlockingManager = contentBlockingManager
         self.errorReporting = errorReporting
-        self.useBackgroundTaskProtection = useBackgroundTaskProtection
 
         super.init()
 
@@ -135,13 +133,7 @@ public final class AMPCanonicalExtractor: NSObject {
 
         let ampKeywords = settings.ampKeywords
 
-        if useBackgroundTaskProtection {
-            return performAMPDetectionWithBackgroundTask(urlStr: urlStr, ampKeywords: ampKeywords)
-        } else {
-            return ampKeywords.contains { keyword in
-                return urlStr.contains(keyword)
-            }
-        }
+        return performAMPDetectionWithBackgroundTask(urlStr: urlStr, ampKeywords: ampKeywords)
     }
 
     private func performAMPDetectionWithBackgroundTask(urlStr: String, ampKeywords: [String]) -> Bool {

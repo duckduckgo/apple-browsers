@@ -19,6 +19,7 @@
 import Foundation
 import WebKit
 import BrowserServicesKit
+import PrivacyConfig
 import UserScript
 import Common
 import os.log

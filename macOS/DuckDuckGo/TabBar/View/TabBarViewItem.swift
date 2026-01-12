@@ -17,10 +17,10 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import DesignResourcesKitIcons
 import FeatureFlags
+import PrivacyConfig
 import WebKit
 
 struct OtherTabBarViewItemsState {

@@ -12,5 +12,19 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_dax_easter_egg_logo_set_as_permanent": {
+        "description": "Fired when the user sets a Dax Easter Egg logo as their permanent search icon",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_dax_easter_egg_logo_reset_to_default": {
+        "description": "Fired when the user resets their search icon to the default Dax logo",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

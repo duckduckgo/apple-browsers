@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Foundation
+import PrivacyConfig
 
 /**
  * This enum describes available Sync features.

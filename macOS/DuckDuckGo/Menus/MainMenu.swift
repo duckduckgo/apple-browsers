@@ -27,6 +27,7 @@ import SwiftUI
 import WebKit
 import Configuration
 import VPN
+import PrivacyConfig
 import Subscription
 import SubscriptionUI
 import Utilities
@@ -105,6 +106,7 @@ final class MainMenu: NSMenu {
     let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
     let toggleWatchdogCrashMenuItem = NSMenuItem(title: "Crash on timeout", action: #selector(MainViewController.toggleWatchdogCrash))
     let alwaysShowFirstTimeQuitSurvey = NSMenuItem(title: "Always Show First-Time Quit Survey", action: #selector(MainViewController.alwaysShowFirstTimeQuitSurvey))
+    let shiftNextStepsDaysMenuItem = NSMenuItem(title: "Shift maximum Next Steps demonstration days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
 
     // MARK: Help
 
@@ -513,6 +515,7 @@ final class MainMenu: NSMenu {
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
         updateContentScopeDebugStateMenuItem()
+        updateShiftNextStepsDaysMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
         updateWatchdogMenuItems()
         updateWebExtensionsMenuItem()
@@ -728,14 +731,16 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "New Tab Page") {
-                NSMenuItem(title: "Reset Continue Setup", action: #selector(AppDelegate.debugResetContinueSetup))
+                NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
-                NSMenuItem(title: "Shift \(AppearancePreferences.Constants.dismissNextStepsCardsAfterDays) days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
+                shiftNextStepsDaysMenuItem
             }
             NSMenuItem(title: "CPM") {
                 NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
                 NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
                 NSMenuItem(title: "Clear blockedCookiesPopoverSeen flag", action: #selector(AppDelegate.debugClearBlockedCookiesPopoverSeenFlag))
+                NSMenuItem(title: "Reset widgetNewLabelFirstShownDate", action: #selector(AppDelegate.debugResetWidgetNewLabelFirstShownDateKey))
+                NSMenuItem(title: "Set widgetNewLabelFirstShownDate to 10 days ago", action: #selector(AppDelegate.debugSetWidgetNewLabelFirstShownDateTo10DaysAgo))
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
@@ -776,6 +781,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
                 NSMenuItem(title: "Set Launch Date A Month In the Past", action: #selector(AppDelegate.setLaunchDayAMonthInThePast))
                 NSMenuItem(title: "Reset Quit Survey Was Shown", action: #selector(AppDelegate.resetQuitSurveyWasShown))
+                NSMenuItem(title: "Reset Themes Popover Was Shown", action: #selector(AppDelegate.resetThemesPopoverWasShown))
 
             }.withAccessibilityIdentifier("MainMenu.resetData")
             NSMenuItem(title: "UI Triggers") {
@@ -857,19 +863,19 @@ final class MainMenu: NSMenu {
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
 
-            var currentEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+            var currentEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
             let updateServiceEnvironment: (SubscriptionEnvironment.ServiceEnvironment) -> Void = { env in
                 currentEnvironment.serviceEnvironment = env
-                DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
+                DefaultSubscriptionManagerV2.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
             let updatePurchasingPlatform: (SubscriptionEnvironment.PurchasePlatform) -> Void = { platform in
                 currentEnvironment.purchasePlatform = platform
-                DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
+                DefaultSubscriptionManagerV2.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
 
             let updateCustomBaseSubscriptionURL: (URL?) -> Void = { url in
                 currentEnvironment.customBaseSubscriptionURL = url
-                DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
+                DefaultSubscriptionManagerV2.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
 
             SubscriptionDebugMenu(currentEnvironment: currentEnvironment,
@@ -879,10 +885,8 @@ final class MainMenu: NSMenu {
                                   currentViewController: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController },
                                   openSubscriptionTab: { Application.appDelegate.windowControllersManager.showTab(with: .subscription($0)) },
                                   subscriptionAuthV1toV2Bridge: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                  subscriptionManagerV1: Application.appDelegate.subscriptionManagerV1,
                                   subscriptionManagerV2: Application.appDelegate.subscriptionManagerV2,
                                   subscriptionUserDefaults: subscriptionUserDefaults,
-                                  isAuthV2Enabled: Application.appDelegate.isUsingAuthV2,
                                   wideEvent: Application.appDelegate.wideEvent)
 
             NSMenuItem(title: "TipKit") {
@@ -1018,6 +1022,10 @@ final class MainMenu: NSMenu {
 
     private func updateContentScopeDebugStateMenuItem() {
         contentScopeDebugStateMenuItem.state = contentScopePreferences.isDebugStateEnabled ? .on : .off
+    }
+
+    private func updateShiftNextStepsDaysMenuItem() {
+        shiftNextStepsDaysMenuItem.title = "Shift \(appearancePreferences.maxNextStepsCardsDemonstrationDays) days"
     }
 
     @MainActor

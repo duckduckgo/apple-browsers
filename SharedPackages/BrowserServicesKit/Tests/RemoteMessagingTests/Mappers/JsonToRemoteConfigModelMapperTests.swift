@@ -103,7 +103,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
             content: .promoSingleAction(
                 titleText: "Survey Title",
                 descriptionText: "Survey Description",
-                placeholder: .privacyShield,
+                placeholder: .subscription,
                 actionText: "Survey Action",
                 action: .survey(value: "https://duckduckgo.com/survey")
             ),
@@ -145,7 +145,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         let rule8 = config.rules.filter { $0.id == 8 }.first
         XCTAssertNotNil(rule8)
         XCTAssertNil(rule8?.targetPercentile)
-        XCTAssertEqual(rule8?.attributes.count, 9)
+        XCTAssertEqual(rule8?.attributes.count, 10)
 
         attribs = rule8?.attributes.filter { $0 is DaysSinceNetPEnabledMatchingAttribute }
         XCTAssertEqual(attribs?.count, 1)
@@ -154,6 +154,10 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         attribs = rule8?.attributes.filter { $0 is DaysSinceDuckAIUsedMatchingAttribute }
         XCTAssertEqual(attribs?.count, 1)
         XCTAssertEqual(attribs?.first as? DaysSinceDuckAIUsedMatchingAttribute, DaysSinceDuckAIUsedMatchingAttribute(min: 3, fallback: nil))
+
+        attribs = rule8?.attributes.filter { $0 is PIRCurrentUserMatchingAttribute }
+        XCTAssertEqual(attribs?.count, 1)
+        XCTAssertEqual(attribs?.first as? PIRCurrentUserMatchingAttribute, PIRCurrentUserMatchingAttribute(value: true, fallback: nil))
 
         attribs = rule8?.attributes.filter { $0 is IsSubscriptionEligibleUserMatchingAttribute }
         XCTAssertEqual(attribs?.count, 1)

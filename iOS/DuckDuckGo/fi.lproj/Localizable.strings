@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Eilen";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Löysit piilotetun logon!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo tallennettu";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Palauta hakulogo";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Vaihda tähän logoon";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Huomio! %1$@ näkee mitä teet sivustolla %2$@, enkä voi estää sitä.\n\nMutta jos käytät minua selaamiseen, voin vähentää, mitä %1$@ saa tietää sinusta, estämällä heidän seurantansa monilla muilla sivustoilla.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Yhteenveto tästä sivusta";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Näytä Duck.ai-painikkeet ja -linkit DuckDuckGo-hakutuloksissa.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Etsi sivulta";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Poista kaikki keskustelut";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai-keskustelut";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Saattaa kirjata sinut ulos tileiltä";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Evästeet ja sivuston tiedot";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Välilehdet";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Valitse, mitä poistetaan";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ilmavirta";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist -asetukset";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Näytä uudet Duck.ai-keskustelut selaimen välilehtinä";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Lähetä sivun konteksti automaattisesti Duck.ai:lle";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Duck.ai-välilehtitila";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Lähetä konteksti automaattisesti";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Piilota tekoälyn luomat kuvat";
@@ -3574,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Tilaussopimukset";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Ostoksen suorittaminen...";
 
@@ -3663,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Ilmainen kokeilujakso on aktiivinen";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Näytä kaikki tilaukset";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-ilmoitus";

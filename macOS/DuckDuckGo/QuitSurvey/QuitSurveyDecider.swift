@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
 import FeatureFlags
 import Foundation
 import os.log
 import Persistence
+import PrivacyConfig
 import AppKit
 
 /// Protocol for deciding whether to show the quit survey.

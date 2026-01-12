@@ -18,20 +18,9 @@
 
 import XCTest
 import TrackerRadarKit
-import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
-
-final class MockDomainsProtectionStore: DomainsProtectionStore {
-    var unprotectedDomains = Set<String>()
-
-    func disableProtection(forDomain domain: String) {
-        unprotectedDomains.insert(domain)
-    }
-
-    func enableProtection(forDomain domain: String) {
-        unprotectedDomains.remove(domain)
-    }
-}
 
 class AppPrivacyConfigurationTests: XCTestCase {
 

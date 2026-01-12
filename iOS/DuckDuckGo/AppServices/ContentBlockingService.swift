@@ -18,7 +18,7 @@
 //
 
 import ContentBlocking
-import BrowserServicesKit
+import PrivacyConfig
 import Core
 import DDGSync
 

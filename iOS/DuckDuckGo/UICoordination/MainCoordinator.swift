@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import BrowserServicesKit
+import PrivacyConfig
 import Subscription
 import Persistence
 import DDGSync

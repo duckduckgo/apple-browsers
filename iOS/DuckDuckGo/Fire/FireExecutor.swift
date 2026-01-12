@@ -22,6 +22,7 @@ import DDGSync
 import Bookmarks
 import AIChat
 import BrowserServicesKit
+import PrivacyConfig
 import UserScript
 import WKAbstractions
 
@@ -35,16 +36,32 @@ struct FireOptions: OptionSet {
     static let all: FireOptions = [.tabs, .data, .aiChats]
 }
 
-protocol FireExecutorDelegate: AnyObject {
-    func willStartBurningTabs()
-    func didFinishBurningTabs()
-    func willStartBurningData()
-    func didFinishBurningData()
-    func willStartBurningAIHistory()
-    func didFinishBurningAIHistory()
+enum FireContext {
+    case manualFire              // User pressed Fire Button
+    case autoClearOnLaunch       // Auto-clear during app launch
+    case autoClearOnForeground   // Auto-clear after period of inactivity when returning to foreground
 }
 
-class FireExecutor {
+protocol FireExecutorDelegate: AnyObject {
+    func willStartBurning(fireContext: FireContext)
+    func willStartBurningTabs(fireContext: FireContext)
+    func didFinishBurningTabs(fireContext: FireContext)
+    func willStartBurningData(fireContext: FireContext)
+    func didFinishBurningData(fireContext: FireContext)
+    func willStartBurningAIHistory(fireContext: FireContext)
+    func didFinishBurningAIHistory(fireContext: FireContext)
+    func didFinishBurning(fireContext: FireContext)
+}
+
+protocol FireExecuting {
+    @MainActor func prepare(for options: FireOptions)
+    @MainActor func burn(options: FireOptions,
+                         applicationState: DataStoreWarmup.ApplicationState,
+                         fireContext: FireContext) async
+    var delegate: FireExecutorDelegate? { get set }
+}
+
+class FireExecutor: FireExecuting {
     
     // MARK: - Variables
     
@@ -66,6 +83,7 @@ class FireExecutor {
     private var burnInProgress = false
     private var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
     private let aiChatHistoryCleaner: HistoryCleaning
+    private var preparedOptions: FireOptions = []
     
     // MARK: - Init
     
@@ -104,37 +122,58 @@ class FireExecutor {
     // MARK: - Public Functions
     @MainActor
     func prepare(for options: FireOptions) {
-        if options.contains(.tabs) {
+        // Only prepare tabs if requested and not already prepared
+        if options.contains(.tabs) && !preparedOptions.contains(.tabs) {
             prepareForBurningTabs()
         }
+        preparedOptions.formUnion(options)
     }
     
     @MainActor
-    func burn(options: FireOptions, applicationState: DataStoreWarmup.ApplicationState = .unknown) async {
-        if options.contains(.tabs) {
-            delegate?.willStartBurningTabs()
-            burnTabs()
-            delegate?.didFinishBurningTabs()
-        }
-
-        cancelOngoingDownloadsIfNeeded(options)
+    func burn(options: FireOptions,
+              applicationState: DataStoreWarmup.ApplicationState = .unknown,
+              fireContext: FireContext) async {
+        assert(delegate != nil, "Delegate should not be nil. This leads to unexpected behavior.")
         
+        // Ensure all requested options are prepared
+        let unpreparedOptions = options.subtracting(preparedOptions)
+        if !unpreparedOptions.isEmpty {
+            prepare(for: unpreparedOptions)
+        }
+        
+        delegate?.willStartBurning(fireContext: fireContext)
+        if options.contains(.tabs) {
+            delegate?.willStartBurningTabs(fireContext: fireContext)
+            burnTabs()
+            delegate?.didFinishBurningTabs(fireContext: fireContext)
+        }
+        
+        cancelOngoingDownloadsIfNeeded(options)
+
         let shouldBurnData = options.contains(.data)
         
-        // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
-        let legacyAIChatsEnabled = featureFlagger.isFeatureOn(.granularFireButtonOptions) || appSettings.autoClearAIChatHistory // TODO: - Removed the check when granularFireButtonOptions is removed.
+        // For auto-clear with enhancedDataClearingSettings FF ON:
+        // - User configures what to clear via the enhanced settings UI
+        // For manual fire OR auto-clear with FF OFF (legacy):
+        // - AI chats clear only if autoClearAIChatHistory setting is enabled
+        let chosenThroughNewAutoClearUI = featureFlagger.isFeatureOn(.enhancedDataClearingSettings) && fireContext != .manualFire
+        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI || appSettings.autoClearAIChatHistory
         
-        let shouldBurnAIChats = options.contains(.aiChats) && legacyAIChatsEnabled
+        let shouldBurnAIChats = options.contains(.aiChats) && shouldAllowAIChatsBurn
 
-        if shouldBurnData { delegate?.willStartBurningData() }
-        if shouldBurnAIChats { delegate?.willStartBurningAIHistory() }
+        if shouldBurnData { delegate?.willStartBurningData(fireContext: fireContext) }
+        if shouldBurnAIChats { delegate?.willStartBurningAIHistory(fireContext: fireContext) }
 
         async let dataTask: Void = shouldBurnData ? burnData(applicationState: applicationState) : ()
         async let aiTask: Void = shouldBurnAIChats ? burnAIHistory() : ()
         _ = await (dataTask, aiTask)
 
-        if shouldBurnData { delegate?.didFinishBurningData() }
-        if shouldBurnAIChats { delegate?.didFinishBurningAIHistory() }
+        if shouldBurnData { delegate?.didFinishBurningData(fireContext: fireContext) }
+        if shouldBurnAIChats { delegate?.didFinishBurningAIHistory(fireContext: fireContext) }
+        delegate?.didFinishBurning(fireContext: fireContext)
+        
+        // Reset prepared state for next burn cycle
+        preparedOptions = []
     }
     
     // MARK: - Clearing Downloads

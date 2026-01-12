@@ -20,6 +20,7 @@
 import Core
 import BrowserServicesKit
 import Persistence
+import PrivacyConfig
 import SwiftUI
 import Common
 import Combine
@@ -35,12 +36,6 @@ import SystemSettingsPiPTutorial
 import SERPSettings
 
 final class SettingsViewModel: ObservableObject {
-
-    /// There's an improved picker cell being rolled out with the feature flag below.
-    /// Once it has passed a ship review we'll move to the improved one.
-    var useImprovedPicker: Bool {
-        featureFlagger.isFeatureOn(.mobileCustomization)
-    }
 
     // Dependencies
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
@@ -71,13 +66,12 @@ final class SettingsViewModel: ObservableObject {
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     var browsingMenuSheetCapability: BrowsingMenuSheetCapable
+    private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
 
     // Subscription Dependencies
-    let isAuthV2Enabled: Bool
-    let subscriptionManagerV1: (any SubscriptionManager)?
     let subscriptionManagerV2: (any SubscriptionManagerV2)?
     let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
@@ -110,6 +104,7 @@ final class SettingsViewModel: ObservableObject {
     // App Data State Notification Observer
     private var textZoomObserver: Any?
     private var appForegroundObserver: Any?
+    private var aiChatSettingsObserver: Any?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let keyValueStore: ThrowingKeyValueStoring
@@ -629,8 +624,6 @@ final class SettingsViewModel: ObservableObject {
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
-         isAuthV2Enabled: Bool,
-         subscriptionManagerV1: (any SubscriptionManager)?,
          subscriptionManagerV2: (any SubscriptionManagerV2)?,
          subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -658,6 +651,7 @@ final class SettingsViewModel: ObservableObject {
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          browsingMenuSheetCapability: BrowsingMenuSheetCapable,
+         onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
     ) {
@@ -665,8 +659,6 @@ final class SettingsViewModel: ObservableObject {
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
         self.legacyViewProvider = legacyViewProvider
-        self.isAuthV2Enabled = isAuthV2Enabled
-        self.subscriptionManagerV1 = subscriptionManagerV1
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.subscriptionAuthV1toV2Bridge = subscriptionAuthV1toV2Bridge
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -694,6 +686,11 @@ final class SettingsViewModel: ObservableObject {
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
         self.browsingMenuSheetCapability = browsingMenuSheetCapability
+        self.onboardingSearchExperienceSettingsResolver = onboardingSearchExperienceSettingsResolver ?? OnboardingSearchExperienceSettingsResolver(
+            featureFlagger: AppDependencyProvider.shared.featureFlagger,
+            onboardingProvider: OnboardingSearchExperience(),
+            daxDialogsStatusProvider: legacyViewProvider.daxDialogsManager
+        )
         self.whatsNewCoordinator = whatsNewCoordinator
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
@@ -702,6 +699,7 @@ final class SettingsViewModel: ObservableObject {
     deinit {
         subscriptionSignOutObserver = nil
         textZoomObserver = nil
+        aiChatSettingsObserver = nil
         if #available(iOS 18.2, *) {
             appForegroundObserver = nil
         }
@@ -1284,6 +1282,15 @@ extension SettingsViewModel {
             guard let self = self else { return }
             self.state.textZoom = SettingsState.TextZoom(level: self.appSettings.defaultTextZoomLevel)
         })
+        
+        aiChatSettingsObserver = NotificationCenter.default.addObserver(forName: .aiChatSettingsChanged,
+                                                                  object: nil,
+                                                                  queue: .main, using: { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.refreshAutoClearOptionsIfNeeded()
+            }
+        })
 
         if #available(iOS 18.2, *) {
             appForegroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
@@ -1300,57 +1307,7 @@ extension SettingsViewModel {
     }
 
     func restoreAccountPurchase() async {
-        if !isAuthV2Enabled {
-            await restoreAccountPurchaseV1()
-        } else {
-            await restoreAccountPurchaseV2()
-        }
-    }
-
-    func restoreAccountPurchaseV1() async {
-        guard let subscriptionManagerV1 else {
-            assertionFailure("Missing dependency: subscriptionManagerV1")
-            return
-        }
-
-        DispatchQueue.main.async { self.state.subscription.isRestoring = true }
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManagerV1.accountManager,
-                                                             storePurchaseManager: subscriptionManagerV1.storePurchaseManager(),
-                                                             subscriptionEndpointService: subscriptionManagerV1.subscriptionEndpointService,
-                                                             authEndpointService: subscriptionManagerV1.authEndpointService)
-        let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
-        switch result {
-        case .success:
-            DispatchQueue.main.async {
-                self.state.subscription.isRestoring = false
-            }
-            await self.setupSubscriptionEnvironment()
-            
-        case .failure(let restoreFlowError):
-            DispatchQueue.main.async {
-                self.state.subscription.isRestoring = false
-                self.state.subscription.shouldDisplayRestoreSubscriptionError = true
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    self.state.subscription.shouldDisplayRestoreSubscriptionError = false
-                }
-            }
-
-            switch restoreFlowError {
-            case .missingAccountOrTransactions:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorMissingAccountOrTransactions)
-            case .pastTransactionAuthenticationError:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError)
-            case .failedToObtainAccessToken:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToObtainAccessToken)
-            case .failedToFetchAccountDetails:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchAccountDetails)
-            case .failedToFetchSubscriptionDetails:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails)
-            case .subscriptionExpired:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorSubscriptionExpired)
-            }
-        }
+        await restoreAccountPurchaseV2()
     }
 
     func restoreAccountPurchaseV2() async {
@@ -1402,11 +1359,7 @@ extension SettingsViewModel {
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
     private func isUserEligibleForTrialOffer() async -> Bool {
-        if isAuthV2Enabled {
-            return await subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
-        } else {
-            return await subscriptionManagerV1?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
-        }
+        return subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
     }
 
 }
@@ -1451,11 +1404,19 @@ extension SettingsViewModel {
 
     var aiChatSearchInputEnabledBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
+            get: {
+                self.onboardingSearchExperienceSettingsResolver.deferredValue ?? self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+            },
             set: { newValue in
-                guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
-                self.objectWillChange.send()
-                self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                if self.onboardingSearchExperienceSettingsResolver.shouldUseDeferredOnboardingChoice {
+                    if self.onboardingSearchExperienceSettingsResolver.storeIfDeferred(newValue) {
+                        self.objectWillChange.send()
+                    }
+                } else {
+                    guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                }
             }
         )
     }
@@ -1477,19 +1438,7 @@ extension SettingsViewModel {
             }
         )
     }
-    
-    var isAIChatFullModeEnabled: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatFullModeEnabled },
-            set: { newValue in
-                withAnimation {
-                    self.objectWillChange.send()
-                    self.aiChatSettings.enableAIChatFullModeSetting(enable: newValue)
-                }
-            }
-        )
-    }
-    
+
     var isAutomaticContextAttachmentEnabled: Binding<Bool> {
         Binding<Bool>(
             get: { self.aiChatSettings.isAutomaticContextAttachmentEnabled },
@@ -1525,7 +1474,18 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
     }
 
     func navigateToAutoClearData() {
-        presentLegacyView(.autoclearData)
+        if featureFlagger.isFeatureOn(.enhancedDataClearingSettings) {
+            let viewModel = AutoClearSettingsViewModel(
+                appSettings: appSettings,
+                aiChatSettings: aiChatSettings
+            )
+            let view = AutoClearSettingsView(viewModel: viewModel)
+                .environmentObject(self)
+            let hostingController = UIHostingController(rootView: view)
+            pushViewController(hostingController)
+        } else {
+            presentLegacyView(.autoclearData)
+        }
     }
 
     func presentFireConfirmation() {
@@ -1534,6 +1494,12 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
         }, {
             // Cancelled - no action needed
         })
+    }
+    
+    private func refreshAutoClearOptionsIfNeeded() {
+        if !aiChatSettings.isAIChatEnabled {
+            appSettings.autoClearAction = appSettings.autoClearAction.subtracting(.aiChats)
+        }
     }
 }
 

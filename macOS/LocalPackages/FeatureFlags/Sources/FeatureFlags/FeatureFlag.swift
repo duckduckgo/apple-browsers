@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760000
@@ -103,9 +103,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617269950
     case paidAIChat
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717945014
-    case aiChatSidebar
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615582950
     case aiChatPageContext
@@ -272,9 +269,24 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
     case aiChatSync
+
+    /// Autoconsent heuristic action experiment
+    /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
+    case heuristicAction
+
+    /// Next Steps cards iteration with single card displayed on New Tab page
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
+    case nextStepsSingleCardIteration
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
+
+    /// Cohorts for the autoconsent heuristic action experiment
+    public enum HeuristicActionCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     public var defaultValue: Bool {
         switch self {
         case .supportsAlternateStripePaymentFlow,
@@ -295,7 +307,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportWideEventMeasurement,
                 .tabProgressIndicator,
                 .firstTimeQuitSurvey,
-                .autofillPasswordSearchPrioritizeDomain:
+                .autofillPasswordSearchPrioritizeDomain,
+                .themes:
             true
         default:
             false
@@ -304,6 +317,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
+        case .heuristicAction:
+            return HeuristicActionCohort.self
         default:
             return nil
         }
@@ -332,7 +347,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
                 .hangReporting,
-				.aiChatSidebar,
                 .aiChatPageContext,
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
@@ -380,7 +394,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillPasswordSearchPrioritizeDomain,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
-                .aiChatSync:
+                .aiChatSync,
+                .heuristicAction,
+                .nextStepsSingleCardIteration:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -453,8 +469,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .paidAIChat:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
-        case .aiChatSidebar:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .aiChatKeepSession:
@@ -492,7 +506,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .themes:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.themes))
         case .appStoreUpdateFlow:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
@@ -542,7 +556,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webNotifications:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications))
         case .newPermissionView:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.newPermissionView))
+            return .remoteReleasable(.feature(.combinedPermissionView))
         case .tabClosingEventRecreation:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         case .firstTimeQuitSurvey:
@@ -554,6 +568,10 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .memoryUsageMonitor:
             return .disabled
         case .aiChatSync:
+            return .disabled
+        case .heuristicAction:
+            return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
+        case .nextStepsSingleCardIteration:
             return .disabled
         }
     }

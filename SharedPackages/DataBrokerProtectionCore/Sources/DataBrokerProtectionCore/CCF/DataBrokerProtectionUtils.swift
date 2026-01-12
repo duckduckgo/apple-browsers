@@ -17,6 +17,7 @@
 //
 import Foundation
 import WebKit
+import PrivacyConfig
 import BrowserServicesKit
 import UserScript
 import os.log

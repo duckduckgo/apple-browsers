@@ -28,6 +28,7 @@ import NetworkProtectionUI
 import os.log
 import PageRefreshMonitor
 import PixelKit
+import PrivacyConfig
 import Subscription
 import SubscriptionUI
 import VPN
@@ -1448,8 +1449,7 @@ final class NavigationBarViewController: NSViewController {
                                    subscriptionManager: subscriptionManager,
                                    freemiumDBPFeature: freemiumDBPFeature,
                                    dockCustomizer: dockCustomization,
-                                   defaultBrowserPreferences: defaultBrowserPreferences,
-                                   isUsingAuthV2: subscriptionManager is DefaultSubscriptionManagerV2)
+                                   defaultBrowserPreferences: defaultBrowserPreferences)
 
         menu.actionDelegate = self
         let location = NSPoint(x: -menu.size.width + sender.bounds.width, y: sender.bounds.height + 4)

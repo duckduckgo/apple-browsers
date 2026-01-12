@@ -1,0 +1,10 @@
+// See https://app.asana.com/1/137249556945/project/1211150618152277/task/1210713315191795?focus=true
+{
+    "m_mac_theme_name_daily": {
+        "description": "Daily pixel indicating the active Theme Name",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "themeName"]
+    }
+}

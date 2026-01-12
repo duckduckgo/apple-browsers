@@ -124,14 +124,10 @@ final class QuitSurveyPresenter {
         // Show as sheet on the main window, or as standalone window if no main window
         if let parentWindowController = windowControllersManager.lastKeyMainWindowController,
            let parentWindow = parentWindowController.window {
-            parentWindow.beginSheet(window)
+            parentWindow.beginSheet(window) { _ in }
         } else {
-            let screenFrame = NSScreen.main?.frame ?? .zero
-            let windowOrigin = NSPoint(
-                x: screenFrame.midX - windowRect.width / 2,
-                y: screenFrame.midY - windowRect.height / 2
-            )
-            window.setFrameOrigin(windowOrigin)
+            // Fallback: show as a centered window
+            window.center()
             window.makeKeyAndOrderFront(nil)
         }
     }

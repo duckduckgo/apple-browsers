@@ -84,6 +84,10 @@ extension UserScriptMessageBroker: UserScriptMessagePushing {}
 final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     typealias DataModel = SubscriptionUserScript.DataModel
 
+    private enum FeaturePage {
+        static let duckai = "duckai"
+    }
+
     let platform: DataModel.Platform
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding
@@ -165,7 +169,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
             return nil
         }()
 
-        navigationDelegate?.navigateToSubscriptionPurchase(origin: purchaseParams?.origin, featurePage: "duckai")
+        navigationDelegate?.navigateToSubscriptionPurchase(origin: purchaseParams?.origin, featurePage: FeaturePage.duckai)
         return nil
     }
 
@@ -184,7 +188,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
             return nil
         }()
 
-        navigationDelegate?.navigateToSubscriptionPlans(origin: upgradeParams?.origin, featurePage: "duckai")
+        navigationDelegate?.navigateToSubscriptionPlans(origin: upgradeParams?.origin, featurePage: FeaturePage.duckai)
 
         return nil
     }

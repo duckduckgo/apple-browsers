@@ -24,10 +24,10 @@ import DesignResourcesKitIcons
 struct InfoPanelView: View {
 
     private enum Constants {
-        static let contentSpacing: CGFloat = 12
+        static let contentSpacing: CGFloat = 8
         static let iconSize: CGFloat = 20
-        static let infoButtonPadding: CGFloat = 8
-        static let horizontalPadding: CGFloat = 16
+        static let infoButtonPadding: CGFloat = 4
+        static let horizontalPadding: CGFloat = 12
         static let verticalPadding: CGFloat = 8
         static let cornerRadius: CGFloat = 16
     }

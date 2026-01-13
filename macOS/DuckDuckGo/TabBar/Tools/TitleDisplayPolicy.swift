@@ -19,15 +19,15 @@
 import Foundation
 
 protocol TitleDisplayPolicy {
-    func mustSkipDisplayingTitle(title: String, url: URL?, previousURL: URL?) -> Bool
+    func mustSkipDisplayingTitle(title: String, url: URL?, previousURL: URL?, isLoading: Bool) -> Bool
     func mustAnimateTitleTransition(title: String, previousTitle: String) -> Bool
     func mustAnimateNewTitleFadeIn(targetURL: URL?, previousURL: URL?) -> Bool
 }
 
 struct DefaultTitleDisplayPolicy: TitleDisplayPolicy {
 
-    func mustSkipDisplayingTitle(title: String, url: URL?, previousURL: URL?) -> Bool {
-        previousURL?.host == url?.host && url?.suggestedTitlePlaceholder == title
+    func mustSkipDisplayingTitle(title: String, url: URL?, previousURL: URL?, isLoading: Bool) -> Bool {
+        previousURL?.host == url?.host && url?.suggestedTitlePlaceholder == title && isLoading
     }
 
     func mustAnimateTitleTransition(title: String, previousTitle: String) -> Bool {

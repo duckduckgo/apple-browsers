@@ -1423,7 +1423,10 @@ public struct UserText {
     public static let settingsExperimentalMenu = NSLocalizedString("settings.appearance.experimental.menu", value: "Experimental Browser Menu", comment: "Settings screen cell text for experimental menu")
 
     // Tab Switcher tracker count
-    public static let tabSwitcherTrackerCountTitle = NSLocalizedString("tab.switcher.tracker.count.title", value: "%lld trackers blocked", comment: "Title showing total blocked trackers in the tab switcher banner. Placeholder is a number.")
+    public static func tabSwitcherTrackerCountTitle(_ count: Int64) -> String {
+        let message = NSLocalizedString("tab.switcher.tracker.count.title", comment: "Do not translate - stringsdict entry")
+        return String(format: message, count)
+    }
     public static let tabSwitcherTrackerCountSubtitle = NSLocalizedString("tab.switcher.tracker.count.subtitle", value: "in the last 7 days", comment: "Subtitle for tracker count banner indicating time window")
     public static let tabSwitcherTrackerCountHideTitle = NSLocalizedString("tab.switcher.tracker.count.hide.title", value: "Hide tracker count?", comment: "Alert title asking user to hide the tracker count banner")
     public static let tabSwitcherTrackerCountHideMessage = NSLocalizedString("tab.switcher.tracker.count.hide.message", value: "You can turn this back on in Settings > Appearance.", comment: "Alert message explaining how to re-enable tracker count")

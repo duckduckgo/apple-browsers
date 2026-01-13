@@ -56,7 +56,7 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
             return
         }
 
-        let title = String(format: UserText.tabSwitcherTrackerCountTitle, count)
+        let title = UserText.tabSwitcherTrackerCountTitle(count)
         state = State(isVisible: true, title: title, subtitle: UserText.tabSwitcherTrackerCountSubtitle)
     }
 

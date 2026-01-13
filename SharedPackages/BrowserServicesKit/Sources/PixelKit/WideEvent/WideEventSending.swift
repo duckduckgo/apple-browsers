@@ -93,6 +93,8 @@ public final class DefaultWideEventSender: WideEventSending {
     }
 
     private static func generatePixelName(for name: String) -> String {
+        assert(!name.isEmpty, "Pixel name should not be empty")
+
         #if os(macOS)
         return "m_mac_wide_\(name)"
         #elseif os(iOS)

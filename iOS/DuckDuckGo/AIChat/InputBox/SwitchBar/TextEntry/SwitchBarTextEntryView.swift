@@ -197,10 +197,13 @@ class SwitchBarTextEntryView: UIView {
             
             self.textView.text = ""
             self.updatePlaceholderVisibility()
+            self.updateButtonState()
             self.updateTextViewHeight()
             
             self.handler.clearText()
             self.handler.clearButtonTapped()
+            
+            self.wasTextEmptyForAutocorrection = false
             self.updateAutoCorrectionSetupForAIChat(for: "")
         }
 

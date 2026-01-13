@@ -31,6 +31,7 @@ enum OnboardingSteps: String, CaseIterable {
     case systemSettings
     case duckPlayerSingle
     case customize
+    case addressBarMode
 }
 
 /// Defines which onboarding steps should be excluded from the flow
@@ -257,7 +258,29 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func stepCompleted(step: OnboardingSteps) {
-        Logger.general.error("Onboarding step: \("\(step)", privacy: .public)")
+        Logger.general.debug("Onboarding step completed: \("\(step)", privacy: .public)")
+        fireStepCompletedPixel(for: step)
+    }
+
+    private func fireStepCompletedPixel(for step: OnboardingSteps) {
+        let pixel: GeneralPixel
+        switch step {
+        case .welcome:
+            pixel = .onboardingStepCompleteWelcome
+        case .getStarted:
+            pixel = .onboardingStepCompleteGetStarted
+        case .makeDefaultSingle:
+            pixel = .onboardingStepCompletePrivateByDefault
+        case .systemSettings:
+            pixel = .onboardingStepCompleteSystemSettings
+        case .duckPlayerSingle:
+            pixel = .onboardingStepCompleteCleanerBrowsing
+        case .customize:
+            pixel = .onboardingStepCompleteCustomize
+        case .addressBarMode:
+            pixel = .onboardingStepCompleteAIChatToggle
+        }
+        PixelKit.fire(pixel, frequency: .dailyAndCount)
     }
 
     func reportException(with param: [String: String]) {
@@ -279,6 +302,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
         }
 
+        PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
         fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
     }
 

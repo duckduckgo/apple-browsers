@@ -1,0 +1,59 @@
+// Onboarding step completion pixels for tracking user progress through the initial onboarding flow
+{
+    "m_mac_onboarding_step-complete-welcome": {
+        "description": "Fired when the user completes the Welcome step of the onboarding flow",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_step-complete-get-started": {
+        "description": "Fired when the user completes the Get Started step of the onboarding flow",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_step-complete-private-by-default": {
+        "description": "Fired when the user completes the Private by Default (Make Default Browser) step of the onboarding flow",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_step-complete-cleaner-browsing": {
+        "description": "Fired when the user completes the Cleaner Browsing (DuckPlayer) step of the onboarding flow",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_step-complete-system-settings": {
+        "description": "Fired when the user completes the System Settings (Dock/Import) step of the onboarding flow",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_step-complete-customize": {
+        "description": "Fired when the user completes the Customize step of the onboarding flow",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_step-complete-aichat-toggle": {
+        "description": "Fired when the user completes the AI Chat Toggle (Address Bar Mode) step of the onboarding flow",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_onboarding_final-step-complete": {
+        "description": "Fired when the user completes the entire onboarding flow and clicks Start Browsing or Go to Settings",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

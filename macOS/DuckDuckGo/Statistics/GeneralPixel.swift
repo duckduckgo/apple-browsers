@@ -304,6 +304,14 @@ enum GeneralPixel: PixelKitEvent {
 
     // Onboarding
     case onboardingExceptionReported(message: String, id: String)
+    case onboardingStepCompleteWelcome
+    case onboardingStepCompleteGetStarted
+    case onboardingStepCompletePrivateByDefault
+    case onboardingStepCompleteCleanerBrowsing
+    case onboardingStepCompleteSystemSettings
+    case onboardingStepCompleteCustomize
+    case onboardingStepCompleteAIChatToggle
+    case onboardingFinalStepComplete
 
     // MARK: - Advanced Usage
 
@@ -990,8 +998,16 @@ enum GeneralPixel: PixelKitEvent {
 
             // Onboarding
         case .onboardingExceptionReported: return "m_mac_onboarding_exception-reported"
+        case .onboardingStepCompleteWelcome: return "m_mac_onboarding_step-complete-welcome"
+        case .onboardingStepCompleteGetStarted: return "m_mac_onboarding_step-complete-get-started"
+        case .onboardingStepCompletePrivateByDefault: return "m_mac_onboarding_step-complete-private-by-default"
+        case .onboardingStepCompleteCleanerBrowsing: return "m_mac_onboarding_step-complete-cleaner-browsing"
+        case .onboardingStepCompleteSystemSettings: return "m_mac_onboarding_step-complete-system-settings"
+        case .onboardingStepCompleteCustomize: return "m_mac_onboarding_step-complete-customize"
+        case .onboardingStepCompleteAIChatToggle: return "m_mac_onboarding_step-complete-aichat-toggle"
+        case .onboardingFinalStepComplete: return "m_mac_onboarding_final-step-complete"
 
-        // “Advanced” usage
+        // "Advanced" usage
         case .windowFullscreen: return "m_mac_window_fullscreen"
         case .windowSplitScreen: return "m_mac_window_split_screen"
 
@@ -1694,6 +1710,14 @@ enum GeneralPixel: PixelKitEvent {
                 .suggestionSubmittedMouse,
                 .suggestionSubmittedKeyboard,
                 .onboardingExceptionReported,
+                .onboardingStepCompleteWelcome,
+                .onboardingStepCompleteGetStarted,
+                .onboardingStepCompletePrivateByDefault,
+                .onboardingStepCompleteCleanerBrowsing,
+                .onboardingStepCompleteSystemSettings,
+                .onboardingStepCompleteCustomize,
+                .onboardingStepCompleteAIChatToggle,
+                .onboardingFinalStepComplete,
                 .windowFullscreen,
                 .windowSplitScreen,
                 .pictureInPictureVideoPlayback,

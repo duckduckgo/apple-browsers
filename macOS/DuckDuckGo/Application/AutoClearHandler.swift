@@ -20,6 +20,17 @@ import AppKit
 import Combine
 import Foundation
 
+protocol AutoClearAlertPresenting {
+    func confirmAutoClear(clearChats: Bool) -> NSApplication.ModalResponse
+}
+
+struct DefaultAutoClearAlertPresenter: AutoClearAlertPresenting {
+    func confirmAutoClear(clearChats: Bool) -> NSApplication.ModalResponse {
+        let alert = NSAlert.autoClearAlert(clearChats: clearChats)
+        return alert.runModal()
+    }
+}
+
 final class AutoClearHandler: ApplicationTerminationDecider {
 
     private let dataClearingPreferences: DataClearingPreferences
@@ -27,17 +38,20 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     private let fireViewModel: FireViewModel
     private let stateRestorationManager: AppStateRestorationManager
     private let syncAIChatsCleaner: SyncAIChatsCleaning?
+    private let alertPresenter: AutoClearAlertPresenting
 
     init(dataClearingPreferences: DataClearingPreferences,
          startupPreferences: StartupPreferences,
          fireViewModel: FireViewModel,
          stateRestorationManager: AppStateRestorationManager,
-         syncAIChatsCleaner: SyncAIChatsCleaning?) {
+         syncAIChatsCleaner: SyncAIChatsCleaning?,
+         alertPresenter: AutoClearAlertPresenting = DefaultAutoClearAlertPresenter()) {
         self.dataClearingPreferences = dataClearingPreferences
         self.startupPreferences = startupPreferences
         self.fireViewModel = fireViewModel
         self.stateRestorationManager = stateRestorationManager
         self.syncAIChatsCleaner = syncAIChatsCleaner
+        self.alertPresenter = alertPresenter
     }
 
     @MainActor
@@ -84,9 +98,7 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     // MARK: - Private
 
     private func confirmAutoClear() -> NSApplication.ModalResponse {
-        let alert = NSAlert.autoClearAlert(clearChats: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
-        let response = alert.runModal()
-        return response
+        return alertPresenter.confirmAutoClear(clearChats: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
     }
 
     @MainActor

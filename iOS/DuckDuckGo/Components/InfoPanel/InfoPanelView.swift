@@ -36,7 +36,6 @@ struct InfoPanelView: View {
         let title: String
         let subtitle: String
         let icon: UIImage
-        let accentColor: Color
         let backgroundColor: Color
         let onTap: () -> Void
         let onInfo: () -> Void
@@ -110,7 +109,6 @@ extension InfoPanelView.Model {
             title: state.title,
             subtitle: state.subtitle,
             icon: UIImage(resource: .trackerShield),
-            accentColor: Color(designSystemColor: .accent),
             backgroundColor: dynamicBackgroundColor,
             onTap: onTap,
             onInfo: onInfo
@@ -125,7 +123,6 @@ struct InfoPanelView_Previews: PreviewProvider {
             model: .init(title: "396 trackers blocked",
                          subtitle: "in the last 7 days",
                          icon: UIImage(resource: .trackerShield),
-                         accentColor: Color(designSystemColor: .accent),
                          backgroundColor: .green0,
                          onTap: {},
                          onInfo: {})

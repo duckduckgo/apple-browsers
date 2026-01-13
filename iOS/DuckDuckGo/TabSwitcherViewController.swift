@@ -306,7 +306,6 @@ class TabSwitcherViewController: UIViewController {
         )
         trackerCountViewModel = viewModel
         trackerCountCancellable = viewModel.$state
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 self?.applyTrackerCountState(state)
             }
@@ -325,9 +324,7 @@ class TabSwitcherViewController: UIViewController {
 
         trackerInfoModel = .trackerInfoPanel(
             state: state,
-            onTap: { [weak self] in
-                self?.trackerCountViewModel?.refresh()
-            },
+            onTap: { },
             onInfo: { [weak self] in
                 self?.presentHideTrackerCountAlert()
             }

@@ -26,12 +26,9 @@ final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
     static let estimatedHeight: CGFloat = 60
 
     private enum Constants {
-        static let topPadding: CGFloat = 0
         static let horizontalPadding: CGFloat = 14
-        static let bottomPadding: CGFloat = 0
     }
 
-    private weak var parentViewController: UIViewController?
     private var host: UIHostingController<AnyView>?
 
     override init(frame: CGRect) {
@@ -45,10 +42,16 @@ final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
     }
 
     func configure(in parent: UIViewController, model: InfoPanelView.Model?) {
-        parentViewController = parent
         let rootView: AnyView = model.map { AnyView(InfoPanelView(model: $0)) } ?? AnyView(EmptyView())
 
         if let host {
+            // If the host is parented to a different view controller, re-parent it
+            if host.parent !== parent {
+                host.willMove(toParent: nil)
+                host.removeFromParent()
+                parent.addChild(host)
+                host.didMove(toParent: parent)
+            }
             host.rootView = rootView
             host.view.isHidden = (model == nil)
             setNeedsLayout()
@@ -67,17 +70,16 @@ final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
         host.didMove(toParent: parent)
 
         NSLayoutConstraint.activate([
-            host.view.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
+            host.view.topAnchor.constraint(equalTo: topAnchor),
             host.view.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             host.view.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            host.view.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.bottomPadding)
+            host.view.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        host?.rootView = AnyView(EmptyView())
-        host?.view.isHidden = true
+        cleanupHostingController()
     }
 
     override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
@@ -98,11 +100,20 @@ final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
         return attributes
     }
 
+    private func cleanupHostingController() {
+        guard let host else { return }
+        host.willMove(toParent: nil)
+        host.view.removeFromSuperview()
+        host.removeFromParent()
+        self.host = nil
+    }
+
     deinit {
-        host?.willMove(toParent: nil)
-        host?.view.removeFromSuperview()
-        host?.removeFromParent()
-        host = nil
+        // Note: cleanupHostingController() is called from prepareForReuse() which handles
+        // the typical reuse cycle. This deinit handles the case where the view is deallocated
+        // without going through prepareForReuse (e.g., when the collection view itself is deallocated).
+        // UIKit guarantees deinit runs on main thread for UIView subclasses.
+        cleanupHostingController()
     }
 }
 

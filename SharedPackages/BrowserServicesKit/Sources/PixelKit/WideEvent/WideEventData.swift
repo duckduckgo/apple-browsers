@@ -41,12 +41,6 @@ public protocol WideEventData: Codable, WideEventParameterProviding {
     func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision
 }
 
-extension WideEventData {
-    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
-        .keepPending
-    }
-}
-
 public enum WideEventStatus: Codable, Equatable, CustomStringConvertible {
     case success(reason: String? = nil)
     case failure

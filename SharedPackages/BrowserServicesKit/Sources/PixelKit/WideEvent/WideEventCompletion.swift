@@ -26,3 +26,11 @@ public enum WideEventCompletionDecision {
     case keepPending
     case complete(WideEventStatus)
 }
+
+// By default, events shouldn't complete automatically - this should be overridden on a per-event basis any
+// time that automatic completion is needed.
+extension WideEventData {
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        .keepPending
+    }
+}

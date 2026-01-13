@@ -1,6 +1,5 @@
 //
-//  WideEventLaunchCleanupTask.swift
-//  DuckDuckGo
+//  WideEventCompletion.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,18 +17,12 @@
 //
 
 import Foundation
-import PixelKit
 
-struct WideEventLaunchCleanupTask: LaunchTask {
+public enum WideEventCompletionTrigger {
+    case appLaunch
+}
 
-    let wideEventService: WideEventService
-
-    var name: String = "Wide Event Launch Cleanup"
-
-    func run(context: LaunchTaskContext) {
-        wideEventService.sendPendingEvents(trigger: .appLaunch) {
-            context.finish()
-        }
-    }
-
+public enum WideEventCompletionDecision {
+    case keepPending
+    case complete(WideEventStatus)
 }

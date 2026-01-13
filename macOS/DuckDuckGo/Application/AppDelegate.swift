@@ -1371,7 +1371,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             // 4. State restoration
             StateRestorationAppTerminationDecider(
-                stateRestorationManager: stateRestorationManager!
+                stateRestorationManager: stateRestorationManager
             ),
 
             // 5. Auto-clear (burn on quit)

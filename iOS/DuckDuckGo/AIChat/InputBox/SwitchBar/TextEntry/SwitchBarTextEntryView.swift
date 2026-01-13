@@ -455,8 +455,6 @@ class SwitchBarTextEntryView: UIView {
             .removeDuplicates()
             .sink { [weak self] text in
                 guard let self = self else { return }
-
-                self.updateAutoCorrectionSetupForAIChat(for: self.textView.text ?? "")
                 
                 if self.textView.text != text {
                     // Don't overwrite text while user is actively typing - the publisher
@@ -470,6 +468,8 @@ class SwitchBarTextEntryView: UIView {
                     self.updatePlaceholderVisibility()
                     self.updateTextViewHeight()
                 }
+                
+                self.updateAutoCorrectionSetupForAIChat(for: self.textView.text ?? "")
             }
             .store(in: &cancellables)
 

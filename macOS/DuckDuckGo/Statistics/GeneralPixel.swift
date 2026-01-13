@@ -310,7 +310,6 @@ enum GeneralPixel: PixelKitEvent {
     case onboardingStepCompleteCleanerBrowsing
     case onboardingStepCompleteSystemSettings
     case onboardingStepCompleteCustomize
-    case onboardingStepCompleteAIChatToggle
     case onboardingFinalStepComplete
 
     // MARK: - Advanced Usage
@@ -1004,7 +1003,6 @@ enum GeneralPixel: PixelKitEvent {
         case .onboardingStepCompleteCleanerBrowsing: return "m_mac_onboarding_step-complete-cleaner-browsing"
         case .onboardingStepCompleteSystemSettings: return "m_mac_onboarding_step-complete-system-settings"
         case .onboardingStepCompleteCustomize: return "m_mac_onboarding_step-complete-customize"
-        case .onboardingStepCompleteAIChatToggle: return "m_mac_onboarding_step-complete-aichat-toggle"
         case .onboardingFinalStepComplete: return "m_mac_onboarding_final-step-complete"
 
         // "Advanced" usage
@@ -1716,7 +1714,6 @@ enum GeneralPixel: PixelKitEvent {
                 .onboardingStepCompleteCleanerBrowsing,
                 .onboardingStepCompleteSystemSettings,
                 .onboardingStepCompleteCustomize,
-                .onboardingStepCompleteAIChatToggle,
                 .onboardingFinalStepComplete,
                 .windowFullscreen,
                 .windowSplitScreen,

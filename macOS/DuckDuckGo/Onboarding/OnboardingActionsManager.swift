@@ -263,7 +263,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     private func fireStepCompletedPixel(for step: OnboardingSteps) {
-        let pixel: GeneralPixel
+        let pixel: GeneralPixel?
         switch step {
         case .welcome:
             pixel = .onboardingStepCompleteWelcome
@@ -278,9 +278,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .customize:
             pixel = .onboardingStepCompleteCustomize
         case .addressBarMode:
-            pixel = .onboardingStepCompleteAIChatToggle
+            // No pixel for addressBarMode as it's the last step before final
+            pixel = nil
         }
-        PixelKit.fire(pixel, frequency: .dailyAndCount)
+        if let pixel {
+            PixelKit.fire(pixel, frequency: .dailyAndCount)
+        }
     }
 
     func reportException(with param: [String: String]) {

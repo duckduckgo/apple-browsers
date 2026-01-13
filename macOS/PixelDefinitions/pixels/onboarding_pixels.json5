@@ -42,13 +42,6 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "m_mac_onboarding_step-complete-aichat-toggle": {
-        "description": "Fired when the user completes the AI Chat Toggle (Address Bar Mode) step of the onboarding flow",
-        "owners": ["Bunn"],
-        "triggers": ["other"],
-        "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
     "m_mac_onboarding_final-step-complete": {
         "description": "Fired when the user completes the entire onboarding flow and clicks Start Browsing or Go to Settings",
         "owners": ["Bunn"],

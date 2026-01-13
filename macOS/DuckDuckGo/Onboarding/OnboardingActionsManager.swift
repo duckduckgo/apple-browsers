@@ -305,7 +305,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
         }
 
-        PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
         fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
     }
 
@@ -318,6 +317,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     private func fireOnboardingFinishedPixels(userSawToggleOnboarding: Bool) {
+        PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
+
         guard userSawToggleOnboarding else { return }
 
         let togglePixel: AIChatPixel = aiChatPreferencesStorage.showSearchAndDuckAIToggle

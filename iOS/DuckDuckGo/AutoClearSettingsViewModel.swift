@@ -30,6 +30,10 @@ final class AutoClearSettingsViewModel: ObservableObject {
     private let appSettings: AppSettings
     private let aiChatSettings: AIChatSettingsProvider
     
+    // MARK: - Initial State (for change detection)
+    
+    private var initialOptions: FireOptions = []
+    
     // MARK: - Published State
     
     @Published private(set) var autoClearEnabled: Bool = false
@@ -148,20 +152,17 @@ final class AutoClearSettingsViewModel: ObservableObject {
             clearDuckAIChats = action.contains(.aiChats)
             selectedTiming = appSettings.autoClearTiming
         }
+        
+        // Store initial state for change detection
+        initialOptions = appSettings.autoClearAction
     }
     
     private func persistSettings() {
         if autoClearEnabled {
             var options = FireOptions()
-            if clearTabs {
-                options.insert(.tabs)
-            }
-            if clearCookies {
-                options.insert(.data)
-            }
-            if clearDuckAIChats && showDuckAIChatsToggle {
-                options.insert(.aiChats)
-            }
+            if clearTabs { options.insert(.tabs) }
+            if clearCookies { options.insert(.data) }
+            if clearDuckAIChats && showDuckAIChatsToggle { options.insert(.aiChats) }
             
             // If no options are selected, disable auto clear
             if options.isEmpty {
@@ -176,5 +177,22 @@ final class AutoClearSettingsViewModel: ObservableObject {
             appSettings.autoClearAction = FireOptions()
             appSettings.autoClearTiming = .termination
         }
+    }
+    
+    // MARK: - Public Methods
+    
+    func onViewDismiss() {
+        guard appSettings.autoClearAction != initialOptions else { return }
+
+        let effectiveTabs = autoClearEnabled && clearTabs
+        let effectiveData = autoClearEnabled && clearCookies
+        let effectiveChats = autoClearEnabled && clearDuckAIChats && showDuckAIChatsToggle
+
+        Pixel.fire(pixel: .settingsAutomaticDataClearingOptionsUpdated,
+                   withAdditionalParameters: [
+                       "tabs": String(effectiveTabs),
+                       "data": String(effectiveData),
+                       "chats": String(effectiveChats)
+                   ])
     }
 }

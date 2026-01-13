@@ -160,6 +160,72 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         XCTAssertFalse(model.isRecentActivityVisible)
     }
 
+    // MARK: - Widget New Label Tests
+
+    func testWhenNoWidgetNewLabelDateIsStoredThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        settingsPersistor.widgetNewLabelFirstShownDate = nil
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+        XCTAssertNotNil(settingsPersistor.widgetNewLabelFirstShownDate, "Should store current date when first accessed")
+    }
+
+    func testWhenWidgetNewLabelDateIsWithinSevenDaysThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        let recentDate = Date().addingTimeInterval(-6 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = recentDate
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+    }
+
+    func testWhenWidgetNewLabelDateIsOlderThanSevenDaysThenShouldShowProtectionsReportNewLabelReturnsFalse() {
+        let eightDaysAgo = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = eightDaysAgo
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertFalse(model.shouldShowProtectionsReportNewLabel)
+    }
+
+    func testWhenWidgetNewLabelDateIsInTheFutureThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        let futureDate = Date().addingTimeInterval(24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = futureDate
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+    }
+
     // MARK: - Burn Animation Tests
 
     func testWhenInitializedWithShowBurnAnimationTrueThenShouldShowBurnAnimationIsTrue() {

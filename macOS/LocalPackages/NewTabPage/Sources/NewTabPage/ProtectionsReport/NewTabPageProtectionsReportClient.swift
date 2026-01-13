@@ -43,7 +43,7 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
         Publishers.CombineLatest(model.$isViewExpanded.dropFirst(), model.$activeFeed.dropFirst())
             .map { isExpanded, activeFeed in
                 let expansion: NewTabPageUserScript.WidgetConfig.Expansion = isExpanded ? .expanded : .collapsed
-                return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: activeFeed, showBurnAnimation: model.shouldShowBurnAnimation)
+                return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: activeFeed, showBurnAnimation: model.shouldShowBurnAnimation, showProtectionsReportNewLabel: model.shouldShowProtectionsReportNewLabel)
             }
             .removeDuplicates()
             .sink { [weak self] config in
@@ -69,7 +69,22 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
                     let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
                     let config = NewTabPageDataModel.ProtectionsConfig(expansion: expansion,
                                                                        feed: model.activeFeed,
-                                                                       showBurnAnimation: shouldShowBurnAnimation)
+                                                                       showBurnAnimation: shouldShowBurnAnimation,
+                                                                       showProtectionsReportNewLabel: model.shouldShowProtectionsReportNewLabel)
+                    self?.notifyConfigUpdated(config)
+                }
+            }
+            .store(in: &cancellables)
+
+        model.$shouldShowProtectionsReportNewLabel
+            .dropFirst()
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
+                    let config = NewTabPageDataModel.ProtectionsConfig(expansion: expansion,
+                                                                       feed: model.activeFeed,
+                                                                       showBurnAnimation: model.shouldShowBurnAnimation,
+                                                                       showProtectionsReportNewLabel: model.shouldShowProtectionsReportNewLabel)
                     self?.notifyConfigUpdated(config)
                 }
             }
@@ -95,7 +110,7 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
     @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
-        return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: model.activeFeed, showBurnAnimation: model.shouldShowBurnAnimation)
+        return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: model.activeFeed, showBurnAnimation: model.shouldShowBurnAnimation, showProtectionsReportNewLabel: model.shouldShowProtectionsReportNewLabel)
     }
 
     @MainActor

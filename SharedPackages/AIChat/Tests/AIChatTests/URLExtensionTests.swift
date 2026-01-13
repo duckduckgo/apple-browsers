@@ -263,6 +263,38 @@ final class URLExtensionTests: XCTestCase {
         }
     }
 
+    // MARK: - Chat ID Tests
+
+    func testDuckAIChatIDWithValidChatID() {
+        let urlString = "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=e0328fe7-be35-43e1-9142-92c28e7e9a3b"
+        let url = URL(string: urlString)!
+        XCTAssertEqual(url.duckAIChatID, "e0328fe7-be35-43e1-9142-92c28e7e9a3b")
+    }
+
+    func testDuckAIChatIDWithMissingChatID() {
+        let urlString = "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4"
+        let url = URL(string: urlString)!
+        XCTAssertNil(url.duckAIChatID)
+    }
+
+    func testDuckAIChatIDWithEmptyChatID() {
+        let urlString = "https://duckduckgo.com/?ia=chat&chatID="
+        let url = URL(string: urlString)!
+        XCTAssertNil(url.duckAIChatID)
+    }
+
+    func testDuckAIChatIDWithNonDuckAIURL() {
+        let urlString = "https://example.com/?chatID=e0328fe7-be35-43e1-9142-92c28e7e9a3b"
+        let url = URL(string: urlString)!
+        XCTAssertNil(url.duckAIChatID)
+    }
+
+    func testDuckAIChatIDWithDuckAIHost() {
+        let urlString = "https://duck.ai/?chatID=abc123"
+        let url = URL(string: urlString)!
+        XCTAssertEqual(url.duckAIChatID, "abc123")
+    }
+
 }
 
 extension URL {

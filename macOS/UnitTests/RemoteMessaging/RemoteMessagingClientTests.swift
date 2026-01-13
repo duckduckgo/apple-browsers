@@ -187,7 +187,8 @@ final class RemoteMessagingClientTests: XCTestCase {
             platform: .google,
             status: .autoRenewable,
             activeOffers: [],
-            tier: nil
+            tier: nil,
+            availableChanges: nil
         )
         subscriptionAuthV1toV2Bridge.returnSubscription = .success(subscription)
         availabilityProvider.isRemoteMessagingAvailable = true

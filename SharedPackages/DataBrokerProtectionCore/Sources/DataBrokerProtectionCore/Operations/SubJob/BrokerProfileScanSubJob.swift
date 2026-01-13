@@ -400,7 +400,7 @@ struct BrokerProfileScanSubJob {
                                                          brokerId: brokerId,
                                                          profileQueryId: profileQueryId,
                                                          type: .reAppearence)
-                    eventPixels.fireReappeareanceEventPixel()
+                    eventPixels.fireReappeareanceEventPixel(dataBrokerURL: brokerProfileQueryData.dataBroker.url)
                     try database.add(reAppearanceEvent)
                     try database.updateRemovedDate(nil, on: id)
                 }
@@ -425,8 +425,8 @@ struct BrokerProfileScanSubJob {
         // If it's a new found profile, we'd like to opt-out ASAP
         // If this broker has a parent opt out, we set the preferred date to nil, as we will only perform the operation
         // within the parent.
-        eventPixels.fireNewMatchEventPixel()
         let broker = brokerProfileQueryData.dataBroker
+        eventPixels.fireNewMatchEventPixel(dataBrokerURL: broker.url)
         let preferredRunOperation: Date? = broker.performsOptOutWithinParent() ? nil : Date()
 
         // If profile does not exist we insert the new profile and we create the opt-out operation

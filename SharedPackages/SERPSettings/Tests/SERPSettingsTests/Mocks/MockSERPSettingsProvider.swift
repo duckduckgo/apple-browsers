@@ -94,6 +94,8 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool = false
     var isAIChatVoiceSearchUserSettingsEnabled: Bool = false
     var isAIChatTabSwitcherUserSettingsEnabled: Bool = false
+    var isAIChatFullModeEnabled: Bool = false
+    var isAutomaticContextAttachmentEnabled: Bool = false
 
     func enableAIChat(enable: Bool) {
         isAIChatEnabled = enable
@@ -103,6 +105,8 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {}
     func enableAIChatTabSwitcherUserSettings(enable: Bool) {}
     func enableAIChatSearchInputUserSettings(enable: Bool) {}
+    func enableAIChatFullModeSetting(enable: Bool) {}
+    func enableAutomaticContextAttachment(enable: Bool) {}
 }
 #endif
 

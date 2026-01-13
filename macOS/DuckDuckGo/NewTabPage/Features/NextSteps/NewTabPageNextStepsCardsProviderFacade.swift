@@ -23,20 +23,58 @@ import NewTabPage
 import PrivacyConfig
 
 final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProviding {
-    private let featureFlagger: FeatureFlagger
-    private let singleCardProvider: NewTabPageNextStepsSingleCardProvider
-    private let legacyProvider: NewTabPageNextStepsCardsProvider
-
-    private var activeProvider: NewTabPageNextStepsCardsProviding {
-        featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) ? singleCardProvider : legacyProvider
-    }
+    private var cancellables: Set<AnyCancellable> = []
+    @Published private(set) var activeProvider: NewTabPageNextStepsCardsProviding
 
     init(featureFlagger: FeatureFlagger,
-         singleCardProvider: NewTabPageNextStepsSingleCardProvider,
-         legacyProvider: NewTabPageNextStepsCardsProvider) {
-        self.featureFlagger = featureFlagger
-        self.singleCardProvider = singleCardProvider
-        self.legacyProvider = legacyProvider
+         dataImportProvider: DataImportStatusProviding,
+         subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
+         legacyPersistor: HomePageContinueSetUpModelPersisting,
+         pixelHandler: NewTabPageNextStepsCardsPixelHandling,
+         cardActionsHandler: NewTabPageNextStepsCardsActionHandling,
+         appearancePreferences: AppearancePreferences,
+         legacySubscriptionCardPersistor: HomePageSubscriptionCardPersisting,
+         persistor: NewTabPageNextStepsCardsPersisting,
+         duckPlayerPreferences: DuckPlayerPreferencesPersistor) {
+
+        func getActiveProvider() -> NewTabPageNextStepsCardsProviding {
+            if featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) {
+                return NewTabPageNextStepsSingleCardProvider(
+                    cardActionHandler: cardActionsHandler,
+                    pixelHandler: pixelHandler,
+                    persistor: persistor,
+                    legacyPersistor: legacyPersistor,
+                    legacySubscriptionCardPersistor: legacySubscriptionCardPersistor,
+                    appearancePreferences: appearancePreferences,
+                    defaultBrowserProvider: SystemDefaultBrowserProvider(),
+                    dockCustomizer: DockCustomizer(),
+                    dataImportProvider: dataImportProvider,
+                    duckPlayerPreferences: duckPlayerPreferences,
+                    subscriptionCardVisibilityManager: subscriptionCardVisibilityManager
+                )
+            } else {
+                return NewTabPageNextStepsCardsProvider(
+                    continueSetUpModel: HomePage.Models.ContinueSetUpModel(
+                        dataImportProvider: dataImportProvider,
+                        subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+                        persistor: legacyPersistor,
+                        pixelHandler: pixelHandler,
+                        cardActionsHandler: cardActionsHandler
+                    ),
+                    appearancePreferences: appearancePreferences,
+                    pixelHandler: pixelHandler
+                )
+            }
+        }
+
+        activeProvider = getActiveProvider()
+
+        featureFlagger.updatesPublisher
+            .sink { [weak self] _ in
+                guard let self else { return }
+                activeProvider = getActiveProvider()
+            }
+            .store(in: &cancellables)
     }
 
     var isViewExpanded: Bool {
@@ -48,41 +86,25 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
         }
     }
 
-    private(set) lazy var isViewExpandedPublisher: AnyPublisher<Bool, Never> = {
-        featureFlagger.updatesPublisher
-            .prepend(())
-            .map { [weak self] _ -> AnyPublisher<Bool, Never> in
-                guard let self else {
-                    return Empty<Bool, Never>().eraseToAnyPublisher()
-                }
-                return self.activeProvider.isViewExpandedPublisher
-                    .removeDuplicates()
-                    .eraseToAnyPublisher()
+    var isViewExpandedPublisher: AnyPublisher<Bool, Never> {
+        $activeProvider
+            .flatMap { provider in
+                provider.isViewExpandedPublisher
             }
-            .switchToLatest()
-            .share()
             .eraseToAnyPublisher()
-    }()
+    }
 
     var cards: [NewTabPageDataModel.CardID] {
         activeProvider.cards
     }
 
-    private(set) lazy var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> = {
-        featureFlagger.updatesPublisher
-            .prepend(())
-            .map { [weak self] _ -> AnyPublisher<[NewTabPageDataModel.CardID], Never> in
-                guard let self else {
-                    return Empty<[NewTabPageDataModel.CardID], Never>().eraseToAnyPublisher()
-                }
-                return self.activeProvider.cardsPublisher
-                    .removeDuplicates()
-                    .eraseToAnyPublisher()
+    var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> {
+        $activeProvider
+            .flatMap { provider in
+                provider.cardsPublisher
             }
-            .switchToLatest()
-            .share()
             .eraseToAnyPublisher()
-    }()
+    }
 
     @MainActor
     func handleAction(for card: NewTabPageDataModel.CardID) {

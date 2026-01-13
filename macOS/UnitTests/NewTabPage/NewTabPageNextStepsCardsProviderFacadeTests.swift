@@ -27,71 +27,28 @@ import XCTest
 
 final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
     private var featureFlagger: MockFeatureFlagger!
-    private var legacyCardsProvider: NewTabPageNextStepsCardsProvider!
-    private var singleCardProvider: NewTabPageNextStepsSingleCardProvider!
-    private var facade: NewTabPageNextStepsCardsProviderFacade!
-    private var legacyCardsProviderPixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
-    private var singleCardProviderPixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
-    private var legacyCardsProviderActionHandler: MockNewTabPageNextStepsCardsActionHandler!
-    private var singleCardProviderActionHandler: MockNewTabPageNextStepsCardsActionHandler!
+    private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
+    private var actionHandler: MockNewTabPageNextStepsCardsActionHandler!
     private var appearancePreferences: AppearancePreferences!
 
     @MainActor
     override func setUp() async throws {
         try await super.setUp()
         featureFlagger = MockFeatureFlagger()
-        legacyCardsProviderPixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
-        singleCardProviderPixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
-        legacyCardsProviderActionHandler = MockNewTabPageNextStepsCardsActionHandler()
-        singleCardProviderActionHandler = MockNewTabPageNextStepsCardsActionHandler()
+        pixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
+        actionHandler = MockNewTabPageNextStepsCardsActionHandler()
 
         appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
-
-        let continueSetUpModel = HomePage.Models.ContinueSetUpModel(
-            defaultBrowserProvider: CapturingDefaultBrowserProvider(),
-            dockCustomizer: DockCustomizerMock(),
-            dataImportProvider: CapturingDataImportProvider(),
-            emailManager: EmailManager(storage: MockEmailStorage()),
-            duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
-            subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging(),
-            persistor: MockHomePageContinueSetUpModelPersisting(),
-            pixelHandler: legacyCardsProviderPixelHandler,
-            cardActionsHandler: legacyCardsProviderActionHandler
-        )
-        legacyCardsProvider = NewTabPageNextStepsCardsProvider(
-            continueSetUpModel: continueSetUpModel,
-            appearancePreferences: appearancePreferences,
-            pixelHandler: legacyCardsProviderPixelHandler
-        )
-
-        singleCardProvider = NewTabPageNextStepsSingleCardProvider(
-            cardActionHandler: singleCardProviderActionHandler,
-            pixelHandler: singleCardProviderPixelHandler,
-            persistor: MockNewTabPageNextStepsCardsPersistor(),
-            legacyPersistor: MockHomePageContinueSetUpModelPersisting(),
-            legacySubscriptionCardPersistor: MockHomePageSubscriptionCardPersisting(),
-            appearancePreferences: appearancePreferences,
-            defaultBrowserProvider: CapturingDefaultBrowserProvider(),
-            dockCustomizer: DockCustomizerMock(),
-            dataImportProvider: CapturingDataImportProvider(),
-            duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
-            subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging()
-        )
     }
 
     override func tearDown() {
-        facade = nil
-        singleCardProvider = nil
-        legacyCardsProvider = nil
         featureFlagger = nil
-        legacyCardsProviderPixelHandler = nil
-        singleCardProviderPixelHandler = nil
-        legacyCardsProviderActionHandler = nil
-        singleCardProviderActionHandler = nil
+        pixelHandler = nil
+        actionHandler = nil
         appearancePreferences = nil
         super.tearDown()
     }
@@ -99,48 +56,41 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
     // MARK: - Feature Flag OFF (Legacy Provider)
 
     @MainActor
-    func testWhenFeatureFlagIsOff_ThenForwardsToLegacyProvider() {
+    func testWhenFeatureFlagIsOff_ThenForwardsToLegacyProvider() throws {
         featureFlagger.enabledFeatureFlags = []
-        facade = NewTabPageNextStepsCardsProviderFacade(
-            featureFlagger: featureFlagger,
-            singleCardProvider: singleCardProvider,
-            legacyProvider: legacyCardsProvider
-        )
+        let facade = createFacade(featureFlagger: featureFlagger)
+
+        let provider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsCardsProvider)
 
         // Test isViewExpanded
-        legacyCardsProvider.isViewExpanded = true
+        facade.isViewExpanded = true
         XCTAssertTrue(facade.isViewExpanded)
         facade.isViewExpanded = false
-        XCTAssertFalse(legacyCardsProvider.isViewExpanded)
+        XCTAssertFalse(provider.isViewExpanded)
 
         // Test cards
-        legacyCardsProvider.appearancePreferences.isContinueSetUpCardsViewOutdated = false
-        legacyCardsProvider.continueSetUpModel.featuresMatrix = [[.defaultBrowser, .emailProtection]]
+        provider.appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        provider.continueSetUpModel.featuresMatrix = [[.defaultBrowser, .emailProtection]]
         XCTAssertEqual(facade.cards, [.defaultApp, .emailProtection])
 
         // Test handleAction - verify legacy provider's model is called
         facade.handleAction(for: .defaultApp)
-        XCTAssertEqual(legacyCardsProviderActionHandler.cardActionsPerformed, [.defaultApp])
-        XCTAssertTrue(singleCardProviderActionHandler.cardActionsPerformed.isEmpty)
+        XCTAssertEqual(actionHandler.cardActionsPerformed, [.defaultApp])
 
         // Test dismiss - verify legacy provider's pixel handler is called
         facade.dismiss(.emailProtection)
-        XCTAssertEqual(legacyCardsProviderPixelHandler.fireNextStepsCardDismissedPixelCalledWith, .emailProtection)
-        XCTAssertNil(singleCardProviderPixelHandler.fireNextStepsCardDismissedPixelCalledWith)
+        XCTAssertEqual(pixelHandler.fireNextStepsCardDismissedPixelCalledWith, .emailProtection)
 
         // Test willDisplayCards - verify legacy provider's pixel handler is called
         facade.willDisplayCards([.duckplayer])
-        XCTAssertEqual(legacyCardsProviderPixelHandler.fireNextStepsCardShownPixelsCalledWith, [.duckplayer])
-        XCTAssertNil(singleCardProviderPixelHandler.fireNextStepsCardShownPixelsCalledWith)
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.duckplayer])
     }
 
-    func testWhenFeatureFlagIsOff_ThenCardsPublisher_EmitsChangesFromLegacyProvider() {
+    func testWhenFeatureFlagIsOff_ThenCardsPublisher_EmitsChangesFromLegacyProvider() throws {
         featureFlagger.enabledFeatureFlags = []
-        facade = NewTabPageNextStepsCardsProviderFacade(
-            featureFlagger: featureFlagger,
-            singleCardProvider: singleCardProvider,
-            legacyProvider: legacyCardsProvider
-        )
+        let facade = createFacade(featureFlagger: featureFlagger)
+
+        let provider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsCardsProvider)
 
         var receivedCards: [[NewTabPageDataModel.CardID]] = []
         let cancellable = facade.cardsPublisher.sink { cards in
@@ -148,19 +98,17 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         }
 
         // Trigger change
-        legacyCardsProvider.continueSetUpModel.featuresMatrix = [[.defaultBrowser]]
+        provider.continueSetUpModel.featuresMatrix = [[.defaultBrowser]]
         cancellable.cancel()
 
         XCTAssertEqual(receivedCards, [[.defaultApp]])
     }
 
-    func testWhenFeatureFlagIsOff_ThenIsViewExpandedPublisher_EmitsChangesLegacyProvider() {
+    func testWhenFeatureFlagIsOff_ThenIsViewExpandedPublisher_EmitsChangesLegacyProvider() throws {
         featureFlagger.enabledFeatureFlags = []
-        facade = NewTabPageNextStepsCardsProviderFacade(
-            featureFlagger: featureFlagger,
-            singleCardProvider: singleCardProvider,
-            legacyProvider: legacyCardsProvider
-        )
+        let facade = createFacade(featureFlagger: featureFlagger)
+
+        let provider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsCardsProvider)
 
         var receivedValues: [Bool] = []
         let cancellable = facade.isViewExpandedPublisher.sink { value in
@@ -168,7 +116,7 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         }
 
         // Trigger change
-        legacyCardsProvider.isViewExpanded = true
+        provider.isViewExpanded = true
         cancellable.cancel()
 
         XCTAssertEqual(receivedValues, [true])
@@ -177,47 +125,40 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
     // MARK: - Feature Flag ON (Single Card Provider)
 
     @MainActor
-    func testWhenFeatureFlagIsOn_ThenForwardsToSingleCardProvider() {
+    func testWhenFeatureFlagIsOn_ThenForwardsToSingleCardProvider() throws {
         featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
-        facade = NewTabPageNextStepsCardsProviderFacade(
-            featureFlagger: featureFlagger,
-            singleCardProvider: singleCardProvider,
-            legacyProvider: legacyCardsProvider
-        )
+        let facade = createFacade(featureFlagger: featureFlagger)
+
+        let provider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsSingleCardProvider)
 
         // Test isViewExpanded
-        singleCardProvider.isViewExpanded = true
+        provider.isViewExpanded = true
         XCTAssertTrue(facade.isViewExpanded)
         facade.isViewExpanded = false
-        XCTAssertFalse(singleCardProvider.isViewExpanded)
+        XCTAssertFalse(provider.isViewExpanded)
 
         // Test cards
         XCTAssertEqual(facade.cards, Self.allSingleCardProviderCards)
 
         // Test handleAction - verify single card provider's action handler is called
         facade.handleAction(for: .subscription)
-        XCTAssertEqual(singleCardProviderActionHandler.cardActionsPerformed, [.subscription])
-        XCTAssertTrue(legacyCardsProviderActionHandler.cardActionsPerformed.isEmpty)
+        XCTAssertEqual(actionHandler.cardActionsPerformed, [.subscription])
 
         // Test dismiss - verify single card provider's pixel handler is called
         facade.dismiss(.bringStuff)
-        XCTAssertEqual(singleCardProviderPixelHandler.fireNextStepsCardDismissedPixelCalledWith, .bringStuff)
-        XCTAssertNil(legacyCardsProviderPixelHandler.fireNextStepsCardDismissedPixelCalledWith)
+        XCTAssertEqual(pixelHandler.fireNextStepsCardDismissedPixelCalledWith, .bringStuff)
 
         // Test willDisplayCards - verify single card provider's pixel handler is called
-        facade.willDisplayCards([.addAppToDockMac])
-        XCTAssertEqual(singleCardProviderPixelHandler.fireNextStepsCardShownPixelsCalledWith, [.addAppToDockMac])
-        XCTAssertNil(legacyCardsProviderPixelHandler.fireNextStepsCardShownPixelsCalledWith)
+        facade.willDisplayCards([.emailProtection])
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.emailProtection])
     }
 
     @MainActor
-    func testWhenFeatureFlagIsOn_ThenCardsPublisher_EmitsChangesFromSingleCardProvider() {
+    func testWhenFeatureFlagIsOn_ThenCardsPublisher_EmitsChangesFromSingleCardProvider() throws {
         featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
-        facade = NewTabPageNextStepsCardsProviderFacade(
-            featureFlagger: featureFlagger,
-            singleCardProvider: singleCardProvider,
-            legacyProvider: legacyCardsProvider
-        )
+        let facade = createFacade(featureFlagger: featureFlagger)
+
+        let provider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsSingleCardProvider)
 
         var receivedCards: [[NewTabPageDataModel.CardID]] = []
         let cancellable = facade.cardsPublisher.sink { cards in
@@ -225,19 +166,17 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         }
 
         // Trigger change
-        singleCardProvider.dismiss(.defaultApp)
+        provider.dismiss(.defaultApp)
         cancellable.cancel()
 
         XCTAssertEqual(receivedCards, [Self.allSingleCardProviderCards.filter({ $0 != .defaultApp })])
     }
 
-    func testWhenFeatureFlagIsOn_ThenIsViewExpandedPublisher_EmitsChangesSingleCardProvider() {
+    func testWhenFeatureFlagIsOn_ThenIsViewExpandedPublisher_EmitsChangesSingleCardProvider() throws {
         featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
-        facade = NewTabPageNextStepsCardsProviderFacade(
-            featureFlagger: featureFlagger,
-            singleCardProvider: singleCardProvider,
-            legacyProvider: legacyCardsProvider
-        )
+        let facade = createFacade(featureFlagger: featureFlagger)
+
+        let provider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsSingleCardProvider)
 
         var receivedValues: [Bool] = []
         let cancellable = facade.isViewExpandedPublisher.sink { value in
@@ -245,7 +184,7 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         }
 
         // Trigger change
-        singleCardProvider.isViewExpanded = true
+        provider.isViewExpanded = true
         cancellable.cancel()
 
         XCTAssertEqual(receivedValues, [true])
@@ -254,34 +193,44 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
     // MARK: - Dynamic Flag Switching
 
     @MainActor
-    func testWhenFeatureFlagChanges_ThenSwitchesProvider() {
+    func testWhenFeatureFlagChanges_ThenSwitchesProvider() throws {
         featureFlagger.enabledFeatureFlags = []
-        facade = NewTabPageNextStepsCardsProviderFacade(
-            featureFlagger: featureFlagger,
-            singleCardProvider: singleCardProvider,
-            legacyProvider: legacyCardsProvider
-        )
+        let facade = createFacade(featureFlagger: featureFlagger)
+
+        var receivedCards: [[NewTabPageDataModel.CardID]] = []
+        let cancellable = facade.cardsPublisher.sink { cards in
+            receivedCards.append(cards)
+        }
 
         // Initially uses legacy provider
-        facade.handleAction(for: .defaultApp)
-        XCTAssertEqual(legacyCardsProviderActionHandler.cardActionsPerformed, [.defaultApp])
-        XCTAssertEqual(singleCardProviderActionHandler.cardActionsPerformed, [])
+        let legacyProvider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsCardsProvider)
+        XCTAssertEqual(facade.cards, legacyProvider.cards)
+        legacyProvider.appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        legacyProvider.continueSetUpModel.featuresMatrix = [[.defaultBrowser, .emailProtection]]
+        XCTAssertEqual(receivedCards.last, legacyProvider.cards)
 
         // Switch flag on
         featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
+        featureFlagger.triggerUpdate()
 
         // Now uses single card provider
-        facade.handleAction(for: .subscription)
-        XCTAssertEqual(legacyCardsProviderActionHandler.cardActionsPerformed, [.defaultApp])
-        XCTAssertEqual(singleCardProviderActionHandler.cardActionsPerformed, [.subscription])
+        let singleCardProvider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsSingleCardProvider)
+        XCTAssertEqual(facade.cards, singleCardProvider.cards)
+        facade.dismiss(.subscription)
+        XCTAssertEqual(receivedCards.last, singleCardProvider.cards)
 
         // Switch flag off
         featureFlagger.enabledFeatureFlags = []
+        featureFlagger.triggerUpdate()
 
         // Back to legacy provider
-        facade.handleAction(for: .emailProtection)
-        XCTAssertEqual(legacyCardsProviderActionHandler.cardActionsPerformed, [.defaultApp, .emailProtection])
-        XCTAssertEqual(singleCardProviderActionHandler.cardActionsPerformed, [.subscription])
+        let legacyProvider2 = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsCardsProvider)
+        XCTAssertEqual(facade.cards, legacyProvider2.cards)
+        legacyProvider2.appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        legacyProvider2.continueSetUpModel.featuresMatrix = [[.defaultBrowser]]
+        XCTAssertEqual(receivedCards.last, legacyProvider2.cards)
+
+        cancellable.cancel()
     }
 }
 
@@ -293,4 +242,19 @@ private extension NewTabPageNextStepsCardsProviderFacadeTests {
         NewTabPageDataModel.CardID.allCases
 #endif
     }()
+
+    func createFacade(featureFlagger: FeatureFlagger) -> NewTabPageNextStepsCardsProviderFacade {
+        NewTabPageNextStepsCardsProviderFacade(
+            featureFlagger: featureFlagger,
+            dataImportProvider: CapturingDataImportProvider(),
+            subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging(),
+            legacyPersistor: MockHomePageContinueSetUpModelPersisting(),
+            pixelHandler: pixelHandler,
+            cardActionsHandler: actionHandler,
+            appearancePreferences: appearancePreferences,
+            legacySubscriptionCardPersistor: MockHomePageSubscriptionCardPersisting(),
+            persistor: MockNewTabPageNextStepsCardsPersistor(),
+            duckPlayerPreferences: DuckPlayerPreferencesPersistorMock()
+        )
+    }
 }

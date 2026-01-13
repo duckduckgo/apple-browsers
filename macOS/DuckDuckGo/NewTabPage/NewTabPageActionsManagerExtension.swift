@@ -189,45 +189,6 @@ extension NewTabPageActionsManager {
         )
         let dataImportProvider = BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager)
         let nextStepsPixelHandler = NewTabPageNextStepsCardsPixelHandler()
-        let cardActionsHandler = NewTabPageNextStepsCardsActionHandler(defaultBrowserProvider: SystemDefaultBrowserProvider(),
-                                                                       dockCustomizer: DockCustomizer(),
-                                                                       dataImportProvider: dataImportProvider,
-                                                                       tabOpener: NewTabPageTabOpener(),
-                                                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
-                                                                       pixelHandler: nextStepsPixelHandler)
-
-        let nextStepsCardsProvider = NewTabPageNextStepsCardsProvider(
-            continueSetUpModel: HomePage.Models.ContinueSetUpModel(
-                dataImportProvider: dataImportProvider,
-                subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-                persistor: homePageContinueSetUpModelPersistor,
-                pixelHandler: nextStepsPixelHandler,
-                cardActionsHandler: cardActionsHandler
-            ),
-            appearancePreferences: appearancePreferences,
-            pixelHandler: nextStepsPixelHandler
-        )
-
-        let nextStepsSingleCardProvider = NewTabPageNextStepsSingleCardProvider(
-            cardActionHandler: cardActionsHandler,
-            pixelHandler: nextStepsPixelHandler,
-            persistor: nextStepsCardsPersistor,
-            legacyPersistor: homePageContinueSetUpModelPersistor,
-            legacySubscriptionCardPersistor: subscriptionCardPersistor,
-            appearancePreferences: appearancePreferences,
-            defaultBrowserProvider: SystemDefaultBrowserProvider(),
-            dockCustomizer: DockCustomizer(),
-            dataImportProvider: dataImportProvider,
-            duckPlayerPreferences: duckPlayerPreferences,
-            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager
-        )
-
-        // Create facade that switches between providers based on feature flag
-        let cardsProviderFacade = NewTabPageNextStepsCardsProviderFacade(
-            featureFlagger: featureFlagger,
-            singleCardProvider: nextStepsSingleCardProvider,
-            legacyProvider: nextStepsCardsProvider
-        )
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
@@ -243,7 +204,25 @@ extension NewTabPageActionsManager {
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),
             NewTabPageFreemiumDBPClient(provider: freemiumDBPBannerProvider),
             NewTabPageNextStepsCardsClient(
-                model: cardsProviderFacade
+                model: NewTabPageNextStepsCardsProviderFacade(
+                    featureFlagger: featureFlagger,
+                    dataImportProvider: dataImportProvider,
+                    subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+                    legacyPersistor: homePageContinueSetUpModelPersistor,
+                    pixelHandler: nextStepsPixelHandler,
+                    cardActionsHandler: NewTabPageNextStepsCardsActionHandler(
+                        defaultBrowserProvider: SystemDefaultBrowserProvider(),
+                        dockCustomizer: DockCustomizer(),
+                        dataImportProvider: dataImportProvider,
+                        tabOpener: NewTabPageTabOpener(),
+                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                        pixelHandler: nextStepsPixelHandler
+                    ),
+                    appearancePreferences: appearancePreferences,
+                    legacySubscriptionCardPersistor: subscriptionCardPersistor,
+                    persistor: nextStepsCardsPersistor,
+                    duckPlayerPreferences: duckPlayerPreferences
+                )
             ),
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),
             NewTabPageProtectionsReportClient(model: protectionsReportModel),

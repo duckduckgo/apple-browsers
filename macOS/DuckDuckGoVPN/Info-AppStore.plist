@@ -26,5 +26,7 @@
 	<string>$(PROXY_SYSEX_BUNDLE_ID)</string>
 	<key>DBP_BACKGROUND_AGENT_BUNDLE_ID</key>
 	<string>$(DBP_BACKGROUND_AGENT_BUNDLE_ID)</string>
+	<key>UIDesignRequiresCompatibility</key>
+	<true/>
 </dict>
 </plist>

@@ -29,9 +29,55 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     public let status: Status
     public let activeOffers: [Offer]
     public let tier: TierName?
+    public let availableChanges: AvailableChanges?
 
     /// Not parsed from 
     public var features: [SubscriptionEntitlement]?
+
+    /// Represents available subscription tier changes
+    public struct AvailableChanges: Codable, Equatable {
+        public let upgrade: [TierChange]
+        public let downgrade: [TierChange]
+
+        public init(upgrade: [TierChange] = [], downgrade: [TierChange] = []) {
+            self.upgrade = upgrade
+            self.downgrade = downgrade
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.upgrade = (try? container.decode([TierChange].self, forKey: .upgrade)) ?? []
+            self.downgrade = (try? container.decode([TierChange].self, forKey: .downgrade)) ?? []
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case upgrade, downgrade
+        }
+    }
+
+    /// Represents a single tier change option
+    public struct TierChange: Codable, Equatable {
+        public let tier: String
+        public let productIds: [String]
+        public let order: Int
+
+        public init(tier: String, productIds: [String], order: Int) {
+            self.tier = tier
+            self.productIds = productIds
+            self.order = order
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.tier = try container.decode(String.self, forKey: .tier)
+            self.productIds = (try? container.decode([String].self, forKey: .productIds)) ?? []
+            self.order = (try? container.decode(Int.self, forKey: .order)) ?? 0
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case tier, productIds, order
+        }
+    }
 
     public enum BillingPeriod: String, Codable {
         case monthly = "Monthly"
@@ -152,6 +198,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         lhs.platform == rhs.platform &&
         lhs.status == rhs.status &&
         lhs.tier == rhs.tier &&
+        lhs.availableChanges == rhs.availableChanges &&
         Set(lhs.activeOffers) == Set(rhs.activeOffers) &&
         Set(lhs.features ?? []) == Set(rhs.features ?? [])
     }

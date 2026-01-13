@@ -1115,6 +1115,7 @@ extension SettingsViewModel {
         case dbp
         case itr
         case subscriptionFlow(redirectURLComponents: URLComponents? = nil)
+        case subscriptionPlanChangeFlow(redirectURLComponents: URLComponents? = nil)
         case restoreFlow
         case duckPlayer
         case aiChat
@@ -1131,6 +1132,7 @@ extension SettingsViewModel {
             case .dbp: return "dbp"
             case .itr: return "itr"
             case .subscriptionFlow: return "subscriptionFlow"
+            case .subscriptionPlanChangeFlow: return "subscriptionPlanChangeFlow"
             case .restoreFlow: return "restoreFlow"
             case .duckPlayer: return "duckPlayer"
             case .aiChat: return "aiChat"
@@ -1147,7 +1149,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance:
                 return .navigationLink
             }
         }

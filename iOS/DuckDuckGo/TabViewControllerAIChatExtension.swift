@@ -21,25 +21,22 @@ import AIChat
 import Foundation
 import UIKit
 
-/// Protocol for tab controllers that support AIChat content loading.
+/// Protocol for tab controllers that support full mode AIChat content loading.
 protocol AITabController {
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
     func load(_ query: String?, autoSend: Bool, payload: Any?, tools: [AIChatRAGTool]?)
-    
+
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction()
-    
+
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction()
-    
+
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction()
-    
+
     /// Opens a new AI chat in a new tab.
     func openNewChatInNewTab()
-    
-    /// Presents the contextual AI chat sheet over the current tab. Re-presents an active chat if it exists.
-    func presentContextualAIChatSheet(from presentingViewController: UIViewController)
 }
 
 // MARK: - AITabController
@@ -78,29 +75,10 @@ extension TabViewController: AITabController {
         delegate?.tab(self, didRequestNewTabForUrl: newChatURL, openedByPage: false, inheritingAttribution: nil)
     }
 
-    /// Reloads the AI Chat if this is an AI tab.
-    func reloadAIChatIfNeeded() {
-        guard isAITab else { return }
-        webView.reload()
-    }
-
-    /// Presents the contextual AI chat sheet over the current tab. Re-presents an active chat if it exists.
-    ///
-    /// - Parameter presentingViewController: The view controller to present the sheet from.
-    func presentContextualAIChatSheet(from presentingViewController: UIViewController) {
-        aiChatContextualSheetCoordinator.presentSheet(from: presentingViewController)
-    }
-}
-
-// MARK: - AIChatContextualSheetCoordinatorDelegate
-extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
-
-    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL) {
-        delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
-    }
-
-    func aiChatContextualSheetCoordinatorDidRequestExpand(_ coordinator: AIChatContextualSheetCoordinator) {
-        let duckAIURL = aiChatContentHandler.buildQueryURL(query: nil, autoSend: false, tools: nil)
-        delegate?.tab(self, didRequestNewTabForUrl: duckAIURL, openedByPage: false, inheritingAttribution: nil)
+    /// Reloads the full mode AI Chat tab if this is an AI tab.
+    func reloadFullModeAIChatIfNeeded() {
+        if isAITab {
+            webView.reload()
+        }
     }
 }

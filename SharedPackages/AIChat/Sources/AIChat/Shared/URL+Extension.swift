@@ -74,6 +74,16 @@ extension URL {
         return false
     }
 
+    /// Returns the chat ID from the URL if present, or nil if not a Duck AI URL with a chat ID.
+    public var duckAIChatID: String? {
+        guard isDuckAIURL,
+              let chatID = queryItems?.first(where: { $0.name == "chatID" })?.value,
+              !chatID.isEmpty else {
+            return nil
+        }
+        return chatID
+    }
+
     // MARK: - Private methods
 
     private var isDuckAIChatQuery: Bool {

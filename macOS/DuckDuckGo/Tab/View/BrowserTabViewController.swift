@@ -109,6 +109,7 @@ final class BrowserTabViewController: NSViewController {
     private var duckPlayerConsentCancellable: AnyCancellable?
     private var pinnedTabsDelegatesCancellable: AnyCancellable?
     private var keyWindowSelectedTabCancellable: AnyCancellable?
+    private var contentOverlayDismissalCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
 
     private weak var previouslySelectedTab: Tab?
@@ -1233,10 +1234,10 @@ final class BrowserTabViewController: NSViewController {
                 tld: tld
             )
             self.contentOverlayPopover = overlayPopover
-            windowControllersManager.stateChanged
+            self.contentOverlayDismissalCancellable = windowControllersManager.stateChanged
                 .sink { [weak overlayPopover] _ in
                     overlayPopover?.viewController.closeContentOverlayPopover()
-                }.store(in: &self.cancellables)
+                }
             return overlayPopover
         }()
     }

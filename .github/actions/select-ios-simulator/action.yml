@@ -7,7 +7,7 @@ inputs:
   device-name:
     description: 'iOS simulator device name'
     required: false
-    default: 'iPhone 16'
+    default: 'iPhone 17'
 outputs:
   destination:
     description: 'Complete xcodebuild destination string'
@@ -51,7 +51,7 @@ runs:
           fi
         done
         
-        echo "⚠️ No preferred iOS version found, using default iOS 18.6 with iPhone 16"
-        destination="platform=iOS Simulator,name=iPhone 16,OS=18.6"
+        echo "⚠️ No preferred iOS version found, using default iOS 26.1 with iPhone 17"
+        destination="platform=iOS Simulator,name=iPhone 17,OS=26.1"
         echo "destination=$destination" >> $GITHUB_OUTPUT
-        echo "ios-version=18.6" >> $GITHUB_OUTPUT
+        echo "ios-version=26.1" >> $GITHUB_OUTPUT

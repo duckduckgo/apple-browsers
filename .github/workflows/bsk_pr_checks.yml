@@ -36,11 +36,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: macos-15
-      timeout-minutes: 30
+      runs-on: macos-26
+      timeout-minutes: 45
 
       env:
-        RUNS_ON: macos-15 # keep this in sync with runs-on above
+        RUNS_ON: macos-26 # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
@@ -202,11 +202,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: macos-15
-      timeout-minutes: 30
+      runs-on: macos-26
+      timeout-minutes: 45
 
       env:
-        RUNS_ON: macos-15 # keep this in sync with runs-on above
+        RUNS_ON: macos-26 # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
@@ -247,7 +247,7 @@ jobs:
         id: select-simulator
         uses: ./.github/actions/select-ios-simulator
         with:
-          preferred-versions: "18.6,18.2"
+          preferred-versions: "26.1"
 
       - name: Resolve package dependencies
         run: |

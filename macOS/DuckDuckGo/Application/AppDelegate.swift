@@ -1331,6 +1331,83 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard featureFlagger.isFeatureOn(.terminationDeciderSequence) else {
+            return applicationShouldTerminateFallback()
+        }
+
+        // Show quit survey for first-time quitters (new users within 14 days)
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+        let quitSurveyDecider = QuitSurveyAppTerminationDecider(
+            featureFlagger: featureFlagger,
+            dataClearingPreferences: dataClearingPreferences,
+            downloadManager: downloadManager,
+            installDate: AppDelegate.firstLaunchDate,
+            persistor: persistor,
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+            showQuitSurvey: { [weak self] in
+                guard let self else { return }
+                let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor)
+                await presenter.showSurvey()
+            }
+        )
+
+        if let surveyTask = quitSurveyDecider.presentQuitSurveyIfNeeded() {
+            Task { @MainActor in
+                await surveyTask.value
+                NSApp.reply(toApplicationShouldTerminate: true)
+            }
+            return .terminateLater
+        }
+
+        let downloadsDecider = ActiveDownloadsAppTerminationDecider(
+            downloadManager: downloadManager,
+            downloadListCoordinator: downloadListCoordinator
+        )
+        if let downloadsTask = downloadsDecider.handleTermination() {
+            Task {
+                let shouldContinueTermination = await downloadsTask.value
+                guard shouldContinueTermination else {
+                    NSApp.reply(toApplicationShouldTerminate: false)
+                    return
+                }
+                let reply = continueTerminationAfterAsyncDeciders()
+                switch reply {
+                case .terminateCancel:
+                    NSApp.reply(toApplicationShouldTerminate: false)
+                case .terminateNow:
+                    NSApp.reply(toApplicationShouldTerminate: true)
+                case .terminateLater:
+                    break // autoClearHandler.onAutoClearCompleted will call `NSApp.reply(toApplicationShouldTerminate: true)`
+                @unknown default:
+                    NSApp.reply(toApplicationShouldTerminate: true)
+                }
+            }
+            return .terminateLater
+        }
+
+        return continueTerminationAfterAsyncDeciders()
+    }
+
+    @MainActor
+    private func continueTerminationAfterAsyncDeciders() -> NSApplication.TerminateReply {
+        // Cancel any active update tracking flow
+        updateController?.handleAppTermination()
+
+        stateRestorationManager?.applicationWillTerminate()
+
+        // Handling of "Burn on quit"
+        if let terminationReply = autoClearHandler.handleAppTermination() {
+            return terminationReply
+        }
+
+        tearDownPrivacyStats()
+
+        return .terminateNow
+    }
+
+    // Original Termination Handler (Fallback - To be removed)
+    @MainActor
+    private func applicationShouldTerminateFallback() -> NSApplication.TerminateReply {
         // Show quit survey for first-time quitters (new users within 14 days)
         let decider = QuitSurveyDecider(
             featureFlagger: featureFlagger,
@@ -1343,7 +1420,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if decider.shouldShowQuitSurvey {
             decider.markQuitSurveyShown()
-            showQuitSurvey()
+            let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+            let presenter = QuitSurveyPresenter(windowControllersManager: windowControllersManager, persistor: persistor)
+            presenter.showSurveySyncFallback()
             return .terminateLater
         }
 
@@ -1353,7 +1432,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if !activeDownloads.isEmpty {
                 let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
                 let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
-                    // close alert and burn the window when all downloads finished
+                    // close alert and quit when all downloads finished
                     NSApp.stopModal(withCode: .OK)
                 }
                 let response = alert.runModal()
@@ -1388,55 +1467,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             condition.resolve()
         }
         RunLoop.current.run(until: condition)
-    }
-
-    // MARK: - Quit Survey
-
-    @MainActor private func showQuitSurvey() {
-        var quitSurveyWindow: NSWindow?
-
-        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let surveyView = QuitSurveyFlowView(
-            persistor: persistor,
-            onQuit: {
-                if let parentWindow = quitSurveyWindow?.sheetParent {
-                    parentWindow.endSheet(quitSurveyWindow!)
-                } else {
-                    quitSurveyWindow?.close()
-                }
-                NSApp.reply(toApplicationShouldTerminate: true)
-            },
-            onResize: { width, height in
-                guard let window = quitSurveyWindow else { return }
-                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
-                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
-                window.setFrame(newFrame, display: true, animate: false)
-            }
-        )
-
-        let controller = QuitSurveyViewController(rootView: surveyView)
-        quitSurveyWindow = NSWindow(contentViewController: controller)
-
-        guard let window = quitSurveyWindow else { return }
-
-        window.styleMask.remove(.resizable)
-        let windowRect = NSRect(
-            x: 0,
-            y: 0,
-            width: QuitSurveyViewController.Constants.initialWidth,
-            height: QuitSurveyViewController.Constants.initialHeight
-        )
-        window.setFrame(windowRect, display: true)
-
-        // Show as sheet on the main window, or as standalone window if no main window
-        if let parentWindowController = windowControllersManager.lastKeyMainWindowController,
-           let parentWindow = parentWindowController.window {
-            parentWindow.beginSheet(window) { _ in }
-        } else {
-            // Fallback: show as a centered window
-            window.center()
-            window.makeKeyAndOrderFront(nil)
-        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

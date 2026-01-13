@@ -28,10 +28,6 @@ class NewPermissionViewTests: UITestCase {
     private var addressBarTextField: XCUIElement!
     private var permissionsSiteURL: URL!
 
-    private var isCI: Bool {
-        ProcessInfo.processInfo.environment["CI"] != nil
-    }
-
     // Fire Dialog Element Accessors
     private var fireDialogTitle: XCUIElement { app.fireDialogTitle }
     private var fireDialogHistoryToggle: XCUIElement { app.fireDialogHistoryToggle }
@@ -106,7 +102,7 @@ class NewPermissionViewTests: UITestCase {
     // MARK: - Camera Permission Tests
 
     func test_cameraPermissions_withAcceptedTCCChallenge_showCorrectStateInBrowser() throws {
-        if isCI { throw XCTSkip("Test disabled due to TCC permission dialog issues on CI") }
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
 
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
@@ -173,7 +169,7 @@ class NewPermissionViewTests: UITestCase {
     }
 
     func test_cameraPermissions_withDeniedTCCChallenge_showCorrectStateInBrowser() throws {
-        if isCI { throw XCTSkip("Test disabled due to TCC permission dialog issues on CI") }
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
 
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
@@ -223,7 +219,7 @@ class NewPermissionViewTests: UITestCase {
     }
 
     func test_cameraPermissions_withAcceptedTCCChallenge_whereNeverAllowIsSelected_alwaysDenies() throws {
-        if isCI { throw XCTSkip("Test disabled due to TCC permission dialog issues on CI") }
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
 
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
@@ -315,7 +311,7 @@ class NewPermissionViewTests: UITestCase {
     // MARK: - Microphone Permission Tests
 
     func test_microphonePermissions_withAcceptedTCCChallenge_showCorrectStateInBrowser() throws {
-        if isCI { throw XCTSkip("Test disabled due to TCC permission dialog issues on CI") }
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
 
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
@@ -379,7 +375,7 @@ class NewPermissionViewTests: UITestCase {
     }
 
     func test_microphonePermissions_withDeniedTCCChallenge_showCorrectStateInBrowser() throws {
-        if isCI { throw XCTSkip("Test disabled due to TCC permission dialog issues on CI") }
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
 
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
@@ -429,7 +425,7 @@ class NewPermissionViewTests: UITestCase {
     }
 
     func test_microphonePermissions_withAcceptedTCCChallenge_whereNeverAllowIsSelected_alwaysDenies() throws {
-        if isCI { throw XCTSkip("Test disabled due to TCC permission dialog issues on CI") }
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
 
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 

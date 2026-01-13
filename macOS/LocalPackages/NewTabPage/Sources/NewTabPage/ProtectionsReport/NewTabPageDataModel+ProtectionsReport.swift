@@ -48,6 +48,7 @@ extension NewTabPageDataModel {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion
         let feed: Feed
         let showBurnAnimation: Bool
+        let showProtectionsReportNewLabel: Bool
     }
 
     public enum Feed: String, Codable {

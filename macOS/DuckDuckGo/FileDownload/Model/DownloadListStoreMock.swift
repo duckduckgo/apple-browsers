@@ -40,6 +40,9 @@ final class DownloadListStoreMock: DownloadListStoring {
     func sync() {
         syncBlock?()
     }
+    func sync() async {
+        syncBlock?()
+    }
 
 }
 #endif

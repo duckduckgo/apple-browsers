@@ -33,6 +33,7 @@ import Common
 @testable import PersistenceTestingUtils
 import SystemSettingsPiPTutorialTestSupport
 import Combine
+import PrivacyConfig
 
 // swiftlint:disable force_try
 

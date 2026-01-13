@@ -21,4 +21,5 @@ import NewTabPage
 
 final class MockNewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding {
     var isOmnibarAvailable: Bool = true
+    var isNextStepsSingleCardIterationAvailable: Bool = false
 }

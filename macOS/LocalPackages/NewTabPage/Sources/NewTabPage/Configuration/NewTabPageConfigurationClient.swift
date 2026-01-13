@@ -25,6 +25,7 @@ import WebKit
 
 public protocol NewTabPageSectionsAvailabilityProviding: AnyObject {
     var isOmnibarAvailable: Bool { get }
+    var isNextStepsSingleCardIterationAvailable: Bool { get }
 }
 
 public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
@@ -142,7 +143,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
             .init(id: .subscriptionWinBackBanner),
-            .init(id: .nextSteps),
+            sectionsAvailabilityProvider.isNextStepsSingleCardIterationAvailable ? .init(id: .nextStepsList) : .init(id: .nextSteps),
             .init(id: .favorites),
             .init(id: .protections)
         ]

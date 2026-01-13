@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Foundation
 import NewTabPage
+import os.log
 import PrivacyConfig
 import Subscription
 
@@ -142,7 +143,9 @@ private extension NewTabPageNextStepsCardsActionHandler {
 
     @MainActor
     func performSyncAction(completion: (() -> Void)?) {
-        let syncLauncher = syncLauncher ?? DeviceSyncCoordinator()
-        syncLauncher?.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
+        guard let syncLauncher = syncLauncher ?? DeviceSyncCoordinator() else {
+            return Logger.sync.error("DeviceSyncCoordinator is not available to perform Next Steps sync action")
+        }
+        syncLauncher.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
     }
 }

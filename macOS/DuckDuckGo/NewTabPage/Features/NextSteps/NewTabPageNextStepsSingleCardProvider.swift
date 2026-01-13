@@ -187,7 +187,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .personalizeBrowser:
             return !appearancePreferences.didOpenCustomizationSettings
         case .sync:
-            return syncService?.authState == .inactive
+            return syncService?.featureFlags.contains(.all) == true && syncService?.authState == .inactive
         }
     }
 

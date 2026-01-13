@@ -1433,6 +1433,7 @@ public struct UserText {
     public static let tabSwitcherTrackerCountHideAction = NSLocalizedString("tab.switcher.tracker.count.hide.action", value: "Hide", comment: "Action button to hide tracker count banner")
     public static let tabSwitcherTrackerCountKeepAction = NSLocalizedString("tab.switcher.tracker.count.keep.action", value: "Keep", comment: "Action button to keep showing tracker count banner")
     public static let tabSwitcherTrackerCountInfoA11y = NSLocalizedString("tab.switcher.tracker.count.info.a11y", value: "Tracker count options", comment: "Accessibility label for tracker count info button")
+    public static let tabSwitcherTrackerCountInfoHintA11y = NSLocalizedString("tab.switcher.tracker.count.info.hint.a11y", value: "Double tap to show options for hiding this banner", comment: "Accessibility hint for tracker count info button")
 
 
     // Privacy Section

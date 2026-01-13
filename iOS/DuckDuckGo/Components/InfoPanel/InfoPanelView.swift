@@ -64,6 +64,7 @@ struct InfoPanelView: View {
                     .padding(Constants.infoButtonPadding)
             })
             .accessibilityLabel(Text(UserText.tabSwitcherTrackerCountInfoA11y))
+            .accessibilityHint(Text(UserText.tabSwitcherTrackerCountInfoHintA11y))
         }
         .padding(.horizontal, Constants.horizontalPadding)
         .padding(.vertical, Constants.verticalPadding)

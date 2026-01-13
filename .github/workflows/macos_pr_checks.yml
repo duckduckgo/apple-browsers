@@ -418,10 +418,10 @@ jobs:
       inputs.skip-release-build != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     env:
-      RUNS_ON: macos-15 # keep this in sync with runs-on above
+      RUNS_ON: macos-26 # keep this in sync with runs-on above
 
     steps:
     - name: Register SSH key for certificates repository access

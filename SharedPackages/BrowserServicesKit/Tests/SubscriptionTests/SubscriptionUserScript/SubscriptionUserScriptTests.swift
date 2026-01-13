@@ -54,6 +54,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.backToSettingsCallCount, 0)
         XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
         XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionUpgradeCallCount, 0)
     }
 
     func testThatSubscriptionDetailsMessageIsPassedToHandler() async throws {
@@ -65,6 +66,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.backToSettingsCallCount, 0)
         XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
         XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionUpgradeCallCount, 0)
     }
 
     func testThatGetAuthAccessTokenMessageIsPassedToHandler() async throws {
@@ -76,6 +78,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.backToSettingsCallCount, 0)
         XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
         XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionUpgradeCallCount, 0)
     }
 
     func testThatGetFeatureConfigMessageIsPassedToHandler() async throws {
@@ -87,6 +90,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.backToSettingsCallCount, 0)
         XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
         XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionUpgradeCallCount, 0)
     }
 
     func testThatBackToSettingsMessageIsPassedToHandler() async throws {
@@ -98,6 +102,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.backToSettingsCallCount, 1)
         XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
         XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionUpgradeCallCount, 0)
     }
 
     func testThatOpenSubscriptionActivationMessageIsPassedToHandler() async throws {
@@ -109,6 +114,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.backToSettingsCallCount, 0)
         XCTAssertEqual(handler.openSubscriptionActivationCallCount, 1)
         XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionUpgradeCallCount, 0)
     }
 
     func testThatOpenSubscriptionPurchaseMessageIsPassedToHandler() async throws {
@@ -125,9 +131,31 @@ final class SubscriptionUserScriptTests: XCTestCase {
         XCTAssertEqual(mockHandler.backToSettingsCallCount, 0)
         XCTAssertEqual(mockHandler.openSubscriptionActivationCallCount, 0)
         XCTAssertEqual(mockHandler.openSubscriptionPurchaseCallCount, 1)
+        XCTAssertEqual(mockHandler.openSubscriptionUpgradeCallCount, 0)
 
         // Verify parameters were passed through
         let passedParams = try XCTUnwrap(mockHandler.lastOpenSubscriptionPurchaseParams as? [String: String])
+        XCTAssertEqual(passedParams["origin"], origin)
+    }
+
+    func testThatOpenSubscriptionUpgradeMessageIsPassedToHandler() async throws {
+        let origin = "some_origin"
+        let params = ["origin": origin]
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: SubscriptionUserScript.MessageName.openSubscriptionUpgrade.rawValue))
+        _ = try await handler(params, WKScriptMessage())
+
+        let mockHandler = try XCTUnwrap(self.handler)
+        XCTAssertEqual(mockHandler.handshakeCallCount, 0)
+        XCTAssertEqual(mockHandler.subscriptionDetailsCallCount, 0)
+        XCTAssertEqual(mockHandler.getAuthAccessTokenCallCount, 0)
+        XCTAssertEqual(mockHandler.getFeatureConfigCallCount, 0)
+        XCTAssertEqual(mockHandler.backToSettingsCallCount, 0)
+        XCTAssertEqual(mockHandler.openSubscriptionActivationCallCount, 0)
+        XCTAssertEqual(mockHandler.openSubscriptionPurchaseCallCount, 0)
+        XCTAssertEqual(mockHandler.openSubscriptionUpgradeCallCount, 1)
+
+        // Verify parameters were passed through
+        let passedParams = try XCTUnwrap(mockHandler.lastOpenSubscriptionUpgradeParams as? [String: String])
         XCTAssertEqual(passedParams["origin"], origin)
     }
 

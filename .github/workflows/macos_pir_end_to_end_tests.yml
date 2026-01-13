@@ -38,10 +38,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-15-xlarge]
+        runner: [macos-26-xlarge]
         include:
-          - xcode-version: "16.4"
-            runner: macos-15-xlarge
+          - xcode-version: "26.1"
+            runner: macos-26-xlarge
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}

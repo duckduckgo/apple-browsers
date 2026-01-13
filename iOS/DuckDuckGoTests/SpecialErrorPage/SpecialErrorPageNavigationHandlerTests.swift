@@ -34,8 +34,6 @@ final class SpecialErrorPageNavigationHandlerTests {
     init() {
         WKNavigationResponse.swizzleDealloc()
 
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.sslCertificatesBypass]
         webView = MockSpecialErrorWebView(frame: CGRect(), configuration: .nonPersistent())
         sslErrorPageNavigationHandler = MockSSLErrorPageNavigationHandler()
         maliciousSiteProtectionNavigationHandler = MockMaliciousSiteProtectionNavigationHandler()

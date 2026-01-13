@@ -596,6 +596,10 @@ final class DownloadListCoordinator {
         item.progress?.cancel()
     }
 
+    func sync() async {
+        await store.sync()
+    }
+
     func sync() {
         store.sync()
     }

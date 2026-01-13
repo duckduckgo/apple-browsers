@@ -16238,66 +16238,6 @@
         }
       }
     },
-    "confirm.exit.fullscreen.action" : {
-      "comment" : "Action text shown in the exit fullscreen confirmation overlay",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Halten oder erneut drücken, um den Vollbildmodus zu verlassen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Hold or press again to exit fullscreen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mantén pulsado o pulsa de nuevo para salir de pantalla completa"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Maintenir la touche enfoncée ou appuyer à nouveau pour quitter le mode plein écran"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tieni premuto o premi di nuovo per uscire dalla modalità a schermo intero"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Houd ingedrukt of druk nogmaals om de volledige schermweergave te verlaten"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Przytrzymaj lub naciśnij ponownie, aby wyjść z trybu pełnoekranowego"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prime sem soltar ou prime novamente para sair do ecrã completo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удерживайте или нажмите снова, чтобы выйти из полноэкранного режима"
-          }
-        }
-      }
-    },
     "confirm.quit.action" : {
       "comment" : "Action text shown in the quit confirmation overlay",
       "extractionState" : "extracted_with_value",

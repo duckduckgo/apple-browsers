@@ -367,6 +367,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @UserDefaultsWrapper
     private var didCrashDuringCrashHandlersSetUp: Bool
 
+    @UserDefaultsWrapper(key: .warnBeforeQuitting, defaultValue: true)
+    var warnBeforeQuitting: Bool
+
     static var isNewUser: Bool {
         return firstLaunchDate >= Date.weekAgo
     }
@@ -1366,37 +1369,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ),
 
             // 3. Warn before quit confirmation
-            {
-                // Don't show "warn before quit" if autoclear warning will be shown
-                let willShowAutoClearWarning = dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isWarnBeforeClearingEnabled
-
-                // Don't show if no window is open
-                let hasWindow = windowControllersManager.lastKeyMainWindowController?.window != nil
-
-                guard featureFlagger.isFeatureOn(.warnBeforeQuit),
-                      !willShowAutoClearWarning,
-                      hasWindow,
-                      let currentEvent = NSApp.currentEvent,
-                      let manager = WarnBeforeQuitManager(
-                        currentEvent: currentEvent,
-                        isWarningEnabled: { [weak self] in
-                            self?.warnBeforeQuitting ?? true
-                        }
-                      ) else { return ApplicationTerminationDecider?.none }
-
-                let presenter = OverlayPresenter(
-                    anchorViewProvider: nil,
-                    onDontAskAgain: { [weak self] in
-                        self?.warnBeforeQuitting = false
-                    },
-                    onHoverChange: { [weak manager] isHovering in
-                        manager?.setMouseHovering(isHovering)
-                    }
-                )
-                // Subscribe to state stream (the Task keeps presenter alive)
-                presenter.subscribe(to: manager.stateStream)
-                return manager
-            }(),
+            makeWarnBeforeQuitDecider(),
 
             // 4. Update controller cleanup
             updateController.map(UpdateControllerAppTerminationDecider.init),
@@ -1416,6 +1389,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ]
 
         return deciders.compactMap { $0 }
+    }
+
+    @MainActor
+    private func makeWarnBeforeQuitDecider() -> ApplicationTerminationDecider? {
+        // Don't show "warn before quit" if autoclear warning will be shown
+        let willShowAutoClearWarning = dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isWarnBeforeClearingEnabled
+
+        // Don't show if no window is open
+        let hasWindow = windowControllersManager.lastKeyMainWindowController?.window != nil
+
+        guard featureFlagger.isFeatureOn(.warnBeforeQuit),
+              !willShowAutoClearWarning,
+              hasWindow,
+              let currentEvent = NSApp.currentEvent,
+              let manager = WarnBeforeQuitManager(
+                currentEvent: currentEvent,
+                isWarningEnabled: { [weak self] in
+                    self?.warnBeforeQuitting ?? true
+                }
+              ) else { return nil }
+
+        let presenter = OverlayPresenter(
+            onDontAskAgain: { [weak self] in
+                self?.warnBeforeQuitting = false
+            },
+            onHoverChange: { [weak manager] isHovering in
+                manager?.setMouseHovering(isHovering)
+            }
+        )
+        // Subscribe to state stream (the Task keeps presenter alive)
+        presenter.subscribe(to: manager.stateStream)
+        return manager
     }
 
     // Original Termination Handler (Fallback - To be removed)

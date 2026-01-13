@@ -418,11 +418,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
 }
 
-public enum SslCertificatesSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .sslCertificates }
-    case allowBypass
-}
-
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .duckPlayer }
     case pip

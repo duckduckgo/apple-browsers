@@ -140,9 +140,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473926615
-    case duckAISearchParameter
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719485546
     case refactorOfSyncPreferences
 
@@ -292,7 +289,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
-                .duckAISearchParameter,
                 .syncCreditCards,
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
@@ -357,7 +353,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newTabPagePerTab,
                 .newTabPageTabIDs,
                 .supportsAlternateStripePaymentFlow,
-                .duckAISearchParameter,
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
@@ -493,8 +488,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPageTabIDs))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
-        case .duckAISearchParameter:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.duckAISearchParameter))
         case .fireDialog:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
         case .fireDialogIndividualSitesLink:

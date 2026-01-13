@@ -209,8 +209,11 @@ public class StatisticsLoader {
             return
         }
 
+        isDuckAIRetentionRequestInProgress = true
+
         guard let url = StatisticsDependentURLFactory(statisticsStore: statisticsStore).makeDuckAIAtbURL() else {
             requestInstallStatistics {
+                self.isDuckAIRetentionRequestInProgress = false
                 self.updateUsageSegmentationAfterInstall(activityType: .duckAI)
                 completion()
             }
@@ -220,7 +223,6 @@ public class StatisticsLoader {
         let configuration = APIRequest.Configuration(url: url)
         let request = APIRequest(configuration: configuration, urlSession: .session())
 
-        isDuckAIRetentionRequestInProgress = true
         request.fetch { response, error in
             DispatchQueue.main.async {
                 self.isDuckAIRetentionRequestInProgress = false

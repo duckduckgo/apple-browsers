@@ -80,7 +80,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             settings: mockSettings,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
-            featureDiscovery: MockFeatureDiscovery()
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: MockFeatureFlagger()
         )
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()

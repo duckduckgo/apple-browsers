@@ -462,7 +462,15 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
 
             if featureFlagger.isFeatureOn(.iOSAIChatAtb) {
-                statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission()
+                DispatchQueue.main.async {
+                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
+                                                                        application: UIApplication.shared)
+                    self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
+                        DispatchQueue.main.async {
+                            backgroundAssertion.release()
+                        }
+                    }
+                }
             }
         }
 

@@ -110,8 +110,6 @@ struct UserText {
     
     static let confirmCloseAction = NSLocalizedString("confirm.close.action", value: "Hold or press again to close", comment: "Action text shown in the close confirmation overlay")
     
-    static let confirmExitFullscreenAction = NSLocalizedString("confirm.exit.fullscreen.action", value: "Hold or press again to exit fullscreen", comment: "Action text shown in the exit fullscreen confirmation overlay")
-    
     static let confirmDontShowAgain = NSLocalizedString("confirm.dont.show.again", value: "Don‘t Show Again", comment: "Button to disable confirmation dialogs")
     
     // Settings

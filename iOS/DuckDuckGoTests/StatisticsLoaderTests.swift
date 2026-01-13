@@ -350,6 +350,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee.refreshRetentionAtbOnDuckAIPromptSubmission {
             // Then
             XCTAssertEqual(self.mockStatisticsStore.atb, "atb")
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
             XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
             expect.fulfill()
         }
@@ -370,6 +371,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee.refreshRetentionAtbOnDuckAIPromptSubmission {
             // Then
             XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
             XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
             expect.fulfill()
         }
@@ -390,6 +392,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee.refreshRetentionAtbOnDuckAIPromptSubmission {
             // Then
             XCTAssertEqual(self.mockStatisticsStore.atb, "atb")
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "searchretentionatb")
             XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "retentionAtb")
             expect.fulfill()
         }

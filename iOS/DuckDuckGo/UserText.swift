@@ -1635,7 +1635,6 @@ public struct UserText {
     }
 
     public static let subscriptionDevicesSectionHeader = NSLocalizedString("duckduckgo.subscription.add.to.devices.header", value: "Add your subscription to other devices", comment: "Header for section for activating subscription on other devices")
-    public static let subscriptionRebrandingMessage = NSLocalizedString("subscription.rebranding.message", value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription")
     public static let subscriptionDevicesSectionNoEmailFooter = NSLocalizedString("duckduckgo.subscription.add.to.devices.no.email.footer", value: "Add your subscription to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
     public static let subscriptionDevicesSectionWithEmailFooter = NSLocalizedString("duckduckgo.subscription.add.to.devices.with.email.footer", value: "Use this email to add your subscription on your other devices in the DuckDuckGo app, go to Settings > DuckDuckGo Subscription > I Have a Subscription. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email is added")
     public static let subscriptionRemoveFromDevice = NSLocalizedString("subscription.remove.from.device.button", value: "Remove From This Device", comment: "Remove from this device button")
@@ -1643,6 +1642,12 @@ public struct UserText {
     public static let subscriptionManagePlan = NSLocalizedString("subscription.manage.plan", value: "Manage Plan", comment: "Manage Plan header")
     public static let subscriptionViewAllPlans = NSLocalizedString("subscription.view.all.plans", value: "View All Plans", comment: "View All Plans button to see available subscription tiers")
     public static let subscriptionPlansTitle = NSLocalizedString("subscription.plans.title", value: "Subscription Plans", comment: "Navigation title for the subscription plans page")
+    public static let subscriptionUpgradeSectionTitle = NotLocalizedString("subscription.upgrade.section.title", value: "Upgrade", comment: "Header for the upgrade section in subscription settings")
+    public static let subscriptionUpgradeSectionCaption = NotLocalizedString("subscription.upgrade.section.caption", value: "Unlock smarter, more powerful AI", comment: "Caption text in the upgrade section promoting AI features")
+    public static func subscriptionUpgradeButton(tierName: String) -> String {
+        let format = NotLocalizedString("subscription.upgrade.button", value: "Upgrade to %@", comment: "Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro')")
+        return String(format: format, tierName.capitalized)
+    }
     public static let subscriptionChangePlan = NSLocalizedString("subscription.change.plan", value: "Update Plan or Cancel", comment: "Change plan or cancel title")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")

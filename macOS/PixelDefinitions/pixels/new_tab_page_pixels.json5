@@ -18,7 +18,7 @@
         "description": "Fires when a user switches between search and DuckAI mode in the omnibar. Used to understand mode preference.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["daily"],
         "parameters": [
             {
                 "key": "mode",

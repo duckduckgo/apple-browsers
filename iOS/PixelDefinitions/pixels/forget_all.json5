@@ -17,7 +17,7 @@
         "description": "Fired when user pressed the button to clear data in Data Clearing Settings",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "daily_standard"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "mf": {
@@ -26,6 +26,25 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "mf_dc": {
+        "description": "Fired when data clearing is completed after Fire button action, includes timing information",
+        "owners": ["dus7", "hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "dur",
+                "type": "string",
+                "description": "Duration in seconds (as a floating-point string)"
+            },
+            {
+                "key": "tc",
+                "type": "string",
+                "description": "Tab count at time of firing"
+            }
+        ]
     },
     "m_forget-all-pressed_browsing_daily": {
         "description": "Fired daily when user pressed the Fire button while browsing",

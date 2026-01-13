@@ -55,14 +55,10 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
             }
             .padding(.bottom, 16)
 
-            // Rebranding message
-            if model.showRebrandingMessage {
-                rebrandingMessage
-            }
-
             // Sections
             switch model.settingsState {
             case .subscriptionActive, .subscriptionFreeTrialActive:
+                upgradeSection
                 activateSection
                 settingsSection
                 helpSection
@@ -170,6 +166,37 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
             } else {
                 Button(UserText.addToDeviceButtonTitle) { model.activationFlowAction() }
                     .padding(.top, 4)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var upgradeSection: some View {
+        if model.shouldShowUpgrade, let tierName = model.firstAvailableUpgradeTier {
+            SubfeatureGroup {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(.aiChatAdvancedColor24)
+                    VStack(alignment: .leading, spacing: 18) {
+                        Text(UserText.upgradeSectionCaption)
+                            .foregroundColor(Color(.textPrimary))
+                            .font(.system(size: 13, weight: .semibold))
+                        Button(UserText.upgradeButton(tierName: tierName)) {
+                            switch model.viewAllPlansAction(url: .upgrade) {
+                            case .navigateToPlans(let navigationAction),
+                                    .navigateToManageSubscription(let navigationAction):
+                                navigationAction()
+                            case .presentSheet(let sheet):
+                                manageSubscriptionSheet = sheet
+                            case .showInternalSubscriptionAlert:
+                                showingInternalSubscriptionAlert.toggle()
+                            }
+                        }
+                        .buttonStyle(StandardButtonStyle(topPadding: 8, bottomPadding: 8, horizontalPadding: 12, cornerRadius: 6))
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 14)
+                .padding(.horizontal, 10)
             }
         }
     }
@@ -308,24 +335,5 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
         })
         .frame(width: 360)
-    }
-
-    private var rebrandingMessage: some View {
-        SubfeatureGroup {
-            HStack(spacing: 8) {
-                Image(.privacyProColor24)
-                Text(UserText.preferencesSubscriptionRebrandingMessage)
-                    .font(
-                        Font.custom("SF Pro", size: 13).weight(.semibold)
-                    )
-                Spacer()
-                CloseButton(
-                    icon: NSImage(resource: .close16),
-                    size: 20,
-                    action: { model.dismissRebrandingMessage() }
-                )
-            }
-            .padding(2)
-        }
     }
 }

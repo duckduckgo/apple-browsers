@@ -789,6 +789,192 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier.name })
     }
 
+    // MARK: - subscriptionChangeSelected Tests
+
+    @MainActor
+    func testSubscriptionChangeSelected_AppStore_Success_CompletesFlow() async throws {
+        // Given
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = Constants.mockScriptMessage
+
+        // Set up authenticated user with existing subscription
+        subscriptionManagerV2.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        // Set up successful purchase
+        mockStorePurchaseManager.purchaseSubscriptionResult = .success("test-transaction-jws")
+
+        // Set up successful confirmation
+        let subscription = DuckDuckGoSubscription(
+            productId: "yearly-pro",
+            name: "Pro Yearly",
+            billingPeriod: .yearly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(365 * 24 * 60 * 60),
+            platform: .apple,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .pro,
+            availableChanges: nil
+        )
+        subscriptionManagerV2.confirmPurchaseResponse = .success(subscription)
+
+        var didPresentProgress = false
+        var didDismissProgress = false
+        var didUpdateProgress = false
+
+        mockUIHandler.setDidPerformActionCallback { action in
+            switch action {
+            case .didPresentProgressViewController:
+                didPresentProgress = true
+            case .didDismissProgressViewController:
+                didDismissProgress = true
+            case .didUpdateProgressViewController:
+                didUpdateProgress = true
+            default:
+                break
+            }
+        }
+
+        // When
+        _ = try await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertTrue(didPresentProgress, "Should present progress view")
+        XCTAssertTrue(didUpdateProgress, "Should update progress view during completion")
+        XCTAssertTrue(didDismissProgress, "Should dismiss progress view")
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_AppStore_UserCancelled_DismissesWithoutAlert() async throws {
+        // Given
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = Constants.mockScriptMessage
+
+        // Set up authenticated user
+        subscriptionManagerV2.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        // Set up cancelled purchase
+        mockStorePurchaseManager.purchaseSubscriptionResult = .failure(.purchaseCancelledByUser)
+
+        var didShowAlert = false
+        var didDismissProgress = false
+
+        mockUIHandler.setDidPerformActionCallback { action in
+            switch action {
+            case .didShowAlert:
+                didShowAlert = true
+            case .didDismissProgressViewController:
+                didDismissProgress = true
+            default:
+                break
+            }
+        }
+
+        // When
+        _ = try await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertFalse(didShowAlert, "Should NOT show alert when user cancels")
+        XCTAssertTrue(didDismissProgress, "Should dismiss progress view")
+        XCTAssertTrue(mockEventReporter.reportedActivationErrors.contains { error in
+            if case .cancelledByUser = error { return true }
+            return false
+        }, "Should report cancelled by user error")
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_AppStore_PurchaseFailed_ShowsAlert() async throws {
+        // Given
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = Constants.mockScriptMessage
+
+        // Set up authenticated user
+        subscriptionManagerV2.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        // Set up failed purchase
+        mockStorePurchaseManager.purchaseSubscriptionResult = .failure(.productNotFound)
+
+        var shownAlertType: SubscriptionAlertType?
+        mockUIHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        mockUIHandler.setDidPerformActionCallback { action in
+            if case .didShowAlert(let alertType) = action {
+                shownAlertType = alertType
+            }
+        }
+
+        // When
+        _ = try await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertEqual(shownAlertType, .somethingWentWrong, "Should show 'Something Went Wrong' alert")
+        XCTAssertTrue(mockEventReporter.reportedActivationErrors.contains { error in
+            if case .purchaseFailed = error { return true }
+            return false
+        }, "Should report purchase failed error")
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_Stripe_CompletesWithoutAlert() async throws {
+        // Given
+        let params: [String: Any] = ["id": "stripe-yearly-pro", "change": "upgrade"]
+        let message = Constants.mockScriptMessage
+
+        // Set environment to Stripe
+        subscriptionManagerV2.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
+
+        // Set up authenticated user
+        subscriptionManagerV2.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        var didShowAlert = false
+        var didDismissProgress = false
+
+        mockUIHandler.setDidPerformActionCallback { action in
+            switch action {
+            case .didShowAlert:
+                didShowAlert = true
+            case .didDismissProgressViewController:
+                didDismissProgress = true
+            default:
+                break
+            }
+        }
+
+        // When
+        _ = try await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertFalse(didShowAlert, "Stripe tier change should not show any alert")
+        XCTAssertTrue(didDismissProgress, "Should dismiss progress view")
+        // Note: For Stripe, the handler sends a redirect with the access token via pushPurchaseUpdate
+        // The actual redirect message can't be easily verified without mocking the broker
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_ReportsErrorForAllErrorTypes() async throws {
+        // Given
+        subscriptionManagerV2.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        let errorCases: [StorePurchaseManagerError] = [
+            .productNotFound,
+            .purchaseFailed(NSError(domain: "test", code: 0)),
+            .purchaseCancelledByUser
+        ]
+
+        for error in errorCases {
+            mockEventReporter.reportedActivationErrors.removeAll()
+            mockStorePurchaseManager.purchaseSubscriptionResult = .failure(error)
+            mockUIHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+
+            let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+
+            // When
+            _ = try await sut.subscriptionChangeSelected(params: params, original: Constants.mockScriptMessage)
+
+            // Then
+            XCTAssertFalse(mockEventReporter.reportedActivationErrors.isEmpty,
+                          "Should report error for \(error)")
+        }
+    }
 }
 
 // MARK: - Mocks

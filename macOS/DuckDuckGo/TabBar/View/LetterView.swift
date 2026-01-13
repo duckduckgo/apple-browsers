@@ -46,12 +46,14 @@ final class LetterView: NSView {
            let eTLDplus1 = NSApp.delegateTyped.tld.eTLDplus1(domain),
            let firstLetter = eTLDplus1.capitalized.first.flatMap(String.init)
         else {
+            label.isHidden = true
             placeholderView.isHidden = false
             return
         }
 
-        placeholderView.isHidden = true
         label.stringValue = firstLetter
+        label.isHidden = false
+        placeholderView.isHidden = true
         backgroundView.layer?.backgroundColor = Color.forString(eTLDplus1).cgColor
     }
 

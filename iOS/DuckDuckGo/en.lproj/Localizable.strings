@@ -3469,9 +3469,6 @@ Take back control of your personal information with the browser designed for dat
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restoring subscription...";
 
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro is now just called the DuckDuckGo subscription";
-
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Remove From This Device";
 

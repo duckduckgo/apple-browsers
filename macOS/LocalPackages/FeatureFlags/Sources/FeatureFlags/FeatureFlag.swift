@@ -20,9 +20,6 @@ import Foundation
 import PrivacyConfig
 
 public enum FeatureFlag: String, CaseIterable {
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760000
-    case sslCertificatesBypass
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715841970
     case maliciousSiteProtection
 
@@ -403,8 +400,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .heuristicAction,
                 .nextStepsSingleCardIteration:
             return true
-        case .sslCertificatesBypass,
-                .appendAtbToSerpQueries,
+        case .appendAtbToSerpQueries,
                 .freemiumDBP,
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
@@ -421,8 +417,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .appendAtbToSerpQueries:
             return .internalOnly()
-        case .sslCertificatesBypass:
-            return .remoteReleasable(.subfeature(SslCertificatesSubfeature.allowBypass))
         case .unknownUsernameCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.unknownUsernameCategorization))
         case .freemiumDBP:

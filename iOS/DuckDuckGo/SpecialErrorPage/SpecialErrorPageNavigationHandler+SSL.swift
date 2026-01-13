@@ -34,16 +34,13 @@ final class SSLErrorPageNavigationHandler {
 
     private let urlCredentialCreator: URLCredentialCreating
     private let storageCache: StorageCache
-    private let featureFlagger: FeatureFlagger
 
     init(
         urlCredentialCreator: URLCredentialCreating = URLCredentialCreator(),
-        storageCache: StorageCache = AppDependencyProvider.shared.storageCache,
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
+        storageCache: StorageCache = AppDependencyProvider.shared.storageCache
     ) {
         self.urlCredentialCreator = urlCredentialCreator
         self.storageCache = storageCache
-        self.featureFlagger = featureFlagger
     }
 }
 
@@ -62,8 +59,7 @@ extension SSLErrorPageNavigationHandler: SSLSpecialErrorPageNavigationHandling {
     }
 
     func makeNewRequestURLAndSpecialErrorDataIfEnabled(error: NSError) -> SSLSpecialError? {
-        guard featureFlagger.isFeatureOn(.sslCertificatesBypass),
-              error.isServerCertificateUntrusted,
+        guard error.isServerCertificateUntrusted,
               let errorType = error.sslErrorType,
               let failedURL = error.failedUrl,
               let host = failedURL.host

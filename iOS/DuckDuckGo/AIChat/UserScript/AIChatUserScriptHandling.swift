@@ -92,6 +92,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
 
+    /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
 
     init(experimentalAIChatManager: ExperimentalAIChatManager,
@@ -158,8 +159,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsFullMode = false
             supportsContextualMode = aichatContextualModeFeature.isAvailable
         case .none:
-            supportsFullMode = aichatFullModeFeature.isAvailable ? true : defaults.supportsAIChatFullMode
-            supportsContextualMode = aichatContextualModeFeature.isAvailable ? true : defaults.supportsAIChatContextualMode
+            supportsFullMode = aichatFullModeFeature.isAvailable || defaults.supportsAIChatFullMode
+            supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
         return AIChatNativeConfigValues(

@@ -56,7 +56,7 @@ protocol AIChatContentHandling {
 
     var delegate: AIChatContentHandlingDelegate? { get set }
 
-    /// Configures the user script and WebView for AIChat interaction.
+    /// Configures the user script, WebView and display mode for AIChat interaction.
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode)
 
     /// Sets the initial payload data for the AIChat session.

@@ -593,7 +593,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .enhancedDataClearingSettings:
             return .disabled
         case .tabSwitcherTrackerCount:
-            return .disabled
+            return .internalOnly()
         }
     }
 }

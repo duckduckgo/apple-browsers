@@ -117,7 +117,6 @@ extension URL {
                                          value: URL.DuckDuckGoParameters.KBG.kbgDisabledValue)
         }
 
-
         return url
     }
 

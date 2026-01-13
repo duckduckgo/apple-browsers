@@ -191,11 +191,17 @@ class SwitchBarTextEntryView: UIView {
 
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
-            self?.hasBeenInteractedWith = true
-            self?.fireClearButtonPressedPixel()
-            self?.handler.clearText()
-            self?.handler.clearButtonTapped()
-            self?.updateAutoCorrectionSetupForAIChat(for: "")
+            guard let self else { return }
+            self.hasBeenInteractedWith = true
+            self.fireClearButtonPressedPixel()
+            
+            self.textView.text = ""
+            self.updatePlaceholderVisibility()
+            self.updateTextViewHeight()
+            
+            self.handler.clearText()
+            self.handler.clearButtonTapped()
+            self.updateAutoCorrectionSetupForAIChat(for: "")
         }
 
         buttonsView.onVoiceTapped = { [weak self] in
@@ -450,15 +456,15 @@ class SwitchBarTextEntryView: UIView {
             .sink { [weak self] text in
                 guard let self = self else { return }
 
-                self.updateAutoCorrectionSetupForAIChat(for: text)
+                self.updateAutoCorrectionSetupForAIChat(for: self.textView.text ?? "")
+                
                 if self.textView.text != text {
                     // Don't overwrite text while user is actively typing - the publisher
                     // may deliver stale values due to async scheduling, which would
                     // interfere with iOS autocomplete.
-                    // Exception: always allow clearing text (empty string from clear button)
+                    // Note: Clear button updates textView directly to avoid race conditions.
                     let isUserActivelyTyping = self.textView.isFirstResponder && self.hasBeenInteractedWith
-                    let isClearingText = text.isEmpty
-                    guard !isUserActivelyTyping || isClearingText else { return }
+                    guard !isUserActivelyTyping else { return }
                     
                     self.textView.text = text
                     self.updatePlaceholderVisibility()

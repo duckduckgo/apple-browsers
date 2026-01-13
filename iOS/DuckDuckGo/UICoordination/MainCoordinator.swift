@@ -156,7 +156,8 @@ final class MainCoordinator {
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: privacyConfigurationManager,
-                                        appSettings: AppDependencyProvider.shared.appSettings)
+                                        appSettings: AppDependencyProvider.shared.appSettings,
+                                        privacyStats: privacyStats)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,

@@ -342,6 +342,17 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     }
 }
 
+// MARK: - Mock Classes
+
+private class MockSyncDeviceFlowLauncher: SyncDeviceFlowLaunching {
+    var startDeviceSyncFlowCalled = false
+
+    func startDeviceSyncFlow(source: SyncDeviceButtonTouchpoint, completion: (() -> Void)?) {
+        startDeviceSyncFlowCalled = true
+        completion?()
+    }
+}
+
 // MARK: - Date Extension for Testing
 
 private extension Date {

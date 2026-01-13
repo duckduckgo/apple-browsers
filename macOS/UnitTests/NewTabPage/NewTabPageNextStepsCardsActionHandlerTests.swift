@@ -31,7 +31,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var dockCustomizer: DockCustomization!
     private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
     private var navigator: MockNavigator!
-    private var syncLauncher: MockSyncDeviceFlowLauncher!
+    private var syncLauncher: MockSyncLauncher!
 
     @MainActor override func setUp() {
         capturingDefaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -43,7 +43,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         privacyConfigManager.privacyConfig = config
         pixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
         navigator = MockNavigator()
-        syncLauncher = MockSyncDeviceFlowLauncher()
+        syncLauncher = MockSyncLauncher()
 
         actionHandler = NewTabPageNextStepsCardsActionHandler(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -204,5 +204,17 @@ private class MockNavigator: NewTabPageNavigator {
 
     func openNewTabPageBackgroundCustomizationSettings() {
         customizationSettingsOpened = true
+    }
+}
+
+private class MockSyncLauncher: SyncDeviceFlowLaunching {
+    private(set) var startDeviceSyncFlowCalled = false
+    private(set) var syncSource: SyncDeviceButtonTouchpoint?
+    private(set) var capturedCompletion: (() -> Void)?
+
+    func startDeviceSyncFlow(source: SyncDeviceButtonTouchpoint, completion: (() -> Void)?) {
+        startDeviceSyncFlowCalled = true
+        syncSource = source
+        capturedCompletion = completion
     }
 }

@@ -21,14 +21,9 @@ import NewTabPage
 
 final class MockNewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActionHandling {
     private(set) var cardActionsPerformed: [NewTabPage.NewTabPageDataModel.CardID] = []
-    private(set) var syncLauncher: SyncDeviceFlowLaunching? = nil
 
     func performAction(for card: NewTabPage.NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
         cardActionsPerformed.append(card)
         refreshCardsAction?()
-    }
-
-    func setSyncLauncher(_ syncLauncher: SyncDeviceFlowLaunching) {
-        self.syncLauncher = syncLauncher
     }
 }

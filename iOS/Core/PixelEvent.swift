@@ -488,9 +488,6 @@ extension Pixel {
         case autofillCardsManagementSaveCard
         case autofillCardsManagementUpdateCard
 
-        case autofillCardsAutofilledInMainframe
-        case autofillCardsAutofilledInIframe
-
         case autofillManagementScreenVisitSurveyAvailable
 
         case getDesktopCopy
@@ -1245,6 +1242,7 @@ extension Pixel {
         case settingsDataClearingClearDataOpen
         case settingsAutomaticallyClearDataOn
         case settingsAutomaticallyClearDataOff
+        case settingsAutomaticDataClearingOptionsUpdated
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
@@ -1649,6 +1647,7 @@ extension Pixel.Event {
         case .settingsDataClearingClearDataOpen: return "m_settings_data_clearing_clear_data_open"
         case .settingsAutomaticallyClearDataOn: return "m_settings_automatically_clear_data_on"
         case .settingsAutomaticallyClearDataOff: return "m_settings_automatically_clear_data_off"
+        case .settingsAutomaticDataClearingOptionsUpdated: return "m_automatic_data_clearing_options_updated"
         case .settingsNextStepsAddAppToDock: return "m_settings_next_steps_add_app_to_dock"
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
@@ -1985,9 +1984,6 @@ extension Pixel.Event {
         case .autofillCardsManagementDeleteCard: return "autofill_cards_management_delete_card"
         case .autofillCardsManagementSaveCard: return "autofill_cards_management_save_card"
         case .autofillCardsManagementUpdateCard: return "autofill_cards_management_update_card"
-
-        case .autofillCardsAutofilledInMainframe: return "autofill_cards_autofilled_in_mainframe"
-        case .autofillCardsAutofilledInIframe: return "autofill_cards_autofilled_in_iframe"
 
         case .autofillManagementScreenVisitSurveyAvailable: return "m_autofill_management_screen_visit_survey_available"
 

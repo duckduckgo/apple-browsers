@@ -26,20 +26,20 @@ import WebKit
 
 enum ErrorPageHTMLFactory {
 
-    static func html(for error: WKError, header: String? = nil, featureFlagger: FeatureFlagger, themeName: ThemeName) -> String {
-        buildHTML(for: error, header: header, featureFlagger: featureFlagger)
+    static func html(for error: WKError, header: String? = nil, themeName: ThemeName) -> String {
+        buildHTML(for: error, header: header)
             .replaceThemePlaceholder(themeName: themeName)
     }
 }
 
 private extension ErrorPageHTMLFactory {
 
-    static func buildHTML(for error: WKError, header: String? = nil, featureFlagger: FeatureFlagger) -> String {
+    static func buildHTML(for error: WKError, header: String? = nil) -> String {
         switch error as NSError {
         case is MaliciousSiteError:
             return SpecialErrorPageHTMLTemplate.htmlFromTemplate
 
-        case is URLError where error.isServerCertificateUntrusted && featureFlagger.isFeatureOn(.sslCertificatesBypass):
+        case is URLError where error.isServerCertificateUntrusted:
             return SpecialErrorPageHTMLTemplate.htmlFromTemplate
 
         default:

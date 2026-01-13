@@ -87,6 +87,7 @@ public enum PrivacyFeature: String {
     case duckAiDataClearing
     case serp
     case popupBlocking
+    case combinedPermissionView
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -137,10 +138,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
 
-    /// New permission center
-    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
-    case newPermissionView
-
     /// Tab closing event recreation feature flag (failsafe for removing private API)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
@@ -149,9 +146,17 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
     case tabProgressIndicator
 
+    /// Feature flag for Themes
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
+    case themes
+
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
+
+    /// Failsafe for the modular termination decider pattern
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212684817782056?focus=true
+    case terminationDeciderSequence
 
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
@@ -411,11 +416,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case blackFridayCampaign
     case tierMessagingEnabled
     case allowProTierPurchase
-}
-
-public enum SslCertificatesSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .sslCertificates }
-    case allowBypass
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

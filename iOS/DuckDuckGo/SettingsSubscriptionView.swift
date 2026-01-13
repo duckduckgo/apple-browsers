@@ -181,8 +181,7 @@ struct SettingsSubscriptionView: View {
                 label: UserText.settingsSubscriptionAiChatTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                 statusIndicator: StatusIndicatorView(status: .off),
-                isGreyedOut: true,
-                optionalBadgeText: UserText.settingsItemNewBadge
+                isGreyedOut: true
             )
         }
 

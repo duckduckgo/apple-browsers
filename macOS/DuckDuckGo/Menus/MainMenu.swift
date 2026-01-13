@@ -739,6 +739,8 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
                 NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
                 NSMenuItem(title: "Clear blockedCookiesPopoverSeen flag", action: #selector(AppDelegate.debugClearBlockedCookiesPopoverSeenFlag))
+                NSMenuItem(title: "Reset widgetNewLabelFirstShownDate", action: #selector(AppDelegate.debugResetWidgetNewLabelFirstShownDateKey))
+                NSMenuItem(title: "Set widgetNewLabelFirstShownDate to 10 days ago", action: #selector(AppDelegate.debugSetWidgetNewLabelFirstShownDateTo10DaysAgo))
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
@@ -779,6 +781,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
                 NSMenuItem(title: "Set Launch Date A Month In the Past", action: #selector(AppDelegate.setLaunchDayAMonthInThePast))
                 NSMenuItem(title: "Reset Quit Survey Was Shown", action: #selector(AppDelegate.resetQuitSurveyWasShown))
+                NSMenuItem(title: "Reset Themes Popover Was Shown", action: #selector(AppDelegate.resetThemesPopoverWasShown))
 
             }.withAccessibilityIdentifier("MainMenu.resetData")
             NSMenuItem(title: "UI Triggers") {
@@ -875,6 +878,38 @@ final class MainMenu: NSMenu {
                 DefaultSubscriptionManagerV2.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
 
+            // Closure to handle subscription selection via the user script handler
+            let subscriptionSelectionHandler: SubscriptionSelectionHandler? = {
+                if #available(macOS 12.0, *) {
+                    return { @MainActor (productId: String, changeType: String?) async in
+                        guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else { return }
+
+                        let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
+                        let feature = SubscriptionPagesUseSubscriptionFeatureV2(
+                            subscriptionManager: subscriptionManager,
+                            stripePurchaseFlow: stripePurchaseFlow,
+                            uiHandler: Application.appDelegate.subscriptionUIHandler,
+                            aiChatURL: AIChatRemoteSettings().aiChatURL,
+                            wideEvent: Application.appDelegate.wideEvent
+                        )
+
+                        // Create params matching what the web would send
+                        var params: [String: Any] = ["id": productId]
+                        if let changeType = changeType {
+                            params["change"] = changeType
+                        }
+
+                        // Call the appropriate handler based on whether it's a tier change or new purchase
+                        if changeType != nil {
+                            _ = try? await feature.subscriptionChangeSelected(params: params, original: WKScriptMessage())
+                        } else {
+                            _ = try? await feature.subscriptionSelected(params: params, original: WKScriptMessage())
+                        }
+                    }
+                }
+                return nil
+            }()
+
             SubscriptionDebugMenu(currentEnvironment: currentEnvironment,
                                   updateServiceEnvironment: updateServiceEnvironment,
                                   updatePurchasingPlatform: updatePurchasingPlatform,
@@ -884,7 +919,8 @@ final class MainMenu: NSMenu {
                                   subscriptionAuthV1toV2Bridge: Application.appDelegate.subscriptionAuthV1toV2Bridge,
                                   subscriptionManagerV2: Application.appDelegate.subscriptionManagerV2,
                                   subscriptionUserDefaults: subscriptionUserDefaults,
-                                  wideEvent: Application.appDelegate.wideEvent)
+                                  wideEvent: Application.appDelegate.wideEvent,
+                                  subscriptionSelectionHandler: subscriptionSelectionHandler)
 
             NSMenuItem(title: "TipKit") {
                 NSMenuItem(title: "Reset", action: #selector(AppDelegate.resetTipKit))

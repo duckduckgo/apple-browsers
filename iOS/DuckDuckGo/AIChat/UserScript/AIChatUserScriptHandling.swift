@@ -27,6 +27,13 @@ import WebKit
 import Common
 import DDGSync
 import Core
+
+/// The current display mode of the AI Chat interface.
+enum AIChatDisplayMode {
+    case fullTab
+    case contextual
+}
+
 // MARK: - Response Types
 
 /// Response structure for openKeyboard request
@@ -45,7 +52,8 @@ protocol AIChatMetricReportingHandling: AnyObject {
 }
 
 // swiftlint:disable inclusive_language
-protocol AIChatUserScriptHandling {
+protocol AIChatUserScriptHandling: AnyObject {
+    var displayMode: AIChatDisplayMode? { get set }
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -73,7 +81,7 @@ protocol AIChatUserScriptHandling {
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
-    
+
     private var payloadHandler: (any AIChatConsumableDataHandling)?
     private var inputBoxHandler: (any AIChatInputBoxHandling)?
     private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
@@ -82,15 +90,21 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let featureFlagger: FeatureFlagger
     private let migrationStore = AIChatMigrationStore()
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
+
+    /// Set externally via `AIChatContentHandler.setup()`.
+    var displayMode: AIChatDisplayMode?
 
     init(experimentalAIChatManager: ExperimentalAIChatManager,
          syncHandler: AIChatSyncHandling,
          featureFlagger: FeatureFlagger,
-         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+         aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.aichatContextualModeFeature = aichatContextualModeFeature
     }
 
     enum AIChatKeys {
@@ -133,6 +147,22 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
         let defaults = AIChatNativeConfigValues.defaultValues
+
+        let supportsFullMode: Bool
+        let supportsContextualMode: Bool
+
+        switch displayMode {
+        case .fullTab:
+            supportsFullMode = aichatFullModeFeature.isAvailable
+            supportsContextualMode = false
+        case .contextual:
+            supportsFullMode = false
+            supportsContextualMode = aichatContextualModeFeature.isAvailable
+        case .none:
+            supportsFullMode = aichatFullModeFeature.isAvailable || defaults.supportsAIChatFullMode
+            supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
+        }
+
         return AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
@@ -143,7 +173,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
             supportsPageContext: defaults.supportsPageContext,
-            supportsAIChatFullMode: aichatFullModeFeature.isAvailable ? true : defaults.supportsAIChatFullMode,
+            supportsAIChatFullMode: supportsFullMode,
+            supportsAIChatContextualMode: supportsContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,

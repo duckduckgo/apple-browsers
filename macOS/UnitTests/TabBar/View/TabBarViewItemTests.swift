@@ -368,7 +368,14 @@ private class TabBarViewModelMock: TabBarViewModel {
     var isPinned: Bool
     @Published var url: URL?
     @Published var title: String = ""
-    var titlePublisher: Published<String>.Publisher { $title }
+
+    var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> {
+        $title
+            .eraseToAnyPublisher()
+            .combineLatest($isLoading)
+            .eraseToAnyPublisher()
+    }
+
     @Published var favicon: NSImage?
     var faviconPublisher: Published<NSImage?>.Publisher { $favicon }
     @Published var tabContent: Tab.TabContent = .none

@@ -56,9 +56,11 @@ jobs:
       - name: Add commit SHA to plist
         run: |
           echo "Setting DDG_COMMIT_SHA to ${{ github.sha }}"
+
           plist_path="DuckDuckGo/Info.plist"
           /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${{ github.sha }}" "${plist_path}" \
             || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${plist_path}"
+
           experimental_plist_path="DuckDuckGo/Info-Experimental.plist"
           /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${{ github.sha }}" "${experimental_plist_path}" \
             || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${experimental_plist_path}"

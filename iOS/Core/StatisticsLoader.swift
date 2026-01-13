@@ -213,9 +213,11 @@ public class StatisticsLoader {
 
         guard let url = StatisticsDependentURLFactory(statisticsStore: statisticsStore).makeDuckAIAtbURL() else {
             requestInstallStatistics {
-                self.isDuckAIRetentionRequestInProgress = false
-                self.updateUsageSegmentationAfterInstall(activityType: .duckAI)
-                completion()
+                DispatchQueue.main.async {
+                    self.isDuckAIRetentionRequestInProgress = false
+                    self.updateUsageSegmentationAfterInstall(activityType: .duckAI)
+                    completion()
+                }
             }
             return
         }

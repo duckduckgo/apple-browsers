@@ -151,6 +151,30 @@ Makes Alpha release build only (without uploading)
 
 Uploads pre-built Alpha app to TestFlight
 
+### ios release_experimental
+
+```sh
+[bundle exec] fastlane ios release_experimental
+```
+
+Makes Experimental release build and uploads it to TestFlight
+
+### ios build_experimental
+
+```sh
+[bundle exec] fastlane ios build_experimental
+```
+
+Makes Experimental release build only (without uploading)
+
+### ios upload_experimental
+
+```sh
+[bundle exec] fastlane ios upload_experimental
+```
+
+Uploads pre-built Experimental app to TestFlight
+
 ### ios increment_build_number_for_version
 
 ```sh

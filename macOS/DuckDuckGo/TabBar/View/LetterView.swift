@@ -147,9 +147,6 @@ private extension LetterView {
     }
 
     func refreshActivationAlpha(isActive: Bool) {
-        let alphaWhenActive: CGFloat = 1
-        let alphaWhenInactive: CGFloat = 0.4
-
-        backgroundView.alphaValue = isActive ? alphaWhenActive : alphaWhenInactive
+        backgroundView.alphaValue = isActive ? .activeViewAlpha : .inactiveViewAlpha
     }
 }

@@ -754,8 +754,6 @@ class TabViewController: UIViewController {
         }
     }
 
-    let flashPreventionView = UIView()
-
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
     // of the Fire button, but the app still does so in the event that previously persisted cookies have not yet been consumed.
     func attachWebView(configuration: WKWebViewConfiguration,
@@ -783,11 +781,7 @@ class TabViewController: UIViewController {
         webView.allowsLinkPreview = true
         webView.allowsBackForwardNavigationGestures = true
 
-//        flashPreventionView.backgroundColor = .red
-//        flashPreventionView.translatesAutoresizingMaskIntoConstraints = false
-//        flashPreventionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-//        flashPreventionView.frame = webView.frame
-//        webView.addSubview(flashPreventionView)
+        webView.preventFlashOnLoad()
 
         addObservers()
 

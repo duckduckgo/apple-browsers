@@ -29,4 +29,7 @@ public enum SingleUseColor {
 
     /// Color used for what's New background
     case whatsNewBackground
+
+    /// The background of the webview before it loads properly
+    case webViewPreLoadBackground
 }

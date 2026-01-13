@@ -254,6 +254,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: shadowTertiary.lightColor, darkColor: highlightDecoration.darkColor)
         case .whatsNewBackground:
             return DynamicColor(lightColor: .white, darkColor: background.darkColor)
+        case .webViewPreLoadBackground:
+            return DynamicColor(lightColor: .white, darkColor: .black)
         }
     }
 }

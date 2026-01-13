@@ -46,13 +46,6 @@
             }
         ]
     },
-    "mf_t": {
-        "description": "Fired after Fire button action with timing information",
-        "owners": ["dus7", "hassaanelgarem"],
-        "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
     "m_forget-all-pressed_browsing_daily": {
         "description": "Fired daily when user pressed the Fire button while browsing",
         "owners": ["dus7", "hassaanelgarem"],

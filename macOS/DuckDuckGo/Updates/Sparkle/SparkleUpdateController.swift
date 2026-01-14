@@ -117,6 +117,11 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
                 needsNotificationDot = hasPendingUpdate
             }
             showUpdateNotificationIfNeeded()
+
+            // Dismiss stale "update available" popover when download begins
+            if case .downloadDidStart = updateProgress {
+                notificationPresenter.dismissIfPresented()
+            }
         }
     }
 

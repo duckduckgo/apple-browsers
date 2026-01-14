@@ -27,9 +27,12 @@ final class NewTabPageConfigurationErrorHandler: EventMapping<NewTabPageConfigur
             switch event {
             case .newTabPageError:
                 PixelKit.fire(DebugEvent(NewTabPagePixel.newTabPageExceptionReported), frequency: .dailyAndStandard)
-            case .newTabPageTelemetry(let payload):
-/// TODO: Wire the actual pixel
-                break
+
+            case .newTabPageTelemetry(.customizerOpened(let themesDiscoveryOnscreen)):
+                PixelKit.fire(NewTabPagePixel.customizerOpen(themesDiscoveryOnscreen: themesDiscoveryOnscreen))
+
+            case .newTabPageTelemetry(.customizerClosed):
+                PixelKit.fire(NewTabPagePixel.customizerClosed)
             }
         }
     }

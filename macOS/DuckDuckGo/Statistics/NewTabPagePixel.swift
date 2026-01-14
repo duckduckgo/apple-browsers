@@ -138,6 +138,18 @@ enum NewTabPagePixel: PixelKitEvent {
 
     case newTabPageExceptionReported
 
+    /**
+     * Event Trigger: NTP's Customizer is Open or Closed.
+     *
+     * > Related links:
+     * [Privacy Triage](`PLACEHOLDER`)
+     *
+     * Anomaly Investigation:
+     * - Anomaly in this pixel may mean an increase/drop in app use.
+     */
+    case customizerOpen(themesDiscoveryOnscreen: Bool)
+    case customizerClosed
+
     // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
     case searchSubmitted
     case promptSubmitted

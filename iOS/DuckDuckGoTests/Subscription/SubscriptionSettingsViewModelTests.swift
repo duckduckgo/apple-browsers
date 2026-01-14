@@ -1,5 +1,5 @@
 //
-//  SubscriptionSettingsViewModelV2Tests.swift
+//  SubscriptionSettingsViewModelTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.

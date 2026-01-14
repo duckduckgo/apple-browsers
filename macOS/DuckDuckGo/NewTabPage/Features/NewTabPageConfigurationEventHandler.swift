@@ -1,5 +1,5 @@
 //
-//  NewTabPageConfigurationErrorHandler.swift
+//  NewTabPageConfigurationEventHandler.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Common
 import NewTabPage
 import PixelKit
 
-final class NewTabPageConfigurationErrorHandler: EventMapping<NewTabPageConfigurationEvent> {
+final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigurationEvent> {
 
     init() {
         super.init { event, _, _, _ in

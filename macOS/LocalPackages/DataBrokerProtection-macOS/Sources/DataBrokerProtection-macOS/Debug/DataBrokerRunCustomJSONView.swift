@@ -18,6 +18,7 @@
 
 import SwiftUI
 import BrowserServicesKit
+import DataBrokerProtectionCore
 
 struct DataBrokerRunCustomJSONView: View {
     @ObservedObject var viewModel: DataBrokerRunCustomJSONViewModel
@@ -25,6 +26,8 @@ struct DataBrokerRunCustomJSONView: View {
     @State private var jsonText: String = ""
     @State private var selectedResultId: UUID?
     @State private var selectedBrokerUrl: String?
+    @State private var brokerFilter: BrokerFilter = .all
+    @State private var brokerSearchText: String = ""
     private let maxNames = 3
     private let maxAddresses = 5
     private let brokerConfigWidth: CGFloat = 360
@@ -137,13 +140,21 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var brokerConfigView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Broker Config")
-                .font(.headline)
+            Picker("", selection: $brokerFilter) {
+                ForEach(BrokerFilter.allCases, id: \.self) { filter in
+                    Text(filter.title).tag(filter)
+                }
+            }
+            .pickerStyle(.radioGroup)
+            .horizontalRadioGroupLayout()
+
+            TextField("Type to search", text: $brokerSearchText)
+                .textFieldStyle(.roundedBorder)
 
             Divider()
 
             List(selection: $selectedBrokerUrl) {
-                ForEach(viewModel.brokers.sorted(by: { $0.url.lowercased() < $1.url.lowercased() }), id: \.url) { broker in
+                ForEach(filteredBrokers, id: \.url) { (broker: DataBroker) in
                     HStack {
                         Text(broker.url)
                         Spacer()
@@ -249,8 +260,49 @@ struct DataBrokerRunCustomJSONView: View {
         return viewModel.results.first { $0.id == selectedResultId }
     }
 
+    private var filteredBrokers: [DataBroker] {
+        let trimmedSearch = brokerSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let searchKey = trimmedSearch.lowercased()
+        let sorted = viewModel.brokers.sorted(by: { $0.url.lowercased() < $1.url.lowercased() })
+        return sorted.filter { broker in
+            guard brokerFilter.includes(broker) else { return false }
+            guard !searchKey.isEmpty else { return true }
+            let urlMatch = broker.url.lowercased().contains(searchKey)
+            let nameMatch = broker.name.lowercased().contains(searchKey)
+            return urlMatch || nameMatch
+        }
+    }
+
     private func contentContainer<Content: View>(_ content: Content) -> some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
+
+private enum BrokerFilter: String, CaseIterable {
+    case all
+    case active
+    case deprecated
+
+    var title: String {
+        switch self {
+        case .all:
+            return "All"
+        case .active:
+            return "Active"
+        case .deprecated:
+            return "Deprecated"
+        }
+    }
+
+    func includes(_ broker: DataBroker) -> Bool {
+        switch self {
+        case .all:
+            return true
+        case .active:
+            return broker.removedAt == nil
+        case .deprecated:
+            return broker.removedAt != nil
+        }
     }
 }

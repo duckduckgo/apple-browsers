@@ -22,7 +22,7 @@ jobs:
   build-experimental:
     runs-on: macos-15
     name: Build Experimental
-    timeout-minutes: 20
+    timeout-minutes: 30
     
     concurrency:
       group: ios-experimental-build-${{ github.ref }}

@@ -692,7 +692,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
         )
-        tabsPreferences = TabsPreferences(persistor: TabsPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        tabsPreferences = TabsPreferences(
+            persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
+            windowControllersManager: windowControllersManager
+        )
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
 
@@ -1133,7 +1136,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
-
         BWManager.shared.initCommunication()
 
         if case .normal = AppVersion.runType,
@@ -1369,24 +1371,60 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 downloadListCoordinator: downloadListCoordinator
             ),
 
-            // 3. Update controller cleanup
+            // 3. Warn before quit confirmation
+            makeWarnBeforeQuitDecider(),
+
+            // 4. Update controller cleanup
             updateController.map(UpdateControllerAppTerminationDecider.init),
 
-            // 4. State restoration
+            // 5. State restoration
             StateRestorationAppTerminationDecider(
                 stateRestorationManager: stateRestorationManager
             ),
 
-            // 5. Auto-clear (burn on quit)
+            // 6. Auto-clear (burn on quit)
             autoClearHandler,
 
-            // 6. Privacy stats cleanup
+            // 7. Privacy stats cleanup
             PrivacyStatsAppTerminationDecider(
                 privacyStats: privacyStats
             ),
         ]
 
         return deciders.compactMap { $0 }
+    }
+
+    @MainActor
+    private func makeWarnBeforeQuitDecider() -> ApplicationTerminationDecider? {
+        // Don't show "warn before quit" if autoclear warning will be shown
+        let willShowAutoClearWarning = dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isWarnBeforeClearingEnabled
+
+        // Don't show if no window is open
+        let hasWindow = windowControllersManager.lastKeyMainWindowController?.window != nil
+
+        guard featureFlagger.isFeatureOn(.warnBeforeQuit),
+              !willShowAutoClearWarning,
+              hasWindow,
+              let currentEvent = NSApp.currentEvent,
+              let manager = WarnBeforeQuitManager(
+                currentEvent: currentEvent,
+                isWarningEnabled: { [tabsPreferences] in
+                    tabsPreferences.warnBeforeQuitting
+                }
+              ) else { return nil }
+
+        let presenter = WarnBeforeQuitOverlayPresenter(
+            startupPreferences: startupPreferences,
+            onDontAskAgain: { [tabsPreferences] in
+                tabsPreferences.warnBeforeQuitting = false
+            },
+            onHoverChange: { [weak manager] isHovering in
+                manager?.setMouseHovering(isHovering)
+            }
+        )
+        // Subscribe to state stream (the Task keeps presenter alive)
+        presenter.subscribe(to: manager.stateStream)
+        return manager
     }
 
     // Original Termination Handler (Fallback - To be removed)

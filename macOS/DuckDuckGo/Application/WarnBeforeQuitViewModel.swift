@@ -24,9 +24,19 @@ import Foundation
 final class WarnBeforeQuitViewModel: ObservableObject {
 
     @Published private(set) var progress: CGFloat = 0
+    private let startupPreferences: StartupPreferences?
 
     var onDontAskAgain: (() -> Void)?
     var onHoverChange: ((Bool) -> Void)?
+
+    var subtitleText: String? {
+        // Only show "Tabs will be restored" subtitle if restore tabs is enabled
+        return startupPreferences?.restorePreviousSession == true ? UserText.confirmQuitSubtitle : nil
+    }
+
+    init(startupPreferences: StartupPreferences?) {
+        self.startupPreferences = startupPreferences
+    }
 
     func updateProgress(_ newProgress: CGFloat) {
         progress = min(1.0, max(0, newProgress))

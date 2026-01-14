@@ -54,9 +54,11 @@ struct WarnBeforeQuitView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
 
-                Text(UserText.confirmQuitSubtitle)
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.8))
+                if let subtitle = viewModel.subtitleText {
+                    Text(subtitle)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.8))
+                }
             }
 
             Spacer()
@@ -98,7 +100,7 @@ struct WarnBeforeQuitView: View {
 }
 
 #Preview {
-    WarnBeforeQuitView(viewModel: WarnBeforeQuitViewModel())
+    WarnBeforeQuitView(viewModel: WarnBeforeQuitViewModel(startupPreferences: nil))
         .padding(40)
         .background(Color.gray)
 }

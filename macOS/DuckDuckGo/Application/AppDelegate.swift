@@ -1411,6 +1411,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               ) else { return nil }
 
         let presenter = OverlayPresenter(
+            startupPreferences: startupPreferences,
             onDontAskAgain: { [weak self] in
                 self?.warnBeforeQuitting = false
             },

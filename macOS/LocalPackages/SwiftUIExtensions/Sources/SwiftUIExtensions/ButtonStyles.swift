@@ -18,6 +18,7 @@
 
 import Foundation
 import SwiftUI
+import DesignResourcesKit
 
 public struct StandardButtonStyle: ButtonStyle {
     public let fontSize: CGFloat
@@ -59,20 +60,23 @@ public struct DefaultActionButtonStyle: ButtonStyle {
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
     public let shouldBeFixedVertical: Bool
+    public let appearance: ButtonAppearanceSettings
 
-    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, shouldBeFixedVertical: Bool = true) {
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, shouldBeFixedVertical: Bool = true, appearance: ButtonAppearanceSettings = .legacyActionButton) {
         self.enabled = enabled
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.shouldBeFixedVertical = shouldBeFixedVertical
+        self.appearance = appearance
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        ButtonContent(configuration: configuration, enabled: enabled, topPadding: topPadding, bottomPadding: bottomPadding, shouldBeFixedVertical: shouldBeFixedVertical)
+        ButtonContent(configuration: configuration, appearance: appearance, enabled: enabled, topPadding: topPadding, bottomPadding: bottomPadding, shouldBeFixedVertical: shouldBeFixedVertical)
     }
 
     struct ButtonContent: View {
         let configuration: Configuration
+        let appearance: ButtonAppearanceSettings
         let enabled: Bool
         let topPadding: CGFloat
         let bottomPadding: CGFloat
@@ -81,14 +85,12 @@ public struct DefaultActionButtonStyle: ButtonStyle {
 
         var body: some View {
             let enabledBackgroundColor = configuration.isPressed
-            ? Color("PrimaryButtonPressed", bundle: Bundle.module)
-                : (isHovered
-                    ? Color("PrimaryButtonHover", bundle: Bundle.module)
-                    : Color("PrimaryButtonRest", bundle: Bundle.module))
+                ? appearance.pressedBackgroundColor
+                : (isHovered ? appearance.hoveredBackgroundColor : appearance.backgroundColor)
 
-            let disabledBackgroundColor = Color.gray.opacity(0.1)
-            let enabledLabelColor = configuration.isPressed ? Color.white.opacity(0.8) : Color.white
-            let disabledLabelColor = Color.primary.opacity(0.3)
+            let disabledBackgroundColor = appearance.disabledBackgroundColor
+            let enabledLabelColor = configuration.isPressed ? appearance.pressedTextColor : appearance.textColor
+            let disabledLabelColor = appearance.disabledTextColor
 
             configuration.label
                 .font(.system(size: 13))
@@ -213,6 +215,50 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
             .foregroundColor(labelColor)
             .cornerRadius(5)
 
+    }
+}
+
+public struct ButtonAppearanceSettings {
+    let backgroundColor: Color
+    let textColor: Color
+    let hoveredBackgroundColor: Color
+    let hoveredTextColor: Color
+    let pressedBackgroundColor: Color
+    let pressedTextColor: Color
+    let disabledBackgroundColor: Color
+    let disabledTextColor: Color
+
+    public init(backgroundColor: Color, textColor: Color, hoveredBackgroundColor: Color, hoveredTextColor: Color, pressedBackgroundColor: Color, pressedTextColor: Color, disabledBackgroundColor: Color, disabledTextColor: Color) {
+        self.backgroundColor = backgroundColor
+        self.textColor = textColor
+        self.hoveredBackgroundColor = hoveredBackgroundColor
+        self.hoveredTextColor = hoveredTextColor
+        self.pressedBackgroundColor = pressedBackgroundColor
+        self.pressedTextColor = pressedTextColor
+        self.disabledBackgroundColor = disabledBackgroundColor
+        self.disabledTextColor = disabledTextColor
+    }
+
+    public static var themedActionButton: ButtonAppearanceSettings {
+        .init(backgroundColor: Color(designSystemColor: .accentPrimary),
+              textColor: Color(designSystemColor: .accentContentPrimary),
+              hoveredBackgroundColor: Color(designSystemColor: .accentSecondary),
+              hoveredTextColor: Color(designSystemColor: .accentContentSecondary),
+              pressedBackgroundColor: Color(designSystemColor: .accentTertiary),
+              pressedTextColor: Color(designSystemColor: .accentContentTertiary),
+              disabledBackgroundColor: Color.gray.opacity(0.1),
+              disabledTextColor: Color.primary.opacity(0.3))
+    }
+
+    public static var legacyActionButton: ButtonAppearanceSettings {
+        .init(backgroundColor: Color("PrimaryButtonRest", bundle: Bundle.module),
+              textColor: .white,
+              hoveredBackgroundColor: Color("PrimaryButtonHover", bundle: Bundle.module),
+              hoveredTextColor: .white,
+              pressedBackgroundColor: Color("PrimaryButtonPressed", bundle: Bundle.module),
+              pressedTextColor: Color.white.opacity(0.8),
+              disabledBackgroundColor: Color.gray.opacity(0.1),
+              disabledTextColor: Color.primary.opacity(0.3))
     }
 }
 

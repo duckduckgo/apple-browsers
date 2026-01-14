@@ -67,7 +67,6 @@ public extension OnboardingStyles {
 
         private func foregroundColor(isPressed: Bool, isHovered: Bool) -> Color {
 #if os(iOS)
-
             switch (colorScheme, isPressed, isHovered) {
             case (.light, false, false):
                 return .lightRestBlue

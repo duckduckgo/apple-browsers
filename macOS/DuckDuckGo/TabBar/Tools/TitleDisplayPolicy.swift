@@ -26,14 +26,21 @@ protocol TitleDisplayPolicy {
 
 struct DefaultTitleDisplayPolicy: TitleDisplayPolicy {
 
+    /// When navigating to a URL within the same domain, the `Tab.title` switches to a placeholder (domain name) as soon as possible -but before Page Load completes-..
+    /// In order to avoid distracting the user, in this scenario we'll avoid rendering a Placeholder Title (up until Page Load is complete)
+    ///
     func mustSkipDisplayingTitle(title: String, url: URL?, previousURL: URL?, isLoading: Bool) -> Bool {
         previousURL?.host == url?.host && url?.suggestedTitlePlaceholder == title && isLoading
     }
 
+    /// We avoid animating title transitions when the actual text didn't change
+    ///
     func mustAnimateTitleTransition(title: String, previousTitle: String) -> Bool {
         title != previousTitle && previousTitle.isEmpty == false
     }
 
+    /// Fade-In animation is only performed when visiting a different
+    ///
     func mustAnimateNewTitleFadeIn(targetURL: URL?, previousURL: URL?) -> Bool {
         targetURL?.host?.dropSubdomain() != previousURL?.host?.dropSubdomain()
     }

@@ -250,7 +250,14 @@ public final class DefaultWideEventSender: WideEventSending {
         headers.forEach { request.setValue($1, forHTTPHeaderField: $0) }
 
         URLSession.shared.dataTask(with: request) { _, response, error in
-            let success = (response as? HTTPURLResponse)?.statusCode == 200
+            let success: Bool
+
+            if let http = response as? HTTPURLResponse {
+                success = (200...299).contains(http.statusCode)
+            } else {
+                success = false
+            }
+
             onComplete(success, error)
         }.resume()
 #endif

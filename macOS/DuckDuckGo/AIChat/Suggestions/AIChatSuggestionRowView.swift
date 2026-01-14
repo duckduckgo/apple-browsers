@@ -184,9 +184,12 @@ final class AIChatSuggestionRowView: NSView {
 
     override func mouseMoved(with event: NSEvent) {
         NSCursor.arrow.set()
-        // Notify that mouse moved - this re-enables mouse hover
-        onMouseMoved?()
-        if !isKeyboardNavigating {
+        // Notify that mouse moved - this re-enables mouse hover (only if needed)
+        if isKeyboardNavigating {
+            onMouseMoved?()
+            isKeyboardNavigating = false
+        }
+        if !isHovered {
             isHovered = true
         }
         super.mouseMoved(with: event)

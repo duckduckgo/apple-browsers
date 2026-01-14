@@ -148,9 +148,10 @@ public final class DefaultWideEventSender: WideEventSending {
     }
 
     private func sendPOSTRequest<T: WideEventData>(data: T, status: WideEventStatus) {
-        let parameters = generateTypedParameters(from: data, status: status)
+        let parameters = generateJSONParameters(from: data, status: status)
+        let nested = nestedDictionary(from: parameters)
 
-        guard let jsonData = buildJSONPayload(from: parameters) else {
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: nested, options: []) else {
             Self.logger.error("Failed to build JSON payload for wide event POST request")
             return
         }
@@ -173,16 +174,16 @@ public final class DefaultWideEventSender: WideEventSending {
         }
     }
 
-    private func generateTypedParameters<T: WideEventData>(from data: T, status: WideEventStatus) -> [String: Any] {
-        var parameters: [String: Any] = [:]
+    private func generateJSONParameters<T: WideEventData>(from data: T, status: WideEventStatus) -> [String: Encodable] {
+        var parameters: [String: Encodable] = [:]
 
-        parameters.merge(data.globalData.typedParameters(), uniquingKeysWith: { _, new in new })
-        parameters.merge(data.appData.typedParameters(), uniquingKeysWith: { _, new in new })
-        parameters.merge(data.contextData.typedParameters(), uniquingKeysWith: { _, new in new })
-        parameters.merge(data.typedParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(data.globalData.jsonParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(data.appData.jsonParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(data.contextData.jsonParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(data.jsonParameters(), uniquingKeysWith: { _, new in new })
 
         if let errorData = data.errorData {
-            parameters.merge(errorData.typedParameters(), uniquingKeysWith: { _, new in new })
+            parameters.merge(errorData.jsonParameters(), uniquingKeysWith: { _, new in new })
         }
 
         parameters[WideEventParameter.Feature.status] = status.description
@@ -195,11 +196,6 @@ public final class DefaultWideEventSender: WideEventSending {
         }
 
         return parameters
-    }
-
-    private func buildJSONPayload(from parameters: [String: Any]) -> Data? {
-        let nested = nestedDictionary(from: parameters)
-        return try? JSONSerialization.data(withJSONObject: nested, options: [])
     }
 
     private func nestedDictionary(from parameters: [String: Any]) -> [String: Any] {

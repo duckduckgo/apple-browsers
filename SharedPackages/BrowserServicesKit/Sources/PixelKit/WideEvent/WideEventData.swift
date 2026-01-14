@@ -139,8 +139,8 @@ extension WideEventGlobalData: WideEventParameterProviding {
         return parameters
     }
 
-    public func typedParameters() -> [String: Any] {
-        var parameters: [String: Any] = [:]
+    public func jsonParameters() -> [String: Encodable] {
+        var parameters: [String: Encodable] = [:]
 
         parameters[WideEventParameter.Global.platform] = platform
         parameters[WideEventParameter.Global.type] = type

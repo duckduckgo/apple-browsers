@@ -271,16 +271,7 @@
             {
                 "key": "context.name",
                 "type": "string",
-                "description": "Context name for the flow",
-                "enum": [
-                    "",
-                    "funnel_app_macos",
-                    "funnel_appsettings_macos",
-                    "funnel_appmenu_macos",
-                    "funnel_freescan_macos",
-                    "funnel_toolbar_macos",
-                    "funnel_appmenu_macos_winback"
-                ]
+                "description": "Context name for the flow"
             }
         ]
     },

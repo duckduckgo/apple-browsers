@@ -19,6 +19,8 @@
 
 import AIChat
 import BrowserServicesKit
+import Core
+import PrivacyConfig
 import Foundation
 import WebKit
 
@@ -27,6 +29,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String)
     func submitStartChatAction()
     func submitOpenSettingsAction()
@@ -55,8 +58,8 @@ protocol AIChatContentHandling {
 
     var delegate: AIChatContentHandlingDelegate? { get set }
 
-    /// Configures the user script and WebView for AIChat interaction.
-    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView)
+    /// Configures the user script, WebView and display mode for AIChat interaction.
+    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode)
 
     /// Sets the initial payload data for the AIChat session.
     func setPayload(payload: Any?)
@@ -87,6 +90,8 @@ final class AIChatContentHandler: AIChatContentHandling {
     private var payloadHandler: AIChatPayloadHandler
     private let pixelMetricHandler: (any AIChatPixelMetricHandling)?
     private let featureDiscovery: FeatureDiscovery
+    private let featureFlagger: FeatureFlagger
+    private lazy var statisticsLoader: StatisticsLoader = .shared
     
     private var userScript: AIChatUserScriptProviding?
     
@@ -97,17 +102,19 @@ final class AIChatContentHandler: AIChatContentHandling {
     init(aiChatSettings: AIChatSettingsProvider,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
          pixelMetricHandler: any AIChatPixelMetricHandling = AIChatPixelMetricHandler(),
-         featureDiscovery: FeatureDiscovery) {
+         featureDiscovery: FeatureDiscovery,
+         featureFlagger: FeatureFlagger) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
         self.featureDiscovery = featureDiscovery
+        self.featureFlagger = featureFlagger
     }
-    
-    /// Configures the user script and WebView for AIChat interaction.
-    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView) {
+
+    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
         self.userScript = userScript
         self.userScript?.delegate = self
+        self.userScript?.setDisplayMode(displayMode)
         self.userScript?.setPayloadHandler(payloadHandler)
         self.userScript?.webView = webView
     }
@@ -194,6 +201,18 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             delegate?.aiChatContentHandlerDidReceivePromptSubmission(self)
+
+            if featureFlagger.isFeatureOn(.iOSAIChatAtb) {
+                DispatchQueue.main.async {
+                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
+                                                                        application: UIApplication.shared)
+                    self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
+                        DispatchQueue.main.async {
+                            backgroundAssertion.release()
+                        }
+                    }
+                }
+            }
         }
 
         pixelMetricHandler?.firePixelWithMetric(metric)

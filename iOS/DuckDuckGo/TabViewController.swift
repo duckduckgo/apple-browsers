@@ -205,7 +205,6 @@ class TabViewController: UIViewController {
     // Required to allow grace period between authentication prompts when autofilling credit cards
     // where forms are split into multiple iframes, requiring multiple prompts
     private var domainFillCreditCardPromptLastShownOn: String?
-    private var domainFillCreditCardPixelLastFiredFor: String?
     // Required to prevent fireproof prompt presenting before autofill save login prompt
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
@@ -502,7 +501,8 @@ class TabViewController: UIViewController {
             settings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            featureDiscovery: featureDiscovery
+            featureDiscovery: featureDiscovery,
+            featureFlagger: featureFlagger
         )
         coordinator.delegate = self
         return coordinator
@@ -573,7 +573,9 @@ class TabViewController: UIViewController {
         
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
-        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
+        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
+                                                         featureDiscovery: featureDiscovery,
+                                                         featureFlagger: featureFlagger)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
 
@@ -1057,27 +1059,19 @@ class TabViewController: UIViewController {
         guard url.isDuckDuckGoSearch else { return false }
         
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
-
-        // Only check DuckAI params if the feature flag is enabled
-        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
-        }
+        let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+        shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
         return shouldReissue
     }
-    
+
     private func reissueSearchWithRequiredParams(for url: URL) {
         var mobileSearch = url.applyingStatsParams()
+        let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+        mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
 
-        // If it's enabled, don't evaluate shouldReissue
-        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
-        }
-        
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
     }
-    
+
     private func showProgressIndicator() {
         progressWorker.didStartLoading()
     }
@@ -2154,11 +2148,15 @@ extension TabViewController: WKNavigationDelegate {
                     if !url.isDuckAIURL {
                         NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
                     }
-                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
-                                                                        application: UIApplication.shared)
-                    StatisticsLoader.shared.refreshSearchRetentionAtb {
-                        DispatchQueue.main.async {
-                            backgroundAssertion.release()
+
+                    let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL && featureFlagger.isFeatureOn(.iOSAIChatAtb)
+                    if !shouldSkipSearchAtbForDuckAI {
+                        let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
+                                                                            application: UIApplication.shared)
+                        StatisticsLoader.shared.refreshSearchRetentionAtb {
+                            DispatchQueue.main.async {
+                                backgroundAssertion.release()
+                            }
                         }
                     }
                     subscriptionDataReporter.saveSearchCount()
@@ -2968,7 +2966,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
-        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
@@ -3323,7 +3321,6 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
-                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard isCreditCardAutofillEnabled() else {
             completionHandler(nil)
@@ -3336,7 +3333,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        promptToFill(withCreditCards: creditCards, isMainFrame: isMainFrame) { card in
+        promptToFill(withCreditCards: creditCards) { card in
             completionHandler(card)
         }
     }
@@ -3344,7 +3341,6 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
-                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard isCreditCardAutofillEnabled(), mainType == .creditCards else {
             completionHandler(nil)
@@ -3352,12 +3348,12 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        promptToFill(withCreditCards: creditCards, isMainFrame: isMainFrame) { card in
+        promptToFill(withCreditCards: creditCards) { card in
             completionHandler(card)
         }
     }
 
-    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         if domainFillCreditCardPromptLastShownOn != url?.host {
             AppDependencyProvider.shared.autofillLoginSession.endSession()
             self.domainFillCreditCardPromptLastShownOn = self.url?.host
@@ -3378,33 +3374,14 @@ extension TabViewController: SecureVaultManagerDelegate {
 
                 if creditCard != nil {
                     NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
-                    self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
                 }
             }
             shouldShowCreditCardPrompt = false
             autofillCreditCardAccessoryView?.updateCreditCards(creditCards)
         } else {
-            addCreditCardInputAccessoryView(creditCards: creditCards) { [weak self] card in
+            addCreditCardInputAccessoryView(creditCards: creditCards) { card in
                 completionHandler(card)
-
-                if card != nil {
-                    self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
-                }
             }
-        }
-    }
-
-    private func fireCreditCardFramePixels(isMainFrame: Bool) {
-        guard domainFillCreditCardPixelLastFiredFor != url?.host else {
-            return
-        }
-
-        domainFillCreditCardPixelLastFiredFor = url?.host
-
-        if isMainFrame {
-            Pixel.fire(pixel: .autofillCardsAutofilledInMainframe)
-        } else {
-            Pixel.fire(pixel: .autofillCardsAutofilledInIframe)
         }
     }
 

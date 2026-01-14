@@ -52,7 +52,7 @@ final class MainViewController: NSViewController {
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
     private let winBackOfferPromptPresenting: WinBackOfferPromptPresenting
-    private let tabsPreferences: TabsPreferences
+    let tabsPreferences: TabsPreferences
     private let duckPlayer: DuckPlayer
 
     let tabCollectionViewModel: TabCollectionViewModel

@@ -37,13 +37,6 @@ enum ConfirmationAction {
         case .close: return UserText.confirmCloseAction
         }
     }
-
-    var subtitleText: String? {
-        switch self {
-        case .quit: return UserText.confirmQuitSubtitle
-        case .close: return nil
-        }
-    }
 }
 
 @MainActor
@@ -51,12 +44,25 @@ final class WarnBeforeQuitViewModel: ObservableObject {
 
     @Published private(set) var progress: CGFloat = 0
     let action: ConfirmationAction
+    private let startupPreferences: StartupPreferences?
 
     var onDontAskAgain: (() -> Void)?
     var onHoverChange: ((Bool) -> Void)?
 
-    init(action: ConfirmationAction = .quit) {
+    var subtitleText: String? {
+        // For quit action, only show "Tabs will be restored" subtitle if restore tabs is enabled
+        // For close action, no subtitle
+        switch action {
+        case .quit:
+            return startupPreferences?.restorePreviousSession == true ? UserText.confirmQuitSubtitle : nil
+        case .close:
+            return nil
+        }
+    }
+
+    init(action: ConfirmationAction = .quit, startupPreferences: StartupPreferences? = nil) {
         self.action = action
+        self.startupPreferences = startupPreferences
     }
 
     func updateProgress(_ newProgress: CGFloat) {

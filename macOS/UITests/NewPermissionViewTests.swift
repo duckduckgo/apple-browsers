@@ -102,6 +102,8 @@ class NewPermissionViewTests: UITestCase {
     // MARK: - Camera Permission Tests
 
     func test_cameraPermissions_withAcceptedTCCChallenge_showCorrectStateInBrowser() throws {
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
+
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
         let cameraButton = app.webViews.buttons["Camera"]
@@ -167,6 +169,8 @@ class NewPermissionViewTests: UITestCase {
     }
 
     func test_cameraPermissions_withDeniedTCCChallenge_showCorrectStateInBrowser() throws {
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
+
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
         let cameraButton = app.webViews.buttons["Camera"]
@@ -215,6 +219,8 @@ class NewPermissionViewTests: UITestCase {
     }
 
     func test_cameraPermissions_withAcceptedTCCChallenge_whereNeverAllowIsSelected_alwaysDenies() throws {
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
+
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
         let cameraButton = app.webViews.buttons["Camera"]
@@ -305,6 +311,8 @@ class NewPermissionViewTests: UITestCase {
     // MARK: - Microphone Permission Tests
 
     func test_microphonePermissions_withAcceptedTCCChallenge_showCorrectStateInBrowser() throws {
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
+
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
         let microphoneButton = app.webViews.buttons["Microphone"]
@@ -367,6 +375,8 @@ class NewPermissionViewTests: UITestCase {
     }
 
     func test_microphonePermissions_withDeniedTCCChallenge_showCorrectStateInBrowser() throws {
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
+
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
         let microphoneButton = app.webViews.buttons["Microphone"]
@@ -415,6 +425,8 @@ class NewPermissionViewTests: UITestCase {
     }
 
     func test_microphonePermissions_withAcceptedTCCChallenge_whereNeverAllowIsSelected_alwaysDenies() throws {
+        throw XCTSkip("Test disabled due to TCC permission dialog issues on CI")
+
         addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
 
         let microphoneButton = app.webViews.buttons["Microphone"]

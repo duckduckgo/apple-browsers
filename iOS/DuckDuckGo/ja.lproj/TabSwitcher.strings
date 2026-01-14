@@ -1,0 +1,30 @@
+/* Class = "UILabel"; text = "Title"; ObjectID = "1GE-Nf-lKM"; */
+"1GE-Nf-lKM.text" = "タイトル";
+
+/* Class = "UILabel"; text = "Title"; ObjectID = "2GU-MM-UwX"; */
+"2GU-MM-UwX.text" = "タイトル";
+
+/* Class = "UIButton"; accessibilityLabel = "Close Tab"; ObjectID = "ExX-zP-FAE"; */
+"ExX-zP-FAE.accessibilityLabel" = "タブを閉じる";
+
+/* Class = "UIButton"; accessibilityLabel = "Close Tab"; ObjectID = "G2C-qh-g3T"; */
+"G2C-qh-g3T.accessibilityLabel" = "タブを閉じる";
+
+/* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "Gyy-py-IOg"; */
+"Gyy-py-IOg.accessibilityLabel" = "未読タブ";
+
+/* Class = "UILabel"; text = "Link"; ObjectID = "LbT-NO-T0G"; */
+"LbT-NO-T0G.text" = "リンク";
+
+/* Class = "UINavigationItem"; title = "Title"; ObjectID = "P3h-DO-2nT"; */
+"P3h-DO-2nT.title" = "タイトル";
+
+/* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "qrJ-aX-XrW"; */
+"qrJ-aX-XrW.accessibilityLabel" = "未読タブ";
+
+/* Class = "UILabel"; text = "Website -- Long Title"; ObjectID = "Uu4-yR-9tN"; */
+"Uu4-yR-9tN.text" = "ウェブサイト — ロングタイトル";
+
+/* Class = "UIButton"; accessibilityHint = "Close"; ObjectID = "xto-EI-h22"; */
+"xto-EI-h22.accessibilityHint" = "閉じる";
+

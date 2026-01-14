@@ -8535,6 +8535,14 @@
     setAdBlocking(params) {
       this.messaging.notify("setAdBlocking", params);
     }
+    /**
+     * Sent when the user selects their Address Bar Mode preference -- Search only or Search & Duck.ai
+     *
+     * @param {import('./types').BooleanSystemValue} params
+     */
+    setDuckAiInAddressBar(params) {
+      this.messaging.notify("setDuckAiInAddressBar", params);
+    }
   };
 
   // ../node_modules/preact/dist/preact.module.js
@@ -9638,16 +9646,17 @@
   }
 
   // pages/onboarding/app/components/Stack.js
-  function Stack({ children, gap = "var(--sp-6)", animate: animate2 = false, debug = false }) {
+  function Stack({ children, gap = "var(--sp-6)", className = "", animate: animate2 = false, debug = false }) {
     const { isReducedMotion } = useEnv();
     const [parent] = useAutoAnimate({ duration: isReducedMotion ? 0 : 300 });
-    return /* @__PURE__ */ _("div", { class: Stack_default.stack, ref: animate2 ? parent : null, "data-debug": String(debug), style: { gap } }, children);
+    const classNames2 = [Stack_default.stack, className].filter(Boolean).join(" ");
+    return /* @__PURE__ */ _("div", { class: classNames2, ref: animate2 ? parent : null, "data-debug": String(debug), style: { gap } }, children);
   }
   Stack.gaps = {
     6: "var(--sp-6)",
     4: "var(--sp-4)",
     3: "var(--sp-3)",
-    0: 0
+    0: "0"
   };
 
   // pages/onboarding/app/components/Icons.module.css
@@ -9875,6 +9884,10 @@
     duckPlayerSingle: {
       id: "duckPlayerSingle",
       kind: "info"
+    },
+    addressBarMode: {
+      id: "addressBarMode",
+      kind: "info"
     }
   };
   var stepMeta = (
@@ -10039,6 +10052,16 @@
       kind: "one-time",
       acceptText: t3("row_youtube-ad-blocking_accept_v3"),
       accepButtonVariant: "primary"
+    }),
+    // Intended only for use with v3
+    "address-bar-mode": (t3) => ({
+      id: "address-bar-mode",
+      icon: "v3/Ai-Chat-Color-24.svg",
+      title: t3("addressBarMode_title"),
+      secondaryText: t3("addressBarMode_footer"),
+      summary: t3("addressBarMode_title"),
+      kind: "toggle",
+      acceptText: t3("startBrowsing")
     })
   };
   var beforeAfterMeta = {
@@ -10455,6 +10478,22 @@
       title: "No targeted ads. No targeted recommendations. Just your video.",
       note: "Subtitle for a page that shows the benefits of using the Duck Player feature to watch YouTube videos more privately."
     },
+    addressBarMode_title: {
+      title: "Want easy access to private AI Chat?",
+      note: "Title for the Address Bar Mode feature step in onboarding"
+    },
+    addressBarMode_searchAndDuckAi: {
+      title: "Search & Duck.ai",
+      note: "Button label for enabling search with Duck.ai in the address bar"
+    },
+    addressBarMode_searchOnly: {
+      title: "Search Only",
+      note: "Button label for search only mode in the address bar"
+    },
+    addressBarMode_footer: {
+      title: "AI features are private and optional. You can make changes in <b>Settings > AI Features</b>.",
+      note: "Footer text explaining AI features are optional and can be changed in settings. The <b> tag is used to bold the settings path."
+    },
     customize_title_v3: {
       title: "Let\u2019s customize a few things\u2026",
       note: "Title for a page that allows the user to customize specific settings in the DuckDuckGo browser."
@@ -10583,6 +10622,10 @@
       title: "No protection",
       note: "The level of protection offered by a browser on a specific feature in the comparison table."
     },
+    comparison_aiChat: {
+      title: "Chat privately with AI chatbots (optional)",
+      note: "The description of a browser privacy feature in the comparison table."
+    },
     browser_DuckDuckGo: {
       title: "DuckDuckGo",
       note: "Brand name of the DuckDuckGo browser"
@@ -10609,7 +10652,8 @@
     "dockSingle",
     "importSingle",
     "makeDefaultSingle",
-    "duckPlayerSingle"
+    "duckPlayerSingle",
+    "addressBarMode"
   ];
   var DEFAULT_ORDER = ["welcome", "getStarted", "privateByDefault", "cleanerBrowsing", "systemSettings", "customize", "summary"];
   var ALT_ORDER = [
@@ -10623,7 +10667,7 @@
     "customize",
     "summary"
   ];
-  var ORDER_V3 = ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "duckPlayerSingle", "customize"];
+  var ORDER_V3 = ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "duckPlayerSingle", "customize", "addressBarMode"];
   function useTypedTranslation() {
     return {
       t: x2(TranslationContext).t
@@ -10767,6 +10811,16 @@
                 }
               };
             }
+            if (state.step.kind === "info") {
+              return {
+                ...state,
+                status: { kind: "idle" },
+                values: {
+                  ...state.values,
+                  [action.id]: action.payload
+                }
+              };
+            }
             throw new Error("unimplemented");
           }
           case "exec-error": {
@@ -10803,7 +10857,8 @@
         "home-shortcut": "idle",
         "placebo-ad-blocking": "idle",
         "aggressive-ad-blocking": "idle",
-        "youtube-ad-blocking": "idle"
+        "youtube-ad-blocking": "idle",
+        "address-bar-mode": "idle"
       }
     });
     const platform = usePlatformName();
@@ -10863,6 +10918,10 @@
       case "aggressive-ad-blocking":
       case "youtube-ad-blocking": {
         messaging2.setAdBlocking(payload);
+        return payload;
+      }
+      case "address-bar-mode": {
+        messaging2.setDuckAiInAddressBar(payload);
         return payload;
       }
       case "dock": {
@@ -11729,6 +11788,15 @@
       }
     },
     {
+      icon: "v3/Ai-Chat-Color-24.svg",
+      title: t3("comparison_aiChat"),
+      statuses: {
+        chrome: SupportStatus.PARTIAL_SUPPORT,
+        safari: SupportStatus.NOT_SUPPORTED,
+        ddg: SupportStatus.FULL_SUPPORT
+      }
+    },
+    {
       icon: "v3/Shield-Color-24.svg",
       title: t3("comparison_blockTrackers"),
       statuses: {
@@ -11895,6 +11963,205 @@
         stateMachine: "State Machine 2"
       }
     )));
+  }
+
+  // pages/onboarding/app/components/ToggleButton.module.css
+  var ToggleButton_default = {
+    button: "ToggleButton_button",
+    selected: "ToggleButton_selected",
+    buttonText: "ToggleButton_buttonText",
+    radioButton: "ToggleButton_radioButton",
+    radioCircle: "ToggleButton_radioCircle",
+    radioCheckmark: "ToggleButton_radioCheckmark",
+    radioCircleUnselected: "ToggleButton_radioCircleUnselected"
+  };
+
+  // pages/onboarding/app/components/ToggleButton.js
+  var RadioButton = {
+    Selected: () => /* @__PURE__ */ _("svg", { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none" }, /* @__PURE__ */ _("circle", { cx: "12", cy: "11", r: "10", className: ToggleButton_default.radioCircle }), /* @__PURE__ */ _(
+      "path",
+      {
+        d: "M16.7748 8.21423C17.0707 8.50409 17.0756 8.97894 16.7858 9.27484L12.2916 13.8626C11.507 14.6635 10.2174 14.6635 9.43279 13.8626L7.21423 11.5978C6.92437 11.3019 6.92927 10.8271 7.22516 10.5372C7.52106 10.2473 7.99591 10.2522 8.28577 10.5481L10.5043 12.8129C10.7008 13.0134 11.0236 13.0134 11.2201 12.8129L15.7142 8.22516C16.0041 7.92927 16.479 7.92437 16.7748 8.21423Z",
+        className: ToggleButton_default.radioCheckmark
+      }
+    )),
+    Unselected: () => /* @__PURE__ */ _("svg", { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none" }, /* @__PURE__ */ _("circle", { cx: "12", cy: "11", r: "9.25", strokeWidth: "1.5", className: ToggleButton_default.radioCircleUnselected }))
+  };
+  function ToggleButton({ label, selected, onClick }) {
+    return /* @__PURE__ */ _("button", { className: `${ToggleButton_default.button} ${selected ? ToggleButton_default.selected : ""}`, onClick }, /* @__PURE__ */ _("span", { className: ToggleButton_default.buttonText }, label), /* @__PURE__ */ _("span", { className: ToggleButton_default.radioButton }, selected ? /* @__PURE__ */ _(RadioButton.Selected, null) : /* @__PURE__ */ _(RadioButton.Unselected, null)));
+  }
+
+  // pages/onboarding/app/pages/AddressBarMode/AddressBarPreview.module.css
+  var AddressBarPreview_default = {
+    wrapper: "AddressBarPreview_wrapper",
+    image: "AddressBarPreview_image",
+    bgOverlay: "AddressBarPreview_bgOverlay",
+    bgReduced: "AddressBarPreview_bgReduced",
+    borderOverlay: "AddressBarPreview_borderOverlay",
+    borderReduced: "AddressBarPreview_borderReduced",
+    regularIcon: "AddressBarPreview_regularIcon",
+    extendedIcon: "AddressBarPreview_extendedIcon"
+  };
+
+  // pages/onboarding/app/pages/AddressBarMode/AddressBarPreview.js
+  var ICON_TRANSITION = { transition: "opacity 250ms ease-in-out" };
+  function AddressBarPreview({ isReduced, isDarkMode = false }) {
+    const colors = isDarkMode ? {
+      // Dark mode
+      outerBg: "#06092d",
+      starsOpacity: "0.1",
+      browserChrome: "#282828",
+      browserBorder: "#3c3c3c",
+      topBar: "#050505",
+      tabsArea: "#333",
+      addressBarBg: "#3d3d3d",
+      addressBarBorder: "#adc2fc",
+      iconPillBg: "#8fabf9",
+      iconPillIcons: "#3d3d3d",
+      searchIcon: "#8fabf9",
+      navArrows: "#fff",
+      navArrowsOpacity: "0.24"
+    } : {
+      // Light mode
+      outerBg: "transparent",
+      // Gradient applied via CSS on wrapper
+      starsOpacity: "0.2",
+      browserChrome: "#f2f2f2",
+      browserBorder: "#e6edff",
+      topBar: "#e0e0e0",
+      tabsArea: "#fafafa",
+      addressBarBg: "#fff",
+      addressBarBorder: "#adc2fc",
+      iconPillBg: "#3969ef",
+      iconPillIcons: "#fff",
+      searchIcon: "#3969ef",
+      navArrows: "#000",
+      navArrowsOpacity: "0.36"
+    };
+    const wrapperStyle = isDarkMode ? {} : { background: "linear-gradient(180deg, #b8d2fc 0%, #9ab8f8 50%, #7295f6 100%)", borderRadius: "8px" };
+    return /* @__PURE__ */ _("div", { className: AddressBarPreview_default.wrapper, style: wrapperStyle }, /* @__PURE__ */ _("svg", { fill: "none", viewBox: "0 0 432 208", xmlns: "http://www.w3.org/2000/svg", className: AddressBarPreview_default.image }, /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("clipPath", { id: "clip-main" }, /* @__PURE__ */ _("rect", { width: "432", height: "208", fill: "#fff", rx: "8" }))), /* @__PURE__ */ _("g", { clipPath: "url(#clip-main)" }, /* @__PURE__ */ _("rect", { width: "432", height: "208", fill: colors.outerBg, rx: "8" }), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#fff",
+        d: "M25.235 142c.824 0 1.53.588 1.648 1.294l.823 3.177c.118.588.706 1.176 1.294 1.294l3.177.823c.823.235 1.294.942 1.294 1.647 0 .824-.588 1.53-1.294 1.648l-3.177.823c-.588.118-1.176.706-1.294 1.294l-.823 3.177c-.235.823-.942 1.294-1.648 1.294-.823 0-1.53-.588-1.647-1.294L22.765 154c-.118-.588-.706-1.176-1.294-1.294l-3.177-.823c-.824-.235-1.294-.942-1.294-1.648 0-.823.588-1.529 1.294-1.647l3.177-.823c.588-.118 1.176-.706 1.294-1.294l.823-3.177c.235-.823.941-1.294 1.647-1.294m392-4c.824 0 1.53.588 1.648 1.294l.823 3.177c.118.588.706 1.176 1.294 1.294l3.177.823c.823.235 1.294.942 1.294 1.647 0 .824-.588 1.53-1.294 1.648l-3.177.823c-.588.118-1.176.706-1.294 1.294l-.823 3.177c-.235.823-.942 1.294-1.648 1.294-.823 0-1.529-.588-1.647-1.294l-.823-3.177c-.118-.588-.706-1.176-1.294-1.294l-3.177-.823c-.824-.235-1.294-.942-1.294-1.648 0-.823.588-1.529 1.294-1.647l3.177-.823c.588-.118 1.176-.706 1.294-1.294l.823-3.177c.235-.823.942-1.294 1.647-1.294m-10.147-15a3.1 3.1 0 0 1 3.089 3.088 3.1 3.1 0 0 1-3.089 3.089 3.1 3.1 0 0 1-3.088-3.089 3.1 3.1 0 0 1 3.088-3.088M7.5 122c1.375 0 2.5 1.125 2.5 2.5S8.875 127 7.5 127a2.507 2.507 0 0 1-2.5-2.5c0-1.375 1.125-2.5 2.5-2.5M20 106.25c.5 0 .928.357 1 .785l.5 1.929c.071.357.429.715.786.786l1.928.5c.5.143.786.571.786 1 0 .5-.358.929-.786 1l-1.928.5c-.357.071-.714.428-.786.785l-.5 1.929c-.143.5-.571.786-1 .786-.5 0-.929-.358-1-.786l-.5-1.929c-.072-.357-.43-.714-.786-.785l-1.928-.5a1.05 1.05 0 0 1-.786-1c0-.5.358-.929.786-1l1.928-.5c.357-.071.715-.429.786-.786l.5-1.929a1.05 1.05 0 0 1 1-.785M426.875 98a1.88 1.88 0 0 1 1.875 1.875 1.88 1.88 0 0 1-1.875 1.875A1.88 1.88 0 0 1 425 99.875 1.88 1.88 0 0 1 426.875 98M405.5 82c.75 0 1.393.536 1.5 1.179l.75 2.892c.107.536.643 1.072 1.179 1.179l2.892.75c.75.214 1.179.857 1.179 1.5 0 .75-.536 1.393-1.179 1.5l-2.892.75c-.536.107-1.072.643-1.179 1.179L407 95.82c-.214.75-.857 1.179-1.5 1.179-.75 0-1.393-.536-1.5-1.179l-.75-2.892c-.107-.536-.643-1.072-1.179-1.179l-2.892-.75c-.75-.214-1.179-.857-1.179-1.5 0-.75.536-1.393 1.179-1.5l2.892-.75c.536-.107 1.072-.643 1.179-1.179l.75-2.892c.214-.75.857-1.179 1.5-1.179m-393-14c1.375 0 2.5 1.125 2.5 2.5S13.875 73 12.5 73a2.507 2.507 0 0 1-2.5-2.5c0-1.375 1.125-2.5 2.5-2.5M417 61c.5 0 .929.358 1 .786l.5 1.928c.071.357.429.715.786.786l1.928.5c.5.143.786.571.786 1 0 .5-.358.929-.786 1l-1.928.5c-.357.071-.715.429-.786.786l-.5 1.928c-.143.5-.571.786-1 .786-.5 0-.929-.358-1-.786l-.5-1.928c-.071-.357-.429-.715-.786-.786l-1.928-.5a1.05 1.05 0 0 1-.786-1c0-.5.358-.929.786-1l1.928-.5c.357-.071.715-.429.786-.786l.5-1.928c.143-.5.571-.786 1-.786M27.5 45c.75 0 1.393.536 1.5 1.179l.75 2.892c.107.536.643 1.072 1.179 1.179l2.892.75c.75.214 1.179.857 1.179 1.5 0 .75-.536 1.393-1.179 1.5l-2.892.75c-.536.107-1.072.643-1.179 1.179L29 58.82c-.214.75-.857 1.179-1.5 1.179-.75 0-1.393-.536-1.5-1.179l-.75-2.892c-.107-.536-.643-1.072-1.179-1.179L21.18 54c-.75-.214-1.179-.857-1.179-1.5 0-.75.536-1.393 1.179-1.5l2.892-.75c.536-.107 1.072-.643 1.179-1.179L26 46.18c.214-.75.857-1.179 1.5-1.179",
+        opacity: colors.starsOpacity
+      }
+    ), /* @__PURE__ */ _("path", { fill: colors.browserChrome, d: "M32 30a8 8 0 0 1 8-8h352a8 8 0 0 1 8 8v178H32z" }), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: colors.browserBorder,
+        d: "M400 30a8 8 0 0 0-8-8v-2c5.523 0 10 4.477 10 10v180H30V30c0-5.523 4.477-10 10-10v2a8 8 0 0 0-8 8v178h368zm-8-10v2H40v-2z"
+      }
+    ), /* @__PURE__ */ _("path", { fill: colors.topBar, d: "M32 30a8 8 0 0 1 8-8h352a8 8 0 0 1 8 8v50H32z" }), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: colors.tabsArea,
+        d: "M166 37a8 8 0 0 0 8 8h75a8 8 0 0 1 8 8v3a8 8 0 0 1-8 8H55a8 8 0 0 1-8-8v-3a8 8 0 0 1 8-8h3a8 8 0 0 0 8-8v-5a8 8 0 0 1 8-8h84a8 8 0 0 1 8 8z"
+      }
+    ), /* @__PURE__ */ _("path", { fill: colors.tabsArea, d: "M32 53a8 8 0 0 1 8-8h352a8 8 0 0 1 8 8v28H32z" }), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: colors.navArrows,
+        fillOpacity: colors.navArrowsOpacity,
+        d: "M49.86 58.267a.469.469 0 0 0-.664-.663l-3.983 3.987a1.594 1.594 0 0 0 0 2.253l3.983 3.986a.469.469 0 0 0 .663-.663l-3.979-3.981h9.65a.469.469 0 0 0 0-.938h-9.65zm326.89.702c0-.26.21-.469.469-.469h9.562a.469.469 0 1 1 0 .938h-9.562a.47.47 0 0 1-.469-.47m0 3.751c0-.26.21-.469.469-.469h9.562a.469.469 0 1 1 0 .938h-9.562a.47.47 0 0 1-.469-.47m.469 3.282a.469.469 0 1 0 0 .938h9.562a.469.469 0 1 0 0-.938z"
+      }
+    ))), /* @__PURE__ */ _("div", { className: `${AddressBarPreview_default.bgOverlay} ${isReduced ? AddressBarPreview_default.bgReduced : ""}`, style: { backgroundColor: colors.addressBarBg } }), /* @__PURE__ */ _(
+      "div",
+      {
+        className: `${AddressBarPreview_default.borderOverlay} ${isReduced ? AddressBarPreview_default.borderReduced : ""}`,
+        style: { borderColor: colors.addressBarBorder }
+      }
+    ), /* @__PURE__ */ _(
+      "svg",
+      {
+        className: AddressBarPreview_default.regularIcon,
+        style: { opacity: isReduced ? 1 : 0, ...ICON_TRANSITION },
+        viewBox: "0 0 12 12",
+        fill: "none",
+        xmlns: "http://www.w3.org/2000/svg"
+      },
+      /* @__PURE__ */ _(
+        "path",
+        {
+          fill: colors.searchIcon,
+          d: "M5.25 0a5.25 5.25 0 0 1 4.049 8.592l2.555 2.555.064.078a.502.502 0 0 1-.693.693l-.079-.065-2.554-2.554A5.25 5.25 0 1 1 5.25 0m0 1a4.25 4.25 0 1 0 0 8.5 4.25 4.25 0 0 0 0-8.5"
+        }
+      )
+    ), /* @__PURE__ */ _(
+      "svg",
+      {
+        className: AddressBarPreview_default.extendedIcon,
+        style: { opacity: isReduced ? 0 : 1, ...ICON_TRANSITION },
+        viewBox: "0 0 56 20",
+        fill: "none",
+        xmlns: "http://www.w3.org/2000/svg"
+      },
+      /* @__PURE__ */ _(
+        "path",
+        {
+          fill: colors.iconPillBg,
+          d: "M0 10c0-5.523 4.477-10 10-10h36c5.523 0 10 4.477 10 10s-4.477 10-10 10H10C4.477 20 0 15.523 0 10"
+        }
+      ),
+      /* @__PURE__ */ _(
+        "path",
+        {
+          fill: colors.iconPillIcons,
+          d: "M46 2a8 8 0 0 1 0 16H36a8 8 0 0 1 0-16zm-31.75 2a5.25 5.25 0 0 1 4.049 8.592l2.555 2.555.064.078a.502.502 0 0 1-.693.693l-.079-.065-2.554-2.554A5.25 5.25 0 1 1 14.25 4M42 4c-3.314 0-6 2.392-6 5.344 0 1.48.676 2.82 1.769 3.788.239.212.284.58.075.822l-.971 1.118a.531.531 0 0 0 .488.877c1.992-.342 5.481-1.003 6.9-1.654 2.193-.795 3.739-2.712 3.739-4.951C48 6.392 45.314 4 42 4m0 1c2.873 0 5 2.05 5 4.344 0 1.748-1.213 3.333-3.08 4.01l-.038.015-.038.017c-.601.275-1.73.585-3.035.876-.777.173-1.582.333-2.316.47l.106-.123c.611-.704.432-1.694-.167-2.225-.903-.8-1.432-1.877-1.432-3.04C37 7.05 39.127 5 42 5m-27.75 0a4.25 4.25 0 1 0 0 8.5 4.25 4.25 0 0 0 0-8.5m28.035 1.453c-.074-.297-.496-.296-.57 0l-.165.658a2.45 2.45 0 0 1-1.782 1.784l-.659.164c-.296.074-.296.496 0 .57l.659.165c.877.22 1.562.905 1.782 1.782l.165.658c.074.297.496.297.57 0l.164-.658a2.45 2.45 0 0 1 1.783-1.782l.659-.165c.296-.075.296-.496 0-.57l-.659-.164a2.45 2.45 0 0 1-1.783-1.784z"
+        }
+      )
+    ));
+  }
+
+  // pages/onboarding/app/pages/AddressBarMode/AddressBarMode.module.css
+  var AddressBarMode_default = {
+    container: "AddressBarMode_container",
+    body: "AddressBarMode_body",
+    buttons: "AddressBarMode_buttons",
+    footer: "AddressBarMode_footer",
+    starIcon: "AddressBarMode_starIcon",
+    footerText: "AddressBarMode_footerText"
+  };
+
+  // pages/onboarding/app/pages/AddressBarMode/AddressBarMode.js
+  function AddressBarMode() {
+    const { t: t3 } = useTypedTranslation();
+    const { isDarkMode } = useEnv();
+    const dispatch = x2(GlobalDispatch);
+    const { status } = useGlobalState();
+    const [selectedOption, setSelectedOption] = d2("search-and-duckai");
+    const isPending = status.kind === "executing";
+    const dispatchPreference = (option) => {
+      dispatch({
+        kind: "update-system-value",
+        id: "address-bar-mode",
+        payload: { enabled: option === "search-and-duckai" },
+        current: true
+      });
+    };
+    y2(() => {
+      dispatchPreference(selectedOption);
+    }, []);
+    const handleSelection = (option) => {
+      if (option === selectedOption || isPending) return;
+      setSelectedOption(option);
+      dispatchPreference(option);
+    };
+    return /* @__PURE__ */ _(SlideIn2, null, /* @__PURE__ */ _(Stack, { className: AddressBarMode_default.container, gap: Stack.gaps["0"] }, /* @__PURE__ */ _(Stack, { className: AddressBarMode_default.body, gap: "10px" }, /* @__PURE__ */ _(AddressBarPreview, { isReduced: selectedOption === "search-only", isDarkMode }), /* @__PURE__ */ _("div", { className: AddressBarMode_default.buttons }, /* @__PURE__ */ _(
+      ToggleButton,
+      {
+        label: t3("addressBarMode_searchAndDuckAi"),
+        selected: selectedOption === "search-and-duckai",
+        onClick: () => handleSelection("search-and-duckai")
+      }
+    ), /* @__PURE__ */ _(
+      ToggleButton,
+      {
+        label: t3("addressBarMode_searchOnly"),
+        selected: selectedOption === "search-only",
+        onClick: () => handleSelection("search-only")
+      }
+    ))), /* @__PURE__ */ _("div", { className: AddressBarMode_default.footer }, /* @__PURE__ */ _("img", { src: "assets/img/steps/v3/Star-Color-24.svg", alt: "", className: AddressBarMode_default.starIcon }), /* @__PURE__ */ _("span", { className: AddressBarMode_default.footerText }, /* @__PURE__ */ _(Trans, { str: t3("addressBarMode_footer"), values: {} })))));
   }
 
   // pages/onboarding/app/components/v3/ElasticButton.js
@@ -12131,10 +12398,11 @@
         content: /* @__PURE__ */ _(DuckPlayerStep, null)
       };
     },
-    customize: ({ t: t3, globalState, dismiss }) => {
-      const { step, activeRow } = globalState;
+    customize: ({ t: t3, globalState, advance, dismiss }) => {
+      const { step, activeRow, order, activeStep } = globalState;
       const isDone = activeRow >= /** @type {import('../../types').CustomizeStep} */
       step.rows.length;
+      const isLastStep = order[order.length - 1] === activeStep;
       return {
         variant: "box",
         heading: {
@@ -12142,12 +12410,30 @@
           subtitle: t3("customize_subtitle_v3"),
           speechBubble: true
         },
-        acceptButton: isDone ? {
+        acceptButton: isDone ? isLastStep ? {
           text: t3("startBrowsing"),
           endIcon: /* @__PURE__ */ _(Launch, null),
           handler: dismiss
+        } : {
+          text: t3("nextButton"),
+          handler: advance
         } : null,
         content: /* @__PURE__ */ _(SettingsStep2, { data: settingsRowItems2 })
+      };
+    },
+    addressBarMode: ({ t: t3, dismiss }) => {
+      return {
+        variant: "box",
+        heading: {
+          title: t3("addressBarMode_title"),
+          speechBubble: true
+        },
+        acceptButton: {
+          text: t3("startBrowsing"),
+          endIcon: /* @__PURE__ */ _(Launch, null),
+          handler: dismiss
+        },
+        content: /* @__PURE__ */ _(AddressBarMode, null)
       };
     }
   };
@@ -12233,6 +12519,14 @@
       secondaryText: t3("row_youtube-ad-blocking_desc_v3"),
       kind: "one-time",
       acceptText: t3("row_youtube-ad-blocking_accept_v3"),
+      accepButtonVariant: "primary"
+    }),
+    "address-bar-mode": (t3) => ({
+      id: "address-bar-mode",
+      icon: "v3/Ai-Chat-Color-24.svg",
+      title: t3("addressBarMode_title"),
+      kind: "toggle",
+      acceptText: t3("startBrowsing"),
       accepButtonVariant: "primary"
     })
   };

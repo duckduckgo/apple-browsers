@@ -111,4 +111,53 @@ struct SubscriptionNavigationCoordinatorTests {
         #expect(url.absoluteString.contains("featurePage=duckai"))
     }
 
+    @Test("navigateToSubscriptionPlans fetches plans URL and shows subscription tab")
+    func navigateToSubscriptionPlans() async throws {
+        let (coordinator, mockTabShower, mockSubscriptionManager) = createCoordinator()
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        mockSubscriptionManager.urls[.plans] = expectedURL
+
+        coordinator.navigateToSubscriptionPlans(origin: nil, featurePage: "duckai")
+
+        // Verify tab shower was called to show tab with subscription content
+        #expect(mockTabShower.capturedContent != nil)
+
+        guard case let .subscription(url) = mockTabShower.capturedContent else {
+            Issue.record("Expected .subscription tab content")
+            return
+        }
+
+        // Verify the base URL is correct
+        #expect(url.host == expectedURL.host)
+        #expect(url.path == expectedURL.path)
+        // Verify the URL contains the featurePage=duckai parameter
+        #expect(url.absoluteString.contains("featurePage=duckai"))
+    }
+
+    @Test("navigateToSubscriptionPlans fetches plans URL and shows subscription tab with origin")
+    func navigateToSubscriptionPlansWithOrigin() async throws {
+        let (coordinator, mockTabShower, mockSubscriptionManager) = createCoordinator()
+        let baseURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        let origin = "funnel_duckai_macos__modelpicker"
+        mockSubscriptionManager.urls[.plans] = baseURL
+
+        coordinator.navigateToSubscriptionPlans(origin: origin, featurePage: "duckai")
+
+        // Verify tab shower was called to show tab with subscription content
+        #expect(mockTabShower.capturedContent != nil)
+
+        guard case let .subscription(url) = mockTabShower.capturedContent else {
+            Issue.record("Expected .subscription tab content")
+            return
+        }
+
+        // Verify the base URL is correct
+        #expect(url.host == baseURL.host)
+        #expect(url.path == baseURL.path)
+        // Verify the URL contains the origin parameter
+        #expect(url.absoluteString.contains("origin=\(origin)"))
+        // Verify the URL contains the featurePage=duckai parameter
+        #expect(url.absoluteString.contains("featurePage=duckai"))
+    }
+
 }

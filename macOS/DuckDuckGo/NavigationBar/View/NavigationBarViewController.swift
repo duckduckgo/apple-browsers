@@ -525,43 +525,6 @@ final class NavigationBarViewController: NSViewController {
         updateNavigationBarForCurrentWidth()
     }
 
-    /**
-     * Presents History View onboarding.
-     *
-     * This is gater by the decider that takes into account whether the user is new,
-     * whether they've seen the popover already and whether the feature flag is enabled.
-     *
-     * > `force` parameter is only used by `HistoryDebugMenu`.
-     */
-    func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
-        guard !isInPopUpWindow else { return }
-
-        let onboardingDecider = HistoryViewOnboardingDecider()
-        guard force || onboardingDecider.shouldPresentOnboarding,
-              !tabCollectionViewModel.isBurner,
-              view.window?.isKeyWindow == true
-        else {
-            return
-        }
-
-        // If we're on history tab, we don't show the onboarding and mark it as shown,
-        // assuming that the user is onboarded
-        guard tabCollectionViewModel.selectedTabViewModel?.tab.content.isHistory != true else {
-            onboardingDecider.skipPresentingOnboarding()
-            return
-        }
-
-        popovers.showHistoryViewOnboardingPopover(from: optionsButton, withDelegate: self) { [weak self] showHistory in
-            guard let self else { return }
-
-            popovers.closeHistoryViewOnboardingViewPopover()
-
-            if showHistory {
-                tabCollectionViewModel.insertOrAppendNewTab(.anyHistoryPane, selected: true)
-            }
-        }
-    }
-
     func resizeAddressBar(for sizeClass: AddressBarSizeClass, animated: Bool) {
         daxFadeInAnimation?.cancel()
         heightChangeAnimation?.cancel()

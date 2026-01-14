@@ -37,6 +37,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     let subscriptionManager: any SubscriptionManager
     let subscriptionUserDefaults: UserDefaults
     let wideEvent: WideEventManaging
+    let subscriptionSelectionHandler: SubscriptionSelectionHandler?
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -49,7 +50,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                 openSubscriptionTab: @escaping (URL) -> Void,
                 subscriptionManager: any SubscriptionManager,
                 subscriptionUserDefaults: UserDefaults,
-                wideEvent: WideEventManaging) {
+                wideEvent: WideEventManaging,
+                subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil) {
         self.currentEnvironment = currentEnvironment
         self.updateServiceEnvironment = updateServiceEnvironment
         self.updatePurchasingPlatform = updatePurchasingPlatform
@@ -59,6 +61,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         self.subscriptionManager = subscriptionManager
         self.subscriptionUserDefaults = subscriptionUserDefaults
         self.wideEvent = wideEvent
+        self.subscriptionSelectionHandler = subscriptionSelectionHandler
         super.init(title: "Subscription", action: nil, keyEquivalent: "")
         self.submenu = makeSubmenu()
     }
@@ -78,7 +81,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
             menu.addItem(.separator())
             menu.addItem(NSMenuItem(title: "Sync App Store AppleID Account (re- sign-in)", action: #selector(syncAppleIDAccount), target: self))
             menu.addItem(NSMenuItem(title: "Purchase Subscription from App Store", action: #selector(showPurchaseView), target: self))
-            menu.addItem(NSMenuItem(title: "Buy Available Subscriptions", action: #selector(showBuyProductionSubscriptions), target: self))
+            menu.addItem(NSMenuItem(title: "Change Tier", action: #selector(showBuyProductionSubscriptions), target: self))
             menu.addItem(NSMenuItem(title: "Restore Subscription from App Store transaction", action: #selector(restorePurchases), target: self))
         }
 
@@ -463,8 +466,11 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     @objc
     func showBuyProductionSubscriptions(_ sender: Any?) {
         if #available(macOS 12.0, *) {
-            let viewController = ProductionSubscriptionPurchaseViewController(subscriptionManager: subscriptionManager)
-            viewController.title = "Buy Available Subscriptions"
+            let viewController = ProductionSubscriptionPurchaseViewController(
+                subscriptionManager: subscriptionManager,
+                subscriptionSelectionHandler: subscriptionSelectionHandler
+            )
+            viewController.title = "Change Tier"
             currentViewController()?.presentAsSheet(viewController)
         }
     }

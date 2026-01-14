@@ -196,7 +196,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
         subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
         protectionsReportModel: newTabPageProtectionsReportModel,
-        homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
+        homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
+        nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
+        subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
+        duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor()
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -687,7 +690,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
         )
-        tabsPreferences = TabsPreferences(persistor: TabsPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        tabsPreferences = TabsPreferences(
+            persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
+            windowControllersManager: windowControllersManager
+        )
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
 
@@ -1128,7 +1134,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
-
         BWManager.shared.initCommunication()
 
         if case .normal = AppVersion.runType,
@@ -1329,6 +1334,100 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard featureFlagger.isFeatureOn(.terminationDeciderSequence) else {
+            return applicationShouldTerminateFallback()
+        }
+
+        let handler = TerminationDeciderHandler()
+        let deciders = createTerminationDeciders()
+        return handler.executeTerminationDeciders(deciders, isAsync: false)
+    }
+
+    @MainActor
+    private func createTerminationDeciders() -> [ApplicationTerminationDecider] {
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+
+        let deciders: [ApplicationTerminationDecider?] = [
+            // 1. Quit survey (for new users within first 3 days)
+            QuitSurveyAppTerminationDecider(
+                featureFlagger: featureFlagger,
+                dataClearingPreferences: dataClearingPreferences,
+                downloadManager: downloadManager,
+                installDate: AppDelegate.firstLaunchDate,
+                persistor: persistor,
+                reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+                showQuitSurvey: { [weak self] in
+                    guard let self else { return }
+                    let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor)
+                    await presenter.showSurvey()
+                }
+            ),
+
+            // 2. Active downloads check
+            ActiveDownloadsAppTerminationDecider(
+                downloadManager: downloadManager,
+                downloadListCoordinator: downloadListCoordinator
+            ),
+
+            // 3. Warn before quit confirmation
+            makeWarnBeforeQuitDecider(),
+
+            // 4. Update controller cleanup
+            updateController.map(UpdateControllerAppTerminationDecider.init),
+
+            // 5. State restoration
+            StateRestorationAppTerminationDecider(
+                stateRestorationManager: stateRestorationManager
+            ),
+
+            // 6. Auto-clear (burn on quit)
+            autoClearHandler,
+
+            // 7. Privacy stats cleanup
+            PrivacyStatsAppTerminationDecider(
+                privacyStats: privacyStats
+            ),
+        ]
+
+        return deciders.compactMap { $0 }
+    }
+
+    @MainActor
+    private func makeWarnBeforeQuitDecider() -> ApplicationTerminationDecider? {
+        // Don't show "warn before quit" if autoclear warning will be shown
+        let willShowAutoClearWarning = dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isWarnBeforeClearingEnabled
+
+        // Don't show if no window is open
+        let hasWindow = windowControllersManager.lastKeyMainWindowController?.window != nil
+
+        guard featureFlagger.isFeatureOn(.warnBeforeQuit),
+              !willShowAutoClearWarning,
+              hasWindow,
+              let currentEvent = NSApp.currentEvent,
+              let manager = WarnBeforeQuitManager(
+                currentEvent: currentEvent,
+                isWarningEnabled: { [tabsPreferences] in
+                    tabsPreferences.warnBeforeQuitting
+                }
+              ) else { return nil }
+
+        let presenter = WarnBeforeQuitOverlayPresenter(
+            startupPreferences: startupPreferences,
+            onDontAskAgain: { [tabsPreferences] in
+                tabsPreferences.warnBeforeQuitting = false
+            },
+            onHoverChange: { [weak manager] isHovering in
+                manager?.setMouseHovering(isHovering)
+            }
+        )
+        // Subscribe to state stream (the Task keeps presenter alive)
+        presenter.subscribe(to: manager.stateStream)
+        return manager
+    }
+
+    // Original Termination Handler (Fallback - To be removed)
+    @MainActor
+    private func applicationShouldTerminateFallback() -> NSApplication.TerminateReply {
         // Show quit survey for first-time quitters (new users within 14 days)
         let decider = QuitSurveyDecider(
             featureFlagger: featureFlagger,
@@ -1341,7 +1440,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if decider.shouldShowQuitSurvey {
             decider.markQuitSurveyShown()
-            showQuitSurvey()
+            let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+            let presenter = QuitSurveyPresenter(windowControllersManager: windowControllersManager, persistor: persistor)
+            presenter.showSurveySyncFallback()
             return .terminateLater
         }
 
@@ -1351,7 +1452,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if !activeDownloads.isEmpty {
                 let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
                 let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
-                    // close alert and burn the window when all downloads finished
+                    // close alert and quit when all downloads finished
                     NSApp.stopModal(withCode: .OK)
                 }
                 let response = alert.runModal()
@@ -1370,7 +1471,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateRestorationManager?.applicationWillTerminate()
 
         // Handling of "Burn on quit"
-        if let terminationReply = autoClearHandler.handleAppTermination() {
+        if let terminationReply = autoClearHandler.handleAppTerminationFallback() {
             return terminationReply
         }
 
@@ -1386,55 +1487,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             condition.resolve()
         }
         RunLoop.current.run(until: condition)
-    }
-
-    // MARK: - Quit Survey
-
-    @MainActor private func showQuitSurvey() {
-        var quitSurveyWindow: NSWindow?
-
-        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let surveyView = QuitSurveyFlowView(
-            persistor: persistor,
-            onQuit: {
-                if let parentWindow = quitSurveyWindow?.sheetParent {
-                    parentWindow.endSheet(quitSurveyWindow!)
-                } else {
-                    quitSurveyWindow?.close()
-                }
-                NSApp.reply(toApplicationShouldTerminate: true)
-            },
-            onResize: { width, height in
-                guard let window = quitSurveyWindow else { return }
-                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
-                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
-                window.setFrame(newFrame, display: true, animate: false)
-            }
-        )
-
-        let controller = QuitSurveyViewController(rootView: surveyView)
-        quitSurveyWindow = NSWindow(contentViewController: controller)
-
-        guard let window = quitSurveyWindow else { return }
-
-        window.styleMask.remove(.resizable)
-        let windowRect = NSRect(
-            x: 0,
-            y: 0,
-            width: QuitSurveyViewController.Constants.initialWidth,
-            height: QuitSurveyViewController.Constants.initialHeight
-        )
-        window.setFrame(windowRect, display: true)
-
-        // Show as sheet on the main window, or as standalone window if no main window
-        if let parentWindowController = windowControllersManager.lastKeyMainWindowController,
-           let parentWindow = parentWindowController.window {
-            parentWindow.beginSheet(window) { _ in }
-        } else {
-            // Fallback: show as a centered window
-            window.center()
-            window.makeKeyAndOrderFront(nil)
-        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -1703,9 +1755,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()
-            autoClearHandler.onAutoClearCompleted = {
-                NSApplication.shared.reply(toApplicationShouldTerminate: true)
-            }
         }
     }
 
@@ -1803,7 +1852,10 @@ extension AppDelegate: UserScriptDependenciesProviding {
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
             subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
             protectionsReportModel: newTabPageProtectionsReportModel,
-            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
+            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
+            nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
+            subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
+            duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor()
         )
     }
 }

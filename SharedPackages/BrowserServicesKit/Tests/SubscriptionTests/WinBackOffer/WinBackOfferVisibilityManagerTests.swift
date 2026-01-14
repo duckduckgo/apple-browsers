@@ -439,7 +439,8 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
             platform: .apple,
             status: status,
             activeOffers: [],
-            tier: nil
+            tier: nil,
+            availableChanges: nil
         )
     }
 }

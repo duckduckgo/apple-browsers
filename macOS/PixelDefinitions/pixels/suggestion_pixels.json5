@@ -4,7 +4,7 @@
         "description": "Fires when the user selects a phrase suggestion from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["daily"],
         "parameters": [
             {
                 "key": "source",
@@ -20,7 +20,7 @@
         "description": "Fires when the user selects a website suggestion from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["daily"],
         "parameters": [
             {
                 "key": "source",
@@ -36,7 +36,7 @@
         "description": "Fires when the user selects a history entry from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["daily"],
         "parameters": [
             {
                 "key": "source",
@@ -52,7 +52,7 @@
         "description": "Fires when the user selects a bookmark from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["daily"],
         "parameters": [
             {
                 "key": "source",
@@ -68,7 +68,7 @@
         "description": "Fires when the user selects a favorite from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["daily"],
         "parameters": [
             {
                 "key": "source",
@@ -84,7 +84,7 @@
         "description": "Fires when the user selects an open tab from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["daily"],
         "parameters": [
             {
                 "key": "source",

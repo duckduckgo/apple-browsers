@@ -1069,6 +1069,20 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_ios_dbp_event_scanning-events_new-match": {
+        "description": "Fired when a new matching profile is found during a scan",
+        "owners": ["quanganhdo", "edulpn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+    },
+    "m_ios_dbp_event_scanning-events_re-appearance": {
+        "description": "Fired when a previously removed profile re-appears on a data broker during a scan",
+        "owners": ["quanganhdo", "edulpn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+    },
     "m_ios_dbp_databroker_custom_stats_optoutsubmit": {
         "description": "Fired daily with per-broker opt-out submission success rate stats.",
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],

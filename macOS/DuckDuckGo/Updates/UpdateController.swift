@@ -208,3 +208,16 @@ extension UpdateController {
         PixelKit.fire(UpdateFlowPixels.updateNotificationShown)
     }
 }
+
+// MARK: - ApplicationTerminationDecider
+
+/// Wrapper for update controller termination logic
+@MainActor
+struct UpdateControllerAppTerminationDecider: ApplicationTerminationDecider {
+    let updateController: UpdateController
+
+    func shouldTerminate(isAsync: Bool) -> TerminationQuery {
+        updateController.handleAppTermination()
+        return .sync(.next)
+    }
+}

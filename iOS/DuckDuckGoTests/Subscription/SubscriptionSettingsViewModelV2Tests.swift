@@ -191,7 +191,7 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
         await waitForSubscriptionUpdate()
 
         // When
-        sut.viewAllPlans()
+        sut.navigateToPlans()
 
         // Then
         XCTAssertTrue(sut.state.isShowingPlansView)
@@ -206,7 +206,7 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
         await waitForSubscriptionUpdate()
 
         // When
-        sut.viewAllPlans()
+        sut.navigateToPlans()
 
         // Then
         XCTAssertTrue(sut.state.isShowingGoogleView)
@@ -230,7 +230,7 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
             .sink { _ in stripeViewExpectation.fulfill() }
             .store(in: &cancellables)
 
-        sut.viewAllPlans()
+        sut.navigateToPlans()
 
         // Then - Wait for isShowingStripeView to become true
         await fulfillment(of: [stripeViewExpectation], timeout: 2.0)
@@ -246,7 +246,7 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
         await waitForSubscriptionUpdate()
 
         // When
-        sut.viewAllPlans()
+        sut.navigateToPlans()
 
         // Then
         XCTAssertTrue(sut.state.isShowingInternalSubscriptionNotice)
@@ -268,6 +268,255 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
 
         // Then
         XCTAssertFalse(sut.state.isShowingPlansView)
+    }
+
+    // MARK: - Upgrade Section Visibility Tests
+
+    func testShouldShowUpgrade_WhenNoSubscription_ReturnsFalse() {
+        // Given - No subscription
+        mockSubscriptionManager.resultSubscription = nil
+        sut = makeSUT()
+
+        // Then
+        XCTAssertFalse(sut.shouldShowUpgrade)
+    }
+
+    func testShouldShowUpgrade_WhenSubscriptionInactive_ReturnsFalse() async {
+        // Given - Inactive subscription with available upgrades
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
+            downgrade: []
+        )
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+            status: .expired,
+            tier: .plus,
+            availableChanges: availableChanges
+        )
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then
+        XCTAssertFalse(sut.shouldShowUpgrade)
+    }
+
+    func testShouldShowUpgrade_WhenFeatureFlagDisabled_ReturnsFalse() async {
+        // Given - Active subscription with available upgrades but feature flag OFF
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
+            downgrade: []
+        )
+        mockFeatureFlagger.enabledFeatureFlags = [] // Feature flag OFF
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .plus,
+            availableChanges: availableChanges
+        )
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then
+        XCTAssertFalse(sut.shouldShowUpgrade)
+    }
+
+    func testShouldShowUpgrade_WhenNoAvailableUpgrades_ReturnsFalse() async {
+        // Given - Active subscription with feature flag ON but no available upgrades
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .plus,
+            availableChanges: DuckDuckGoSubscription.AvailableChanges(upgrade: [], downgrade: [])
+        )
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then
+        XCTAssertFalse(sut.shouldShowUpgrade)
+    }
+
+    func testShouldShowUpgrade_WhenAllConditionsMet_ReturnsTrue() async {
+        // Given - Active subscription with feature flag ON and available upgrades
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
+            downgrade: []
+        )
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .plus,
+            availableChanges: availableChanges
+        )
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then
+        XCTAssertTrue(sut.shouldShowUpgrade)
+    }
+
+    // MARK: - First Available Upgrade Tier Tests
+
+    func testFirstAvailableUpgradeTier_WhenNoSubscription_ReturnsNil() {
+        // Given
+        mockSubscriptionManager.resultSubscription = nil
+        sut = makeSUT()
+
+        // Then
+        XCTAssertNil(sut.firstAvailableUpgradeTier)
+    }
+
+    func testFirstAvailableUpgradeTier_WhenNoAvailableChanges_ReturnsNil() async {
+        // Given
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .plus,
+            availableChanges: nil
+        )
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then
+        XCTAssertNil(sut.firstAvailableUpgradeTier)
+    }
+
+    func testFirstAvailableUpgradeTier_WhenEmptyUpgrades_ReturnsNil() async {
+        // Given
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .plus,
+            availableChanges: DuckDuckGoSubscription.AvailableChanges(upgrade: [], downgrade: [])
+        )
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then
+        XCTAssertNil(sut.firstAvailableUpgradeTier)
+    }
+
+    func testFirstAvailableUpgradeTier_ReturnsTierWithLowestOrder() async {
+        // Given - Multiple upgrades with different orders
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [
+                DuckDuckGoSubscription.TierChange(tier: "ultra", productIds: [], order: 3),
+                DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1),
+                DuckDuckGoSubscription.TierChange(tier: "premium", productIds: [], order: 2)
+            ],
+            downgrade: []
+        )
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .plus,
+            availableChanges: availableChanges
+        )
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then - Should return "pro" (lowest order = 1)
+        XCTAssertEqual(sut.firstAvailableUpgradeTier, "pro")
+    }
+
+    // MARK: - Navigate To Plans (Upgrade) Action Tests
+
+    func testNavigateToPlans_WithGoToUpgrade_WhenApplePlatform_SetsIsShowingUpgradeViewTrue() async {
+        // Given - Apple platform subscription
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
+            downgrade: []
+        )
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            platform: .apple,
+            tier: .plus,
+            availableChanges: availableChanges
+        )
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+        await waitForSubscriptionUpdate()
+
+        // When
+        sut.navigateToPlans(goToUpgrade: true)
+
+        // Then
+        XCTAssertTrue(sut.state.isShowingUpgradeView)
+        XCTAssertFalse(sut.state.isShowingPlansView)
+    }
+
+    func testNavigateToPlans_WithoutGoToUpgrade_WhenApplePlatform_SetsIsShowingPlansViewTrue() async {
+        // Given - Apple platform subscription
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            platform: .apple,
+            tier: .plus
+        )
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+        await waitForSubscriptionUpdate()
+
+        // When
+        sut.navigateToPlans(goToUpgrade: false)
+
+        // Then
+        XCTAssertTrue(sut.state.isShowingPlansView)
+        XCTAssertFalse(sut.state.isShowingUpgradeView)
+    }
+
+    func testNavigateToPlans_WithGoToUpgrade_WhenGooglePlatform_SetsIsShowingGoogleViewTrue() async {
+        // Given - Google platform subscription
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            platform: .google,
+            tier: .plus
+        )
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+        await waitForSubscriptionUpdate()
+
+        // When
+        sut.navigateToPlans(goToUpgrade: true)
+
+        // Then - Google shows the same view regardless of goToUpgrade
+        XCTAssertTrue(sut.state.isShowingGoogleView)
+    }
+
+    func testDisplayUpgradeView_UpdatesState() {
+        // Given
+        sut = makeSUT()
+        XCTAssertFalse(sut.state.isShowingUpgradeView)
+
+        // When
+        sut.displayUpgradeView(true)
+
+        // Then
+        XCTAssertTrue(sut.state.isShowingUpgradeView)
+
+        // When
+        sut.displayUpgradeView(false)
+
+        // Then
+        XCTAssertFalse(sut.state.isShowingUpgradeView)
     }
 
     // MARK: - Helpers

@@ -150,6 +150,7 @@ public extension URL {
 
         static let source = "ddg_ios"
         static let appUsage = "app_use"
+        static let duckAI = "duckai"
         static let searchHeader = "-1"
         static let kbgDisabled = "-1"
         static let emailEnabled = "1"
@@ -193,6 +194,8 @@ public extension URL {
     static var searchAtb: URL? { defaultStatisticsDependentURLFactory.makeSearchAtbURL() }
 
     static var appAtb: URL? { defaultStatisticsDependentURLFactory.makeAppAtbURL() }
+
+    static var duckAIAtb: URL? { defaultStatisticsDependentURLFactory.makeDuckAIAtbURL() }
 
     var hasCorrectMobileStatsParams: Bool { URL.defaultStatisticsDependentURLFactory.hasCorrectMobileStatsParams(url: self) }
 
@@ -284,6 +287,24 @@ public final class StatisticsDependentURLFactory {
             URL.Param.setAtb: setAtb,
             URL.Param.email: EmailManager().isSignedIn ? URL.ParamValue.emailEnabled : URL.ParamValue.emailDisabled
         ])
+    }
+
+    func makeDuckAIAtbURL() -> URL? {
+        guard let atbWithVariant = statisticsStore.atbWithVariant else {
+            return nil
+        }
+
+        var params: [String: String] = [
+            URL.Param.atb: atbWithVariant,
+            URL.Param.activityType: URL.ParamValue.duckAI
+        ]
+
+        // set_atb is nil for first prompt (backend identifies this as first-ever prompt)
+        if let setAtb = statisticsStore.duckAIRetentionAtb {
+            params[URL.Param.setAtb] = setAtb
+        }
+
+        return URL.atb.appendingParameters(params)
     }
 
     func hasCorrectMobileStatsParams(url: URL) -> Bool {

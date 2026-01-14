@@ -26,10 +26,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473245911
     case scamSiteProtection
 
-    /// Add experimental atb parameter to SERP queries for internal users to display Privacy Reminder
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472784764
-    case appendAtbToSerpQueries
-
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614987519
     case freemiumDBP
 
@@ -262,6 +258,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Prioritize results where the domain matches the search query when searching passwords & autofill
     case autofillPasswordSearchPrioritizeDomain
 
+    /// Warn before quit confirmation overlay
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
+    case warnBeforeQuit
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
     case dataImportWideEventMeasurement
 
@@ -394,14 +394,14 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newPermissionView,
                 .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain,
+                .warnBeforeQuit,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
                 .aiChatSync,
                 .heuristicAction,
                 .nextStepsSingleCardIteration:
             return true
-        case .appendAtbToSerpQueries,
-                .freemiumDBP,
+        case .freemiumDBP,
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
@@ -415,8 +415,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var source: FeatureFlagSource {
         switch self {
-        case .appendAtbToSerpQueries:
-            return .internalOnly()
         case .unknownUsernameCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.unknownUsernameCategorization))
         case .freemiumDBP:
@@ -565,6 +563,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.terminationDeciderSequence))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
+        case .warnBeforeQuit:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:

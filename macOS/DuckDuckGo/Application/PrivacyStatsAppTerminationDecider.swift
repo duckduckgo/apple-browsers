@@ -1,5 +1,5 @@
 //
-//  PrivacyStatsTerminationDecider.swift
+//  PrivacyStatsAppTerminationDecider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

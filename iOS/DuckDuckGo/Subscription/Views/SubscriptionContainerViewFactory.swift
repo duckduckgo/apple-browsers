@@ -50,7 +50,7 @@ enum SubscriptionContainerViewFactory {
             return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
         }()
 
-        let origin = redirectURLComponents?.url?.getParameter(named: AttributionParameter.origin)
+        let origin = redirectURLComponents?.queryItems?.first(where: { $0.name == AttributionParameter.origin })?.value
 
 
         let viewModel = SubscriptionContainerViewModel(
@@ -122,7 +122,7 @@ enum SubscriptionContainerViewFactory {
                                                                  appStoreRestoreFlow: appStoreRestoreFlow,
                                                                  wideEvent: wideEvent)
 
-        let origin = redirectURLComponents?.url?.getParameter(named: AttributionParameter.origin)
+        let origin = redirectURLComponents?.queryItems?.first(where: { $0.name == AttributionParameter.origin })?.value
 
         // Build plans URL from subscription manager (respects custom base URL)
         // and preserve all query parameters from redirectURLComponents

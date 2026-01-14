@@ -118,6 +118,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         static let getSubscriptionOptions = "getSubscriptionOptions"
         static let getSubscriptionTierOptions = "getSubscriptionTierOptions"
         static let subscriptionSelected = "subscriptionSelected"
+        static let subscriptionChangeSelected = "subscriptionChangeSelected"
         static let activateSubscription = "activateSubscription"
         static let featureSelected = "featureSelected"
         static let completeStripePayment = "completeStripePayment"
@@ -142,6 +143,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         case Handlers.getSubscriptionOptions: return getSubscriptionOptions
         case Handlers.getSubscriptionTierOptions: return getSubscriptionTierOptions
         case Handlers.subscriptionSelected: return subscriptionSelected
+        case Handlers.subscriptionChangeSelected: return subscriptionChangeSelected
         case Handlers.activateSubscription: return activateSubscription
         case Handlers.featureSelected: return featureSelected
         case Handlers.completeStripePayment: return completeStripePayment
@@ -338,10 +340,9 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                                                                          storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
                                                                          wideEvent: wideEvent)
-
                 // 6: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
                 Logger.subscription.log("[Purchase] Purchasing")
-                let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id)
+                let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
 
                 switch purchaseResult {
                 case .success(let result):
@@ -353,24 +354,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                         data.createAccountDuration = accountCreationDuration
                     }
                 case .failure(let error):
-                    switch error {
-                    case .noProductsFound:
-                        subscriptionEventReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
-                    case .activeSubscriptionAlreadyPresent:
-                        subscriptionEventReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
-                    case .authenticatingWithTransactionFailed:
-                        subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
-                    case .accountCreationFailed(let creationError):
-                        subscriptionEventReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
-                    case .purchaseFailed(let purchaseError):
-                        subscriptionEventReporter.report(subscriptionActivationError: .purchaseFailed(purchaseError))
-                    case .cancelledByUser:
-                        subscriptionEventReporter.report(subscriptionActivationError: .cancelledByUser)
-                    case .missingEntitlements:
-                        subscriptionEventReporter.report(subscriptionActivationError: .missingEntitlements)
-                    case .internalError:
-                        assertionFailure("Internal error")
-                    }
+                    reportPurchaseFlowError(error)
 
                     if error != .cancelledByUser {
                         await showSomethingWentWrongAlert()
@@ -444,31 +428,15 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                     wideEvent.updateFlow(data)
                     wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
                 case .failure(let error):
-                    switch error {
-                    case .noProductsFound:
-                        subscriptionEventReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
-                        completeWideEventFlow(with: error)
-                    case .activeSubscriptionAlreadyPresent:
-                        subscriptionEventReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
-                        completeWideEventFlow(with: error)
-                    case .authenticatingWithTransactionFailed:
-                        subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
-                        completeWideEventFlow(with: error)
-                    case .accountCreationFailed(let creationError):
-                        subscriptionEventReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
-                        completeWideEventFlow(with: error)
-                    case .purchaseFailed(let purchaseError):
-                        subscriptionEventReporter.report(subscriptionActivationError: .purchaseFailed(purchaseError))
-                        completeWideEventFlow(with: error)
-                    case .cancelledByUser:
-                        subscriptionEventReporter.report(subscriptionActivationError: .cancelledByUser)
+                    reportPurchaseFlowError(error)
 
+                    switch error {
+                    case .cancelledByUser:
                         if let wideEventData {
                             wideEvent.completeFlow(wideEventData, status: .cancelled, onComplete: { _, _ in })
                         }
                     case .missingEntitlements:
                         // This case deliberately avoids sending a failure wide event in case activation succeeds later
-                        subscriptionEventReporter.report(subscriptionActivationError: .missingEntitlements)
                         DispatchQueue.main.async { [weak self] in
                             self?.notificationCenter.post(name: .subscriptionPageCloseAndOpenPreferences, object: self)
                         }
@@ -476,7 +444,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                         return nil
                     case .internalError(let internalError):
                         completeWideEventFlow(with: internalError ?? error)
-                        assertionFailure("Internal error")
+                    default:
+                        completeWideEventFlow(with: error)
                     }
 
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "completed"))
@@ -529,6 +498,117 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         return nil
     }
 
+    // MARK: - Tier Change
+
+    func subscriptionChangeSelected(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        struct SubscriptionChangeSelection: Decodable {
+            let id: String
+            let change: String?  // "upgrade" or "downgrade"
+        }
+
+        let message = original
+        await setPixelOrigin(from: message)
+
+        switch subscriptionManager.currentEnvironment.purchasePlatform {
+        case .appStore:
+            if #available(macOS 12.0, *) {
+                // 1: Parse subscription change selection from message object
+                guard let subscriptionSelection: SubscriptionChangeSelection = CodableHelper.decode(from: params) else {
+                    assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionChangeSelection")
+                    subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
+                    await uiHandler.dismissProgressViewController()
+                    return nil
+                }
+
+                Logger.subscription.log("[TierChange] Starting \(subscriptionSelection.change ?? "change", privacy: .public) for: \(subscriptionSelection.id, privacy: .public)")
+
+                // 2: Show purchase progress UI to user
+                await uiHandler.presentProgressViewController(withTitle: UserText.purchasingSubscriptionTitle)
+
+                // 3: Set up the purchase flow
+                let appStorePurchaseFlow = makeAppStorePurchaseFlow()
+
+                // 4: Execute the tier change (uses existing account's externalID)
+                Logger.subscription.log("[TierChange] Executing tier change")
+                let tierChangeResult = await appStorePurchaseFlow.changeTier(to: subscriptionSelection.id)
+
+                let purchaseTransactionJWS: String
+                switch tierChangeResult {
+                case .success(let transactionJWS):
+                    purchaseTransactionJWS = transactionJWS
+                case .failure(let error):
+                    reportPurchaseFlowError(error)
+
+                    if error != AppStorePurchaseFlowError.cancelledByUser {
+                        await showSomethingWentWrongAlert()
+                    } else {
+                        await uiHandler.dismissProgressViewController()
+                    }
+
+                    await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
+                    return nil
+                }
+
+                // 5: Update UI to indicate that the tier change is completing
+                await uiHandler.updateProgressViewController(title: UserText.completingPurchaseTitle)
+
+                // 6: Complete the tier change by confirming with the backend
+                let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
+
+                // 7: Handle tier change completion result
+                switch completePurchaseResult {
+                case .success(let purchaseUpdate):
+                    Logger.subscription.log("[TierChange] Tier change completed successfully")
+                    notificationCenter.post(name: .subscriptionDidChange, object: self)
+                    await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
+                case .failure(let error):
+                    reportPurchaseFlowError(error)
+
+                    if case .missingEntitlements = error {
+                        DispatchQueue.main.async { [weak self] in
+                            self?.notificationCenter.post(name: .subscriptionPageCloseAndOpenPreferences, object: self)
+                        }
+                        await uiHandler.dismissProgressViewController()
+                        return nil
+                    }
+
+                    await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "completed"))
+                }
+            }
+
+        case .stripe:
+            // For Stripe tier changes, we always send the auth token so the backend can modify the existing subscription
+            guard let subscriptionSelection: SubscriptionChangeSelection = CodableHelper.decode(from: params) else {
+                assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionChangeSelection")
+                subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
+                return nil
+            }
+
+            Logger.subscription.log("[TierChange] Starting Stripe \(subscriptionSelection.change ?? "change", privacy: .public) for: \(subscriptionSelection.id, privacy: .public)")
+
+            // Get the access token - for tier changes, the user must be authenticated
+            // since they're modifying an existing subscription
+            let accessToken: String
+            do {
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                accessToken = tokenContainer.accessToken
+                Logger.subscription.log("[TierChange] Retrieved access token for Stripe tier change")
+            } catch {
+                Logger.subscription.error("[TierChange] Failed to get token for Stripe tier change: \(error, privacy: .public)")
+                subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
+                await showSomethingWentWrongAlert()
+                await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
+                return nil
+            }
+
+            // Return redirect with token so frontend handles Stripe checkout
+            await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.redirect(withToken: accessToken))
+        }
+
+        await uiHandler.dismissProgressViewController()
+        return nil
+    }
+
     // MARK: functions used in SubscriptionAccessActionHandlers
 
     func activateSubscription(params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -572,6 +652,14 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     }
 
     func completeStripePayment(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        // Parse optional change parameter for tier changes
+        struct StripePaymentCompletion: Decodable {
+            let change: String?  // "upgrade" or "downgrade" for tier changes, nil for new purchases
+        }
+
+        let completion: StripePaymentCompletion? = CodableHelper.decode(from: params)
+        let changeType = completion?.change
+
         var accountActivationDuration = WideEvent.MeasuredInterval.startingNow()
         wideEventData?.activateAccountDuration = accountActivationDuration
 
@@ -579,10 +667,16 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         await stripePurchaseFlow.completeSubscriptionPurchase()
         await uiHandler.dismissProgressViewController()
 
-        PixelKit.fire(SubscriptionPixel.subscriptionPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
+        // Fire appropriate pixel based on whether this is a new purchase or tier change
+        if let changeType {
+            Logger.subscription.log("[TierChange] Stripe \(changeType, privacy: .public) completed successfully")
+        } else {
+            PixelKit.fire(SubscriptionPixel.subscriptionPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
+            subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
+        }
+
         sendFreemiumSubscriptionPixelIfFreemiumActivated()
         saveSubscriptionUpgradeTimestampIfFreemiumActivated()
-        subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
         sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
         notificationCenter.post(name: .subscriptionDidChange, object: self)
 
@@ -710,6 +804,46 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 }
             }
         default: return
+        }
+    }
+
+    // MARK: - Purchase Flow Helpers
+
+    /// Creates an App Store purchase flow with the required dependencies.
+    @available(macOS 12.0, *)
+    private func makeAppStorePurchaseFlow() -> DefaultAppStorePurchaseFlow {
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(
+            subscriptionManager: subscriptionManager,
+            storePurchaseManager: subscriptionManager.storePurchaseManager()
+        )
+        return DefaultAppStorePurchaseFlow(
+            subscriptionManager: subscriptionManager,
+            storePurchaseManager: subscriptionManager.storePurchaseManager(),
+            appStoreRestoreFlow: appStoreRestoreFlow,
+            wideEvent: wideEvent
+        )
+    }
+
+    /// Reports a purchase flow error to the subscription event reporter.
+    /// This maps `AppStorePurchaseFlowError` to the appropriate `SubscriptionActivationError` for analytics.
+    private func reportPurchaseFlowError(_ error: AppStorePurchaseFlowError) {
+        switch error {
+        case .noProductsFound:
+            subscriptionEventReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
+        case .activeSubscriptionAlreadyPresent:
+            subscriptionEventReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
+        case .authenticatingWithTransactionFailed:
+            subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
+        case .accountCreationFailed(let creationError):
+            subscriptionEventReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
+        case .purchaseFailed(let purchaseError):
+            subscriptionEventReporter.report(subscriptionActivationError: .purchaseFailed(purchaseError))
+        case .cancelledByUser:
+            subscriptionEventReporter.report(subscriptionActivationError: .cancelledByUser)
+        case .missingEntitlements:
+            subscriptionEventReporter.report(subscriptionActivationError: .missingEntitlements)
+        case .internalError:
+            assertionFailure("Internal error")
         }
     }
 

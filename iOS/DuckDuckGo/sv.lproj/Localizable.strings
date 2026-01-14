@@ -1276,6 +1276,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Igår";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Du har hittat en dold logotyp!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logotyp har sparats";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Återställ söklogotyp";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Byt till denna logotyp";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Bra att veta! Jag kan inte hindra %1$@ från att se din aktivitet på %2$@.\n\nMen om du surfar med hjälp av mig kan jag se till att %1$@ får veta mindre om dig genom att blockera deras spårare på många andra webbplatser.";
 
@@ -1383,6 +1395,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGos AI-funktioner är privata och valfria. Dina data används inte för att träna AI.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Sammanfatta denna sida";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Visa Duck.ai-knappar och -länkar i DuckDuckGo-sökresultaten.";
@@ -1944,6 +1959,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Hitta på sidan";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Radera alla chattar";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai-chattar";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Kan logga ut dig från konton";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookies och webbplatsdata";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Flikar";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Välj vad som ska raderas";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftström";
@@ -2911,11 +2944,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Inställningar för Search Assist";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Visa nya Duck.ai-chattar som flikar i webbläsaren";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Skicka automatiskt sidkontext till Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Flikläge för Duck.ai";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Skicka kontext automatiskt";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Dölj AI-genererade bilder";
@@ -3535,6 +3568,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Abonnemangstyper";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Slutför köpet ...";
 
@@ -3624,6 +3660,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Gratis provperiod aktiv";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Visa alla abonnemang";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-varning";

@@ -223,9 +223,9 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             remoteMessagingDatabase.loadStore { context, error in
                 guard context != nil else {
                     if let error = error {
-                        PixelKit.fire(DebugEvent(GeneralPixel.syncMetadataCouldNotLoadDatabase, error: error))
+                        PixelKit.fire(DebugEvent(GeneralPixel.remoteMessageDebugCouldNotLoadDatabase, error: error), frequency: .dailyAndStandard)
                     } else {
-                        PixelKit.fire(DebugEvent(GeneralPixel.syncMetadataCouldNotLoadDatabase))
+                        PixelKit.fire(DebugEvent(GeneralPixel.remoteMessageDebugCouldNotLoadDatabase), frequency: .dailyAndStandard)
                     }
 
                     Thread.sleep(forTimeInterval: 1)

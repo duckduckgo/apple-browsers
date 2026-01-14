@@ -102,6 +102,7 @@ final class SettingsViewModel: ObservableObject {
     // App Data State Notification Observer
     private var textZoomObserver: Any?
     private var appForegroundObserver: Any?
+    private var aiChatSettingsObserver: Any?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let keyValueStore: ThrowingKeyValueStoring
@@ -145,10 +146,6 @@ final class SettingsViewModel: ObservableObject {
         get {
             (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
         }
-    }
-
-    var isUpdatedAIFeaturesSettingsEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
 
     var shouldShowHideAIGeneratedImagesSection: Bool {
@@ -688,6 +685,7 @@ final class SettingsViewModel: ObservableObject {
     deinit {
         subscriptionSignOutObserver = nil
         textZoomObserver = nil
+        aiChatSettingsObserver = nil
         if #available(iOS 18.2, *) {
             appForegroundObserver = nil
         }
@@ -1110,6 +1108,7 @@ extension SettingsViewModel {
         case dbp
         case itr
         case subscriptionFlow(redirectURLComponents: URLComponents? = nil)
+        case subscriptionPlanChangeFlow(redirectURLComponents: URLComponents? = nil)
         case restoreFlow
         case duckPlayer
         case aiChat
@@ -1126,6 +1125,7 @@ extension SettingsViewModel {
             case .dbp: return "dbp"
             case .itr: return "itr"
             case .subscriptionFlow: return "subscriptionFlow"
+            case .subscriptionPlanChangeFlow: return "subscriptionPlanChangeFlow"
             case .restoreFlow: return "restoreFlow"
             case .duckPlayer: return "duckPlayer"
             case .aiChat: return "aiChat"
@@ -1142,7 +1142,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance:
                 return .navigationLink
             }
         }
@@ -1266,6 +1266,15 @@ extension SettingsViewModel {
                                                                   queue: .main, using: { [weak self] _ in
             guard let self = self else { return }
             self.state.textZoom = SettingsState.TextZoom(level: self.appSettings.defaultTextZoomLevel)
+        })
+        
+        aiChatSettingsObserver = NotificationCenter.default.addObserver(forName: .aiChatSettingsChanged,
+                                                                  object: nil,
+                                                                  queue: .main, using: { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.refreshAutoClearOptionsIfNeeded()
+            }
         })
 
         if #available(iOS 18.2, *) {
@@ -1435,7 +1444,18 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
     }
 
     func navigateToAutoClearData() {
-        presentLegacyView(.autoclearData)
+        if featureFlagger.isFeatureOn(.enhancedDataClearingSettings) {
+            let viewModel = AutoClearSettingsViewModel(
+                appSettings: appSettings,
+                aiChatSettings: aiChatSettings
+            )
+            let view = AutoClearSettingsView(viewModel: viewModel)
+                .environmentObject(self)
+            let hostingController = UIHostingController(rootView: view)
+            pushViewController(hostingController)
+        } else {
+            presentLegacyView(.autoclearData)
+        }
     }
 
     func presentFireConfirmation() {
@@ -1444,6 +1464,12 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
         }, {
             // Cancelled - no action needed
         })
+    }
+    
+    private func refreshAutoClearOptionsIfNeeded() {
+        if !aiChatSettings.isAIChatEnabled {
+            appSettings.autoClearAction = appSettings.autoClearAction.subtracting(.aiChats)
+        }
     }
 }
 

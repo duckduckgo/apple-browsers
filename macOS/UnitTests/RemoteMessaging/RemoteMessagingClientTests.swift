@@ -187,7 +187,8 @@ final class RemoteMessagingClientTests: XCTestCase {
             platform: .google,
             status: .autoRenewable,
             activeOffers: [],
-            tier: nil
+            tier: nil,
+            availableChanges: nil
         )
         subscriptionManager.resultSubscription = .success(subscription)
         availabilityProvider.isRemoteMessagingAvailable = true

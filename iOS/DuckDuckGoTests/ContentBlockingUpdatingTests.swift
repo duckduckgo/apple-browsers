@@ -22,6 +22,7 @@ import WebKit
 import Core
 import TrackerRadarKit
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 @testable import DuckDuckGo
 
 class FireproofingMock: Fireproofing {
@@ -53,7 +54,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           privacyConfigurationManager: configManager,
                                                                           contentBlockingManager: rulesManager,
                                                                           fireproofing: FireproofingMock(),
-                                                                          contentScopeExperimentsManager: MockContentScopeExperimentManager()))
+                                                                          contentScopeExperimentsManager: MockContentScopeExperimentManager(),
+                                                                          internalUserDecider: MockInternalUserDecider()))
     }
 
     override static func setUp() {

@@ -37,7 +37,7 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
          aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
          appSettings: AppSettings = AppSettingsMock(),
-         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
+         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(logoStore: DaxEasterEggLogoStore(), featureFlagger: MockFeatureFlagger()),
          mobileCustomization: MobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore())) {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger

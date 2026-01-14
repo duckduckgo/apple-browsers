@@ -35,6 +35,8 @@ public protocol NewTabPageCustomBackgroundProviding: AnyObject {
     var userImagesPublisher: AnyPublisher<[NewTabPageDataModel.UserImage], Never> { get }
 
     @MainActor func presentUploadDialog() async
+    func processNewTabPageInitialized()
+
     func deleteImage(with imageID: String) async
 
     @MainActor func showContextMenu(for imageID: String, using presenter: NewTabPageContextMenuPresenting) async
@@ -142,8 +144,15 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
         guard let data: NewTabPageDataModel.ThemeData = DecodableHelper.decode(from: params) else {
             return nil
         }
-        model.theme = data.theme
-        model.themeVariant = data.themeVariant
+
+        if model.theme != data.theme {
+            model.theme = data.theme
+        }
+
+        if model.themeVariant != data.themeVariant {
+            model.themeVariant = data.themeVariant
+        }
+
         return nil
     }
 

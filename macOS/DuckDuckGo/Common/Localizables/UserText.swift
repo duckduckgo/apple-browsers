@@ -103,6 +103,20 @@ struct UserText {
     static let quit = NSLocalizedString("quit", value: "Quit", comment: "Quit button")
     static let uninstall = NSLocalizedString("uninstall", value: "Uninstall", comment: "Uninstall button")
     static let dontQuit = NSLocalizedString("dont.quit", value: "Don’t Quit", comment: "Don’t Quit button")
+
+    // Warn Before Quit/Close/Exit Fullscreen
+    static let confirmQuitAction = NSLocalizedString("confirm.quit.action", value: "Hold or press again to quit", comment: "Action text shown in the quit confirmation overlay")
+    static let confirmQuitSubtitle = NSLocalizedString("confirm.quit.subtitle", value: "Tabs will be saved for next time.", comment: "Subtitle shown in the quit confirmation overlay explaining that tabs will be restored")
+    
+    static let confirmCloseAction = NSLocalizedString("confirm.close.action", value: "Hold or press again to close", comment: "Action text shown in the close confirmation overlay")
+    
+    static let confirmDontShowAgain = NSLocalizedString("confirm.dont.show.again", value: "Don‘t Show Again", comment: "Button to disable confirmation dialogs")
+    
+    // Settings
+    static let settingsOnQuitSection = NSLocalizedString("settings.on.quit.section", value: "On Quit", comment: "Settings section header for quit-related preferences")
+    static let settingsConfirmQuitCheckbox = NSLocalizedString("settings.confirm.quit.checkbox", value: "Show confirmation before quitting with ⌘Q", comment: "Checkbox label in Settings to enable quit confirmation")
+    static let settingsConfirmCloseCheckbox = NSLocalizedString("settings.confirm.close.checkbox", value: "Show confirmation before closing pinned tabs with ⌘W", comment: "Checkbox label in Settings to enable close confirmation for pinned tabs")
+
     static let next = NSLocalizedString("next", value: "Next", comment: "Next button")
     static let pasteAndGo = NSLocalizedString("paste.and.go", value: "Paste & Go", comment: "Paste & Go button")
     static let pasteAndSearch = NSLocalizedString("paste.and.search", value: "Paste & Search", comment: "Paste & Search button")

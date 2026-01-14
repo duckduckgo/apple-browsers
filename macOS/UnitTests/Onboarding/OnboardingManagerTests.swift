@@ -57,7 +57,7 @@ class OnboardingManagerTests: XCTestCase {
         )
         startupPreferences = StartupPreferences(persistor: startupPersistor, windowControllersManager: WindowControllersManagerMock(), appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()
-        manager = OnboardingActionsManager(navigationDelegate: navigationDelegate, dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences, dataImportProvider: importProvider)
+        manager = OnboardingActionsManager(navigationDelegate: navigationDelegate, dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences, dataImportProvider: importProvider, featureFlagger: MockFeatureFlagger())
     }
 
     override func tearDown() {
@@ -73,8 +73,110 @@ class OnboardingManagerTests: XCTestCase {
         importProvider = nil
     }
 
-    func testReturnsExpectedOnboardingConfig() {
+    func testReturnsExpectedOnboardingConfig_WhenBothFlagsAreOff_ExcludesAddressBarMode() {
         // Given
+        var systemSettings: SystemSettings
+#if APPSTORE
+        systemSettings = SystemSettings(rows: ["import"])
+#else
+        systemSettings = SystemSettings(rows: ["dock", "import"])
+#endif
+        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        let expectedConfig = OnboardingConfiguration(
+            stepDefinitions: stepDefinitions,
+            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            order: "v3",
+            env: "development",
+            locale: "en",
+            platform: .init(name: "macos")
+        )
+
+        // Then
+        XCTAssertEqual(manager.configuration, expectedConfig)
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenOnlyOmnibarToggleIsOn_ExcludesAddressBarMode() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle]
+        let managerWithFlagOn = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger
+        )
+
+        var systemSettings: SystemSettings
+#if APPSTORE
+        systemSettings = SystemSettings(rows: ["import"])
+#else
+        systemSettings = SystemSettings(rows: ["dock", "import"])
+#endif
+        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        let expectedConfig = OnboardingConfiguration(
+            stepDefinitions: stepDefinitions,
+            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            order: "v3",
+            env: "development",
+            locale: "en",
+            platform: .init(name: "macos")
+        )
+
+        // Then
+        XCTAssertEqual(managerWithFlagOn.configuration, expectedConfig)
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenOnlyOmnibarOnboardingIsOn_ExcludesAddressBarMode() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarOnboarding]
+        let managerWithFlagOn = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger
+        )
+
+        var systemSettings: SystemSettings
+#if APPSTORE
+        systemSettings = SystemSettings(rows: ["import"])
+#else
+        systemSettings = SystemSettings(rows: ["dock", "import"])
+#endif
+        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        let expectedConfig = OnboardingConfiguration(
+            stepDefinitions: stepDefinitions,
+            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            order: "v3",
+            env: "development",
+            locale: "en",
+            platform: .init(name: "macos")
+        )
+
+        // Then
+        XCTAssertEqual(managerWithFlagOn.configuration, expectedConfig)
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenBothFlagsAreOn_DoesNotExcludeAddressBarMode() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarOnboarding]
+        let managerWithFlagsOn = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger
+        )
+
         var systemSettings: SystemSettings
 #if APPSTORE
         systemSettings = SystemSettings(rows: ["import"])
@@ -92,7 +194,7 @@ class OnboardingManagerTests: XCTestCase {
         )
 
         // Then
-        XCTAssertEqual(manager.configuration, expectedConfig)
+        XCTAssertEqual(managerWithFlagsOn.configuration, expectedConfig)
     }
 
     func testOnOnboardingStarted_UserInteractionIsPrevented() {

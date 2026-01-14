@@ -418,10 +418,10 @@ jobs:
       inputs.skip-release-build != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     env:
-      RUNS_ON: macos-15 # keep this in sync with runs-on above
+      RUNS_ON: macos-26 # keep this in sync with runs-on above
 
     steps:
     - name: Register SSH key for certificates repository access
@@ -550,6 +550,41 @@ jobs:
         run: |
           git update-index --refresh
           git diff-index --quiet HEAD --
+
+  translation-check:
+    name: Translated Strings
+
+    runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    # Only run for PRs targeting main, release/*, or hotfix/* branches
+    if: >
+      github.event_name == 'pull_request' &&
+      needs.should-run-checks.outputs.should_run == 'true' &&
+      (github.base_ref == 'main' ||
+       startsWith(github.base_ref, 'release/macos/') ||
+       startsWith(github.base_ref, 'hotfix/macos/'))
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Allows scripts to diff against the base branch
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify string extraction
+        run: python3 scripts/translation-pr-checks/verify_string_extraction.py --platform macOS
+
+      - name: Check translations
+        run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform macOS
 
   create-asana-task:
     name: Create Asana Task

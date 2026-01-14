@@ -62,7 +62,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
         let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
-        XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .authUpdate])
+        XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .openSubscriptionUpgrade, .authUpdate])
     }
 
     func testWhenSubscriptionFailsToBeFetchedThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
@@ -88,7 +88,8 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
             platform: .stripe,
             status: .autoRenewable,
             activeOffers: [],
-            tier: nil
+            tier: nil,
+            availableChanges: nil
         )
 
         subscriptionManager.resultSubscription = .success(subscription)
@@ -221,6 +222,26 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(mockNavigationDelegate.purchaseFeaturePage, "duckai")
     }
 
+    @MainActor
+    func testOpenSubscriptionUpgradeCallsNavigationDelegate() async throws {
+        let origin = "some_origin"
+        let params = ["origin": origin]
+        let response = try await handler.openSubscriptionUpgrade(params: params, message: WKScriptMessage())
+        XCTAssertNil(response)
+        XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionUpgradeCalled)
+        XCTAssertEqual(mockNavigationDelegate.purchaseOrigin, origin)
+        XCTAssertEqual(mockNavigationDelegate.purchaseFeaturePage, "duckai")
+    }
+
+    @MainActor
+    func testOpenSubscriptionUpgradeWithoutOriginCallsNavigationDelegate() async throws {
+        let response = try await handler.openSubscriptionUpgrade(params: [:], message: WKScriptMessage())
+        XCTAssertNil(response)
+        XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionUpgradeCalled)
+        XCTAssertNil(mockNavigationDelegate.purchaseOrigin)
+        XCTAssertEqual(mockNavigationDelegate.purchaseFeaturePage, "duckai")
+    }
+
     // MARK: - Auth Update Push Tests
 
     func testThatSubscriptionDidChangeNotificationTriggersAuthUpdate() {
@@ -275,7 +296,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
 private extension DuckDuckGoSubscription {
     init(status: Status) {
-        self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [], tier: nil)
+        self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [], tier: nil, availableChanges: nil)
     }
 }
 
@@ -284,6 +305,7 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
     var navigateToSettingsCalled = false
     var navigateToSubscriptionActivationCalled = false
     var navigateToSubscriptionPurchaseCalled = false
+    var navigateToSubscriptionUpgradeCalled = false
     var purchaseOrigin: String?
     var purchaseFeaturePage: String?
 
@@ -297,6 +319,12 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
 
     func navigateToSubscriptionPurchase(origin: String?, featurePage: String?) {
         navigateToSubscriptionPurchaseCalled = true
+        purchaseOrigin = origin
+        purchaseFeaturePage = featurePage
+    }
+
+    func navigateToSubscriptionPlans(origin: String?, featurePage: String?) {
+        navigateToSubscriptionUpgradeCalled = true
         purchaseOrigin = origin
         purchaseFeaturePage = featurePage
     }

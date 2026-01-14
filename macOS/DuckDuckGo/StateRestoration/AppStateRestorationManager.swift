@@ -244,3 +244,16 @@ final class AppStateRestorationManager: NSObject {
         }
     }
 }
+
+// MARK: - ApplicationTerminationDecider
+
+/// Wrapper for state restoration termination logic
+@MainActor
+struct StateRestorationAppTerminationDecider: ApplicationTerminationDecider {
+    let stateRestorationManager: AppStateRestorationManager
+
+    func shouldTerminate(isAsync: Bool) -> TerminationQuery {
+        stateRestorationManager.applicationWillTerminate()
+        return .sync(.next)
+    }
+}

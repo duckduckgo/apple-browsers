@@ -211,9 +211,9 @@ final class FireViewController: NSViewController {
     private func animateFire(burningData: Fire.BurningData) async {
         var playFireAnimation = true
 
-        // Animate just on the active window
+        // Animate just on the active window, don't animate if animation is already playing on another window
         let lastKeyWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
-        if view.window?.windowController !== lastKeyWindowController {
+        if view.window?.windowController !== lastKeyWindowController || fireViewModel.isAnimationPlaying {
             playFireAnimation = false
         }
 

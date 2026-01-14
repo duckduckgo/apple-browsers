@@ -1338,74 +1338,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return applicationShouldTerminateFallback()
         }
 
-        // Show quit survey for first-time quitters (new users within 14 days)
-        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let quitSurveyDecider = QuitSurveyAppTerminationDecider(
-            featureFlagger: featureFlagger,
-            dataClearingPreferences: dataClearingPreferences,
-            downloadManager: downloadManager,
-            installDate: AppDelegate.firstLaunchDate,
-            persistor: persistor,
-            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
-            showQuitSurvey: { [weak self] in
-                guard let self else { return }
-                let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor)
-                await presenter.showSurvey()
-            }
-        )
-
-        if let surveyTask = quitSurveyDecider.presentQuitSurveyIfNeeded() {
-            Task { @MainActor in
-                await surveyTask.value
-                NSApp.reply(toApplicationShouldTerminate: true)
-            }
-            return .terminateLater
-        }
-
-        let downloadsDecider = ActiveDownloadsAppTerminationDecider(
-            downloadManager: downloadManager,
-            downloadListCoordinator: downloadListCoordinator
-        )
-        if let downloadsTask = downloadsDecider.handleTermination() {
-            Task {
-                let shouldContinueTermination = await downloadsTask.value
-                guard shouldContinueTermination else {
-                    NSApp.reply(toApplicationShouldTerminate: false)
-                    return
-                }
-                let reply = continueTerminationAfterAsyncDeciders()
-                switch reply {
-                case .terminateCancel:
-                    NSApp.reply(toApplicationShouldTerminate: false)
-                case .terminateNow:
-                    NSApp.reply(toApplicationShouldTerminate: true)
-                case .terminateLater:
-                    break // autoClearHandler.onAutoClearCompleted will call `NSApp.reply(toApplicationShouldTerminate: true)`
-                @unknown default:
-                    NSApp.reply(toApplicationShouldTerminate: true)
-                }
-            }
-            return .terminateLater
-        }
-
-        return continueTerminationAfterAsyncDeciders()
+        let handler = TerminationDeciderHandler()
+        let deciders = createTerminationDeciders()
+        return handler.executeTerminationDeciders(deciders, isAsync: false)
     }
 
     @MainActor
-    private func continueTerminationAfterAsyncDeciders() -> NSApplication.TerminateReply {
-        // Cancel any active update tracking flow
-        updateController?.handleAppTermination()
+    private func createTerminationDeciders() -> [ApplicationTerminationDecider] {
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
 
-        stateRestorationManager?.applicationWillTerminate()
+        let deciders: [ApplicationTerminationDecider?] = [
+            // 1. Quit survey (for new users within first 3 days)
+            QuitSurveyAppTerminationDecider(
+                featureFlagger: featureFlagger,
+                dataClearingPreferences: dataClearingPreferences,
+                downloadManager: downloadManager,
+                installDate: AppDelegate.firstLaunchDate,
+                persistor: persistor,
+                reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+                showQuitSurvey: { [weak self] in
+                    guard let self else { return }
+                    let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor)
+                    await presenter.showSurvey()
+                }
+            ),
 
-        // Handling of "Burn on quit"
-        if let terminationReply = autoClearHandler.handleAppTermination() {
-            return terminationReply
-        }
+            // 2. Active downloads check
+            ActiveDownloadsAppTerminationDecider(
+                downloadManager: downloadManager,
+                downloadListCoordinator: downloadListCoordinator
+            ),
 
-        tearDownPrivacyStats()
+            // 3. Update controller cleanup
+            updateController.map(UpdateControllerAppTerminationDecider.init),
 
-        return .terminateNow
+            // 4. State restoration
+            StateRestorationAppTerminationDecider(
+                stateRestorationManager: stateRestorationManager
+            ),
+
+            // 5. Auto-clear (burn on quit)
+            autoClearHandler,
+
+            // 6. Privacy stats cleanup
+            PrivacyStatsAppTerminationDecider(
+                privacyStats: privacyStats
+            ),
+        ]
+
+        return deciders.compactMap { $0 }
     }
 
     // Original Termination Handler (Fallback - To be removed)
@@ -1454,7 +1435,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateRestorationManager?.applicationWillTerminate()
 
         // Handling of "Burn on quit"
-        if let terminationReply = autoClearHandler.handleAppTermination() {
+        if let terminationReply = autoClearHandler.handleAppTerminationFallback() {
             return terminationReply
         }
 
@@ -1738,9 +1719,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()
-            autoClearHandler.onAutoClearCompleted = {
-                NSApplication.shared.reply(toApplicationShouldTerminate: true)
-            }
         }
     }
 

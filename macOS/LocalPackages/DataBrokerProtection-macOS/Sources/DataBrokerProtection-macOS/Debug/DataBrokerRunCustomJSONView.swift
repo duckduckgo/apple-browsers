@@ -29,6 +29,7 @@ struct DataBrokerRunCustomJSONView: View {
     @State private var brokerFilter: BrokerFilter = .all
     @State private var brokerSearchText: String = ""
     @State private var selectedTab: Tab = .scan
+    @State private var selectedDebugEventId: String?
     @State private var logMonitorWindow: NSWindow?
     
     private let maxNames = 3
@@ -262,7 +263,7 @@ struct DataBrokerRunCustomJSONView: View {
                 Text("No events yet.")
                     .foregroundColor(.secondary)
             } else {
-                List {
+                List(selection: $selectedDebugEventId) {
                     Section(header: eventTableHeader.listRowInsets(EdgeInsets())) {
                         ForEach(viewModel.combinedDebugEvents) { event in
                             HStack(spacing: 12) {
@@ -274,9 +275,12 @@ struct DataBrokerRunCustomJSONView: View {
                                     .frame(width: eventSummaryColumnWidth, alignment: .leading)
                                 Text(event.details)
                                     .foregroundColor(.secondary)
+                                    .lineLimit(10)
+                                    .help(event.details)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .listRowInsets(EdgeInsets())
+                            .tag(event.id)
                         }
                     }
                 }

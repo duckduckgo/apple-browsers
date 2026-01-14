@@ -145,6 +145,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var addresses = [AddressUI.empty()]
     @Published var historyEvents: [HistoryEvent] = []
     @Published var actionEvents: [DebugActionEvent] = []
+    @Published var actionResponseEvents: [DebugActionResponseEvent] = []
 
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
@@ -434,6 +435,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.results.removeAll()
         self.historyEvents.removeAll()
         self.actionEvents.removeAll()
+        self.actionResponseEvents.removeAll()
         if let data = jsonString.data(using: .utf8) {
             do {
                 let decoder = JSONDecoder()
@@ -448,9 +450,21 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     Task {
                         do {
                             addScanStartedEvent(for: query)
-                            let stageCalculator = FakeStageDurationCalculator(stepType: .scan) { [weak self] action, stepType in
-                                self?.addActionEvent(action: action, stepType: stepType)
-                            }
+                            let stageCalculator = FakeStageDurationCalculator(
+                                stepType: .scan,
+                                onActionPayload: { [weak self] stepType, actionId, actionType, payloadJSON in
+                                    self?.addActionPayloadEvent(stepType: stepType,
+                                                                actionId: actionId,
+                                                                actionType: actionType,
+                                                                payloadJSON: payloadJSON)
+                                },
+                                onActionResponse: { [weak self] stepType, actionId, actionType, payloadJSON in
+                                    self?.addActionResponseEvent(stepType: stepType,
+                                                                 actionId: actionId,
+                                                                 actionType: actionType,
+                                                                 payloadJSON: payloadJSON)
+                                }
+                            )
                             let runner = BrokerProfileScanSubJobWebRunner(
                                 privacyConfig: self.privacyConfigManager,
                                 prefs: self.contentScopeProperties,
@@ -514,9 +528,21 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         )
         Task {
             do {
-                let stageCalculator = FakeStageDurationCalculator(stepType: .optOut) { [weak self] action, stepType in
-                    self?.addActionEvent(action: action, stepType: stepType)
-                }
+                let stageCalculator = FakeStageDurationCalculator(
+                    stepType: .optOut,
+                    onActionPayload: { [weak self] stepType, actionId, actionType, payloadJSON in
+                        self?.addActionPayloadEvent(stepType: stepType,
+                                                    actionId: actionId,
+                                                    actionType: actionType,
+                                                    payloadJSON: payloadJSON)
+                    },
+                    onActionResponse: { [weak self] stepType, actionId, actionType, payloadJSON in
+                        self?.addActionResponseEvent(stepType: stepType,
+                                                     actionId: actionId,
+                                                     actionType: actionType,
+                                                     payloadJSON: payloadJSON)
+                    }
+                )
                 let runner = BrokerProfileOptOutSubJobWebRunner(
                     privacyConfig: self.privacyConfigManager,
                     prefs: self.contentScopeProperties,
@@ -624,22 +650,36 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         AppVersion.shared.versionNumber
     }
 
-    private func addActionEvent(action: Action, stepType: StepType) {
+    private func addActionPayloadEvent(stepType: StepType, actionId: String?, actionType: ActionType?, payloadJSON: String) {
         let event = DebugActionEvent(
             timestamp: Date(),
             stepType: stepType,
-            actionType: action.actionType,
-            actionId: action.id,
-            details: String(describing: action)
+            actionType: actionType,
+            actionId: actionId,
+            details: payloadJSON
         )
         DispatchQueue.main.async {
             self.actionEvents.append(event)
         }
     }
 
+    private func addActionResponseEvent(stepType: StepType, actionId: String?, actionType: ActionType?, payloadJSON: String) {
+        let event = DebugActionResponseEvent(
+            timestamp: Date(),
+            stepType: stepType,
+            actionType: actionType,
+            actionId: actionId,
+            details: payloadJSON
+        )
+        DispatchQueue.main.async {
+            self.actionResponseEvents.append(event)
+        }
+    }
+
     var combinedDebugEvents: [DebugEventRow] {
         let historyRows = historyEvents.map { event in
             DebugEventRow(
+                id: event.id,
                 timestamp: event.date,
                 kind: "History",
                 summary: historyEventDescription(event),
@@ -648,13 +688,33 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         }
         let actionRows = actionEvents.map { event in
             DebugEventRow(
+                id: event.id.uuidString,
                 timestamp: event.timestamp,
                 kind: "Action",
-                summary: "\(event.stepType.rawValue) > \(event.actionType.rawValue)\n\(event.actionId)",
+                summary: actionSummary(stepType: event.stepType,
+                                       actionType: event.actionType,
+                                       actionId: event.actionId),
                 details: event.details
             )
         }
-        return (historyRows + actionRows).sorted(by: { $0.timestamp < $1.timestamp })
+        let responseRows = actionResponseEvents.map { event in
+            DebugEventRow(
+                id: event.id.uuidString,
+                timestamp: event.timestamp,
+                kind: "Response",
+                summary: actionSummary(stepType: event.stepType,
+                                       actionType: event.actionType,
+                                       actionId: event.actionId),
+                details: event.details
+            )
+        }
+        return (historyRows + actionRows + responseRows).sorted(by: { $0.timestamp < $1.timestamp })
+    }
+
+    private func actionSummary(stepType: StepType, actionType: ActionType?, actionId: String?) -> String {
+        let typeText = actionType?.rawValue ?? "unknown"
+        let idText = actionId ?? "-"
+        return "\(stepType.rawValue) > \(typeText)\n\(idText)"
     }
 
     private func historyEventDescription(_ event: HistoryEvent) -> String {
@@ -687,31 +747,43 @@ struct DebugActionEvent: Identifiable {
     let id = UUID()
     let timestamp: Date
     let stepType: StepType
-    let actionType: ActionType
-    let actionId: String
+    let actionType: ActionType?
+    let actionId: String?
+    let details: String
+}
+
+struct DebugActionResponseEvent: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    let stepType: StepType
+    let actionType: ActionType?
+    let actionId: String?
     let details: String
 }
 
 struct DebugEventRow: Identifiable {
-    let id = UUID()
+    let id: String
     let timestamp: Date
     let kind: String
     let summary: String
     let details: String
 }
 
-final class FakeStageDurationCalculator: StageDurationCalculator {
+final class FakeStageDurationCalculator: StageDurationCalculator, ActionEventReportingForDebug {
 
     var attemptId: UUID = UUID()
     var isImmediateOperation: Bool = false
     var tries = 1
     private let stepType: StepType
-    private let onAction: ((Action, StepType) -> Void)?
+    private let onActionPayload: ((StepType, String?, ActionType?, String) -> Void)?
+    private let onActionResponse: ((StepType, String?, ActionType?, String) -> Void)?
 
     init(stepType: StepType = .scan,
-         onAction: ((Action, StepType) -> Void)? = nil) {
+         onActionPayload: ((StepType, String?, ActionType?, String) -> Void)? = nil,
+         onActionResponse: ((StepType, String?, ActionType?, String) -> Void)? = nil) {
         self.stepType = stepType
-        self.onAction = onAction
+        self.onActionPayload = onActionPayload
+        self.onActionResponse = onActionResponse
     }
 
     func durationSinceLastStage() -> Double {
@@ -774,7 +846,6 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     }
 
     func setLastAction(_ action: Action) {
-        onAction?(action, stepType)
     }
 
     func fireOptOutConditionFound() {
@@ -789,6 +860,14 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
 
     func incrementTries() {
         self.tries += 1
+    }
+
+    func recordActionPayload(stepType: StepType?, actionId: String?, actionType: ActionType?, payloadJSON: String) {
+        onActionPayload?(stepType ?? self.stepType, actionId, actionType, payloadJSON)
+    }
+
+    func recordActionResponse(stepType: StepType?, actionId: String?, actionType: ActionType?, payloadJSON: String) {
+        onActionResponse?(stepType ?? self.stepType, actionId, actionType, payloadJSON)
     }
 }
 

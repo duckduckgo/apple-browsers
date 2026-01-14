@@ -138,6 +138,22 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
+        var payloadObject: [String: Any] = [:]
+        if let profilesJSON = prettyPrintedJSON(from: profiles),
+           let profilesData = profilesJSON.data(using: .utf8),
+           let profilesObject = try? JSONSerialization.jsonObject(with: profilesData) {
+            payloadObject["profiles"] = profilesObject
+        } else {
+            payloadObject["profiles"] = profiles.map { $0.id.map(String.init) ?? "unknown" }
+        }
+        if let meta {
+            payloadObject["meta"] = meta
+        }
+        let payloadJSON = prettyPrintedJSON(from: payloadObject) ?? prettyPrintedJSON(from: profiles) ?? String(describing: profiles)
+        recordActionResponseForDebug(stepType: .scan,
+                                     actionId: nil,
+                                     actionType: .extract,
+                                     payloadJSON: payloadJSON)
         complete(profiles)
         await executeNextStep()
     }

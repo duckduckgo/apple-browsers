@@ -126,6 +126,9 @@ public extension SubJobWebRunning {
                                                                                      attemptId: stageCalculator.attemptId,
                                                                                      shouldRunNextStep: shouldRunNextStep) {
                 stageCalculator.fireOptOutCaptchaSolve()
+                recordActionPayloadForDebug(action: action,
+                                            stepType: stepType,
+                                            data: .solveCaptcha(CaptchaToken(token: captchaData)))
                 await webViewHandler?.execute(action: action,
                                               ofType: stepType,
                                               data: .solveCaptcha(CaptchaToken(token: captchaData)))
@@ -164,6 +167,7 @@ public extension SubJobWebRunning {
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
         }
 
+        recordActionPayloadForDebug(action: action, stepType: stepType, data: .userData(context.profileQuery, self.extractedProfile))
         await webViewHandler?.execute(action: action,
                                       ofType: stepType,
                                       data: .userData(context.profileQuery, self.extractedProfile))
@@ -172,7 +176,7 @@ public extension SubJobWebRunning {
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {
         if let email = extractedProfile?.email {
             stageCalculator.setStage(.emailReceive)
-            let url =  try await emailConfirmationDataService.getConfirmationLink(
+            let url = try await emailConfirmationDataService.getConfirmationLink(
                 from: email,
                 numberOfRetries: 10, // Move to constant
                 pollingInterval: action.pollingTime,
@@ -244,6 +248,10 @@ public extension SubJobWebRunning {
 
             do  {
                 try await webViewHandler?.load(url: url)
+                recordActionResponseForDebug(stepType: actionsHandler?.stepType,
+                                             actionId: nil,
+                                             actionType: .navigate,
+                                             payloadJSON: prettyPrintedJSON(from: ["url": url.absoluteString]) ?? url.absoluteString)
                 await successNextSteps()
             } catch let error as DataBrokerProtectionError {
                 guard error == error404 && self is BrokerProfileScanSubJobWebRunner else {
@@ -276,6 +284,11 @@ public extension SubJobWebRunning {
     }
 
     func success(actionId: String, actionType: ActionType) async {
+        let payload = prettyPrintedJSON(from: ["actionId": actionId, "actionType": actionType.rawValue]) ?? "actionId=\(actionId) actionType=\(actionType.rawValue)"
+        recordActionResponseForDebug(stepType: actionsHandler?.stepType,
+                                     actionId: actionId,
+                                     actionType: actionType,
+                                     payloadJSON: payload)
         let isForOptOut = actionsHandler?.isForOptOut == true
 
         switch actionType {
@@ -300,6 +313,12 @@ public extension SubJobWebRunning {
     }
 
     func conditionSuccess(actions: [Action]) async {
+        let actionDescriptions = actions.map { String(describing: $0) }
+        let payload = prettyPrintedJSON(from: actionDescriptions) ?? String(describing: actions)
+        recordActionResponseForDebug(stepType: actionsHandler?.stepType,
+                                     actionId: nil,
+                                     actionType: nil,
+                                     payloadJSON: payload)
         if actions.isEmpty {
             Logger.action.log(loggerContext(), message: "Condition action completed with no follow-up actions")
             if actionsHandler?.stepType == .optOut {
@@ -318,6 +337,15 @@ public extension SubJobWebRunning {
     }
 
     func captchaInformation(captchaInfo: GetCaptchaInfoResponse) async {
+        let payload = prettyPrintedJSON(from: [
+            "siteKey": captchaInfo.siteKey,
+            "url": captchaInfo.url,
+            "type": captchaInfo.type
+        ]) ?? String(describing: captchaInfo)
+        recordActionResponseForDebug(stepType: actionsHandler?.stepType,
+                                     actionId: nil,
+                                     actionType: .getCaptchaInfo,
+                                     payloadJSON: payload)
         do {
             stageCalculator.fireOptOutCaptchaParse()
             stageCalculator.setStage(.captchaSend)
@@ -339,6 +367,15 @@ public extension SubJobWebRunning {
     }
 
     func solveCaptcha(with response: SolveCaptchaResponse) async {
+        let payload = prettyPrintedJSON(from: [
+            "callback": [
+                "eval": response.callback.eval
+            ]
+        ]) ?? String(describing: response)
+        recordActionResponseForDebug(stepType: actionsHandler?.stepType,
+                                     actionId: nil,
+                                     actionType: .solveCaptcha,
+                                     payloadJSON: payload)
         do {
             try await webViewHandler?.evaluateJavaScript(response.callback.eval)
 
@@ -349,6 +386,11 @@ public extension SubJobWebRunning {
     }
 
     func onError(error: Error) async {
+        let errorPayload = errorPayloadJSON(error)
+        recordActionResponseForDebug(stepType: actionsHandler?.stepType,
+                                     actionId: errorActionId(error),
+                                     actionType: nil,
+                                     payloadJSON: errorPayload)
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
             Logger.action.log(loggerContext(for: currentAction),
                               message: "Condition action did NOT meet its expectation, continuing with regular action execution")

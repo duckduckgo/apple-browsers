@@ -695,7 +695,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
         )
-        tabsPreferences = TabsPreferences(persistor: TabsPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        tabsPreferences = TabsPreferences(
+            persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
+            windowControllersManager: windowControllersManager
+        )
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
 

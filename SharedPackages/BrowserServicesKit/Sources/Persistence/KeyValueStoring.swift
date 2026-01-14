@@ -20,7 +20,7 @@ import Foundation
 
 /// Key-value store compatible with base UserDefaults API
 /// - Important: Use this for non-critical data that is easily recoverable if lost due to access issues.
-public protocol KeyValueStoring {
+public protocol KeyValueStoring: ThrowingKeyValueStoring {
 
     func object(forKey defaultName: String) -> Any?
     func set(_ value: Any?, forKey defaultName: String)

@@ -28,22 +28,26 @@ struct DataBrokerRunCustomJSONView: View {
     @State private var selectedBrokerUrl: String?
     @State private var brokerFilter: BrokerFilter = .all
     @State private var brokerSearchText: String = ""
+    @State private var selectedTab: Tab = .scan
+    
     private let maxNames = 3
     private let maxAddresses = 5
     private let brokerConfigWidth: CGFloat = 360
 
     var body: some View {
         HStack(alignment: .top, spacing: 24) {
-            TabView {
+            TabView(selection: $selectedTab) {
                 contentContainer(scanView)
                     .tabItem {
                         Text("Scan")
                     }
+                    .tag(Tab.scan)
 
                 contentContainer(resultsView)
                     .tabItem {
-                        Text("Extracted Profiles")
+                        Text(extractedProfilesTitle)
                     }
+                    .tag(Tab.extractedProfiles)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -121,8 +125,18 @@ struct DataBrokerRunCustomJSONView: View {
             }
 
             Divider()
-            Button("Run") {
-                viewModel.runJSON(jsonString: jsonText)
+            VStack(alignment: .leading, spacing: 6) {
+                Button("Run") {
+                    viewModel.runJSON(jsonString: jsonText)
+                    selectedTab = .extractedProfiles
+                }
+                .disabled(jsonText.isEmpty)
+
+                if jsonText.isEmpty {
+                    Text("Please enter broker JSON to enable scan")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
 
             if viewModel.isRunningOnAllBrokers {
@@ -130,6 +144,7 @@ struct DataBrokerRunCustomJSONView: View {
             } else {
                 Button("Run all brokers") {
                     viewModel.runAllBrokers()
+                    selectedTab = .extractedProfiles
                 }
             }
 
@@ -234,18 +249,6 @@ struct DataBrokerRunCustomJSONView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Divider()
-
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.secondary, lineWidth: 1)
-                .frame(maxWidth: .infinity, minHeight: 240)
-                .overlay(
-                    Text("Web view")
-                        .foregroundColor(.secondary)
-                )
-
-            Divider()
-
             Button("Clear and go back") {
                 viewModel.results.removeAll()
                 selectedResultId = nil
@@ -258,6 +261,10 @@ struct DataBrokerRunCustomJSONView: View {
     private var selectedResult: ScanResult? {
         guard let selectedResultId else { return nil }
         return viewModel.results.first { $0.id == selectedResultId }
+    }
+
+    private var extractedProfilesTitle: String {
+        "Extracted Profiles (\(viewModel.results.count))"
     }
 
     private var filteredBrokers: [DataBroker] {
@@ -277,6 +284,11 @@ struct DataBrokerRunCustomJSONView: View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
+}
+
+private enum Tab: Hashable {
+    case scan
+    case extractedProfiles
 }
 
 private enum BrokerFilter: String, CaseIterable {

@@ -64,7 +64,6 @@ final class MainViewController: NSViewController {
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
-    private var selectedTabViewModelForHistoryViewOnboardingCancellable: AnyCancellable?
     private var viewEventsCancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
@@ -637,14 +636,6 @@ final class MainViewController: NSViewController {
             subscribeToTitleChange(of: tabViewModel)
             subscribeToTabContent(of: tabViewModel)
         }
-
-        selectedTabViewModelForHistoryViewOnboardingCancellable = tabCollectionViewModel.$selectedTabViewModel
-            .dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self, !self.isInPopUpWindow else { return }
-                navigationBarViewController.presentHistoryViewOnboardingIfNeeded()
-            }
     }
 
     private func subscribeToTitleChange(of selectedTabViewModel: TabViewModel?) {

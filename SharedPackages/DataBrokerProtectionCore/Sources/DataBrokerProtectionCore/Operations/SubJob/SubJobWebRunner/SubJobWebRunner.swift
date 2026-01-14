@@ -164,6 +164,7 @@ public extension SubJobWebRunning {
 
         if featureFlagger.isClickActionDelayReductionOptimizationOn && action is ClickAction {
             Logger.action.log("Executing click action delay BEFORE click: \(self.clickAwaitTime)s")
+            recordWaitForDebug(stepType: stepType, reason: "click delay (before click)", seconds: clickAwaitTime)
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
         }
 
@@ -300,6 +301,7 @@ public extension SubJobWebRunning {
             // When ON, the delay happens before the click in runNextAction
             if !featureFlagger.isClickActionDelayReductionOptimizationOn {
                 Logger.action.log("Executing click action delay AFTER click: \(self.clickAwaitTime)s")
+                recordWaitForDebug(stepType: actionsHandler?.stepType, reason: "click delay (after click)", seconds: clickAwaitTime)
                 try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
             }
             await executeNextStep()
@@ -413,6 +415,7 @@ public extension SubJobWebRunning {
 
     func executeCurrentAction() async {
         let waitTimeUntilRunningTheActionAgain: TimeInterval = 3
+        recordWaitForDebug(stepType: actionsHandler?.stepType, reason: "retry", seconds: waitTimeUntilRunningTheActionAgain)
         try? await Task.sleep(nanoseconds: UInt64(waitTimeUntilRunningTheActionAgain) * 1_000_000_000)
 
         if let currentAction = self.actionsHandler?.currentAction() {

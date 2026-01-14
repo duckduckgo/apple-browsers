@@ -204,8 +204,12 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var resultsView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Extracted Profiles")
+            HStack(spacing: 8) {
+                if viewModel.isProgressActive {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                Text(viewModel.progressText)
                     .font(.headline)
             }
 
@@ -234,38 +238,50 @@ struct DataBrokerRunCustomJSONView: View {
                     .tag(scanResult.id)
                 }
             }
-            .frame(maxHeight: 320)
+            .frame(maxHeight: 220)
             .listStyle(.plain)
 
             Divider()
 
-            if viewModel.combinedDebugEvents.isEmpty {
-                Text("No events yet.")
-                    .foregroundColor(.secondary)
-            } else {
-                List(selection: $selectedDebugEventId) {
-                    Section(header: eventTableHeader.listRowInsets(EdgeInsets())) {
-                        ForEach(viewModel.combinedDebugEvents) { event in
-                            HStack(spacing: 12) {
-                                Text(historyDateFormatter.string(from: event.timestamp))
-                                    .frame(width: eventTimeColumnWidth, alignment: .leading)
-                                Text(event.kind)
-                                    .frame(width: eventKindColumnWidth, alignment: .leading)
-                                Text(event.summary)
-                                    .frame(width: eventSummaryColumnWidth, alignment: .leading)
-                                Text(event.details)
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(10)
-                                    .help(event.details)
+            GeometryReader { proxy in
+                let detailsHeight = debugEventDetailsHeight
+                let listHeight = max(200, proxy.size.height - detailsHeight - 12)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    if viewModel.combinedDebugEvents.isEmpty {
+                        Text("No events yet.")
+                            .foregroundColor(.secondary)
+                    } else {
+                        List(selection: $selectedDebugEventId) {
+                            Section(header: eventTableHeader.listRowInsets(EdgeInsets())) {
+                                ForEach(viewModel.combinedDebugEvents) { event in
+                                    HStack(spacing: 12) {
+                                        Text(historyDateFormatter.string(from: event.timestamp))
+                                            .frame(width: eventTimeColumnWidth, alignment: .leading)
+                                        Text(event.kind)
+                                            .frame(width: eventKindColumnWidth, alignment: .leading)
+                                        Text(event.summary)
+                                            .frame(width: eventSummaryColumnWidth, alignment: .leading)
+                                        Text(event.details)
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(10)
+                                            .help(event.details)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .listRowInsets(EdgeInsets())
+                                    .tag(event.id)
+                                }
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .listRowInsets(EdgeInsets())
-                            .tag(event.id)
                         }
+                        .listStyle(.plain)
+                        .frame(height: listHeight)
                     }
+
+                    TextEditor(text: .constant(selectedDebugEventDetails))
+                        .border(Color.gray, width: 1)
+                        .frame(height: detailsHeight)
                 }
-                .listStyle(.plain)
-                .frame(maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -290,10 +306,16 @@ struct DataBrokerRunCustomJSONView: View {
     private var eventTimeColumnWidth: CGFloat { 140 }
     private var eventKindColumnWidth: CGFloat { 90 }
     private var eventSummaryColumnWidth: CGFloat { 240 }
+    private var debugEventDetailsHeight: CGFloat { 160 }
 
     private var selectedResult: ScanResult? {
         guard let selectedResultId else { return nil }
         return viewModel.results.first { $0.id == selectedResultId }
+    }
+
+    private var selectedDebugEventDetails: String {
+        guard let selectedDebugEventId else { return "" }
+        return viewModel.combinedDebugEvents.first { $0.id == selectedDebugEventId }?.details ?? ""
     }
 
     private var extractedProfilesTitle: String {

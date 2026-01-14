@@ -146,6 +146,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var historyEvents: [HistoryEvent] = []
     @Published var actionEvents: [DebugActionEvent] = []
     @Published var actionResponseEvents: [DebugActionResponseEvent] = []
+    @Published var progressText: String = "Idle"
+    @Published var isProgressActive: Bool = false
 
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
@@ -436,6 +438,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.historyEvents.removeAll()
         self.actionEvents.removeAll()
         self.actionResponseEvents.removeAll()
+        self.isProgressActive = true
+        self.progressText = "Starting scan..."
         if let data = jsonString.data(using: .utf8) {
             do {
                 let decoder = JSONDecoder()
@@ -463,6 +467,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                                                  actionId: actionId,
                                                                  actionType: actionType,
                                                                  payloadJSON: payloadJSON)
+                                },
+                                onWait: { [weak self] stepType, reason, seconds in
+                                    self?.updateProgress("Waiting \(seconds)s (\(reason))")
                                 }
                             )
                             let runner = BrokerProfileScanSubJobWebRunner(
@@ -502,6 +509,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     }
                 }
                 group.notify(queue: .main) {
+                    self.isProgressActive = false
+                    self.progressText = "Idle"
                     if let error = self.error {
                         self.showAlert(for: error)
                     } else if self.results.count == 0 {
@@ -516,6 +525,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     @MainActor
     func runOptOut(scanResult: ScanResult) {
+        isProgressActive = true
+        progressText = "Starting opt-out..."
         addOptOutStartedEvent(for: scanResult)
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: scanResult.dataBroker,
@@ -541,6 +552,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                                      actionId: actionId,
                                                      actionType: actionType,
                                                      payloadJSON: payloadJSON)
+                    },
+                    onWait: { [weak self] stepType, reason, seconds in
+                        self?.updateProgress("Waiting \(seconds)s (\(reason))")
                     }
                 )
                 let runner = BrokerProfileOptOutSubJobWebRunner(
@@ -563,6 +577,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
                 addOptOutConfirmedEvent(for: scanResult)
                 DispatchQueue.main.async {
+                    self.isProgressActive = false
+                    self.progressText = "Idle"
                     self.showAlert = true
                     self.alert = AlertUI(title: "Success!", description: "We finished the opt out process for the selected profile.")
                 }
@@ -573,6 +589,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
                 addOptOutErrorEvent(for: scanResult, error: error)
+                DispatchQueue.main.async {
+                    self.isProgressActive = false
+                    self.progressText = "Idle"
+                }
                 showAlert(for: error)
             }
         }
@@ -661,6 +681,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.actionEvents.append(event)
         }
+        updateProgress(currentActionText(stepType: stepType, actionType: actionType, prefix: "Action"))
     }
 
     private func addActionResponseEvent(stepType: StepType, actionId: String?, actionType: ActionType?, payloadJSON: String) {
@@ -674,6 +695,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.actionResponseEvents.append(event)
         }
+        updateProgress(currentActionText(stepType: stepType, actionType: actionType, prefix: "Response"))
     }
 
     var combinedDebugEvents: [DebugEventRow] {
@@ -715,6 +737,18 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let typeText = actionType?.rawValue ?? "unknown"
         let idText = actionId ?? "-"
         return "\(stepType.rawValue) > \(typeText)\n\(idText)"
+    }
+
+    private func currentActionText(stepType: StepType, actionType: ActionType?, prefix: String) -> String {
+        let typeText = actionType?.rawValue ?? "unknown"
+        return "\(prefix): \(stepType.rawValue) > \(typeText)"
+    }
+
+    private func updateProgress(_ text: String) {
+        DispatchQueue.main.async {
+            self.progressText = text
+            self.isProgressActive = true
+        }
     }
 
     private func historyEventDescription(_ event: HistoryEvent) -> String {
@@ -777,13 +811,16 @@ final class FakeStageDurationCalculator: StageDurationCalculator, ActionEventRep
     private let stepType: StepType
     private let onActionPayload: ((StepType, String?, ActionType?, String) -> Void)?
     private let onActionResponse: ((StepType, String?, ActionType?, String) -> Void)?
+    private let onWait: ((StepType, String, TimeInterval) -> Void)?
 
     init(stepType: StepType = .scan,
          onActionPayload: ((StepType, String?, ActionType?, String) -> Void)? = nil,
-         onActionResponse: ((StepType, String?, ActionType?, String) -> Void)? = nil) {
+         onActionResponse: ((StepType, String?, ActionType?, String) -> Void)? = nil,
+         onWait: ((StepType, String, TimeInterval) -> Void)? = nil) {
         self.stepType = stepType
         self.onActionPayload = onActionPayload
         self.onActionResponse = onActionResponse
+        self.onWait = onWait
     }
 
     func durationSinceLastStage() -> Double {
@@ -868,6 +905,10 @@ final class FakeStageDurationCalculator: StageDurationCalculator, ActionEventRep
 
     func recordActionResponse(stepType: StepType?, actionId: String?, actionType: ActionType?, payloadJSON: String) {
         onActionResponse?(stepType ?? self.stepType, actionId, actionType, payloadJSON)
+    }
+
+    func recordWait(stepType: StepType?, reason: String, seconds: TimeInterval) {
+        onWait?(stepType ?? self.stepType, reason, seconds)
     }
 }
 

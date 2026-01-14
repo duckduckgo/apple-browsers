@@ -161,6 +161,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public func executeNextStep() async {
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
+        recordWaitForDebug(stepType: .scan, reason: "between actions", seconds: operationAwaitTime)
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 

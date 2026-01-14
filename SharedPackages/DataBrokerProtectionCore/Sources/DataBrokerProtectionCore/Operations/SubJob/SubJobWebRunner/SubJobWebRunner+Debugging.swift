@@ -21,6 +21,7 @@ import Foundation
 public protocol ActionEventReportingForDebug {
     func recordActionPayload(stepType: StepType?, actionId: String?, actionType: ActionType?, payloadJSON: String)
     func recordActionResponse(stepType: StepType?, actionId: String?, actionType: ActionType?, payloadJSON: String)
+    func recordWait(stepType: StepType?, reason: String, seconds: TimeInterval)
 }
 
 public extension SubJobWebRunning {
@@ -40,6 +41,11 @@ public extension SubJobWebRunning {
                                       actionId: actionId,
                                       actionType: actionType,
                                       payloadJSON: payloadJSON)
+    }
+
+    func recordWaitForDebug(stepType: StepType?, reason: String, seconds: TimeInterval) {
+        guard let reporter = stageCalculator as? ActionEventReportingForDebug else { return }
+        reporter.recordWait(stepType: stepType, reason: reason, seconds: seconds)
     }
 
     func errorActionId(_ error: Error) -> String? {

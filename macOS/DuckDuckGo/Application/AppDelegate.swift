@@ -1413,7 +1413,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
               ) else { return nil }
 
-        let presenter = OverlayPresenter(
+        let presenter = WarnBeforeQuitOverlayPresenter(
             startupPreferences: startupPreferences,
             onDontAskAgain: { [tabsPreferences] in
                 tabsPreferences.warnBeforeQuitting = false

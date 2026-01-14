@@ -20,21 +20,48 @@ import AppKit
 import Combine
 import Foundation
 
+enum ConfirmationAction {
+    case quit
+    case close
+
+    var shortcutText: String {
+        switch self {
+        case .quit: return "⌘Q"
+        case .close: return "⌘W"
+        }
+    }
+
+    var actionText: String {
+        switch self {
+        case .quit: return UserText.confirmQuitAction
+        case .close: return UserText.confirmCloseAction
+        }
+    }
+}
+
 @MainActor
 final class WarnBeforeQuitViewModel: ObservableObject {
 
     @Published private(set) var progress: CGFloat = 0
+    let action: ConfirmationAction
     private let startupPreferences: StartupPreferences?
 
     var onDontAskAgain: (() -> Void)?
     var onHoverChange: ((Bool) -> Void)?
 
     var subtitleText: String? {
-        // Only show "Tabs will be restored" subtitle if restore tabs is enabled
-        return startupPreferences?.restorePreviousSession == true ? UserText.confirmQuitSubtitle : nil
+        // For quit action, only show "Tabs will be restored" subtitle if restore tabs is enabled
+        // For close action, no subtitle
+        switch action {
+        case .quit:
+            return startupPreferences?.restorePreviousSession == true ? UserText.confirmQuitSubtitle : nil
+        case .close:
+            return nil
+        }
     }
 
-    init(startupPreferences: StartupPreferences?) {
+    init(action: ConfirmationAction = .quit, startupPreferences: StartupPreferences? = nil) {
+        self.action = action
         self.startupPreferences = startupPreferences
     }
 

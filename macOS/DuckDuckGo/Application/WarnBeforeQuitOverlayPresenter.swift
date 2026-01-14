@@ -1,5 +1,5 @@
 //
-//  OverlayPresenter.swift
+//  WarnBeforeQuitOverlayPresenter.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import SwiftUI
 ///
 /// Observes state changes from WarnBeforeQuitManager and updates the UI accordingly.
 @MainActor
-final class OverlayPresenter {
+final class WarnBeforeQuitOverlayPresenter {
 
     // MARK: - Properties
 
@@ -34,15 +34,19 @@ final class OverlayPresenter {
     private var progressTask: Task<Void, Never>?
 
     let windowProvider: @MainActor () -> NSWindow?
+    let anchorViewProvider: (@MainActor () -> NSView?)?
 
     // MARK: - Initialization
 
-    init(startupPreferences: StartupPreferences?,
+    init(action: ConfirmationAction = .quit,
+         startupPreferences: StartupPreferences? = nil,
          onDontAskAgain: @escaping () -> Void,
          onHoverChange: @escaping (Bool) -> Void,
-         windowProvider: @MainActor @escaping () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow }) {
-        self.viewModel = WarnBeforeQuitViewModel(startupPreferences: startupPreferences)
+         windowProvider: @MainActor @escaping () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow },
+         anchorViewProvider: (@MainActor () -> NSView?)? = nil) {
+        self.viewModel = WarnBeforeQuitViewModel(action: action, startupPreferences: startupPreferences)
         self.windowProvider = windowProvider
+        self.anchorViewProvider = anchorViewProvider
         self.viewModel.onDontAskAgain = onDontAskAgain
         self.viewModel.onHoverChange = onHoverChange
     }
@@ -94,13 +98,32 @@ final class OverlayPresenter {
 
         guard let overlayWindow else { return }
 
-        // Position overlay at top center of the key window
-        let windowFrame = keyWindow.frame
         let overlaySize = CGSize(width: 520, height: 90)
-        let overlayOrigin = CGPoint(
-            x: windowFrame.midX - overlaySize.width / 2,
-            y: windowFrame.maxY - overlaySize.height - 80
-        )
+        let overlayOrigin: CGPoint
+
+        // Position overlay relative to anchor view (tab) or window center
+        if let anchorView = anchorViewProvider?(), let window = anchorView.window {
+            // Get anchor view's frame in screen coordinates
+            let anchorFrameInWindow = anchorView.convert(anchorView.bounds, to: nil)
+            let anchorFrameInScreen = window.convertToScreen(anchorFrameInWindow)
+            let windowFrame = window.frame
+
+            // Position below the anchor (tab), left-aligned
+            let x = anchorFrameInScreen.minX
+            let clampedX = max(windowFrame.minX, min(x, windowFrame.maxX - overlaySize.width))
+
+            overlayOrigin = CGPoint(
+                x: clampedX,
+                y: anchorFrameInScreen.minY - overlaySize.height - 12
+            )
+        } else {
+            // Default: Position at top center of the key window
+            let windowFrame = keyWindow.frame
+            overlayOrigin = CGPoint(
+                x: windowFrame.midX - overlaySize.width / 2,
+                y: windowFrame.maxY - overlaySize.height - 80
+            )
+        }
 
         overlayWindow.setFrame(CGRect(origin: overlayOrigin, size: overlaySize), display: true)
 

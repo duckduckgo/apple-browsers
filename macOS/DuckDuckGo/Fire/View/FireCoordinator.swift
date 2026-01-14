@@ -119,6 +119,11 @@ final class FireCoordinator {
     }
 
     func fireButtonAction() {
+        // Don't open dialog if burn is already in progress
+        guard fireViewModel.fire.burningData == nil else {
+            return
+        }
+
         // There must be a window when the Fire button is clicked
         guard let lastKeyMainWindowController = windowControllersManager.lastKeyMainWindowController,
               let burningWindow = lastKeyMainWindowController.window else {
@@ -141,6 +146,11 @@ final class FireCoordinator {
     }
 
     func showFirePopover(relativeTo positioningView: NSView, tabCollectionViewModel: TabCollectionViewModel) {
+        // Don't open popover if burn is already in progress
+        guard fireViewModel.fire.burningData == nil else {
+            return
+        }
+
         guard !(firePopover?.isShown ?? false) else {
             firePopover?.close()
             return
@@ -156,6 +166,11 @@ extension FireCoordinator {
     /// Unified Fire dialog presenter for all entry points
     @MainActor
     func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeVisits providedVisits: [Visit]? = nil, settings: FireDialogViewSettings? = nil) async -> FireDialogView.Response {
+        // Don't open dialog if burn is already in progress
+        guard fireViewModel.fire.burningData == nil else {
+            return .noAction
+        }
+
         let targetWindow = window ?? windowControllersManager.lastKeyMainWindowController?.window
         guard let parentWindow = targetWindow,
               let tabCollectionViewModel = tabViewModelGetter(parentWindow) else { return .noAction }

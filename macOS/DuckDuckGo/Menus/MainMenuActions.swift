@@ -876,7 +876,9 @@ extension AppDelegate {
 
 extension MainViewController {
 
-    /// Finds currently active Tab even if it‘s playing a Full Screen video
+    private static var shouldIgnoreRepeatedCloseTabShortcuts = false
+
+    /// Finds currently active Tab even if it's playing a Full Screen video
     private func getActiveTabAndIndex() -> (tab: Tab, index: TabIndex)? {
         var tab: Tab? {
             // popup windows don‘t get to lastKeyMainWindowController so try getting their WindowController directly from a key window
@@ -940,19 +942,28 @@ extension MainViewController {
     @objc func closeTab(_ sender: Any?) {
         guard let (tab, index) = getActiveTabAndIndex() else { return }
         makeKeyIfNeeded()
-
-        // when close is triggered by a keyboard shortcut,
-        // instead of closing a pinned tab we select the first regular tab
-        // (this is in line with Safari behavior)
-        // If there are no regular tabs, we close the window.
-        var isHandlingKeyDownEvent: Bool {
-            guard sender is NSMenuItem,
-                  let currentEvent = NSApp.currentEvent,
-                  case .keyDown = currentEvent.type,
-                  currentEvent.modifierFlags.contains(.command) else { return false }
-             return true
+        let currentEvent = NSApp.currentEvent
+        guard !Self.shouldIgnoreRepeatedCloseTabShortcuts || currentEvent?.isARepeat != true || currentEvent?.keyEquivalent != [.command, "w"] else {
+            return // auto-repeated ⌘W keyDown event received after the tab was closed with long pressing ⌘W should be ignored
         }
-        if isHandlingKeyDownEvent, tab.isPinned {
+        Self.shouldIgnoreRepeatedCloseTabShortcuts = false
+
+        // Handle Cmd+W on pinned tabs
+        if case .pinned(let pinnedIndex) = index,
+           sender is NSMenuItem,
+           let currentEvent, currentEvent.keyEquivalent == [.command, "w"] {
+            // Show confirmation warning if enabled
+            if featureFlagger.isFeatureOn(.warnBeforeQuit) {
+                let shouldClose = !tabsPreferences.warnBeforeClosingPinnedTabs || showPinnedTabCloseConfirmation(for: tab, atPinnedIndex: pinnedIndex, currentEvent: currentEvent)
+                if shouldClose {
+                    // ignore repeated incoming ⌘W keyDown events after the tab was closed with long pressing ⌘W
+                    Self.shouldIgnoreRepeatedCloseTabShortcuts = tabsPreferences.warnBeforeClosingPinnedTabs
+                    tabCollectionViewModel.remove(at: index)
+                }
+                return
+            }
+
+            // Original behavior: switch to first regular tab or close window
             if tabCollectionViewModel.tabCollection.tabs.isEmpty {
                 view.window?.performClose(sender)
             } else {
@@ -963,6 +974,45 @@ extension MainViewController {
         }
 
         tabCollectionViewModel.remove(at: index)
+    }
+
+    /// Shows the pinned tab close confirmation overlay and returns true if the tab should be closed, false otherwise
+    @MainActor
+    private func showPinnedTabCloseConfirmation(for tab: Tab, atPinnedIndex pinnedIndex: Int, currentEvent: NSEvent) -> Bool {
+        guard let manager = WarnBeforeQuitManager(
+            currentEvent: currentEvent,
+            isWarningEnabled: { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs }
+        ) else { return false }
+
+        let presenter = WarnBeforeQuitOverlayPresenter(
+            action: .close,
+            onDontAskAgain: { [tabsPreferences] in
+                tabsPreferences.warnBeforeClosingPinnedTabs = false
+            },
+            onHoverChange: { [weak manager] isHovering in
+                manager?.setMouseHovering(isHovering)
+            },
+            anchorViewProvider: { [weak self] in
+                self?.tabBarViewController.cell(forPinnedTabAt: pinnedIndex)
+            }
+        )
+        // Subscribe to the manager's state stream. Keeps the presenter alive as long as the stream is active.
+        presenter.subscribe(to: manager.stateStream)
+
+        // Wait for the manager to complete the hold phase or release the key.
+        let query = manager.shouldTerminate(isAsync: false)
+        switch query {
+        case .sync(let decision):
+            return decision == .next
+        case .async(let task):
+            // Wait for the shortcut to be repeated, "Don't Show Again" button clicked, or the warning is dismissed.
+            Task { @MainActor in
+                let decision = await task.value
+                guard decision == .next else { return }
+                tabCollectionViewModel.remove(at: .pinned(pinnedIndex))
+            }
+            return false
+        }
     }
 
     // MARK: - View

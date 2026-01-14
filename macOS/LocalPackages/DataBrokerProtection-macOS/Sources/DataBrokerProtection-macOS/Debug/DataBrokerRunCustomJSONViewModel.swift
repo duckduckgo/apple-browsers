@@ -428,6 +428,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @MainActor
     func runJSON(jsonString: String) {
         self.error = nil
+        self.results.removeAll()
         if let data = jsonString.data(using: .utf8) {
             do {
                 let decoder = JSONDecoder()

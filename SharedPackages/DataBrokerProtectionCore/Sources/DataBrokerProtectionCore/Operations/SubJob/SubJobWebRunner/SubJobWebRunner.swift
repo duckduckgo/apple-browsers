@@ -111,6 +111,10 @@ public extension SubJobWebRunning {
                 try await runEmailConfirmationAction(action: emailConfirmationAction)
                 await executeNextStep()
             } catch {
+                recordActionResponseForDebug(stepType: stepType,
+                                             actionId: emailConfirmationAction.id,
+                                             actionType: emailConfirmationAction.actionType,
+                                             details: errordetails(error))
                 await onError(error: DataBrokerProtectionError.emailError(error as? EmailError))
             }
 
@@ -176,6 +180,10 @@ public extension SubJobWebRunning {
 
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {
         if let email = extractedProfile?.email {
+            recordActionResponseForDebug(stepType: actionsHandler?.stepType,
+                                         actionId: action.id,
+                                         actionType: action.actionType,
+                                         details: "email confirmation started (polling inverval \(action.pollingTime)s)")
             stageCalculator.setStage(.emailReceive)
             let url = try await emailConfirmationDataService.getConfirmationLink(
                 from: email,
@@ -193,6 +201,10 @@ public extension SubJobWebRunning {
                 return
             }
 
+            recordActionResponseForDebug(stepType: actionsHandler?.stepType,
+                                         actionId: action.id,
+                                         actionType: action.actionType,
+                                         details: "email confirmation link received")
             stageCalculator.fireOptOutEmailConfirm()
         } else {
             throw EmailError.cantFindEmail
@@ -419,6 +431,10 @@ public extension SubJobWebRunning {
         if let currentAction = self.actionsHandler?.currentAction() {
             decrementRetriesCountOnError()
             Logger.dataBrokerProtection.log("Retrying current action")
+            recordActionResponseForDebug(stepType: actionsHandler?.stepType,
+                                         actionId: currentAction.id,
+                                         actionType: currentAction.actionType,
+                                         details: "retrying action")
             await runNextAction(currentAction)
         } else {
             resetRetriesCount()

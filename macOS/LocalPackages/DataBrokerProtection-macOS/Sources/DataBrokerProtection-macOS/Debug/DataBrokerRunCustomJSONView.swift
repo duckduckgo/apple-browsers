@@ -220,6 +220,15 @@ struct DataBrokerRunCustomJSONView: View {
                 }
                 Text(viewModel.progressText)
                     .font(.headline)
+                if #available(macOS 12.0, *) {
+                    Spacer()
+                    TimelineView(.periodic(from: .now, by: 1.0)) { context in
+                        Text(clockFormatter.string(from: context.date))
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .monospacedDigit()
+                    }
+                }
             }
 
             Divider()
@@ -316,6 +325,11 @@ struct DataBrokerRunCustomJSONView: View {
     private var eventKindColumnWidth: CGFloat { 90 }
     private var eventSummaryColumnWidth: CGFloat { 240 }
     private var debugEventDetailsHeight: CGFloat { 160 }
+    private var clockFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }
 
     private var selectedResult: ScanResult? {
         guard let selectedResultId else { return nil }

@@ -131,6 +131,12 @@ final class AIChatContextualSheetViewModel {
         updateExpandButtonState()
     }
 
+    /// Clears the page context (called when user removes the context chip)
+    func clearPageContext() {
+        pageContext = nil
+        fullPageContext = nil
+    }
+
     // MARK: - Private Methods
 
     private func updateExpandButtonState() {

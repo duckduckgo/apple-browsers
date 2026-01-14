@@ -221,16 +221,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         } else {
             showContextualInput()
             preloadWebViewController()
-            showContextChipIfAvailable()
         }
-    }
-
-    /// Shows the context chip if page context was provided when opening the sheet
-    private func showContextChipIfAvailable() {
-        guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
-            self?.contextualInputViewController.hideContextChip()
-        }) else { return }
-        contextualInputViewController.showContextChip(chipView, animated: false)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -387,7 +378,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
-        // TODO: Handle any cleanup when context chip is removed
+        viewModel.clearPageContext()
     }
 }
 

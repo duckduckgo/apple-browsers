@@ -253,6 +253,8 @@ enum NewTabPagePixel: PixelKitEvent {
                 .protectionsSectionHidden,
                 .blockedTrackingAttemptsShowLess,
                 .blockedTrackingAttemptsShowMore,
+                .customizerHidden,
+                .customizerShown,
                 .privacyStatsCouldNotLoadDatabase,
                 .privacyStatsDatabaseError,
                 .newTabPageExceptionReported,

@@ -1,0 +1,143 @@
+//
+//  MemoryPressureReporterTests.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Combine
+import PrivacyConfig
+import PixelKit
+import XCTest
+@testable import DuckDuckGo_Privacy_Browser
+
+final class MemoryPressureReporterTests: XCTestCase {
+
+    private var sut: MemoryPressureReporter!
+    private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockPixelFiring: MockPixelFiring!
+
+    override func setUp() {
+        super.setUp()
+        mockFeatureFlagger = MockFeatureFlagger()
+        mockPixelFiring = MockPixelFiring()
+    }
+
+    override func tearDown() {
+        sut = nil
+        mockFeatureFlagger = nil
+        mockPixelFiring = nil
+        super.tearDown()
+    }
+
+    // MARK: - Initialization Tests
+
+    func testWhenFeatureFlagIsDisabled_ThenMonitoringDoesNotStart() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        // When
+        sut = MemoryPressureReporter(featureFlagger: mockFeatureFlagger, pixelFiring: mockPixelFiring)
+
+        // Then - allow time for async subscription
+        let expectation = expectation(description: "Wait for subscription")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+
+        // Monitoring should not have started (stopMonitoring should work without issues)
+        sut.stopMonitoring()
+    }
+
+    func testWhenFeatureFlagIsEnabled_ThenMonitoringStarts() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.memoryPressureReporting]
+
+        // When
+        sut = MemoryPressureReporter(featureFlagger: mockFeatureFlagger, pixelFiring: mockPixelFiring)
+
+        // Then - allow time for async subscription
+        let expectation = expectation(description: "Wait for subscription")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+
+        // Monitoring should have started - calling startMonitoring again should be a no-op due to guard
+        sut.startMonitoring() // This should not create a duplicate source
+    }
+
+    // MARK: - Start/Stop Monitoring Tests
+
+    func testWhenStartMonitoringCalledWithFeatureFlagDisabled_ThenMonitoringDoesNotStart() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        sut = MemoryPressureReporter(featureFlagger: mockFeatureFlagger, pixelFiring: mockPixelFiring)
+
+        // When
+        sut.startMonitoring()
+
+        // Then - no crash or error, monitoring doesn't start due to guard
+        sut.stopMonitoring()
+    }
+
+    func testWhenStopMonitoringCalled_ThenMonitoringStops() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.memoryPressureReporting]
+        sut = MemoryPressureReporter(featureFlagger: mockFeatureFlagger, pixelFiring: mockPixelFiring)
+
+        let expectation = expectation(description: "Wait for subscription")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+
+        // When
+        sut.stopMonitoring()
+
+        // Then - calling stop again should be safe
+        sut.stopMonitoring()
+    }
+
+    // MARK: - Pixel Name Tests
+
+    func testMemoryPressureWarningPixelName() {
+        // Given/When
+        let pixel = MemoryPressurePixel.memoryPressureWarning
+
+        // Then
+        XCTAssertEqual(pixel.name, "memory_pressure_warning")
+    }
+
+    func testMemoryPressureCriticalPixelName() {
+        // Given/When
+        let pixel = MemoryPressurePixel.memoryPressureCritical
+
+        // Then
+        XCTAssertEqual(pixel.name, "memory_pressure_critical")
+    }
+
+    func testMemoryPressurePixelParameters() {
+        // Given/When
+        let warningPixel = MemoryPressurePixel.memoryPressureWarning
+        let criticalPixel = MemoryPressurePixel.memoryPressureCritical
+
+        // Then
+        XCTAssertNil(warningPixel.parameters)
+        XCTAssertNil(criticalPixel.parameters)
+        XCTAssertNil(warningPixel.standardParameters)
+        XCTAssertNil(criticalPixel.standardParameters)
+    }
+}

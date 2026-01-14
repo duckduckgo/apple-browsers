@@ -84,7 +84,7 @@ final class MemoryPressureReporter {
             .store(in: &cancellables)
     }
 
-    private func startMonitoring() {
+    func startMonitoring() {
         guard memoryPressureSource == nil, featureFlagger.isFeatureOn(.memoryPressureReporting) else { return }
 
         let source = DispatchSource.makeMemoryPressureSource(eventMask: [.normal, .warning, .critical], queue: .main)
@@ -99,7 +99,7 @@ final class MemoryPressureReporter {
         memoryPressureSource = source
     }
 
-    private func stopMonitoring() {
+    func stopMonitoring() {
         memoryPressureSource?.cancel()
         memoryPressureSource = nil
     }

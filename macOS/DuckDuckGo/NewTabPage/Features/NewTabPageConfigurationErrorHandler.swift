@@ -28,11 +28,11 @@ final class NewTabPageConfigurationErrorHandler: EventMapping<NewTabPageConfigur
             case .newTabPageError:
                 PixelKit.fire(DebugEvent(NewTabPagePixel.newTabPageExceptionReported), frequency: .dailyAndStandard)
 
-            case .newTabPageTelemetry(.customizerOpened(let themesDiscoveryOnscreen)):
-                PixelKit.fire(NewTabPagePixel.customizerOpen(themesDiscoveryOnscreen: themesDiscoveryOnscreen))
+            case .newTabPageTelemetry(.customizerOpened(let themePopoverWasOpen)):
+                PixelKit.fire(NewTabPagePixel.customizerShown(themePopoverWasOpen: themePopoverWasOpen))
 
             case .newTabPageTelemetry(.customizerClosed):
-                PixelKit.fire(NewTabPagePixel.customizerClosed)
+                PixelKit.fire(NewTabPagePixel.customizerHidden)
             }
         }
     }

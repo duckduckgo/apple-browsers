@@ -139,7 +139,7 @@ enum NewTabPagePixel: PixelKitEvent {
     case newTabPageExceptionReported
 
     /**
-     * Event Trigger: NTP's Customizer is Open or Closed.
+     * Event Trigger: NTP's Customizer is Shown or Hidden.
      *
      * > Related links:
      * [Privacy Triage](`PLACEHOLDER`)
@@ -147,8 +147,8 @@ enum NewTabPagePixel: PixelKitEvent {
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      */
-    case customizerOpen(themesDiscoveryOnscreen: Bool)
-    case customizerClosed
+    case customizerShown(themePopoverWasOpen: Bool)
+    case customizerHidden
 
     // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
     case searchSubmitted
@@ -181,6 +181,8 @@ enum NewTabPagePixel: PixelKitEvent {
         case .protectionsSectionHidden: return "m_mac_protections-section-hidden"
         case .blockedTrackingAttemptsShowLess: return "m_mac_new-tab-page_blocked-tracking-attempts_show-less"
         case .blockedTrackingAttemptsShowMore: return "m_mac_new-tab-page_blocked-tracking-attempts_show-more"
+        case .customizerHidden: return "new-tab-page_customizer_hidden"
+        case .customizerShown: return "new-tab-page_customizer_shown"
         case .privacyStatsCouldNotLoadDatabase: return "new-tab-page_privacy-stats_could-not-load-database"
         case .privacyStatsDatabaseError: return "new-tab-page_privacy-stats_database_error"
         case .newTabPageExceptionReported: return "new-tab-page_exception-reported"
@@ -198,6 +200,10 @@ enum NewTabPagePixel: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
+        case .customizerShown(let themePopoverWasOpen):
+            return [
+                "themePopoverWasOpen": themePopoverWasOpen.description
+            ]
         case .newTabPageShown(let favorites, let protections, let customBackground):
             return [
                 "favorites": String(favorites),
@@ -218,6 +224,7 @@ enum NewTabPagePixel: PixelKitEvent {
                 .protectionsSectionHidden,
                 .blockedTrackingAttemptsShowLess,
                 .blockedTrackingAttemptsShowMore,
+                .customizerHidden,
                 .privacyFeedHistoryLinkOpened,
                 .privacyStatsCouldNotLoadDatabase,
                 .privacyStatsDatabaseError,

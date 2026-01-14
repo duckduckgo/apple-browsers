@@ -37,11 +37,11 @@ public final class DebugPurchaseModelV2: ObservableObject {
     }
 
     @MainActor
-    func purchase(_ product: Product) {
+    func purchase(_ product: Product, includeProTier: Bool = true) {
         print("Attempting purchase: \(product.displayName)")
 
         Task {
-            await appStorePurchaseFlow.purchaseSubscription(with: product.id)
+            await appStorePurchaseFlow.purchaseSubscription(with: product.id, includeProTier: includeProTier)
         }
     }
 }

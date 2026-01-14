@@ -196,7 +196,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
         subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
         protectionsReportModel: newTabPageProtectionsReportModel,
-        homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
+        homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
+        nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
+        subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
+        duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor()
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -1835,7 +1838,10 @@ extension AppDelegate: UserScriptDependenciesProviding {
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
             subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
             protectionsReportModel: newTabPageProtectionsReportModel,
-            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
+            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
+            nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
+            subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
+            duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor()
         )
     }
 }

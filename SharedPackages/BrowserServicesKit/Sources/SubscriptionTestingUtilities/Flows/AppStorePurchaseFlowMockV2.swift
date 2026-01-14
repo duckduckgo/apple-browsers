@@ -22,15 +22,29 @@ import Subscription
 public final class AppStorePurchaseFlowMockV2: AppStorePurchaseFlowV2 {
     public var purchaseSubscriptionResult: Result<PurchaseResult, AppStorePurchaseFlowError>?
     public var completeSubscriptionPurchaseResult: Result<PurchaseUpdate, AppStorePurchaseFlowError>?
+    public var changeTierResult: Result<TransactionJWS, AppStorePurchaseFlowError>?
+
+    public var purchaseSubscriptionCalled = false
+    public var purchaseSubscriptionIncludeProTier: Bool?
+    public var changeTierCalled = false
+    public var changeTierSubscriptionIdentifier: String?
 
     public init() { }
 
-    public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
-        purchaseSubscriptionResult!
+    public func purchaseSubscription(with subscriptionIdentifier: String, includeProTier: Bool) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
+        purchaseSubscriptionCalled = true
+        purchaseSubscriptionIncludeProTier = includeProTier
+        return purchaseSubscriptionResult!
     }
 
     @discardableResult
     public func completeSubscriptionPurchase(with transactionJWS: TransactionJWS, additionalParams: [String: String]?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
         completeSubscriptionPurchaseResult!
+    }
+
+    public func changeTier(to subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError> {
+        changeTierCalled = true
+        changeTierSubscriptionIdentifier = subscriptionIdentifier
+        return changeTierResult!
     }
 }

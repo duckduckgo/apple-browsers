@@ -69,43 +69,7 @@ extension AIChatSuggestion {
 extension AIChatSuggestion {
 
     /// Mock pinned chats for development and testing.
-    public static let mockPinnedChats: [AIChatSuggestion] = [
-        AIChatSuggestion(
-            id: "pinned-1",
-            title: "Can you help me think through this product decision?",
-            isPinned: true,
-            chatId: "chat-pinned-1",
-            timestamp: Date().addingTimeInterval(-3600)
-        ),
-        AIChatSuggestion(
-            id: "pinned-2",
-            title: "Can you help me decide what to cook tonight?",
-            isPinned: true,
-            chatId: "chat-pinned-2",
-            timestamp: Date().addingTimeInterval(-7200)
-        ),
-        AIChatSuggestion(
-            id: "pinned-3",
-            title: "I'm comparing a few options and can't tell which one makes sense",
-            isPinned: true,
-            chatId: "chat-pinned-3",
-            timestamp: Date().addingTimeInterval(-10800)
-        ),
-        AIChatSuggestion(
-            id: "pinned-4",
-            title: "I need help preparing for a conversation I'm nervous about",
-            isPinned: true,
-            chatId: "chat-pinned-4",
-            timestamp: Date().addingTimeInterval(-14400)
-        ),
-        AIChatSuggestion(
-            id: "pinned-5",
-            title: "Help me write a professional email",
-            isPinned: true,
-            chatId: "chat-pinned-5",
-            timestamp: Date().addingTimeInterval(-18000)
-        )
-    ]
+    public static let mockPinnedChats: [AIChatSuggestion] = []
 
     /// Mock recent chats for development and testing.
     public static let mockRecentChats: [AIChatSuggestion] = [
@@ -129,20 +93,6 @@ extension AIChatSuggestion {
             isPinned: false,
             chatId: "chat-recent-3",
             timestamp: Date().addingTimeInterval(-5400)
-        ),
-        AIChatSuggestion(
-            id: "recent-4",
-            title: "What are some good books about productivity?",
-            isPinned: false,
-            chatId: "chat-recent-4",
-            timestamp: Date().addingTimeInterval(-7200)
-        ),
-        AIChatSuggestion(
-            id: "recent-5",
-            title: "Help me plan a weekend trip to the mountains",
-            isPinned: false,
-            chatId: "chat-recent-5",
-            timestamp: Date().addingTimeInterval(-9000)
         )
     ]
 }

@@ -39,11 +39,12 @@ final class OverlayPresenter {
     // MARK: - Initialization
 
     init(action: ConfirmationAction = .quit,
+         startupPreferences: StartupPreferences? = nil,
          onDontAskAgain: @escaping () -> Void,
          onHoverChange: @escaping (Bool) -> Void,
          windowProvider: @MainActor @escaping () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow },
          anchorViewProvider: (@MainActor () -> NSView?)? = nil) {
-        self.viewModel = WarnBeforeQuitViewModel(action: action)
+        self.viewModel = WarnBeforeQuitViewModel(action: action, startupPreferences: startupPreferences)
         self.windowProvider = windowProvider
         self.anchorViewProvider = anchorViewProvider
         self.viewModel.onDontAskAgain = onDontAskAgain

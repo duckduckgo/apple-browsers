@@ -111,12 +111,10 @@ extension URL {
             url = url.appendingParameter(name: URL.DuckDuckGoParameters.ATB.atb, value: atbWithVariant + "-wb")
         }
 
-        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            /// Append the kbg disable parameter only when Duck AI features are not shown
-            if !NSApp.delegateTyped.aiChatPreferences.shouldShowAIFeatures {
-                url = url.appendingParameter(name: URL.DuckDuckGoParameters.KBG.kbg,
-                                             value: URL.DuckDuckGoParameters.KBG.kbgDisabledValue)
-            }
+        /// Append the kbg disable parameter only when Duck AI features are not shown
+        if !NSApp.delegateTyped.aiChatPreferences.shouldShowAIFeatures {
+            url = url.appendingParameter(name: URL.DuckDuckGoParameters.KBG.kbg,
+                                         value: URL.DuckDuckGoParameters.KBG.kbgDisabledValue)
         }
 
         return url

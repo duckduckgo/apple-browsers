@@ -196,7 +196,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
         subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
         protectionsReportModel: newTabPageProtectionsReportModel,
-        homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
+        homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
+        nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
+        subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
+        duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor()
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -692,7 +695,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
         )
-        tabsPreferences = TabsPreferences(persistor: TabsPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        tabsPreferences = TabsPreferences(
+            persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
+            windowControllersManager: windowControllersManager
+        )
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
 
@@ -1405,14 +1411,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               let currentEvent = NSApp.currentEvent,
               let manager = WarnBeforeQuitManager(
                 currentEvent: currentEvent,
-                isWarningEnabled: { [weak self] in
-                    self?.warnBeforeQuitting ?? true
+                isWarningEnabled: { [tabsPreferences] in
+                    tabsPreferences.warnBeforeQuitting
                 }
               ) else { return nil }
 
         let presenter = OverlayPresenter(
-            onDontAskAgain: { [weak self] in
-                self?.warnBeforeQuitting = false
+            startupPreferences: startupPreferences,
+            onDontAskAgain: { [tabsPreferences] in
+                tabsPreferences.warnBeforeQuitting = false
             },
             onHoverChange: { [weak manager] isHovering in
                 manager?.setMouseHovering(isHovering)
@@ -1850,7 +1857,10 @@ extension AppDelegate: UserScriptDependenciesProviding {
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
             subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
             protectionsReportModel: newTabPageProtectionsReportModel,
-            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
+            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
+            nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
+            subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
+            duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor()
         )
     }
 }

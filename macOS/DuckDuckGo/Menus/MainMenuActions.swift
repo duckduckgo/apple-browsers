@@ -880,10 +880,10 @@ extension MainViewController {
 
     private var warnBeforeClosingPinnedTabs: Bool {
         get {
-            UserDefaultsWrapper(key: .warnBeforeClosingPinnedTabs, defaultValue: true).wrappedValue
+            tabsPreferences.warnBeforeClosingPinnedTabs
         }
         set {
-            UserDefaultsWrapper(key: .warnBeforeClosingPinnedTabs, defaultValue: true).wrappedValue = newValue
+            tabsPreferences.warnBeforeClosingPinnedTabs = newValue
         }
     }
 
@@ -963,10 +963,10 @@ extension MainViewController {
            let currentEvent, currentEvent.keyEquivalent == [.command, "w"] {
             // Show confirmation warning if enabled
             if featureFlagger.isFeatureOn(.warnBeforeQuit) {
-                let shouldClose = !warnBeforeClosingPinnedTabs || showPinnedTabCloseConfirmation(for: tab, atPinnedIndex: pinnedIndex, currentEvent: currentEvent)
+                let shouldClose = !tabsPreferences.warnBeforeClosingPinnedTabs || showPinnedTabCloseConfirmation(for: tab, atPinnedIndex: pinnedIndex, currentEvent: currentEvent)
                 if shouldClose {
                     // ignore repeated incoming ⌘W keyDown events after the tab was closed with long pressing ⌘W
-                    Self.shouldIgnoreRepeatedCloseTabShortcuts = warnBeforeClosingPinnedTabs
+                    Self.shouldIgnoreRepeatedCloseTabShortcuts = tabsPreferences.warnBeforeClosingPinnedTabs
                     tabCollectionViewModel.remove(at: index)
                 }
                 return
@@ -990,13 +990,13 @@ extension MainViewController {
     private func showPinnedTabCloseConfirmation(for tab: Tab, atPinnedIndex pinnedIndex: Int, currentEvent: NSEvent) -> Bool {
         guard let manager = WarnBeforeQuitManager(
             currentEvent: currentEvent,
-            isWarningEnabled: { [weak self] in self?.warnBeforeClosingPinnedTabs ?? true }
+            isWarningEnabled: { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs }
         ) else { return false }
 
         let presenter = OverlayPresenter(
             action: .close,
-            onDontAskAgain: { [weak self] in
-                self?.warnBeforeClosingPinnedTabs = false
+            onDontAskAgain: { [tabsPreferences] in
+                tabsPreferences.warnBeforeClosingPinnedTabs = false
             },
             onHoverChange: { [weak manager] isHovering in
                 manager?.setMouseHovering(isHovering)

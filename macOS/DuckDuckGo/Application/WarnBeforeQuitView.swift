@@ -54,7 +54,7 @@ struct WarnBeforeQuitView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
 
-                if let subtitle = viewModel.action.subtitleText {
+                if let subtitle = viewModel.subtitleText {
                     Text(subtitle)
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.8))

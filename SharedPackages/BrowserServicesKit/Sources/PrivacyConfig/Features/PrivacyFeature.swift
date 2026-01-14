@@ -286,9 +286,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
-    /// Append the kbg disable parameter only when Duck AI features are not shown
-    case duckAISearchParameter
-
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
 
@@ -312,6 +309,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
+
+    /// Enables the omnibar onboarding for AI Chat
+    case omnibarOnboarding
 
     /// Enables the omnibar cluster for AI Chat
     case omnibarCluster

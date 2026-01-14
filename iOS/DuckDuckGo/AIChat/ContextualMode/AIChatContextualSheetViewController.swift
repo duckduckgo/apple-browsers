@@ -251,9 +251,23 @@ final class AIChatContextualSheetViewController: UIViewController {
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
     }
 
-    // MARK: - Child View Controller Management
+    // MARK: - Public Methods
 
-    private func showContextualInput() {
+    /// Called when page context has been collected (after requesting attachment)
+    func didReceivePageContext() {
+        guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
+            self?.contextualInputViewController.hideContextChip()
+        }) else { return }
+
+        contextualInputViewController.showContextChip(chipView)
+    }
+}
+
+// MARK: - Private Methods
+
+private extension AIChatContextualSheetViewController {
+
+    func showContextualInput() {
         contextualInputViewController.delegate = self
         configureAttachActions()
         embedChildViewController(contextualInputViewController)
@@ -263,14 +277,14 @@ final class AIChatContextualSheetViewController: UIViewController {
         }
     }
 
-    private func configureAttachActions() {
+    func configureAttachActions() {
         let attachActions = viewModel.createAttachActions { [weak self] in
             self?.attachPageContext()
         }
         contextualInputViewController.attachActions = attachActions
     }
 
-    private func attachPageContext() {
+    func attachPageContext() {
         if let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
             self?.contextualInputViewController.hideContextChip()
         }) {
@@ -281,16 +295,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
     }
 
-    /// Called when page context has been collected (after requesting attachment)
-    func didReceivePageContext() {
-        guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
-            self?.contextualInputViewController.hideContextChip()
-        }) else { return }
-
-        contextualInputViewController.showContextChip(chipView)
-    }
-
-    private func embedChildViewController(_ childVC: UIViewController) {
+    func embedChildViewController(_ childVC: UIViewController) {
         addChild(childVC)
         childVC.view.translatesAutoresizingMaskIntoConstraints = false
         contentContainerView.addSubview(childVC.view)
@@ -305,7 +310,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         childVC.didMove(toParent: self)
     }
 
-    private func removeCurrentChildViewController() {
+    func removeCurrentChildViewController() {
         children.forEach { child in
             child.willMove(toParent: nil)
             child.view.removeFromSuperview()
@@ -313,9 +318,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         }
     }
 
-    // MARK: - Web View Preloading
-
-    private func preloadWebViewController() {
+    func preloadWebViewController() {
         let webVC = webViewControllerFactory()
         webVC.delegate = self
         webVC.aiChatContentHandlingDelegate = self
@@ -323,16 +326,14 @@ final class AIChatContextualSheetViewController: UIViewController {
         webVC.loadViewIfNeeded()
     }
 
-    // MARK: - Web View Transition
-
-    private func transitionToWebView(_ webVC: AIChatContextualWebViewController) {
+    func transitionToWebView(_ webVC: AIChatContextualWebViewController) {
         removeCurrentChildViewController()
         embedChildViewController(webVC)
         currentWebViewController = webVC
         existingWebViewController = nil
     }
 
-    private func showWebViewWithPrompt(_ prompt: String) {
+    func showWebViewWithPrompt(_ prompt: String) {
         guard let webVC = preloadedWebViewController else { return }
 
         viewModel.didSubmitPrompt()
@@ -349,7 +350,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         preloadedWebViewController = nil
     }
 
-    private func expandToLargeDetent() {
+    func expandToLargeDetent() {
         guard let sheet = sheetPresentationController else { return }
         sheet.animateChanges {
             sheet.selectedDetentIdentifier = .large

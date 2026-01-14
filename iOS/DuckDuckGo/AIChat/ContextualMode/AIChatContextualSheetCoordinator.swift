@@ -152,12 +152,15 @@ final class AIChatContextualSheetCoordinator {
     func reloadIfNeeded() {
         webViewController?.reload()
     }
+}
 
-    // MARK: - Private Methods
+// MARK: - Private Methods
+
+private extension AIChatContextualSheetCoordinator {
 
     /// Factory method for creating web view controllers, avoids prop drilling through the Sheet VC.
-    private func makeWebViewController() -> AIChatContextualWebViewController {
-        return AIChatContextualWebViewController(
+    func makeWebViewController() -> AIChatContextualWebViewController {
+        AIChatContextualWebViewController(
             aiChatSettings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
@@ -167,7 +170,7 @@ final class AIChatContextualSheetCoordinator {
     }
 
     /// Decodes a base64-encoded favicon from the page context data.
-    private func decodeFaviconImage(from favicons: [AIChatPageContextData.PageContextFavicon]?) -> UIImage? {
+    func decodeFaviconImage(from favicons: [AIChatPageContextData.PageContextFavicon]?) -> UIImage? {
         guard let favicon = favicons?.first,
               favicon.href.hasPrefix("data:image"),
               let dataRange = favicon.href.range(of: "base64,"),

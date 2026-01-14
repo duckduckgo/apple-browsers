@@ -25,16 +25,6 @@ import UIKit
 
 extension TabViewController {
 
-    private enum Constants {
-        /// Timeout for page context collection from JS userscript
-        static let pageContextCollectionTimeout: TimeInterval = 2
-    }
-
-    /// Access to page context user script from tab's UserScripts
-    private var pageContextUserScript: PageContextUserScript? {
-        userScripts?.pageContextUserScript
-    }
-
     /// Presents the contextual AI chat sheet over the current tab.
     /// Re-presents an active chat if one exists for this tab.
     ///
@@ -87,7 +77,25 @@ extension TabViewController {
         }
     }
 
-    private func enrichWithFavicon(_ context: AIChatPageContextData?) -> AIChatPageContextData? {
+    /// Reloads the contextual AI chat web view if one exists.
+    func reloadContextualAIChatIfNeeded() {
+        aiChatContextualSheetCoordinator.reloadIfNeeded()
+    }
+}
+
+// MARK: - Private Methods
+
+private extension TabViewController {
+
+    enum Constants {
+        static let pageContextCollectionTimeout: TimeInterval = 2
+    }
+
+    var pageContextUserScript: PageContextUserScript? {
+        userScripts?.pageContextUserScript
+    }
+
+    func enrichWithFavicon(_ context: AIChatPageContextData?) -> AIChatPageContextData? {
         guard let context = context,
               let url = URL(string: context.url) else {
             return context
@@ -108,21 +116,16 @@ extension TabViewController {
         )
     }
 
-    private func getFaviconBase64(for url: URL) -> String? {
+    func getFaviconBase64(for url: URL) -> String? {
         guard let domain = url.host else { return nil }
         let faviconResult = FaviconsHelper.loadFaviconSync(forDomain: domain, usingCache: .tabs, useFakeFavicon: false)
         guard let favicon = faviconResult.image, !faviconResult.isFake else { return nil }
         return makeBase64EncodedFavicon(from: favicon)
     }
 
-    private func makeBase64EncodedFavicon(from image: UIImage) -> String? {
+    func makeBase64EncodedFavicon(from image: UIImage) -> String? {
         guard let pngData = image.pngData() else { return nil }
         return "data:image/png;base64,\(pngData.base64EncodedString())"
-    }
-
-    /// Reloads the contextual AI chat web view if one exists.
-    func reloadContextualAIChatIfNeeded() {
-        aiChatContextualSheetCoordinator.reloadIfNeeded()
     }
 }
 

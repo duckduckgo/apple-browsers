@@ -315,7 +315,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor func getScopedSyncAuthToken(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard featureFlagger.isFeatureOn(.aiChatSync) else {
-            return AIChatErrorResponse(reason: "sync disabled")
+            return AIChatErrorResponse(reason: "sync unavailable")
         }
 
         func makeErrorResponse(_ reason: String) -> AIChatErrorResponse {
@@ -350,7 +350,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func encryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
         guard featureFlagger.isFeatureOn(.aiChatSync) else {
-            return AIChatErrorResponse(reason: "sync disabled")
+            return AIChatErrorResponse(reason: "sync unavailable")
         }
 
         guard let syncHandler = makeSyncHandler(), syncHandler.isSyncTurnedOn() else {
@@ -379,7 +379,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func decryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
         guard featureFlagger.isFeatureOn(.aiChatSync) else {
-            return AIChatErrorResponse(reason: "sync disabled")
+            return AIChatErrorResponse(reason: "sync unavailable")
         }
 
         guard let syncHandler = makeSyncHandler(), syncHandler.isSyncTurnedOn() else {
@@ -413,7 +413,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         guard syncHandler.isSyncTurnedOn() == false else {
-            return AIChatErrorResponse(reason: "sync already enabled")
+            return AIChatErrorResponse(reason: "sync already on")
         }
 
         Task { @MainActor in

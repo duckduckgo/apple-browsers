@@ -29,6 +29,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String)
     func submitStartChatAction()
     func submitOpenSettingsAction()
@@ -201,6 +202,18 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             delegate?.aiChatContentHandlerDidReceivePromptSubmission(self)
+
+            if featureFlagger.isFeatureOn(.iOSAIChatAtb) {
+                DispatchQueue.main.async {
+                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
+                                                                        application: UIApplication.shared)
+                    self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
+                        DispatchQueue.main.async {
+                            backgroundAssertion.release()
+                        }
+                    }
+                }
+            }
         }
 
         pixelMetricHandler?.firePixelWithMetric(metric)

@@ -53,6 +53,7 @@ final class AIChatContextualSheetCoordinator {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
+    private let featureFlagger: FeatureFlagger
 
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
@@ -69,12 +70,14 @@ final class AIChatContextualSheetCoordinator {
          aiChatSettings: AIChatSettingsProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
-         featureDiscovery: FeatureDiscovery) {
+         featureDiscovery: FeatureDiscovery,
+         featureFlagger: FeatureFlagger) {
         self.voiceSearchHelper = voiceSearchHelper
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
+        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Public Methods
@@ -161,7 +164,8 @@ final class AIChatContextualSheetCoordinator {
             aiChatSettings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            featureDiscovery: featureDiscovery
+            featureDiscovery: featureDiscovery,
+            featureFlagger: featureFlagger
         )
     }
 

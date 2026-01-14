@@ -1,5 +1,5 @@
 //
-//  OverlayPresenter.swift
+//  WarnBeforeQuitOverlayPresenter.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import SwiftUI
 ///
 /// Observes state changes from WarnBeforeQuitManager and updates the UI accordingly.
 @MainActor
-final class OverlayPresenter {
+final class WarnBeforeQuitOverlayPresenter {
 
     // MARK: - Properties
 

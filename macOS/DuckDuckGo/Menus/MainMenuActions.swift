@@ -993,7 +993,7 @@ extension MainViewController {
             isWarningEnabled: { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs }
         ) else { return false }
 
-        let presenter = OverlayPresenter(
+        let presenter = WarnBeforeQuitOverlayPresenter(
             action: .close,
             onDontAskAgain: { [tabsPreferences] in
                 tabsPreferences.warnBeforeClosingPinnedTabs = false

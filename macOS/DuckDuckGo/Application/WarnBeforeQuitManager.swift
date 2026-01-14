@@ -26,7 +26,7 @@ import QuartzCore
 /// Manages the "Warn Before Quitting" feature that prevents accidental app termination.
 ///
 /// Business logic layer that emits state changes via AsyncStream.
-/// UI layer (OverlayPresenter) observes and reacts to state changes.
+/// UI layer (WarnBeforeQuitOverlayPresenter) observes and reacts to state changes.
 @MainActor
 final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 

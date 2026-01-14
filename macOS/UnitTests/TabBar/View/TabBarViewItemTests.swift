@@ -371,7 +371,6 @@ private class TabBarViewModelMock: TabBarViewModel {
 
     var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> {
         $title
-            .eraseToAnyPublisher()
             .combineLatest($isLoading)
             .eraseToAnyPublisher()
     }
@@ -393,7 +392,6 @@ private class TabBarViewModelMock: TabBarViewModel {
     @Published var error: WKError?
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
         $isLoading
-            .eraseToAnyPublisher()
             .combineLatest($error)
             .eraseToAnyPublisher()
     }

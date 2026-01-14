@@ -55,7 +55,6 @@ extension TabViewModel: TabBarViewModel {
     }
     var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> {
         $title
-            .eraseToAnyPublisher()
             .combineLatest($isLoading)
             .eraseToAnyPublisher()
     }
@@ -69,7 +68,6 @@ extension TabViewModel: TabBarViewModel {
     var crashIndicatorModel: TabCrashIndicatorModel { tab.crashIndicatorModel }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
         tab.$isLoading
-            .eraseToAnyPublisher()
             .combineLatest(tab.$error)
             .eraseToAnyPublisher()
     }
@@ -1760,7 +1758,6 @@ extension TabBarViewItem {
             @Published var title: String = ""
             var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> {
                 $title
-                    .eraseToAnyPublisher()
                     .combineLatest($isLoading)
                     .eraseToAnyPublisher()
             }
@@ -1783,7 +1780,6 @@ extension TabBarViewItem {
             @Published var error: WKError?
             var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
                 $isLoading
-                    .eraseToAnyPublisher()
                     .combineLatest($error)
                     .eraseToAnyPublisher()
             }

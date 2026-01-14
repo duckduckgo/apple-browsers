@@ -360,15 +360,43 @@ struct AIChatUserScriptHandlerTests {
 
     // MARK: - Sync tests
 
-    @Test("getSyncStatus returns sync not ready when sync service is unavailable")
+    @Test("getSyncStatus returns internal error when sync status could not be obtained")
     @MainActor
-    func testThatGetSyncStatusReturnsSyncNotReadyWhenSyncServiceUnavailable() throws {
+    func testThatGetSyncStatusReturnsInternalErrorWhenSyncServiceUnavailable() throws {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
 
         let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
         let errorResponse = try #require(response as? AIChatErrorResponse)
-        #expect(errorResponse.reason == "sync not ready")
+        #expect(errorResponse.reason == "internal error")
+    }
+
+    @Test("getSyncStatus returns internal error when sync service is unavailable")
+    @MainActor
+    func testThatGetSyncStatusReturnsInternalErrorWhenFeatureOffAndSyncServiceUnavailable() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
+
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let errorResponse = try #require(response as? AIChatErrorResponse)
+        #expect(errorResponse.reason == "internal error")
+    }
+
+    @Test("getSyncStatus returns syncAvailable=false when feature is off and sync service is available")
+    @MainActor
+    func testThatGetSyncStatusReturnsSyncNotAvailableWhenFeatureOffAndSyncServiceAvailable() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let syncService = makeSyncService(authState: .active, account: nil)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let payloadResponse = try #require(response as? AIChatPayloadResponse)
+        let status = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncStatus)
+        #expect(status.syncAvailable == false)
+        #expect(status.userId == nil)
+        #expect(status.deviceId == nil)
+        #expect(status.deviceName == nil)
+        #expect(status.deviceType == nil)
     }
 
     @Test("getSyncStatus returns nil ids when sync service is available but account is missing")
@@ -518,28 +546,27 @@ struct AIChatUserScriptHandlerTests {
         #expect(errorResponse.reason == "setup disabled")
     }
 
-    @Test("sendToSetupSync returns sync not ready when sync service is unavailable")
+    @Test("sendToSetupSync returns internal error when sync could not be started")
     @MainActor
-    func testThatSendToSetupSyncReturnsSyncNotReadyWhenSyncServiceUnavailable() throws {
+    func testThatSendToSetupSyncReturnsInternalErrorWhenSyncServiceUnavailable() throws {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
 
         let response = testHandler.sendToSetupSync(params: [String: Any](), message: WKScriptMessage())
         let errorResponse = try #require(response as? AIChatErrorResponse)
-        #expect(errorResponse.reason == "sync not ready")
+        #expect(errorResponse.reason == "internal error")
     }
 
-    @Test("setAIChatHistoryEnabled returns sync off when sync is not turned on")
+    @Test("setAIChatHistoryEnabled is notify-only and best-effort persists even when account is missing")
     @MainActor
-    func testThatSetAIChatHistoryEnabledReturnsSyncOffWhenSyncIsNotTurnedOn() throws {
+    func testThatSetAIChatHistoryEnabledBestEffortPersistsWhenAccountIsMissing() throws {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
         let syncService = makeSyncService(authState: .active, account: nil)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
 
         let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage())
-        let errorResponse = try #require(response as? AIChatErrorResponse)
-        #expect(errorResponse.reason == "sync off")
-        #expect(syncService.setAIChatHistoryEnabledCalls.isEmpty)
+        #expect(response == nil)
+        #expect(syncService.setAIChatHistoryEnabledCalls == [true])
     }
 
     @Test("setAIChatHistoryEnabled calls sync service when sync is on")
@@ -562,17 +589,16 @@ struct AIChatUserScriptHandlerTests {
         #expect(syncService.isAIChatHistoryEnabled)
     }
 
-    @Test("setAIChatHistoryEnabled returns sync off when feature is off and sync is not turned on")
+    @Test("setAIChatHistoryEnabled is notify-only and best-effort persists when feature is off")
     @MainActor
-    func testThatSetAIChatHistoryEnabledReturnsSyncOffWhenFeatureOffAndSyncIsNotTurnedOn() throws {
+    func testThatSetAIChatHistoryEnabledBestEffortPersistsWhenFeatureOff() throws {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
         let syncService = makeSyncService(authState: .active, account: nil)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
 
         let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage())
-        let errorResponse = try #require(response as? AIChatErrorResponse)
-        #expect(errorResponse.reason == "sync off")
-        #expect(syncService.setAIChatHistoryEnabledCalls.isEmpty)
+        #expect(response == nil)
+        #expect(syncService.setAIChatHistoryEnabledCalls == [true])
     }
 
     // MARK: - Sync helpers

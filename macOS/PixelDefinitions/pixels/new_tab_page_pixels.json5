@@ -57,10 +57,10 @@
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
-            "appVersion", 
-            "pixelSource", 
+            "appVersion",
+            "pixelSource",
             {
-                "key": "theme_popover_was_open",
+                "key": "themePopoverWasOpen",
                 "type": "boolean",
                 "description": "Whether the Themes Discovery Popover was onscreen, or not"
             }

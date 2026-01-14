@@ -155,6 +155,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     var error: Error?
     var shouldContinueOperations = true
     private var runningTasks: [Task<Void, Never>] = []
+    private var profileQueryLabels: [Int64: String] = [:]
 
     let brokers: [DataBroker]
 
@@ -458,15 +459,17 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             let stageCalculator = FakeStageDurationCalculator(
                                 stepType: .scan,
                                 onActionPayload: { [weak self] stepType, actionId, actionType, details in
+                                    let profileQuery = self?.profileQueryText(for: query.profileQuery) ?? "-"
                                     self?.addActionPayloadEvent(stepType: stepType,
-                                                                actionId: actionId,
                                                                 actionType: actionType,
+                                                                profileQuery: profileQuery,
                                                                 details: details)
                                 },
                                 onActionResponse: { [weak self] stepType, actionId, actionType, details in
+                                    let profileQuery = self?.profileQueryText(for: query.profileQuery) ?? "-"
                                     self?.addActionResponseEvent(stepType: stepType,
-                                                                 actionId: actionId,
                                                                  actionType: actionType,
+                                                                 profileQuery: profileQuery,
                                                                  details: details)
                                 },
                                 onWait: { [weak self] stepType, reason, seconds in
@@ -547,15 +550,17 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 let stageCalculator = FakeStageDurationCalculator(
                     stepType: .optOut,
                     onActionPayload: { [weak self] stepType, actionId, actionType, details in
+                        let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
                         self?.addActionPayloadEvent(stepType: stepType,
-                                                    actionId: actionId,
                                                     actionType: actionType,
+                                                    profileQuery: profileQuery,
                                                     details: details)
                     },
                     onActionResponse: { [weak self] stepType, actionId, actionType, details in
+                        let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
                         self?.addActionResponseEvent(stepType: stepType,
-                                                     actionId: actionId,
                                                      actionType: actionType,
+                                                     profileQuery: profileQuery,
                                                      details: details)
                     },
                     onWait: { [weak self] stepType, reason, seconds in
@@ -623,6 +628,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             brokerProfileQueryData.append(
                 .init(dataBroker: broker, profileQuery: profileQuery.with(id: profileQueryIndex), scanJobData: fakeScanJobData)
             )
+            profileQueryLabels[profileQueryIndex] = profileQueryText(for: profileQuery)
 
             profileQueryIndex += 1
         }
@@ -649,6 +655,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     .init(dataBroker: broker, profileQuery: profileQuery.with(id: profileQueryIndex), scanJobData: fakeScanJobData)
                 )
             }
+            profileQueryLabels[profileQueryIndex] = profileQueryText(for: profileQuery)
 
             profileQueryIndex += 1
         }
@@ -718,12 +725,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         AppVersion.shared.versionNumber
     }
 
-    private func addActionPayloadEvent(stepType: StepType, actionId: String?, actionType: ActionType?, details: String) {
+
+    private func addActionPayloadEvent(stepType: StepType, actionType: ActionType?, profileQuery: String, details: String) {
         let event = DebugActionEvent(
             timestamp: Date(),
             stepType: stepType,
             actionType: actionType,
-            actionId: actionId,
+            profileQuery: profileQuery,
             details: details
         )
         DispatchQueue.main.async {
@@ -732,12 +740,12 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         updateProgress(currentActionText(stepType: stepType, actionType: actionType, prefix: "Action"))
     }
 
-    private func addActionResponseEvent(stepType: StepType, actionId: String?, actionType: ActionType?, details: String) {
+    private func addActionResponseEvent(stepType: StepType, actionType: ActionType?, profileQuery: String, details: String) {
         let event = DebugActionResponseEvent(
             timestamp: Date(),
             stepType: stepType,
             actionType: actionType,
-            actionId: actionId,
+            profileQuery: profileQuery,
             details: details
         )
         DispatchQueue.main.async {
@@ -753,7 +761,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 timestamp: event.date,
                 kind: "History",
                 summary: historyEventDescription(event),
-                details: event.error ?? ""
+                details: historyEventDetails(event)
             )
         }
         let actionRows = actionEvents.map { event in
@@ -763,7 +771,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 kind: "Action",
                 summary: actionSummary(stepType: event.stepType,
                                        actionType: event.actionType,
-                                       actionId: event.actionId),
+                                       profileQuery: event.profileQuery),
                 details: event.details
             )
         }
@@ -774,22 +782,27 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 kind: "Response",
                 summary: actionSummary(stepType: event.stepType,
                                        actionType: event.actionType,
-                                       actionId: event.actionId),
+                                       profileQuery: event.profileQuery),
                 details: event.details
             )
         }
         return (historyRows + actionRows + responseRows).sorted(by: { $0.timestamp < $1.timestamp })
     }
 
-    private func actionSummary(stepType: StepType, actionType: ActionType?, actionId: String?) -> String {
+    private func actionSummary(stepType: StepType, actionType: ActionType?, profileQuery: String) -> String {
         let typeText = actionType?.rawValue ?? "unknown"
-        let idText = actionId ?? "-"
-        return "\(stepType.rawValue) > \(typeText)\n\(idText)"
+        return "\(stepType.rawValue) > \(typeText)\n\(profileQuery)"
     }
 
     private func currentActionText(stepType: StepType, actionType: ActionType?, prefix: String) -> String {
         let typeText = actionType?.rawValue ?? "unknown"
         return "\(prefix): \(stepType.rawValue) > \(typeText)"
+    }
+
+    private func profileQueryText(for profileQuery: ProfileQuery) -> String {
+        let nameText = "\(profileQuery.firstName) \(profileQuery.lastName)"
+        let locationText = "\(profileQuery.city) \(profileQuery.state)"
+        return "\(nameText) x \(locationText)"
     }
 
     private func updateProgress(_ text: String) {
@@ -840,6 +853,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             return "Removed by User"
         }
     }
+
+    private func historyEventDetails(_ event: HistoryEvent) -> String {
+        profileQueryLabels[event.profileQueryId] ?? "-"
+    }
 }
 
 struct DebugActionEvent: Identifiable {
@@ -847,7 +864,7 @@ struct DebugActionEvent: Identifiable {
     let timestamp: Date
     let stepType: StepType
     let actionType: ActionType?
-    let actionId: String?
+    let profileQuery: String
     let details: String
 }
 
@@ -856,7 +873,7 @@ struct DebugActionResponseEvent: Identifiable {
     let timestamp: Date
     let stepType: StepType
     let actionType: ActionType?
-    let actionId: String?
+    let profileQuery: String
     let details: String
 }
 

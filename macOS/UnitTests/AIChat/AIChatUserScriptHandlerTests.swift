@@ -546,15 +546,15 @@ struct AIChatUserScriptHandlerTests {
         #expect(errorResponse.reason == "setup disabled")
     }
 
-    @Test("sendToSetupSync returns internal error when sync could not be started")
+    @Test("sendToSetupSync returns setup disabled when sync service is unavailable")
     @MainActor
-    func testThatSendToSetupSyncReturnsInternalErrorWhenSyncServiceUnavailable() throws {
+    func testThatSendToSetupSyncReturnsSetupDisabledWhenSyncServiceUnavailable() throws {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
 
         let response = testHandler.sendToSetupSync(params: [String: Any](), message: WKScriptMessage())
         let errorResponse = try #require(response as? AIChatErrorResponse)
-        #expect(errorResponse.reason == "internal error")
+        #expect(errorResponse.reason == "setup disabled")
     }
 
     @Test("setAIChatHistoryEnabled is notify-only and best-effort persists even when account is missing")

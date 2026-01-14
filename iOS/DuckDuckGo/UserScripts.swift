@@ -43,6 +43,7 @@ final class UserScripts: UserScriptsProvider {
     let subscriptionUserScript: SubscriptionUserScript
     let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
     let serpSettingsUserScript: SERPSettingsUserScript
+    let pageContextUserScript: PageContextUserScript?
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -75,6 +76,7 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
                                                                 scriptContext: .contentScope,
+                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName],
                                                                 privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,
@@ -97,6 +99,12 @@ final class UserScripts: UserScriptsProvider {
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
 
+        if featureFlagger.isFeatureOn(.contextualDuckAIMode) {
+            pageContextUserScript = PageContextUserScript()
+        } else {
+            pageContextUserScript = nil
+        }
+
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
@@ -108,6 +116,9 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        if let pageContextUserScript {
+            contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
+        }
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()

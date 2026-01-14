@@ -44,6 +44,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
 
     /// Called when the user requests to open sync settings
     func aiChatContextualSheetViewControllerDidRequestOpenSyncSettings(_ viewController: AIChatContextualSheetViewController)
+
+    /// Called when the user taps the "Attach Page" button and context needs to be collected
+    func aiChatContextualSheetViewControllerDidRequestAttachPage(_ viewController: AIChatContextualSheetViewController)
 }
 
 /// Contextual sheet view controller. Configures UX and actions.
@@ -219,12 +222,25 @@ final class AIChatContextualSheetViewController: UIViewController {
         } else {
             showContextualInput()
             preloadWebViewController()
+            showContextChipIfAvailable()
         }
+    }
+
+    /// Shows the context chip if page context was provided when opening the sheet
+    private func showContextChipIfAvailable() {
+        guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
+            self?.contextualInputViewController.hideContextChip()
+        }) else { return }
+        contextualInputViewController.showContextChip(chipView, animated: false)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         configureSheetPresentation()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
     }
 
     override func viewDidLayoutSubviews() {
@@ -269,6 +285,20 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     private func attachPageContext() {
+        // If context already exists, show it directly
+        if let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
+            self?.contextualInputViewController.hideContextChip()
+        }) {
+            contextualInputViewController.showContextChip(chipView)
+            return
+        }
+
+        // Otherwise, request context collection from the tab
+        delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
+    }
+
+    /// Called when page context has been collected (after requesting attachment)
+    func didReceivePageContext() {
         guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
             self?.contextualInputViewController.hideContextChip()
         }) else { return }
@@ -322,6 +352,8 @@ final class AIChatContextualSheetViewController: UIViewController {
         guard let webVC = preloadedWebViewController else { return }
 
         viewModel.didSubmitPrompt()
+
+        // TODO: Pass page context via new FE messaging when available
 
         transitionToWebView(webVC)
         view.layoutIfNeeded()
@@ -389,6 +421,10 @@ extension AIChatContextualSheetViewController: AIChatContextualWebViewController
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?) {
         Logger.aiChat.debug("[AIChatContextual] Received contextual chat URL update: \(String(describing: url?.absoluteString))")
         viewModel.didUpdateContextualChatURL(url)
+    }
+
+    func contextualWebViewControllerDidFinishLoading(_ viewController: AIChatContextualWebViewController) {
+        // No-op for now, required by delegate protocol
     }
 }
 
@@ -520,6 +556,7 @@ private extension AIChatContextualSheetViewController {
         guard let sheet = sheetPresentationController else { return }
 
         sheet.detents = [.medium(), .large()]
+        sheet.selectedDetentIdentifier = .medium
         sheet.largestUndimmedDetentIdentifier = .medium
         sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         sheet.prefersGrabberVisible = true

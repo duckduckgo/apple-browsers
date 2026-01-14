@@ -169,7 +169,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativeChatInput: defaults.supportsNativeChatInput,
             supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
-            supportsPageContext: defaults.supportsPageContext,
+            supportsPageContext: aichatContextualModeFeature.isAvailable ? true : defaults.supportsPageContext,
             supportsAIChatFullMode: aichatFullModeFeature.isAvailable ? true : defaults.supportsAIChatFullMode,
             supportsAIChatContextualMode: aichatContextualModeFeature.isAvailable ? true : defaults.supportsAIChatContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
@@ -288,6 +288,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         return migrationStore.clear()
     }
+
+    // MARK: - Sync
 
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable? {
         do {

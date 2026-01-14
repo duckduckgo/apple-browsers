@@ -20,6 +20,7 @@
 import AIChat
 import BrowserServicesKit
 import Combine
+import Common
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -30,6 +31,7 @@ import WebKit
 protocol AIChatContextualWebViewControllerDelegate: AnyObject {
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestToLoad url: URL)
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?)
+    func contextualWebViewControllerDidFinishLoading(_ viewController: AIChatContextualWebViewController)
 }
 
 final class AIChatContextualWebViewController: UIViewController {
@@ -127,6 +129,8 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func reload() {
+        isPageReady = false
+        isContentHandlerReady = false
         webView.reload()
     }
 
@@ -168,7 +172,9 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func loadAIChat() {
         loadingView.startAnimating()
-        let request = URLRequest(url: aiChatSettings.aiChatURL)
+        // Add placement=sidebar to tell duck.ai this is contextual mode
+        let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+        let request = URLRequest(url: contextualURL)
         webView.load(request)
     }
 
@@ -215,6 +221,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         }
 
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
+
         isContentHandlerReady = true
         submitPendingPromptIfReady()
     }
@@ -243,6 +250,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         loadingView.stopAnimating()
         isPageReady = true
         submitPendingPromptIfReady()
+        delegate?.contextualWebViewControllerDidFinishLoading(self)
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

@@ -176,7 +176,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(status.deviceType, "iPhone")
     }
 
-    func testGetScopedSyncAuthTokenReturnsSyncDisabledWhenFeatureOff() async throws {
+    func testGetScopedSyncAuthTokenReturnsSyncUnavailableWhenFeatureOff() async throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
 
@@ -185,7 +185,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         // Then
         let errorResponse = try XCTUnwrap(response as? AIChatErrorResponse)
-        XCTAssertEqual(errorResponse.reason, "sync disabled")
+        XCTAssertEqual(errorResponse.reason, "sync unavailable")
         XCTAssertEqual(mockAIChatSyncHandler.getScopedTokenCallCount, 0)
     }
 
@@ -204,7 +204,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(tokenPayload.token, "scoped-token")
     }
 
-    func testEncryptWithSyncMasterKeyReturnsSyncDisabledWhenFeatureOff() throws {
+    func testEncryptWithSyncMasterKeyReturnsSyncUnavailableWhenFeatureOff() throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
         mockAIChatSyncHandler.syncTurnedOn = true
@@ -216,7 +216,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         // Then
         let errorResponse = try XCTUnwrap(response as? AIChatErrorResponse)
-        XCTAssertEqual(errorResponse.reason, "sync disabled")
+        XCTAssertEqual(errorResponse.reason, "sync unavailable")
         XCTAssertTrue(mockAIChatSyncHandler.encryptCalls.isEmpty)
     }
 
@@ -253,7 +253,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(mockAIChatSyncHandler.encryptCalls, ["plain"])
     }
 
-    func testDecryptWithSyncMasterKeyReturnsSyncDisabledWhenFeatureOff() throws {
+    func testDecryptWithSyncMasterKeyReturnsSyncUnavailableWhenFeatureOff() throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
         mockAIChatSyncHandler.syncTurnedOn = true
@@ -265,7 +265,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         // Then
         let errorResponse = try XCTUnwrap(response as? AIChatErrorResponse)
-        XCTAssertEqual(errorResponse.reason, "sync disabled")
+        XCTAssertEqual(errorResponse.reason, "sync unavailable")
         XCTAssertTrue(mockAIChatSyncHandler.decryptCalls.isEmpty)
     }
 

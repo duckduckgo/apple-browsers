@@ -441,8 +441,8 @@ struct AIChatUserScriptHandlerTests {
         #expect(status.deviceType == "desktop")
     }
 
-    @Test("getScopedSyncAuthToken returns sync disabled when feature is off")
-    func testThatGetScopedSyncAuthTokenReturnsSyncDisabledWhenFeatureOff() async throws {
+    @Test("getScopedSyncAuthToken returns sync unavailable when feature is off")
+    func testThatGetScopedSyncAuthTokenReturnsSyncUnavailableWhenFeatureOff() async throws {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
         let testHandler = await MainActor.run {
             makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
@@ -450,7 +450,7 @@ struct AIChatUserScriptHandlerTests {
 
         let response = await testHandler.getScopedSyncAuthToken(params: [String: Any](), message: WKScriptMessage())
         let errorResponse = try #require(response as? AIChatErrorResponse)
-        #expect(errorResponse.reason == "sync disabled")
+        #expect(errorResponse.reason == "sync unavailable")
     }
 
     @Test("getScopedSyncAuthToken returns payload when token rescope succeeds")

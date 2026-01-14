@@ -276,7 +276,7 @@ public enum FeatureFlag: String {
     case showWhatsNewPromptOnDemand
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212697212804653?focus=true
-    case iOSAIChatAtb
+    case aiChatAtb
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
@@ -368,7 +368,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .contextualDuckAIMode,
              .aiChatSync,
              .showWhatsNewPromptOnDemand,
-             .iOSAIChatAtb,
+             .aiChatAtb,
              .enhancedDataClearingSettings:
             return true
         case .showSettingsCompleteSetupSection:
@@ -582,8 +582,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .showWhatsNewPromptOnDemand:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
-        case .iOSAIChatAtb:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.iOSAIChatAtb))
+        case .aiChatAtb:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
             return .disabled
         }

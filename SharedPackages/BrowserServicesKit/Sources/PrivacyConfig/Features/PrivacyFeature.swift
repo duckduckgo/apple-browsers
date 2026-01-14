@@ -326,7 +326,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case contextualDuckAIMode
 
     /// Enables ATB measurement for Duck.ai usage on iOS
-    case iOSAIChatAtb
+    case aiChatAtb
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

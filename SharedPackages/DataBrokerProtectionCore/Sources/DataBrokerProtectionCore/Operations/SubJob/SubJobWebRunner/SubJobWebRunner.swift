@@ -114,7 +114,7 @@ public extension SubJobWebRunning {
                 recordActionResponseForDebug(stepType: stepType,
                                              actionId: emailConfirmationAction.id,
                                              actionType: emailConfirmationAction.actionType,
-                                             details: errordetails(error))
+                                             details: errorDetails(error))
                 await onError(error: DataBrokerProtectionError.emailError(error as? EmailError))
             }
 
@@ -398,7 +398,7 @@ public extension SubJobWebRunning {
     }
 
     func onError(error: Error) async {
-        let errorPayload = errordetails(error)
+        let errorPayload = errorDetails(error)
         recordActionResponseForDebug(stepType: actionsHandler?.stepType,
                                      actionId: errorActionId(error),
                                      actionType: nil,

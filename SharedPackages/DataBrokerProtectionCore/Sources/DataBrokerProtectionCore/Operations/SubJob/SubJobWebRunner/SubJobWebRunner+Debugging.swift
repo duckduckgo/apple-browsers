@@ -56,7 +56,7 @@ public extension SubJobWebRunning {
         return nil
     }
 
-    func errordetails(_ error: Error) -> String {
+    func errorDetails(_ error: Error) -> String {
         if let dbpError = error as? DataBrokerProtectionError {
             switch dbpError {
             case let .actionFailed(actionID, message):

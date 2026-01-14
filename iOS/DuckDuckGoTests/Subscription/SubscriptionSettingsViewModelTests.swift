@@ -26,7 +26,7 @@ import Networking
 import NetworkingTestingUtils
 import Persistence
 
-final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
+final class SubscriptionSettingsViewModelTests: XCTestCase {
 
     var sut: SubscriptionSettingsViewModel!
     var mockSubscriptionManager: SubscriptionManagerMock!
@@ -288,11 +288,11 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
             downgrade: []
         )
         mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .expired,
             tier: .plus,
             availableChanges: availableChanges
-        )
+        ))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
 
@@ -310,11 +310,11 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
             downgrade: []
         )
         mockFeatureFlagger.enabledFeatureFlags = [] // Feature flag OFF
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             tier: .plus,
             availableChanges: availableChanges
-        )
+        ))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
 
@@ -328,11 +328,11 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
     func testShouldShowUpgrade_WhenNoAvailableUpgrades_ReturnsFalse() async {
         // Given - Active subscription with feature flag ON but no available upgrades
         mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             tier: .plus,
             availableChanges: DuckDuckGoSubscription.AvailableChanges(upgrade: [], downgrade: [])
-        )
+        ))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
 
@@ -350,11 +350,11 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
             downgrade: []
         )
         mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             tier: .plus,
             availableChanges: availableChanges
-        )
+        ))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
 
@@ -378,11 +378,11 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
 
     func testFirstAvailableUpgradeTier_WhenNoAvailableChanges_ReturnsNil() async {
         // Given
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             tier: .plus,
             availableChanges: nil
-        )
+        ))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
 
@@ -395,11 +395,11 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
 
     func testFirstAvailableUpgradeTier_WhenEmptyUpgrades_ReturnsNil() async {
         // Given
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             tier: .plus,
             availableChanges: DuckDuckGoSubscription.AvailableChanges(upgrade: [], downgrade: [])
-        )
+        ))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
 
@@ -420,11 +420,11 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
             ],
             downgrade: []
         )
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             tier: .plus,
             availableChanges: availableChanges
-        )
+        ))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
 
@@ -444,12 +444,12 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
             downgrade: []
         )
         mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             platform: .apple,
             tier: .plus,
             availableChanges: availableChanges
-        )
+        ))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
         await waitForSubscriptionUpdate()
@@ -465,11 +465,11 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
     func testNavigateToPlans_WithoutGoToUpgrade_WhenApplePlatform_SetsIsShowingPlansViewTrue() async {
         // Given - Apple platform subscription
         mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             platform: .apple,
             tier: .plus
-        )
+        ))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
         await waitForSubscriptionUpdate()
@@ -485,11 +485,11 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
     func testNavigateToPlans_WithGoToUpgrade_WhenGooglePlatform_SetsIsShowingGoogleViewTrue() async {
         // Given - Google platform subscription
         mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             platform: .google,
             tier: .plus
-        )
+        ))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
         await waitForSubscriptionUpdate()

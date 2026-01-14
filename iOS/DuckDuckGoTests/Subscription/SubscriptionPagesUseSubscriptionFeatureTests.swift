@@ -580,16 +580,16 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testSubscriptionChangeSelected_WhenTierChangeSucceeds_SetsIdleStatus() async throws {
         // Given
-        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.changeTierResult = .success("mock-transaction-jws")
         purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
 
-        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: nil,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
@@ -611,15 +611,15 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testSubscriptionChangeSelected_WhenUserCancels_SetsCancelledError() async throws {
         // Given
-        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.changeTierResult = .failure(.cancelledByUser)
 
-        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: nil,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
@@ -640,15 +640,15 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testSubscriptionChangeSelected_WhenPurchaseFails_SetsPurchaseFailedError() async throws {
         // Given
-        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.changeTierResult = .failure(.purchaseFailed(NSError(domain: "test", code: 0)))
 
-        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: nil,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
@@ -669,16 +669,16 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testSubscriptionChangeSelected_WhenCompletionFails_SetsMissingEntitlementsError() async throws {
         // Given
-        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.changeTierResult = .success("mock-transaction-jws")
         purchaseFlow.completeSubscriptionPurchaseResult = .failure(.missingEntitlements)
 
-        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: nil,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
@@ -698,14 +698,14 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testSubscriptionChangeSelected_WhenInvalidParams_ReturnsNilWithoutCallingFlow() async throws {
         // Given
-        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        let purchaseFlow = AppStorePurchaseFlowMock()
 
-        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: nil,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
@@ -727,15 +727,15 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testSubscriptionChangeSelected_CallsChangeTierWithCorrectIdentifier() async throws {
         // Given
-        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.changeTierResult = .failure(.cancelledByUser)
 
-        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: nil,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent

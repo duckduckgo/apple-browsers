@@ -31,7 +31,8 @@ final class SubscriptionTests: XCTestCase {
                                 platform: .apple,
                                 status: .autoRenewable,
                                 activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)],
-                                tier: nil)
+                                tier: nil,
+                                availableChanges: nil)
         let b = DuckDuckGoSubscription(productId: "1",
                                 name: "a",
                                 billingPeriod: .monthly,
@@ -40,7 +41,8 @@ final class SubscriptionTests: XCTestCase {
                                 platform: .apple,
                                 status: .autoRenewable,
                                 activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)],
-                                tier: nil)
+                                tier: nil,
+                                availableChanges: nil)
         let c = DuckDuckGoSubscription(productId: "2",
                                 name: "a",
                                 billingPeriod: .monthly,
@@ -49,7 +51,8 @@ final class SubscriptionTests: XCTestCase {
                                 platform: .apple,
                                 status: .autoRenewable,
                                 activeOffers: [],
-                                tier: nil)
+                                tier: nil,
+                                availableChanges: nil)
         XCTAssertEqual(a, b)
         XCTAssertNotEqual(a, c)
     }
@@ -337,11 +340,213 @@ final class SubscriptionTests: XCTestCase {
 
         XCTAssertNil(subscription.tier)
     }
+
+    // MARK: - AvailableChanges Decoding Tests
+
+    func testAvailableChangesDecoding_WithAllFields() throws {
+        let rawAvailableChanges = """
+        {
+            \"upgrade\": [
+                { \"tier\": \"pro\", \"productIds\": [\"pro.monthly\", \"pro.yearly\"], \"order\": 1 }
+            ],
+            \"downgrade\": [
+                { \"tier\": \"basic\", \"productIds\": [\"basic.monthly\"], \"order\": 2 }
+            ]
+        }
+        """
+
+        let decoder = JSONDecoder()
+        let availableChanges = try decoder.decode(DuckDuckGoSubscription.AvailableChanges.self, from: Data(rawAvailableChanges.utf8))
+
+        XCTAssertEqual(availableChanges.upgrade.count, 1)
+        XCTAssertEqual(availableChanges.upgrade.first?.tier, "pro")
+        XCTAssertEqual(availableChanges.upgrade.first?.productIds, ["pro.monthly", "pro.yearly"])
+        XCTAssertEqual(availableChanges.upgrade.first?.order, 1)
+        XCTAssertEqual(availableChanges.downgrade.count, 1)
+        XCTAssertEqual(availableChanges.downgrade.first?.tier, "basic")
+    }
+
+    func testAvailableChangesDecoding_WithNullUpgrade_DefaultsToEmptyArray() throws {
+        let rawAvailableChanges = """
+        {
+            \"upgrade\": null,
+            \"downgrade\": []
+        }
+        """
+
+        let decoder = JSONDecoder()
+        let availableChanges = try decoder.decode(DuckDuckGoSubscription.AvailableChanges.self, from: Data(rawAvailableChanges.utf8))
+
+        XCTAssertEqual(availableChanges.upgrade, [])
+        XCTAssertEqual(availableChanges.downgrade, [])
+    }
+
+    func testAvailableChangesDecoding_WithMissingFields_DefaultsToEmptyArrays() throws {
+        let rawAvailableChanges = """
+        {
+        }
+        """
+
+        let decoder = JSONDecoder()
+        let availableChanges = try decoder.decode(DuckDuckGoSubscription.AvailableChanges.self, from: Data(rawAvailableChanges.utf8))
+
+        XCTAssertEqual(availableChanges.upgrade, [])
+        XCTAssertEqual(availableChanges.downgrade, [])
+    }
+
+    // MARK: - TierChange Decoding Tests
+
+    func testTierChangeDecoding_WithAllFields() throws {
+        let rawTierChange = """
+        {
+            \"tier\": \"pro\",
+            \"productIds\": [\"pro.monthly\", \"pro.yearly\"],
+            \"order\": 1
+        }
+        """
+
+        let decoder = JSONDecoder()
+        let tierChange = try decoder.decode(DuckDuckGoSubscription.TierChange.self, from: Data(rawTierChange.utf8))
+
+        XCTAssertEqual(tierChange.tier, "pro")
+        XCTAssertEqual(tierChange.productIds, ["pro.monthly", "pro.yearly"])
+        XCTAssertEqual(tierChange.order, 1)
+    }
+
+    func testTierChangeDecoding_WithMissingProductIds_DefaultsToEmptyArray() throws {
+        let rawTierChange = """
+        {
+            \"tier\": \"pro\",
+            \"order\": 1
+        }
+        """
+
+        let decoder = JSONDecoder()
+        let tierChange = try decoder.decode(DuckDuckGoSubscription.TierChange.self, from: Data(rawTierChange.utf8))
+
+        XCTAssertEqual(tierChange.tier, "pro")
+        XCTAssertEqual(tierChange.productIds, [])
+        XCTAssertEqual(tierChange.order, 1)
+    }
+
+    func testTierChangeDecoding_WithMissingOrder_DefaultsToZero() throws {
+        let rawTierChange = """
+        {
+            \"tier\": \"pro\",
+            \"productIds\": [\"pro.monthly\"]
+        }
+        """
+
+        let decoder = JSONDecoder()
+        let tierChange = try decoder.decode(DuckDuckGoSubscription.TierChange.self, from: Data(rawTierChange.utf8))
+
+        XCTAssertEqual(tierChange.tier, "pro")
+        XCTAssertEqual(tierChange.productIds, ["pro.monthly"])
+        XCTAssertEqual(tierChange.order, 0)
+    }
+
+    func testTierChangeDecoding_WithNullProductIds_DefaultsToEmptyArray() throws {
+        let rawTierChange = """
+        {
+            \"tier\": \"pro\",
+            \"productIds\": null,
+            \"order\": 1
+        }
+        """
+
+        let decoder = JSONDecoder()
+        let tierChange = try decoder.decode(DuckDuckGoSubscription.TierChange.self, from: Data(rawTierChange.utf8))
+
+        XCTAssertEqual(tierChange.tier, "pro")
+        XCTAssertEqual(tierChange.productIds, [])
+        XCTAssertEqual(tierChange.order, 1)
+    }
+
+    // MARK: - Subscription with AvailableChanges Tests
+
+    func testSubscriptionDecoding_WithAvailableChanges() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": [],
+            \"tier\": \"plus\",
+            \"availableChanges\": {
+                \"upgrade\": [
+                    { \"tier\": \"pro\", \"productIds\": [\"pro.monthly\"], \"order\": 1 }
+                ],
+                \"downgrade\": []
+            }
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertNotNil(subscription.availableChanges)
+        XCTAssertEqual(subscription.availableChanges?.upgrade.count, 1)
+        XCTAssertEqual(subscription.availableChanges?.upgrade.first?.tier, "pro")
+        XCTAssertEqual(subscription.availableChanges?.downgrade.count, 0)
+    }
+
+    func testSubscriptionDecoding_WithoutAvailableChanges() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": [],
+            \"tier\": \"plus\"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertNil(subscription.availableChanges)
+    }
+
+    func testSubscriptionDecoding_WithNullAvailableChanges() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": [],
+            \"tier\": \"plus\",
+            \"availableChanges\": null
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertNil(subscription.availableChanges)
+    }
 }
 
 extension DuckDuckGoSubscription {
 
-    static func make(withStatus status: DuckDuckGoSubscription.Status, activeOffers: [DuckDuckGoSubscription.Offer] = [], tier: TierName? = nil) -> DuckDuckGoSubscription {
+    static func make(withStatus status: DuckDuckGoSubscription.Status, activeOffers: [DuckDuckGoSubscription.Offer] = [], tier: TierName? = nil, availableChanges: DuckDuckGoSubscription.AvailableChanges? = nil) -> DuckDuckGoSubscription {
         DuckDuckGoSubscription(productId: UUID().uuidString,
                      name: "Subscription test #1",
                      billingPeriod: .monthly,
@@ -350,6 +555,7 @@ extension DuckDuckGoSubscription {
                      platform: .apple,
                      status: status,
                      activeOffers: activeOffers,
-                     tier: tier)
+                     tier: tier,
+                    availableChanges: availableChanges)
     }
 }

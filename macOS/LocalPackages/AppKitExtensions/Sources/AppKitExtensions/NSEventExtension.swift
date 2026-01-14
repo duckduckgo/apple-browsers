@@ -202,11 +202,9 @@ extension NSEvent.KeyEquivalent: ExpressibleByStringLiteral, ExpressibleByUnicod
     }
 
     init?(event: NSEvent) {
-        guard [.keyDown, .keyUp].contains(event.type) else {
-            assertionFailure("wrong type of event \(event)")
-            return nil
-        }
-        guard let characters = event.characters else { return nil }
+        // Ignore events that are not key down or key up
+        guard [.keyDown, .keyUp].contains(event.type),
+              let characters = event.charactersIgnoringModifiers, !characters.isEmpty else { return nil }
         self.init(characters: characters, modifierFlags: event.modifierFlags)
     }
 

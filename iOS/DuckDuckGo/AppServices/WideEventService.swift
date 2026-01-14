@@ -27,12 +27,12 @@ import VPN
 final class WideEventService {
     private let wideEvent: WideEventManaging
     private let featureFlagger: FeatureFlagger
-    private let subscriptionBridge: SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: SubscriptionManager
 
-    init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionBridge: SubscriptionAuthV1toV2Bridge) {
+    init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionManager: SubscriptionManager) {
         self.wideEvent = wideEvent
         self.featureFlagger = featureFlagger
-        self.subscriptionBridge = subscriptionBridge
+        self.subscriptionManager = subscriptionManager
     }
 
     func resume() {
@@ -79,7 +79,7 @@ final class WideEventService {
 
     private func checkForCurrentEntitlements() async -> Bool {
         do {
-            let entitlements = try await subscriptionBridge.currentSubscriptionFeatures()
+            let entitlements = try await subscriptionManager.currentSubscriptionFeatures()
             return !entitlements.isEmpty
         } catch {
             return false

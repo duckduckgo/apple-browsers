@@ -57,7 +57,7 @@ final class SubscriptionUIHandler: SubscriptionUIHandling {
 
     func presentSubscriptionAccessViewController(handler: any SubscriptionAccessActionHandling, message: WKScriptMessage) {
         let actionHandlers = SubscriptionAccessActionHandlers(openActivateViaEmailURL: {
-            let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .activationFlow)
+            let url = Application.appDelegate.subscriptionManager.url(for: .activationFlow)
             handler.subscriptionAccessActionOpenURLHandler(url: url)
             PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
         }, restorePurchases: {
@@ -65,7 +65,7 @@ final class SubscriptionUIHandler: SubscriptionUIHandling {
             PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
         })
 
-        let newSubscriptionAccessViewController = SubscriptionAccessViewController(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
+        let newSubscriptionAccessViewController = SubscriptionAccessViewController(subscriptionManager: Application.appDelegate.subscriptionManager,
                                                                                    actionHandlers: actionHandlers)
         currentMainViewController?.presentAsSheet(newSubscriptionAccessViewController)
     }

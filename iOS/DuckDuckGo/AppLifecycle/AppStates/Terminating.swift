@@ -31,7 +31,6 @@ enum TerminationError: Error {
 
 }
 
-
 enum TerminationReason {
 
     case insufficientDiskSpace
@@ -103,7 +102,7 @@ struct Terminating: TerminatingHandling {
                 underlyingError = error
                 debugMessage = "Bookmarks DB init failed: could not prepare database"
                 pixel = .debugBookmarksCouldNotPrepareDatabase
-                
+
             // Legacy storage errors
             case .noDBSchemeFound:
                 debugMessage = "Legacy Bookmarks DB init failed: no DB scheme found"
@@ -124,7 +123,7 @@ struct Terminating: TerminatingHandling {
             case .couldNotFixFavoriteFolder:
                 debugMessage = "Legacy Bookmarks DB init failed: could not fix favorite folder"
                 pixel = .debugBookmarksCouldNotFixFavoriteFolder
-                
+
             // Migration errors
             case .couldNotPrepareBookmarksDBStructure(let error):
                 underlyingError = error
@@ -134,14 +133,14 @@ struct Terminating: TerminatingHandling {
                 underlyingError = error
                 debugMessage = "Bookmarks migration failed: could not write to DB"
                 pixel = .debugBookmarksCouldNotWriteToDB
-                
+
             // Generic
             case .other(let error):
                 underlyingError = error
                 debugMessage = "Bookmarks DB init failed: \(bookmarkError)"
                 pixel = .bookmarksCouldNotLoadDatabase
             }
-            
+
             errorToReport = underlyingError
             mode = underlyingError.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: debugMessage)
         case .historyDatabase(let error):

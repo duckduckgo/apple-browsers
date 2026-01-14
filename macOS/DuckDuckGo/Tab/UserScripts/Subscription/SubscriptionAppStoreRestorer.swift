@@ -31,9 +31,9 @@ protocol SubscriptionAppStoreRestorer {
 
 @available(macOS 12.0, *)
 struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
     private let subscriptionErrorReporter: SubscriptionEventReporter
-    private let appStoreRestoreFlow: AppStoreRestoreFlowV2
+    private let appStoreRestoreFlow: AppStoreRestoreFlow
     private let featureFlagger: FeatureFlagger
 
     // Wide Event
@@ -42,9 +42,9 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
 
     let uiHandler: SubscriptionUIHandling
 
-    public init(subscriptionManager: SubscriptionManagerV2,
+    public init(subscriptionManager: SubscriptionManager,
                 subscriptionErrorReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
-                appStoreRestoreFlow: AppStoreRestoreFlowV2,
+                appStoreRestoreFlow: AppStoreRestoreFlow,
                 uiHandler: SubscriptionUIHandling,
                 subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData? = nil,
                 featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,

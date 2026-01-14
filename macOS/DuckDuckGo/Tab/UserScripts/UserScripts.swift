@@ -84,7 +84,7 @@ final class UserScripts: UserScriptsProvider {
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
-            subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: NSApp.delegateTyped.subscriptionManager,
             featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
@@ -218,12 +218,9 @@ final class UserScripts: UserScriptsProvider {
         }
 
         var delegate: Subfeature
-        guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
-            assertionFailure("subscriptionManager is not available")
-            return
-        }
-        let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
-        delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
+        let subscriptionManager = Application.appDelegate.subscriptionManager
+        let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
+        delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                              stripePurchaseFlow: stripePurchaseFlow,
                                                              uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                              aiChatURL: AIChatRemoteSettings().aiChatURL,
@@ -232,7 +229,7 @@ final class UserScripts: UserScriptsProvider {
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
 
-        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionManager)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }

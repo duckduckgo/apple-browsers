@@ -119,6 +119,7 @@ public extension DesignSystemImages {
             public static var radar: DesignSystemImage { .init(resource: .radarColor24) }
             public static var adsFewer: DesignSystemImage { .init(resource: .adsFewerColor24) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor24) }
+            public static var aiChatAdvanced: DesignSystemImage { .init(resource: .aiChatAdvancedColor24) }
             public static var aiChatGradient: DesignSystemImage { .init(resource: .aiChatGradientColor24) }
             public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneralColor24) }
             public static var announce: DesignSystemImage { .init(resource: .announceColor24) }
@@ -140,7 +141,6 @@ public extension DesignSystemImages {
             public static var cookieBlocked: DesignSystemImage { .init(resource: .cookieBlockedColor24) }
             public static var creditCard: DesignSystemImage { .init(resource: .creditCardColor24) }
             public static var creditCardCheck: DesignSystemImage { .init(resource: .creditCardCheckColor24) }
-            public static var databroker: DesignSystemImage { .init(resource: .databrokerColor24) }
             public static var defaultBrowserMobile: DesignSystemImage { .init(resource: .defaultBrowserMobileColor24) }
             public static var deviceAll: DesignSystemImage { .init(resource: .deviceAllColor24) }
             public static var document: DesignSystemImage { .init(resource: .documentColor24) }
@@ -167,7 +167,6 @@ public extension DesignSystemImages {
             public static var history: DesignSystemImage { .init(resource: .historyColor24) }
             public static var home: DesignSystemImage { .init(resource: .homeColor24) }
             public static var homescreenLock: DesignSystemImage { .init(resource: .homescreenLockColor24) }
-            public static var identity: DesignSystemImage { .init(resource: .identityColor24) }
             public static var identityBlockedPIR: DesignSystemImage { .init(resource: .identityBlockedPIRColor24) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestorationColor24) }
             public static var `import`: DesignSystemImage { .init(resource: .importColor24) }

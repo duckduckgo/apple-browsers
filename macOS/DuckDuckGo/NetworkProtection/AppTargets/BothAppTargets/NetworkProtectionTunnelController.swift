@@ -67,7 +67,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Subscriptions
 
-    private let subscriptionManagerV2: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
 
     // MARK: - Extensions Support
 
@@ -180,7 +180,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          defaults: UserDefaults,
          wideEvent: WideEventManaging,
          notificationCenter: NotificationCenter = .default,
-         subscriptionManagerV2: any SubscriptionManagerV2,
+         subscriptionManager: any SubscriptionManager,
          vpnAppState: VPNAppState) {
 
         self.availableExtensions = availableExtensions
@@ -190,7 +190,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.settings = settings
         self.defaults = defaults
         self.wideEvent = wideEvent
-        self.subscriptionManagerV2 = subscriptionManagerV2
+        self.subscriptionManager = subscriptionManager
         self.vpnAppState = vpnAppState
         subscribeToSettingsChanges()
         subscribeToStatusChanges()
@@ -763,7 +763,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         // It’s important to force refresh the token here to immediately branch the token used by the main app from the one sent to the system extension.
         // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-        try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
+        try await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
         self.connectionWideEventData?.oauthDuration?.complete()
 
         // Encode entire VPN settings as one unit
@@ -922,7 +922,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     private func fetchTokenContainer() async throws -> TokenContainer {
         do {
-            let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
+            let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
             Logger.networkProtection.log("🟢 TunnelController found token container")
             return tokenContainer
         } catch {

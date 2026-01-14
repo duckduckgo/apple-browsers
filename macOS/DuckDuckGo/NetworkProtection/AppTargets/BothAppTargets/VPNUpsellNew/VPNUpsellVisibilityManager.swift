@@ -54,7 +54,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Dependencies
     private let isFirstLaunch: Bool
     private let isNewUser: Bool
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
     private let timerDuration: TimeInterval
@@ -72,7 +72,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
     init(isFirstLaunch: Bool,
          isNewUser: Bool,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          defaultBrowserProvider: DefaultBrowserProvider,
          contextualOnboardingPublisher: AnyPublisher<Bool, Never>,
          persistor: VPNUpsellUserDefaultsPersisting,

@@ -215,7 +215,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         if let existingWebVC = existingWebViewController {
             existingWebVC.delegate = self
             existingWebVC.aiChatContentHandlingDelegate = self
-            // Set contextualChatURL from existing webVC if available
             viewModel.setInitialContextualChatURL(existingWebVC.currentContextualChatURL)
             transitionToWebView(existingWebVC)
             expandToLargeDetent()
@@ -285,7 +284,6 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     private func attachPageContext() {
-        // If context already exists, show it directly
         if let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
             self?.contextualInputViewController.hideContextChip()
         }) {
@@ -293,7 +291,6 @@ final class AIChatContextualSheetViewController: UIViewController {
             return
         }
 
-        // Otherwise, request context collection from the tab
         delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
     }
 
@@ -421,10 +418,6 @@ extension AIChatContextualSheetViewController: AIChatContextualWebViewController
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?) {
         Logger.aiChat.debug("[AIChatContextual] Received contextual chat URL update: \(String(describing: url?.absoluteString))")
         viewModel.didUpdateContextualChatURL(url)
-    }
-
-    func contextualWebViewControllerDidFinishLoading(_ viewController: AIChatContextualWebViewController) {
-        // No-op for now, required by delegate protocol
     }
 }
 

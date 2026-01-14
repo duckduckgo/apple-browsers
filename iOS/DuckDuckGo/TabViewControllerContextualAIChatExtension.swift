@@ -43,8 +43,8 @@ extension TabViewController {
         Task { @MainActor in
             var pageContext: AIChatPageContextData?
 
-            // Collect context if automatic setting is enabled
-            if aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled {
+            let isFirstDisplay = aiChatContextualSheetCoordinator.sheetViewController == nil
+            if isFirstDisplay && aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled {
                 pageContext = await collectPageContext()
             }
 
@@ -57,14 +57,8 @@ extension TabViewController {
 
     /// Collects page context from the current tab via JS userscript
     func collectPageContext() async -> AIChatPageContextData? {
-        guard let script = pageContextUserScript else {
-            Swift.print("[PageContext] pageContextUserScript is nil!")
-            return nil
-        }
+        guard let script = pageContextUserScript else { return nil }
 
-        Swift.print("[PageContext] Starting collection...")
-
-        // Set webView reference for the script to push messages
         script.webView = webView
 
         return await withCheckedContinuation { continuation in
@@ -78,17 +72,14 @@ extension TabViewController {
                     guard !didResume else { return }
                     didResume = true
                     cancellable?.cancel()
-                    Swift.print("[PageContext] Received result: \(pageContext?.title ?? "nil")")
                     let enriched = self?.enrichWithFavicon(pageContext)
                     continuation.resume(returning: enriched)
                 }
 
             script.collect()
 
-            // Timeout to prevent hanging if JS doesn't respond
             DispatchQueue.main.asyncAfter(deadline: .now() + Constants.pageContextCollectionTimeout) {
                 guard !didResume else { return }
-                Swift.print("[PageContext] Timeout - JS did not respond")
                 didResume = true
                 cancellable?.cancel()
                 continuation.resume(returning: nil)

@@ -99,7 +99,6 @@ final class AIChatContextualSheetCoordinator {
                 hasExistingChat: webViewController != nil
             )
 
-            // Set page context if provided
             if let context = pageContext {
                 sheetViewModel.pageContext = AIChatContextualSheetViewModel.PageContext(
                     title: context.title,
@@ -134,8 +133,6 @@ final class AIChatContextualSheetCoordinator {
             favicon: decodeFaviconImage(from: context.favicon)
         )
         viewModel.fullPageContext = context
-
-        // Notify the sheet that context is now available
         sheetViewController?.didReceivePageContext()
     }
 

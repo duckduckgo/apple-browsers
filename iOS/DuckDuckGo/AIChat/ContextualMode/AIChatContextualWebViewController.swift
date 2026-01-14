@@ -31,7 +31,6 @@ import WebKit
 protocol AIChatContextualWebViewControllerDelegate: AnyObject {
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestToLoad url: URL)
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?)
-    func contextualWebViewControllerDidFinishLoading(_ viewController: AIChatContextualWebViewController)
 }
 
 final class AIChatContextualWebViewController: UIViewController {
@@ -176,7 +175,6 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func loadAIChat() {
         loadingView.startAnimating()
-        // Add placement=sidebar to tell duck.ai this is contextual mode
         let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
         let request = URLRequest(url: contextualURL)
         webView.load(request)
@@ -254,7 +252,6 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         loadingView.stopAnimating()
         isPageReady = true
         submitPendingPromptIfReady()
-        delegate?.contextualWebViewControllerDidFinishLoading(self)
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

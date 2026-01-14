@@ -91,6 +91,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let migrationStore = AIChatMigrationStore()
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
+    
+    /// Set externally via `AIChatContentHandler.setup()`.
+    var displayMode: AIChatDisplayMode?
 
     init(experimentalAIChatManager: ExperimentalAIChatManager,
          syncHandler: AIChatSyncHandling,

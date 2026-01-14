@@ -60,7 +60,7 @@
             "appVersion", 
             "pixelSource", 
             {
-                "key": "themePopoverWasOpen",
+                "key": "theme_popover_was_open",
                 "type": "boolean",
                 "description": "Whether the Themes Discovery Popover was onscreen, or not"
             }

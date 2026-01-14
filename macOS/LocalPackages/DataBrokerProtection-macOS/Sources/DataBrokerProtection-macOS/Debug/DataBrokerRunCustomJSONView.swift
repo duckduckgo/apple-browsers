@@ -207,10 +207,6 @@ struct DataBrokerRunCustomJSONView: View {
             HStack {
                 Text("Extracted Profiles")
                     .font(.headline)
-                Spacer()
-                Button("Open Log Monitor") {
-                    openLogMonitor()
-                }
             }
 
             Divider()
@@ -240,22 +236,6 @@ struct DataBrokerRunCustomJSONView: View {
             }
             .frame(maxHeight: 320)
             .listStyle(.plain)
-
-            Divider()
-
-            VStack(alignment: .leading, spacing: 8) {
-                if let selectedResult = selectedResult {
-                    Text(selectedResult.extractedProfile.name ?? "No name")
-                        .font(.headline)
-                    Text(selectedResult.extractedProfile.addresses?.map { $0.fullAddress }.joined(separator: ", ") ?? "No address")
-                    Text(selectedResult.extractedProfile.relatives?.joined(separator: ", ") ?? "No relatives")
-                        .foregroundColor(.secondary)
-                } else {
-                    Text("Select a profile to view details.")
-                        .foregroundColor(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
             Divider()
 

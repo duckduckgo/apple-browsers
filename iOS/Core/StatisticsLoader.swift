@@ -38,6 +38,7 @@ public class StatisticsLoader {
     private let fireSearchExperimentPixels: () -> Void
     private let fireAppRetentionExperimentPixels: () -> Void
     private let pixelFiring: PixelFiring.Type
+    private var isDuckAIRetentionRequestInProgress = false
 
     init(statisticsStore: StatisticsStore = StatisticsUserDefaults(),
          returnUserMeasurement: ReturnUserMeasurement = KeychainReturnUserMeasurement(),
@@ -176,6 +177,71 @@ public class StatisticsLoader {
                 self.updateUsageSegmentationWithAtb(atb, activityType: .appUse)
             }
             completion()
+        }
+    }
+
+    public func refreshRetentionAtbOnDuckAIPromptSubmission(completion: @escaping Completion = {}) {
+        DispatchQueue.main.async {
+            let group = DispatchGroup()
+
+            group.enter()
+            group.enter()
+
+            self.refreshSearchRetentionAtb {
+                group.leave()
+            }
+
+            self.refreshDuckAIRetentionAtb {
+                group.leave()
+            }
+
+            group.notify(queue: .main) {
+                completion()
+            }
+        }
+    }
+
+    private func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        guard !isDuckAIRetentionRequestInProgress else {
+            completion()
+            return
+        }
+
+        isDuckAIRetentionRequestInProgress = true
+
+        guard let url = StatisticsDependentURLFactory(statisticsStore: statisticsStore).makeDuckAIAtbURL() else {
+            requestInstallStatistics {
+                DispatchQueue.main.async {
+                    self.isDuckAIRetentionRequestInProgress = false
+                    self.updateUsageSegmentationAfterInstall(activityType: .duckAI)
+                    completion()
+                }
+            }
+            return
+        }
+
+        let configuration = APIRequest.Configuration(url: url)
+        let request = APIRequest(configuration: configuration, urlSession: .session())
+
+        request.fetch { response, error in
+            DispatchQueue.main.async {
+                self.isDuckAIRetentionRequestInProgress = false
+
+                if let error = error {
+                    Logger.general.error("Duck.ai atb request failed with error: \(error.localizedDescription, privacy: .public)")
+                    completion()
+                    return
+                }
+
+                if let data = response?.data, let atb = try? self.parser.convert(fromJsonData: data) {
+                    self.statisticsStore.duckAIRetentionAtb = atb.version
+                    self.storeUpdateVersionIfPresent(atb)
+                    self.updateUsageSegmentationWithAtb(atb, activityType: .duckAI)
+                }
+                completion()
+            }
         }
     }
 

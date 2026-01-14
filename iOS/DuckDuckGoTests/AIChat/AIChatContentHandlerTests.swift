@@ -29,17 +29,20 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockSettings: MockAIChatSettingsProvider!
     var mockPayloadHandler: AIChatPayloadHandler!
     var mockMetricHandler: MockAIChatPixelMetricHandler!
+    var mockFeatureFlagger: MockFeatureFlagger!
 
     override func setUpWithError() throws {
         mockSettings = MockAIChatSettingsProvider()
         mockPayloadHandler = AIChatPayloadHandler()
         mockMetricHandler = MockAIChatPixelMetricHandler()
+        mockFeatureFlagger = MockFeatureFlagger()
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
-            featureDiscovery: MockFeatureDiscovery()
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger
         )
     }
 

@@ -284,6 +284,22 @@
     "title" : "Brak ukierunkowanych reklam. Brak ukierunkowanych rekomendacji. Tylko wybrany film.",
     "note" : "Subtitle for a page that shows the benefits of using the Duck Player feature to watch YouTube videos more privately."
   },
+  "addressBarMode_title" : {
+    "title" : "Chcesz łatwego dostępu do prywatnego czatu AI?",
+    "note" : "Title for the Address Bar Mode feature step in onboarding"
+  },
+  "addressBarMode_searchAndDuckAi" : {
+    "title" : "Wyszukiwanie i Duck.ai",
+    "note" : "Button label for enabling search with Duck.ai in the address bar"
+  },
+  "addressBarMode_searchOnly" : {
+    "title" : "Tylko wyszukiwanie",
+    "note" : "Button label for search only mode in the address bar"
+  },
+  "addressBarMode_footer" : {
+    "title" : "Funkcje sztucznej inteligencji są prywatne i opcjonalne. Możesz dokonać zmian w obszarze <b>Ustawienia &gt; Funkcje AI</b>.",
+    "note" : "Footer text explaining AI features are optional and can be changed in settings. The <b> tag is used to bold the settings path."
+  },
   "customize_title_v3" : {
     "title" : "Dostosujmy kilka elementów...",
     "note" : "Title for a page that allows the user to customize specific settings in the DuckDuckGo browser."
@@ -411,6 +427,10 @@
   "comparison_notSupported" : {
     "title" : "Brak ochrony",
     "note" : "The level of protection offered by a browser on a specific feature in the comparison table."
+  },
+  "comparison_aiChat" : {
+    "title" : "Czatuj prywatnie z chatbotami AI (opcjonalne)",
+    "note" : "The description of a browser privacy feature in the comparison table."
   },
   "browser_DuckDuckGo" : {
     "title" : "DuckDuckGo",

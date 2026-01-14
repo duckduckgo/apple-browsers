@@ -25,7 +25,6 @@ public enum OAuthClientError: DDGError {
     case missingTokenContainer
     case unauthenticated
     case invalidTokenRequest
-    case authMigrationNotPerformed
     case unknownAccount
 
     public var description: String {
@@ -38,8 +37,6 @@ public enum OAuthClientError: DDGError {
             return "The account is not authenticated, please re-authenticate"
         case .invalidTokenRequest:
             return "Invalid token request"
-        case .authMigrationNotPerformed:
-            return "Auth migration not needed"
         case .unknownAccount:
             return "Unknown account"
         }
@@ -57,8 +54,6 @@ public enum OAuthClientError: DDGError {
             return 11002
         case .invalidTokenRequest:
             return 11003
-        case .authMigrationNotPerformed:
-            return 11004
         case .unknownAccount:
             return 11005
         }
@@ -69,11 +64,6 @@ public enum OAuthClientError: DDGError {
 public protocol AuthTokenStoring {
     func getTokenContainer() throws -> TokenContainer?
     func saveTokenContainer(_ tokenContainer: TokenContainer?) throws
-}
-
-/// Provides the legacy AuthToken V1
-public protocol LegacyAuthTokenStoring {
-    var token: String? { get set }
 }
 
 public enum AuthTokensCachePolicy {
@@ -116,14 +106,6 @@ public protocol OAuthClient {
     /// All options store new or refreshed tokens via the tokensStorage
     func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer
 
-    /// Checks if the migration from V1 to V2 is possible
-    /// - Returns: true is possible, false otherwise
-    var isV1TokenPresent: Bool { get }
-
-    /// Migrate access token v1 to auth token v2 if needed
-    /// - Throws: An error in case of failures during the migration or a `OAuthClientError.authMigrationNotPerformed` if the migration is not needed or not possible
-    func migrateV1Token() async throws
-
     /// Use the TokenContainer provided
     func adopt(tokenContainer: TokenContainer) throws
 
@@ -134,11 +116,6 @@ public protocol OAuthClient {
     /// - Parameter signature: The platform signature
     /// - Returns: A container of tokens
     func activate(withPlatformSignature signature: String) async throws -> TokenContainer
-
-    /// Exchange token v1 for tokens v2
-    /// - Parameter accessTokenV1: The legacy auth token
-    /// - Returns: A TokenContainer with access and refresh tokens
-    @discardableResult func exchange(accessTokenV1: String) async throws -> TokenContainer
 
     // MARK: Logout
 
@@ -176,17 +153,14 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     private let authService: any OAuthService
     private var tokenStorage: any AuthTokenStoring
-    private var legacyTokenStorage: (any LegacyAuthTokenStoring)?
     private var migrationOngoingTask: Task<Void, Error>?
     private var refreshOngoingTask: Task<TokenContainer, Error>?
     private let refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?
 
     public init(tokensStorage: any AuthTokenStoring,
-                legacyTokenStorage: (any LegacyAuthTokenStoring)?,
                 authService: OAuthService,
                 refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?) {
         self.tokenStorage = tokensStorage
-        self.legacyTokenStorage = legacyTokenStorage
         self.authService = authService
         self.refreshEventMapping = refreshEventMapping
     }
@@ -367,51 +341,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
-    public var isV1TokenPresent: Bool {
-        guard let legacyTokenStorage,
-              let legacyToken = legacyTokenStorage.token,
-              !legacyToken.isEmpty else {
-            return false
-        }
-        return true
-    }
-
-    /// Tries to retrieve the v1 auth token stored locally, if present performs a migration to v2
-    public func migrateV1Token() async throws {
-
-        if let task = migrationOngoingTask {
-            return try await task.value
-        }
-
-        let task = Task {
-            defer { migrationOngoingTask = nil }
-
-            guard !isUserAuthenticated else {
-                throw OAuthClientError.authMigrationNotPerformed
-            }
-
-            guard var legacyTokenStorage else {
-                Logger.OAuthClient.fault("Auth migration attempted without a LegacyTokenStorage")
-                throw OAuthClientError.authMigrationNotPerformed
-            }
-
-            guard let legacyToken = legacyTokenStorage.token,
-                  !legacyToken.isEmpty else {
-                throw OAuthClientError.authMigrationNotPerformed
-            }
-
-            Logger.OAuthClient.log("Migrating v1 token...")
-            try await exchange(accessTokenV1: legacyToken)
-            Logger.OAuthClient.log("Tokens migrated successfully")
-
-            // After releasing Auth V2 at 100% we are now deleting the Auth V1 token.
-            legacyTokenStorage.token = nil
-        }
-
-        migrationOngoingTask = task
-        return try await task.value
-    }
-
     public func adopt(tokenContainer: TokenContainer) throws {
         Logger.OAuthClient.log("Adopting TokenContainer")
         try tokenStorage.saveTokenContainer(tokenContainer)
@@ -441,27 +370,11 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         return tokenContainer
     }
 
-    // MARK: Exchange V1 to V2 token
-
-    @discardableResult public func exchange(accessTokenV1: String) async throws -> TokenContainer {
-        Logger.OAuthClient.log("Exchanging access token V1 to V2")
-        let (codeVerifier, codeChallenge) = try await getVerificationCodes()
-        let authSessionID = try await authService.authorize(codeChallenge: codeChallenge)
-        let authCode = try await authService.exchangeToken(accessTokenV1: accessTokenV1, authSessionID: authSessionID)
-        let tokenContainer = try await getTokens(authCode: authCode, codeVerifier: codeVerifier)
-        try tokenStorage.saveTokenContainer(tokenContainer)
-        return tokenContainer
-    }
-
     // MARK: Logout
 
     public func logout() async throws {
         let existingToken = try tokenStorage.getTokenContainer()?.accessToken
         try removeLocalAccount()
-
-        // Also removing V1
-        Logger.OAuthClient.log("Removing V1 token")
-        legacyTokenStorage?.token = nil
 
         if let existingToken {
             Task { // Not waiting for an answer

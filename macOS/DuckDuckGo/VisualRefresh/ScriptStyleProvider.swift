@@ -20,25 +20,25 @@ import Foundation
 import Combine
 import Common
 
-/// # Note: This component is used by HistoryView + SpecialErrorPages
+/// # Note: This component is used by HistoryView + SpecialErrorPages + PrivacyDashboardController
 ///
 final class ScriptStyleProvider: ScriptStyleProviding {
     let themeManager: ThemeManaging
 
     var themeAppearance: String {
-        themeManager.effectiveAppearance.rawValue
+        themeManager.appearance.encodedForFrontend
     }
 
     var themeName: String {
-        themeManager.theme.name.rawValue
+        themeManager.theme.name.encodedForFrontend
     }
 
     var themeStylePublisher: AnyPublisher<(appearance: String, themeName: String), Never> {
-        Publishers.CombineLatest(themeManager.effectiveAppearancePublisher, themeManager.themePublisher)
+        Publishers.CombineLatest(themeManager.appearancePublisher, themeManager.themePublisher)
             .dropFirst()
             .receive(on: DispatchQueue.main)
             .map { appearance, theme in
-                (appearance.rawValue, theme.name.rawValue)
+                (appearance.encodedForFrontend, theme.name.encodedForFrontend)
             }
             .removeDuplicates { previous, current in
                 previous.0 == current.0 && previous.1 == current.1
@@ -48,5 +48,20 @@ final class ScriptStyleProvider: ScriptStyleProviding {
 
     init(themeManager: ThemeManaging) {
         self.themeManager = themeManager
+    }
+}
+
+private extension ThemeAppearance {
+
+    var encodedForFrontend: String {
+        // Frontend expects `system` rather than `systemDefault`
+        self == .systemDefault ? "system" : rawValue
+    }
+}
+
+private extension ThemeName {
+
+    var encodedForFrontend: String {
+        rawValue
     }
 }

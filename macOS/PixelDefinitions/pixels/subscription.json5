@@ -271,8 +271,7 @@
             {
                 "key": "context.name",
                 "type": "string",
-                "description": "Context name for the flow",
-                "enum": ["funnel_appsettings_macos", "funnel_appmenu_macos", "funnel_freescan_macos", "funnel_toolbar_macos"]
+                "description": "Context name for the flow"
             }
         ]
     },
@@ -444,6 +443,12 @@
                 "type": "string",
                 "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status events",
                 "enum": ["partial_data"]
+            },
+            {
+                "key": "feature.data.ext.failing_step",
+                "type": "string",
+                "description": "The step at which the flow failed, when applicable",
+                "enum": ["token_refresh"]
             }
         ]
     },

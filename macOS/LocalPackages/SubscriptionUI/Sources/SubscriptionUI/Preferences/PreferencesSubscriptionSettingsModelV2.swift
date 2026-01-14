@@ -26,6 +26,10 @@ import os.log
 import Persistence
 import PrivacyConfig
 
+public enum PreferencesSubscriptionSettingsState: String {
+    case subscriptionPendingActivation, subscriptionActive, subscriptionExpired, subscriptionFreeTrialActive
+}
+
 public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     @Published var subscriptionDetails: String?
@@ -34,6 +38,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     @Published private(set) var subscriptionTier: TierName?
     private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
     private var isSubscriptionActive: Bool = false
+    private var availableChanges: DuckDuckGoSubscription.AvailableChanges?
 
     /// Returns the tier badge variant to display, or nil if badge should not be shown
     /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
@@ -55,14 +60,26 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         return isProTierPurchaseEnabled() || subscriptionTier == .pro
     }
 
+    /// Returns true if "Upgrade" option should be shown
+    /// Requirements:
+    /// - Subscription is active
+    /// - Pro tier purchase feature flag is enabled
+    /// - There are available upgrades
+    var shouldShowUpgrade: Bool {
+        guard isSubscriptionActive else { return false }
+        guard isProTierPurchaseEnabled() else { return false }
+        return firstAvailableUpgradeTier != nil
+    }
+
+    /// Returns the first available upgrade tier name, sorted by order
+    var firstAvailableUpgradeTier: String? {
+        availableChanges?.upgrade
+            .sorted { $0.order < $1.order }
+            .first?.tier
+    }
+
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
-
-    @Published private(set) var rebrandingMessageDismissed: Bool = false
-
-    public var showRebrandingMessage: Bool {
-        return !rebrandingMessageDismissed
-    }
 
     var expiredSubscriptionPurchaseButtonTitle: String {
         if winBackOfferVisibilityManager.isOfferAvailable {
@@ -78,7 +95,6 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     private let subscriptionManager: SubscriptionManagerV2
     private let keyValueStore: ThrowingKeyValueStoring
-    private let rebrandingDismissedKey = "hasDismissedSubscriptionRebrandingMessage"
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let blackFridayCampaignProvider: BlackFridayCampaignProviding
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
@@ -113,7 +129,6 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
-        self.rebrandingMessageDismissed = (try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool) ?? false
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.blackFridayCampaignProvider = blackFridayCampaignProvider
         self.isProTierPurchaseEnabled = isProTierPurchaseEnabled
@@ -200,11 +215,12 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
         case showInternalSubscriptionAlert
     }
 
-    /// Returns the appropriate action for "View All Plans" based on:
+    /// Returns the appropriate action for "View All Plans" or "Upgrade" based on:
     /// - Subscription platform: where the subscription was purchased
     /// - Current app platform: App Store version vs Stripe (Sparkling) version
+    /// - Parameter url: The subscription URL to navigate to (defaults to `.plans`)
     @MainActor
-    func viewAllPlansAction() -> ViewAllPlansAction {
+    func viewAllPlansAction(url: SubscriptionURL = .plans) -> ViewAllPlansAction {
         guard let subscriptionPlatform = subscriptionPlatform else {
             assertionFailure("Missing or unknown subscriptionPlatform")
             return .navigateToPlans { }
@@ -213,9 +229,9 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
         switch subscriptionPlatform {
         case .apple:
             if currentPurchasePlatform == .appStore {
-                // Apple subscription on App Store app → show plans page
+                // Apple subscription on App Store app → show plans/upgrade page
                 return .navigateToPlans { [weak self] in
-                    self?.userEventHandler(.openURL(.plans))
+                    self?.userEventHandler(.openURL(url))
                 }
             } else {
                 // Apple subscription on Stripe app → show Apple dialog with instructions
@@ -223,9 +239,9 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
             }
         case .stripe:
             if currentPurchasePlatform == .stripe {
-                // Stripe subscription on Stripe app → show plans page
+                // Stripe subscription on Stripe app → show plans/upgrade page
                 return .navigateToPlans { [weak self] in
-                    self?.userEventHandler(.openURL(.plans))
+                    self?.userEventHandler(.openURL(url))
                 }
             } else {
                 // Stripe subscription on App Store app → redirect to Stripe portal
@@ -404,6 +420,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
                 hasActiveTrialOffer = subscription.hasActiveTrialOffer
                 subscriptionTier = subscription.tier
                 isSubscriptionActive = subscription.isActive
+                availableChanges = subscription.availableChanges
             }
         } catch {
             Logger.subscription.error("Error getting subscription: \(error, privacy: .public)")
@@ -445,10 +462,6 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
         return dateFormatter
     }()
 
-    public func dismissRebrandingMessage() {
-        rebrandingMessageDismissed = true
-        try? keyValueStore.set(true, forKey: rebrandingDismissedKey)
-    }
 }
 
 enum ManageSubscriptionSheet: Identifiable {

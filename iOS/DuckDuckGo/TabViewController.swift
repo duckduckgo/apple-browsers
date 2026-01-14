@@ -205,7 +205,6 @@ class TabViewController: UIViewController {
     // Required to allow grace period between authentication prompts when autofilling credit cards
     // where forms are split into multiple iframes, requiring multiple prompts
     private var domainFillCreditCardPromptLastShownOn: String?
-    private var domainFillCreditCardPixelLastFiredFor: String?
     // Required to prevent fireproof prompt presenting before autofill save login prompt
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
@@ -281,6 +280,7 @@ class TabViewController: UIViewController {
             updateTabModel()
             delegate?.tabLoadingStateDidChange(tab: self)
             checkLoginDetectionAfterNavigation()
+            updateInputAccessoryViewVisibility()
         }
     }
     
@@ -358,8 +358,7 @@ class TabViewController: UIViewController {
     private lazy var linkProtection: LinkProtection = {
         LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                       errorReporting: Self.debugEvents,
-                       useBackgroundTaskProtection: featureFlagger.isFeatureOn(.ampBackgroundTaskSupport))
+                       errorReporting: Self.debugEvents)
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {
@@ -497,7 +496,13 @@ class TabViewController: UIViewController {
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
-        let coordinator = AIChatContextualSheetCoordinator(voiceSearchHelper: voiceSearchHelper)
+        let coordinator = AIChatContextualSheetCoordinator(
+            voiceSearchHelper: voiceSearchHelper,
+            settings: aiChatSettings,
+            privacyConfigurationManager: privacyConfigurationManager,
+            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+            featureDiscovery: featureDiscovery
+        )
         coordinator.delegate = self
         return coordinator
     }()
@@ -577,7 +582,8 @@ class TabViewController: UIViewController {
 
         // Reload AI Chat when subscription state changes
         subscriptionAIChatStateHandler.onSubscriptionStateChanged = { [weak self] in
-            self?.reloadAIChatIfNeeded()
+            self?.reloadFullModeAIChatIfNeeded()
+            self?.reloadContextualAIChatIfNeeded()
         }
 
         // Assign itself as tabNavigationHandler for DuckPlayer
@@ -1050,27 +1056,19 @@ class TabViewController: UIViewController {
         guard url.isDuckDuckGoSearch else { return false }
         
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
-
-        // Only check DuckAI params if the feature flag is enabled
-        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
-        }
+        let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+        shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
         return shouldReissue
     }
-    
+
     private func reissueSearchWithRequiredParams(for url: URL) {
         var mobileSearch = url.applyingStatsParams()
+        let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+        mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
 
-        // If it's enabled, don't evaluate shouldReissue
-        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
-        }
-        
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
     }
-    
+
     private func showProgressIndicator() {
         progressWorker.didStartLoading()
     }
@@ -1482,18 +1480,22 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView,
                  didReceive challenge: URLAuthenticationChallenge,
                  completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic {
-            performBasicHTTPAuthentication(protectionSpace: challenge.protectionSpace, completionHandler: completionHandler)
-        } else if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
+
+        switch challenge.protectionSpace.authenticationMethod {
+        case NSURLAuthenticationMethodHTTPBasic, NSURLAuthenticationMethodHTTPDigest:
+            performHTTPAuthentication(protectionSpace: challenge.protectionSpace, completionHandler: completionHandler)
+
+        case NSURLAuthenticationMethodServerTrust:
             // Handle SSL challenge and present Special Error page if issues with SSL certificates are detected
             specialErrorPageNavigationHandler.handleWebView(webView, didReceive: challenge, completionHandler: completionHandler)
-        } else {
+
+        default:
             completionHandler(.performDefaultHandling, nil)
         }
     }
 
-    func performBasicHTTPAuthentication(protectionSpace: URLProtectionSpace,
-                                        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+    func performHTTPAuthentication(protectionSpace: URLProtectionSpace,
+                                   completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         if let urlProvidedBasicAuthCredential,
            urlProvidedBasicAuthCredential.url.matches(protectionSpace) {
 
@@ -1732,6 +1734,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func updatePreview() {
+        guard isTabCurrentlyPresented() else { return }
+
         preparePreview { image in
             if let image = image {
                 self.delegate?.tab(self, didUpdatePreview: image)
@@ -1921,6 +1925,12 @@ extension TabViewController: WKNavigationDelegate {
             saveLoginPromptIsPresenting = false
             shouldShowAutofillExtensionPrompt = false
         }
+    }
+
+    /// Hides the default keyboard input accessory view when on duck.ai pages.
+    private func updateInputAccessoryViewVisibility() {
+        guard let webView = webView as? WebView else { return }
+        webView.shouldHideDefaultInputAccessoryView = isAITab
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
@@ -2949,7 +2959,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
-        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
@@ -3304,7 +3314,6 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
-                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard isCreditCardAutofillEnabled() else {
             completionHandler(nil)
@@ -3317,7 +3326,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        promptToFill(withCreditCards: creditCards, isMainFrame: isMainFrame) { card in
+        promptToFill(withCreditCards: creditCards) { card in
             completionHandler(card)
         }
     }
@@ -3325,7 +3334,6 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
-                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard isCreditCardAutofillEnabled(), mainType == .creditCards else {
             completionHandler(nil)
@@ -3333,12 +3341,12 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        promptToFill(withCreditCards: creditCards, isMainFrame: isMainFrame) { card in
+        promptToFill(withCreditCards: creditCards) { card in
             completionHandler(card)
         }
     }
 
-    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         if domainFillCreditCardPromptLastShownOn != url?.host {
             AppDependencyProvider.shared.autofillLoginSession.endSession()
             self.domainFillCreditCardPromptLastShownOn = self.url?.host
@@ -3359,33 +3367,14 @@ extension TabViewController: SecureVaultManagerDelegate {
 
                 if creditCard != nil {
                     NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
-                    self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
                 }
             }
             shouldShowCreditCardPrompt = false
             autofillCreditCardAccessoryView?.updateCreditCards(creditCards)
         } else {
-            addCreditCardInputAccessoryView(creditCards: creditCards) { [weak self] card in
+            addCreditCardInputAccessoryView(creditCards: creditCards) { card in
                 completionHandler(card)
-
-                if card != nil {
-                    self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
-                }
             }
-        }
-    }
-
-    private func fireCreditCardFramePixels(isMainFrame: Bool) {
-        guard domainFillCreditCardPixelLastFiredFor != url?.host else {
-            return
-        }
-
-        domainFillCreditCardPixelLastFiredFor = url?.host
-
-        if isMainFrame {
-            Pixel.fire(pixel: .autofillCardsAutofilledInMainframe)
-        } else {
-            Pixel.fire(pixel: .autofillCardsAutofilledInIframe)
         }
     }
 

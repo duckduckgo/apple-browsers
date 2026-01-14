@@ -39,6 +39,7 @@ public enum SubscriptionURL {
     case manageSubscriptionsInAppStore
     case identityTheftRestoration
     case plans
+    case upgrade
 
     public enum StaticURLs {
         public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -85,6 +86,8 @@ public enum SubscriptionURL {
                 baseURL.replacing(path: "identity-theft-restoration")
             case .plans:
                 baseURL.appendingPathComponent("plans")
+            case .upgrade:
+                baseURL.appendingPathComponent("plans").appendingParameter(name: "goToUpgrade", value: "true")
             }
         }()
 
@@ -150,6 +153,24 @@ extension SubscriptionURL {
         if let featurePage = featurePage {
             url = url.appendingParameter(name: "featurePage", value: featurePage)
         }
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)
+    }
+
+    /**
+     * Creates URL components for the plans page with origin parameter
+     *
+     * - Parameters:
+     *   - origin: Attribution origin for analytics
+     *   - goToUpgrade: If true, includes goToUpgrade=true parameter for direct upgrade flow
+     *   - environment: The subscription environment (production/staging)
+     *
+     * - Returns: URLComponents containing the plans URL with origin parameter
+     */
+    public static func plansURLComponents(_ origin: String, goToUpgrade: Bool = false, environment: SubscriptionEnvironment.ServiceEnvironment = .production) -> URLComponents? {
+        let subscriptionURL: SubscriptionURL = goToUpgrade ? .upgrade : .plans
+        let url = subscriptionURL
+            .subscriptionURL(environment: environment)
+            .appendingParameter(name: AttributionParameter.origin, value: origin)
         return URLComponents(url: url, resolvingAgainstBaseURL: false)
     }
 }

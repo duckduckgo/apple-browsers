@@ -557,7 +557,7 @@
 	<key>SUFeedURL</key>
 	<string>$(SPARKLE_FEED_URL)</string>
 	<key>SUPublicEDKey</key>
-	<string>ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=</string>
+	<string>$(SPARKLE_PUBLIC_EDKEY)</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>10800</integer>
 	<key>ViewBridgeService</key>
@@ -566,5 +566,7 @@
 	<string>$(APP_CONFIGURATION_APP_GROUP)</string>
 	<key>IPC_APP_GROUP</key>
 	<string>$(IPC_APP_GROUP)</string>
+	<key>UIDesignRequiresCompatibility</key>
+	<true/>
 </dict>
 </plist>

@@ -89,7 +89,7 @@ public class DBPIOSInterface {
         func validateRunPrerequisites() async -> Bool
     }
 
-    public protocol DatabaseDelegate: AnyObject  {
+    public protocol DatabaseDelegate: AnyObject {
         func getUserProfile() throws -> DataBrokerProtectionCore.DataBrokerProtectionProfile?
         func getAllDataBrokers() throws -> [DataBrokerProtectionCore.DataBroker]
         func getAllBrokerProfileQueryData() throws -> [DataBrokerProtectionCore.BrokerProfileQueryData]
@@ -192,7 +192,8 @@ public final class DataBrokerProtectionIOSManager {
     )
     private lazy var statsPixels = DataBrokerProtectionStatsPixels(
         database: jobDependencies.database,
-        handler: jobDependencies.pixelHandler
+        handler: jobDependencies.pixelHandler,
+        featureFlagger: featureFlagger
     )
 
     init(queueManager: JobQueueManaging,
@@ -255,6 +256,11 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         await fireMonitoringPixels()
 
         guard await authenticationManager.isUserAuthenticated else { return }
+
+        guard (try? meetsProfileRunPrequisite) == true else {
+            Logger.dataBrokerProtection.log("No profile, skipping foreground operations")
+            return
+        }
 
         if featureFlagger.isForegroundRunningOnAppActiveFeatureOn {
             await startImmediateScanOperations()

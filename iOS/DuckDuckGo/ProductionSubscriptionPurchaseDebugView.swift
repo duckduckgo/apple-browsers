@@ -21,8 +21,18 @@ import SwiftUI
 import Subscription
 import Core
 
+/// Closure type for handling subscription selection through the user script handler
+/// Parameters: (productId: String, changeType: String?) where changeType is "upgrade", "downgrade", or nil for new purchase
+typealias SubscriptionSelectionHandler = (String, String?) async -> Void
+
 struct ProductionSubscriptionPurchaseDebugView: View {
-    @StateObject private var viewModel = ProductionSubscriptionPurchaseViewModel()
+    @StateObject private var viewModel: ProductionSubscriptionPurchaseViewModel
+
+    init(subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil) {
+        _viewModel = StateObject(wrappedValue: ProductionSubscriptionPurchaseViewModel(
+            subscriptionSelectionHandler: subscriptionSelectionHandler
+        ))
+    }
     
     var body: some View {
         List {
@@ -31,7 +41,7 @@ struct ProductionSubscriptionPurchaseDebugView: View {
             statusSection
             accountSection
         }
-        .navigationTitle("Buy Available Subscriptions")
+        .navigationTitle("Change Tier")
         .onAppear {
             Task {
                 await viewModel.loadExistingExternalID()
@@ -161,6 +171,11 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     @Published var availableSubscriptions: [String] = []
     @Published var isLoadingProducts = true
 
+    private let subscriptionSelectionHandler: SubscriptionSelectionHandler?
+
+    init(subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil) {
+        self.subscriptionSelectionHandler = subscriptionSelectionHandler
+    }
     
     func loadExistingExternalID() async {
         isLoadingExternalID = true
@@ -239,6 +254,40 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     func purchaseSubscription(identifier: String) async {
         isLoading = true
         isError = false
+
+        // Determine if this is a tier change (has existing subscription)
+        let isTierChange = existingExternalID != nil && !(purchasedProductIDs?.isEmpty ?? true)
+        let changeType: String? = isTierChange ? "upgrade" : nil
+
+        if let handler = subscriptionSelectionHandler {
+            // Use the subscription selection handler (calls subscriptionChangeSelected or subscriptionSelected)
+            let actionType = isTierChange ? "tier change" : "purchase"
+            statusMessage = "Starting \(actionType) for \(displayName(for: identifier))..."
+            Logger.subscription.info("[ProductionSubscriptionDebug] Using subscriptionSelectionHandler for \(actionType): \(identifier)")
+
+            let previousProductIDs = purchasedProductIDs ?? []
+            await handler(identifier, changeType)
+
+            // Refresh purchased product IDs after handler completes
+            await loadPurchasedProductIDs()
+
+            // Update status based on outcome
+            if let updatedPurchasedIDs = purchasedProductIDs, updatedPurchasedIDs.contains(identifier) {
+                statusMessage = "✅ \(actionType.capitalized) completed for \(displayName(for: identifier))"
+                isError = false
+            } else if previousProductIDs != (purchasedProductIDs ?? []) {
+                statusMessage = "✅ Subscription updated"
+                isError = false
+            } else {
+                // Cancelled or failed - handler shows its own UI
+                statusMessage = nil
+            }
+
+            isLoading = false
+            return
+        }
+
+        // Fallback to direct purchase (legacy behavior)
         statusMessage = "Starting purchase for \(displayName(for: identifier))..."
         
         // Use existing external ID if available, otherwise generate new
@@ -253,7 +302,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
             isLoading = false
             return
         }
-        let result = await manager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
+        let result = await manager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID, includeProTier: true)
 
         switch result {
         case .success:

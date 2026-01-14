@@ -61,9 +61,6 @@
         }
       }
     },
-    "Buy Available Subscriptions" : {
-      "shouldTranslate" : false
-    },
     "Close" : {
       "localizations" : {
         "de" : {
@@ -116,7 +113,7 @@
         }
       }
     },
-    "Purchase Result" : {
+    "Change Tier" : {
       "shouldTranslate" : false
     },
     "subscription.add.subscription.modal.title" : {
@@ -5479,7 +5476,7 @@
     },
     "subscription.preferences.subscription.rebranding.message" : {
       "comment" : "Message informing users that Subscription is now called the DuckDuckGo subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

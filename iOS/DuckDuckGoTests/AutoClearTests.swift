@@ -20,52 +20,59 @@
 import XCTest
 @testable import DuckDuckGo
 @testable import Core
+import BrowserServicesKit
 
+@MainActor
 class AutoClearTests: XCTestCase {
     
-    class MockWorker: AutoClearWorker {
-
-        var clearNavigationStackInvocationCount = 0
-        var forgetDataInvocationCount = 0
-        var forgetTabsInvocationCount = 0
-        var clearDataFinishedInvocationCount = 0
-
-        func clearNavigationStack() {
-            clearNavigationStackInvocationCount += 1
-        }
+    class MockFireExecutor: FireExecuting {
         
-        func forgetData() {
-            forgetDataInvocationCount += 1
-        }
-
-        func forgetData(applicationState: Core.DataStoreWarmup.ApplicationState) {
-            forgetDataInvocationCount += 1
-        }
-
-
-        func forgetTabs() {
-            forgetTabsInvocationCount += 1
-        }
-
-        func willStartClearing(_: DuckDuckGo.AutoClear) {
-
-        }
-
-        func autoClearDidFinishClearing(_: DuckDuckGo.AutoClear, isLaunching: Bool) {
-            clearDataFinishedInvocationCount += 1
+        var burnCallCount = 0
+        var burnOptions: FireOptions?
+        var burnApplicationState: DataStoreWarmup.ApplicationState?
+        var burnFireContext: FireContext?
+        
+        weak var delegate: FireExecutorDelegate?
+        
+        func prepare(for options: FireOptions) { }
+        
+        func burn(options: FireOptions,
+                  applicationState: DataStoreWarmup.ApplicationState,
+                  fireContext: FireContext) async {
+            burnCallCount += 1
+            burnOptions = options
+            burnApplicationState = applicationState
+            burnFireContext = fireContext
         }
     }
     
-    private var worker = MockWorker()
-    private var appSettings = AppSettingsMock()
+    private var mockFireExecutor: MockFireExecutor!
+    private var appSettings: AppSettingsMock!
+    private var mockFeatureFlagger: MockFeatureFlagger!
+
+    override func setUp() {
+        super.setUp()
+        mockFireExecutor = MockFireExecutor()
+        appSettings = AppSettingsMock()
+        mockFeatureFlagger = MockFeatureFlagger()
+        // Enable enhanced UI by default to prevent auto-injection of AI chats
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+    }
+
+    override func tearDown() {
+        mockFireExecutor = nil
+        appSettings = nil
+        mockFeatureFlagger = nil
+        super.tearDown()
+    }
 
     // Note: applicationDidLaunch based clearing has moved to "configureTabManager" function of
     //  MainViewController to ensure that tabs are removed before the data is cleared.
 
     func testWhenTimingIsSetToTerminationThenOnlyRestartClearsData() async {
-        let logic = AutoClear(worker: worker, appSettings: appSettings)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
 
-        appSettings.autoClearAction = .clearData
+        appSettings.autoClearAction = .data
         appSettings.autoClearTiming = .termination
         
         await logic.clearDataDueToTimeExpired(applicationState: .unknown)
@@ -75,9 +82,9 @@ class AutoClearTests: XCTestCase {
     }
     
     func testWhenDesiredTimingIsSetThenDataIsClearedOnceTimeHasElapsed() async {
-        let logic = AutoClear(worker: worker, appSettings: appSettings)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
 
-        appSettings.autoClearAction = .clearData
+        appSettings.autoClearAction = .data
         
         let cases: [AutoClearSettingsModel.Timing: TimeInterval] = [.delay5min: 5 * 60,
                                                                     .delay15min: 15 * 60,
@@ -94,14 +101,62 @@ class AutoClearTests: XCTestCase {
         }
     }
 
-    func testClearDataClearsNavigationStackAndForgetsData() async {
-        let logic = AutoClear(worker: worker, appSettings: appSettings)
-        appSettings.autoClearAction = .clearData
+    // MARK: - clearDataIfEnabled Tests
+    
+    func testClearDataIfEnabledCallsWorkerBurn() async {
+        // Given
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
+        appSettings.autoClearAction = .data
         appSettings.autoClearTiming = .delay15min
+        
+        // When
+        await logic.clearDataIfEnabled(launching: false, applicationState: .active)
+
+        // Then
+        XCTAssertEqual(mockFireExecutor.burnCallCount, 1)
+        XCTAssertEqual(mockFireExecutor.burnApplicationState, .active)
+        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnForeground)
+    }
+    
+    func testClearDataIfEnabledWithLaunchingUsesAutoClearOnLaunchContext() async {
+        // Given
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
+        appSettings.autoClearAction = .data
+        appSettings.autoClearTiming = .delay15min
+        
+        // When
+        await logic.clearDataIfEnabled(launching: true, applicationState: .active)
+
+        // Then
+        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnLaunch)
+    }
+    
+    func testClearDataIfEnabledDoesNothingWhenAutoClearDisabled() async {
+        // Given
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
+        appSettings.autoClearAction = [] // Disabled
+        
+        // When
+        await logic.clearDataIfEnabled(launching: false, applicationState: .active)
+
+        // Then
+        XCTAssertEqual(mockFireExecutor.burnCallCount, 0)
+    }
+
+    // MARK: - clearDataDueToTimeExpired Tests
+    
+    func testClearDataDueToTimeExpiredCallsWorkerBurn() async {
+        // Given
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
+        appSettings.autoClearAction = .data
+        appSettings.autoClearTiming = .delay15min
+        
+        // When
         await logic.clearDataDueToTimeExpired(applicationState: .active)
 
-        XCTAssertEqual(worker.clearNavigationStackInvocationCount, 1)
-        XCTAssertEqual(worker.forgetDataInvocationCount, 1)
+        // Then
+        XCTAssertEqual(mockFireExecutor.burnCallCount, 1)
+        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnForeground)
     }
 
 }

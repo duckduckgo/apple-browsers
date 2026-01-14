@@ -41,6 +41,12 @@ final class RoundedSelectionRowView: NSTableRowView {
         }
     }
 
+    var disclosureButton: NSButton? {
+        subviews.first { subview in
+            subview.identifier == NSOutlineView.disclosureButtonIdentifier
+        } as? NSButton
+    }
+
     var insets = NSEdgeInsets()
 
     override func drawDraggingDestinationFeedback(in dirtyRect: NSRect) {

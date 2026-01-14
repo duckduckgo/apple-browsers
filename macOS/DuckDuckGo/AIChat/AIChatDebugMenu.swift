@@ -96,6 +96,7 @@ final class AIChatDebugMenu: NSMenu {
 
     @MainActor @objc func resetTogglePopoverSeenFlag() {
         AIChatTogglePopoverCoordinator(windowControllersManager: NSApp.delegateTyped.windowControllersManager).clearPopoverSeenFlag()
+        storage.userDidSeeToggleOnboarding = false
     }
 
     private func updateWebUIMenuItemsState() {

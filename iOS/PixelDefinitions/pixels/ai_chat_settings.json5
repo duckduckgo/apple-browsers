@@ -3,26 +3,12 @@
         "description": "Fired when Duck.ai chat history is deleted successfully via fire button",
         "owners": ["Bunn"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_aichat_history_delete_failed": {
         "description": "Fired when Duck.ai chat history fails to be deleted via fire button",
         "owners": ["Bunn"],
-        "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
-        "parameters": ["appVersion"]
-    },
-    "m_aichat_settings_full_mode_enabled": {
-        "description": "Fired when user enables the Duck.ai Tabs Mode experimental setting in Settings > AI Features",
-        "owners": ["aataraxiaa"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-    "m_aichat_settings_full_mode_disabled": {
-        "description": "Fired when user disables the Duck.ai Tabs Mode experimental setting in Settings > AI Features",
-        "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]

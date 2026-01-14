@@ -194,6 +194,7 @@ extension UserDefaults {
         case pendingUpdateSince = "pending.update.since"
         case updateValidityStartDate = "update.validity.start.date"
         case lastSuccessfulUpdateDate = "updates.last.successful.date"
+        case debugSparkleCustomFeedURL = "debug.sparkle.custom-feed-url"
 
         // Experiments
         case pixelExperimentInstalled = "pixel.experiment.installed"

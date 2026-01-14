@@ -35,102 +35,60 @@ final class AIChatFullModeFeatureTests: XCTestCase {
 
     // MARK: - Tests
 
-    func testIsAvailableWhenFeatureFlagOnAndIphone() {
+    func testIsAvailableWhenFeatureOnAndIphone() {
         // Given
         let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [.fullDuckAIMode])
-        let mockSettings = MockAIChatSettingsProvider(isAIChatFullModeEnabled: false)
         MockDevicePlatform.shared.mockIsIphone = true
 
         // When
         let feature = AIChatFullModeFeature(
             featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self,
-            aiChatSettings: mockSettings
+            devicePlatform: MockDevicePlatform.self
         )
 
         // Then
         XCTAssertTrue(feature.isAvailable)
     }
 
-    func testIsNotAvailableWhenFeatureFlagOnButNotIphone() {
+    func testIsNotAvailableWhenFeatureOnButNotIphone() {
         // Given
         let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [.fullDuckAIMode])
-        let mockSettings = MockAIChatSettingsProvider()
         MockDevicePlatform.shared.mockIsIphone = false
 
         // When
         let feature = AIChatFullModeFeature(
             featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self,
-            aiChatSettings: mockSettings
+            devicePlatform: MockDevicePlatform.self
         )
 
         // Then
         XCTAssertFalse(feature.isAvailable)
     }
 
-    func testIsNotAvailableWhenFeatureFlagOffAndUserSettingOffButIsIphone() {
+    func testIsNotAvailableWhenFeatureOffButIsIphone() {
         // Given
         let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let mockSettings = MockAIChatSettingsProvider(isAIChatFullModeEnabled: false)
         MockDevicePlatform.shared.mockIsIphone = true
 
         // When
         let feature = AIChatFullModeFeature(
             featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self,
-            aiChatSettings: mockSettings
+            devicePlatform: MockDevicePlatform.self
         )
 
         // Then
         XCTAssertFalse(feature.isAvailable)
     }
 
-    func testIsNotAvailableWhenFeatureFlagOffAndUserSettingOffAndNotIphone() {
+    func testIsNotAvailableWhenFeatureOffAndNotIphone() {
         // Given
         let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let mockSettings = MockAIChatSettingsProvider(isAIChatFullModeEnabled: false)
         MockDevicePlatform.shared.mockIsIphone = false
 
         // When
         let feature = AIChatFullModeFeature(
             featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self,
-            aiChatSettings: mockSettings
-        )
-
-        // Then
-        XCTAssertFalse(feature.isAvailable)
-    }
-
-    func testIsAvailableWhenFeatureFlagOffButUserSettingOnAndIphone() {
-        // Given
-        let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let mockSettings = MockAIChatSettingsProvider(isAIChatFullModeEnabled: true)
-        MockDevicePlatform.shared.mockIsIphone = true
-
-        // When
-        let feature = AIChatFullModeFeature(
-            featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self,
-            aiChatSettings: mockSettings
-        )
-
-        // Then
-        XCTAssertTrue(feature.isAvailable)
-    }
-
-    func testIsNotAvailableWhenFeatureFlagOffAndUserSettingOnButNotIphone() {
-        // Given
-        let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let mockSettings = MockAIChatSettingsProvider(isAIChatFullModeEnabled: true)
-        MockDevicePlatform.shared.mockIsIphone = false
-
-        // When
-        let feature = AIChatFullModeFeature(
-            featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self,
-            aiChatSettings: mockSettings
+            devicePlatform: MockDevicePlatform.self
         )
 
         // Then

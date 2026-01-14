@@ -66,7 +66,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             platform: .stripe,
             status: .autoRenewable,
             activeOffers: [],
-            tier: nil
+            tier: nil,
+            availableChanges: nil
         )
         mockSubscriptionManager.returnSubscription = .success(subscription)
         mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat] // All enabled
@@ -104,7 +105,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
-            isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
             downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
@@ -134,7 +134,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             notificationCenter: testNotificationCenter,
             featureFlagger: mockFeatureFlagger,
-            isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
             downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
@@ -157,7 +156,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
     private func createPreferencesSidebarModelWithDefaults(
         includeDuckPlayer: Bool = false,
         includeAIChat: Bool = false,
-        isUsingAuthV2: Bool = false
     ) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         let loadSections = { currentSubscriptionFeatures in
             return PreferencesSection.defaultSections(
@@ -177,7 +175,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
             syncService: mockSyncService,
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
-            isUsingAuthV2: isUsingAuthV2,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
             downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
@@ -286,7 +283,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
 
         // When
-        let model = createPreferencesSidebarModelWithDefaults(includeAIChat: true, isUsingAuthV2: true)
+        let model = createPreferencesSidebarModelWithDefaults(includeAIChat: true)
         model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
         try await Task.sleep(interval: 0.1)
 
@@ -529,13 +526,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     // MARK: - isPaneNew tests
 
-    func testIsPaneNewReturnsTrueForPaidAIChat() throws {
-        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .paidAIChat])]
-        let model = PreferencesSidebarModel(loadSections: sections)
-
-        XCTAssertTrue(model.isPaneNew(pane: .paidAIChat))
-    }
-
     func testIsPaneNewReturnsFalseForOtherPanes() throws {
         let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill, .general, .vpn])]
         let model = PreferencesSidebarModel(loadSections: sections)
@@ -546,6 +536,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.isPaneNew(pane: .vpn))
         XCTAssertFalse(model.isPaneNew(pane: .personalInformationRemoval))
         XCTAssertFalse(model.isPaneNew(pane: .identityTheftRestoration))
+        XCTAssertFalse(model.isPaneNew(pane: .paidAIChat))
     }
 
     // MARK: - shouldShowWinBackCampaignBadge tests

@@ -88,7 +88,8 @@ struct Launching: LaunchingHandling {
                                                             contentBlocking: contentBlocking,
                                                             sync: syncService.sync,
                                                             fireproofing: fireproofing,
-                                                            contentScopeExperimentsManager: contentScopeExperimentsManager)
+                                                            contentScopeExperimentsManager: contentScopeExperimentsManager,
+                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
@@ -172,8 +173,7 @@ struct Launching: LaunchingHandling {
             )
         )
 
-        let mobileCustomization = MobileCustomization(isFeatureEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
-                                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let mobileCustomization = MobileCustomization(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller

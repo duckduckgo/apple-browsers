@@ -455,17 +455,17 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             addScanStartedEvent(for: query)
                             let stageCalculator = FakeStageDurationCalculator(
                                 stepType: .scan,
-                                onActionPayload: { [weak self] stepType, actionId, actionType, payloadJSON in
+                                onActionPayload: { [weak self] stepType, actionId, actionType, details in
                                     self?.addActionPayloadEvent(stepType: stepType,
                                                                 actionId: actionId,
                                                                 actionType: actionType,
-                                                                payloadJSON: payloadJSON)
+                                                                details: details)
                                 },
-                                onActionResponse: { [weak self] stepType, actionId, actionType, payloadJSON in
+                                onActionResponse: { [weak self] stepType, actionId, actionType, details in
                                     self?.addActionResponseEvent(stepType: stepType,
                                                                  actionId: actionId,
                                                                  actionType: actionType,
-                                                                 payloadJSON: payloadJSON)
+                                                                 details: details)
                                 },
                                 onWait: { [weak self] stepType, reason, seconds in
                                     self?.updateProgress("Waiting \(seconds)s (\(reason))")
@@ -544,17 +544,17 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             do {
                 let stageCalculator = FakeStageDurationCalculator(
                     stepType: .optOut,
-                    onActionPayload: { [weak self] stepType, actionId, actionType, payloadJSON in
+                    onActionPayload: { [weak self] stepType, actionId, actionType, details in
                         self?.addActionPayloadEvent(stepType: stepType,
                                                     actionId: actionId,
                                                     actionType: actionType,
-                                                    payloadJSON: payloadJSON)
+                                                    details: details)
                     },
-                    onActionResponse: { [weak self] stepType, actionId, actionType, payloadJSON in
+                    onActionResponse: { [weak self] stepType, actionId, actionType, details in
                         self?.addActionResponseEvent(stepType: stepType,
                                                      actionId: actionId,
                                                      actionType: actionType,
-                                                     payloadJSON: payloadJSON)
+                                                     details: details)
                     },
                     onWait: { [weak self] stepType, reason, seconds in
                         self?.updateProgress("Waiting \(seconds)s (\(reason))")
@@ -676,13 +676,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         AppVersion.shared.versionNumber
     }
 
-    private func addActionPayloadEvent(stepType: StepType, actionId: String?, actionType: ActionType?, payloadJSON: String) {
+    private func addActionPayloadEvent(stepType: StepType, actionId: String?, actionType: ActionType?, details: String) {
         let event = DebugActionEvent(
             timestamp: Date(),
             stepType: stepType,
             actionType: actionType,
             actionId: actionId,
-            details: payloadJSON
+            details: details
         )
         DispatchQueue.main.async {
             self.actionEvents.append(event)
@@ -690,13 +690,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         updateProgress(currentActionText(stepType: stepType, actionType: actionType, prefix: "Action"))
     }
 
-    private func addActionResponseEvent(stepType: StepType, actionId: String?, actionType: ActionType?, payloadJSON: String) {
+    private func addActionResponseEvent(stepType: StepType, actionId: String?, actionType: ActionType?, details: String) {
         let event = DebugActionResponseEvent(
             timestamp: Date(),
             stepType: stepType,
             actionType: actionType,
             actionId: actionId,
-            details: payloadJSON
+            details: details
         )
         DispatchQueue.main.async {
             self.actionResponseEvents.append(event)
@@ -922,12 +922,12 @@ final class FakeStageDurationCalculator: StageDurationCalculator, ActionEventRep
         self.tries += 1
     }
 
-    func recordActionPayload(stepType: StepType?, actionId: String?, actionType: ActionType?, payloadJSON: String) {
-        onActionPayload?(stepType ?? self.stepType, actionId, actionType, payloadJSON)
+    func recordActionPayload(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String) {
+        onActionPayload?(stepType ?? self.stepType, actionId, actionType, details)
     }
 
-    func recordActionResponse(stepType: StepType?, actionId: String?, actionType: ActionType?, payloadJSON: String) {
-        onActionResponse?(stepType ?? self.stepType, actionId, actionType, payloadJSON)
+    func recordActionResponse(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String) {
+        onActionResponse?(stepType ?? self.stepType, actionId, actionType, details)
     }
 
     func recordWait(stepType: StepType?, reason: String, seconds: TimeInterval) {

@@ -19,8 +19,8 @@
 import Foundation
 
 public protocol ActionEventReportingForDebug {
-    func recordActionPayload(stepType: StepType?, actionId: String?, actionType: ActionType?, payloadJSON: String)
-    func recordActionResponse(stepType: StepType?, actionId: String?, actionType: ActionType?, payloadJSON: String)
+    func recordActionPayload(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String)
+    func recordActionResponse(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String)
     func recordWait(stepType: StepType?, reason: String, seconds: TimeInterval)
 }
 
@@ -28,19 +28,19 @@ public extension SubJobWebRunning {
     func recordActionPayloadForDebug(action: Action, stepType: StepType?, data: CCFRequestData) {
         guard let reporter = stageCalculator as? ActionEventReportingForDebug else { return }
         let params = Params(state: ActionRequest(action: action, data: data))
-        let payloadJSON = prettyPrintedJSON(from: params) ?? String(describing: params)
+        let details = prettyPrintedJSON(from: params)
         reporter.recordActionPayload(stepType: stepType,
                                      actionId: action.id,
                                      actionType: action.actionType,
-                                     payloadJSON: payloadJSON)
+                                     details: details)
     }
 
-    func recordActionResponseForDebug(stepType: StepType?, actionId: String?, actionType: ActionType?, payloadJSON: String) {
+    func recordActionResponseForDebug(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String) {
         guard let reporter = stageCalculator as? ActionEventReportingForDebug else { return }
         reporter.recordActionResponse(stepType: stepType,
                                       actionId: actionId,
                                       actionType: actionType,
-                                      payloadJSON: payloadJSON)
+                                      details: details)
     }
 
     func recordWaitForDebug(stepType: StepType?, reason: String, seconds: TimeInterval) {
@@ -56,7 +56,7 @@ public extension SubJobWebRunning {
         return nil
     }
 
-    func errorPayloadJSON(_ error: Error) -> String {
+    func errordetails(_ error: Error) -> String {
         if let dbpError = error as? DataBrokerProtectionError {
             switch dbpError {
             case let .actionFailed(actionID, message):
@@ -65,38 +65,57 @@ public extension SubJobWebRunning {
                     "actionId": actionID,
                     "message": message,
                     "description": dbpError.localizedDescription
-                ]) ?? dbpError.localizedDescription
+                ])
             default:
                 return prettyPrintedJSON(from: [
                     "type": dbpError.name,
                     "description": dbpError.localizedDescription
-                ]) ?? dbpError.localizedDescription
+                ])
             }
         }
         return prettyPrintedJSON(from: [
             "type": String(describing: type(of: error)),
             "description": error.localizedDescription
-        ]) ?? error.localizedDescription
+        ])
     }
 
-    func prettyPrintedJSON(from encodable: Encodable) -> String? {
+    func prettyPrintedJSON(from profiles: [ExtractedProfile], meta: [String: Any]?) -> String {
+        let profilesJSON = prettyPrintedJSON(from: profiles)
+
+        var payloadObject: [String: Any] = [:]
+        if let profilesData = profilesJSON.data(using: .utf8),
+           let profilesObject = try? JSONSerialization.jsonObject(with: profilesData) {
+            payloadObject["profiles"] = profilesObject
+        } else {
+            payloadObject["profiles"] = profiles.map { $0.id.map(String.init) ?? "unknown" }
+        }
+        if let meta {
+            payloadObject["meta"] = meta
+        }
+
+        return prettyPrintedJSON(from: payloadObject)
+    }
+
+    func prettyPrintedJSON(from encodable: Encodable) -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         do {
             let data = try encoder.encode(AnyEncodable(encodable))
-            return String(data: data, encoding: .utf8)
+            return String(data: data, encoding: .utf8) ?? String(describing: encodable)
         } catch {
-            return nil
+            return String(describing: encodable)
         }
     }
 
-    func prettyPrintedJSON(from object: [String: Any]) -> String? {
-        guard JSONSerialization.isValidJSONObject(object) else { return nil }
+    func prettyPrintedJSON(from object: [String: Any]) -> String {
+        let description = String(describing: self)
+
+        guard JSONSerialization.isValidJSONObject(object) else { return description }
         do {
             let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
-            return String(data: data, encoding: .utf8)
+            return String(data: data, encoding: .utf8) ?? description
         } catch {
-            return nil
+            return description
         }
     }
 }

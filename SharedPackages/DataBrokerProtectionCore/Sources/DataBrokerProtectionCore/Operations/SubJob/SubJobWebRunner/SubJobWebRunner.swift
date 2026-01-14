@@ -252,7 +252,7 @@ public extension SubJobWebRunning {
                 recordActionResponseForDebug(stepType: actionsHandler?.stepType,
                                              actionId: nil,
                                              actionType: .navigate,
-                                             payloadJSON: prettyPrintedJSON(from: ["url": url.absoluteString]) ?? url.absoluteString)
+                                             details: prettyPrintedJSON(from: ["url": url.absoluteString]))
                 await successNextSteps()
             } catch let error as DataBrokerProtectionError {
                 guard error == error404 && self is BrokerProfileScanSubJobWebRunner else {
@@ -285,11 +285,10 @@ public extension SubJobWebRunning {
     }
 
     func success(actionId: String, actionType: ActionType) async {
-        let payload = prettyPrintedJSON(from: ["actionId": actionId, "actionType": actionType.rawValue]) ?? "actionId=\(actionId) actionType=\(actionType.rawValue)"
         recordActionResponseForDebug(stepType: actionsHandler?.stepType,
                                      actionId: actionId,
                                      actionType: actionType,
-                                     payloadJSON: payload)
+                                     details: prettyPrintedJSON(from: ["actionId": actionId, "actionType": actionType.rawValue]))
         let isForOptOut = actionsHandler?.isForOptOut == true
 
         switch actionType {
@@ -316,11 +315,10 @@ public extension SubJobWebRunning {
 
     func conditionSuccess(actions: [Action]) async {
         let actionDescriptions = actions.map { String(describing: $0) }
-        let payload = prettyPrintedJSON(from: actionDescriptions) ?? String(describing: actions)
         recordActionResponseForDebug(stepType: actionsHandler?.stepType,
                                      actionId: nil,
                                      actionType: nil,
-                                     payloadJSON: payload)
+                                     details: prettyPrintedJSON(from: actionDescriptions))
         if actions.isEmpty {
             Logger.action.log(loggerContext(), message: "Condition action completed with no follow-up actions")
             if actionsHandler?.stepType == .optOut {
@@ -339,15 +337,15 @@ public extension SubJobWebRunning {
     }
 
     func captchaInformation(captchaInfo: GetCaptchaInfoResponse) async {
-        let payload = prettyPrintedJSON(from: [
+        let details = prettyPrintedJSON(from: [
             "siteKey": captchaInfo.siteKey,
             "url": captchaInfo.url,
             "type": captchaInfo.type
-        ]) ?? String(describing: captchaInfo)
+        ])
         recordActionResponseForDebug(stepType: actionsHandler?.stepType,
                                      actionId: nil,
                                      actionType: .getCaptchaInfo,
-                                     payloadJSON: payload)
+                                     details: details)
         do {
             stageCalculator.fireOptOutCaptchaParse()
             stageCalculator.setStage(.captchaSend)
@@ -369,15 +367,15 @@ public extension SubJobWebRunning {
     }
 
     func solveCaptcha(with response: SolveCaptchaResponse) async {
-        let payload = prettyPrintedJSON(from: [
+        let details = prettyPrintedJSON(from: [
             "callback": [
                 "eval": response.callback.eval
             ]
-        ]) ?? String(describing: response)
+        ])
         recordActionResponseForDebug(stepType: actionsHandler?.stepType,
                                      actionId: nil,
                                      actionType: .solveCaptcha,
-                                     payloadJSON: payload)
+                                     details: details)
         do {
             try await webViewHandler?.evaluateJavaScript(response.callback.eval)
 
@@ -388,11 +386,11 @@ public extension SubJobWebRunning {
     }
 
     func onError(error: Error) async {
-        let errorPayload = errorPayloadJSON(error)
+        let errorPayload = errordetails(error)
         recordActionResponseForDebug(stepType: actionsHandler?.stepType,
                                      actionId: errorActionId(error),
                                      actionType: nil,
-                                     payloadJSON: errorPayload)
+                                     details: errorPayload)
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
             Logger.action.log(loggerContext(for: currentAction),
                               message: "Condition action did NOT meet its expectation, continuing with regular action execution")

@@ -469,7 +469,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 #if NETP_SYSTEM_EXTENSION
         "\(Bundle.main.bundleIdentifier!).authToken"
 #else
-        NetworkProtectionKeychainTokenStoreV2.Defaults.tokenStoreService
+        NetworkProtectionKeychainTokenStore.Defaults.tokenStoreService
 #endif
     }
 
@@ -477,14 +477,14 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 #if NETP_SYSTEM_EXTENSION
         "\(Bundle.main.bundleIdentifier!).authTokenContainer"
 #else
-        NetworkProtectionKeychainTokenStoreV2.Defaults.tokenStoreService
+        NetworkProtectionKeychainTokenStore.Defaults.tokenStoreService
 #endif
     }
 
     // MARK: - Initialization
 
-    let subscriptionManagerV2: DefaultSubscriptionManagerV2
-    let tokenStorageV2: NetworkProtectionKeychainTokenStoreV2
+    let subscriptionManager: DefaultSubscriptionManager
+    let tokenStorage: NetworkProtectionKeychainTokenStore
 
     @MainActor @objc public init() {
         Logger.networkProtection.log("[+] MacPacketTunnelProvider")
@@ -523,19 +523,19 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let subscriptionUserDefaults = UserDefaults(suiteName: MacPacketTunnelProvider.subscriptionsAppGroup)!
         let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStoreV2 = NetworkProtectionKeychainTokenStoreV2(keychainType: Bundle.keychainType,
+        let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)
-        let authClient = DefaultOAuthClient(tokensStorage: tokenStoreV2,
+        let authClient = DefaultOAuthClient(tokensStorage: tokenStore,
                                             authService: authService,
                                             refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: { true }))
 
-        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
         let pixelHandler = SubscriptionPixelHandler(source: .systemExtension)
-        let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
+        let subscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
-                                                               subscriptionEndpointService: subscriptionEndpointServiceV2,
+                                                               subscriptionEndpointService: subscriptionEndpointService,
                                                                subscriptionEnvironment: subscriptionEnvironment,
                                                                pixelHandler: pixelHandler,
                                                                initForPurchase: false,
@@ -554,8 +554,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             }
         }
 
-        self.tokenStorageV2 = tokenStoreV2
-        self.subscriptionManagerV2 = subscriptionManager
+        self.tokenStorage = tokenStore
+        self.subscriptionManager = subscriptionManager
 
         // MARK: -
 

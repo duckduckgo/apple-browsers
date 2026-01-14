@@ -46,11 +46,11 @@ final class LetterView: NSView {
            let eTLDplus1 = NSApp.delegateTyped.tld.eTLDplus1(domain),
            let firstLetter = eTLDplus1.capitalized.first.flatMap(String.init)
         else {
-            placeholderView.isHidden = false
+            refreshSubviewsVisibility(isPlaceholderHidden: false)
             return
         }
 
-        placeholderView.isHidden = true
+        refreshSubviewsVisibility(isPlaceholderHidden: true)
         label.stringValue = firstLetter
         backgroundView.layer?.backgroundColor = Color.forString(eTLDplus1).cgColor
     }
@@ -133,6 +133,12 @@ final class LetterView: NSView {
         }
 
         backgroundLayer.cornerRadius = backgroundCornerRadius
+    }
+
+    private func refreshSubviewsVisibility(isPlaceholderHidden: Bool) {
+        placeholderView.isHidden = isPlaceholderHidden
+        backgroundView.isHidden = !isPlaceholderHidden
+        label.isHidden = !isPlaceholderHidden
     }
 }
 

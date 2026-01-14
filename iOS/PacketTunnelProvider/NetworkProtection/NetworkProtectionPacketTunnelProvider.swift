@@ -36,7 +36,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
     private static let persistentPixel: PersistentPixelFiring = PersistentPixel()
     private var cancellables = Set<AnyCancellable>()
-    private let subscriptionManager: (any SubscriptionManagerV2)?
+    private let subscriptionManager: (any SubscriptionManager)?
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
     private let wideEvent: WideEventManaging = WideEvent()
@@ -536,8 +536,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         // keychain storage
         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
         let keychainType: KeychainType = .dataProtection(.named(subscriptionAppGroup))
-        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
                                                               userDefaults: UserDefaults.standard) { accessType, error in
             let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
                               PixelParameters.subscriptionKeychainError: error.localizedDescription,
@@ -558,10 +558,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 #endif
         }))
 
-        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
-        let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
+        let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService)
+        let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                oAuthClient: authClient,
                                                                userDefaults: UserDefaults.standard,
                                                                subscriptionEndpointService: subscriptionEndpointService,

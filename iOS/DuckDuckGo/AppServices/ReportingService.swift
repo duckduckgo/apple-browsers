@@ -69,7 +69,7 @@ final class ReportingService {
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
         let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler)
         let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
-        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge)
+        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionManager)
         let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
                                                                dataStoring: attributedMetricDataStorage,
@@ -300,7 +300,7 @@ struct AttributedMetricDefaultBrowserProvider: AttributedMetricDefaultBrowserPro
 
 struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
 
-    let subscriptionManager: SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: SubscriptionManager
 
     func isFreeTrial() async -> Bool {
         (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).hasActiveTrialOffer) ?? false

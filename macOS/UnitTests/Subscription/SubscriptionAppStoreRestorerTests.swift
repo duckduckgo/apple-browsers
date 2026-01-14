@@ -37,9 +37,9 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
     var pixelKit: PixelKit!
     var uiHandler: SubscriptionUIHandlerMock!
 
-    var subscriptionManager: SubscriptionManagerMockV2!
-    var storePurchaseManager: StorePurchaseManagerMockV2!
-    var appStoreRestoreFlow: AppStoreRestoreFlowMockV2!
+    var subscriptionManager: SubscriptionManagerMock!
+    var storePurchaseManager: StorePurchaseManagerMock!
+    var appStoreRestoreFlow: AppStoreRestoreFlowMock!
     var subscriptionEventReporter: MockSubscriptionEventReporter!
     var featureFlagger: MockFeatureFlagger!
     var wideEvent: WideEventMock!
@@ -67,14 +67,14 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
             self.uiEventsHappened.append(action)
         })
 
-        storePurchaseManager = StorePurchaseManagerMockV2()
-        subscriptionManager = SubscriptionManagerMockV2()
+        storePurchaseManager = StorePurchaseManagerMock()
+        subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
                                                                          purchasePlatform: .appStore)
         subscriptionManager.resultStorePurchaseManager = storePurchaseManager
         subscriptionManager.resultURL = Constants.purchaseURL
 
-        appStoreRestoreFlow = AppStoreRestoreFlowMockV2()
+        appStoreRestoreFlow = AppStoreRestoreFlowMock()
         subscriptionEventReporter = MockSubscriptionEventReporter()
         featureFlagger = MockFeatureFlagger()
         wideEvent = WideEventMock()

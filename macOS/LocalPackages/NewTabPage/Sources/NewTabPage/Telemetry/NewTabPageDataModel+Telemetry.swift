@@ -21,7 +21,7 @@ import Foundation
 public extension NewTabPageDataModel {
 
     enum TelemetryEvent: Equatable {
-        case customizerOpened(themePopoverOnscreen: Bool)
+        case customizerOpened(themesDiscoveryOnscreen: Bool)
         case customizerClosed
     }
 }
@@ -66,7 +66,7 @@ private extension NewTabPageDataModel.TelemetryEvent {
         switch state {
         case .opened:
             let popoverOnscreen = try container.decodeIfPresent(Bool.self, forKey: .themeVariantPopoverWasOpen) ?? false
-            return .customizerOpened(themePopoverOnscreen: popoverOnscreen)
+            return .customizerOpened(themesDiscoveryOnscreen: popoverOnscreen)
 
         case .closed:
             return .customizerClosed

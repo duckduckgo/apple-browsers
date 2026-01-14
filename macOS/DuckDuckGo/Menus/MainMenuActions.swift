@@ -878,15 +878,6 @@ extension MainViewController {
 
     private static var shouldIgnoreRepeatedCloseTabShortcuts = false
 
-    private var warnBeforeClosingPinnedTabs: Bool {
-        get {
-            tabsPreferences.warnBeforeClosingPinnedTabs
-        }
-        set {
-            tabsPreferences.warnBeforeClosingPinnedTabs = newValue
-        }
-    }
-
     /// Finds currently active Tab even if it's playing a Full Screen video
     private func getActiveTabAndIndex() -> (tab: Tab, index: TabIndex)? {
         var tab: Tab? {

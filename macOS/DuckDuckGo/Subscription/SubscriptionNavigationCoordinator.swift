@@ -80,4 +80,18 @@ extension SubscriptionNavigationCoordinator: SubscriptionUserScriptNavigationDel
 
         tabShower.showTab(with: .subscription(url))
     }
+
+    /// Opens the subscription upgrade flow in a new tab.
+    /// Called when Duck.ai needs to start a new subscription upgrade.
+    func navigateToSubscriptionPlans(origin: String?, featurePage: String?) {
+        var url = subscriptionManager.url(for: .plans)
+        if let featurePage {
+            url = url.appendingParameter(name: "featurePage", value: featurePage)
+        }
+        if let origin {
+            url = url.appendingParameter(name: AttributionParameter.origin, value: origin)
+        }
+
+        tabShower.showTab(with: .subscription(url))
+    }
 }

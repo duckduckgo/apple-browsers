@@ -170,7 +170,7 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             SettingsCellView(
                 label: UserText.settingsPProDBPTitle,
-                image: Image(uiImage: DesignSystemImages.Color.Size24.databroker),
+                image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                 statusIndicator: StatusIndicatorView(status: .off),
                 isGreyedOut: true
             )
@@ -181,8 +181,7 @@ struct SettingsSubscriptionView: View {
                 label: UserText.settingsSubscriptionAiChatTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                 statusIndicator: StatusIndicatorView(status: .off),
-                isGreyedOut: true,
-                optionalBadgeText: UserText.settingsItemNewBadge
+                isGreyedOut: true
             )
         }
 
@@ -307,7 +306,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: destination, isActive: $isShowingDBP) {
                 SettingsCellView(
                     label: UserText.settingsPProDBPTitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                     statusIndicator: StatusIndicatorView(status: statusIndicator),
                     isGreyedOut: !hasDBPEntitlement
                 )

@@ -55,6 +55,7 @@ private struct Handlers {
     static let getSubscriptionOptions = "getSubscriptionOptions"
     static let getSubscriptionTierOptions = "getSubscriptionTierOptions"
     static let subscriptionSelected = "subscriptionSelected"
+    static let subscriptionChangeSelected = "subscriptionChangeSelected"
     static let activateSubscription = "activateSubscription"
     static let featureSelected = "featureSelected"
     // Pixels related events
@@ -213,6 +214,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         case Handlers.getSubscriptionOptions: return getSubscriptionOptions
         case Handlers.getSubscriptionTierOptions: return getSubscriptionTierOptions
         case Handlers.subscriptionSelected: return subscriptionSelected
+        case Handlers.subscriptionChangeSelected: return subscriptionChangeSelected
         case Handlers.activateSubscription: return activateSubscription
         case Handlers.featureSelected: return featureSelected
         case Handlers.backToSettings: return backToSettings
@@ -430,7 +432,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         let purchaseTransactionJWS: String
 
         // 4: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled) {
         case .success(let result):
             Logger.subscription.log("Subscription purchased successfully")
             purchaseTransactionJWS = result.transactionJWS
@@ -543,6 +545,88 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 wideEvent.updateFlow(wideEventData)
                 wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
             }
+        }
+        return nil
+    }
+
+    // MARK: - Tier Change
+
+    func subscriptionChangeSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
+        struct SubscriptionChangeSelection: Decodable {
+            let id: String
+            let change: String?  // "upgrade" or "downgrade"
+        }
+
+        let message = original
+        setTransactionError(nil)
+        setTransactionStatus(.purchasing)
+
+        // 1: Parse subscription change selection from message object
+        guard let subscriptionSelection: SubscriptionChangeSelection = CodableHelper.decode(from: params) else {
+            Logger.subscription.error("SubscriptionPagesUserScript: expected JSON representation of SubscriptionChangeSelection")
+            setTransactionStatus(.idle)
+            return nil
+        }
+
+        Logger.subscription.log("[TierChange] Starting \(subscriptionSelection.change ?? "change", privacy: .public) for: \(subscriptionSelection.id, privacy: .public)")
+
+        // 2: Execute the tier change (uses existing account's externalID)
+        Logger.subscription.log("[TierChange] Executing tier change")
+        let tierChangeResult = await appStorePurchaseFlow.changeTier(to: subscriptionSelection.id)
+
+        let purchaseTransactionJWS: String
+        switch tierChangeResult {
+        case .success(let transactionJWS):
+            purchaseTransactionJWS = transactionJWS
+        case .failure(let error):
+            Logger.subscription.error("[TierChange] Tier change failed: \(error.localizedDescription)")
+            setTransactionStatus(.idle)
+
+            switch error {
+            case .cancelledByUser:
+                setTransactionError(.cancelledByUser)
+            case .purchaseFailed:
+                setTransactionError(.purchaseFailed)
+            case .internalError:
+                setTransactionError(.purchaseFailed)
+            default:
+                setTransactionError(.purchaseFailed)
+            }
+
+            await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.canceled)
+            return nil
+        }
+
+        setTransactionStatus(.polling)
+
+        guard purchaseTransactionJWS.isEmpty == false else {
+            Logger.subscription.fault("[TierChange] Purchase transaction JWS is empty")
+            assertionFailure("Purchase transaction JWS is empty")
+            setTransactionStatus(.idle)
+            return nil
+        }
+
+        // 3: Complete the tier change by confirming with the backend
+        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil) {
+        case .success:
+            Logger.subscription.log("[TierChange] Tier change completed successfully")
+            setTransactionStatus(.idle)
+            await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
+
+        case .failure(let error):
+            Logger.subscription.error("[TierChange] Complete tier change error: \(error, privacy: .public)")
+
+            // Note: We do NOT sign out here (unlike subscriptionSelected) because the user
+            // still has their original subscription. Signing out would be destructive.
+
+            setTransactionStatus(.idle)
+
+            if case .missingEntitlements = error {
+                setTransactionError(.missingEntitlements)
+            } else {
+                setTransactionError(.purchaseFailed)
+            }
+            await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
         }
         return nil
     }

@@ -94,7 +94,12 @@ public protocol AppStorePurchaseFlowV2 {
     typealias TransactionJWS = String
     typealias PurchaseResult = (transactionJWS: TransactionJWS, accountCreationDuration: WideEvent.MeasuredInterval?)
 
-    func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError>
+    /// Purchases a new subscription for a user who doesn't have an active subscription.
+    /// This method checks for existing subscriptions and creates an account if needed.
+    /// - Parameters:
+    ///   - subscriptionIdentifier: The identifier of the subscription to purchase.
+    ///   - includeProTier: Whether to include Pro tier products when looking up the subscription.
+    func purchaseSubscription(with subscriptionIdentifier: String, includeProTier: Bool) async -> Result<PurchaseResult, AppStorePurchaseFlowError>
 
     /// Completes the subscription purchase by validating the transaction.
     ///
@@ -103,6 +108,13 @@ public protocol AppStorePurchaseFlowV2 {
     ///   - additionalParams: Optional additional parameters to send with the transaction validation request.
     /// - Returns: A `Result` containing either a `PurchaseUpdate` object on success or an `AppStorePurchaseFlowError` on failure.
     @discardableResult func completeSubscriptionPurchase(with transactionJWS: TransactionJWS, additionalParams: [String: String]?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError>
+
+    /// Changes the subscription tier for a user who already has an active subscription.
+    /// This method uses the existing account's externalID and bypasses the "check for active subscription" logic.
+    ///
+    /// - Parameter subscriptionIdentifier: The identifier of the new subscription tier to change to.
+    /// - Returns: A `Result` containing the transaction JWS on success or an `AppStorePurchaseFlowError` on failure.
+    func changeTier(to subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError>
 }
 
 @available(macOS 12.0, iOS 15.0, *)
@@ -125,7 +137,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         self.wideEvent = wideEvent
     }
 
-    public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
+    public func purchaseSubscription(with subscriptionIdentifier: String, includeProTier: Bool) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
         Logger.subscriptionAppStorePurchaseFlow.log("Purchasing Subscription")
 
         let subscriptionRestoreWideEventData = SubscriptionRestoreWideEventData(
@@ -176,7 +188,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         }
 
         // Make the purchase
-        switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID) {
+        switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID, includeProTier: includeProTier) {
         case .success(let transactionJWS):
             NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
             return .success((transactionJWS: transactionJWS, accountCreationDuration: accountCreationDuration))
@@ -184,6 +196,40 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
             Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(String(describing: error), privacy: .public)")
 
             await subscriptionManager.signOut(notifyUI: false)
+
+            switch error {
+            case .purchaseCancelledByUser:
+                return .failure(.cancelledByUser)
+            case .purchaseFailed(let underlyingError):
+                return .failure(.purchaseFailed(underlyingError))
+            default:
+                return .failure(.purchaseFailed(error))
+            }
+        }
+    }
+
+    public func changeTier(to subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError> {
+        Logger.subscriptionAppStorePurchaseFlow.log("Changing Subscription Tier")
+
+        // Get the externalID from the existing token (user already has an active subscription)
+        let externalID: String
+        do {
+            let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            externalID = tokenContainer.decodedAccessToken.externalID
+            Logger.subscriptionAppStorePurchaseFlow.log("Retrieved externalID from existing subscription")
+        } catch {
+            Logger.subscriptionAppStorePurchaseFlow.error("Failed to get token container for tier change: \(String(describing: error), privacy: .public)")
+            return .failure(.internalError(error))
+        }
+
+        // Make the purchase with the existing account's externalID
+        // Always include Pro tier - tier change UI is only visible when Pro is enabled
+        switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID, includeProTier: true) {
+        case .success(let transactionJWS):
+            NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
+            return .success(transactionJWS)
+        case .failure(let error):
+            Logger.subscriptionAppStorePurchaseFlow.error("Tier change purchase error: \(String(describing: error), privacy: .public)")
 
             switch error {
             case .purchaseCancelledByUser:

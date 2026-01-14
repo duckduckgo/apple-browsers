@@ -30,9 +30,7 @@ final class SSLSpecialErrorPageTests {
     private var sut: SSLErrorPageNavigationHandler!
 
     init() {
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.sslCertificatesBypass]
-        sut = SSLErrorPageNavigationHandler(urlCredentialCreator: MockCredentialCreator(), featureFlagger: featureFlagger)
+        sut = SSLErrorPageNavigationHandler(urlCredentialCreator: MockCredentialCreator())
     }
 
     deinit {

@@ -456,4 +456,235 @@ final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
             XCTFail("Expected showInternalSubscriptionAlert action")
         }
     }
+
+    // MARK: - Should Show Upgrade Tests
+
+    func testShouldShowUpgrade_WhenInactiveSubscription_ReturnsFalse() {
+        // Given - Expired subscription with feature flag ON and upgrades available
+        isProTierPurchaseEnabled = true
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
+            downgrade: []
+        )
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
+            status: .expired,
+            tier: .plus,
+            availableChanges: availableChanges
+        ))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertFalse(sut.shouldShowUpgrade)
+    }
+
+    func testShouldShowUpgrade_WhenFeatureFlagDisabled_ReturnsFalse() {
+        // Given - Active subscription with feature flag OFF and upgrades available
+        isProTierPurchaseEnabled = false
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
+            downgrade: []
+        )
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .plus,
+            availableChanges: availableChanges
+        ))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertFalse(sut.shouldShowUpgrade)
+    }
+
+    func testShouldShowUpgrade_WhenNoAvailableUpgrades_ReturnsFalse() {
+        // Given - Active subscription with feature flag ON but no upgrades available
+        isProTierPurchaseEnabled = true
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [],
+            downgrade: [DuckDuckGoSubscription.TierChange(tier: "plus", productIds: [], order: 1)]
+        )
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .pro,
+            availableChanges: availableChanges
+        ))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertFalse(sut.shouldShowUpgrade)
+    }
+
+    func testShouldShowUpgrade_WhenAllConditionsMet_ReturnsTrue() {
+        // Given - Active subscription with feature flag ON and upgrades available
+        isProTierPurchaseEnabled = true
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
+            downgrade: []
+        )
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .plus,
+            availableChanges: availableChanges
+        ))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertTrue(sut.shouldShowUpgrade)
+    }
+
+    // MARK: - First Available Upgrade Tier Tests
+
+    func testFirstAvailableUpgradeTier_WhenNoUpgrades_ReturnsNil() {
+        // Given - No available upgrades
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [],
+            downgrade: []
+        )
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .pro,
+            availableChanges: availableChanges
+        ))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertNil(sut.firstAvailableUpgradeTier)
+    }
+
+    func testFirstAvailableUpgradeTier_ReturnsTierWithLowestOrder() {
+        // Given - Multiple upgrades available
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [
+                DuckDuckGoSubscription.TierChange(tier: "ultimate", productIds: [], order: 2),
+                DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)
+            ],
+            downgrade: []
+        )
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .plus,
+            availableChanges: availableChanges
+        ))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then - Should return "pro" as it has the lowest order
+        XCTAssertEqual(sut.firstAvailableUpgradeTier, "pro")
+    }
+
+    // MARK: - View All Plans Action with Upgrade URL Tests
+
+    @MainActor
+    func testViewAllPlansActionWithUpgradeURL_WhenAppleSubscriptionOnAppStoreApp_ReturnsNavigateToPlans() {
+        // Given - Apple subscription on App Store app (platforms match)
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            platform: .apple,
+            tier: .plus
+        ),
+        purchasePlatform: .appStore)
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // When
+        let action = sut.viewAllPlansAction(url: .upgrade)
+
+        // Then
+        if case .navigateToPlans(let navigationAction) = action {
+            navigationAction()
+            XCTAssertTrue(userEvents.contains { event in
+                if case .openURL(.upgrade) = event { return true }
+                return false
+            })
+        } else {
+            XCTFail("Expected navigateToPlans action")
+        }
+    }
+
+    @MainActor
+    func testViewAllPlansActionWithUpgradeURL_WhenStripeSubscriptionOnStripeApp_ReturnsNavigateToPlans() {
+        // Given - Stripe subscription on Stripe app (platforms match)
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            platform: .stripe,
+            tier: .plus
+        ),
+        purchasePlatform: .stripe)
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // When
+        let action = sut.viewAllPlansAction(url: .upgrade)
+
+        // Then
+        if case .navigateToPlans(let navigationAction) = action {
+            navigationAction()
+            XCTAssertTrue(userEvents.contains { event in
+                if case .openURL(.upgrade) = event { return true }
+                return false
+            })
+        } else {
+            XCTFail("Expected navigateToPlans action")
+        }
+    }
 }

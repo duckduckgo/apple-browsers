@@ -1779,11 +1779,12 @@ final class AddressBarButtonsViewController: NSViewController {
 
         /// Delay slightly to ensure the toggle is visible and positioned correctly
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            guard let self = self else { return }
+            guard let self else { return }
             self.aiChatTogglePopoverCoordinator?.showPopoverIfNeeded(
                 relativeTo: toggleControl,
                 isNewUser: AppDelegate.isNewUser,
-                userDidInteractWithToggle: self.aiChatToggleConditions.hasUserInteractedWithToggle
+                userDidInteractWithToggle: self.aiChatToggleConditions.hasUserInteractedWithToggle,
+                userDidSeeToggleOnboarding: self.aiChatSettings.userDidSeeToggleOnboarding
             )
         }
     }

@@ -20,9 +20,6 @@ import Foundation
 import PrivacyConfig
 
 public enum FeatureFlag: String, CaseIterable {
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760000
-    case sslCertificatesBypass
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715841970
     case maliciousSiteProtection
 
@@ -116,6 +113,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212227266479719
     case aiChatOmnibarCluster
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
+    case aiChatOmnibarOnboarding
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134
     case osSupportForceUnsupportedMessage
 
@@ -142,9 +142,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618846917
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473926615
-    case duckAISearchParameter
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719485546
     case refactorOfSyncPreferences
@@ -258,6 +255,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
     case firstTimeQuitSurvey
 
+    /// Modular termination decider pattern for app quit flow
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212684817782056?focus=true
+    case terminationDeciderSequence
+
     /// Prioritize results where the domain matches the search query when searching passwords & autofill
     case autofillPasswordSearchPrioritizeDomain
 
@@ -291,7 +292,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
-                .duckAISearchParameter,
                 .syncCreditCards,
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
@@ -307,7 +307,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportWideEventMeasurement,
                 .tabProgressIndicator,
                 .firstTimeQuitSurvey,
-                .autofillPasswordSearchPrioritizeDomain:
+                .aiChatOmnibarOnboarding,
+                .terminationDeciderSequence,
+                .autofillPasswordSearchPrioritizeDomain,
+                .themes:
             true
         default:
             false
@@ -350,11 +353,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
+                .aiChatOmnibarOnboarding,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
                 .newTabPageTabIDs,
                 .supportsAlternateStripePaymentFlow,
-                .duckAISearchParameter,
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
@@ -397,15 +400,15 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .heuristicAction,
                 .nextStepsSingleCardIteration:
             return true
-        case .sslCertificatesBypass,
-                .appendAtbToSerpQueries,
+        case .appendAtbToSerpQueries,
                 .freemiumDBP,
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
                 .fireDialogIndividualSitesLink,
                 .scheduledDefaultBrowserAndDockPromptsInactiveUser,
-                .tabClosingEventRecreation:
+                .tabClosingEventRecreation,
+                .terminationDeciderSequence:
             return false
         }
     }
@@ -414,8 +417,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .appendAtbToSerpQueries:
             return .internalOnly()
-        case .sslCertificatesBypass:
-            return .remoteReleasable(.subfeature(SslCertificatesSubfeature.allowBypass))
         case .unknownUsernameCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.unknownUsernameCategorization))
         case .freemiumDBP:
@@ -476,6 +477,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarToggle))
         case .aiChatOmnibarCluster:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
+        case .aiChatOmnibarOnboarding:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarOnboarding))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:
@@ -492,8 +495,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPageTabIDs))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
-        case .duckAISearchParameter:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.duckAISearchParameter))
         case .fireDialog:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
         case .fireDialogIndividualSitesLink:
@@ -505,7 +506,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
         case .themes:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.themes))
         case .appStoreUpdateFlow:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
@@ -560,6 +561,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         case .firstTimeQuitSurvey:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
+        case .terminationDeciderSequence:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.terminationDeciderSequence))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .dataImportWideEventMeasurement:

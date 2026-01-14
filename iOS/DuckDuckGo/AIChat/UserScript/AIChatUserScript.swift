@@ -190,6 +190,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.setPayloadHandler(payloadHandler)
     }
 
+    func setDisplayMode(_ displayMode: AIChatDisplayMode) {
+        handler.displayMode = displayMode
+    }
+
     // MARK: - Input Box Event Subscription
 
     private func subscribeToInputBoxEvents() {

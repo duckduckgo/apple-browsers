@@ -488,9 +488,6 @@ extension Pixel {
         case autofillCardsManagementSaveCard
         case autofillCardsManagementUpdateCard
 
-        case autofillCardsAutofilledInMainframe
-        case autofillCardsAutofilledInIframe
-
         case autofillManagementScreenVisitSurveyAvailable
 
         case getDesktopCopy
@@ -1987,9 +1984,6 @@ extension Pixel.Event {
         case .autofillCardsManagementDeleteCard: return "autofill_cards_management_delete_card"
         case .autofillCardsManagementSaveCard: return "autofill_cards_management_save_card"
         case .autofillCardsManagementUpdateCard: return "autofill_cards_management_update_card"
-
-        case .autofillCardsAutofilledInMainframe: return "autofill_cards_autofilled_in_mainframe"
-        case .autofillCardsAutofilledInIframe: return "autofill_cards_autofilled_in_iframe"
 
         case .autofillManagementScreenVisitSurveyAvailable: return "m_autofill_management_screen_visit_survey_available"
 

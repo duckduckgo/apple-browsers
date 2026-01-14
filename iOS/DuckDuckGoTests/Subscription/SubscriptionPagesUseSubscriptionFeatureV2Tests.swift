@@ -574,6 +574,183 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
         XCTAssertEqual(started.contextData.name, SubscriptionFunnelOrigin.appSettings.rawValue)
     }
+
+    // MARK: - SubscriptionChangeSelected Tests
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenTierChangeSucceeds_SetsIdleStatus() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        purchaseFlow.changeTierResult = .success("mock-transaction-jws")
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent
+        )
+
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = MockWKScriptMessage(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertNil(sut.transactionError)
+        XCTAssertTrue(purchaseFlow.changeTierCalled)
+        XCTAssertEqual(purchaseFlow.changeTierSubscriptionIdentifier, "yearly-pro")
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenUserCancels_SetsCancelledError() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        purchaseFlow.changeTierResult = .failure(.cancelledByUser)
+
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent
+        )
+
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = MockWKScriptMessage(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertEqual(sut.transactionError, .cancelledByUser)
+        XCTAssertTrue(purchaseFlow.changeTierCalled)
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenPurchaseFails_SetsPurchaseFailedError() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        purchaseFlow.changeTierResult = .failure(.purchaseFailed(NSError(domain: "test", code: 0)))
+
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent
+        )
+
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = MockWKScriptMessage(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertEqual(sut.transactionError, .purchaseFailed)
+        XCTAssertTrue(purchaseFlow.changeTierCalled)
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenCompletionFails_SetsMissingEntitlementsError() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        purchaseFlow.changeTierResult = .success("mock-transaction-jws")
+        purchaseFlow.completeSubscriptionPurchaseResult = .failure(.missingEntitlements)
+
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent
+        )
+
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = MockWKScriptMessage(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertEqual(sut.transactionError, .missingEntitlements)
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenInvalidParams_ReturnsNilWithoutCallingFlow() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMockV2()
+
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent
+        )
+
+        // Invalid params - missing "id"
+        let params: [String: Any] = ["change": "upgrade"]
+        let message = MockWKScriptMessage(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        let result = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertNil(result)
+        XCTAssertFalse(purchaseFlow.changeTierCalled)
+        XCTAssertEqual(sut.transactionStatus, .idle)
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_CallsChangeTierWithCorrectIdentifier() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        purchaseFlow.changeTierResult = .failure(.cancelledByUser)
+
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent
+        )
+
+        let params: [String: Any] = ["id": "monthly-plus", "change": "downgrade"]
+        let message = MockWKScriptMessage(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertTrue(purchaseFlow.changeTierCalled)
+        XCTAssertEqual(purchaseFlow.changeTierSubscriptionIdentifier, "monthly-plus")
+    }
 }
 
 final class MockURLWebView: WKWebView {

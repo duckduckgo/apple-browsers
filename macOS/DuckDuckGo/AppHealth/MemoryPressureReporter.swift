@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import PixelKit
+import PrivacyConfig
 
 enum MemoryPressurePixel: PixelKitEvent {
     /// Fired when the system reports warning level memory pressure.
@@ -46,19 +48,42 @@ enum MemoryPressurePixel: PixelKitEvent {
 ///
 final class MemoryPressureReporter {
 
+    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
     private var memoryPressureSource: DispatchSourceMemoryPressure?
+    private var cancellables: Set<AnyCancellable> = []
 
-    init(pixelFiring: PixelFiring?) {
+    init(featureFlagger: FeatureFlagger, pixelFiring: PixelFiring?) {
+        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
-        startMonitoring()
+        subscribeToFeatureFlagUpdates()
     }
 
     deinit {
         stopMonitoring()
     }
 
+    private func subscribeToFeatureFlagUpdates() {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.memoryPressureReporting)
+            }
+            .prepend(featureFlagger.isFeatureOn(.memoryPressureReporting))
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isEnabled in
+                if isEnabled {
+                    self?.startMonitoring()
+                } else {
+                    self?.stopMonitoring()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
     private func startMonitoring() {
+        guard memoryPressureSource == nil, featureFlagger.isFeatureOn(.memoryPressureReporting) else { return }
+
         let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
 
         source.setEventHandler { [weak self] in

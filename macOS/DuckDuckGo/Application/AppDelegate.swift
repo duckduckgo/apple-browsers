@@ -1011,7 +1011,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.attributedMetricManager.addNotificationsObserver()
 
         memoryUsageMonitor = MemoryUsageMonitor(logger: .memory)
-        memoryPressureReporter = MemoryPressureReporter(pixelFiring: PixelKit.shared)
+        memoryPressureReporter = MemoryPressureReporter(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
 
         super.init()
 

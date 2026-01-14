@@ -50,11 +50,13 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         static let externalRegular: TimeInterval = .days(2)
 
         static func delay(for updateType: Update.UpdateType, isInternalUser: Bool) -> TimeInterval {
-            if updateType == .critical {
-                return critical
-            }
-
-            return isInternalUser ? internalRegular : externalRegular
+            // TEMPORARY: hardcoded 60s for testing
+            return 60
+//            if updateType == .critical {
+//                return critical
+//            }
+//
+//            return isInternalUser ? internalRegular : externalRegular
         }
     }
 

@@ -96358,6 +96358,9 @@
         }
       }
     },
+    "To disable, go to Debug → Updates → Reset feed URL to default" : {
+
+    },
     "today" : {
       "comment" : "Date section in history view indicating current day",
       "localizations" : {
@@ -100123,6 +100126,9 @@
           }
         }
       }
+    },
+    "Updates Are Using a Custom Feed URL" : {
+
     },
     "URL" : {
       "localizations" : {

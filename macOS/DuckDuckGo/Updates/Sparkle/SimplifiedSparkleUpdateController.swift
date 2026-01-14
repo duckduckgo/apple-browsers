@@ -44,9 +44,18 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     /// Delay before showing update notifications for automatic updates.
     /// Critical updates show immediately; regular updates are delayed to reduce noise
     /// since they'll install on quit anyway.
-    private enum NotificationDelay {
-        static let regular: TimeInterval = .hours(1)
+    enum NotificationDelay {
         static let critical: TimeInterval = 0
+        static let internalRegular: TimeInterval = .hours(2)
+        static let externalRegular: TimeInterval = .days(2)
+
+        static func delay(for updateType: Update.UpdateType, isInternalUser: Bool) -> TimeInterval {
+            if updateType == .critical {
+                return critical
+            }
+
+            return isInternalUser ? internalRegular : externalRegular
+        }
     }
 
     private var pendingNotificationTask: Task<Void, Never>?
@@ -295,10 +304,8 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             return
         }
 
-        // Automatic updates: delay based on criticality
-        let delay = latestUpdate.type == .critical
-            ? NotificationDelay.critical
-            : NotificationDelay.regular
+        // Automatic updates: delay based on criticality and internal/external user status.
+        let delay = NotificationDelay.delay(for: latestUpdate.type, isInternalUser: internalUserDecider.isInternalUser)
 
         if delay == 0 {
             showUpdateIndicators()

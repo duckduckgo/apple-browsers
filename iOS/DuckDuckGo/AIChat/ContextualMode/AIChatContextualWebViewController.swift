@@ -214,7 +214,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
             return
         }
 
-        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
         isContentHandlerReady = true
         submitPendingPromptIfReady()
     }

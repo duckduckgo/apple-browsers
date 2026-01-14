@@ -27,6 +27,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String)
     func submitStartChatAction()
     func submitOpenSettingsAction()
@@ -55,8 +56,8 @@ protocol AIChatContentHandling {
 
     var delegate: AIChatContentHandlingDelegate? { get set }
 
-    /// Configures the user script and WebView for AIChat interaction.
-    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView)
+    /// Configures the user script, WebView and display mode for AIChat interaction.
+    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode)
 
     /// Sets the initial payload data for the AIChat session.
     func setPayload(payload: Any?)
@@ -103,11 +104,11 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.pixelMetricHandler = pixelMetricHandler
         self.featureDiscovery = featureDiscovery
     }
-    
-    /// Configures the user script and WebView for AIChat interaction.
-    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView) {
+
+    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
         self.userScript = userScript
         self.userScript?.delegate = self
+        self.userScript?.setDisplayMode(displayMode)
         self.userScript?.setPayloadHandler(payloadHandler)
         self.userScript?.webView = webView
     }

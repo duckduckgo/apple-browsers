@@ -2686,6 +2686,7 @@
       const toggle = () => {
         const next = visibility.value === "hidden" ? "visible" : "hidden";
         update(next);
+        window.dispatchEvent(new CustomEvent(TOGGLE_DRAWER_COMPLETE_EVENT, { detail: { state: next } }));
       };
       window.addEventListener(CLOSE_DRAWER_EVENT, close, { signal: controller.signal });
       window.addEventListener(TOGGLE_DRAWER_EVENT, toggle, { signal: controller.signal });
@@ -2749,11 +2750,18 @@
     window.dispatchEvent(new CustomEvent(CLOSE_DRAWER_EVENT));
   }
   function useDrawerEventListeners({ onOpen, onClose, onToggle }, deps = []) {
-    y2(() => {
+    _2(() => {
       const controller = new AbortController();
       if (onOpen) window.addEventListener(OPEN_DRAWER_EVENT, onOpen, { signal: controller.signal });
       if (onClose) window.addEventListener(CLOSE_DRAWER_EVENT, onClose, { signal: controller.signal });
-      if (onToggle) window.addEventListener(TOGGLE_DRAWER_EVENT, onToggle, { signal: controller.signal });
+      if (onToggle) {
+        window.addEventListener(
+          TOGGLE_DRAWER_COMPLETE_EVENT,
+          /** @param {CustomEvent<{state: DrawerVisibility}>} e */
+          (e4) => onToggle(e4.detail.state),
+          { signal: controller.signal }
+        );
+      }
       return () => controller.abort();
     }, deps);
   }
@@ -2764,7 +2772,7 @@
       open: _open
     };
   }
-  var CLOSE_DRAWER_EVENT, TOGGLE_DRAWER_EVENT, OPEN_DRAWER_EVENT;
+  var CLOSE_DRAWER_EVENT, TOGGLE_DRAWER_EVENT, OPEN_DRAWER_EVENT, TOGGLE_DRAWER_COMPLETE_EVENT;
   var init_Drawer = __esm({
     "pages/new-tab/app/components/Drawer.js"() {
       "use strict";
@@ -2775,12 +2783,14 @@
       CLOSE_DRAWER_EVENT = "close-drawer";
       TOGGLE_DRAWER_EVENT = "toggle-drawer";
       OPEN_DRAWER_EVENT = "open-drawer";
+      TOGGLE_DRAWER_COMPLETE_EVENT = "toggle-drawer-complete";
     }
   });
 
   // pages/new-tab/app/customizer/CustomizerProvider.js
   function CustomizerProvider({ service, initialData, children }) {
     const data2 = useSignal(initialData);
+    const ntp = useMessaging();
     const { main, browser, variant } = useThemes(data2);
     useSignalEffect(() => {
       const unsubs = [
@@ -2850,13 +2860,18 @@
         onOpen: () => {
           drawerOpenCount.value++;
           service.dismissThemeVariantPopover();
+          ntp.telemetryEvent({ attributes: { name: "customizer_drawer", value: "opened" } });
         },
-        onToggle: () => {
+        onClose: () => {
+          ntp.telemetryEvent({ attributes: { name: "customizer_drawer", value: "closed" } });
+        },
+        onToggle: (state) => {
           drawerOpenCount.value++;
           service.dismissThemeVariantPopover();
+          ntp.telemetryEvent({ attributes: { name: "customizer_drawer", value: state === "visible" ? "opened" : "closed" } });
         }
       },
-      [service]
+      [service, ntp]
     );
     return /* @__PURE__ */ _(
       CustomizerContext.Provider,
@@ -2885,6 +2900,7 @@
       init_themes();
       init_utils();
       init_Drawer();
+      init_types();
       CustomizerThemesContext = Q({
         /** @type {import("@preact/signals").Signal<'light' | 'dark'>} */
         main: d3("light"),

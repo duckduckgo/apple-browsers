@@ -24,6 +24,7 @@ struct DataBrokerRunCustomJSONView: View {
 
     @State private var jsonText: String = ""
     @State private var selectedResultId: UUID?
+    @State private var selectedBrokerUrl: String?
     private let maxNames = 3
     private let maxAddresses = 5
     private let brokerConfigWidth: CGFloat = 360
@@ -141,14 +142,25 @@ struct DataBrokerRunCustomJSONView: View {
 
             Divider()
 
-            List(viewModel.brokers.sorted(by: { $0.name.lowercased() < $1.name.lowercased() }), id: \.name) { broker in
-                Text(broker.name)
-                    .onTapGesture {
-                        jsonText = broker.toJSONString()
+            List(selection: $selectedBrokerUrl) {
+                ForEach(viewModel.brokers.sorted(by: { $0.url.lowercased() < $1.url.lowercased() }), id: \.url) { broker in
+                    HStack {
+                        Text(broker.url)
+                        Spacer()
+                        Text(broker.version)
+                            .foregroundColor(.secondary)
                     }
+                    .tag(broker.url)
+                }
             }
             .frame(maxHeight: .infinity)
             .listStyle(.plain)
+            .onChange(of: selectedBrokerUrl) { newValue in
+                guard let newValue else { return }
+                if let broker = viewModel.brokers.first(where: { $0.url == newValue }) {
+                    jsonText = broker.toJSONString()
+                }
+            }
 
             Divider()
 

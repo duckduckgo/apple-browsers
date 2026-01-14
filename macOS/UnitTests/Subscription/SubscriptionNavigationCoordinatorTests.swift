@@ -115,7 +115,7 @@ struct SubscriptionNavigationCoordinatorTests {
     func navigateToSubscriptionPlans() async throws {
         let (coordinator, mockTabShower, mockSubscriptionManager) = createCoordinator()
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions")!
-        mockSubscriptionManager.urls[.plans] = expectedURL
+        mockSubscriptionManager.resultURL = expectedURL
 
         coordinator.navigateToSubscriptionPlans(origin: nil, featurePage: "duckai")
 
@@ -139,7 +139,7 @@ struct SubscriptionNavigationCoordinatorTests {
         let (coordinator, mockTabShower, mockSubscriptionManager) = createCoordinator()
         let baseURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let origin = "funnel_duckai_macos__modelpicker"
-        mockSubscriptionManager.urls[.plans] = baseURL
+        mockSubscriptionManager.resultURL = baseURL
 
         coordinator.navigateToSubscriptionPlans(origin: origin, featurePage: "duckai")
 

@@ -46,6 +46,7 @@ public final class StorePurchaseManagerMockV2: StorePurchaseManagerV2 {
     public var updateAvailableProductsCalled: Bool = false
     public var mostRecentTransactionCalled: Bool = false
     public var purchaseSubscriptionCalled: Bool = false
+    public var purchaseSubscriptionIncludeProTier: Bool?
     public var isEligibleForFreeTrialResult: Bool = false
 
     public init() { }
@@ -76,8 +77,9 @@ public final class StorePurchaseManagerMockV2: StorePurchaseManagerV2 {
         return hasActiveSubscriptionResult
     }
 
-    public func purchaseSubscription(with identifier: String, externalID: String) async -> Result<TransactionJWS, StorePurchaseManagerError> {
+    public func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<TransactionJWS, StorePurchaseManagerError> {
         purchaseSubscriptionCalled = true
+        purchaseSubscriptionIncludeProTier = includeProTier
         return purchaseSubscriptionResult!
     }
 

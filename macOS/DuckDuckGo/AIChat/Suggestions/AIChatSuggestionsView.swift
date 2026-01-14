@@ -59,6 +59,7 @@ final class AIChatSuggestionsView: NSView {
     private var rowViews: [AIChatSuggestionRowView] = []
     private var cancellables = Set<AnyCancellable>()
     private var previousSuggestionCount: Int = 0
+    private weak var boundViewModel: AIChatSuggestionsViewModel?
 
     var onSuggestionClicked: ((AIChatSuggestion) -> Void)?
 
@@ -118,9 +119,10 @@ final class AIChatSuggestionsView: NSView {
     /// - Parameters:
     ///   - suggestions: The list of suggestions to display.
     ///   - selectedIndex: The index of the currently selected suggestion (for keyboard navigation).
+    ///   - isKeyboardNavigating: Whether keyboard navigation is currently active.
     /// - Returns: `true` if the suggestion count changed (requiring height update), `false` otherwise.
     @discardableResult
-    func update(with suggestions: [AIChatSuggestion], selectedIndex: Int?) -> Bool {
+    func update(with suggestions: [AIChatSuggestion], selectedIndex: Int?, isKeyboardNavigating: Bool = false) -> Bool {
         let countChanged = suggestions.count != previousSuggestionCount
         previousSuggestionCount = suggestions.count
 
@@ -133,9 +135,14 @@ final class AIChatSuggestionsView: NSView {
             let rowView = AIChatSuggestionRowView(suggestion: suggestion)
             rowView.translatesAutoresizingMaskIntoConstraints = false
             rowView.isSelected = (index == selectedIndex)
+            rowView.isKeyboardNavigating = isKeyboardNavigating
 
             rowView.onClick = { [weak self] in
                 self?.onSuggestionClicked?(suggestion)
+            }
+
+            rowView.onMouseMoved = { [weak self] in
+                self?.boundViewModel?.acknowledgeMouseMovement()
             }
 
             stackView.addArrangedSubview(rowView)
@@ -153,10 +160,17 @@ final class AIChatSuggestionsView: NSView {
     }
 
     /// Updates only the selection state without rebuilding the entire view.
-    /// - Parameter selectedIndex: The index of the currently selected suggestion.
-    func updateSelection(_ selectedIndex: Int?) {
+    /// - Parameters:
+    ///   - selectedIndex: The index of the currently selected suggestion.
+    ///   - isKeyboardNavigating: Whether keyboard navigation is currently active.
+    func updateSelection(_ selectedIndex: Int?, isKeyboardNavigating: Bool = false) {
         for (index, rowView) in rowViews.enumerated() {
             rowView.isSelected = (index == selectedIndex)
+            rowView.isKeyboardNavigating = isKeyboardNavigating
+            // Clear hover state when keyboard navigating
+            if isKeyboardNavigating {
+                rowView.isHovered = false
+            }
         }
     }
 
@@ -165,12 +179,14 @@ final class AIChatSuggestionsView: NSView {
     ///   - viewModel: The view model to bind to.
     ///   - onHeightChange: Called when the number of suggestions changes, requiring a height update.
     func bind(to viewModel: AIChatSuggestionsViewModel, onHeightChange: @escaping (CGFloat) -> Void) {
+        boundViewModel = viewModel
+
         viewModel.$filteredSuggestions
-            .combineLatest(viewModel.$selectedIndex)
+            .combineLatest(viewModel.$selectedIndex, viewModel.$isKeyboardNavigating)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] suggestions, selectedIndex in
+            .sink { [weak self] suggestions, selectedIndex, isKeyboardNavigating in
                 guard let self else { return }
-                let countChanged = self.update(with: suggestions, selectedIndex: selectedIndex)
+                let countChanged = self.update(with: suggestions, selectedIndex: selectedIndex, isKeyboardNavigating: isKeyboardNavigating)
                 if countChanged {
                     let newHeight = AIChatSuggestionsView.calculateHeight(forSuggestionCount: suggestions.count)
                     onHeightChange(newHeight)

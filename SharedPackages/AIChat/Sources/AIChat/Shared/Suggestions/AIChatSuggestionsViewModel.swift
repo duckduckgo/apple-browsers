@@ -33,6 +33,10 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
     /// `nil` means no suggestion is selected.
     @Published public private(set) var selectedIndex: Int?
 
+    /// Indicates whether keyboard navigation is currently active.
+    /// Used to suppress mouse hover while navigating with keyboard.
+    @Published public private(set) var isKeyboardNavigating: Bool = false
+
     // MARK: - Private Properties
 
     private var pinnedChats: [AIChatSuggestion] = []
@@ -113,6 +117,8 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
     public func selectNext() -> Bool {
         guard hasSuggestions else { return false }
 
+        isKeyboardNavigating = true
+
         if let currentIndex = selectedIndex {
             let nextIndex = currentIndex + 1
             if nextIndex < filteredSuggestions.count {
@@ -133,6 +139,8 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
     public func selectPrevious() -> Bool {
         guard hasSuggestions else { return false }
 
+        isKeyboardNavigating = true
+
         if let currentIndex = selectedIndex {
             if currentIndex > 0 {
                 selectedIndex = currentIndex - 1
@@ -147,15 +155,31 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
     }
 
     /// Clears the current selection.
-    public func clearSelection() {
+    /// - Parameter keepMouseSuppressed: If true, mouse hover remains suppressed until mouse moves.
+    public func clearSelection(keepMouseSuppressed: Bool = false) {
         selectedIndex = nil
+        if !keepMouseSuppressed {
+            isKeyboardNavigating = false
+        }
     }
 
-    /// Selects a suggestion at the given index.
+    /// Selects a suggestion at the given index (from mouse interaction).
     /// - Parameter index: The index to select.
     public func select(at index: Int) {
         guard filteredSuggestions.indices.contains(index) else { return }
+        isKeyboardNavigating = false
         selectedIndex = index
+    }
+
+    /// Called when mouse moves, to re-enable mouse hover selection.
+    public func acknowledgeMouseMovement() {
+        isKeyboardNavigating = false
+    }
+
+    /// Suppresses mouse hover selection until the mouse actually moves.
+    /// Call this when the view becomes visible to prevent accidental selection.
+    public func suppressMouseHoverUntilMouseMoves() {
+        isKeyboardNavigating = true
     }
 
     // MARK: - Reset
@@ -164,6 +188,7 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
     public func reset() {
         currentQuery = ""
         selectedIndex = nil
+        isKeyboardNavigating = false
         applyFilter()
     }
 }

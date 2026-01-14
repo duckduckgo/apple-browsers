@@ -74,6 +74,8 @@ final class AIChatSuggestionRowView: NSView {
     }
 
     var onClick: (() -> Void)?
+    var onMouseMoved: (() -> Void)?
+    var isKeyboardNavigating: Bool = false
 
     // MARK: - Initialization
 
@@ -174,12 +176,19 @@ final class AIChatSuggestionRowView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
+        // Don't show hover state if keyboard navigation is active
+        guard !isKeyboardNavigating else { return }
         isHovered = true
         NSCursor.arrow.set()
     }
 
     override func mouseMoved(with event: NSEvent) {
         NSCursor.arrow.set()
+        // Notify that mouse moved - this re-enables mouse hover
+        onMouseMoved?()
+        if !isKeyboardNavigating {
+            isHovered = true
+        }
         super.mouseMoved(with: event)
     }
 

@@ -496,6 +496,9 @@ final class MainViewController: NSViewController {
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.focusTextView()
 
+            // Suppress mouse hover until mouse actually moves
+            aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.suppressMouseHoverUntilMouseMoves()
+
             let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
             aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
         } else {

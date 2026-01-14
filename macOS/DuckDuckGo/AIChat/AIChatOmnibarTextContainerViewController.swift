@@ -82,6 +82,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         applyThemeStyle()
 
         scrollView.documentView = textView
+        textView.navigationDelegate = self
     }
 
     override func viewWillAppear() {
@@ -341,8 +342,60 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     }
 }
 
+// MARK: - FocusableTextViewNavigationDelegate
+extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationDelegate {
+
+    func textViewDidRequestMoveToSuggestions() -> Bool {
+        let viewModel = omnibarController.suggestionsViewModel
+
+        // If already at last suggestion, clear selection (cycle back to text field)
+        if let currentIndex = viewModel.selectedIndex,
+           currentIndex >= viewModel.filteredSuggestions.count - 1 {
+            viewModel.clearSelection(keepMouseSuppressed: true)
+            return true
+        }
+
+        // Try to select next suggestion
+        return viewModel.selectNext()
+    }
+
+    func textViewDidRequestMoveFromSuggestions() -> Bool {
+        let viewModel = omnibarController.suggestionsViewModel
+        // If there's a selection, try to move up in suggestions
+        if viewModel.selectedIndex != nil {
+            // selectPrevious returns true if it moved or cleared selection
+            return viewModel.selectPrevious()
+        }
+        return false
+    }
+
+    func textViewDidRequestSelectCurrentSuggestion() -> Bool {
+        guard let suggestion = omnibarController.suggestionsViewModel.selectedSuggestion else {
+            return false
+        }
+        omnibarController.delegate?.aiChatOmnibarController(omnibarController, didSelectSuggestion: suggestion)
+        return true
+    }
+}
+
+/// Delegate protocol for handling navigation events from FocusableTextView
+protocol FocusableTextViewNavigationDelegate: AnyObject {
+    /// Called when user presses down arrow on the last line
+    /// - Returns: `true` if navigation was handled (moved to suggestions), `false` otherwise
+    func textViewDidRequestMoveToSuggestions() -> Bool
+    /// Called when user presses up arrow on the first line (when suggestions are selected)
+    /// - Returns: `true` if navigation was handled, `false` otherwise
+    func textViewDidRequestMoveFromSuggestions() -> Bool
+    /// Called when user presses Enter while a suggestion is selected
+    /// - Returns: `true` if a suggestion was selected, `false` otherwise
+    func textViewDidRequestSelectCurrentSuggestion() -> Bool
+}
+
 /// Custom NSTextView that ensures it can always accept focus when clicked
 private final class FocusableTextView: NSTextView {
+
+    weak var navigationDelegate: FocusableTextViewNavigationDelegate?
+
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return true
     }
@@ -356,5 +409,52 @@ private final class FocusableTextView: NSTextView {
             window?.makeFirstResponder(self)
         }
         super.mouseDown(with: event)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        // Handle Enter key when a suggestion might be selected
+        if event.keyCode == 36 { // Return/Enter key
+            if navigationDelegate?.textViewDidRequestSelectCurrentSuggestion() == true {
+                return
+            }
+        }
+        super.keyDown(with: event)
+    }
+
+    override func moveDown(_ sender: Any?) {
+        if isCursorOnLastLine() {
+            if navigationDelegate?.textViewDidRequestMoveToSuggestions() == true {
+                return
+            }
+        }
+        super.moveDown(sender)
+    }
+
+    override func moveUp(_ sender: Any?) {
+        // First check if we should navigate in suggestions
+        if navigationDelegate?.textViewDidRequestMoveFromSuggestions() == true {
+            return
+        }
+        super.moveUp(sender)
+    }
+
+    /// Checks if the cursor is on the last line of the text view
+    private func isCursorOnLastLine() -> Bool {
+        guard let layoutManager = layoutManager,
+              let textContainer = textContainer else {
+            return true
+        }
+
+        let selectedRange = selectedRange()
+        let glyphRange = layoutManager.glyphRange(forCharacterRange: selectedRange, actualCharacterRange: nil)
+
+        var lineRange = NSRange()
+        layoutManager.lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: &lineRange)
+
+        let lastGlyphIndex = layoutManager.numberOfGlyphs > 0 ? layoutManager.numberOfGlyphs - 1 : 0
+        var lastLineRange = NSRange()
+        layoutManager.lineFragmentRect(forGlyphAt: lastGlyphIndex, effectiveRange: &lastLineRange)
+
+        return NSMaxRange(lineRange) >= NSMaxRange(lastLineRange)
     }
 }

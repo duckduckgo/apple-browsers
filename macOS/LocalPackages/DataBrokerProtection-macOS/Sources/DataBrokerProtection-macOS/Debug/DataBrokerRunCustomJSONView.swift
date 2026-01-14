@@ -258,26 +258,54 @@ struct DataBrokerRunCustomJSONView: View {
 
             Divider()
 
-            if viewModel.historyEvents.isEmpty {
-                Text("No history events yet.")
+            if viewModel.combinedDebugEvents.isEmpty {
+                Text("No events yet.")
                     .foregroundColor(.secondary)
             } else {
-                List(viewModel.historyEvents.sorted(by: { $0.date < $1.date })) { event in
-                    HStack(spacing: 12) {
-                        Text(historyDateFormatter.string(from: event.date))
-                            .frame(width: 140, alignment: .leading)
-                        Text(historyEventDescription(event))
-                            .frame(minWidth: 140, alignment: .leading)
-                        Text(event.error ?? "")
-                            .foregroundColor(.secondary)
+                List {
+                    Section(header: eventTableHeader.listRowInsets(EdgeInsets())) {
+                        ForEach(viewModel.combinedDebugEvents) { event in
+                            HStack(spacing: 12) {
+                                Text(historyDateFormatter.string(from: event.timestamp))
+                                    .frame(width: eventTimeColumnWidth, alignment: .leading)
+                                Text(event.kind)
+                                    .frame(width: eventKindColumnWidth, alignment: .leading)
+                                Text(event.summary)
+                                    .frame(width: eventSummaryColumnWidth, alignment: .leading)
+                                Text(event.details)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .listRowInsets(EdgeInsets())
+                        }
                     }
                 }
                 .listStyle(.plain)
-                .frame(maxHeight: 220)
+                .frame(maxHeight: .infinity)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
+
+    private var eventTableHeader: some View {
+        HStack(spacing: 12) {
+            Text("Time")
+                .frame(width: eventTimeColumnWidth, alignment: .leading)
+            Text("Kind")
+                .frame(width: eventKindColumnWidth, alignment: .leading)
+            Text("Summary")
+                .frame(width: eventSummaryColumnWidth, alignment: .leading)
+            Text("Details")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .font(.caption)
+        .foregroundColor(.secondary)
+    }
+
+    private var eventTimeColumnWidth: CGFloat { 140 }
+    private var eventKindColumnWidth: CGFloat { 90 }
+    private var eventSummaryColumnWidth: CGFloat { 240 }
 
     private var selectedResult: ScanResult? {
         guard let selectedResultId else { return nil }
@@ -308,33 +336,8 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var historyDateFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
+        formatter.dateFormat = "HH:mm:ss.SSS"
         return formatter
-    }
-
-    private func historyEventDescription(_ event: HistoryEvent) -> String {
-        switch event.type {
-        case .noMatchFound:
-            return "No Match"
-        case .matchesFound(let count):
-            return "Matches (\(count))"
-        case .error(let error):
-            return "Error: \(error.name) - \(error.localizedDescription)"
-        case .optOutStarted:
-            return "Opt-out Started"
-        case .optOutRequested:
-            return "Opt-out Requested"
-        case .optOutSubmittedAndAwaitingEmailConfirmation:
-            return "Opt-out Awaiting Email"
-        case .optOutConfirmed:
-            return "Opt-out Confirmed"
-        case .scanStarted:
-            return "Scan Started"
-        case .reAppearence:
-            return "Reappearance"
-        case .matchRemovedByUser:
-            return "Removed by User"
-        }
     }
 
     private func openLogMonitor() {

@@ -144,6 +144,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var names = [NameUI.empty()]
     @Published var addresses = [AddressUI.empty()]
     @Published var historyEvents: [HistoryEvent] = []
+    @Published var actionEvents: [DebugActionEvent] = []
 
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
@@ -432,6 +433,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.error = nil
         self.results.removeAll()
         self.historyEvents.removeAll()
+        self.actionEvents.removeAll()
         if let data = jsonString.data(using: .utf8) {
             do {
                 let decoder = JSONDecoder()
@@ -446,6 +448,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     Task {
                         do {
                             addScanStartedEvent(for: query)
+                            let stageCalculator = FakeStageDurationCalculator(stepType: .scan) { [weak self] action, stepType in
+                                self?.addActionEvent(action: action, stepType: stepType)
+                            }
                             let runner = BrokerProfileScanSubJobWebRunner(
                                 privacyConfig: self.privacyConfigManager,
                                 prefs: self.contentScopeProperties,
@@ -453,7 +458,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 emailConfirmationDataService: self.emailConfirmationDataService,
                                 captchaService: self.captchaService,
                                 featureFlagger: self.featureFlagger,
-                                stageDurationCalculator: FakeStageDurationCalculator(),
+                                stageDurationCalculator: stageCalculator,
                                 pixelHandler: fakePixelHandler,
                                 executionConfig: .init(),
                                 shouldRunNextStep: { true }
@@ -509,6 +514,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         )
         Task {
             do {
+                let stageCalculator = FakeStageDurationCalculator(stepType: .optOut) { [weak self] action, stepType in
+                    self?.addActionEvent(action: action, stepType: stepType)
+                }
                 let runner = BrokerProfileOptOutSubJobWebRunner(
                     privacyConfig: self.privacyConfigManager,
                     prefs: self.contentScopeProperties,
@@ -516,7 +524,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     emailConfirmationDataService: self.emailConfirmationDataService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
-                    stageCalculator: FakeStageDurationCalculator(),
+                    stageCalculator: stageCalculator,
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),
                     actionsHandlerMode: .optOut,
@@ -615,6 +623,81 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     func appVersion() -> String {
         AppVersion.shared.versionNumber
     }
+
+    private func addActionEvent(action: Action, stepType: StepType) {
+        let event = DebugActionEvent(
+            timestamp: Date(),
+            stepType: stepType,
+            actionType: action.actionType,
+            actionId: action.id,
+            details: String(describing: action)
+        )
+        DispatchQueue.main.async {
+            self.actionEvents.append(event)
+        }
+    }
+
+    var combinedDebugEvents: [DebugEventRow] {
+        let historyRows = historyEvents.map { event in
+            DebugEventRow(
+                timestamp: event.date,
+                kind: "History",
+                summary: historyEventDescription(event),
+                details: event.error ?? ""
+            )
+        }
+        let actionRows = actionEvents.map { event in
+            DebugEventRow(
+                timestamp: event.timestamp,
+                kind: "Action",
+                summary: "\(event.stepType.rawValue) > \(event.actionType.rawValue)\n\(event.actionId)",
+                details: event.details
+            )
+        }
+        return (historyRows + actionRows).sorted(by: { $0.timestamp < $1.timestamp })
+    }
+
+    private func historyEventDescription(_ event: HistoryEvent) -> String {
+        switch event.type {
+        case .noMatchFound:
+            return "No Match"
+        case .matchesFound(let count):
+            return "Matches (\(count))"
+        case .error(let error):
+            return "Error: \(error.name) - \(error.localizedDescription)"
+        case .optOutStarted:
+            return "Opt-out Started"
+        case .optOutRequested:
+            return "Opt-out Requested"
+        case .optOutSubmittedAndAwaitingEmailConfirmation:
+            return "Opt-out Awaiting Email"
+        case .optOutConfirmed:
+            return "Opt-out Confirmed"
+        case .scanStarted:
+            return "Scan Started"
+        case .reAppearence:
+            return "Reappearance"
+        case .matchRemovedByUser:
+            return "Removed by User"
+        }
+    }
+}
+
+struct DebugActionEvent: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    let stepType: StepType
+    let actionType: ActionType
+    let actionId: String
+    let details: String
+}
+
+struct DebugEventRow: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    let kind: String
+    let summary: String
+    let details: String
 }
 
 final class FakeStageDurationCalculator: StageDurationCalculator {
@@ -622,6 +705,14 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     var attemptId: UUID = UUID()
     var isImmediateOperation: Bool = false
     var tries = 1
+    private let stepType: StepType
+    private let onAction: ((Action, StepType) -> Void)?
+
+    init(stepType: StepType = .scan,
+         onAction: ((Action, StepType) -> Void)? = nil) {
+        self.stepType = stepType
+        self.onAction = onAction
+    }
 
     func durationSinceLastStage() -> Double {
         0.0
@@ -683,6 +774,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     }
 
     func setLastAction(_ action: Action) {
+        onAction?(action, stepType)
     }
 
     func fireOptOutConditionFound() {

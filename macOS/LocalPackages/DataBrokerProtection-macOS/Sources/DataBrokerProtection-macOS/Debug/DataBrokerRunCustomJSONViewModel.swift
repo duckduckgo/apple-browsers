@@ -152,6 +152,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
     var error: Error?
+    var shouldContinueOperations = true
+    private var runningTasks: [Task<Void, Never>] = []
 
     let brokers: [DataBroker]
 
@@ -433,11 +435,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     @MainActor
     func runJSON(jsonString: String) {
-        self.error = nil
-        self.results.removeAll()
-        self.historyEvents.removeAll()
-        self.actionEvents.removeAll()
-        self.actionResponseEvents.removeAll()
+        cancelRunningOperations()
+        resetDebugData()
         self.isProgressActive = true
         self.progressText = "Starting scan..."
         if let data = jsonString.data(using: .utf8) {
@@ -451,7 +450,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 for query in brokerProfileQueryData {
                     group.enter()
 
-                    Task {
+                    let task = Task {
                         do {
                             addScanStartedEvent(for: query)
                             let stageCalculator = FakeStageDurationCalculator(
@@ -482,7 +481,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 stageDurationCalculator: stageCalculator,
                                 pixelHandler: fakePixelHandler,
                                 executionConfig: .init(),
-                                shouldRunNextStep: { true }
+                                shouldRunNextStep: { [weak self] in
+                                    self?.shouldContinueOperations == true
+                                }
                             )
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
                             let assignedProfiles = extractedProfiles.map { assignExtractedProfileIdIfNeeded($0) }
@@ -499,7 +500,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             group.leave()
                         } catch let UserScriptError.failedToLoadJS(jsFile, error) {
                             pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
-                            try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                            try? await Task.sleep(interval: 1.0) // give time for the pixel to be sent
                             fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
                         } catch {
                             addScanErrorEvent(for: query, error: error)
@@ -507,6 +508,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             group.leave()
                         }
                     }
+                    runningTasks.append(task)
                 }
                 group.notify(queue: .main) {
                     self.isProgressActive = false
@@ -525,6 +527,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     @MainActor
     func runOptOut(scanResult: ScanResult) {
+        cancelRunningOperations()
         isProgressActive = true
         progressText = "Starting opt-out..."
         addOptOutStartedEvent(for: scanResult)
@@ -537,7 +540,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 historyEvents: [HistoryEvent]()
             )
         )
-        Task {
+        let task = Task {
             do {
                 let stageCalculator = FakeStageDurationCalculator(
                     stepType: .optOut,
@@ -568,7 +571,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),
                     actionsHandlerMode: .optOut,
-                    shouldRunNextStep: { true }
+                    shouldRunNextStep: { [weak self] in
+                        self?.shouldContinueOperations == true
+                    }
                 )
 
                 try await runner.optOut(profileQuery: brokerProfileQueryData,
@@ -585,7 +590,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
             } catch let UserScriptError.failedToLoadJS(jsFile, error) {
                 pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
-                try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                try? await Task.sleep(interval: 1.0) // give time for the pixel to be sent
                 fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
                 addOptOutErrorEvent(for: scanResult, error: error)
@@ -596,6 +601,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 showAlert(for: error)
             }
         }
+        runningTasks.append(task)
     }
 
     private func createBrokerProfileQueryData(for broker: DataBroker) -> [BrokerProfileQueryData] {
@@ -749,6 +755,23 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             self.progressText = text
             self.isProgressActive = true
         }
+    }
+
+    private func resetDebugData() {
+        self.error = nil
+        self.results.removeAll()
+        self.historyEvents.removeAll()
+        self.actionEvents.removeAll()
+        self.actionResponseEvents.removeAll()
+    }
+
+    private func cancelRunningOperations() {
+        shouldContinueOperations = false
+        runningTasks.forEach { $0.cancel() }
+        runningTasks.removeAll()
+        shouldContinueOperations = true
+        isProgressActive = false
+        progressText = "Idle"
     }
 
     private func historyEventDescription(_ event: HistoryEvent) -> String {

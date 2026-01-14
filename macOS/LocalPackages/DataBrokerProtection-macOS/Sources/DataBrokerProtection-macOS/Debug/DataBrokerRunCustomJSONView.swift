@@ -29,6 +29,7 @@ struct DataBrokerRunCustomJSONView: View {
     @State private var brokerFilter: BrokerFilter = .all
     @State private var brokerSearchText: String = ""
     @State private var selectedTab: Tab = .scan
+    @State private var logMonitorWindow: NSWindow?
     
     private let maxNames = 3
     private let maxAddresses = 5
@@ -202,8 +203,14 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var resultsView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Extracted Profiles")
-                .font(.headline)
+            HStack {
+                Text("Extracted Profiles")
+                    .font(.headline)
+                Spacer()
+                Button("Open Log Monitor") {
+                    openLogMonitor()
+                }
+            }
 
             Divider()
 
@@ -248,12 +255,6 @@ struct DataBrokerRunCustomJSONView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            Button("Clear and go back") {
-                viewModel.results.removeAll()
-                selectedResultId = nil
-            }
-            .padding()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -283,6 +284,31 @@ struct DataBrokerRunCustomJSONView: View {
     private func contentContainer<Content: View>(_ content: Content) -> some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func openLogMonitor() {
+        if let logMonitorWindow, logMonitorWindow.isVisible {
+            logMonitorWindow.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        let viewModel = DataBrokerLogMonitorViewModel()
+        viewModel.startMonitoring()
+
+        let contentView = DataBrokerLogMonitorView(viewModel: viewModel)
+        let hostingController = NSHostingController(rootView: contentView)
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "DataBrokerProtection Log Monitor"
+        window.contentViewController = hostingController
+        window.makeKeyAndOrderFront(nil)
+
+        logMonitorWindow = window
     }
 }
 

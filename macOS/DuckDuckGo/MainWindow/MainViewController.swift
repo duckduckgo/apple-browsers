@@ -501,6 +501,10 @@ final class MainViewController: NSViewController {
         } else {
             aiChatOmnibarContainerViewController.cleanup()
             aiChatOmnibarTextContainerViewController.stopEventMonitoring()
+
+            if !shouldKeepSelection {
+                aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
+            }
         }
     }
 

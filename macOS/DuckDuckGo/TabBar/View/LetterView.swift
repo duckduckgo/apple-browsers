@@ -17,9 +17,12 @@
 //
 
 import Foundation
+import Combine
 import SwiftUIExtensions
 
 final class LetterView: NSView {
+
+    private var applicationStatePublisher: AnyCancellable?
 
     enum BackgroundShape {
         case rectangle
@@ -29,11 +32,13 @@ final class LetterView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setup()
+        startListeningToNotifications()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setup()
+        startListeningToNotifications()
     }
 
     func displayURL(_ url: URL?) {
@@ -128,5 +133,20 @@ final class LetterView: NSView {
         }
 
         backgroundLayer.cornerRadius = backgroundCornerRadius
+    }
+}
+
+private extension LetterView {
+
+    private func startListeningToNotifications() {
+        applicationStatePublisher = NSApp.isActivePublisher()
+            .dropFirst()
+            .sink { [weak self] isActive in
+                self?.refreshActivationAlpha(isActive: isActive)
+            }
+    }
+
+    func refreshActivationAlpha(isActive: Bool) {
+        backgroundView.alphaValue = isActive ? .activeViewAlpha : .inactiveViewAlpha
     }
 }

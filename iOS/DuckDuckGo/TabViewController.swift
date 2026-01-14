@@ -1056,27 +1056,19 @@ class TabViewController: UIViewController {
         guard url.isDuckDuckGoSearch else { return false }
         
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
-
-        // Only check DuckAI params if the feature flag is enabled
-        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
-        }
+        let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+        shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
         return shouldReissue
     }
-    
+
     private func reissueSearchWithRequiredParams(for url: URL) {
         var mobileSearch = url.applyingStatsParams()
+        let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+        mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
 
-        // If it's enabled, don't evaluate shouldReissue
-        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
-        }
-        
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
     }
-    
+
     private func showProgressIndicator() {
         progressWorker.didStartLoading()
     }
@@ -2967,7 +2959,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
-        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {

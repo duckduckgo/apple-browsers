@@ -178,7 +178,7 @@ public protocol StorePurchaseManagerV2 {
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
     func isUserEligibleForFreeTrial() -> Bool
 
-    @MainActor func purchaseSubscription(with identifier: String, externalID: String) async -> Result<StorePurchaseManagerV2.TransactionJWS, StorePurchaseManagerError>
+    @MainActor func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<StorePurchaseManagerV2.TransactionJWS, StorePurchaseManagerError>
 }
 
 @available(macOS 12.0, iOS 15.0, *) typealias Transaction = StoreKit.Transaction
@@ -487,9 +487,9 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
     }
 
     @MainActor
-    public func purchaseSubscription(with identifier: String, externalID: String) async -> Result<TransactionJWS, StorePurchaseManagerError> {
+    public func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<TransactionJWS, StorePurchaseManagerError> {
 
-        guard let product = await getAvailableProducts().first(where: { $0.id == identifier }) else { return .failure(StorePurchaseManagerError.productNotFound) }
+        guard let product = await getAvailableProducts(includeProTier: includeProTier).first(where: { $0.id == identifier }) else { return .failure(StorePurchaseManagerError.productNotFound) }
 
         Logger.subscriptionStorePurchaseManager.log("Purchasing Subscription: \(product.displayName, privacy: .public) (\(externalID, privacy: .public))")
 

@@ -526,13 +526,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     // MARK: - isPaneNew tests
 
-    func testIsPaneNewReturnsTrueForPaidAIChat() throws {
-        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .paidAIChat])]
-        let model = PreferencesSidebarModel(loadSections: sections)
-
-        XCTAssertTrue(model.isPaneNew(pane: .paidAIChat))
-    }
-
     func testIsPaneNewReturnsFalseForOtherPanes() throws {
         let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill, .general, .vpn])]
         let model = PreferencesSidebarModel(loadSections: sections)
@@ -543,6 +536,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.isPaneNew(pane: .vpn))
         XCTAssertFalse(model.isPaneNew(pane: .personalInformationRemoval))
         XCTAssertFalse(model.isPaneNew(pane: .identityTheftRestoration))
+        XCTAssertFalse(model.isPaneNew(pane: .paidAIChat))
     }
 
     // MARK: - shouldShowWinBackCampaignBadge tests

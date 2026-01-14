@@ -61,9 +61,6 @@
         }
       }
     },
-    "Buy Available Subscriptions" : {
-      "shouldTranslate" : false
-    },
     "Close" : {
       "localizations" : {
         "de" : {
@@ -116,7 +113,7 @@
         }
       }
     },
-    "Purchase Result" : {
+    "Change Tier" : {
       "shouldTranslate" : false
     },
     "subscription.add.subscription.modal.title" : {

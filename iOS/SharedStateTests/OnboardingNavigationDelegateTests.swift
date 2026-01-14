@@ -32,6 +32,7 @@ import Common
 @testable import DuckDuckGo
 @testable import Core
 import PersistenceTestingUtils
+import PrivacyConfig
 
 // swiftlint:disable force_try
 

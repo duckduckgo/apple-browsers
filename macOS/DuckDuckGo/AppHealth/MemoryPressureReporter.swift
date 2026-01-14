@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import os.log
 import PixelKit
 import PrivacyConfig
 
@@ -50,12 +51,14 @@ final class MemoryPressureReporter {
 
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
+    private let logger: Logger?
     private var memoryPressureSource: DispatchSourceMemoryPressure?
     private var cancellables: Set<AnyCancellable> = []
 
-    init(featureFlagger: FeatureFlagger, pixelFiring: PixelFiring?) {
+    init(featureFlagger: FeatureFlagger, pixelFiring: PixelFiring?, logger: Logger? = nil) {
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
+        self.logger = logger
         subscribeToFeatureFlagUpdates()
     }
 
@@ -84,7 +87,7 @@ final class MemoryPressureReporter {
     private func startMonitoring() {
         guard memoryPressureSource == nil, featureFlagger.isFeatureOn(.memoryPressureReporting) else { return }
 
-        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.normal, .warning, .critical], queue: .main)
 
         source.setEventHandler { [weak self] in
             guard let self else { return }
@@ -103,9 +106,13 @@ final class MemoryPressureReporter {
 
     private func handleMemoryPressureEvent(_ event: DispatchSource.MemoryPressureEvent) {
         if event.contains(.critical) {
+            logger?.warning("Memory pressure: critical")
             pixelFiring?.fire(MemoryPressurePixel.memoryPressureCritical, frequency: .dailyAndStandard)
         } else if event.contains(.warning) {
+            logger?.warning("Memory pressure: warning")
             pixelFiring?.fire(MemoryPressurePixel.memoryPressureWarning, frequency: .dailyAndStandard)
+        } else if event.contains(.normal) {
+            logger?.info("Memory pressure: normal")
         }
     }
 }

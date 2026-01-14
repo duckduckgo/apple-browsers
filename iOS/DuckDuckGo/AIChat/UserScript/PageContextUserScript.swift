@@ -24,37 +24,34 @@ import Foundation
 import UserScript
 import WebKit
 
-struct PageContextCollectionPayload: Codable {
+private struct PageContextCollectionPayload: Codable {
     let serializedPageData: String?
 }
 
-struct PageContextResponse: Codable {
-    let pageContext: AIChatPageContextData?
-}
-
 final class PageContextUserScript: NSObject, Subfeature {
-    public let collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never>
-    static public let featureName: String = "pageContext"
-    public var featureName: String {
-        Self.featureName
-    }
+
+    let collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never>
+
+    static let featureName: String = "pageContext"
+    var featureName: String { Self.featureName }
+
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
     let messageOriginPolicy: MessageOriginPolicy = .all
 
     private let collectionResultSubject = PassthroughSubject<AIChatPageContextData?, Never>()
 
-    public func with(broker: UserScriptMessageBroker) {
-        self.broker = broker
-    }
-
-    enum MessageName: String {
+    private enum MessageName: String {
         case collect
         case collectionResult
     }
 
     override init() {
         collectionResultPublisher = collectionResultSubject.eraseToAnyPublisher()
+    }
+
+    func with(broker: UserScriptMessageBroker) {
+        self.broker = broker
     }
 
     /// Requests collecting page context

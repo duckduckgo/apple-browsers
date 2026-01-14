@@ -137,6 +137,7 @@ struct ScanResult {
 // swiftlint:disable force_try
 final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var birthYear: String = ""
+    @Published var age: String = ""
     @Published var results = [ScanResult]()
     @Published var showAlert = false
     @Published var showNoResults = false
@@ -171,6 +172,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private let featureFlagger: DBPFeatureFlagging
 
     var nextExtractedProfileId: Int64 = 1
+    private var isSyncingAgeFields = false
 
     private class DebugDBPFeatureFlagger: DBPFeatureFlagging {
         private let featureFlagger: FeatureFlagger
@@ -670,6 +672,46 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
             print("Error when scanning: \(error)")
         }
+    }
+
+    func syncAge(fromBirthYear newValue: String) {
+        guard !isSyncingAgeFields else { return }
+        if newValue.isEmpty {
+            guard !age.isEmpty else { return }
+            isSyncingAgeFields = true
+            age = ""
+            isSyncingAgeFields = false
+            return
+        }
+        guard let year = Int(newValue) else { return }
+        let currentYear = Calendar.current.component(.year, from: Date())
+        guard year > 0, year <= currentYear else { return }
+        let computedAge = currentYear - year
+        let computedAgeText = String(computedAge)
+        guard age != computedAgeText else { return }
+        isSyncingAgeFields = true
+        age = computedAgeText
+        isSyncingAgeFields = false
+    }
+
+    func syncBirthYear(fromAge newValue: String) {
+        guard !isSyncingAgeFields else { return }
+        if newValue.isEmpty {
+            guard !birthYear.isEmpty else { return }
+            isSyncingAgeFields = true
+            birthYear = ""
+            isSyncingAgeFields = false
+            return
+        }
+        guard let parsedAge = Int(newValue) else { return }
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let computedYear = currentYear - parsedAge
+        guard computedYear > 0 else { return }
+        let computedYearText = String(computedYear)
+        guard birthYear != computedYearText else { return }
+        isSyncingAgeFields = true
+        birthYear = computedYearText
+        isSyncingAgeFields = false
     }
 
     func appVersion() -> String {

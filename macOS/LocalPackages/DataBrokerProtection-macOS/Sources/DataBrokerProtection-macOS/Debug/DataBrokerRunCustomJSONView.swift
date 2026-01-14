@@ -120,8 +120,17 @@ struct DataBrokerRunCustomJSONView: View {
 
             Divider()
 
-            HStack {
+            HStack(spacing: 12) {
                 TextField("Birth year (YYYY)", text: $viewModel.birthYear)
+                    .onChange(of: viewModel.birthYear) { newValue in
+                        viewModel.syncAge(fromBirthYear: newValue)
+                    }
+                    .frame(maxWidth: 200)
+                    .textFieldStyle(.roundedBorder)
+                TextField("Age (years)", text: $viewModel.age)
+                    .onChange(of: viewModel.age) { newValue in
+                        viewModel.syncBirthYear(fromAge: newValue)
+                    }
                     .frame(maxWidth: 200)
                     .textFieldStyle(.roundedBorder)
             }

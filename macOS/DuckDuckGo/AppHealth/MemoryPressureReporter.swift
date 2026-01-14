@@ -22,6 +22,11 @@ import os.log
 import PixelKit
 import PrivacyConfig
 
+extension Notification.Name {
+    static let memoryPressureWarning = Notification.Name("com.duckduckgo.macos.memoryPressure.warning")
+    static let memoryPressureCritical = Notification.Name("com.duckduckgo.macos.memoryPressure.critical")
+}
+
 enum MemoryPressurePixel: PixelKitEvent {
     /// Fired when the system reports warning level memory pressure.
     case memoryPressureWarning
@@ -52,13 +57,18 @@ final class MemoryPressureReporter {
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
     private let logger: Logger?
+    private let notificationCenter: NotificationCenter
     private var memoryPressureSource: DispatchSourceMemoryPressure?
     private var cancellables: Set<AnyCancellable> = []
 
-    init(featureFlagger: FeatureFlagger, pixelFiring: PixelFiring?, logger: Logger? = nil) {
+    init(featureFlagger: FeatureFlagger,
+         pixelFiring: PixelFiring?,
+         logger: Logger? = nil,
+         notificationCenter: NotificationCenter = .default) {
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.logger = logger
+        self.notificationCenter = notificationCenter
         subscribeToFeatureFlagUpdates()
     }
 
@@ -107,12 +117,22 @@ final class MemoryPressureReporter {
     private func handleMemoryPressureEvent(_ event: DispatchSource.MemoryPressureEvent) {
         if event.contains(.critical) {
             logger?.warning("Memory pressure: critical")
+            notificationCenter.post(name: .memoryPressureCritical, object: self)
             pixelFiring?.fire(MemoryPressurePixel.memoryPressureCritical, frequency: .dailyAndStandard)
         } else if event.contains(.warning) {
             logger?.warning("Memory pressure: warning")
+            notificationCenter.post(name: .memoryPressureWarning, object: self)
             pixelFiring?.fire(MemoryPressurePixel.memoryPressureWarning, frequency: .dailyAndStandard)
         } else if event.contains(.normal) {
             logger?.info("Memory pressure: normal")
         }
     }
 }
+
+#if DEBUG
+extension MemoryPressureReporter {
+    func processMemoryPressureEventForTesting(_ event: DispatchSource.MemoryPressureEvent) {
+        handleMemoryPressureEvent(event)
+    }
+}
+#endif

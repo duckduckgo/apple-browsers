@@ -89,8 +89,11 @@ extension TabViewController {
 
     private func enrichWithFavicon(_ context: AIChatPageContextData?) -> AIChatPageContextData? {
         guard let context = context,
-              let url = URL(string: context.url),
-              let faviconBase64 = getFaviconBase64(for: url) else {
+              let url = URL(string: context.url) else {
+            return context
+        }
+
+        guard let faviconBase64 = getFaviconBase64(for: url) else {
             return context
         }
 

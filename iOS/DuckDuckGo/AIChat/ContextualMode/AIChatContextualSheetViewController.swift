@@ -238,10 +238,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         configureSheetPresentation()
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-    }
-
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateButtonContainerCornerRadii()

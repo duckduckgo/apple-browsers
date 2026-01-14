@@ -255,6 +255,26 @@ struct DataBrokerRunCustomJSONView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+
+            Divider()
+
+            if viewModel.historyEvents.isEmpty {
+                Text("No history events yet.")
+                    .foregroundColor(.secondary)
+            } else {
+                List(viewModel.historyEvents.sorted(by: { $0.date < $1.date })) { event in
+                    HStack(spacing: 12) {
+                        Text(historyDateFormatter.string(from: event.date))
+                            .frame(width: 140, alignment: .leading)
+                        Text(historyEventDescription(event))
+                            .frame(minWidth: 140, alignment: .leading)
+                        Text(event.error ?? "")
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .listStyle(.plain)
+                .frame(maxHeight: 220)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -284,6 +304,37 @@ struct DataBrokerRunCustomJSONView: View {
     private func contentContainer<Content: View>(_ content: Content) -> some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var historyDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }
+
+    private func historyEventDescription(_ event: HistoryEvent) -> String {
+        switch event.type {
+        case .noMatchFound:
+            return "No Match"
+        case .matchesFound(let count):
+            return "Matches (\(count))"
+        case .error(let error):
+            return "Error: \(error.name) - \(error.localizedDescription)"
+        case .optOutStarted:
+            return "Opt-out Started"
+        case .optOutRequested:
+            return "Opt-out Requested"
+        case .optOutSubmittedAndAwaitingEmailConfirmation:
+            return "Opt-out Awaiting Email"
+        case .optOutConfirmed:
+            return "Opt-out Confirmed"
+        case .scanStarted:
+            return "Scan Started"
+        case .reAppearence:
+            return "Reappearance"
+        case .matchRemovedByUser:
+            return "Removed by User"
+        }
     }
 
     private func openLogMonitor() {

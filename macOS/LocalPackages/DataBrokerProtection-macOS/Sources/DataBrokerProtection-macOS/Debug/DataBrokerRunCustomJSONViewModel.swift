@@ -21,7 +21,6 @@ import BrowserServicesKit
 import DataBrokerProtectionCore
 import Common
 import ContentScopeScripts
-import Combine
 import os.log
 import FeatureFlags
 import PixelKit
@@ -144,6 +143,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var isRunningOnAllBrokers = false
     @Published var names = [NameUI.empty()]
     @Published var addresses = [AddressUI.empty()]
+    @Published var historyEvents: [HistoryEvent] = []
 
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
@@ -163,6 +163,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private let csvColumns = ["name_input", "age_input", "city_input", "state_input", "name_scraped", "age_scraped", "address_scraped", "relatives_scraped", "url", "broker name", "screenshot_id", "error", "matched_fields", "result_match", "expected_match"]
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let featureFlagger: DBPFeatureFlagging
+
+    var nextExtractedProfileId: Int64 = 1
 
     private class DebugDBPFeatureFlagger: DBPFeatureFlagging {
         private let featureFlagger: FeatureFlagger
@@ -429,6 +431,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     func runJSON(jsonString: String) {
         self.error = nil
         self.results.removeAll()
+        self.historyEvents.removeAll()
         if let data = jsonString.data(using: .utf8) {
             do {
                 let decoder = JSONDecoder()
@@ -442,6 +445,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
                     Task {
                         do {
+                            addScanStartedEvent(for: query)
                             let runner = BrokerProfileScanSubJobWebRunner(
                                 privacyConfig: self.privacyConfigManager,
                                 prefs: self.contentScopeProperties,
@@ -455,9 +459,12 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 shouldRunNextStep: { true }
                             )
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
+                            let assignedProfiles = extractedProfiles.map { assignExtractedProfileIdIfNeeded($0) }
+                            addScanResultEvents(for: query,
+                                                extractedProfiles: assignedProfiles)
 
                             DispatchQueue.main.async {
-                                for extractedProfile in extractedProfiles {
+                                for extractedProfile in assignedProfiles {
                                     self.results.append(ScanResult(dataBroker: query.dataBroker,
                                                                    profileQuery: query.profileQuery,
                                                                    extractedProfile: extractedProfile))
@@ -469,6 +476,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
                             fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
                         } catch {
+                            addScanErrorEvent(for: query, error: error)
                             self.error = error
                             group.leave()
                         }
@@ -489,6 +497,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     @MainActor
     func runOptOut(scanResult: ScanResult) {
+        addOptOutStartedEvent(for: scanResult)
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: scanResult.dataBroker,
             profileQuery: scanResult.profileQuery,
@@ -518,6 +527,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                         extractedProfile: scanResult.extractedProfile,
                                         showWebView: true) { true }
 
+                addOptOutConfirmedEvent(for: scanResult)
                 DispatchQueue.main.async {
                     self.showAlert = true
                     self.alert = AlertUI(title: "Success!", description: "We finished the opt out process for the selected profile.")
@@ -528,6 +538,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
                 fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
+                addOptOutErrorEvent(for: scanResult, error: error)
                 showAlert(for: error)
             }
         }

@@ -26,10 +26,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473245911
     case scamSiteProtection
 
-    /// Add experimental atb parameter to SERP queries for internal users to display Privacy Reminder
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472784764
-    case appendAtbToSerpQueries
-
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614987519
     case freemiumDBP
 
@@ -400,8 +396,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .heuristicAction,
                 .nextStepsSingleCardIteration:
             return true
-        case .appendAtbToSerpQueries,
-                .freemiumDBP,
+        case .freemiumDBP,
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
@@ -415,8 +410,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var source: FeatureFlagSource {
         switch self {
-        case .appendAtbToSerpQueries:
-            return .internalOnly()
         case .unknownUsernameCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.unknownUsernameCategorization))
         case .freemiumDBP:

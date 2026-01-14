@@ -1411,15 +1411,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               let currentEvent = NSApp.currentEvent,
               let manager = WarnBeforeQuitManager(
                 currentEvent: currentEvent,
-                isWarningEnabled: { [weak self] in
-                    self?.warnBeforeQuitting ?? true
+                isWarningEnabled: { [tabsPreferences] in
+                    tabsPreferences.warnBeforeQuitting
                 }
               ) else { return nil }
 
         let presenter = OverlayPresenter(
             startupPreferences: startupPreferences,
-            onDontAskAgain: { [weak self] in
-                self?.warnBeforeQuitting = false
+            onDontAskAgain: { [tabsPreferences] in
+                tabsPreferences.warnBeforeQuitting = false
             },
             onHoverChange: { [weak manager] isHovering in
                 manager?.setMouseHovering(isHovering)

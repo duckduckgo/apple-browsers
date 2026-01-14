@@ -87,16 +87,17 @@ final class TerminationDeciderHandler {
 
         while !remainingDeciders.isEmpty {
             let decider = remainingDeciders.removeFirst()
+            let deciderType = String(describing: type(of: decider))
             let query = decider.shouldTerminate(isAsync: isAsync)
 
             switch query {
             case .sync(let decision):
                 switch decision {
                 case .next:
-                    Logger.general.debug("TerminationDeciderHandler: Decider returned .sync(.next), continuing")
+                    Logger.general.debug("TerminationDeciderHandler: \(deciderType) returned .sync(.next), continuing")
                     continue  // Move to next decider
                 case .cancel:
-                    Logger.general.debug("TerminationDeciderHandler: Decider returned .sync(.cancel)")
+                    Logger.general.debug("TerminationDeciderHandler: \(deciderType) returned .sync(.cancel)")
                     if isAsync {
                         NSApp.reply(toApplicationShouldTerminate: false)
                     }
@@ -104,7 +105,7 @@ final class TerminationDeciderHandler {
                 }
 
             case .async(let task):
-                Logger.general.debug("TerminationDeciderHandler: Decider returned .async, deferring termination")
+                Logger.general.debug("TerminationDeciderHandler: \(deciderType) returned .async, deferring termination")
                 // Store task and continue asynchronously
                 terminationTask = Task { @MainActor in
                     let decision = await task.value
@@ -112,11 +113,11 @@ final class TerminationDeciderHandler {
 
                     switch decision {
                     case .next:
-                        Logger.general.debug("TerminationDeciderHandler: Async task completed with .next")
+                        Logger.general.debug("TerminationDeciderHandler: \(deciderType) async task completed with .next")
                         // Continue with remaining deciders in async mode
                         _ = self.executeTerminationDeciders(remainingDeciders, isAsync: true)
                     case .cancel:
-                        Logger.general.debug("TerminationDeciderHandler: Async task completed with .cancel")
+                        Logger.general.debug("TerminationDeciderHandler: \(deciderType) async task completed with .cancel")
                         NSApp.reply(toApplicationShouldTerminate: false)
                     }
                 }
@@ -126,7 +127,7 @@ final class TerminationDeciderHandler {
         }
 
         // All deciders returned .next
-        Logger.general.debug("TerminationDeciderHandler: All deciders completed with .next, terminating")
+        Logger.general.debug("TerminationDeciderHandler: All deciders completed, terminating")
         if isAsync {
             NSApp.reply(toApplicationShouldTerminate: true)
         }

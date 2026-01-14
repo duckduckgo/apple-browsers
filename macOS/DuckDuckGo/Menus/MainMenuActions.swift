@@ -604,6 +604,14 @@ extension AppDelegate {
         throwTestCppException()
     }
 
+    @objc func simulateMemoryPressureWarning(_ sender: Any?) {
+        memoryPressureReporter.simulateMemoryPressureEvent(level: .warning)
+    }
+
+    @objc func simulateMemoryPressureCritical(_ sender: Any?) {
+        memoryPressureReporter.simulateMemoryPressureEvent(level: .critical)
+    }
+
     @objc func resetSecureVaultData(_ sender: Any?) {
         let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared)
 

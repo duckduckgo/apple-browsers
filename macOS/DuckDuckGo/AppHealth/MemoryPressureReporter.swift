@@ -127,6 +127,23 @@ final class MemoryPressureReporter {
             logger?.info("Memory pressure: normal")
         }
     }
+
+    // MARK: - Debug Menu Support
+
+    /// Simulates a memory pressure event for debugging purposes.
+    ///
+    /// This method is intended **only for use by the Debug menu** to manually trigger
+    /// memory pressure handling without waiting for actual system memory pressure events.
+    /// It allows developers to test the app's response to memory pressure conditions.
+    ///
+    /// - Parameter level: The memory pressure level to simulate (`.warning` or `.critical`).
+    ///
+    /// - Warning: Do not use this method in production code. It is designed exclusively
+    ///   for debugging and testing purposes via the Debug menu.
+    ///
+    func simulateMemoryPressureEvent(level: DispatchSource.MemoryPressureEvent) {
+        handleMemoryPressureEvent(level)
+    }
 }
 
 #if DEBUG

@@ -84,13 +84,11 @@ public struct DefaultActionButtonStyle: ButtonStyle {
         @State private var isHovered: Bool = false
 
         var body: some View {
-            let enabledBackgroundColor = configuration.isPressed
+            let backgroundColor = configuration.isPressed
                 ? appearance.pressedBackgroundColor
                 : (isHovered ? appearance.hoveredBackgroundColor : appearance.backgroundColor)
 
-            let disabledBackgroundColor = appearance.disabledBackgroundColor
-            let enabledLabelColor = configuration.isPressed ? appearance.pressedTextColor : appearance.textColor
-            let disabledLabelColor = appearance.disabledTextColor
+            let labelColor = configuration.isPressed ? appearance.pressedTextColor : appearance.textColor
 
             configuration.label
                 .font(.system(size: 13))
@@ -102,8 +100,9 @@ public struct DefaultActionButtonStyle: ButtonStyle {
                 .padding(.top, topPadding)
                 .padding(.bottom, bottomPadding)
                 .padding(.horizontal, 7.5)
-                .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
-                .foregroundColor(enabled ? enabledLabelColor : disabledLabelColor)
+                .background(backgroundColor)
+                .foregroundColor(labelColor)
+                .opacity(enabled ? 1 : 0.5)
                 .cornerRadius(5)
                 .onHover { hovering in
                     isHovered = hovering
@@ -225,18 +224,14 @@ public struct ButtonAppearanceSettings {
     let hoveredTextColor: Color
     let pressedBackgroundColor: Color
     let pressedTextColor: Color
-    let disabledBackgroundColor: Color
-    let disabledTextColor: Color
 
-    public init(backgroundColor: Color, textColor: Color, hoveredBackgroundColor: Color, hoveredTextColor: Color, pressedBackgroundColor: Color, pressedTextColor: Color, disabledBackgroundColor: Color, disabledTextColor: Color) {
+    public init(backgroundColor: Color, textColor: Color, hoveredBackgroundColor: Color, hoveredTextColor: Color, pressedBackgroundColor: Color, pressedTextColor: Color) {
         self.backgroundColor = backgroundColor
         self.textColor = textColor
         self.hoveredBackgroundColor = hoveredBackgroundColor
         self.hoveredTextColor = hoveredTextColor
         self.pressedBackgroundColor = pressedBackgroundColor
         self.pressedTextColor = pressedTextColor
-        self.disabledBackgroundColor = disabledBackgroundColor
-        self.disabledTextColor = disabledTextColor
     }
 
     public static var themedActionButton: ButtonAppearanceSettings {
@@ -245,9 +240,7 @@ public struct ButtonAppearanceSettings {
               hoveredBackgroundColor: Color(designSystemColor: .accentSecondary),
               hoveredTextColor: Color(designSystemColor: .accentContentSecondary),
               pressedBackgroundColor: Color(designSystemColor: .accentTertiary),
-              pressedTextColor: Color(designSystemColor: .accentContentTertiary),
-              disabledBackgroundColor: Color.gray.opacity(0.1),
-              disabledTextColor: Color.primary.opacity(0.3))
+              pressedTextColor: Color(designSystemColor: .accentContentTertiary))
     }
 
     public static var legacyActionButton: ButtonAppearanceSettings {
@@ -256,9 +249,7 @@ public struct ButtonAppearanceSettings {
               hoveredBackgroundColor: Color("PrimaryButtonHover", bundle: Bundle.module),
               hoveredTextColor: .white,
               pressedBackgroundColor: Color("PrimaryButtonPressed", bundle: Bundle.module),
-              pressedTextColor: Color.white.opacity(0.8),
-              disabledBackgroundColor: Color.gray.opacity(0.1),
-              disabledTextColor: Color.primary.opacity(0.3))
+              pressedTextColor: Color.white.opacity(0.8))
     }
 }
 

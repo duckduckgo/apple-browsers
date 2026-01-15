@@ -818,13 +818,15 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private func makeAppStorePurchaseFlow() -> DefaultAppStorePurchaseFlow {
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(
             subscriptionManager: subscriptionManager,
-            storePurchaseManager: subscriptionManager.storePurchaseManager()
+            storePurchaseManager: subscriptionManager.storePurchaseManager(),
+            pendingTransactionHandler: pendingTransactionHandler
         )
         return DefaultAppStorePurchaseFlow(
             subscriptionManager: subscriptionManager,
             storePurchaseManager: subscriptionManager.storePurchaseManager(),
             appStoreRestoreFlow: appStoreRestoreFlow,
-            wideEvent: wideEvent
+            wideEvent: wideEvent,
+            pendingTransactionHandler: pendingTransactionHandler
         )
     }
 

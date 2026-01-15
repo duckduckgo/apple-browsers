@@ -109,12 +109,10 @@ final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
     }
 
     deinit {
-        // Note: cleanupHostingController() is called from prepareForReuse() which handles
-        // the typical reuse cycle. This deinit handles the case where the view is deallocated
-        // without going through prepareForReuse (e.g., when the collection view itself is deallocated).
-        // UIKit guarantees deinit runs on main thread for UIView subclasses.
+        // Note: cleanupHostingController() is called from prepareForReuse().
+        // This deinit handles cases where reuse is skipped (e.g., collection
+        // view teardown). UIKit guarantees deinit runs on main thread for
+        // UIView subclasses.
         cleanupHostingController()
     }
 }
-
-

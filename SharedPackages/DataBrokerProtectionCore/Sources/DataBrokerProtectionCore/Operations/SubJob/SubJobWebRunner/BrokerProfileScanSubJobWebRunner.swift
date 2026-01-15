@@ -138,10 +138,10 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
-        recordActionResponseForDebug(stepType: .scan,
-                                     actionId: nil,
-                                     actionType: .extract,
-                                     details: prettyPrintedJSON(from: profiles, meta: meta))
+        recordDebugEvent(kind: .actionResponse,
+                         stepType: .scan,
+                         actionType: .extract,
+                         details: prettyPrintedJSON(from: profiles, meta: meta))
         complete(profiles)
         await executeNextStep()
     }
@@ -149,7 +149,9 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public func executeNextStep() async {
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
-        recordWaitForDebug(stepType: .scan, reason: "between actions", seconds: operationAwaitTime)
+        recordDebugEvent(kind: .wait,
+                         stepType: .scan,
+                         details: "Waiting \(operationAwaitTime)s (between actions)")
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 

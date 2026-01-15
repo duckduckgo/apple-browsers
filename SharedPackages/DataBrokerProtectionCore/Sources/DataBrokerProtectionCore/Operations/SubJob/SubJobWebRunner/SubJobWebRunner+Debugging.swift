@@ -18,41 +18,42 @@
 
 import Foundation
 
-public protocol ActionEventReportingForDebug {
-    func recordActionPayload(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String)
-    func recordActionResponse(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String)
-    func recordWait(stepType: StepType?, reason: String, seconds: TimeInterval)
+public enum DebugEventKind: String {
+    case actionPayload = "Action"
+    case actionResponse = "Response"
+    case actionRetry = "Retry"
+    case wait = "Wait"
+}
+
+public protocol DebugEventReporting {
+    func recordDebugEvent(kind: DebugEventKind,
+                          stepType: StepType?,
+                          actionType: ActionType?,
+                          details: String)
+}
+
+public extension DebugEventReporting {
+    func recordDebugEvent(kind: DebugEventKind,
+                          stepType: StepType?,
+                          actionType: ActionType? = nil,
+                          details: String) {
+        recordDebugEvent(kind: kind,
+                         stepType: stepType,
+                         actionType: actionType,
+                         details: details)
+    }
 }
 
 public extension SubJobWebRunning {
-    func recordActionPayloadForDebug(action: Action, stepType: StepType?, data: CCFRequestData) {
-        guard let reporter = stageCalculator as? ActionEventReportingForDebug else { return }
-        let params = Params(state: ActionRequest(action: action, data: data))
-        reporter.recordActionPayload(stepType: stepType,
-                                     actionId: action.id,
-                                     actionType: action.actionType,
-                                     details: prettyPrintedJSON(from: params))
-    }
-
-    func recordActionResponseForDebug(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String) {
-        guard let reporter = stageCalculator as? ActionEventReportingForDebug else { return }
-        reporter.recordActionResponse(stepType: stepType,
-                                      actionId: actionId,
-                                      actionType: actionType,
-                                      details: details)
-    }
-
-    func recordWaitForDebug(stepType: StepType?, reason: String, seconds: TimeInterval) {
-        guard let reporter = stageCalculator as? ActionEventReportingForDebug else { return }
-        reporter.recordWait(stepType: stepType, reason: reason, seconds: seconds)
-    }
-
-    func errorActionId(_ error: Error) -> String? {
-        guard let dbpError = error as? DataBrokerProtectionError else { return nil }
-        if case let .actionFailed(actionID, _) = dbpError {
-            return actionID
-        }
-        return nil
+    func recordDebugEvent(kind: DebugEventKind,
+                          stepType: StepType?,
+                          actionType: ActionType? = nil,
+                          details: String) {
+        guard let reporter = stageCalculator as? DebugEventReporting else { return }
+        reporter.recordDebugEvent(kind: kind,
+                                  stepType: stepType,
+                                  actionType: actionType,
+                                  details: details)
     }
 
     func errorDetails(_ error: Error) -> String {

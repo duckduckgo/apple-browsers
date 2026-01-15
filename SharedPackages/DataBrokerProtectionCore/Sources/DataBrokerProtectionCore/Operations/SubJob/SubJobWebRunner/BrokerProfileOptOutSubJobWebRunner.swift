@@ -192,7 +192,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public func executeNextStep() async {
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
-        recordWaitForDebug(stepType: .optOut, reason: "between actions", seconds: operationAwaitTime)
+        recordDebugEvent(kind: .wait,
+                         stepType: .optOut,
+                         details: "Waiting \(operationAwaitTime)s (between actions)")
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 
         let shouldContinue = self.shouldRunNextStep()

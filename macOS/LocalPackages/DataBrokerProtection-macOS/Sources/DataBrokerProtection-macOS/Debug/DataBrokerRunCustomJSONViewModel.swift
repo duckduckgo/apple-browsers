@@ -145,8 +145,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var names = [NameUI.empty()]
     @Published var addresses = [AddressUI.empty()]
     @Published var historyEvents: [HistoryEvent] = []
-    @Published var actionEvents: [DebugActionEvent] = []
-    @Published var actionResponseEvents: [DebugActionResponseEvent] = []
+    @Published var debugEvents: [DebugActionEvent] = []
     @Published var progressText: String = "Idle"
     @Published var isProgressActive: Bool = false
 
@@ -439,8 +438,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.error = nil
         self.results.removeAll()
         self.historyEvents.removeAll()
-        self.actionEvents.removeAll()
-        self.actionResponseEvents.removeAll()
+        self.debugEvents.removeAll()
         self.isProgressActive = true
         self.progressText = "Starting scan..."
         if let data = jsonString.data(using: .utf8) {
@@ -459,22 +457,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             addScanStartedEvent(for: query)
                             let stageCalculator = FakeStageDurationCalculator(
                                 stepType: .scan,
-                                onActionPayload: { [weak self] stepType, actionId, actionType, details in
+                                onDebugEvent: { [weak self] kind, stepType, actionType, details in
                                     let profileQuery = self?.profileQueryText(for: query.profileQuery) ?? "-"
-                                    self?.addActionPayloadEvent(stepType: stepType,
-                                                                actionType: actionType,
-                                                                profileQuery: profileQuery,
-                                                                details: details)
-                                },
-                                onActionResponse: { [weak self] stepType, actionId, actionType, details in
-                                    let profileQuery = self?.profileQueryText(for: query.profileQuery) ?? "-"
-                                    self?.addActionResponseEvent(stepType: stepType,
-                                                                 actionType: actionType,
-                                                                 profileQuery: profileQuery,
-                                                                 details: details)
-                                },
-                                onWait: { [weak self] stepType, reason, seconds in
-                                    self?.updateProgress("Waiting \(seconds)s (\(reason))")
+                                    self?.addDebugEvent(kind: kind,
+                                                        stepType: stepType,
+                                                        actionType: actionType,
+                                                        profileQuery: profileQuery,
+                                                        details: details)
                                 }
                             )
                             let runner = BrokerProfileScanSubJobWebRunner(
@@ -546,22 +535,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             do {
                 let stageCalculator = FakeStageDurationCalculator(
                     stepType: .optOut,
-                    onActionPayload: { [weak self] stepType, actionId, actionType, details in
+                    onDebugEvent: { [weak self] kind, stepType, actionType, details in
                         let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
-                        self?.addActionPayloadEvent(stepType: stepType,
-                                                    actionType: actionType,
-                                                    profileQuery: profileQuery,
-                                                    details: details)
-                    },
-                    onActionResponse: { [weak self] stepType, actionId, actionType, details in
-                        let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
-                        self?.addActionResponseEvent(stepType: stepType,
-                                                     actionType: actionType,
-                                                     profileQuery: profileQuery,
-                                                     details: details)
-                    },
-                    onWait: { [weak self] stepType, reason, seconds in
-                        self?.updateProgress("Waiting \(seconds)s (\(reason))")
+                        self?.addDebugEvent(kind: kind,
+                                            stepType: stepType,
+                                            actionType: actionType,
+                                            profileQuery: profileQuery,
+                                            details: details)
                     }
                 )
                 let runner = BrokerProfileOptOutSubJobWebRunner(
@@ -720,32 +700,19 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
 
-    private func addActionPayloadEvent(stepType: StepType, actionType: ActionType?, profileQuery: String, details: String) {
+    private func addDebugEvent(kind: DebugEventKind, stepType: StepType, actionType: ActionType?, profileQuery: String, details: String) {
         let event = DebugActionEvent(
             timestamp: Date(),
+            kind: kind,
             stepType: stepType,
             actionType: actionType,
             profileQuery: profileQuery,
             details: details
         )
         DispatchQueue.main.async {
-            self.actionEvents.append(event)
+            self.debugEvents.append(event)
         }
-        updateProgress(currentActionText(stepType: stepType, actionType: actionType, prefix: "Action"))
-    }
-
-    private func addActionResponseEvent(stepType: StepType, actionType: ActionType?, profileQuery: String, details: String) {
-        let event = DebugActionResponseEvent(
-            timestamp: Date(),
-            stepType: stepType,
-            actionType: actionType,
-            profileQuery: profileQuery,
-            details: details
-        )
-        DispatchQueue.main.async {
-            self.actionResponseEvents.append(event)
-        }
-        updateProgress(currentActionText(stepType: stepType, actionType: actionType, prefix: "Response"))
+        updateProgress(currentActionText(stepType: stepType, actionType: actionType, prefix: kind.rawValue))
     }
 
     var combinedDebugEvents: [DebugEventRow] {
@@ -758,29 +725,18 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 details: historyEventDetails(event)
             )
         }
-        let actionRows = actionEvents.map { event in
+        let debugRows = debugEvents.map { event in
             DebugEventRow(
                 id: event.id.uuidString,
                 timestamp: event.timestamp,
-                kind: "Action",
+                kind: event.kind.rawValue,
                 summary: actionSummary(stepType: event.stepType,
                                        actionType: event.actionType,
                                        profileQuery: event.profileQuery),
                 details: event.details
             )
         }
-        let responseRows = actionResponseEvents.map { event in
-            DebugEventRow(
-                id: event.id.uuidString,
-                timestamp: event.timestamp,
-                kind: "Response",
-                summary: actionSummary(stepType: event.stepType,
-                                       actionType: event.actionType,
-                                       profileQuery: event.profileQuery),
-                details: event.details
-            )
-        }
-        return (historyRows + actionRows + responseRows).sorted(by: { $0.timestamp < $1.timestamp })
+        return (historyRows + debugRows).sorted(by: { $0.timestamp < $1.timestamp })
     }
 
     private func actionSummary(stepType: StepType, actionType: ActionType?, profileQuery: String) -> String {
@@ -839,15 +795,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 struct DebugActionEvent: Identifiable {
     let id = UUID()
     let timestamp: Date
-    let stepType: StepType
-    let actionType: ActionType?
-    let profileQuery: String
-    let details: String
-}
-
-struct DebugActionResponseEvent: Identifiable {
-    let id = UUID()
-    let timestamp: Date
+    let kind: DebugEventKind
     let stepType: StepType
     let actionType: ActionType?
     let profileQuery: String
@@ -862,24 +810,18 @@ struct DebugEventRow: Identifiable {
     let details: String
 }
 
-final class FakeStageDurationCalculator: StageDurationCalculator, ActionEventReportingForDebug {
+final class FakeStageDurationCalculator: StageDurationCalculator, DebugEventReporting {
 
     var attemptId: UUID = UUID()
     var isImmediateOperation: Bool = false
     var tries = 1
     private let stepType: StepType
-    private let onActionPayload: ((StepType, String?, ActionType?, String) -> Void)?
-    private let onActionResponse: ((StepType, String?, ActionType?, String) -> Void)?
-    private let onWait: ((StepType, String, TimeInterval) -> Void)?
+    private let onDebugEvent: ((DebugEventKind, StepType, ActionType?, String) -> Void)?
 
     init(stepType: StepType = .scan,
-         onActionPayload: ((StepType, String?, ActionType?, String) -> Void)? = nil,
-         onActionResponse: ((StepType, String?, ActionType?, String) -> Void)? = nil,
-         onWait: ((StepType, String, TimeInterval) -> Void)? = nil) {
+         onDebugEvent: ((DebugEventKind, StepType, ActionType?, String) -> Void)? = nil) {
         self.stepType = stepType
-        self.onActionPayload = onActionPayload
-        self.onActionResponse = onActionResponse
-        self.onWait = onWait
+        self.onDebugEvent = onDebugEvent
     }
 
     func durationSinceLastStage() -> Double {
@@ -958,16 +900,11 @@ final class FakeStageDurationCalculator: StageDurationCalculator, ActionEventRep
         self.tries += 1
     }
 
-    func recordActionPayload(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String) {
-        onActionPayload?(stepType ?? self.stepType, actionId, actionType, details)
-    }
-
-    func recordActionResponse(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String) {
-        onActionResponse?(stepType ?? self.stepType, actionId, actionType, details)
-    }
-
-    func recordWait(stepType: StepType?, reason: String, seconds: TimeInterval) {
-        onWait?(stepType ?? self.stepType, reason, seconds)
+    func recordDebugEvent(kind: DebugEventKind,
+                          stepType: StepType?,
+                          actionType: ActionType?,
+                          details: String) {
+        onDebugEvent?(kind, stepType ?? self.stepType, actionType, details)
     }
 }
 

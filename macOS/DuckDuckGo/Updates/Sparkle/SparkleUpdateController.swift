@@ -135,6 +135,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
 
     var mustShowUpdateIndicators: Bool { hasPendingUpdate }
+    let clearsNotificationDotOnMenuOpen = true
 
     @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
     var updateValidityStartDate: Date?

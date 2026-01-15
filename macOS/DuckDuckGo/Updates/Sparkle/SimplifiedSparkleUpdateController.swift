@@ -119,6 +119,7 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
 
     private(set) var mustShowUpdateIndicators = false
+    let clearsNotificationDotOnMenuOpen = false
 
     private let keyValueStore: ThrowingKeyValueStoring
 

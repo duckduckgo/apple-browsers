@@ -64,6 +64,11 @@ protocol UpdateController: AnyObject {
     var needsNotificationDot: Bool { get set }
     var notificationDotPublisher: AnyPublisher<Bool, Never> { get }
 
+    /// Whether opening the More Options menu should clear the notification dot.
+    ///
+    /// Default behavior keeps current clearing logic unless a controller overrides it.
+    var clearsNotificationDotOnMenuOpen: Bool { get }
+
     /// Timestamp of the last automatic or manual update check.
     ///
     /// **App Store vs Sparkle Behavior:**
@@ -176,7 +181,6 @@ protocol UpdateController: AnyObject {
 }
 
 extension UpdateController {
-
     private var shouldShowUpdateNotification: Bool {
         Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
     }

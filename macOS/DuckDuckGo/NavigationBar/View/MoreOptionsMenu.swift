@@ -759,7 +759,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         guard let updateController = Application.appDelegate.updateController else { return }
 
-        if updateController.hasPendingUpdate && updateController.needsNotificationDot {
+        if updateController.clearsNotificationDotOnMenuOpen,
+           updateController.hasPendingUpdate,
+           updateController.needsNotificationDot {
             updateController.needsNotificationDot = false
         }
 

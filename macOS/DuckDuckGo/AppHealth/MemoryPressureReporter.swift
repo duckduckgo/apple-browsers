@@ -107,11 +107,13 @@ final class MemoryPressureReporter {
 
         source.resume()
         memoryPressureSource = source
+        logger?.warning("Memory pressure reporter started")
     }
 
     func stopMonitoring() {
         memoryPressureSource?.cancel()
         memoryPressureSource = nil
+        logger?.warning("Memory pressure reporter stopped")
     }
 
     private func handleMemoryPressureEvent(_ event: DispatchSource.MemoryPressureEvent) {

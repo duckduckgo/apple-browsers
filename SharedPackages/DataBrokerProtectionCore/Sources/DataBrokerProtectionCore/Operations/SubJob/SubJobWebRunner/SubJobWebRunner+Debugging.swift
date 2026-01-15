@@ -53,71 +53,49 @@ public extension SubJobWebRunning {
     }
 
     func errorDetails(_ error: Error) -> String {
-        guard let dbpError = error as? DataBrokerProtectionError,
-              case .actionFailed(let actionID, let message) = dbpError else {
-            return prettyPrintedJSON(from: [
-                "type": String(describing: type(of: error)),
-                "description": error.localizedDescription
-            ])
-        }
-
-        return prettyPrintedJSON(from: [
-            "type": dbpError.name,
-            "actionId": actionID,
-            "message": message,
-            "description": dbpError.localizedDescription
+        prettyPrintedJSON(from: [
+            "type": String(describing: type(of: error)),
+            "description": error.localizedDescription
         ])
     }
 
     func prettyPrintedJSON(from profiles: [ExtractedProfile], meta: [String: Any]?) -> String {
-        let profilesJSON = prettyPrintedJSON(from: profiles)
+        let profiles = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(profiles)))
 
-        var payloadObject: [String: Any] = [:]
-        if let profilesData = profilesJSON.data(using: .utf8),
-           let profilesObject = try? JSONSerialization.jsonObject(with: profilesData) {
-            payloadObject["profiles"] = profilesObject
-        } else {
-            payloadObject["profiles"] = profiles.map { $0.id.map(String.init) ?? "unknown" }
-        }
-        if let meta {
-            payloadObject["meta"] = meta
-        }
-
-        return prettyPrintedJSON(from: payloadObject)
+        return prettyPrintedJSON(from: [
+            "profiles": profiles ?? "unknown",
+            "meta": meta ?? [:]
+        ])
     }
 
-    func prettyPrintedJSON(from encodable: Encodable) -> String {
+    func prettyPrintedJSON(from value: Any) -> String {
         let encoder = JSONEncoder()
+        let fallback = String(describing: value)
+
+        // Encodable
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        do {
-            let data = try encoder.encode(AnyEncodable(encodable))
-            return String(data: data, encoding: .utf8) ?? String(describing: encodable)
-        } catch {
-            return String(describing: encodable)
+        if let encodable = value as? Encodable,
+           let data = try? encoder.encode(AnyEncodable(encodable)) {
+            return String(data: data, encoding: .utf8) ?? fallback
         }
-    }
 
-    func prettyPrintedJSON(from object: [String: Any]) -> String {
-        let description = String(describing: self)
-
-        guard JSONSerialization.isValidJSONObject(object) else { return description }
-        do {
-            let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
-            return String(data: data, encoding: .utf8) ?? description
-        } catch {
-            return description
+        // Foundation object
+        if let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted, .sortedKeys]) {
+            return String(data: data, encoding: .utf8) ?? fallback
         }
+
+        return fallback
     }
 }
 
 private struct AnyEncodable: Encodable {
-    private let encoder: (Encoder) throws -> Void
+    private let encode: (Encoder) throws -> Void
 
-    init(_ encodable: Encodable) {
-        encoder = encodable.encode
+    init<T: Encodable>(_ value: T) {
+        self.encode = value.encode(to:)
     }
 
     func encode(to encoder: Encoder) throws {
-        try self.encoder(encoder)
+        try encode(encoder)
     }
 }

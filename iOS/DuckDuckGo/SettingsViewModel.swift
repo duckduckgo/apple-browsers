@@ -34,6 +34,7 @@ import AIChat
 import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
+import Networking
 
 final class SettingsViewModel: ObservableObject {
 
@@ -603,7 +604,7 @@ final class SettingsViewModel: ObservableObject {
 
     // Indicates if the Paid AI Chat entitlement flag is available for the current user
     var isPaidAIChatAvailable: Bool {
-        state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
+        state.subscription.subscriptionFeatures.contains(.paidAIChat)
     }
 
     // Indicates if AI features are generally enabled
@@ -1216,8 +1217,8 @@ extension SettingsViewModel {
             updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
             // Check entitlements and update state
-            var currentEntitlements: [Entitlement.ProductName] = []
-            let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
+            var currentEntitlements: [SubscriptionEntitlement] = []
+            let entitlementsToCheck: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
                 if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(entitlement),

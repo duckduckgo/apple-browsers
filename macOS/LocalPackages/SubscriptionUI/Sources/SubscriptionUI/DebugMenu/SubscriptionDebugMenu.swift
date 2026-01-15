@@ -265,16 +265,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     func checkEntitlements() {
         Task {
             do {
-                let productNames = SubscriptionEntitlement.allCases
-                var descriptions: [String] = []
-                for productName in productNames {
-                    let isFeatureEnabled = try await subscriptionManager.isFeatureEnabled(productName)
-                    let featureEnabledDescription = isFeatureEnabled ? "\tenabled" : "\tdisabled"
-
-                    descriptions.append("\(productName.rawValue): \(featureEnabledDescription)")
-                }
-
-                showAlert(title: "Check Entitlements", message: descriptions.joined(separator: "\n"))
+                let entitlementsStatus = try await subscriptionManager.getAllEntitlementStatus()
+                showAlert(title: "Check Entitlements", message: entitlementsStatus.debugDescription)
             } catch {
                 showAlert(title: "Check Entitlements", message: "Error: \(error)")
             }

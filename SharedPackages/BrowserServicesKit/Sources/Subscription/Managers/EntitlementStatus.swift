@@ -21,7 +21,7 @@ import Networking
 
 /// Contains the enabled status of all subscription entitlements.
 /// Use this when you need to check multiple entitlements to avoid multiple token fetches.
-public struct EntitlementStatus: Equatable {
+public struct EntitlementStatus: Equatable, CustomDebugStringConvertible {
     public let networkProtection: Bool
     public let dataBrokerProtection: Bool
     public let identityTheftRestoration: Bool
@@ -74,5 +74,17 @@ public struct EntitlementStatus: Equatable {
         case .unknown:
             return false
         }
+    }
+
+    public var debugDescription: String {
+        let status: (Bool) -> String = { $0 ? "Enabled" : "Disabled" }
+        return """
+            EntitlementStatus:
+            - VPN: \(status(networkProtection))
+            - PIR: \(status(dataBrokerProtection))
+            - ITR: \(status(identityTheftRestoration))
+            - ITR-Global: \(status(identityTheftRestorationGlobal))
+            - AI Chat: \(status(paidAIChat))
+            """
     }
 }

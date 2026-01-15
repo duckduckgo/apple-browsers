@@ -28,11 +28,10 @@ public extension SubJobWebRunning {
     func recordActionPayloadForDebug(action: Action, stepType: StepType?, data: CCFRequestData) {
         guard let reporter = stageCalculator as? ActionEventReportingForDebug else { return }
         let params = Params(state: ActionRequest(action: action, data: data))
-        let details = prettyPrintedJSON(from: params)
         reporter.recordActionPayload(stepType: stepType,
                                      actionId: action.id,
                                      actionType: action.actionType,
-                                     details: details)
+                                     details: prettyPrintedJSON(from: params))
     }
 
     func recordActionResponseForDebug(stepType: StepType?, actionId: String?, actionType: ActionType?, details: String) {
@@ -57,25 +56,19 @@ public extension SubJobWebRunning {
     }
 
     func errorDetails(_ error: Error) -> String {
-        if let dbpError = error as? DataBrokerProtectionError {
-            switch dbpError {
-            case let .actionFailed(actionID, message):
-                return prettyPrintedJSON(from: [
-                    "type": dbpError.name,
-                    "actionId": actionID,
-                    "message": message,
-                    "description": dbpError.localizedDescription
-                ])
-            default:
-                return prettyPrintedJSON(from: [
-                    "type": dbpError.name,
-                    "description": dbpError.localizedDescription
-                ])
-            }
+        guard let dbpError = error as? DataBrokerProtectionError,
+              case .actionFailed(let actionID, let message) = dbpError else {
+            return prettyPrintedJSON(from: [
+                "type": String(describing: type(of: error)),
+                "description": error.localizedDescription
+            ])
         }
+
         return prettyPrintedJSON(from: [
-            "type": String(describing: type(of: error)),
-            "description": error.localizedDescription
+            "type": dbpError.name,
+            "actionId": actionID,
+            "message": message,
+            "description": dbpError.localizedDescription
         ])
     }
 

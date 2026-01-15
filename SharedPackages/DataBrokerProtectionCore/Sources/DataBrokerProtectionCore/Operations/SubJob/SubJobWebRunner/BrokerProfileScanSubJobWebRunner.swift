@@ -138,11 +138,10 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
-        let details = prettyPrintedJSON(from: profiles, meta: meta)
         recordActionResponseForDebug(stepType: .scan,
                                      actionId: nil,
                                      actionType: .extract,
-                                     details: details)
+                                     details: prettyPrintedJSON(from: profiles, meta: meta))
         complete(profiles)
         await executeNextStep()
     }

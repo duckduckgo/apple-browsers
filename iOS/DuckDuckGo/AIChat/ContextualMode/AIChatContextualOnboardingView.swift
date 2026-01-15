@@ -100,11 +100,9 @@ struct AIChatContextualOnboardingView: View {
     }
 }
 
-#if DEBUG
 #Preview {
     AIChatContextualOnboardingView(
         onConfirm: {},
         onViewSettings: {}
     )
 }
-#endif

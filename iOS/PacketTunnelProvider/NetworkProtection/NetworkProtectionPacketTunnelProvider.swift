@@ -521,7 +521,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             experimentManager: nil
         )
 
-        self.wideEvent = WideEvent(featureFlagProvider: FeatureFlaggerWideEventFeatureFlagProvider(featureFlagger: featureFlagger))
+        self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
 
         // Align Subscription environment to the VPN environment
         var subscriptionEnvironment = SubscriptionEnvironment.default
@@ -678,7 +678,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     }
 }
 
-private struct FeatureFlaggerWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     let featureFlagger: FeatureFlagger
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {

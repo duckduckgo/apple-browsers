@@ -202,8 +202,9 @@ final class AppStorePurchaseFlowTests: XCTestCase {
     func test_completeSubscriptionPurchase_withSuccess_callsHandleSubscriptionActivated() async {
         // Given
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.appleSubscription
-        subscriptionManagerMock.confirmPurchaseResponse = .success(subscriptionManagerMock.resultSubscription!)
+        let subscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(subscription)
+        subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
         
         // When
         let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
@@ -216,8 +217,9 @@ final class AppStorePurchaseFlowTests: XCTestCase {
     func test_completeSubscriptionPurchase_withFailure_doesNotCallHandleSubscriptionActivated() async {
         // Given
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.appleSubscription
-        subscriptionManagerMock.confirmPurchaseResponse = .success(subscriptionManagerMock.resultSubscription!)
+        let subscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(subscription)
+        subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
         
         // When
         let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)

@@ -34,6 +34,7 @@ final class AppStoreRestoreFlowTests: XCTestCase {
         super.setUp()
         subscriptionManagerMock = SubscriptionManagerMock()
         storePurchaseManagerMock = StorePurchaseManagerMock()
+        pendingTransactionHandlerMock = MockPendingTransactionHandler()
         sut = DefaultAppStoreRestoreFlow(
             subscriptionManager: subscriptionManagerMock,
             storePurchaseManager: storePurchaseManagerMock,
@@ -109,17 +110,17 @@ final class AppStoreRestoreFlowTests: XCTestCase {
             break
         }
     }
-    
+
     // MARK: - PendingTransactionHandler Tests
-    
+
     func test_restoreAccountFromPastPurchase_withSuccess_callsHandleSubscriptionActivated() async {
         // Given
         storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.appleSubscription
-        
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+
         // When
         let result = await sut.restoreAccountFromPastPurchase()
-        
+
         // Then
         switch result {
         case .success:
@@ -132,10 +133,10 @@ final class AppStoreRestoreFlowTests: XCTestCase {
     func test_restoreAccountFromPastPurchase_withMissingTransaction_doesNotCallHandleSubscriptionActivated() async {
         // Given
         storePurchaseManagerMock.mostRecentTransactionResult = nil
-        
+
         // When
         let result = await sut.restoreAccountFromPastPurchase()
-        
+
         // Then
         switch result {
         case .failure(let error):
@@ -149,11 +150,11 @@ final class AppStoreRestoreFlowTests: XCTestCase {
     func test_restoreAccountFromPastPurchase_withExpiredSubscription_doesNotCallHandleSubscriptionActivated() async {
         // Given
         storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
-        subscriptionManagerMock.resultSubscription = SubscriptionMockFactory.expiredSubscription
-        
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.expiredSubscription)
+
         // When
         let result = await sut.restoreAccountFromPastPurchase()
-        
+
         // Then
         switch result {
         case .failure(let error):

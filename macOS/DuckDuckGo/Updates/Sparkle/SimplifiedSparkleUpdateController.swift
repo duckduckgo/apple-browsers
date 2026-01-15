@@ -98,7 +98,6 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         let isDone = currentProgress.isDone
         let isResumable = progressState.isResumable
         hasPendingUpdate = isInstalled && isDone && isResumable
-        Logger.updates.log("🔍 refreshUpdateFromCache: isInstalled=\(isInstalled), isDone=\(isDone), isResumable=\(isResumable) → hasPendingUpdate=\(self.hasPendingUpdate)")
     }
 
     // MARK: - Update Progress State Machine
@@ -110,12 +109,9 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { progressState.updateProgressPublisher }
 
     private func handleProgressChange(_ progress: UpdateCycleProgress) {
-        Logger.updates.log("🔍 Controller.handleProgressChange: \(progress, privacy: .public)")
-        Logger.updates.log("🔍 Controller.handleProgressChange: cachedUpdateResult=\(self.cachedUpdateResult != nil, privacy: .public), hasPendingUpdate(before)=\(self.hasPendingUpdate, privacy: .public)")
         if let cachedUpdateResult {
             refreshUpdateFromCache(cachedUpdateResult, progress: progress)
         }
-        Logger.updates.log("🔍 Controller.handleProgressChange: hasPendingUpdate(after)=\(self.hasPendingUpdate, privacy: .public)")
         handleUpdateNotification()
 
         // Dismiss stale "update available" popover when download begins
@@ -347,19 +343,17 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     func checkForUpdateRespectingRollout() {
 #if DEBUG
         let featureFlagOn = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-        Logger.updates.log("🔍 checkForUpdateRespectingRollout: DEBUG build, autoUpdateInDEBUG=\(featureFlagOn, privacy: .public)")
         guard featureFlagOn else {
-            Logger.updates.log("🔍 checkForUpdateRespectingRollout: bailing - feature flag off")
+            Logger.updates.debug("Skipping update check - autoUpdateInDEBUG feature flag is off")
             return
         }
 #endif
-        Logger.updates.log("🔍 checkForUpdateRespectingRollout: calling performUpdateCheck")
         performUpdateCheck()
     }
 
     private func performUpdateCheck() {
         guard let updater, updater.canCheckForUpdates else {
-            Logger.updates.log("🔍 performUpdateCheck: bailing - Sparkle not ready")
+            Logger.updates.debug("Skipping update check - Sparkle not ready")
             return
         }
 
@@ -368,7 +362,6 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             updateWideEvent.startFlow(initiationType: .automatic)
         }
 
-        Logger.updates.log("🔍 performUpdateCheck: calling updater.checkForUpdatesInBackground()")
         updater.checkForUpdatesInBackground()
     }
 
@@ -574,7 +567,7 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
     }
 
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
-        Logger.updates.log("🔍 didFindValidUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("Found update: \(item.displayVersionString, privacy: .public) (\(item.versionString, privacy: .public))")
 
         // Sparkle background checks bypass our check methods, so ensure tracking exists
         updateWideEvent.ensureFlowExists(initiationType: .automatic)
@@ -592,15 +585,13 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: any Error) {
-        Logger.updates.log("🔍 updaterDidNotFindUpdate")
-
         // Sparkle background checks bypass our check methods, so ensure tracking exists
         updateWideEvent.ensureFlowExists(initiationType: .automatic)
 
         let nsError = error as NSError
         guard let item = nsError.userInfo[SPULatestAppcastItemFoundKey] as? SUAppcastItem else { return }
 
-        Logger.updates.log("🔍 didNotFindUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("Already up to date: \(item.displayVersionString, privacy: .public) (\(item.versionString, privacy: .public))")
 
         let needsLatestReleaseNote = {
             guard let reason = nsError.userInfo[SPUNoUpdateFoundReasonKey] as? Int else { return false }
@@ -614,13 +605,13 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
     }
 
     func updater(_ updater: SPUUpdater, willDownloadUpdate item: SUAppcastItem, with request: NSMutableURLRequest) {
-        Logger.updates.log("🔍 willDownloadUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("Downloading update: \(item.displayVersionString, privacy: .public)")
         progressState.transition(to: .downloadDidStart)
         updateWideEvent.didStartDownload()
     }
 
     func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {
-        Logger.updates.log("🔍 didDownloadUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("Download complete: \(item.displayVersionString, privacy: .public)")
         updateWideEvent.didCompleteDownload()
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidDownloadUpdate))
 
@@ -628,36 +619,34 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
     }
 
     func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {
-        Logger.updates.log("🔍 willExtractUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.debug("Extracting update: \(item.displayVersionString, privacy: .public)")
         progressState.transition(to: .extractionDidStart)
         updateWideEvent.didStartExtraction()
     }
 
     func updater(_ updater: SPUUpdater, didExtractUpdate item: SUAppcastItem) {
-        Logger.updates.log("🔍 didExtractUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.debug("Extraction complete: \(item.displayVersionString, privacy: .public)")
         updateWideEvent.didCompleteExtraction()
     }
 
     func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
-        Logger.updates.log("🔍 willInstallUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("Installing update: \(item.displayVersionString, privacy: .public)")
     }
 
     func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem, immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
-        Logger.updates.log("🔍 willInstallUpdateOnQuit: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("Update ready - will install on quit: \(item.displayVersionString, privacy: .public)")
         progressState.transition(to: .updateCycleDone(.pausedAtRestartCheckpoint), resume: immediateInstallHandler)
         return true
     }
 
     func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: (any Error)?) {
         if error == nil {
-            Logger.updates.log("🔍 didFinishUpdateCycleFor: no error")
             progressState.transition(to: .updateCycleDone(.finishedWithNoError))
         } else if let errorCode = (error as? NSError)?.code, errorCode == Int(Sparkle.SUError.noUpdateError.rawValue) {
-            Logger.updates.log("🔍 didFinishUpdateCycleFor: no update found")
             progressState.transition(to: .updateCycleDone(.finishedWithNoUpdateFound))
             updateWideEvent.completeFlow(status: .success(reason: UpdateWideEventData.SuccessReason.noUpdateAvailable.rawValue))
         } else if let error {
-            Logger.updates.log("🔍 didFinishUpdateCycleFor: error - \(error.localizedDescription, privacy: .public)")
+            Logger.updates.error("Update cycle failed: \(error.localizedDescription, privacy: .public)")
             progressState.transition(to: .updaterError(error))
             updateWideEvent.completeFlow(status: .failure, error: error)
         }

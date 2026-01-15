@@ -86,17 +86,17 @@ final class UpdateProgressState: UpdateProgressManaging {
         // Preserve error state so UI can show the error instead of clearing it
         if case .updaterError = updateProgress,
            case .updateCycleDone(.dismissedWithNoError) = newProgress {
-            Logger.updates.log("🔍 transition REJECTED: \(String(describing: newProgress), privacy: .public) from \(String(describing: self.updateProgress), privacy: .public)")
+            Logger.updates.debug("State transition rejected: cannot dismiss error state")
             return false
         }
 
         // Prevent new checks from disrupting pending updates (e.g., at restart checkpoint)
         if case .updateCycleDidStart = newProgress, !isIdleOrTerminal {
-            Logger.updates.log("🔍 transition REJECTED: \(String(describing: newProgress), privacy: .public) from \(String(describing: self.updateProgress), privacy: .public)")
+            Logger.updates.debug("State transition rejected: update already in progress")
             return false
         }
 
-        Logger.updates.log("🔍 transition: \(String(describing: self.updateProgress), privacy: .public) → \(String(describing: newProgress), privacy: .public)")
+        Logger.updates.debug("State: \(String(describing: self.updateProgress), privacy: .public) → \(String(describing: newProgress), privacy: .public)")
         // Set callback before updateProgress because @Published fires on willSet
         resumeCallback = resume
         updateProgress = newProgress

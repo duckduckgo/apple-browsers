@@ -169,7 +169,6 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     /// Sets updateProgress from delegate callbacks that have no corresponding SPUUserDriver method.
     /// This ensures all progress changes flow through the user driver for clean Combine propagation.
     func setProgressFromDelegate(_ progress: UpdateCycleProgress) {
-        Logger.updates.log("🔍 setProgressFromDelegate: \(progress, privacy: .public)")
         self.updateProgress = progress
     }
 
@@ -256,7 +255,6 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func showDownloadInitiated(cancellation: @escaping () -> Void) {
-        Logger.updates.log("🔍 showDownloadInitiated → .downloadDidStart")
         updateProgress = .downloadDidStart
     }
 
@@ -274,7 +272,6 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func showDownloadDidStartExtractingUpdate() {
-        Logger.updates.log("🔍 showDownloadDidStartExtractingUpdate → .extractionDidStart")
         updateProgress = .extractionDidStart
     }
 
@@ -283,31 +280,25 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
-        Logger.updates.log("🔍 showReady called (useLegacyAutoRestartLogic: \(self.useLegacyAutoRestartLogic), areAutomaticUpdatesEnabled: \(self.areAutomaticUpdatesEnabled))")
-
         onDismiss = { [weak self] in
             // Cancel the current update that has begun installing and dismiss the update
             // This doesn't actually skip the update in the future (‽)
             reply(.skip)
             self?.updateProgress = .updateCycleDone(.dismissingObsoleteUpdate)
-            Logger.updates.log("Updater dismissing obsolete update")
         }
 
         guard useLegacyAutoRestartLogic else {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
-            Logger.updates.log("🔍 showReady setting updateProgress = .pausedAtRestartCheckpoint")
             return
         }
 
         if areAutomaticUpdatesEnabled {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
-            Logger.updates.log("Updater paused at restart checkpoint (automatic update pending user decision)")
         } else {
             reply(.install)
             updateProgress = .updateCycleDone(.proceededToInstallationAtRestartCheckpoint)
-            Logger.updates.log("Updater proceeded to installation at restart checkpoint")
         }
     }
 

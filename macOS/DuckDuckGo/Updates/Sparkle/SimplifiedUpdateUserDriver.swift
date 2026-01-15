@@ -140,7 +140,6 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func showDownloadInitiated(cancellation: @escaping () -> Void) {
-        Logger.updates.log("🔍 showDownloadInitiated → .downloadDidStart")
         onProgressChange(.downloadDidStart, nil)
     }
 
@@ -158,7 +157,6 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func showDownloadDidStartExtractingUpdate() {
-        Logger.updates.log("🔍 showDownloadDidStartExtractingUpdate → .extractionDidStart")
         onProgressChange(.extractionDidStart, nil)
     }
 
@@ -167,18 +165,14 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
-        Logger.updates.log("🔍 showReady called (areAutomaticUpdatesEnabled: \(self.areAutomaticUpdatesEnabled))")
-
         onDismiss = { [weak self] in
             // Cancel the current update that has begun installing and dismiss the update
             // This doesn't actually skip the update in the future (‽)
             reply(.skip)
             self?.onProgressChange(.updateCycleDone(.dismissingObsoleteUpdate), nil)
-            Logger.updates.log("Updater dismissing obsolete update")
         }
 
         onProgressChange(.updateCycleDone(.pausedAtRestartCheckpoint), { reply(.install) })
-        Logger.updates.log("🔍 showReady setting updateProgress = .pausedAtRestartCheckpoint")
     }
 
     func showInstallingUpdate(withApplicationTerminated applicationTerminated: Bool, retryTerminatingApplication: @escaping () -> Void) {

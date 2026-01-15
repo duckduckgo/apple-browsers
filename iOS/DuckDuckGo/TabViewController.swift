@@ -1712,7 +1712,7 @@ extension TabViewController: WKNavigationDelegate {
     private func fireProductTelemetry(for webView: WKWebView) {
         guard let url = webView.url else { return }
 
-        if url.isDuckAIURL == true {
+        if url.isDuckAIURL {
             aiChatContentHandler.fireAIChatTelemetry()
         } else {
             productSurfaceTelemetry.navigationCompleted(url: webView.url)

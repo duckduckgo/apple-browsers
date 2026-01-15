@@ -1348,24 +1348,18 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         Task.detached(priority: .background) { [weak self] in
             guard let self else { return }
 
-            guard let features = try? await subscriptionManager.currentSubscriptionFeatures(forceRefresh: false) else {
-                Logger.general.error("Failed to fetch subscription features")
-                return
-            }
+            do {
+                let status = try await subscriptionManager.getAllEntitlementStatus()
+                let isIdentityTheftRestorationItemEnabled = status.identityTheftRestoration || status.identityTheftRestorationGlobal
 
-            let isNetworkProtectionItemEnabled = features.contains(.networkProtection)
-            let isDataBrokerProtectionItemEnabled = features.contains(.dataBrokerProtection)
-            let isPaidAIChatItemEnabled = features.contains(.paidAIChat)
-
-            let hasIdentityTheftRestoration = features.contains(.identityTheftRestoration)
-            let hasIdentityTheftRestorationGlobal = features.contains(.identityTheftRestorationGlobal)
-            let isIdentityTheftRestorationItemEnabled = hasIdentityTheftRestoration || hasIdentityTheftRestorationGlobal
-
-            Task { @MainActor in
-                self.networkProtectionItem.isEnabled = isNetworkProtectionItemEnabled
-                self.dataBrokerProtectionItem.isEnabled = isDataBrokerProtectionItemEnabled
-                self.identityTheftRestorationItem.isEnabled = isIdentityTheftRestorationItemEnabled
-                self.paidAIChatItem.isEnabled = isPaidAIChatItemEnabled
+                Task { @MainActor in
+                    self.networkProtectionItem.isEnabled = status.networkProtection
+                    self.dataBrokerProtectionItem.isEnabled = status.dataBrokerProtection
+                    self.identityTheftRestorationItem.isEnabled = isIdentityTheftRestorationItemEnabled
+                    self.paidAIChatItem.isEnabled = status.paidAIChat
+                }
+            } catch {
+                Logger.general.error("Failed to fetch subscription entitlements")
             }
         }
     }

@@ -111,6 +111,10 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// This is mostly useful post-purchases.
     func isFeatureEnabled(_ feature: SubscriptionEntitlement) async throws -> Bool
 
+    /// Returns the enabled status of all entitlements in a single token fetch.
+    /// This is more efficient than calling `isFeatureEnabled` multiple times.
+    func getAllEntitlementStatus() async throws -> EntitlementStatus
+
     // MARK: - Token Management
 
     /// Get a token container accordingly to the policy
@@ -634,6 +638,19 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             // Fallback to the cached user entitlements in case of keychain reading error
             Logger.subscription.debug("Failed to read user entitlements from keychain: \(error, privacy: .public)")
             return self.cachedUserEntitlements.contains(feature)
+        }
+    }
+
+    public func getAllEntitlementStatus() async throws -> EntitlementStatus {
+        do {
+            guard isUserAuthenticated else { return .empty }
+            let tokenContainer = try await getTokenContainer(policy: .localValid)
+            let enabledEntitlements = tokenContainer.decodedAccessToken.subscriptionEntitlements
+            return EntitlementStatus(enabledEntitlements: enabledEntitlements)
+        } catch {
+            // Fallback to the cached user entitlements in case of keychain reading error
+            Logger.subscription.debug("Failed to read user entitlements from keychain: \(error, privacy: .public)")
+            return EntitlementStatus(enabledEntitlements: self.cachedUserEntitlements)
         }
     }
 

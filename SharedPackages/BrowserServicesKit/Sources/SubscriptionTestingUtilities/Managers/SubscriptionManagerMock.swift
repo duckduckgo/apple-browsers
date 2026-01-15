@@ -186,6 +186,10 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         resultFeatures.contains(feature)
     }
 
+    public func getAllEntitlementStatus() async throws -> EntitlementStatus {
+        EntitlementStatus(enabledEntitlements: resultFeatures)
+    }
+
     // MARK: - Subscription Token Provider
 
     public func getAccessToken() async throws -> String {

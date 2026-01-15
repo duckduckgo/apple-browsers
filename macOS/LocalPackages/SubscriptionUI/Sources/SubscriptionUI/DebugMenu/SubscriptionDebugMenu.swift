@@ -266,17 +266,10 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         Task {
             do {
                 let productNames = SubscriptionEntitlement.allCases
-                let availableEntitlements = try await subscriptionManager.currentSubscriptionFeatures(forceRefresh: true)
                 var descriptions: [String] = []
                 for productName in productNames {
-                    let featureEnabledDescription: String = {
-                        let isFeatureEnabled = availableEntitlements.contains(productName)
-                        if isFeatureEnabled {
-                            return "\tenabled"
-                        } else {
-                            return "\tdisabled"
-                        }
-                    }()
+                    let isFeatureEnabled = try await subscriptionManager.isFeatureEnabled(productName)
+                    let featureEnabledDescription = isFeatureEnabled ? "\tenabled" : "\tdisabled"
 
                     descriptions.append("\(productName.rawValue): \(featureEnabledDescription)")
                 }

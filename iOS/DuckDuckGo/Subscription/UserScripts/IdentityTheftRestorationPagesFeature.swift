@@ -43,9 +43,9 @@ final class IdentityTheftRestorationPagesFeature: Subfeature, ObservableObject {
         static let getFeatureConfig = "getFeatureConfig"
     }
         
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+    init(subscriptionManager: any SubscriptionManager) {
         self.subscriptionManager = subscriptionManager
     }
 

@@ -62,12 +62,12 @@ struct SyncRecoveryAlternativeView: View {
             Spacer()
 
             VStack(spacing: 8) {
-                Button(action: { onSyncFlowSelected(SyncSettingsViewController.Constants.startSyncFlow) }) {
+                Button(action: { onSyncFlowSelected(SyncSettingsViewController.SourceConstants.startSyncFlow) }) {
                     Text(UserText.syncRecoveryAlternativePromptSyncButton)
                 }
                 .buttonStyle(PrimaryButtonStyle())
 
-                Button(action: { onSyncFlowSelected(SyncSettingsViewController.Constants.startBackupFlow) }) {
+                Button(action: { onSyncFlowSelected(SyncSettingsViewController.SourceConstants.startBackupFlow) }) {
                     Text(UserText.syncRecoveryAlternativePromptBackupButton)
                 }
                 .buttonStyle(GhostButtonStyle())

@@ -3727,6 +3727,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Szinkronizálás beállítása";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Hitelkártyák szinkronizálása és biztonsági mentése";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Adatok szinkronizálása és biztonsági mentése";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nem, köszönöm";
 

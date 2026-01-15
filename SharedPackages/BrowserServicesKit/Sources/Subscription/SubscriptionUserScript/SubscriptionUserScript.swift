@@ -89,7 +89,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     let platform: DataModel.Platform
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManager
     private let featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding
     weak var navigationDelegate: SubscriptionUserScriptNavigationDelegate?
     weak private var webView: WKWebView?
@@ -98,7 +98,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     private var cancellables = Set<AnyCancellable>()
 
     init(platform: DataModel.Platform,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding,
          navigationDelegate: SubscriptionUserScriptNavigationDelegate?) {
         self.platform = platform
@@ -290,7 +290,7 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     private let debugHost: String?
 
     public convenience init(platform: DataModel.Platform,
-                            subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+                            subscriptionManager: any SubscriptionManager,
                             featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding,
                             navigationDelegate: SubscriptionUserScriptNavigationDelegate?,
                             debugHost: String?) {

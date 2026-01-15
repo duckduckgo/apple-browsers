@@ -30,7 +30,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
         static let redirectURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
     }
 
-    var subscriptionManager: SubscriptionManagerMockV2!
+    var subscriptionManager: SubscriptionManagerMock!
 
     private var mockInternalUserStoring: MockInternalUserStoring! = MockInternalUserStoring()
 
@@ -38,7 +38,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        subscriptionManager = SubscriptionManagerMockV2()
+        subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.currentEnvironment = Constants.environment
 
         mockInternalUserStoring.isInternalUser = false

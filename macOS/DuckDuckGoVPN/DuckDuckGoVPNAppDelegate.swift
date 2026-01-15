@@ -40,7 +40,7 @@ import VPNAppState
 @objc(Application)
 final class DuckDuckGoVPNApplication: NSApplication {
 
-    public var subscriptionManagerV2: any SubscriptionManagerV2
+    public var subscriptionManager: any SubscriptionManager
     private let _delegate: DuckDuckGoVPNAppDelegate // swiftlint:disable:this weak_delegate
 
     override init() {
@@ -55,14 +55,14 @@ final class DuckDuckGoVPNApplication: NSApplication {
         // Configure Subscription
         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-        let subscriptionEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
-        subscriptionManagerV2 = DefaultSubscriptionManagerV2(keychainType: keychainType,
+        subscriptionManager = DefaultSubscriptionManager(keychainType: keychainType,
                                                              environment: subscriptionEnvironment,
                                                              userDefaults: subscriptionUserDefaults,
                                                              pixelHandlingSource: .vpnApp)
 
-        _delegate = DuckDuckGoVPNAppDelegate(subscriptionManagerV2: subscriptionManagerV2,
+        _delegate = DuckDuckGoVPNAppDelegate(subscriptionManager: subscriptionManager,
                                              subscriptionEnvironment: subscriptionEnvironment)
 
         super.init()
@@ -119,7 +119,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     private static let recentThreshold: TimeInterval = 5.0
 
     private let appLauncher = AppLauncher()
-    private let subscriptionManagerV2: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
 
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
@@ -138,15 +138,15 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     private let wideEventVPNAppStorageSuiteName: String = "com.duckduckgo.vpn.wideEvent"
     private lazy var wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: UserDefaults(suiteName: wideEventVPNAppStorageSuiteName) ?? .standard))
 
-    public init(subscriptionManagerV2: any SubscriptionManagerV2,
+    public init(subscriptionManager: any SubscriptionManager,
                 subscriptionEnvironment: SubscriptionEnvironment) {
-        self.subscriptionManagerV2 = subscriptionManagerV2
+        self.subscriptionManager = subscriptionManager
         self.tunnelSettings = VPNSettings(defaults: .netP)
         self.tunnelSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
         self.configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: VPNAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
         super.init()
 
-        var tokenFound = subscriptionManagerV2.isUserAuthenticated
+        var tokenFound = subscriptionManager.isUserAuthenticated
 
         if tokenFound {
             Logger.networkProtection.debug("🟢 VPN Agent found")
@@ -248,7 +248,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         settings: tunnelSettings,
         defaults: userDefaults,
         wideEvent: wideEvent,
-        subscriptionManagerV2: subscriptionManagerV2,
+        subscriptionManager: subscriptionManager,
         vpnAppState: vpnAppState)
 
     /// An IPC server that provides access to the tunnel controller.
@@ -538,10 +538,10 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
         var isUserAuthenticated: Bool
         let entitlementsCheck: () async -> Swift.Result<Bool, Error>
-        isUserAuthenticated = subscriptionManagerV2.isUserAuthenticated
+        isUserAuthenticated = subscriptionManager.isUserAuthenticated
         entitlementsCheck = {
             do {
-                let tokenContainer = try await self.subscriptionManagerV2.getTokenContainer(policy: .localValid)
+                let tokenContainer = try await self.subscriptionManager.getTokenContainer(policy: .localValid)
                 let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
                 Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
                 return .success(isNetworkProtectionEnabled)

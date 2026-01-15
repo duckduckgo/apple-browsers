@@ -56,8 +56,8 @@ extension TabTitleView {
     /// This exit mechanism is meant to handle Page Reload scenarios, in which we're already rendering a Title, and we'd wanna
     /// avoid animating the Placeholder.
     ///
-    func displayTitleIfNeeded(title: String, url: URL?, animated: Bool = true) {
-        if displayPolicy.mustSkipDisplayingTitle(title: title, url: url, previousURL: sourceURL) {
+    func displayTitleIfNeeded(title: String, url: URL?, isLoading: Bool, animated: Bool = true) {
+        if displayPolicy.mustSkipDisplayingTitle(title: title, url: url, previousURL: sourceURL, isLoading: isLoading) {
             return
         }
 

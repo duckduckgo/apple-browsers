@@ -50,9 +50,9 @@ public struct SubscriptionTierOptions: Encodable, Equatable {
 public struct SubscriptionTier: Encodable, Equatable {
     public let tier: TierName
     public let features: [TierFeature]
-    public let options: [SubscriptionOptionV2]
+    public let options: [SubscriptionOption]
 
-    public init(tier: TierName, features: [TierFeature], options: [SubscriptionOptionV2]) {
+    public init(tier: TierName, features: [TierFeature], options: [SubscriptionOption]) {
         self.tier = tier
         self.features = features
         self.options = options

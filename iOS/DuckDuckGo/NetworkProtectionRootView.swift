@@ -29,7 +29,7 @@ struct NetworkProtectionRootView: View {
     let feedbackFormModel: UnifiedFeedbackFormViewModel
 
     init() {
-        let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+        let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
         let locationListRepository = NetworkProtectionLocationListCompositeRepository()
         statusViewModel = NetworkProtectionStatusViewModel(tunnelController: AppDependencyProvider.shared.networkProtectionTunnelController,
                                                            settings: AppDependencyProvider.shared.vpnSettings,

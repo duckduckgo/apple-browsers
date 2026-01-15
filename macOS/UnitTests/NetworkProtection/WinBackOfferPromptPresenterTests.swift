@@ -27,14 +27,14 @@ import XCTest
 final class WinBackOfferPromptPresenterTests: XCTestCase {
     var sut: WinBackOfferPromptPresenter!
     var mockVisibilityManager: MockWinBackOfferVisibilityManager!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var lastReceivedURL: URL?
     var capturedPixels: [SubscriptionPixel]!
 
     override func setUp() {
         super.setUp()
         mockVisibilityManager = MockWinBackOfferVisibilityManager()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         capturedPixels = []
         sut = WinBackOfferPromptPresenter(visibilityManager: mockVisibilityManager, urlOpener: { url in
             self.lastReceivedURL = url

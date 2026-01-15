@@ -370,9 +370,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @UserDefaultsWrapper
     private var didCrashDuringCrashHandlersSetUp: Bool
 
-    @UserDefaultsWrapper(key: .warnBeforeQuitting, defaultValue: true)
-    var warnBeforeQuitting: Bool
-
     static var isNewUser: Bool {
         return firstLaunchDate >= Date.weekAgo
     }

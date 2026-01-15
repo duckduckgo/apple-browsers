@@ -71,12 +71,18 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
 
     @MainActor
     func handleAction(for card: NewTabPageDataModel.CardID) {
-        continueSetUpModel.performAction(for: .init(card))
+        guard let featureType = HomePage.Models.FeatureType(card) else {
+            return
+        }
+        continueSetUpModel.performAction(for: featureType)
     }
 
     @MainActor
     func dismiss(_ card: NewTabPageDataModel.CardID) {
-        continueSetUpModel.removeItem(for: .init(card))
+        guard let featureType = HomePage.Models.FeatureType(card) else {
+            return
+        }
+        continueSetUpModel.removeItem(for: featureType)
     }
 
     @MainActor
@@ -88,7 +94,7 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
 }
 
 extension HomePage.Models.FeatureType {
-    init(_ card: NewTabPageDataModel.CardID) {
+    init?(_ card: NewTabPageDataModel.CardID) {
         switch card {
         case .bringStuff:
             self = .importBookmarksAndPasswords
@@ -102,6 +108,8 @@ extension HomePage.Models.FeatureType {
             self = .dock
         case .subscription:
             self = .subscription
+        case .personalizeBrowser, .sync:
+            return nil // These cards are not used with this card provider
         }
     }
 }

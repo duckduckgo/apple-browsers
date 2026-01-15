@@ -199,7 +199,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
         nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
         subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
-        duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor()
+        duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
+        syncService: syncService
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -1855,7 +1856,8 @@ extension AppDelegate: UserScriptDependenciesProviding {
             homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
             nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
             subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
-            duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor()
+            duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
+            syncService: syncService
         )
     }
 }

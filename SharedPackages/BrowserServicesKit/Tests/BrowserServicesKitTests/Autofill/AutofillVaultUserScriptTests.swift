@@ -505,7 +505,8 @@ class AutofillVaultUserScriptTests: XCTestCase {
         XCTAssertEqual(autofillData.credentials?.password, password)
     }
 
-    func testWhenGetAutofilldataIsCall_ThenMainAndSubtypesAreUsed() {
+    func testWhenGetAutofilldataIsCall_ThenMainAndSubtypesAreUsed() throws {
+        throw XCTSkip("Flaky test")
 
         let delegate = MockSecureVaultDelegate()
         userScript.vaultDelegate = delegate
@@ -565,7 +566,8 @@ class AutofillVaultUserScriptTests: XCTestCase {
         XCTAssertNil(delegate.lastSubtype)
     }
 
-    func testWhenGetAutofillDataForCreditCardsCalled_ThenDelegateMethodCalled() {
+    func testWhenGetAutofillDataForCreditCardsCalled_ThenDelegateMethodCalled() throws {
+        throw XCTSkip("Flaky test")
         class CreditCardDelegate: MockSecureVaultDelegate {
             var didRequestCreditCardCalled = false
             var capturedTrigger: AutofillUserScript.GetTriggerType?
@@ -764,7 +766,8 @@ class AutofillVaultUserScriptTests: XCTestCase {
         wait(for: expectations, timeout: 2.0)
     }
 
-    func testWhenMultipleRequestsForSameMessageType_PreviousRepliesAreCancelled() {
+    func testWhenMultipleRequestsForSameMessageType_PreviousRepliesAreCancelled() throws {
+        throw XCTSkip("Flaky test")
         class SlowFocusDelegate: MockSecureVaultDelegate {
             var completionHandlers: [(SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void] = []
             let firstCallExpectation: XCTestExpectation

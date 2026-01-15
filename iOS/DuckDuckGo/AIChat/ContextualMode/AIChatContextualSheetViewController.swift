@@ -338,13 +338,13 @@ private extension AIChatContextualSheetViewController {
 
         viewModel.didSubmitPrompt()
 
-        // TODO: Pass page context via new FE messaging when available
+        let pageContext = contextualInputViewController.isContextChipVisible ? viewModel.fullPageContext : nil
 
         transitionToWebView(webVC)
         view.layoutIfNeeded()
         expandToLargeDetent()
 
-        webVC.submitPrompt(prompt)
+        webVC.submitPrompt(prompt, pageContext: pageContext)
         delegate?.aiChatContextualSheetViewController(self, didCreateWebViewController: webVC)
 
         preloadedWebViewController = nil

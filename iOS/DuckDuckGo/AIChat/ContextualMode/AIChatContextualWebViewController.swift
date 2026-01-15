@@ -54,6 +54,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     private var pendingPrompt: String?
+    private var pendingPageContext: AIChatPageContextData?
     private var userContentController: UserContentController?
     private var isPageReady = false
     private var isContentHandlerReady = false
@@ -119,11 +120,12 @@ final class AIChatContextualWebViewController: UIViewController {
     // MARK: - Public Methods
 
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
-    func submitPrompt(_ prompt: String) {
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         if isPageReady && isContentHandlerReady {
-            aiChatContentHandler.submitPrompt(prompt)
+            aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
         } else {
             pendingPrompt = prompt
+            pendingPageContext = pageContext
         }
     }
 
@@ -186,8 +188,10 @@ final class AIChatContextualWebViewController: UIViewController {
               isPageReady,
               isContentHandlerReady else { return }
 
+        let pageContext = pendingPageContext
         pendingPrompt = nil
-        aiChatContentHandler.submitPrompt(prompt)
+        pendingPageContext = nil
+        aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
     }
 
     // MARK: - URL Observation

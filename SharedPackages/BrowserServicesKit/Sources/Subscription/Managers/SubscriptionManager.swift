@@ -593,7 +593,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public var currentStorefrontRegion: SubscriptionRegion {
         switch currentEnvironment.purchasePlatform {
         case .appStore:
-            if #available(macOS 12.0, *) {
+            if #available(macOS 12.0, iOS 15.0, *) {
                 return storePurchaseManager().currentStorefrontRegion
             } else {
                 return .usa

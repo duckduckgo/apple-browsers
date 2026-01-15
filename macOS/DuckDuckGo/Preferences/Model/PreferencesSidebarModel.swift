@@ -411,7 +411,7 @@ final class PreferencesSidebarModel: ObservableObject {
         let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.hasAppStoreProductsAvailable == false
 
         // Enabled: Is the entitlement in the token?
-        let entitlementStatus = try await subscriptionManager.getAllEntitlementStatus()
+        let entitlementStatus = await subscriptionManager.getAllEntitlementStatus()
 
         // Availability: Is included in the purchased subscription?
         let subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures()

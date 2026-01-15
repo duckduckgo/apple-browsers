@@ -264,12 +264,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     @objc
     func checkEntitlements() {
         Task {
-            do {
-                let entitlementsStatus = try await subscriptionManager.getAllEntitlementStatus()
-                showAlert(title: "Check Entitlements", message: entitlementsStatus.debugDescription)
-            } catch {
-                showAlert(title: "Check Entitlements", message: "Error: \(error)")
-            }
+            let entitlementsStatus = await subscriptionManager.getAllEntitlementStatus()
+            showAlert(title: "Check Entitlements", message: entitlementsStatus.debugDescription)
         }
     }
 

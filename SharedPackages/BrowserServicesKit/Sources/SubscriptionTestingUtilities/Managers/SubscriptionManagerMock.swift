@@ -186,7 +186,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         resultFeatures.contains(feature)
     }
 
-    public func getAllEntitlementStatus() async throws -> EntitlementStatus {
+    public func getAllEntitlementStatus() async -> EntitlementStatus {
         EntitlementStatus(enabledEntitlements: resultFeatures)
     }
 

@@ -1348,18 +1348,14 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         Task.detached(priority: .background) { [weak self] in
             guard let self else { return }
 
-            do {
-                let status = try await subscriptionManager.getAllEntitlementStatus()
-                let isIdentityTheftRestorationItemEnabled = status.identityTheftRestoration || status.identityTheftRestorationGlobal
+            let status = await subscriptionManager.getAllEntitlementStatus()
+            let isIdentityTheftRestorationItemEnabled = status.identityTheftRestoration || status.identityTheftRestorationGlobal
 
-                Task { @MainActor in
-                    self.networkProtectionItem.isEnabled = status.networkProtection
-                    self.dataBrokerProtectionItem.isEnabled = status.dataBrokerProtection
-                    self.identityTheftRestorationItem.isEnabled = isIdentityTheftRestorationItemEnabled
-                    self.paidAIChatItem.isEnabled = status.paidAIChat
-                }
-            } catch {
-                Logger.general.error("Failed to fetch subscription entitlements")
+            Task { @MainActor in
+                self.networkProtectionItem.isEnabled = status.networkProtection
+                self.dataBrokerProtectionItem.isEnabled = status.dataBrokerProtection
+                self.identityTheftRestorationItem.isEnabled = isIdentityTheftRestorationItemEnabled
+                self.paidAIChatItem.isEnabled = status.paidAIChat
             }
         }
     }

@@ -30,8 +30,7 @@ struct DataBrokerRunCustomJSONView: View {
     @State private var brokerSearchText: String = ""
     @State private var selectedTab: Tab = .scan
     @State private var selectedDebugEventId: String?
-    @State private var logMonitorWindow: NSWindow?
-    
+
     private enum Constants {
         static let maxNames = 3
         static let maxAddresses = 5
@@ -381,31 +380,6 @@ struct DataBrokerRunCustomJSONView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
         return formatter
-    }
-
-    private func openLogMonitor() {
-        if let logMonitorWindow, logMonitorWindow.isVisible {
-            logMonitorWindow.makeKeyAndOrderFront(nil)
-            return
-        }
-
-        let viewModel = DataBrokerLogMonitorViewModel()
-        viewModel.startMonitoring()
-
-        let contentView = DataBrokerLogMonitorView(viewModel: viewModel)
-        let hostingController = NSHostingController(rootView: contentView)
-
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "DataBrokerProtection Log Monitor"
-        window.contentViewController = hostingController
-        window.makeKeyAndOrderFront(nil)
-
-        logMonitorWindow = window
     }
 }
 

@@ -41,7 +41,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     var internalUserDecider: MockInternalUserDecider!
     var defaultBrowserProvider: DefaultBrowserProviderMock!
     var dockCustomizer: DockCustomizerMock!
-    var mockSubscriptionManager: SubscriptionManagerMockV2!
+    var mockSubscriptionManager: SubscriptionManagerMock!
 
     private var mockFreemiumDBPPresenter: MockFreemiumDBPPresenter! = .init()
     private var mockFreemiumDBPFeature: MockFreemiumDBPFeature!
@@ -67,7 +67,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         dockCustomizer.addToDock()
         defaultBrowserProvider.isDefault = true
         mockFeatureFlagger = MockFeatureFlagger()
-        mockSubscriptionManager = SubscriptionManagerMockV2()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockFreemiumDBPFeature = MockFreemiumDBPFeature()
 
         mockNotificationCenter = MockNotificationCenter()

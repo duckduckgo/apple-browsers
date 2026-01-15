@@ -86,7 +86,7 @@ final class NetworkProtectionIPCTunnelController {
     // MARK: - Wide Event
     private var connectionWideEventData: VPNConnectionWideEventData?
 
-    init(featureGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
+    init(featureGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager),
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
          ipcClient: NetworkProtectionIPCClient,
          fileManager: FileManager = .default,

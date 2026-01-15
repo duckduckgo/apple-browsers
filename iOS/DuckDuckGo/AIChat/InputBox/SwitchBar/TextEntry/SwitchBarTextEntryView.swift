@@ -89,6 +89,8 @@ class SwitchBarTextEntryView: UIView {
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
 
+    private var wasTextEmptyForAutocorrection: Bool = true
+
     let textHeightChangeSubject = PassthroughSubject<Void, Never>()
 
     /// When true the text entry will expand the text when the selection changes, e.g.  If the user uses the space bar to move the caret then it updates the selection.
@@ -189,11 +191,20 @@ class SwitchBarTextEntryView: UIView {
 
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
-            self?.hasBeenInteractedWith = true
-            self?.fireClearButtonPressedPixel()
-            self?.handler.clearText()
-            self?.handler.clearButtonTapped()
-            self?.updateAutoCorrectionSetupForAIChat(for: "")
+            guard let self else { return }
+            self.hasBeenInteractedWith = true
+            self.fireClearButtonPressedPixel()
+            
+            self.textView.text = ""
+            self.updatePlaceholderVisibility()
+            self.updateButtonState()
+            self.updateTextViewHeight()
+            
+            self.handler.clearText()
+            self.handler.clearButtonTapped()
+            
+            self.wasTextEmptyForAutocorrection = false
+            self.updateAutoCorrectionSetupForAIChat(for: "")
         }
 
         buttonsView.onVoiceTapped = { [weak self] in
@@ -227,6 +238,8 @@ class SwitchBarTextEntryView: UIView {
     // MARK: - UI Updates
 
     private func updateForCurrentMode() {
+        wasTextEmptyForAutocorrection = textView.text.isEmpty
+
         switch currentMode {
         case .search:
             placeholderLabel.text = UserText.searchDuckDuckGo
@@ -257,7 +270,11 @@ class SwitchBarTextEntryView: UIView {
             if handler.isUsingFadeOutAnimation {
                 textView.keyboardType = .default
                 textView.returnKeyType = .default
-                disableAutoCorrectionAndSpellChecking()
+                if textView.text.isEmpty {
+                    disableAutoCorrectionAndSpellChecking()
+                } else {
+                    enableAutoCorrectionAndSpellChecking()
+                }
             } else {
                 textView.keyboardType = .webSearch
                 textView.returnKeyType = .go
@@ -441,13 +458,21 @@ class SwitchBarTextEntryView: UIView {
             .removeDuplicates()
             .sink { [weak self] text in
                 guard let self = self else { return }
-
-                self.updateAutoCorrectionSetupForAIChat(for: text)
+                
                 if self.textView.text != text {
+                    // Don't overwrite text while user is actively typing - the publisher
+                    // may deliver stale values due to async scheduling, which would
+                    // interfere with iOS autocomplete.
+                    // Note: Clear button updates textView directly to avoid race conditions.
+                    let isUserActivelyTyping = self.textView.isFirstResponder && self.hasBeenInteractedWith
+                    guard !isUserActivelyTyping else { return }
+                    
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
                     self.updateTextViewHeight()
                 }
+                
+                self.updateAutoCorrectionSetupForAIChat(for: self.textView.text ?? "")
             }
             .store(in: &cancellables)
 
@@ -463,15 +488,21 @@ class SwitchBarTextEntryView: UIView {
     private func updateAutoCorrectionSetupForAIChat(for text: String) {
         guard handler.isUsingFadeOutAnimation && currentMode == .aiChat else { return }
 
-        if text.isEmpty {
+        let isTextEmpty = text.isEmpty
+        let stateChanged = isTextEmpty != wasTextEmptyForAutocorrection
+        guard stateChanged else { return }
+
+        wasTextEmptyForAutocorrection = isTextEmpty
+
+        if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
-            textView.reloadInputViews()
         } else {
             textView.keyboardType = .default
             textView.returnKeyType = .default
             enableAutoCorrectionAndSpellChecking()
-            textView.reloadInputViews()
         }
+
+        textView.reloadInputViews()
     }
 
     @discardableResult
@@ -521,7 +552,14 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         handler.updateCurrentText(textView.text ?? "")
         handler.markUserInteraction()
 
-        textView.reloadInputViews()
+        // Only reload input views when fadeOutOnToggle is OFF to preserve legacy behavior.
+        // When ON, reloadInputViews() on every keystroke causes the publisher to deliver
+        // stale text values that interfere with iOS autocomplete.
+        // When deleting .fadeOutOnToggle flag, delete textView.reloadInputViews() here as this fixes
+        // https://app.asana.com/1/137249556945/inbox/1210947754150827/item/1212750684390654/story/1212749500239461?focus=true
+        if !handler.isUsingFadeOutAnimation {
+            textView.reloadInputViews()
+        }
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {

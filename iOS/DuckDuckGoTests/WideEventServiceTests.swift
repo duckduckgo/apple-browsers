@@ -30,20 +30,20 @@ final class WideEventServiceTests: XCTestCase {
 
     private var wideEventMock: WideEventMock!
     private var featureFlagger: MockFeatureFlagger!
-    private var subscriptionBridge: SubscriptionAuthV1toV2BridgeMock!
+    private var subscriptionManager: SubscriptionManagerMock!
     private var service: WideEventService!
 
     override func setUp() {
         super.setUp()
         wideEventMock = WideEventMock()
         featureFlagger = MockFeatureFlagger()
-        subscriptionBridge = SubscriptionAuthV1toV2BridgeMock()
-        service = WideEventService(wideEvent: wideEventMock, featureFlagger: featureFlagger, subscriptionBridge: subscriptionBridge)
+        subscriptionManager = SubscriptionManagerMock()
+        service = WideEventService(wideEvent: wideEventMock, featureFlagger: featureFlagger, subscriptionManager: subscriptionManager)
     }
     
     override func tearDown() {
         service = nil
-        subscriptionBridge = nil
+        subscriptionManager = nil
         featureFlagger = nil
         wideEventMock = nil
         super.tearDown()
@@ -75,8 +75,8 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withActivateAccountDuration_oldStart_noEntitlements_sendsUnknownPixel() {
-        subscriptionBridge.subscriptionFeatures = []
-        
+        subscriptionManager.resultFeatures = []
+
         let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
         let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
         let data = createMockWideEventData(activateAccountDuration: interval)
@@ -100,8 +100,8 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withActivateAccountDuration_hasEntitlements_sendsSuccessPixel() {
-        subscriptionBridge.subscriptionFeatures = [.networkProtection]
-        
+        subscriptionManager.resultFeatures = [.networkProtection]
+
         let oldStart = Date().addingTimeInterval(-3 * 60 * 60)
         let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
         let data = createMockWideEventData(activateAccountDuration: interval)
@@ -148,8 +148,8 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withActivateAccountDuration_entitlementsError_sendsUnknownPixel() {
-        subscriptionBridge.subscriptionFeatures = []
-        
+        subscriptionManager.resultFeatures = []
+
         let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
         let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
         let data = createMockWideEventData(activateAccountDuration: interval)
@@ -194,7 +194,7 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withMultipleData_processesAll() {
-        subscriptionBridge.subscriptionFeatures = [.networkProtection]
+        subscriptionManager.resultFeatures = [.networkProtection]
         
         let start = Date().addingTimeInterval(-1 * 60 * 60)
         let interval = WideEvent.MeasuredInterval(start: start, end: nil)

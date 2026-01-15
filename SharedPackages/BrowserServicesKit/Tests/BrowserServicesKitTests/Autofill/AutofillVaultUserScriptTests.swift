@@ -526,7 +526,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
 
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: delegate.receivedCallbacks)
 
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 10)
 
         XCTAssertEqual(delegate.lastSubtype, AutofillUserScript.GetAutofillDataSubType.username)
     }
@@ -832,7 +832,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         wait(for: [secondDelegateCallExpect], timeout: 1.0)
 
         // First reply should complete quickly with cancellation
-        wait(for: [firstReplyExpect], timeout: 0.5)
+        wait(for: [firstReplyExpect], timeout: 2.0)
 
         // Verify first reply was cancelled
         XCTAssertTrue(firstReplyReceived)

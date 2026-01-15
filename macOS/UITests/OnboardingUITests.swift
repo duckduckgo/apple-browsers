@@ -103,6 +103,13 @@ final class OnboardingUITests: UITestCase {
         XCTAssertTrue(showHomeButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         showHomeButton.click()
 
+        let nextButtonCustomize = welcomeWindow.webViews["Welcome"].buttons["Next"]
+        XCTAssertTrue(nextButtonCustomize.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        nextButtonCustomize.click()
+
+        // AI Chat
+        XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Want easy access to private AI Chat?"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         // Start Browsing
         let startBrowsingButton = welcomeWindow.webViews["Welcome"].buttons["Start Browsing"]
         XCTAssertTrue(startBrowsingButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))

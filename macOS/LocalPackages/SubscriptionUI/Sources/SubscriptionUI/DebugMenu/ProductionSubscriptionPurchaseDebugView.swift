@@ -29,7 +29,7 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
     @StateObject private var viewModel: ProductionSubscriptionPurchaseViewModel
     let dismissAction: () -> Void
 
-    public init(subscriptionManager: SubscriptionManagerV2,
+    public init(subscriptionManager: SubscriptionManager,
                 subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil,
                 dismissAction: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: ProductionSubscriptionPurchaseViewModel(
@@ -184,14 +184,14 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
 @available(macOS 12.0, *)
 public final class ProductionSubscriptionPurchaseViewController: NSViewController {
 
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
     private let subscriptionSelectionHandler: SubscriptionSelectionHandler?
 
     public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    public init(subscriptionManager: SubscriptionManagerV2,
+    public init(subscriptionManager: SubscriptionManager,
                 subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionSelectionHandler = subscriptionSelectionHandler
@@ -228,10 +228,10 @@ final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     @Published var availableSubscriptions: [String] = []
     @Published var isLoadingProducts = true
 
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
     private let subscriptionSelectionHandler: SubscriptionSelectionHandler?
 
-    init(subscriptionManager: SubscriptionManagerV2,
+    init(subscriptionManager: SubscriptionManager,
          subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionSelectionHandler = subscriptionSelectionHandler
@@ -261,8 +261,8 @@ final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     func loadAvailableProducts() async {
         isLoadingProducts = true
 
-        guard let defaultManager = subscriptionManager.storePurchaseManager() as? DefaultStorePurchaseManagerV2 else {
-            Logger.subscription.error("[ProductionSubscriptionDebug] Could not cast to DefaultStorePurchaseManagerV2")
+        guard let defaultManager = subscriptionManager.storePurchaseManager() as? DefaultStorePurchaseManager else {
+            Logger.subscription.error("[ProductionSubscriptionDebug] Could not cast to DefaultStorePurchaseManager")
             isLoadingProducts = false
             return
         }

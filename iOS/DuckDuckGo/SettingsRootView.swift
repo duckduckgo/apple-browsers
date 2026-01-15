@@ -149,7 +149,7 @@ struct SettingsRootView: View {
     @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
         SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
                                                              navigationCoordinator: subscriptionNavigationCoordinator,
-                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                              subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                              subscriptionDataReporter: viewModel.subscriptionDataReporter,
                                                              userScriptsDependencies: viewModel.userScriptsDependencies,
@@ -162,7 +162,7 @@ struct SettingsRootView: View {
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
         SubscriptionContainerViewFactory.makePlansFlowV2(redirectURLComponents: redirectURLComponents,
                                                          navigationCoordinator: subscriptionNavigationCoordinator,
-                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                          subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                          userScriptsDependencies: viewModel.userScriptsDependencies,
                                                          internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -172,7 +172,7 @@ struct SettingsRootView: View {
 
     @ViewBuilder func emailFlowNavigationDestination() -> some View {
         SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                          subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                          userScriptsDependencies: viewModel.userScriptsDependencies,
                                                          internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -223,7 +223,7 @@ struct SettingsRootView: View {
                 SubscriptionPIRMoveToDesktopView()
             }
         case .itr:
-            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                  userScriptsDependencies: viewModel.userScriptsDependencies,
                                                  isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)
             SubscriptionITPView(viewModel: model)
@@ -247,7 +247,7 @@ struct SettingsRootView: View {
             SettingsAppearanceView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
-                let model = SubscriptionSettingsViewModelV2(userScriptsDependencies: viewModel.userScriptsDependencies)
+                let model = SubscriptionSettingsViewModel(userScriptsDependencies: viewModel.userScriptsDependencies)
                 SubscriptionSettingsViewV2(configuration: configuration, viewModel: model, settingsViewModel: viewModel)
                     .environmentObject(subscriptionNavigationCoordinator)
             }

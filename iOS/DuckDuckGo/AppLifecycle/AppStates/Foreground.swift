@@ -115,7 +115,7 @@ struct Foreground: ForegroundHandling {
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
             onAppReadyForInteractions: {
                 appDependencies.launchTaskManager.start()
-                
+
                 // Mark that the app has successfully launched at least once
                 // This helps distinguish database corruption from fresh installs/restores
                 BoolFileMarker(name: .hasSuccessfullyLaunchedBefore)?.mark()
@@ -141,7 +141,7 @@ struct Foreground: ForegroundHandling {
         services.wideEventService.resume()
         appDependencies.launchSourceManager.handleAppAction(launchAction)
         appDependencies.mainCoordinator.onForeground()
-        
+
         let switchBarRetentionMetrics = SwitchBarRetentionMetrics(aiChatSettings: appDependencies.aiChatSettings)
         switchBarRetentionMetrics.checkDailyAndSendPixelIfApplicable()
     }

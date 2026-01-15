@@ -25,7 +25,7 @@ import FeatureFlags
 import Networking
 import os.log
 
-extension DefaultSubscriptionManagerV2 {
+extension DefaultSubscriptionManager {
     // Init the SubscriptionManager using the standard dependencies and configuration, to be used only in the dependencies tree root
     public convenience init(keychainType: KeychainType,
                             environment: SubscriptionEnvironment,
@@ -34,10 +34,10 @@ extension DefaultSubscriptionManagerV2 {
                             pixelHandlingSource: SubscriptionPixelHandler.Source) {
 
         let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource)
-        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+        let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
                                                               userDefaults: userDefaults) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
@@ -58,7 +58,7 @@ extension DefaultSubscriptionManagerV2 {
                                             authService: authService,
                                             refreshEventMapping: authRefreshEventMapping)
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
-        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
                                                                                baseURL: environment.serviceEnvironment.url)
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
@@ -94,7 +94,7 @@ extension DefaultSubscriptionManagerV2 {
         }
         let isInternalUserEnabled = { featureFlagger?.internalUserDecider.isInternalUser ?? false }
         if #available(macOS 12.0, *) {
-            self.init(storePurchaseManager: DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
+            self.init(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                           subscriptionFeatureFlagger: subscriptionFeatureFlagger),
                       oAuthClient: authClient,
                       userDefaults: userDefaults,

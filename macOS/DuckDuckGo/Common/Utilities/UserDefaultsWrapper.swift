@@ -81,6 +81,8 @@ extension UserDefaults {
         case launchToCustomHomePage = "preferences.startup.launch-to-custom-home-page"
         case customHomePageURL = "preferences.startup.customHomePageURL"
         case openFireWindowByDefault = "preferences.startup.open-fire-window-by-default"
+        case warnBeforeQuitting = "preferences.general.warn-before-quitting"
+        case warnBeforeClosingPinnedTabs = "preferences.general.warn-before-closing-pinned-tabs"
         case themeAppearance = "com.duckduckgo.macos.currentThemeNameKey"
         case themeName = "preferences.appearance.theme-name"
         case showFullURL = "preferences.appearance.show-full-url"

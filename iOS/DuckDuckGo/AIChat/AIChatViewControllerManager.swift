@@ -461,7 +461,7 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
 
-            if featureFlagger.isFeatureOn(.iOSAIChatAtb) {
+            if featureFlagger.isFeatureOn(.aiChatAtb) {
                 DispatchQueue.main.async {
                     let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
                                                                         application: UIApplication.shared)

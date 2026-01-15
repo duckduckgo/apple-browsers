@@ -28,7 +28,7 @@ import Subscription
 @MainActor
 final class VPNUpsellPopoverViewModelTests: XCTestCase {
     var sut: VPNUpsellPopoverViewModel!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
@@ -39,7 +39,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockFeatureFlagger = MockFeatureFlagger()
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
@@ -115,7 +115,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
     func testWhenPrimaryCTAIsClicked_SubscriptionLandingPageIsOpened_AndOriginIsSet() throws {
         // Given
         let baseURL = URL(string: "https://duckduckgo.com/pro/purchase")!
-        mockSubscriptionManager.urls[.purchase] = baseURL
+        mockSubscriptionManager.resultURL = baseURL
 
         // When
         sut.showSubscriptionLandingPage()
@@ -131,7 +131,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
     func testWhenPrimaryCTAIsClicked_ThenProceedPixelIsFired() throws {
         // Given
         let baseURL = URL(string: "https://duckduckgo.com/pro/purchase")!
-        mockSubscriptionManager.urls[.purchase] = baseURL
+        mockSubscriptionManager.resultURL = baseURL
         XCTAssertTrue(firedPixels.isEmpty)
 
         // When
@@ -256,8 +256,8 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
     func testWhenListingPlusFeatures_AndPIRIsEnabled_ItListsPIR() throws {
         // Given
         let expectation = XCTestExpectation(description: "Feature set should be updated")
-        mockSubscriptionManager.enabledFeatures = [.dataBrokerProtection]
-        mockSubscriptionManager.subscriptionFeatures = [.dataBrokerProtection]
+//        mockSubscriptionManager.enabledFeatures = [.dataBrokerProtection]
+        mockSubscriptionManager.resultFeatures = [.dataBrokerProtection]
 
         sut.$featureSet
             .dropFirst()
@@ -312,8 +312,8 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
     func testWhenMoreThanOnePlusFeatureIsEnabled_TheCopyContainsTheCorrectCount() throws {
          // Given
         let expectation = XCTestExpectation(description: "Feature set should be updated")
-        mockSubscriptionManager.enabledFeatures = [.dataBrokerProtection, .paidAIChat]
-        mockSubscriptionManager.subscriptionFeatures = [.dataBrokerProtection, .paidAIChat]
+//        mockSubscriptionManager.enabledFeatures = [.dataBrokerProtection, .paidAIChat]
+        mockSubscriptionManager.resultFeatures = [.dataBrokerProtection, .paidAIChat]
 
         sut.$featureSet
             .dropFirst()

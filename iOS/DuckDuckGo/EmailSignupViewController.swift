@@ -172,6 +172,7 @@ class EmailSignupViewController: UIViewController {
 
         webView = WKWebView(frame: view.bounds, configuration: configuration)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        webView.preventFlashOnLoad()
 
         view.addSubview(webView)
 

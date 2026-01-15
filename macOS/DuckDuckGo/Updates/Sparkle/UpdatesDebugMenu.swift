@@ -212,12 +212,12 @@ final class UpdatesDebugMenu: NSMenu {
 
     private func promptForPrivateKey() -> String? {
         let alert = NSAlert()
-        alert.messageText = "Enter Debug Signing Private Key"
+        alert.messageText = "Private key for testing Sparkle updates"
         alert.informativeText = "Paste the base64-encoded EdDSA private key (64 bytes).\nThis key is stored in the company secure location."
         alert.addButton(withTitle: "OK")
         alert.addButton(withTitle: "Cancel")
 
-        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 400, height: 24))
+        let textField = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 400, height: 24))
         textField.placeholderString = "Base64 private key..."
         alert.accessoryView = textField
 

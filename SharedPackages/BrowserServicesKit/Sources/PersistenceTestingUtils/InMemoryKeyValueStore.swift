@@ -50,7 +50,7 @@ open class InMemoryKeyValueStore: ObservableKeyValueStoring {
     }
 
     public func removeObject(forKey key: String) {
-        store[key] = nil
+        store.removeValue(forKey: key)
         objectWillChange.send()
         keyChanges.send(key)
     }

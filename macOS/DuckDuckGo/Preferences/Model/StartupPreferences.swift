@@ -102,9 +102,8 @@ struct StartupPreferencesUserDefaultsPersistor: StartupPreferencesPersistor {
 
 }
 
-final class StartupPreferences: ObservableObject, PreferencesTabOpening {
+final class StartupPreferences: ObservableObject {
 
-    let windowControllersManager: WindowControllersManagerProtocol
     private let pinningManager: LocalPinningManager
     private var appearancePreferences: AppearancePreferences
     private var persistor: StartupPreferencesPersistor
@@ -112,12 +111,10 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
 
     init(pinningManager: LocalPinningManager = .shared,
          persistor: StartupPreferencesPersistor,
-         windowControllersManager: WindowControllersManagerProtocol,
          appearancePreferences: AppearancePreferences) {
         self.pinningManager = pinningManager
         self.appearancePreferences = appearancePreferences
         self.persistor = persistor
-        self.windowControllersManager = windowControllersManager
         restorePreviousSession = persistor.restorePreviousSession
         launchToCustomHomePage = persistor.launchToCustomHomePage
         customHomePageURL = persistor.customHomePageURL

@@ -220,15 +220,20 @@ final class UserScripts: UserScriptsProvider {
         var delegate: Subfeature
         let subscriptionManager = Application.appDelegate.subscriptionManager
         let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
         delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                             stripePurchaseFlow: stripePurchaseFlow,
-                                                             uiHandler: Application.appDelegate.subscriptionUIHandler,
-                                                             aiChatURL: AIChatRemoteSettings().aiChatURL,
-                                                             wideEvent: WideEvent())
-
+                                                           stripePurchaseFlow: stripePurchaseFlow,
+                                                           uiHandler: Application.appDelegate.subscriptionUIHandler,
+                                                           aiChatURL: AIChatRemoteSettings().aiChatURL,
+                                                           wideEvent: WideEvent(),
+                                                           pendingTransactionHandler: pendingTransactionHandler)
+        
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
-
+        
         let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionManager)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)

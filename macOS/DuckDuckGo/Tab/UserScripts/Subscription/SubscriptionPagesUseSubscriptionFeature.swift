@@ -81,6 +81,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private var wideEventData: SubscriptionPurchaseWideEventData?
     private var restoreEmailOfferPageWideEventData: SubscriptionRestoreWideEventData?
     private var restoreEmailAppSettingsWideEventData: SubscriptionRestoreWideEventData?
+    
+    private let pendingTransactionHandler: PendingTransactionHandling
 
     public init(subscriptionManager: SubscriptionManager,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
@@ -92,7 +94,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
                 aiChatURL: URL,
                 wideEvent: WideEventManaging,
-                subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter()) {
+                subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
+                pendingTransactionHandler: PendingTransactionHandling) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
@@ -104,6 +107,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.wideEvent = wideEvent
         self.subscriptionEventReporter = subscriptionEventReporter
+        self.pendingTransactionHandler = pendingTransactionHandler
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -838,6 +842,9 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             subscriptionEventReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
         case .purchaseFailed(let purchaseError):
             subscriptionEventReporter.report(subscriptionActivationError: .purchaseFailed(purchaseError))
+        case .transactionPendingAuthentication:
+            pendingTransactionHandler.markPurchasePending()
+            subscriptionEventReporter.report(subscriptionActivationError: .purchasePendingTransaction)
         case .cancelledByUser:
             subscriptionEventReporter.report(subscriptionActivationError: .cancelledByUser)
         case .missingEntitlements:

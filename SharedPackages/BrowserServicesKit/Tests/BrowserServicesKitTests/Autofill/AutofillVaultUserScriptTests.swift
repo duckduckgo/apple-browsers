@@ -606,7 +606,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
 
         userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
-        waitForExpectations(timeout: 2.0) { error in
+        waitForExpectations(timeout: 1.0) { error in
             if let error = error {
                 XCTFail("Expectation failed with error: \(error)")
             }
@@ -835,7 +835,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         wait(for: [secondDelegateCallExpect], timeout: 1.0)
 
         // First reply should complete quickly with cancellation
-        wait(for: [firstReplyExpect], timeout: 1.0)
+        wait(for: [firstReplyExpect], timeout: 0.5)
 
         // Verify first reply was cancelled
         XCTAssertTrue(firstReplyReceived)
@@ -861,7 +861,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         delegate.completionHandlers[1](mockCard, .fill)
 
         // Wait for second reply
-        wait(for: [secondReplyExpect], timeout: 2.0)
+        wait(for: [secondReplyExpect], timeout: 1.0)
 
         // Second reply should have the actual card data
         XCTAssertTrue(secondReplyReceived)

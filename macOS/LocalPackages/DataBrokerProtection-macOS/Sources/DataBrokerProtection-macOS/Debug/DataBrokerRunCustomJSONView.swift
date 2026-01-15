@@ -32,9 +32,17 @@ struct DataBrokerRunCustomJSONView: View {
     @State private var selectedDebugEventId: String?
     @State private var logMonitorWindow: NSWindow?
     
-    private let maxNames = 3
-    private let maxAddresses = 5
-    private let brokerConfigWidth: CGFloat = 360
+    private enum Constants {
+        static let maxNames = 3
+        static let maxAddresses = 5
+        static let eventTimeColumnWidth: CGFloat = 120
+        static let eventKindColumnWidth: CGFloat = 80
+        static let eventProfileQueryColumnWidth: CGFloat = 180
+        static let eventSummaryColumnWidth: CGFloat = 200
+        static let eventDetailsMinWidth: CGFloat = 320
+        static let eventColumnSpacing: CGFloat = 12
+        static let eventColumnCount = 4
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 24) {
@@ -76,7 +84,7 @@ struct DataBrokerRunCustomJSONView: View {
 
             Divider()
 
-            ForEach(0..<min(viewModel.names.count, maxNames), id: \.self) { index in
+            ForEach(0..<min(viewModel.names.count, Constants.maxNames), id: \.self) { index in
                 HStack(spacing: 12) {
                     TextField("First name", text: $viewModel.names[index].first)
                         .frame(maxWidth: .infinity)
@@ -93,11 +101,11 @@ struct DataBrokerRunCustomJSONView: View {
             Button("Add other name") {
                 viewModel.names.append(.empty())
             }
-            .disabled(viewModel.names.count >= maxNames)
+            .disabled(viewModel.names.count >= Constants.maxNames)
 
             Divider()
 
-            ForEach(0..<min(viewModel.addresses.count, maxAddresses), id: \.self) { index in
+            ForEach(0..<min(viewModel.addresses.count, Constants.maxAddresses), id: \.self) { index in
                 HStack(spacing: 12) {
                     TextField("City", text: $viewModel.addresses[index].city)
                         .frame(maxWidth: .infinity)
@@ -116,7 +124,7 @@ struct DataBrokerRunCustomJSONView: View {
             Button("Add other address") {
                 viewModel.addresses.append(.empty())
             }
-            .disabled(viewModel.addresses.count >= maxAddresses)
+            .disabled(viewModel.addresses.count >= Constants.maxAddresses)
 
             Divider()
 
@@ -207,7 +215,7 @@ struct DataBrokerRunCustomJSONView: View {
                 .frame(minHeight: 220)
                 .padding(.bottom)
         }
-        .frame(width: brokerConfigWidth)
+        .frame(width: 360)
         .frame(maxHeight: .infinity, alignment: .topLeading)
     }
 
@@ -264,34 +272,42 @@ struct DataBrokerRunCustomJSONView: View {
             GeometryReader { proxy in
                 let detailsHeight = debugEventDetailsHeight
                 let listHeight = max(200, proxy.size.height - detailsHeight - 12)
+                let listWidth = max(debugEventTableMinWidth, proxy.size.width)
 
                 VStack(alignment: .leading, spacing: 12) {
                     if viewModel.combinedDebugEvents.isEmpty {
                         Text("No events yet.")
                             .foregroundColor(.secondary)
                     } else {
-                        List(selection: $selectedDebugEventId) {
-                            Section(header: eventTableHeader.listRowInsets(EdgeInsets())) {
-                                ForEach(viewModel.combinedDebugEvents) { event in
-                                    HStack(spacing: 12) {
-                                        Text(historyDateFormatter.string(from: event.timestamp))
-                                            .frame(width: eventTimeColumnWidth, alignment: .leading)
-                                        Text(event.kind)
-                                            .frame(width: eventKindColumnWidth, alignment: .leading)
-                                        Text(event.summary)
-                                            .frame(width: eventSummaryColumnWidth, alignment: .leading)
-                                        Text(event.details)
-                                            .foregroundColor(.secondary)
-                                            .lineLimit(10)
-                                            .help(event.details)
+                        ScrollView([.horizontal, .vertical], showsIndicators: true) {
+                            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                                Section(header: eventTableHeader
+                                    .frame(width: listWidth, alignment: .leading)
+                                    .padding(.vertical, 4)
+                                    .background(Color(NSColor.controlBackgroundColor))
+                                ) {
+                                    ForEach(viewModel.combinedDebugEvents, id: \DebugEventRow.id) { event in
+                                        DebugEventRowView(
+                                            event: event,
+                                            isSelected: selectedDebugEventId == event.id,
+                                            listWidth: listWidth,
+                                            eventTimeColumnWidth: Constants.eventTimeColumnWidth,
+                                            eventProfileQueryColumnWidth: Constants.eventProfileQueryColumnWidth,
+                                            eventKindColumnWidth: Constants.eventKindColumnWidth,
+                                            eventSummaryColumnWidth: Constants.eventSummaryColumnWidth,
+                                            eventDetailsMinWidth: Constants.eventDetailsMinWidth,
+                                            historyDateFormatter: historyDateFormatter
+                                        ) {
+                                            selectedDebugEventId = event.id
+                                        }
+
+                                        Divider()
                                     }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .listRowInsets(EdgeInsets())
-                                    .tag(event.id)
                                 }
                             }
+                            .frame(minHeight: listHeight, alignment: .topLeading)
                         }
-                        .listStyle(.plain)
+                        .background(Color(NSColor.textBackgroundColor))
                         .frame(height: listHeight)
                     }
 
@@ -308,22 +324,29 @@ struct DataBrokerRunCustomJSONView: View {
     private var eventTableHeader: some View {
         HStack(spacing: 12) {
             Text("Time")
-                .frame(width: eventTimeColumnWidth, alignment: .leading)
+                .frame(width: Constants.eventTimeColumnWidth, alignment: .leading)
+            Text("Profile Query")
+                .frame(width: Constants.eventProfileQueryColumnWidth, alignment: .leading)
             Text("Kind")
-                .frame(width: eventKindColumnWidth, alignment: .leading)
+                .frame(width: Constants.eventKindColumnWidth, alignment: .leading)
             Text("Summary")
-                .frame(width: eventSummaryColumnWidth, alignment: .leading)
+                .frame(width: Constants.eventSummaryColumnWidth, alignment: .leading)
             Text("Details")
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minWidth: debugEventTableMinWidth, alignment: .leading)
         .font(.caption)
         .foregroundColor(.secondary)
     }
 
-    private var eventTimeColumnWidth: CGFloat { 140 }
-    private var eventKindColumnWidth: CGFloat { 90 }
-    private var eventSummaryColumnWidth: CGFloat { 240 }
+    private var debugEventTableMinWidth: CGFloat {
+        Constants.eventTimeColumnWidth
+        + Constants.eventProfileQueryColumnWidth
+        + Constants.eventKindColumnWidth
+        + Constants.eventSummaryColumnWidth
+        + Constants.eventDetailsMinWidth
+        + Constants.eventColumnSpacing * CGFloat(Constants.eventColumnCount)
+    }
     private var debugEventDetailsHeight: CGFloat { 160 }
     private var clockFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -424,6 +447,67 @@ private enum BrokerFilter: String, CaseIterable {
             return broker.removedAt == nil
         case .deprecated:
             return broker.removedAt != nil
+        }
+    }
+}
+
+private struct DebugEventRowView: View {
+    let event: DebugEventRow
+    let isSelected: Bool
+    let listWidth: CGFloat
+    let eventTimeColumnWidth: CGFloat
+    let eventProfileQueryColumnWidth: CGFloat
+    let eventKindColumnWidth: CGFloat
+    let eventSummaryColumnWidth: CGFloat
+    let eventDetailsMinWidth: CGFloat
+    let historyDateFormatter: DateFormatter
+    let onSelect: () -> Void
+
+    private var rowForegroundColor: Color {
+        isSelected
+        ? Color(NSColor.selectedControlTextColor)
+        : Color.primary
+    }
+
+    private var detailsForegroundColor: Color {
+        isSelected
+        ? rowForegroundColor
+        : Color.secondary
+    }
+
+    private var selectionBackgroundColor: Color {
+        isSelected
+        ? Color(NSColor.selectedControlColor)
+        : Color.clear
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(historyDateFormatter.string(from: event.timestamp))
+                .frame(width: eventTimeColumnWidth, alignment: .leading)
+            Text(event.profileQueryLabel)
+                .frame(width: eventProfileQueryColumnWidth, alignment: .leading)
+            Text(event.kind)
+                .frame(width: eventKindColumnWidth, alignment: .leading)
+            Text(event.summary)
+                .frame(width: eventSummaryColumnWidth, alignment: .leading)
+            Text(event.details)
+                .foregroundColor(detailsForegroundColor)
+                .lineLimit(10)
+                .help(event.details)
+                .frame(minWidth: eventDetailsMinWidth,
+                       maxWidth: .infinity,
+                       alignment: .leading)
+        }
+        .foregroundColor(rowForegroundColor)
+        .frame(width: listWidth, alignment: .leading)
+        .padding(.vertical, 6)
+        .background(
+            selectionBackgroundColor
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onSelect()
         }
     }
 }

@@ -458,13 +458,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 onDebugEvent: { [weak self] kind, actionType, details in
                                     let profileQuery = self?.profileQueryText(for: query.profileQuery) ?? "-"
                                     let summary = self?.actionSummary(stepType: .scan,
-                                                                      actionType: actionType,
-                                                                      profileQuery: profileQuery) ?? "-"
+                                                                      actionType: actionType) ?? "-"
                                     let progressText = self?.currentActionText(stepType: .scan,
                                                                                actionType: actionType,
                                                                                prefix: kind.rawValue) ?? "-"
                                     self?.addDebugEvent(kind: kind,
                                                         summary: summary,
+                                                        profileQueryLabel: profileQuery,
                                                         details: details,
                                                         progressText: progressText)
                                 }
@@ -540,14 +540,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     stepType: .optOut,
                     onDebugEvent: { [weak self] kind, actionType, details in
                         let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
-                        let summary = self?.actionSummary(stepType: .optOut,
-                                                          actionType: actionType,
-                                                          profileQuery: profileQuery) ?? "-"
+                        let summary = self?.actionSummary(stepType: .optOut, actionType: actionType) ?? "-"
                         let progressText = self?.currentActionText(stepType: .optOut,
                                                                    actionType: actionType,
                                                                    prefix: kind.rawValue) ?? "-"
                         self?.addDebugEvent(kind: kind,
                                             summary: summary,
+                                            profileQueryLabel: profileQuery,
                                             details: details,
                                             progressText: progressText)
                     }
@@ -707,10 +706,11 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         AppVersion.shared.versionNumber
     }
 
-    private func addDebugEvent(kind: DebugEventKind, summary: String, details: String, progressText: String) {
+    private func addDebugEvent(kind: DebugEventKind, summary: String, profileQueryLabel: String, details: String, progressText: String) {
         let event = DebugLogEvent(
             timestamp: Date(),
             kind: kind,
+            profileQueryLabel: profileQueryLabel,
             summary: summary,
             details: details
         )
@@ -726,6 +726,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 id: event.id.uuidString,
                 timestamp: event.timestamp,
                 kind: event.kind.rawValue,
+                profileQueryLabel: event.profileQueryLabel,
                 summary: event.summary,
                 details: event.details
             )
@@ -733,9 +734,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         return debugRows.sorted(by: { $0.timestamp < $1.timestamp })
     }
 
-    private func actionSummary(stepType: StepType, actionType: ActionType?, profileQuery: String) -> String {
+    private func actionSummary(stepType: StepType, actionType: ActionType?) -> String {
         let typeText = actionType?.rawValue ?? "unknown"
-        return "\(stepType.rawValue) > \(typeText)\n\(profileQuery)"
+        return "\(stepType.rawValue) > \(typeText)"
     }
 
     private func currentActionText(stepType: StepType, actionType: ActionType?, prefix: String) -> String {
@@ -790,6 +791,7 @@ struct DebugLogEvent: Identifiable {
     let id = UUID()
     let timestamp: Date
     let kind: DebugEventKind
+    let profileQueryLabel: String
     let summary: String
     let details: String
 }
@@ -798,6 +800,7 @@ struct DebugEventRow: Identifiable {
     let id: String
     let timestamp: Date
     let kind: String
+    let profileQueryLabel: String
     let summary: String
     let details: String
 }

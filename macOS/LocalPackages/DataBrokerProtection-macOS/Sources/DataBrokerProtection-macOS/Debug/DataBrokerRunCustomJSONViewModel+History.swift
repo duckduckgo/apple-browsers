@@ -97,12 +97,13 @@ extension DataBrokerRunCustomJSONViewModel {
 
     private func addHistoryEvent(_ event: HistoryEvent) {
         let summary = historyEventDescription(event)
-        let details = historyEventDetails(event)
+        let profileQueryLabel = historyEventDetails(event)
         DispatchQueue.main.async {
             self.debugEvents.append(DebugLogEvent(timestamp: event.date,
                                                   kind: .history,
+                                                  profileQueryLabel: profileQueryLabel,
                                                   summary: summary,
-                                                  details: details))
+                                                  details: ""))
         }
     }
 }

@@ -20,6 +20,7 @@
 import AIChat
 import BrowserServicesKit
 import Combine
+import Common
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -131,6 +132,8 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func reload() {
+        isPageReady = false
+        isContentHandlerReady = false
         webView.reload()
     }
 
@@ -172,7 +175,8 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func loadAIChat() {
         loadingView.startAnimating()
-        let request = URLRequest(url: aiChatSettings.aiChatURL)
+        let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+        let request = URLRequest(url: contextualURL)
         webView.load(request)
     }
 
@@ -219,6 +223,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         }
 
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
+
         isContentHandlerReady = true
         submitPendingPromptIfReady()
     }

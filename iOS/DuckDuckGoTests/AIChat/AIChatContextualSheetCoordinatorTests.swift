@@ -32,6 +32,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var didRequestExpandURLs: [URL] = []
         var openSettingsCallCount = 0
         var openSyncSettingsCallCount = 0
+        var attachPageCallCount = 0
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL) {
             didRequestToLoadURLs.append(url)
@@ -47,6 +48,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         func aiChatContextualSheetCoordinatorDidRequestOpenSyncSettings(_ coordinator: AIChatContextualSheetCoordinator) {
             openSyncSettingsCallCount += 1
+        }
+
+        func aiChatContextualSheetCoordinatorDidRequestAttachPage(_ coordinator: AIChatContextualSheetCoordinator) {
+            attachPageCallCount += 1
         }
     }
 
@@ -77,7 +82,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         sut = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
-            settings: mockSettings,
+            aiChatSettings: mockSettings,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),

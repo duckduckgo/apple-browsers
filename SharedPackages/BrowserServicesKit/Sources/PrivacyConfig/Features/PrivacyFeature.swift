@@ -80,12 +80,14 @@ public enum PrivacyFeature: String {
     case disableFireAnimation
     case htmlNewTabPage
     case daxEasterEggLogos
+    case daxEasterEggPermanentLogo
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport
     case duckAiDataClearing
     case serp
     case popupBlocking
+    case combinedPermissionView
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -132,13 +134,13 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
     case appStoreUpdateFlow
 
+    /// Warn before quit confirmation overlay
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
+    case warnBeforeQuit
+
     /// Feature flag for a macOS Tahoe fix only
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
-
-    /// New permission center
-    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
-    case newPermissionView
 
     /// Tab closing event recreation feature flag (failsafe for removing private API)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
@@ -148,9 +150,17 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
     case tabProgressIndicator
 
+    /// Feature flag for Themes
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
+    case themes
+
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
+
+    /// Failsafe for the modular termination decider pattern
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212684817782056?focus=true
+    case terminationDeciderSequence
 
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
@@ -174,20 +184,11 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210869716452614?focus=true
-    case customization
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397873940926?focus=true
-    case ampBackgroundTaskSupport
-
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
     case productTelemetrySurfaceUsage
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
-    case granularFireButtonOptions
 
     /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211661206210892?focus=true
     case experimentalBrowsingMenu
@@ -285,9 +286,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
-    /// Append the kbg disable parameter only when Duck AI features are not shown
-    case duckAISearchParameter
-
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
 
@@ -312,6 +310,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
 
+    /// Enables the omnibar onboarding for AI Chat
+    case omnibarOnboarding
+
     /// Enables the omnibar cluster for AI Chat
     case omnibarCluster
 
@@ -323,6 +324,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
+
+    /// Enables ATB measurement for Duck.ai usage on iOS
+    case aiChatAtb
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -419,11 +423,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case blackFridayCampaign
     case tierMessagingEnabled
     case allowProTierPurchase
-}
-
-public enum SslCertificatesSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .sslCertificates }
-    case allowBypass
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

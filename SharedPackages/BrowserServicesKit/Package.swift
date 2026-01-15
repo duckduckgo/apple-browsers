@@ -731,6 +731,7 @@ let package = Package(
             ],
             resources: [
                 .copy("Resources/remote-messaging-config-example.json"),
+                .copy("Resources/remote-messaging-config-featured-items.json"),
                 .copy("Resources/remote-messaging-config-malformed.json"),
                 .copy("Resources/remote-messaging-config-metrics.json"),
                 .copy("Resources/remote-messaging-config-unsupported-items.json"),
@@ -742,6 +743,7 @@ let package = Package(
                 .copy("Resources/remote-messaging-config-cards-list-items-with-rules.json"),
                 .copy("Resources/remote-messaging-config-cards-list-items.json"),
                 .copy("Resources/remote-messaging-config-placeholders.json"),
+                .copy("Resources/remote-messaging-config-cards-list-items-with-sections.json"),
                 .copy("Resources/Database_V1.sqlite"),
                 .copy("Resources/Database_V1.sqlite-shm"),
                 .copy("Resources/Database_V1.sqlite-wal"),

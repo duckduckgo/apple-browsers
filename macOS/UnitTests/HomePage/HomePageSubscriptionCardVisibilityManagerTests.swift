@@ -26,14 +26,14 @@ import SubscriptionTestingUtilities
 
 final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
     var sut: HomePageSubscriptionCardVisibilityManager!
-    var subscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var subscriptionManager: SubscriptionManagerMock!
     var persistor: MockHomePageSubscriptionCardPersisting!
     var cancellable: AnyCancellable!
 
     override func setUp() {
         super.setUp()
-        subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
-        subscriptionManager.returnSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
+        subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
         persistor = MockHomePageSubscriptionCardPersisting()
     }
 
@@ -58,9 +58,10 @@ final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
             platform: .stripe,
             status: .autoRenewable,
             activeOffers: [],
-            tier: nil
+            tier: nil,
+            availableChanges: nil
         )
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
 
         sut = HomePageSubscriptionCardVisibilityManager(subscriptionManager: subscriptionManager, persistor: persistor)
 
@@ -86,9 +87,10 @@ final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
             platform: .stripe,
             status: .autoRenewable,
             activeOffers: [],
-            tier: nil
+            tier: nil,
+            availableChanges: nil
         )
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
 
         sut = HomePageSubscriptionCardVisibilityManager(subscriptionManager: subscriptionManager, persistor: persistor)
 
@@ -161,7 +163,7 @@ final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.subscriptionManager.hasAppStoreProductsAvailableSubject.send(false)
+            self.subscriptionManager.hasAppStoreProductsAvailable = false
         }
 
         wait(for: [expectation], timeout: 1.0)

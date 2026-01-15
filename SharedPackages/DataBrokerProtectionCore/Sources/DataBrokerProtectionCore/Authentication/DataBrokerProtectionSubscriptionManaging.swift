@@ -31,9 +31,8 @@ public protocol DataBrokerProtectionSubscriptionManaging {
 
 public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtectionSubscriptionManaging {
 
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManager
     let runTypeProvider: AppRunTypeProviding
-    let isAuthV2Enabled: Bool
 
     public func accessToken() async -> String? {
         // We use a staging token for DuckDuckGo subscription supplied through a github secret/action
@@ -41,16 +40,10 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
         // the tests locally
 
         if runTypeProvider.runType == .integrationTests {
-            Logger.dataBrokerProtection.error("🐕 integrationTests")
+            Logger.dataBrokerProtection.log("🐕 integrationTests")
             var tokenKey: String
-            if !isAuthV2Enabled {
-                Logger.dataBrokerProtection.error("🐕 not auth v2")
-                tokenKey = "PRIVACYPRO_STAGING_TOKEN"
-                assertionFailure("AuthV1 no longer supported in E2E runs")
-            } else {
-                Logger.dataBrokerProtection.error("🐕 auth v2")
-                tokenKey = "PRIVACYPRO_STAGING_ACCESS_TOKEN_V2"
-            }
+            Logger.dataBrokerProtection.log("🐕 auth v2")
+            tokenKey = "PRIVACYPRO_STAGING_ACCESS_TOKEN_V2"
 
             if let token = ProcessInfo.processInfo.environment[tokenKey] {
                 return token
@@ -68,10 +61,9 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
         subscriptionManager.isUserEligibleForFreeTrial()
     }
 
-    public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, runTypeProvider: AppRunTypeProviding, isAuthV2Enabled: Bool) {
+    public init(subscriptionManager: any SubscriptionManager, runTypeProvider: AppRunTypeProviding) {
         self.subscriptionManager = subscriptionManager
         self.runTypeProvider = runTypeProvider
-        self.isAuthV2Enabled = isAuthV2Enabled
     }
 
     public func hasValidEntitlement() async throws -> Bool {

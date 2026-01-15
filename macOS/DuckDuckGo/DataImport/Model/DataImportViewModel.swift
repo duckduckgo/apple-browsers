@@ -70,6 +70,7 @@ struct DataImportViewModel {
         case profilePicker
         case moreInfo
         case passwordEntryHelp
+        case getReadPermission(URL)
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
@@ -458,6 +459,12 @@ struct DataImportViewModel {
                     PixelKit.fire(GeneralPixel.dataImportFailed(source: importSource.pixelSourceParameterName, sourceVersion: importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile), error: importError), frequency: .dailyAndStandard)
                 }
 
+                // On macOS < 15.2, show permission request screen to let user grant access
+                if #unavailable(macOS 15.2) {
+                    screen = .getReadPermission(url)
+                    return true
+                }
+
             default: continue
             }
         }
@@ -840,6 +847,8 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
+        case .getReadPermission:
+            return nil
         case .passwordEntryHelp:
             return nil
 
@@ -867,7 +876,7 @@ extension DataImportViewModel {
             switch screen {
             case .sourceAndDataTypesPicker:
                 return .cancel
-            case .archiveImport, .profilePicker, .moreInfo:
+            case .archiveImport, .profilePicker, .moreInfo, .getReadPermission:
                 return .back
             case .passwordEntryHelp:
                 return .cancel

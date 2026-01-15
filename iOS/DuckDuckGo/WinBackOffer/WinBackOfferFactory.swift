@@ -31,7 +31,7 @@ enum WinBackOfferFactory {
 #if DEBUG || ALPHA
         let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueFilesStore)
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             winbackOfferStore: WinbackOfferStore(keyValueStore: keyValueFilesStore),
             winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
             dateProvider: { winBackOfferDebugStore.simulatedTodayDate },
@@ -39,7 +39,7 @@ enum WinBackOfferFactory {
         )
 #else
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             winbackOfferStore: WinbackOfferStore(keyValueStore: keyValueFilesStore),
             winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
         )

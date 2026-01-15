@@ -47,10 +47,9 @@ struct SubscriptionEmailView: View {
                        isActive: $isShowingNetP,
                        label: { EmptyView() })
         NavigationLink(destination: LazyView(SubscriptionITPView(viewModel:
-                                                                    SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                                                                    SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                                              userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                                                             isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
-                                                                                             isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)).navigationViewStyle(.stack)),
+                                                                                             isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
         if viewModel.isPIREnabled,

@@ -67,8 +67,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Subscriptions
 
-    private let accessTokenStorage: SubscriptionTokenKeychainStorage
-    private let subscriptionManagerV2: any SubscriptionManagerV2
+    private let subscriptionManager: any SubscriptionManager
 
     // MARK: - Extensions Support
 
@@ -181,8 +180,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          defaults: UserDefaults,
          wideEvent: WideEventManaging,
          notificationCenter: NotificationCenter = .default,
-         accessTokenStorage: SubscriptionTokenKeychainStorage,
-         subscriptionManagerV2: any SubscriptionManagerV2,
+         subscriptionManager: any SubscriptionManager,
          vpnAppState: VPNAppState) {
 
         self.availableExtensions = availableExtensions
@@ -192,8 +190,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.settings = settings
         self.defaults = defaults
         self.wideEvent = wideEvent
-        self.accessTokenStorage = accessTokenStorage
-        self.subscriptionManagerV2 = subscriptionManagerV2
+        self.subscriptionManager = subscriptionManager
         self.vpnAppState = vpnAppState
         subscribeToSettingsChanges()
         subscribeToStatusChanges()
@@ -757,27 +754,17 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     private func prepareStartupOptions() async throws -> [String: NSObject] {
+        Logger.networkProtection.log("Preparing startup options")
         var options = [String: NSObject]()
-
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
-        options[NetworkProtectionOptionKey.isAuthV2Enabled] = NSNumber(value: vpnAppState.isAuthV2Enabled)
-        if !vpnAppState.isAuthV2Enabled {
-            Logger.networkProtection.log("Using Auth V1")
-            self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
-            let authToken = try fetchAuthToken()
-            options[NetworkProtectionOptionKey.authToken] = authToken
-            self.connectionWideEventData?.oauthDuration?.complete()
-        } else {
-            Logger.networkProtection.log("Using Auth V2")
-            self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
-            let tokenContainer = try await fetchTokenContainer()
-            options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
+        self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
+        let tokenContainer = try await fetchTokenContainer()
+        options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
 
-            // It’s important to force refresh the token here to immediately branch the token used by the main app from the one sent to the system extension.
-            // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-            try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
-            self.connectionWideEventData?.oauthDuration?.complete()
-        }
+        // It’s important to force refresh the token here to immediately branch the token used by the main app from the one sent to the system extension.
+        // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
+        try await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
+        self.connectionWideEventData?.oauthDuration?.complete()
 
         // Encode entire VPN settings as one unit
         let settingsSnapshot = VPNSettingsSnapshot(from: settings)
@@ -837,9 +824,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     @MainActor
     func restart() async {
-        guard vpnAppState.isAuthV2Enabled,
-            let internalManager else {
-
+        guard let internalManager else {
             // This is a temporary thing because we know this method works well
             // in case we need to roll back auth v2
             await stop(disableOnDemand: false)
@@ -935,24 +920,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
-    private func fetchAuthToken() throws -> NSString? {
-        do {
-            guard let accessToken = try accessTokenStorage.getAccessToken() else {
-                Logger.networkProtection.error("🔴 TunnelController found no token")
-                throw StartError.noAuthToken
-            }
-
-            Logger.networkProtection.log("🟢 TunnelController found token")
-            return Self.adaptAccessTokenForVPN(accessToken) as NSString
-        } catch {
-            Logger.networkProtection.fault("🔴 TunnelController failed to fetch token: \(error.localizedDescription)")
-            throw StartError.failedToFetchAuthToken(error)
-        }
-    }
-
     private func fetchTokenContainer() async throws -> TokenContainer {
         do {
-            let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
+            let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
             Logger.networkProtection.log("🟢 TunnelController found token container")
             return tokenContainer
         } catch {

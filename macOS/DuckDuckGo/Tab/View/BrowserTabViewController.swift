@@ -99,7 +99,7 @@ final class BrowserTabViewController: NSViewController {
     private let aboutPreferences: AboutPreferences
     private let accessibilityPreferences: AccessibilityPreferences
     private let duckPlayer: DuckPlayer
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
     private let tld: TLD
@@ -109,6 +109,7 @@ final class BrowserTabViewController: NSViewController {
     private var duckPlayerConsentCancellable: AnyCancellable?
     private var pinnedTabsDelegatesCancellable: AnyCancellable?
     private var keyWindowSelectedTabCancellable: AnyCancellable?
+    private var contentOverlayDismissalCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
 
     private weak var previouslySelectedTab: Tab?
@@ -153,7 +154,7 @@ final class BrowserTabViewController: NSViewController {
          aboutPreferences: AboutPreferences,
          accessibilityPreferences: AccessibilityPreferences,
          duckPlayer: DuckPlayer,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManager,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
     ) {
@@ -1233,10 +1234,10 @@ final class BrowserTabViewController: NSViewController {
                 tld: tld
             )
             self.contentOverlayPopover = overlayPopover
-            windowControllersManager.stateChanged
+            self.contentOverlayDismissalCancellable = windowControllersManager.stateChanged
                 .sink { [weak overlayPopover] _ in
                     overlayPopover?.viewController.closeContentOverlayPopover()
-                }.store(in: &self.cancellables)
+                }
             return overlayPopover
         }()
     }

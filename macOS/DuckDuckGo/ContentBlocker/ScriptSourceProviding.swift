@@ -252,7 +252,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
-            bookmarkManager: bookmarkManager
+            bookmarkManager: bookmarkManager,
+            featureFlagger: featureFlagger
         )
     }
 

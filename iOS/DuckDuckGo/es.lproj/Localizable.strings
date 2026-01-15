@@ -1291,6 +1291,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Ayer";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "¡Has encontrado un logo oculto!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo guardado";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Logotipo de Restablecer búsqueda";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Cambiar a este logotipo";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "¡Advertencia! No puedo evitar que %1$@ vea tu actividad en %2$@.\n\nPero si navegas conmigo, puedo reducir lo que %1$@ sabe de ti en general bloqueando sus rastreadores en muchos otros sitios web.";
 
@@ -1398,6 +1410,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Las funciones de IA de DuckDuckGo son privadas y opcionales. Tus datos no se utilizan para entrenar a la IA.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Resumir esta página";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Muestra botones y enlaces de Duck.ai en los resultados de búsqueda de DuckDuckGo.";
@@ -1965,6 +1980,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Buscar en la página";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Eliminar todos los chats";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Chats de Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Puede que cierre sesión en tus cuentas";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookies y datos del sitio";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Pestañas";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Elige qué eliminar";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Corriente de aire";
@@ -2947,11 +2980,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Configuración de Asistente de búsqueda";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Mostrar los nuevos chats de Duck.ai como pestañas en el navegador";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Envía automáticamente el contexto de la página a Duck.ai";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Modo de pestañas de Duck.ai";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Enviar contexto automáticamente";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ocultar imágenes generadas por IA";
@@ -3574,6 +3607,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Planes de suscripción";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Completando compra...";
 
@@ -3663,6 +3699,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Prueba gratuita activa";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Ver todos los planes";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alerta de SwiftUI";

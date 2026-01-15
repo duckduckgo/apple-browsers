@@ -236,12 +236,16 @@ final class BookmarkOutlineCellView: NSTableCellView {
     }
 
     private func updateUI() {
+        let palette = theme.palette
+
         if titleLabel.isEnabled {
             let isHighlighted = self.highlight && (self.isInKeyWindow || self.contentMode == .foldersOnly)
+            let iconsTintColor = isHighlighted && contentMode != .foldersOnly ? palette.accentContentPrimary : palette.iconsPrimary
+
             countLabel.isHidden = isHighlighted || countLabel.stringValue.isEmpty
             favoriteImageView.isHidden = isHighlighted || favoriteImageView.image == nil
             menuButton.isShown = isHighlighted && faviconImageView.image != nil // don‘t show for custom menu item
-            menuButton.contentTintColor = isHighlighted && contentMode != .foldersOnly ? .selectedMenuItemTextColor : .button
+            menuButton.contentTintColor = iconsTintColor
             urlLabel.isShown = isHighlighted && !urlLabel.stringValue.isEmpty
         } else {
             menuButton.isHidden = true

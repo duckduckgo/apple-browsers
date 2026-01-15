@@ -58,15 +58,10 @@ final class DataClearingSettingsViewModel: ObservableObject {
     // MARK: - Elements Visibility
     
     var newUIEnabled: Bool {
-        featureFlagger.isFeatureOn(.granularFireButtonOptions)
-    }
-    
-    var useImprovedPicker: Bool {
-        featureFlagger.isFeatureOn(.mobileCustomization)
+        featureFlagger.isFeatureOn(.enhancedDataClearingSettings)
     }
     
     var showAIChatsToggle: Bool {
-        if newUIEnabled { return false }
         return aiChatSettings.isAIChatEnabled && featureFlagger.isFeatureOn(.duckAiDataClearing)
     }
     

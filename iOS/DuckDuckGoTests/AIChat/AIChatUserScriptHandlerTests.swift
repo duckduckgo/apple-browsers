@@ -31,6 +31,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     var mockPayloadHandler: AIChatPayloadHandler!
     var mockAIChatSyncHandler: MockAIChatSyncHandling!
     var mockAIChatFullModeFeature: MockAIChatFullModeFeatureProviding!
+    var mockAIChatContextualModeFeature: MockAIChatContextualModeFeatureProviding!
     private var mockUserDefaults: UserDefaults!
 
     private var mockSuiteName: String {
@@ -43,12 +44,19 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockPayloadHandler = AIChatPayloadHandler()
         mockAIChatSyncHandler = MockAIChatSyncHandling()
         mockAIChatFullModeFeature = MockAIChatFullModeFeatureProviding()
+        mockAIChatContextualModeFeature = MockAIChatContextualModeFeatureProviding()
 
         mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
         mockUserDefaults.removePersistentDomain(forName: mockSuiteName)
 
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
-        aiChatUserScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalAIChatManager, syncHandler: mockAIChatSyncHandler, featureFlagger: mockFeatureFlagger, aichatFullModeFeature: mockAIChatFullModeFeature)
+        aiChatUserScriptHandler = AIChatUserScriptHandler(
+            experimentalAIChatManager: experimentalAIChatManager,
+            syncHandler: mockAIChatSyncHandler,
+            featureFlagger: mockFeatureFlagger,
+            aichatFullModeFeature: mockAIChatFullModeFeature,
+            aichatContextualModeFeature: mockAIChatContextualModeFeature
+        )
         aiChatUserScriptHandler.setPayloadHandler(mockPayloadHandler)
     }
 
@@ -58,6 +66,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockPayloadHandler = nil
         mockAIChatSyncHandler = nil
         mockAIChatFullModeFeature = nil
+        mockAIChatContextualModeFeature = nil
         super.tearDown()
     }
 
@@ -102,6 +111,30 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsURLChatIDRestoration, AIChatNativeConfigValues.defaultValues.supportsURLChatIDRestoration)
         XCTAssertEqual(configValues?.supportsAIChatFullMode, false)
         XCTAssertEqual(configValues?.supportsHomePageEntryPoint, AIChatNativeConfigValues.defaultValues.supportsHomePageEntryPoint)
+    }
+
+    func testGetAIChatNativeConfigValuesWithContextualModeFeatureAvailable() {
+        // Given
+        mockAIChatContextualModeFeature.isAvailable = true
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertNotNil(configValues)
+        XCTAssertEqual(configValues?.supportsAIChatContextualMode, true)
+    }
+
+    func testGetAIChatNativeConfigValuesWithContextualModeFeatureUnavailable() {
+        // Given
+        mockAIChatContextualModeFeature.isAvailable = false
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertNotNil(configValues)
+        XCTAssertEqual(configValues?.supportsAIChatContextualMode, false)
     }
 
     func testGetAIChatNativeHandoffData() {
@@ -364,6 +397,11 @@ struct MockUserScriptMessage: UserScriptMessage {
 
 /// Mock implementation of AIChatFullModeFeatureProviding for testing
 final class MockAIChatFullModeFeatureProviding: AIChatFullModeFeatureProviding {
+    var isAvailable: Bool = false
+}
+
+/// Mock implementation of AIChatContextualModeFeatureProviding for testing
+final class MockAIChatContextualModeFeatureProviding: AIChatContextualModeFeatureProviding {
     var isAvailable: Bool = false
 }
 

@@ -74,7 +74,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
 
     /// Manages user subscriptions and authentication state.
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
 
     /// Manages the user's state within the Freemium DBP system.
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -106,7 +106,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     ///   - featureDisabler: Optional feature disabler. If not provided, the default `DataBrokerProtectionFeatureDisabler` is used lazily.
     ///   - userDefaults: UserDefaults instance for storing preferences, defaulting to `.dbp`.
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          notificationCenter: NotificationCenter = .default,
          featureDisabler: DataBrokerProtectionFeatureDisabling? = nil,
@@ -203,18 +203,7 @@ private extension DefaultFreemiumDBPFeature {
             return storefrontOverride
         }
         guard subscriptionManager.platformIsAppStore else { return true }
-
-        // Default to false for older macOS versions as a conservative approach
-        var isUSStoreFront = false
-        if #available(macOS 12.0, *) {
-            // Check both subscription manager types for compatibility
-            if let subscriptionManagerV1 = subscriptionManager as? SubscriptionManager {
-                isUSStoreFront = subscriptionManagerV1.storePurchaseManager().currentStorefrontRegion == .usa
-            } else if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2 {
-                isUSStoreFront = subscriptionManagerV2.storePurchaseManager().currentStorefrontRegion == .usa
-            }
-        }
-        return isUSStoreFront
+        return subscriptionManager.currentStorefrontRegion == .usa
     }
 
     /// Checks if the user can make purchases. Always true for Stripe, based on App Store product availability for App Store.
@@ -269,7 +258,7 @@ private extension PrivacyConfigurationManaging {
 }
 
 /// Extension to provide computed properties for subscription manager platform and purchase logic.
-private extension SubscriptionAuthV1toV2Bridge {
+private extension SubscriptionManager {
 
     /// `true` if the subscription platform is App Store.
     var platformIsAppStore: Bool {

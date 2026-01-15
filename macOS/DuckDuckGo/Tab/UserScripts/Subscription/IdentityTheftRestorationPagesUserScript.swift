@@ -76,21 +76,18 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
     }
 
     weak var broker: UserScriptMessageBroker?
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    private let isAuthV2Enabled: Bool
 
     let featureName = "useIdentityTheftRestoration"
     lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
         HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .baseURL)) ?? .exact(hostname: OriginDomains.duckduckgo)
     ])
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
-         isAuthV2Enabled: Bool) {
+    init(subscriptionManager: any SubscriptionManager,
+         subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
-        self.isAuthV2Enabled = isAuthV2Enabled
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -109,7 +106,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
     }
 
     func getAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        if let accessToken = try? await Application.appDelegate.subscriptionAuthV1toV2Bridge.getAccessToken() {
+        if let accessToken = try? await Application.appDelegate.subscriptionManager.getAccessToken() {
             return ["token": accessToken]
         } else {
             return [String: String]()
@@ -123,7 +120,9 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         /// Note that the `useAlternateStripePaymentFlow` value is not used on the IDTR page, and so we can set the value to false here.
-        return GetFeatureValue(useSubscriptionsAuthV2: isAuthV2Enabled, usePaidDuckAi: false, useAlternateStripePaymentFlow: false, useGetSubscriptionTierOptions: false)
+        return GetFeatureValue(usePaidDuckAi: false,
+                               useAlternateStripePaymentFlow: false,
+                               useGetSubscriptionTierOptions: false)
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {

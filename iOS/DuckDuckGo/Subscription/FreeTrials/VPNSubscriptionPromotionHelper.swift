@@ -65,7 +65,7 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     private let featureFlagger: FeatureFlagger
 
     /// The subscription manager used to check if the user has a subscription.
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
 
     /// The persistor used to track and check how many times the promotion has been shown.
     private let freeTrialBadgePersistor: FreeTrialBadgePersisting
@@ -81,7 +81,7 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     ///   - freeTrialBadgePersistor: The persistor for tracking promotion views. Defaults to an instance using UserDefaults and a custom key prefix.
     ///   - pixelFiring: The pixel firing service. Defaults to Pixel.self.
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "vpn-menu-item"),
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.featureFlagger = featureFlagger

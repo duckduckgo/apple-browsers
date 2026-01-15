@@ -122,6 +122,48 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
     }
 }
 
+// MARK: - App Termination Decider
+
+/// Handles quit survey presentation during app termination.
+@MainActor
+struct QuitSurveyAppTerminationDecider {
+    let featureFlagger: FeatureFlagger
+    let dataClearingPreferences: DataClearingPreferences
+    let downloadManager: FileDownloadManagerProtocol
+    let installDate: Date?
+    let persistor: QuitSurveyPersistor
+    let reinstallUserDetection: ReinstallingUserDetecting
+    let showQuitSurvey: @MainActor () async -> Void
+}
+
+// MARK: - ApplicationTerminationDecider
+
+extension QuitSurveyAppTerminationDecider: ApplicationTerminationDecider {
+    func shouldTerminate(isAsync: Bool) -> TerminationQuery {
+        let decider = QuitSurveyDecider(
+            featureFlagger: featureFlagger,
+            dataClearingPreferences: dataClearingPreferences,
+            downloadManager: downloadManager,
+            installDate: installDate ?? Date.distantPast,
+            persistor: persistor,
+            reinstallUserDetection: reinstallUserDetection
+        )
+
+        guard decider.shouldShowQuitSurvey else {
+            return .sync(.next)
+        }
+
+        decider.markQuitSurveyShown()
+
+        // Show survey and wait for completion
+        return .async(Task { @MainActor in
+            await showQuitSurvey()
+            // Survey completed - user chose to quit
+            return .next
+        })
+    }
+}
+
 // MARK: - Persistor
 
 protocol QuitSurveyPersistor {

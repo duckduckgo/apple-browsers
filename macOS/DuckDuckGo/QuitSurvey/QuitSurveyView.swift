@@ -51,7 +51,7 @@ struct QuitSurveyFlowView: View {
     var onResize: ((CGFloat, CGFloat) -> Void)?
 
     init(
-        persistor: QuitSurveyPersistor? = nil,
+        persistor: QuitSurveyPersistor?,
         onQuit: @escaping () -> Void,
         onResize: ((CGFloat, CGFloat) -> Void)? = nil
     ) {
@@ -440,7 +440,7 @@ private struct QuitSurveyNegativeView: View {
 struct QuitSurveyView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            QuitSurveyFlowView(onQuit: {})
+            QuitSurveyFlowView(persistor: nil, onQuit: {})
                 .frame(width: 400, height: 200)
                 .previewDisplayName("Initial Question")
         }

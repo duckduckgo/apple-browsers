@@ -378,17 +378,6 @@ public final class VPNSettings {
         }
     }
 
-#if os(iOS)
-    public var isAuthV2Enabled: Bool {
-        get {
-            defaults.networkProtectionSettingIsAuthV2Enabled
-        }
-        set {
-            defaults.networkProtectionSettingIsAuthV2Enabled = newValue
-        }
-    }
-#endif
-
     // MARK: - DNS Settings
 
     public var dnsSettingsPublisher: AnyPublisher<NetworkProtectionDNSSettings, Never> {

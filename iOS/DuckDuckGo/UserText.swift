@@ -935,9 +935,9 @@ public struct UserText {
             value: """
     DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.
     
-    We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data.
+    We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. 
     
-    %@
+    %@ 
     
     Take back control of your personal information with the browser designed for data protection, not data collection.
     """,
@@ -1212,6 +1212,8 @@ public struct UserText {
     // Mark: Sync Promotion
     public static let syncPromoBookmarksTitle = NSLocalizedString("sync.promo.bookmarks.title", value: "Sync & Back Up Your Bookmarks", comment: "Title for the Sync Promotion banner")
     public static let syncPromoPasswordsTitle = NSLocalizedString("sync.promo.passwords.title", value: "Sync & Back Up Your Passwords", comment: "Title for the Sync Promotion banner")
+    public static let syncPromoCreditCardsTitle = NSLocalizedString("sync.promo.credit-cards.title", value: "Sync & Back Up Your Credit Cards", comment: "Title for the Sync Promotion banner")
+    public static let syncPromoDataImportTitle = NSLocalizedString("sync.promo.data.import.title", value: "Sync & Back Up Your Data", comment: "Title for the Sync Promotion banner")
     public static let syncPromoBookmarksMessage = NSLocalizedString("sync.promo.bookmarks.message", value: "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.", comment: "Message for the Sync Promotion banner when user has bookmarks that can be synced")
     public static let syncPromoPasswordsMessage = NSLocalizedString("sync.promo.passwords.message", value: "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.", comment: "Message for the Sync Promotion banner when user has passwords that can be synced")
     public static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value: "Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
@@ -2123,7 +2125,7 @@ public struct UserText {
     public static let dataImportSummarySyncBookmarks = NSLocalizedString("data.import.summary.button.title.sync.bookmarks", value: "Bookmarks", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncData = NSLocalizedString("data.import.summary.button.title.sync.data", value: "Data", comment: "Parameter for data.import.summary.button.title.sync")
     public static let dataImportSummaryVisitSyncSettings = NotLocalizedString("data.import.summary.message.sync.settings", value: "Visit Settings to securely sync bookmarks and passwords between your devices.", comment: "Message informing the user to visit settings to sync bookmarks and passwords. Used from What's New and for en_US locale only.")
-
+    
     public enum SubscriptionPromotionOnboarding {
         public enum Promo {
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")

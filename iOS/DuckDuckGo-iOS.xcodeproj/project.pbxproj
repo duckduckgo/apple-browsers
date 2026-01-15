@@ -1936,6 +1936,7 @@
 		D6FEB8B52B74994000C3615F /* HeadlessWebViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FEB8B42B74994000C3615F /* HeadlessWebViewCoordinator.swift */; };
 		EA39B7E2268A1A35000C62CD /* privacy-reference-tests in Resources */ = {isa = PBXBuildFile; fileRef = EA39B7E1268A1A35000C62CD /* privacy-reference-tests */; };
 		EAB19EDA268963510015D3EA /* DomainMatchingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */; };
+		ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */; };
 		EE00D2D72DFB2D4900B79E9D /* AutofillUsageStore+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00D2D62DFB2D4000B79E9D /* AutofillUsageStore+App.swift */; };
 		EE00D2D82DFC3A3300B79E9D /* UserDefaults+Autofill.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00D2D32DFB295000B79E9D /* UserDefaults+Autofill.swift */; };
 		EE0153E12A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0153E02A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift */; };
@@ -4515,6 +4516,7 @@
 				7BC26CA22DFC0CB800E52480 /* VPN in Frameworks */,
 				4B470EE4299C6DFB0086EBDC /* Core.framework in Frameworks */,
 				4BC8948C2C7902E6009AA141 /* WireGuard in Frameworks */,
+				ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9966,6 +9968,7 @@
 				4BC8948B2C7902E6009AA141 /* WireGuard */,
 				4BC95EB02D7417BF002FAB32 /* Subscription */,
 				7BC26CA12DFC0CB800E52480 /* VPN */,
+				ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */,
 			);
 			productName = PacketTunnelProvider;
 			productReference = 02025662298818B100E694E7 /* PacketTunnelProvider.appex */;
@@ -16197,6 +16200,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 854007E52B57FB020001BD98 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
+		};
+		ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfig;
 		};
 		F11595D02E854C7400CC0481 /* AttributedMetric */ = {
 			isa = XCSwiftPackageProductDependency;

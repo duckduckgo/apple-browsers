@@ -545,6 +545,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case dataImportWideEventMeasurement
     case newDataImportExperience
+    case dataImportSummarySyncPromotion
 }
 
 public enum SERPSubfeature: String, PrivacySubfeature {

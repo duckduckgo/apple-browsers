@@ -3727,6 +3727,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Iestatīt sinhronizāciju";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Sinhronizē un dublē savas kredītkartes";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Sinhronizē un dublē savus datus";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nē, paldies";
 

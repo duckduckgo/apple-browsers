@@ -120,7 +120,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     }
 
     private let notificationCenter: NetworkProtectionNotificationCenter = DistributedNotificationCenter.default()
-    private let wideEvent: WideEventManaging = WideEvent(featureFlagProvider: StaticWideEventFeatureFlagProvider(isPostEndpointEnabled: true))
+    private let wideEvent: WideEventManaging
 
     // MARK: - PacketTunnelProvider.Event reporting
 
@@ -499,6 +499,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent(systemVersion: trimmedOSVersion))
         NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = AppVersion.shared.versionAndBuildNumber
         let settings = VPNSettings(defaults: defaults) // Note, settings here is not yet populated with the startup options
+        self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(settings: settings))
 
         // MARK: - Subscription configuration
 
@@ -716,13 +717,13 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
 }
 
-private struct StaticWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
-    let isPostEndpointEnabled: Bool
+private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    let settings: VPNSettings
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
         switch flag {
         case .postEndpoint:
-            return isPostEndpointEnabled
+            return settings.wideEventPostEndpointEnabled
         }
     }
 }

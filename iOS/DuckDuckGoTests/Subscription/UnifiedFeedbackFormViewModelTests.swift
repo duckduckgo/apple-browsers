@@ -38,7 +38,7 @@ struct UnifiedFeedbackFormViewModelTests {
         source: UnifiedFeedbackFormViewModel.Source = .unknown,
         feedbackSender: MockFeedbackSender = MockFeedbackSender()
     ) -> UnifiedFeedbackFormViewModel {
-        let subscriptionManger = SubscriptionManagerMockV2()
+        let subscriptionManger = SubscriptionManagerMock()
         subscriptionManger.resultFeatures = subscriptionFeatures
         let viewModel = UnifiedFeedbackFormViewModel(
             subscriptionManager: subscriptionManger,

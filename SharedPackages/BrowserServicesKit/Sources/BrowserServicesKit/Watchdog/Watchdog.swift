@@ -54,11 +54,11 @@ public final actor Watchdog {
     private var monitoringTask: Task<Void, Never>?
     private var heartbeatUpdateTask: Task<Void, Never>?
 
-    private var hangStartTime: Date?
+    private var hangStartTime: DispatchTime?
     private var hangState: HangState = .responsive {
         didSet {
             if hangState != oldValue {
-                let duration = currentHangDuration(currentTime: Date())
+                let duration = currentHangDuration(currentTime: .now())
                 hangStateSubject.send((hangState, duration))
             }
         }
@@ -80,13 +80,7 @@ public final actor Watchdog {
     /// Encapsulates recovery detection state and logic
     private var recoveryState: RecoveryState
 
-    @MainActor
     public private(set) var isRunning: Bool = false
-
-    @MainActor
-    private func setIsRunning(_ state: Bool) {
-        isRunning = state
-    }
 
     public private(set) var isPaused: Bool = false
 
@@ -130,34 +124,35 @@ public final actor Watchdog {
 
     /// Starts the watchdog running.
     ///
-    public func start() async {
-        let isCurrentlyRunning = await isRunning
-        guard !isCurrentlyRunning else { return }
+    public func start() {
+        guard isRunning == false else {
+            return
+        }
 
         cancelAndClearTasks()
         resetHangState()
+
         isPaused = false
+        isRunning = true
 
         monitoringTask = Task.detached { [weak self] in
             await self?.runMonitoringLoop()
         }
-
-        await setIsRunning(true)
 
         Self.logger.info("Watchdog started monitoring main thread with timeout: \(self.maximumHangDuration)s")
     }
 
     /// Stops the watchdog entirely.
     ///
-    public func stop() async {
-        let isCurrentlyRunning = await isRunning
-        guard isCurrentlyRunning else { return }
+    public func stop() {
+        guard isRunning else {
+            return
+        }
 
         cancelAndClearTasks()
+        isRunning = false
 
         Self.logger.info("Watchdog stopped monitoring")
-
-        await setIsRunning(false)
     }
 
     private func cancelAndClearTasks() {
@@ -170,26 +165,29 @@ public final actor Watchdog {
 
     /// Pauses the watchdog, if running. Can be resumed with `resume`.
     ///
-    public func pause() async {
-        guard await isRunning else { return }
+    public func pause() {
+        guard isRunning else {
+            return
+        }
 
         Self.logger.info("Watchdog paused")
         isPaused = true
-        await stop()
+        stop()
     }
 
     /// Resumes the watchdog after being paused. Will only resume if the watchdog was previously running.
     ///
-    public func resume() async {
-        guard isPaused else { return }
+    public func resume() {
+        guard isPaused else {
+            return
+        }
 
         Self.logger.info("Watchdog resumed")
 
-        // Reset the heartbeat and state to start fresh after resume
-        await monitor.resetHeartbeat()
+        // Reset the HangState to start fresh after resume. Heartbeat will be reset by `runMonitoringLoop`
         resetHangState()
 
-        await start()
+        start()
     }
 
     private func resetHangState() {
@@ -214,7 +212,7 @@ public final actor Watchdog {
 
             // Sleep for check interval
             do {
-                let nanoseconds = UInt64(checkInterval * 1_000_000_000)
+                let nanoseconds = UInt64(checkInterval * .nanosecondsPerSecond)
                 try await Task.sleep(nanoseconds: nanoseconds)
             } catch {
                 // Task was cancelled
@@ -223,6 +221,10 @@ public final actor Watchdog {
 
             // Check if the heartbeat was actually updated
             let timeSinceLastHeartbeat = await monitor.timeSinceLastHeartbeat()
+            if Task.isCancelled {
+                break
+            }
+
             handleHangDetection(timeSinceLastHeartbeat: timeSinceLastHeartbeat)
         }
     }
@@ -232,7 +234,7 @@ public final actor Watchdog {
     }
 
     private func handleHangDetection(timeSinceLastHeartbeat: TimeInterval) {
-        let now = Date()
+        let now = DispatchTime.now()
 
         // Skip hang detection checks if the watchdog is paused
         guard !isPaused else {
@@ -273,15 +275,13 @@ public final actor Watchdog {
 
     // MARK: - State transitions
 
-    private func transition(from currentState: HangState, to newState: HangState, at time: Date, timeSinceLastHeartbeat: TimeInterval) {
+    private func transition(from currentState: HangState, to newState: HangState, at time: DispatchTime, timeSinceLastHeartbeat: TimeInterval) {
         guard currentState != newState else { return }
 
         switch (currentState, newState) {
         case (.responsive, .hanging):
             hangState = .hanging
-            // Account for half the check interval - the hang will likely have started earlier than the last missed heartbeat
-            // The max() guards against potential negative values – if the time since last heartbeat is less than the check interval/2.
-            hangStartTime = time.addingTimeInterval(-max((timeSinceLastHeartbeat - checkInterval / 2), 0))
+            hangStartTime = calculateHangStartTime(currentTime: time, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
             Self.logger.info("Main thread hang detected! Last heartbeat: \(timeSinceLastHeartbeat)s ago.")
         case (.hanging, .responsive):
             logHangDuration(message: "Main thread hang ended.", currentTime: time)
@@ -302,7 +302,7 @@ public final actor Watchdog {
         }
     }
 
-    private func handleRecoveryDetection(at time: Date, timeSinceLastHeartbeat: TimeInterval) {
+    private func handleRecoveryDetection(at time: DispatchTime, timeSinceLastHeartbeat: TimeInterval) {
         recoveryState.recordHeartbeat(at: time)
 
         if recoveryState.isRecovered {
@@ -312,7 +312,7 @@ public final actor Watchdog {
 
     // MARK: Event firing
 
-    private func fireHangEvent(_ eventFactory: (Int) -> Watchdog.Event, currentTime: Date) {
+    private func fireHangEvent(_ eventFactory: (Int) -> Watchdog.Event, currentTime: DispatchTime) {
         let actualHangDuration = currentHangDuration(currentTime: currentTime)
         let nearestSecond = hangDurationToNearestSecond(duration: actualHangDuration)
         let reportedSecond = max(Int(minimumHangDuration), min(nearestSecond, Int(maximumHangDuration)))
@@ -321,11 +321,17 @@ public final actor Watchdog {
 
     // MARK: Duration handling
 
-    private func currentHangDuration(currentTime: Date) -> TimeInterval {
-        guard let hangStartTime = hangStartTime else { return 0 }
+    private func calculateHangStartTime(currentTime: DispatchTime, timeSinceLastHeartbeat: TimeInterval) -> DispatchTime {
+        let adjustmentNanoseconds = UInt64(max((timeSinceLastHeartbeat - checkInterval / 2), 0) * .nanosecondsPerSecond)
+        return DispatchTime(uptimeNanoseconds: currentTime.uptimeNanoseconds - adjustmentNanoseconds)
+    }
+
+    private func currentHangDuration(currentTime: DispatchTime) -> TimeInterval {
+        guard let hangStartTime else { return 0 }
 
         let hangEndTime = recoveryState.hangEndTime ?? currentTime
-        return hangEndTime.timeIntervalSince(hangStartTime)
+        let deltaInNanoseconds = Double(hangEndTime.uptimeNanoseconds - hangStartTime.uptimeNanoseconds)
+        return TimeInterval(deltaInNanoseconds / .nanosecondsPerSecond)
     }
 
     private func hangDurationToNearestSecond(duration: TimeInterval) -> Int {
@@ -336,7 +342,7 @@ public final actor Watchdog {
         return String(format: "%.1f", duration)
     }
 
-    private func logHangDuration(message: String, currentTime: Date) {
+    private func logHangDuration(message: String, currentTime: DispatchTime) {
         guard hangStartTime != nil else { return }
 
         let hangDuration = currentHangDuration(currentTime: currentTime)
@@ -348,13 +354,13 @@ public final actor Watchdog {
 private final class RecoveryState {
     let requiredHeartbeats: Int
     private(set) var detectedResponsiveHeartbeats: Int = 0
-    private(set) var firstHeartbeatResponseTime: Date?
+    private(set) var firstHeartbeatResponseTime: DispatchTime?
 
     init(requiredHeartbeats: Int) {
         self.requiredHeartbeats = requiredHeartbeats
     }
 
-    func recordHeartbeat(at time: Date) {
+    func recordHeartbeat(at time: DispatchTime) {
         if detectedResponsiveHeartbeats == 0 {
             firstHeartbeatResponseTime = time
         }
@@ -370,24 +376,30 @@ private final class RecoveryState {
         firstHeartbeatResponseTime = nil
     }
 
-    var hangEndTime: Date? {
+    var hangEndTime: DispatchTime? {
         firstHeartbeatResponseTime
     }
 }
 
 /// Actor that manages the heartbeat timestamp in a thread-safe way
 private actor WatchdogMonitor {
-    private var lastHeartbeat = Date()
+    private var lastHeartbeat: DispatchTime = .now()
 
     func resetHeartbeat() {
-        lastHeartbeat = Date()
+        lastHeartbeat = .now()
     }
 
     func updateHeartbeat() {
-        lastHeartbeat = Date()
+        lastHeartbeat = .now()
     }
 
     func timeSinceLastHeartbeat() -> TimeInterval {
-        Date().timeIntervalSince(lastHeartbeat)
+        let now = DispatchTime.now()
+        let deltaInNanoseconds = Double(now.uptimeNanoseconds - lastHeartbeat.uptimeNanoseconds)
+        return TimeInterval(deltaInNanoseconds / .nanosecondsPerSecond)
     }
+}
+
+private extension Double {
+    static let nanosecondsPerSecond = Double(NSEC_PER_SEC)
 }

@@ -37,7 +37,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         autoreleasepool {
             promptHandler = AIChatPromptHandler.shared
             windowControllersManager = Application.appDelegate.windowControllersManager
-            tabsPreferences = TabsPreferences()
+            tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager)
             handler = NewTabPageOmnibarActionsHandler(
                 promptHandler: promptHandler,
                 windowControllersManager: windowControllersManager,

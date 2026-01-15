@@ -27,7 +27,7 @@ protocol HomePageSubscriptionCardVisibilityManaging {
 }
 
 final class HomePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging {
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private var persistor: HomePageSubscriptionCardPersisting
 
     private let hasSubscriptionSubject = CurrentValueSubject<Bool, Never>(false)
@@ -40,7 +40,7 @@ final class HomePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardV
         $shouldShowSubscriptionCard
     }
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, persistor: HomePageSubscriptionCardPersisting) {
+    init(subscriptionManager: any SubscriptionManager, persistor: HomePageSubscriptionCardPersisting) {
         self.subscriptionManager = subscriptionManager
         self.persistor = persistor
 

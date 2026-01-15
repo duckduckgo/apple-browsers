@@ -149,7 +149,7 @@ struct SettingsRootView: View {
     @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
         SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
                                                              navigationCoordinator: subscriptionNavigationCoordinator,
-                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                              subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                              subscriptionDataReporter: viewModel.subscriptionDataReporter,
                                                              userScriptsDependencies: viewModel.userScriptsDependencies,
@@ -159,9 +159,20 @@ struct SettingsRootView: View {
                                                              wideEvent: AppDependencyProvider.shared.wideEvent)
     }
 
+    @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
+        SubscriptionContainerViewFactory.makePlansFlowV2(redirectURLComponents: redirectURLComponents,
+                                                         navigationCoordinator: subscriptionNavigationCoordinator,
+                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                         subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                         userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                         dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                         wideEvent: AppDependencyProvider.shared.wideEvent)
+    }
+
     @ViewBuilder func emailFlowNavigationDestination() -> some View {
         SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                          subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                          userScriptsDependencies: viewModel.userScriptsDependencies,
                                                          internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -212,12 +223,15 @@ struct SettingsRootView: View {
                 SubscriptionPIRMoveToDesktopView()
             }
         case .itr:
-            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                  userScriptsDependencies: viewModel.userScriptsDependencies,
                                                  isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)
             SubscriptionITPView(viewModel: model)
         case let .subscriptionFlow(redirectURLComponents):
             subscriptionFlowNavigationDestination(redirectURLComponents: redirectURLComponents)
+                .environmentObject(subscriptionNavigationCoordinator)
+        case let .subscriptionPlanChangeFlow(redirectURLComponents):
+            subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: redirectURLComponents)
                 .environmentObject(subscriptionNavigationCoordinator)
         case .restoreFlow:
             emailFlowNavigationDestination()
@@ -233,7 +247,7 @@ struct SettingsRootView: View {
             SettingsAppearanceView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
-                let model = SubscriptionSettingsViewModelV2(userScriptsDependencies: viewModel.userScriptsDependencies)
+                let model = SubscriptionSettingsViewModel(userScriptsDependencies: viewModel.userScriptsDependencies)
                 SubscriptionSettingsViewV2(configuration: configuration, viewModel: model, settingsViewModel: viewModel)
                     .environmentObject(subscriptionNavigationCoordinator)
             }

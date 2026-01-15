@@ -241,7 +241,7 @@ class MainViewController: UIViewController {
     private let syncAIChatsCleaner: SyncAIChatsCleaning
 
     private var duckPlayerEntryPointVisible = false
-    private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+    private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
     private let daxEasterEggLogoStore: DaxEasterEggLogoStoring
@@ -2032,6 +2032,8 @@ class MainViewController: UIViewController {
             launchSettings(deepLinkTarget: deepLinkTarget)
         case .subscriptionFlow(let components):
             launchSettings(deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
+        case .subscriptionPlanChangeFlow(let components):
+            launchSettings(deepLinkTarget: .subscriptionPlanChangeFlow(redirectURLComponents: components))
         case .subscriptionSettings:
             launchSettings(deepLinkTarget: .subscriptionSettings)
         case .restoreFlow:
@@ -2172,7 +2174,7 @@ class MainViewController: UIViewController {
     @objc
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
@@ -2280,7 +2282,7 @@ class MainViewController: UIViewController {
     @objc
     private func onNetworkProtectionAccountSignOut(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(

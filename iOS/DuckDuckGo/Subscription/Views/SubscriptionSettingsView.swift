@@ -20,6 +20,7 @@
 import Foundation
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import Core
 import Networking
 import Subscription
@@ -39,7 +40,7 @@ struct SubscriptionSettingsViewV2: View {
     @State var configuration: SubscriptionSettingsViewConfiguration
     @Environment(\.dismiss) var dismiss
 
-    @StateObject var viewModel: SubscriptionSettingsViewModelV2
+    @StateObject var viewModel: SubscriptionSettingsViewModel
     @StateObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     var viewPlans: (() -> Void)?
@@ -57,6 +58,7 @@ struct SubscriptionSettingsViewV2: View {
     @State var isShowingSubscriptionError = false
     @State var isShowingSupportView = false
     @State var isShowingPlansView = false
+    @State var isShowingUpgradeView = false
 
     var body: some View {
         optionsView
@@ -88,6 +90,34 @@ struct SubscriptionSettingsViewV2: View {
         }
         .listRowBackground(Color.clear)
         .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private var upgradeSection: some View {
+        Section(header: Text(UserText.subscriptionUpgradeSectionTitle)) {
+            // Row 1: Icon + Description
+            HStack(spacing: 12) {
+                Image(uiImage: DesignSystemImages.Color.Size24.aiChatAdvanced)
+                    .resizable()
+                    .frame(width: 24, height: 24)
+                Text(UserText.subscriptionUpgradeSectionCaption)
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+            }
+            .listRowBackground(Color(designSystemColor: .surface))
+
+            // Row 2: Upgrade button with chevron
+            if let tierName = viewModel.firstAvailableUpgradeTier {
+                SettingsCustomCell(content: {
+                    Text(UserText.subscriptionUpgradeButton(tierName: tierName))
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .accent))
+                        .padding(.leading, 36) // 24 (icon) + 12 (spacing) to align with text
+                },
+                action: { viewModel.navigateToPlans(goToUpgrade: true) },
+                disclosureIndicator: true,
+                isButton: true)
+            }
+        }
     }
 
     private var devicesSection: some View {
@@ -198,7 +228,7 @@ struct SubscriptionSettingsViewV2: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .accent))
             },
-                               action: { viewModel.viewAllPlans() },
+                               action: { viewModel.navigateToPlans() },
                                disclosureIndicator: true,
                                isButton: true)
         }
@@ -312,31 +342,11 @@ struct SubscriptionSettingsViewV2: View {
     }
 
     @ViewBuilder
-    private var rebrandingMessage: some View {
-        if viewModel.showRebrandingMessage {
-            HStack(alignment: .top) {
-                Text(UserText.subscriptionRebrandingMessage)
-                    .font(
-                        Font(uiFont: UIFont.daxSubheadSemibold())
-                    )
-                Spacer()
-                Button(action: {
-                    viewModel.dismissRebrandingMessage()
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
-                }
-            }
-            .padding(.vertical, 2)
-        }
-    }
-
-    @ViewBuilder
     private var optionsView: some View {
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
                 navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -356,7 +366,7 @@ struct SubscriptionSettingsViewV2: View {
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
                 navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -378,7 +388,7 @@ struct SubscriptionSettingsViewV2: View {
             EmptyView()
         }.hidden()
 
-        NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+        NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(), dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
                                                                                                     isProTierPurchaseEnabled: { settingsViewModel.subscriptionFeatureAvailability.isProTierPurchaseEnabled },
@@ -387,11 +397,12 @@ struct SubscriptionSettingsViewV2: View {
             EmptyView()
         }.hidden()
 
+        // View All Plans navigation
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makePlansFlowV2(
-                redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue),
+                redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue),
                 navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -401,11 +412,28 @@ struct SubscriptionSettingsViewV2: View {
         ) { EmptyView() }
             .hidden()
 
+        // Upgrade navigation
+        NavigationLink(
+            destination: SubscriptionContainerViewFactory.makePlansFlowV2(
+                redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue, goToUpgrade: true),
+                navigationCoordinator: subscriptionNavigationCoordinator,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                userScriptsDependencies: settingsViewModel.userScriptsDependencies,
+                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
+                wideEvent: AppDependencyProvider.shared.wideEvent),
+            isActive: $isShowingUpgradeView
+        ) { EmptyView() }
+            .hidden()
+
         List {
             headerSection
                 .padding(.horizontal, -20)
                 .padding(.vertical, -10)
-            rebrandingMessage
+            if viewModel.shouldShowUpgrade {
+                upgradeSection
+            }
             if configuration == .subscribed || configuration == .expired || configuration == .trial {
                 devicesSection
             }
@@ -452,6 +480,14 @@ struct SubscriptionSettingsViewV2: View {
         }
         .onChange(of: isShowingPlansView) { value in
             viewModel.displayPlansView(value)
+        }
+
+        // Upgrade View binding
+        .onChange(of: viewModel.state.isShowingUpgradeView) { value in
+            isShowingUpgradeView = value
+        }
+        .onChange(of: isShowingUpgradeView) { value in
+            viewModel.displayUpgradeView(value)
         }
 
         // Removal Notice

@@ -29,7 +29,7 @@ protocol UpdateProgressManaging: AnyObject {
 
     /// Attempt to transition to a new state. Returns false if transition was rejected.
     @discardableResult
-    func transition(to newProgress: UpdateCycleProgress) -> Bool
+    func transition(to newProgress: UpdateCycleProgress, resume: (() -> Void)?) -> Bool
 
     /// Reset state for a new update cycle
     func reset()
@@ -37,6 +37,11 @@ protocol UpdateProgressManaging: AnyObject {
     // Computed convenience properties
     var isAtRestartCheckpoint: Bool { get }
     var isAtDownloadCheckpoint: Bool { get }
+    var isResumable: Bool { get }
+    var resumeCallback: (() -> Void)? { get }
+
+    /// Handles progress changes from the driver - matches driver's expected callback signature
+    func handleProgressChange(_ progress: UpdateCycleProgress, _ resume: (() -> Void)?)
 }
 
 /// Concrete implementation of update progress state management.
@@ -46,18 +51,45 @@ protocol UpdateProgressManaging: AnyObject {
 final class UpdateProgressState: UpdateProgressManaging {
     @Published private(set) var updateProgress = UpdateCycleProgress.default
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
+    private(set) var resumeCallback: (() -> Void)?
+
+    var isResumable: Bool { resumeCallback != nil }
+
+    private var isIdleOrTerminal: Bool {
+        switch updateProgress {
+        case .updateCycleNotStarted, .updaterError:
+            return true
+        case .updateCycleDone(let reason):
+            switch reason {
+            case .finishedWithNoError, .finishedWithNoUpdateFound, .dismissedWithNoError, .dismissingObsoleteUpdate:
+                return true
+            case .pausedAtDownloadCheckpoint, .pausedAtRestartCheckpoint, .proceededToInstallationAtRestartCheckpoint:
+                return false
+            }
+        case .updateCycleDidStart, .downloadDidStart, .downloading, .extractionDidStart, .extracting,
+             .readyToInstallAndRelaunch, .installationDidStart, .installing:
+            return false
+        }
+    }
 
     @discardableResult
-    func transition(to newProgress: UpdateCycleProgress) -> Bool {
-        // Don't overwrite error state with "dismissed"
+    func transition(to newProgress: UpdateCycleProgress, resume: (() -> Void)? = nil) -> Bool {
+        // Preserve error state so UI can show the error instead of clearing it
         if case .updaterError = updateProgress,
            case .updateCycleDone(.dismissedWithNoError) = newProgress {
-            Logger.updates.log("🔍 UpdateProgressState.transition: REJECTED \(String(describing: newProgress), privacy: .public) (current is error)")
+            Logger.updates.log("🔍 transition REJECTED: \(String(describing: newProgress), privacy: .public) from \(String(describing: self.updateProgress), privacy: .public)")
             return false
         }
 
-        Logger.updates.log("🔍 UpdateProgressState.transition: \(String(describing: self.updateProgress), privacy: .public) → \(String(describing: newProgress), privacy: .public)")
+        // Prevent new checks from disrupting pending updates (e.g., at restart checkpoint)
+        if case .updateCycleDidStart = newProgress, !isIdleOrTerminal {
+            Logger.updates.log("🔍 transition REJECTED: \(String(describing: newProgress), privacy: .public) from \(String(describing: self.updateProgress), privacy: .public)")
+            return false
+        }
+
+        Logger.updates.log("🔍 transition: \(String(describing: self.updateProgress), privacy: .public) → \(String(describing: newProgress), privacy: .public)")
         updateProgress = newProgress
+        resumeCallback = resume
         return true
     }
 
@@ -82,6 +114,10 @@ final class UpdateProgressState: UpdateProgressManaging {
             return true
         }
         return false
+    }
+
+    func handleProgressChange(_ progress: UpdateCycleProgress, _ resume: (() -> Void)?) {
+        transition(to: progress, resume: resume)
     }
 }
 

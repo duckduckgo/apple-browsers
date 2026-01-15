@@ -96,7 +96,7 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         // Use passed progress if available (avoids @Published willSet timing issue)
         let currentProgress = progress ?? progressState.updateProgress
         let isDone = currentProgress.isDone
-        let isResumable = userDriver?.isResumable == true
+        let isResumable = progressState.isResumable
         hasPendingUpdate = isInstalled && isDone && isResumable
         Logger.updates.log("🔍 refreshUpdateFromCache: isInstalled=\(isInstalled), isDone=\(isDone), isResumable=\(isResumable) → hasPendingUpdate=\(self.hasPendingUpdate)")
     }
@@ -171,15 +171,16 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
                 // If switching to automatic while at download checkpoint, trigger download
                 if areAutomaticUpdatesEnabled && isAtDownloadCheckpoint {
-                    userDriver?.resume()
+                    progressState.resumeCallback?()
                 }
 
-                userDriver?.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
+                userDriver.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
 
                 // Update Sparkle settings when preference changes
+                // Always check for updates; only auto-download when FF on AND automatic enabled
                 let featureFlagEnabled = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-                updater?.automaticallyChecksForUpdates = featureFlagEnabled && areAutomaticUpdatesEnabled
-                updater?.automaticallyDownloadsUpdates = areAutomaticUpdatesEnabled
+                updater?.automaticallyChecksForUpdates = true
+                updater?.automaticallyDownloadsUpdates = featureFlagEnabled && areAutomaticUpdatesEnabled
             }
         }
     }
@@ -204,7 +205,7 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     lazy var notificationDotPublisher = notificationDotSubject.eraseToAnyPublisher()
 
     private(set) var updater: SPUUpdater?
-    private(set) var userDriver: SimplifiedUpdateUserDriver?
+    private(set) var userDriver: SimplifiedUpdateUserDriver
     private let willRelaunchAppSubject = PassthroughSubject<Void, Never>()
     private var internalUserDecider: InternalUserDecider
 
@@ -237,6 +238,11 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             internalUserDecider: internalUserDecider,
             areAutomaticUpdatesEnabled: currentAutomaticUpdatesEnabled
         )
+        self.userDriver = SimplifiedUpdateUserDriver(
+            internalUserDecider: internalUserDecider,
+            areAutomaticUpdatesEnabled: currentAutomaticUpdatesEnabled,
+            onProgressChange: progressState.handleProgressChange
+        )
         super.init()
 
         // Subscribe to progress state changes
@@ -249,8 +255,6 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         self.updateWideEvent.cleanupAbandonedFlows()
 
         _ = try? configureUpdater()
-
-        checkForUpdateRespectingRollout()
 
         validateUpdateExpectations()
     }
@@ -342,32 +346,30 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
     func checkForUpdateRespectingRollout() {
 #if DEBUG
-        guard NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) else {
+        let featureFlagOn = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+        Logger.updates.log("🔍 checkForUpdateRespectingRollout: DEBUG build, autoUpdateInDEBUG=\(featureFlagOn, privacy: .public)")
+        guard featureFlagOn else {
+            Logger.updates.log("🔍 checkForUpdateRespectingRollout: bailing - feature flag off")
             return
         }
 #endif
+        Logger.updates.log("🔍 checkForUpdateRespectingRollout: calling performUpdateCheck")
         performUpdateCheck()
     }
 
     private func performUpdateCheck() {
-        Task { @MainActor in
-            guard let updater, updater.canCheckForUpdates, !updater.sessionInProgress else {
-                Logger.updates.debug("Update check skipped - Sparkle not ready or session in progress")
-                return
-            }
-
-            if case .updaterError = updateProgress {
-                updateWideEvent.cancelFlow(reason: .newCheckStarted)
-                userDriver?.cancelAndDismissCurrentUpdate()
-            }
-
-            userDriver?.resetState()
-            progressState.transition(to: .updateCycleDidStart)
-            updateWideEvent.startFlow(initiationType: .automatic)
-
-            Logger.updates.log("Checking for updates respecting rollout")
-            updater.checkForUpdatesInBackground()
+        guard let updater, updater.canCheckForUpdates else {
+            Logger.updates.log("🔍 performUpdateCheck: bailing - Sparkle not ready")
+            return
         }
+
+        // State machine decides if transition is allowed
+        if progressState.transition(to: .updateCycleDidStart) {
+            updateWideEvent.startFlow(initiationType: .automatic)
+        }
+
+        Logger.updates.log("🔍 performUpdateCheck: calling updater.checkForUpdatesInBackground()")
+        updater.checkForUpdatesInBackground()
     }
 
     func checkForUpdateSkippingRollout() {
@@ -382,25 +384,17 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     }
 
     private func performUpdateCheckSkippingRollout() {
-        Task { @MainActor in
-            guard let updater, updater.canCheckForUpdates, !updater.sessionInProgress else {
-                Logger.updates.debug("User-initiated update check skipped - Sparkle not ready or session in progress")
-                return
-            }
-
-            Logger.updates.debug("User-initiated update check starting")
-
-            if case .updaterError = updateProgress {
-                updateWideEvent.cancelFlow(reason: .newCheckStarted)
-                userDriver?.cancelAndDismissCurrentUpdate()
-            }
-
-            userDriver?.resetState()
-            progressState.transition(to: .updateCycleDidStart)
-
-            Logger.updates.log("Checking for updates skipping rollout")
-            updater.checkForUpdates()
+        guard let updater, updater.canCheckForUpdates else {
+            Logger.updates.debug("User-initiated update check skipped - Sparkle not ready")
+            return
         }
+
+        // State machine decides if transition is allowed
+        // Wide event flow already started by caller (checkForUpdateSkippingRollout)
+        progressState.transition(to: .updateCycleDidStart)
+
+        Logger.updates.log("Checking for updates skipping rollout")
+        updater.checkForUpdates()
     }
 
     // MARK: - Private
@@ -415,25 +409,10 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
     @discardableResult
     private func configureUpdater() throws -> SPUUpdater? {
-        if let userDriver {
-            userDriver.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
-        } else {
-            let driver = SimplifiedUpdateUserDriver(
-                internalUserDecider: internalUserDecider,
-                areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled,
-                onProgressChange: { [weak self] progress in
-                    self?.progressState.transition(to: progress)
-                }
-            )
-            userDriver = driver
-        }
-
-        guard let userDriver,
-              updater == nil else {
+        guard updater == nil else {
             return nil
         }
 
-        // Only clear cached result when creating a new updater, not when reconfiguring
         cachedUpdateResult = nil
 
         let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
@@ -441,11 +420,18 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         let featureFlagEnabled = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
 
         updater.updateCheckInterval = 10_800
-        updater.automaticallyChecksForUpdates = featureFlagEnabled && areAutomaticUpdatesEnabled
-        updater.automaticallyDownloadsUpdates = areAutomaticUpdatesEnabled
+        // Always check for updates (so user sees update available even in manual mode)
+        // Only auto-download when FF is on AND automatic updates are enabled
+        updater.automaticallyChecksForUpdates = true
+        updater.automaticallyDownloadsUpdates = featureFlagEnabled && areAutomaticUpdatesEnabled
 
         try updater.start()
         self.updater = updater
+
+        // Trigger check immediately after start(), before next run loop
+        // Per Sparkle docs: checks can be invoked right after start() and before
+        // the next runloop cycle to avoid racing with Sparkle's scheduled check
+        checkForUpdateRespectingRollout()
 
         return updater
     }
@@ -456,17 +442,15 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     }
 
     @objc func runUpdate() {
-        guard userDriver != nil else { return }
-
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
         resumeUpdater()
     }
 
     private func resumeUpdater() {
-        if userDriver?.isResumable == false {
+        if !progressState.isResumable {
             PixelKit.fire(DebugEvent(GeneralPixel.updaterAttemptToRestartWithoutResumeBlock))
         }
-        userDriver?.resume()
+        progressState.resumeCallback?()
     }
 
     func handleAppTermination() {
@@ -479,14 +463,12 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         if let cachedUpdateResult {
             Logger.updates.log("cachedUpdateResult: \(cachedUpdateResult.item.displayVersionString, privacy: .public)(\(cachedUpdateResult.item.versionString, privacy: .public))")
         }
-        if let state = userDriver?.sparkleUpdateState {
+        if let state = userDriver.sparkleUpdateState {
             Logger.updates.log("Sparkle update state: (userInitiated: \(state.userInitiated, privacy: .public), stage: \(state.stage.rawValue, privacy: .public))")
         } else {
             Logger.updates.log("Sparkle update state: Unknown")
         }
-        if let userDriver {
-            Logger.updates.log("isResumable: \(userDriver.isResumable, privacy: .public)")
-        }
+        Logger.updates.log("isResumable: \(progressState.isResumable, privacy: .public)")
     }
 
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES
@@ -593,6 +575,10 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
 
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
         Logger.updates.log("🔍 didFindValidUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+
+        // Sparkle background checks bypass our check methods, so ensure tracking exists
+        updateWideEvent.ensureFlowExists(initiationType: .automatic)
+
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
 
@@ -606,6 +592,11 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: any Error) {
+        Logger.updates.log("🔍 updaterDidNotFindUpdate")
+
+        // Sparkle background checks bypass our check methods, so ensure tracking exists
+        updateWideEvent.ensureFlowExists(initiationType: .automatic)
+
         let nsError = error as NSError
         guard let item = nsError.userInfo[SPULatestAppcastItemFoundKey] as? SUAppcastItem else { return }
 
@@ -633,7 +624,7 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
         updateWideEvent.didCompleteDownload()
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidDownloadUpdate))
 
-        userDriver?.updateLastUpdateDownloadedDate()
+        userDriver.updateLastUpdateDownloadedDate()
     }
 
     func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {
@@ -653,8 +644,7 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
 
     func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem, immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
         Logger.updates.log("🔍 willInstallUpdateOnQuit: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
-        userDriver?.configureResumeBlock(immediateInstallHandler)
-        progressState.transition(to: .updateCycleDone(.pausedAtRestartCheckpoint))
+        progressState.transition(to: .updateCycleDone(.pausedAtRestartCheckpoint), resume: immediateInstallHandler)
         return true
     }
 

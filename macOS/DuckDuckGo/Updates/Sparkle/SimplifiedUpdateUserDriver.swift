@@ -30,9 +30,6 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     private var internalUserDecider: InternalUserDecider
     var areAutomaticUpdatesEnabled: Bool
 
-    // Resume the update process when the user explicitly chooses to do so
-    private var onResuming: (() -> Void)?
-
     @UserDefaultsWrapper(key: .pendingUpdateSince, defaultValue: .distantPast)
     private var pendingUpdateSince: Date
 
@@ -44,17 +41,12 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         Date().timeIntervalSince(pendingUpdateSince)
     }
 
-    // Dismiss the current update for the time being but keep the downloaded file around
     private var onDismiss: () -> Void = {}
-
-    var isResumable: Bool {
-        onResuming != nil
-    }
 
     private var bytesToDownload: UInt64 = 0
     private var bytesDownloaded: UInt64 = 0
 
-    let onProgressChange: (UpdateCycleProgress) -> Void
+    let onProgressChange: (UpdateCycleProgress, (() -> Void)?) -> Void
 
     private(set) var sparkleUpdateState: SPUUserUpdateState?
 
@@ -62,32 +54,16 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
 
     init(internalUserDecider: InternalUserDecider,
          areAutomaticUpdatesEnabled: Bool,
-         onProgressChange: @escaping (UpdateCycleProgress) -> Void) {
+         onProgressChange: @escaping (UpdateCycleProgress, (() -> Void)?) -> Void) {
 
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
         self.onProgressChange = onProgressChange
     }
 
-    func resume() {
-        onResuming?()
-    }
-
-    func resetState() {
-        Logger.updates.log("🔍 SimplifiedUpdateUserDriver.resetState: onResuming=\(self.onResuming != nil, privacy: .public)")
-        onResuming = nil
-    }
-
-    func configureResumeBlock(_ block: @escaping () -> Void) {
-        Logger.updates.log("🔍 SimplifiedUpdateUserDriver.configureResumeBlock: setting onResuming")
-        onResuming = block
-    }
-
     private func dismissCurrentUpdate() {
-        Logger.updates.log("🔍 SimplifiedUpdateUserDriver.dismissCurrentUpdate: clearing onResuming")
         onDismiss()
         pendingUpdateSince = .distantPast
-        onResuming = nil
     }
 
     /// Cancels the current update and dismisses any UI.
@@ -109,7 +85,7 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
 
     func showUserInitiatedUpdateCheck(cancellation: @escaping () -> Void) {
         Logger.updates.log("Updater started performing the update check. (isInternalUser: \(self.internalUserDecider.isInternalUser, privacy: .public))")
-        onProgressChange(.updateCycleDidStart)
+        onProgressChange(.updateCycleDidStart, nil)
     }
 
     func showUpdateFound(with appcastItem: SUAppcastItem, state: SPUUserUpdateState, reply: @escaping (SPUUserUpdateChoice) -> Void) {
@@ -129,8 +105,7 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         }
 
         if !areAutomaticUpdatesEnabled {
-            onResuming = { reply(.install) }
-            onProgressChange(.updateCycleDone(.pausedAtDownloadCheckpoint))
+            onProgressChange(.updateCycleDone(.pausedAtDownloadCheckpoint), { reply(.install) })
             Logger.updates.log("Updater paused at download checkpoint (manual update pending user decision)")
         } else {
             Logger.updates.log("Updater proceeded to installation at download checkpoint")
@@ -158,7 +133,7 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         // SUResumeAppcastError means the update cycle was cancelled during installation
         // which we don't want to treat as an error
         if errorCode != Int(Sparkle.SUError.resumeAppcastError.rawValue) {
-            onProgressChange(.updaterError(error))
+            onProgressChange(.updaterError(error), nil)
         }
 
         acknowledgement()
@@ -166,7 +141,7 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
 
     func showDownloadInitiated(cancellation: @escaping () -> Void) {
         Logger.updates.log("🔍 showDownloadInitiated → .downloadDidStart")
-        onProgressChange(.downloadDidStart)
+        onProgressChange(.downloadDidStart, nil)
     }
 
     func showDownloadDidReceiveExpectedContentLength(_ expectedContentLength: UInt64) {
@@ -179,16 +154,16 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         if bytesDownloaded > bytesToDownload {
             bytesToDownload = bytesDownloaded
         }
-        onProgressChange(.downloading(Double(bytesDownloaded) / Double(bytesToDownload)))
+        onProgressChange(.downloading(Double(bytesDownloaded) / Double(bytesToDownload)), nil)
     }
 
     func showDownloadDidStartExtractingUpdate() {
         Logger.updates.log("🔍 showDownloadDidStartExtractingUpdate → .extractionDidStart")
-        onProgressChange(.extractionDidStart)
+        onProgressChange(.extractionDidStart, nil)
     }
 
     func showExtractionReceivedProgress(_ progress: Double) {
-        onProgressChange(.extracting(progress))
+        onProgressChange(.extracting(progress), nil)
     }
 
     func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
@@ -198,18 +173,17 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
             // Cancel the current update that has begun installing and dismiss the update
             // This doesn't actually skip the update in the future (‽)
             reply(.skip)
-            self?.onProgressChange(.updateCycleDone(.dismissingObsoleteUpdate))
+            self?.onProgressChange(.updateCycleDone(.dismissingObsoleteUpdate), nil)
             Logger.updates.log("Updater dismissing obsolete update")
         }
 
-        onResuming = { reply(.install) }
-        onProgressChange(.updateCycleDone(.pausedAtRestartCheckpoint))
+        onProgressChange(.updateCycleDone(.pausedAtRestartCheckpoint), { reply(.install) })
         Logger.updates.log("🔍 showReady setting updateProgress = .pausedAtRestartCheckpoint")
     }
 
     func showInstallingUpdate(withApplicationTerminated applicationTerminated: Bool, retryTerminatingApplication: @escaping () -> Void) {
         Logger.updates.info("Updater started the installation")
-        onProgressChange(.installationDidStart)
+        onProgressChange(.installationDidStart, nil)
 
         if !applicationTerminated {
             Logger.updates.log("Updater re-sent a quit event")
@@ -227,7 +201,7 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     ///   - relaunched: Whether the app was relaunched
     ///   - acknowledgement: Callback to acknowledge completion
     func showUpdateInstalledAndRelaunched(_ relaunched: Bool, acknowledgement: @escaping () -> Void) {
-        onProgressChange(.installing)
+        onProgressChange(.installing, nil)
         // Record successful update timestamp for future time-since-update tracking.
         // We do this here (not in WideEvent completion) because this callback happens
         // AFTER successful installation, making it the authoritative source.
@@ -241,7 +215,7 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func dismissUpdateInstallation() {
-        onProgressChange(.updateCycleDone(.dismissedWithNoError))
+        onProgressChange(.updateCycleDone(.dismissedWithNoError), nil)
     }
 }
 

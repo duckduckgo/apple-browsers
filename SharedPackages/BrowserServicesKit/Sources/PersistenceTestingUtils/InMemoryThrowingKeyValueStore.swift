@@ -86,7 +86,7 @@ open class InMemoryThrowingKeyValueStore: ThrowingKeyValueStoring {
         if let throwOnRemove {
             throw throwOnRemove
         }
-        underlyingDict[defaultName] = nil
+        underlyingDict.removeValue(forKey: defaultName)
     }
 }
 

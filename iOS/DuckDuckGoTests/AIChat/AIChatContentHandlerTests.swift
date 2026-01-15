@@ -307,12 +307,12 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var delegateSet = false
     var webViewSet = false
     var payloadHandlerSet = false
-    var lastDisplayModeSet: AIChatDisplayMode?
     var submitPromptCallCount = 0
     var lastSubmittedPrompt: String?
     var submitStartChatActionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
+    var lastDisplayModeSet: AIChatDisplayMode?
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true

@@ -223,6 +223,7 @@ public extension DesignSystemImages {
             public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128) }
             public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop128) }
             public static var bringStuff: DesignSystemImage { .init(resource: .bringStuff128) }
+            public static var contentUpload: DesignSystemImage { .init(resource: .contentUpload128) }
         }
     }
 }

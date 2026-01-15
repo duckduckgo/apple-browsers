@@ -47,6 +47,7 @@ final class AIChatContextualSheetCoordinator {
 
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let settings: AIChatSettingsProvider
+    private let aiChatSettings: AIChatSettings
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
@@ -65,12 +66,14 @@ final class AIChatContextualSheetCoordinator {
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
          settings: AIChatSettingsProvider,
+         aiChatSettings: AIChatSettings = AIChatSettings(),
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger) {
         self.voiceSearchHelper = voiceSearchHelper
         self.settings = settings
+        self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
@@ -106,7 +109,12 @@ final class AIChatContextualSheetCoordinator {
                 webViewControllerFactory: { [unowned self] in
                     self.makeWebViewController()
                 },
-                existingWebViewController: webViewController
+                existingWebViewController: webViewController,
+                settings: aiChatSettings,
+                onOpenSettings: { [weak self] in
+                    guard let self else { return }
+                    self.delegate?.aiChatContextualSheetCoordinatorDidRequestOpenSettings(self)
+                }
             )
             sheetVC.delegate = self
             sheetViewController = sheetVC

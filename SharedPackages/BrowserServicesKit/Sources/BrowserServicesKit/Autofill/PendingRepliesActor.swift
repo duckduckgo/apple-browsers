@@ -19,27 +19,20 @@
 import Foundation
 
 /// An actor that serializes access to the pending‐replies queue.
+@MainActor
 actor PendingRepliesActor {
     typealias MessageReplyHandler = (String?) -> Void
 
     private var pendingReplies = [String: [MessageReplyHandler]]()
 
-    /// Register a new reply handler for `messageType`, cancelling any existing ones for the same message type
+    /// Register a new reply handler for `messageType`, cancelling any existing ones for the same message type.
     func register(_ handler: @escaping MessageReplyHandler, for messageType: String) {
-        var replies = pendingReplies[messageType] ?? []
+        let toCancel = pendingReplies[messageType] ?? []
+        pendingReplies[messageType] = [handler]
 
-        if !replies.isEmpty {
-            let toCancel = replies
-            replies.removeAll()
-            Task { @MainActor in
-                for previous in toCancel {
-                    previous(AutofillUserScript.NoActionResponse.successJSONString)
-                }
-            }
+        for previous in toCancel {
+            previous(AutofillUserScript.NoActionResponse.successJSONString)
         }
-
-        replies.append(handler)
-        pendingReplies[messageType] = replies
     }
 
     /// Send a reply for the first handler registered under `messageType`.
@@ -51,19 +44,16 @@ actor PendingRepliesActor {
         replies.removeFirst()
         pendingReplies[messageType] = replies
 
-        Task { @MainActor in
-            first(response)
-        }
+        first(response)
     }
 
     /// Cancel all pending replies, clearing the entire queue.
     func cancelAll() {
         let all = pendingReplies.values.flatMap { $0 }
         pendingReplies.removeAll()
-        Task { @MainActor in
-            for reply in all {
-                reply(AutofillUserScript.NoActionResponse.successJSONString)
-            }
+
+        for reply in all {
+            reply(AutofillUserScript.NoActionResponse.successJSONString)
         }
     }
 }

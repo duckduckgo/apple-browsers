@@ -597,6 +597,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             switch error {
             case .cancelledByUser:
                 setTransactionError(.cancelledByUser)
+            case .transactionPendingAuthentication:
+                pendingTransactionHandler.markPurchasePending()
+                setTransactionError(.purchasePendingTransaction)
             case .purchaseFailed:
                 setTransactionError(.purchaseFailed)
             case .internalError:

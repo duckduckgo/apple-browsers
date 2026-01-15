@@ -496,9 +496,11 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return
         }
 
+        let isMenuItemCreatedFromUpdateController = featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) || featureFlagger.isFeatureOn(.updatesSimplifiedFlow)
+
         let menuItem: NSMenuItem = {
             #if SPARKLE
-            if featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) {
+            if isMenuItemCreatedFromUpdateController {
                 return SparkleUpdateMenuItemFactory.menuItem(for: updateController)
             } else {
                 return SparkleUpdateMenuItemFactory.menuItem(for: update)

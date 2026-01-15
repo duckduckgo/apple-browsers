@@ -92,24 +92,33 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
     private func refreshUpdateFromCache(_ cachedUpdateResult: UpdateCheckResult) {
         latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled, needsLatestReleaseNote: cachedUpdateResult.needsLatestReleaseNote)
-        hasPendingUpdate = latestUpdate?.isInstalled == false && updateProgress.isDone && userDriver?.isResumable == true
+        let isInstalled = latestUpdate?.isInstalled == false
+        let isDone = progressState.updateProgress.isDone
+        let isResumable = userDriver?.isResumable == true
+        hasPendingUpdate = isInstalled && isDone && isResumable
+        Logger.updates.log("🔍 refreshUpdateFromCache: isInstalled=\(isInstalled), isDone=\(isDone), isResumable=\(isResumable) → hasPendingUpdate=\(self.hasPendingUpdate)")
     }
 
-    @Published private(set) var updateProgress = UpdateCycleProgress.default {
-        didSet {
-            if let cachedUpdateResult {
-                refreshUpdateFromCache(cachedUpdateResult)
-            }
-            handleUpdateNotification()
+    // MARK: - Update Progress State Machine
 
-            // Dismiss stale "update available" popover when download begins
-            if case .downloadDidStart = updateProgress {
-                notificationPresenter.dismissIfPresented()
-            }
+    private let progressState: UpdateProgressManaging = UpdateProgressState()
+    private var progressCancellable: AnyCancellable?
+
+    var updateProgress: UpdateCycleProgress { progressState.updateProgress }
+    var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { progressState.updateProgressPublisher }
+
+    private func handleProgressChange(_ progress: UpdateCycleProgress) {
+        Logger.updates.log("🔍 Controller.updateProgress didSet: \(progress, privacy: .public)")
+        if let cachedUpdateResult {
+            refreshUpdateFromCache(cachedUpdateResult)
+        }
+        handleUpdateNotification()
+
+        // Dismiss stale "update available" popover when download begins
+        if case .downloadDidStart = progress {
+            notificationPresenter.dismissIfPresented()
         }
     }
-
-    var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
 
     @Published private(set) var latestUpdate: Update?
 
@@ -150,37 +159,29 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             if newValue != areAutomaticUpdatesEnabled {
                 pendingNotificationTask?.cancel()
                 pendingNotificationTask = nil
-                updateWideEvent.cancelFlow(reason: .settingsChanged)
-                userDriver?.cancelAndDismissCurrentUpdate()
-                updater?.resetUpdateCycle()
             }
         }
         didSet {
             if oldValue != areAutomaticUpdatesEnabled {
                 updateWideEvent.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
-                updateWideEvent.cancelFlow(reason: .settingsChanged)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                    _ = try? self?.configureUpdater()
-                    self?.checkForUpdateSkippingRollout()
+
+                // If switching to automatic while at download checkpoint, trigger download
+                if areAutomaticUpdatesEnabled && isAtDownloadCheckpoint {
+                    userDriver?.resume()
                 }
+
+                userDriver?.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
+
+                // Update Sparkle settings when preference changes
+                let featureFlagEnabled = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+                updater?.automaticallyChecksForUpdates = featureFlagEnabled && areAutomaticUpdatesEnabled
+                updater?.automaticallyDownloadsUpdates = areAutomaticUpdatesEnabled
             }
         }
     }
 
-    var isAtRestartCheckpoint: Bool {
-        guard let userDriver else {
-            return false
-        }
-
-        switch userDriver.updateProgress {
-        case .readyToInstallAndRelaunch:
-            return true
-        case .updateCycleDone(let reason) where reason == .pausedAtRestartCheckpoint:
-            return true
-        default:
-            return false
-        }
-    }
+    var isAtRestartCheckpoint: Bool { progressState.isAtRestartCheckpoint }
+    var isAtDownloadCheckpoint: Bool { progressState.isAtDownloadCheckpoint }
 
     // Simplified: Always returns false - no expiration logic
     var shouldForceUpdateCheck: Bool { false }
@@ -199,10 +200,9 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     lazy var notificationDotPublisher = notificationDotSubject.eraseToAnyPublisher()
 
     private(set) var updater: SPUUpdater?
-    private(set) var userDriver: UpdateUserDriver?
+    private(set) var userDriver: SimplifiedUpdateUserDriver?
     private let willRelaunchAppSubject = PassthroughSubject<Void, Never>()
     private var internalUserDecider: InternalUserDecider
-    private var updateProcessCancellable: AnyCancellable!
 
     private var shouldCheckNewApplicationVersion = true
 
@@ -234,6 +234,12 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             areAutomaticUpdatesEnabled: currentAutomaticUpdatesEnabled
         )
         super.init()
+
+        // Subscribe to progress state changes
+        progressCancellable = progressState.updateProgressPublisher
+            .sink { [weak self] progress in
+                self?.handleProgressChange(progress)
+            }
 
         // Clean up abandoned flows from previous sessions before starting any new checks
         self.updateWideEvent.cleanupAbandonedFlows()
@@ -346,11 +352,13 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
                 return
             }
 
-            if case .updaterError = userDriver?.updateProgress {
+            if case .updaterError = updateProgress {
                 updateWideEvent.cancelFlow(reason: .newCheckStarted)
                 userDriver?.cancelAndDismissCurrentUpdate()
             }
 
+            userDriver?.resetState()
+            progressState.transition(to: .updateCycleDidStart)
             updateWideEvent.startFlow(initiationType: .automatic)
 
             Logger.updates.log("Checking for updates respecting rollout")
@@ -378,10 +386,13 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
             Logger.updates.debug("User-initiated update check starting")
 
-            if case .updaterError = userDriver?.updateProgress {
+            if case .updaterError = updateProgress {
                 updateWideEvent.cancelFlow(reason: .newCheckStarted)
                 userDriver?.cancelAndDismissCurrentUpdate()
             }
+
+            userDriver?.resetState()
+            progressState.transition(to: .updateCycleDidStart)
 
             Logger.updates.log("Checking for updates skipping rollout")
             updater.checkForUpdates()
@@ -400,14 +411,17 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
     @discardableResult
     private func configureUpdater() throws -> SPUUpdater? {
-        cachedUpdateResult = nil
-
         if let userDriver {
             userDriver.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
         } else {
-            userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
-                                          areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled,
-                                          useLegacyAutoRestartLogic: false)
+            let driver = SimplifiedUpdateUserDriver(
+                internalUserDecider: internalUserDecider,
+                areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled,
+                onProgressChange: { [weak self] progress in
+                    self?.progressState.transition(to: progress)
+                }
+            )
+            userDriver = driver
         }
 
         guard let userDriver,
@@ -415,24 +429,16 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             return nil
         }
 
+        // Only clear cached result when creating a new updater, not when reconfiguring
+        cachedUpdateResult = nil
+
         let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
 
-#if DEBUG
-        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) {
-            updater.updateCheckInterval = 10_800
-        } else {
-            updater.updateCheckInterval = 0
-        }
-        updater.automaticallyChecksForUpdates = false
-        updater.automaticallyDownloadsUpdates = false
-#else
-        if updater.automaticallyDownloadsUpdates == true {
-            updater.automaticallyDownloadsUpdates = false
-        }
-#endif
+        let featureFlagEnabled = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
 
-        updateProcessCancellable = userDriver.updateProgressPublisher
-            .assign(to: \.updateProgress, onWeaklyHeld: self)
+        updater.updateCheckInterval = 10_800
+        updater.automaticallyChecksForUpdates = featureFlagEnabled && areAutomaticUpdatesEnabled
+        updater.automaticallyDownloadsUpdates = areAutomaticUpdatesEnabled
 
         try updater.start()
         self.updater = updater
@@ -582,7 +588,7 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
     }
 
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
-        Logger.updates.log("Updater did find valid update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("🔍 didFindValidUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
 
@@ -599,7 +605,7 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
         let nsError = error as NSError
         guard let item = nsError.userInfo[SPULatestAppcastItemFoundKey] as? SUAppcastItem else { return }
 
-        Logger.updates.log("Updater did not find valid update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("🔍 didNotFindUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
 
         let needsLatestReleaseNote = {
             guard let reason = nsError.userInfo[SPUNoUpdateFoundReasonKey] as? Int else { return false }
@@ -613,12 +619,13 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
     }
 
     func updater(_ updater: SPUUpdater, willDownloadUpdate item: SUAppcastItem, with request: NSMutableURLRequest) {
-        Logger.updates.log("Updater will download update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("🔍 willDownloadUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        progressState.transition(to: .downloadDidStart)
         updateWideEvent.didStartDownload()
     }
 
     func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {
-        Logger.updates.log("Updater did download update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("🔍 didDownloadUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
         updateWideEvent.didCompleteDownload()
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidDownloadUpdate))
 
@@ -626,36 +633,38 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
     }
 
     func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {
-        Logger.updates.log("Updater will extract update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("🔍 willExtractUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        progressState.transition(to: .extractionDidStart)
         updateWideEvent.didStartExtraction()
     }
 
     func updater(_ updater: SPUUpdater, didExtractUpdate item: SUAppcastItem) {
-        Logger.updates.log("Updater did extract update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("🔍 didExtractUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
         updateWideEvent.didCompleteExtraction()
     }
 
     func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
-        Logger.updates.log("Updater will install update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("🔍 willInstallUpdate: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
     }
 
     func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem, immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
-        Logger.updates.log("Updater will install update on quit: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
+        Logger.updates.log("🔍 willInstallUpdateOnQuit: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
         userDriver?.configureResumeBlock(immediateInstallHandler)
+        progressState.transition(to: .updateCycleDone(.pausedAtRestartCheckpoint))
         return true
     }
 
     func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: (any Error)?) {
         if error == nil {
-            Logger.updates.log("Updater did finish update cycle with no error")
-            updateProgress = .updateCycleDone(.finishedWithNoError)
+            Logger.updates.log("🔍 didFinishUpdateCycleFor: no error")
+            progressState.transition(to: .updateCycleDone(.finishedWithNoError))
         } else if let errorCode = (error as? NSError)?.code, errorCode == Int(Sparkle.SUError.noUpdateError.rawValue) {
-            Logger.updates.log("Updater did finish update cycle with no update found")
-            updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
+            Logger.updates.log("🔍 didFinishUpdateCycleFor: no update found")
+            progressState.transition(to: .updateCycleDone(.finishedWithNoUpdateFound))
             updateWideEvent.completeFlow(status: .success(reason: UpdateWideEventData.SuccessReason.noUpdateAvailable.rawValue))
         } else if let error {
-            Logger.updates.log("Updater did finish update cycle with error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
-            updateProgress = .updaterError(error)
+            Logger.updates.log("🔍 didFinishUpdateCycleFor: error - \(error.localizedDescription, privacy: .public)")
+            progressState.transition(to: .updaterError(error))
             updateWideEvent.completeFlow(status: .failure, error: error)
         }
     }

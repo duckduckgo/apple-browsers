@@ -27,12 +27,14 @@ let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
     .init("DuckDuckGo VPN.app", .unknown),
     .init("DuckDuckGo Personal Information Removal.app", .unknown),
     .init("SimplifiedSparkleUpdateController.swift", .source),
+    .init("SimplifiedUpdateUserDriver.swift", .source),
     .init("SparkleDebugHelper.swift", .source),
     .init("SparkleUpdateCompletionValidator.swift", .source),
     .init("SparkleUpdateController.swift", .source),
     .init("SparkleUpdateMenuItemFactory.swift", .source),
     .init("SparkleUpdateWideEvent.swift", .source),
     .init("SparkleUpdaterAvailabilityChecker.swift", .source),
+    .init("UpdateProgressState.swift", .source),
     .init("UpdatesDebugMenu.swift", .source),
     .init("UpdateWideEventData.swift", .source)])
 

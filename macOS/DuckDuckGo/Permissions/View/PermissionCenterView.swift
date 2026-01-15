@@ -27,12 +27,23 @@ struct PermissionCenterView: View {
 
     @ObservedObject var viewModel: PermissionCenterViewModel
 
+    static let widthWithPopups: [String?: CGFloat] = [
+        "ru": 630,
+        "pl": 590,
+        "es": 590,
+        "fr": 630,
+        "it": 490,
+        "nl": 490,
+        "de": 490,
+        "pt": 490,
+    ]
+
     /// Use a wider popover when popup or external app permissions are present due to longer content
     private var popoverWidth: CGFloat {
         let hasPopups = viewModel.permissionItems.contains { $0.permissionType == .popups }
         let hasExternalApps = viewModel.permissionItems.contains { $0.isGroupedExternalApps }
         if hasPopups {
-            return 450
+            return Self.widthWithPopups[Locale.current.languageCode] ?? 450
         } else if hasExternalApps {
             return 380
         }
@@ -46,6 +57,7 @@ struct PermissionCenterView: View {
                 Text(String(format: UserText.permissionCenterTitle, viewModel.domain))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.leading, 20)
                     .padding(.trailing, 16)
                     .padding(.top, 16)
@@ -140,6 +152,7 @@ struct ReloadBannerView: View {
             Text(UserText.permissionCenterReloadMessage)
                 .font(.system(size: 12))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.leading, 12)
 
             Spacer(minLength: 2)
@@ -208,6 +221,7 @@ struct PermissionRowView: View {
                 Text(item.displayName)
                     .font(.system(size: 13))
                     .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary) : Color(designSystemColor: .textPrimary))
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer()
 
@@ -393,6 +407,7 @@ struct PopupPermissionRowView: View {
                 Text(item.displayName)
                     .font(.system(size: 13))
                     .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary) : Color(designSystemColor: .textPrimary))
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer()
 
@@ -433,6 +448,7 @@ struct PopupPermissionRowView: View {
                         Text(headerText)
                             .font(.system(size: 11))
                             .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary).opacity(0.5) : Color(designSystemColor: .textSecondary))
+                            .fixedSize(horizontal: false, vertical: true)
                             .padding(.bottom, 4)
                     }
 
@@ -515,6 +531,7 @@ struct ExternalAppsPermissionRowView: View {
                 Text(item.displayName)
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer()
             }
@@ -567,6 +584,7 @@ struct ExternalSchemeRowView: View {
             Text(schemeInfo.displayText)
                 .font(.system(size: 12))
                 .foregroundColor(schemeInfo.isPendingRemoval ? Color(designSystemColor: .textSecondary).opacity(0.5) : Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer()
 

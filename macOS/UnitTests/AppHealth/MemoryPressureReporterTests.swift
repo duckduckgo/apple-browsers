@@ -129,7 +129,7 @@ final class MemoryPressureReporterTests: XCTestCase {
         let pixel = MemoryPressurePixel.memoryPressureWarning
 
         // Then
-        XCTAssertEqual(pixel.name, "memory_pressure_warning")
+        XCTAssertEqual(pixel.name, "m_mac_memory_pressure_warning")
     }
 
     func testMemoryPressureCriticalPixelName() {
@@ -137,7 +137,7 @@ final class MemoryPressureReporterTests: XCTestCase {
         let pixel = MemoryPressurePixel.memoryPressureCritical
 
         // Then
-        XCTAssertEqual(pixel.name, "memory_pressure_critical")
+        XCTAssertEqual(pixel.name, "m_mac_memory_pressure_critical")
     }
 
     func testMemoryPressurePixelParameters() {
@@ -171,7 +171,7 @@ final class MemoryPressureReporterTests: XCTestCase {
         // Then
         wait(for: [notificationExpectation], timeout: 1.0)
         XCTAssertEqual(mockPixelFiring.firedPixels.count, 1)
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.name, "memory_pressure_warning")
+        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.name, "m_mac_memory_pressure_warning")
         XCTAssertEqual(mockPixelFiring.firedPixels.first?.frequency, .dailyAndStandard)
     }
 
@@ -192,7 +192,7 @@ final class MemoryPressureReporterTests: XCTestCase {
         // Then
         wait(for: [notificationExpectation], timeout: 1.0)
         XCTAssertEqual(mockPixelFiring.firedPixels.count, 1)
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.name, "memory_pressure_critical")
+        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.name, "m_mac_memory_pressure_critical")
         XCTAssertEqual(mockPixelFiring.firedPixels.first?.frequency, .dailyAndStandard)
     }
 

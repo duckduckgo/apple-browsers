@@ -37,9 +37,9 @@ enum MemoryPressurePixel: PixelKitEvent {
     var name: String {
         switch self {
         case .memoryPressureWarning:
-            return "memory_pressure_warning"
+            return "m_mac_memory_pressure_warning"
         case .memoryPressureCritical:
-            return "memory_pressure_critical"
+            return "m_mac_memory_pressure_critical"
         }
     }
 

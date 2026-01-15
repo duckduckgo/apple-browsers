@@ -120,7 +120,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     }
 
     private let notificationCenter: NetworkProtectionNotificationCenter = DistributedNotificationCenter.default()
-    private let wideEvent: WideEventManaging = WideEvent(sendPOSTEnabled: { true })
+    private let wideEvent: WideEventManaging = WideEvent(featureFlagProvider: StaticWideEventFeatureFlagProvider(isPostEndpointEnabled: true))
 
     // MARK: - PacketTunnelProvider.Event reporting
 
@@ -714,6 +714,17 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         }
     }
 
+}
+
+private struct StaticWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    let isPostEndpointEnabled: Bool
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return isPostEndpointEnabled
+        }
+    }
 }
 
 final class DefaultWireGuardInterface: WireGuardGoInterface {

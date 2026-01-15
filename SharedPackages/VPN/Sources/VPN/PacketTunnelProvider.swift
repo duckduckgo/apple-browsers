@@ -412,7 +412,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 providerEvents: EventMapping<Event>,
                 settings: VPNSettings,
                 defaults: UserDefaults,
-                wideEvent: WideEventManaging = WideEvent(sendPOSTEnabled: { true }),
+                wideEvent: WideEventManaging = WideEvent(featureFlagProvider: StaticWideEventFeatureFlagProvider(isPostEndpointEnabled: true)),
                 bandwidthAnalyzer: BandwidthAnalyzing? = nil,
                 latencyMonitor: LatencyMonitoring = NetworkProtectionLatencyMonitor(),
                 entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),
@@ -1842,6 +1842,22 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 let newError = NSError(domain: (error as NSError).domain, code: (error as NSError).code)
                 return [NSUnderlyingErrorKey: newError]
             }
+        }
+    }
+}
+
+// TEMPORARY until the feature flag state is sent through the VPN startup options correctly.
+public struct StaticWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    let isPostEndpointEnabled: Bool
+
+    public init(isPostEndpointEnabled: Bool) {
+        self.isPostEndpointEnabled = isPostEndpointEnabled
+    }
+
+    public func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return isPostEndpointEnabled
         }
     }
 }

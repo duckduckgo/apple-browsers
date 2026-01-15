@@ -62,18 +62,18 @@ public final class WideEvent: WideEventManaging {
     private let sender: WideEventSending
     private let sampler: WideEventSampling
     private let failureEventMapping: EventMapping<WideEventFailureEvent>?
-    private let sendPOSTEnabled: () -> Bool
+    private let featureFlagProvider: WideEventFeatureFlagProviding
 
     public init(storage: WideEventStoring = WideEventUserDefaultsStorage(),
                 sender: WideEventSending = DefaultWideEventSender(),
                 sampler: WideEventSampling? = nil,
                 failureEventMapping: EventMapping<WideEventFailureEvent>? = WideEventFailureEvent.eventMapping,
-                sendPOSTEnabled: @escaping () -> Bool) {
+                featureFlagProvider: WideEventFeatureFlagProviding) {
         self.storage = storage
         self.sender = sender
         self.sampler = sampler ?? DefaultWideEventSampler()
         self.failureEventMapping = failureEventMapping
-        self.sendPOSTEnabled = sendPOSTEnabled
+        self.featureFlagProvider = featureFlagProvider
     }
 
     // MARK: - Public API
@@ -150,7 +150,7 @@ public final class WideEvent: WideEventManaging {
             let current: T = try storage.load(globalID: data.globalData.id)
             storage.delete(current)
 
-            sender.send(current, status: status, sendPOSTEnabled: sendPOSTEnabled(), onComplete: onComplete)
+            sender.send(current, status: status, featureFlagProvider: featureFlagProvider, onComplete: onComplete)
 
             Self.logger.info("Completed wide event flow: \(T.pixelName, privacy: .public) with global ID: \(data.globalData.id, privacy: .public)")
         } catch {

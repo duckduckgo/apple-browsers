@@ -521,9 +521,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             experimentManager: nil
         )
 
-        self.wideEvent = WideEvent(sendPOSTEnabled: { [featureFlagger] in
-            featureFlagger.isFeatureOn(.wideEventPostEndpoint)
-        })
+        self.wideEvent = WideEvent(featureFlagProvider: FeatureFlaggerWideEventFeatureFlagProvider(featureFlagger: featureFlagger))
 
         // Align Subscription environment to the VPN environment
         var subscriptionEnvironment = SubscriptionEnvironment.default
@@ -677,6 +675,17 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         activationDateStore.updateLastActiveDate()
 
         VPNReloadStatusWidgets()
+    }
+}
+
+private struct FeatureFlaggerWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    let featureFlagger: FeatureFlagger
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
+        }
     }
 }
 

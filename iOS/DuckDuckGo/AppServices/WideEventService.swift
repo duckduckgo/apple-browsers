@@ -277,3 +277,18 @@ final class WideEventService {
         }
     }
 }
+
+struct WideEventFeatureFlagAdapter: WideEventFeatureFlagProviding {
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
+        }
+    }
+}

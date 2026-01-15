@@ -21,9 +21,10 @@ import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
 import PrivacyConfig
 import FeatureFlags
+import PixelKit
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {
-    private let featureFlagger: FeatureFlagger
+    fileprivate let featureFlagger: FeatureFlagger
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {
         featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
@@ -68,5 +69,14 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
             for: FeatureFlag.self
         )
         self.featureFlagger = featureFlagger
+    }
+}
+
+extension DBPFeatureFlagger: WideEventFeatureFlagProviding {
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
+        }
     }
 }

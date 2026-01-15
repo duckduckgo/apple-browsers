@@ -120,10 +120,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
         let dbpFeatureFlagger = DBPFeatureFlagger(configurationManager: configurationManager,
                                                   privacyConfigurationManager: privacyConfigurationManager)
 
-        let wideEvent = WideEvent(sendPOSTEnabled: { [weak dbpFeatureFlagger] in
-            guard let dbpFeatureFlagger else { return false }
-            return dbpFeatureFlagger.isWideEventPOSTEndpointOn
-        })
+        let wideEvent = WideEvent(featureFlagProvider: dbpFeatureFlagger)
 
         manager = DataBrokerProtectionAgentManagerProvider.agentManager(
             authenticationManager: authenticationManager,

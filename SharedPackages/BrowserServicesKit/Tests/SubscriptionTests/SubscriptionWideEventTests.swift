@@ -34,7 +34,7 @@ final class SubscriptionWideEventTests: XCTestCase {
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
         setupMockPixelKit()
         wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
-                              sendPOSTEnabled: { true })
+                              featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true))
         firedPixels.removeAll()
     }
 
@@ -343,4 +343,15 @@ final class SubscriptionWideEventTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "300000") // Max bucket
     }
 
+}
+
+private struct MockWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    let isPostEndpointEnabled: Bool
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return isPostEndpointEnabled
+        }
+    }
 }

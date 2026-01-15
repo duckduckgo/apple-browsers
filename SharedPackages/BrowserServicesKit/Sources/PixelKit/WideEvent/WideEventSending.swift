@@ -23,7 +23,7 @@ public protocol WideEventSending {
     func send<T: WideEventData>(
         _ data: T,
         status: WideEventStatus,
-        sendPOSTEnabled: Bool,
+        featureFlagProvider: WideEventFeatureFlagProviding,
         onComplete: @escaping PixelKit.CompletionBlock
     )
 }
@@ -49,7 +49,7 @@ public final class DefaultWideEventSender: WideEventSending {
     public func send<T: WideEventData>(
         _ data: T,
         status: WideEventStatus,
-        sendPOSTEnabled: Bool,
+        featureFlagProvider: WideEventFeatureFlagProviding,
         onComplete: @escaping PixelKit.CompletionBlock
     ) {
         let pixelName = Self.generatePixelName(for: T.pixelName)
@@ -63,7 +63,7 @@ public final class DefaultWideEventSender: WideEventSending {
 
         firePixels(pixelName: pixelName, parameters: parameters, onComplete: onComplete)
 
-        if sendPOSTEnabled {
+        if featureFlagProvider.isEnabled(.postEndpoint) {
             sendPOSTRequest(data: data, status: status)
         }
     }

@@ -46,7 +46,11 @@ extension DefaultSubscriptionManager {
                           frequency: .legacyDailyAndCount)
         }
 
-        let wideEvent: WideEventManaging = WideEvent(sendPOSTEnabled: { featureFlagger?.isFeatureOn(.wideEventPostEndpoint) ?? false })
+        let featureFlagProvider: WideEventFeatureFlagProviding = featureFlagger.map {
+            WideEventFeatureFlagAdapter(featureFlagger: $0)
+        } ?? StaticWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
+
+        let wideEvent: WideEventManaging = WideEvent(featureFlagProvider: featureFlagProvider)
         let authRefreshEventMapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
 #if DEBUG
             return true // Allow the refresh event when using staging in debug mode, for easier testing
@@ -109,6 +113,17 @@ extension DefaultSubscriptionManager {
                       subscriptionEnvironment: environment,
                       pixelHandler: pixelHandler,
                       isInternalUserEnabled: isInternalUserEnabled)
+        }
+    }
+}
+
+private struct StaticWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    let isPostEndpointEnabled: Bool
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return isPostEndpointEnabled
         }
     }
 }

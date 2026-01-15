@@ -26,7 +26,7 @@ final class MockWideEventSending: WideEventSending {
     struct CapturedCall {
         let pixelName: String
         let status: WideEventStatus
-        let sendPOSTEnabled: Bool
+        let postEndpointEnabled: Bool
         let contextName: String?
         let testIdentifier: String?
     }
@@ -37,20 +37,36 @@ final class MockWideEventSending: WideEventSending {
     func send<T: WideEventData>(
         _ data: T,
         status: WideEventStatus,
-        sendPOSTEnabled: Bool,
+        featureFlagProvider: WideEventFeatureFlagProviding,
         onComplete: @escaping PixelKit.CompletionBlock
     ) {
         let mockData = data as? MockWideEventData
+        let postEndpointEnabled = featureFlagProvider.isEnabled(.postEndpoint)
         let call = CapturedCall(
             pixelName: T.pixelName,
             status: status,
-            sendPOSTEnabled: sendPOSTEnabled,
+            postEndpointEnabled: postEndpointEnabled,
             contextName: data.contextData.name,
             testIdentifier: mockData?.testIdentifier
         )
         capturedCalls.append(call)
         DispatchQueue.main.async {
             onComplete(self.completionResult.0, self.completionResult.1)
+        }
+    }
+}
+
+final class MockWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    var isPostEndpointEnabled: Bool
+
+    init(isPostEndpointEnabled: Bool) {
+        self.isPostEndpointEnabled = isPostEndpointEnabled
+    }
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return isPostEndpointEnabled
         }
     }
 }
@@ -125,7 +141,7 @@ final class WideEventTests: XCTestCase {
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
         wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
-                              sendPOSTEnabled: { true })
+                              featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true))
         capturedPixels.removeAll()
         setupMockPixelKit()
     }
@@ -584,6 +600,7 @@ final class WideEventSendingTests: XCTestCase {
     var mockSender: MockWideEventSending!
     var wideEvent: WideEvent!
     var testDefaults: UserDefaults!
+    private var featureFlagProvider: MockWideEventFeatureFlagProvider!
     private var testSuiteName: String!
 
     override func setUp() {
@@ -592,10 +609,11 @@ final class WideEventSendingTests: XCTestCase {
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
         mockSender = MockWideEventSending()
+        featureFlagProvider = MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
         wideEvent = WideEvent(
             storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
             sender: mockSender,
-            sendPOSTEnabled: { true }
+            featureFlagProvider: featureFlagProvider
         )
     }
 
@@ -615,14 +633,14 @@ final class WideEventSendingTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
 
         XCTAssertEqual(mockSender.capturedCalls.count, 1)
-        XCTAssertTrue(mockSender.capturedCalls[0].sendPOSTEnabled)
+        XCTAssertTrue(mockSender.capturedCalls[0].postEndpointEnabled)
     }
 
     func testWideEventPassesSendPOSTDisabledToSender() throws {
         let disabledWideEvent = WideEvent(
             storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
             sender: mockSender,
-            sendPOSTEnabled: { false }
+            featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: false)
         )
 
         let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
@@ -635,16 +653,16 @@ final class WideEventSendingTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
 
         XCTAssertEqual(mockSender.capturedCalls.count, 1)
-        XCTAssertFalse(mockSender.capturedCalls[0].sendPOSTEnabled)
+        XCTAssertFalse(mockSender.capturedCalls[0].postEndpointEnabled)
     }
 
     func testSendPOSTEnabledClosureIsEvaluatedAtSendTime() throws {
-        var featureFlagEnabled = false
+        let dynamicFeatureFlagProvider = MockWideEventFeatureFlagProvider(isPostEndpointEnabled: false)
 
         let dynamicWideEvent = WideEvent(
             storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
             sender: mockSender,
-            sendPOSTEnabled: { featureFlagEnabled }
+            featureFlagProvider: dynamicFeatureFlagProvider
         )
 
         let data1 = MockWideEventData(contextData: WideEventContextData(name: "test1"))
@@ -657,9 +675,9 @@ final class WideEventSendingTests: XCTestCase {
         wait(for: [expectation1], timeout: 1.0)
 
         XCTAssertEqual(mockSender.capturedCalls.count, 1)
-        XCTAssertFalse(mockSender.capturedCalls[0].sendPOSTEnabled)
+        XCTAssertFalse(mockSender.capturedCalls[0].postEndpointEnabled)
 
-        featureFlagEnabled = true
+        dynamicFeatureFlagProvider.isPostEndpointEnabled = true
 
         let data2 = MockWideEventData(contextData: WideEventContextData(name: "test2"))
         dynamicWideEvent.startFlow(data2)
@@ -671,7 +689,7 @@ final class WideEventSendingTests: XCTestCase {
         wait(for: [expectation2], timeout: 1.0)
 
         XCTAssertEqual(mockSender.capturedCalls.count, 2)
-        XCTAssertTrue(mockSender.capturedCalls[1].sendPOSTEnabled)
+        XCTAssertTrue(mockSender.capturedCalls[1].postEndpointEnabled)
     }
 
     func testWideEventPassesCorrectPixelNameToSender() throws {
@@ -806,7 +824,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
         let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, sendPOSTEnabled: false) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1.0)
@@ -836,7 +854,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
         let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, sendPOSTEnabled: true) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1.0)
@@ -861,7 +879,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
         let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, sendPOSTEnabled: false) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1.0)
@@ -885,7 +903,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
         )
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, sendPOSTEnabled: true) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1.0)
@@ -923,7 +941,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
         var receivedSuccess = true
         var receivedError: Error?
 
-        sender.send(data, status: .success, sendPOSTEnabled: true) { success, error in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)) { success, error in
             receivedSuccess = success
             receivedError = error
             expectation.fulfill()
@@ -948,7 +966,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
         )
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success(reason: "test_reason"), sendPOSTEnabled: false) { _, _ in
+        sender.send(data, status: .success(reason: "test_reason"), featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1.0)

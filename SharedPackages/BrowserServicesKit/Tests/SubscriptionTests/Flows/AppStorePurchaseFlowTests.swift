@@ -196,34 +196,34 @@ final class AppStorePurchaseFlowTests: XCTestCase {
             }
         }
     }
-    
+
     // MARK: - PendingTransactionHandler Tests
-    
+
     func test_completeSubscriptionPurchase_withSuccess_callsHandleSubscriptionActivated() async {
         // Given
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         let subscription = SubscriptionMockFactory.appleSubscription
         subscriptionManagerMock.resultSubscription = .success(subscription)
         subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
-        
+
         // When
         let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
-        
+
         // Then
         XCTAssertEqual(result, .success(.completed))
         XCTAssertTrue(pendingTransactionHandlerMock.handleSubscriptionActivatedCalled)
     }
-    
+
     func test_completeSubscriptionPurchase_withFailure_doesNotCallHandleSubscriptionActivated() async {
         // Given
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         let subscription = SubscriptionMockFactory.appleSubscription
         subscriptionManagerMock.resultSubscription = .success(subscription)
         subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
-        
+
         // When
         let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
-        
+
         // Then
         XCTAssertEqual(result, .failure(.missingEntitlements))
         XCTAssertFalse(pendingTransactionHandlerMock.handleSubscriptionActivatedCalled)

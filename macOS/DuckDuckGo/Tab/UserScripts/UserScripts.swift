@@ -230,10 +230,10 @@ final class UserScripts: UserScriptsProvider {
                                                            aiChatURL: AIChatRemoteSettings().aiChatURL,
                                                            wideEvent: WideEvent(),
                                                            pendingTransactionHandler: pendingTransactionHandler)
-        
+
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
-        
+
         let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionManager)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)

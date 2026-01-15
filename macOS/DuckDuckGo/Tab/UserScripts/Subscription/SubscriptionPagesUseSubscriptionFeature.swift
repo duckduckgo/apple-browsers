@@ -81,7 +81,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private var wideEventData: SubscriptionPurchaseWideEventData?
     private var restoreEmailOfferPageWideEventData: SubscriptionRestoreWideEventData?
     private var restoreEmailAppSettingsWideEventData: SubscriptionRestoreWideEventData?
-    
+
     private let pendingTransactionHandler: PendingTransactionHandling
 
     public init(subscriptionManager: SubscriptionManager,

@@ -129,7 +129,7 @@ final class AppStoreRestoreFlowTests: XCTestCase {
             XCTFail("Unexpected failure")
         }
     }
-    
+
     func test_restoreAccountFromPastPurchase_withMissingTransaction_doesNotCallHandleSubscriptionActivated() async {
         // Given
         storePurchaseManagerMock.mostRecentTransactionResult = nil
@@ -146,7 +146,7 @@ final class AppStoreRestoreFlowTests: XCTestCase {
             XCTFail("Unexpected success")
         }
     }
-    
+
     func test_restoreAccountFromPastPurchase_withExpiredSubscription_doesNotCallHandleSubscriptionActivated() async {
         // Given
         storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"

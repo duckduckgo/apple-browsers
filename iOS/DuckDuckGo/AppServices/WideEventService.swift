@@ -44,8 +44,8 @@ final class WideEventService {
 
         Task {
             await processCompletion(SubscriptionRestoreWideEventData.self, trigger: trigger)
-            await processSubscriptionPurchaseCompletion(trigger: trigger)
             await processCompletion(VPNConnectionWideEventData.self, trigger: trigger)
+            await processSubscriptionPurchaseCompletion(trigger: trigger)
 
             if shouldSendDataImportWideEvent {
                 await processCompletion(DataImportWideEventData.self, trigger: trigger)

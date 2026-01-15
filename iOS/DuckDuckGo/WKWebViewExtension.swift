@@ -19,10 +19,12 @@
 
 import WebKit
 import DesignResourcesKit
+import PrivacyConfig
 
 extension WKWebView {
 
-    func preventFlashOnLoad() {
+    func preventFlashOnLoad(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+        guard featureFlagger.isFeatureOn(.webViewFlashPrevention) else { return }
         isOpaque = false
 
         let color = UIColor(designSystemColor: .surfaceCanvas)

@@ -280,6 +280,8 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
+
+    case webViewFlashPrevention
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -369,7 +371,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .aiChatSync,
              .showWhatsNewPromptOnDemand,
              .aiChatAtb,
-             .enhancedDataClearingSettings:
+             .enhancedDataClearingSettings,
+             .webViewFlashPrevention:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -586,6 +589,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
             return .disabled
+        case .webViewFlashPrevention:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
         }
     }
 }

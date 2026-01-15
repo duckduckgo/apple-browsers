@@ -62,6 +62,7 @@ public final class CoreData {
                                                 registeredTransformers: transformers)
 
         let description = NSPersistentStoreDescription()
+        description.type = NSInMemoryStoreType
         description.url = url
         container.persistentStoreDescriptions = [description]
 

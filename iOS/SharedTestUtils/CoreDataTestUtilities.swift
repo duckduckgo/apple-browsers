@@ -39,6 +39,7 @@ final class CoreData {
         // More info: https://www.donnywals.com/setting-up-a-core-data-store-for-unit-tests/
 
         let description = NSPersistentStoreDescription()
+        description.type = NSInMemoryStoreType
         description.url = URL(fileURLWithPath: "/dev/null")
         container.persistentStoreDescriptions = [description]
 

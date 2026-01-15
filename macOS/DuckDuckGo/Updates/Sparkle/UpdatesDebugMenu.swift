@@ -336,6 +336,7 @@ private enum SparkleTestingResources {
               <sparkle:version>9999</sparkle:version>
               <sparkle:shortVersionString>99.0.0</sparkle:shortVersionString>
               <description><![CDATA[
+                <h3>What's new</h3>
                 <ul>
                   <li>Test update for local Sparkle testing</li>
                 </ul>

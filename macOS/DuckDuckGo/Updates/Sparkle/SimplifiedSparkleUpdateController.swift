@@ -92,7 +92,6 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
     private func refreshUpdateFromCache(_ cachedUpdateResult: UpdateCheckResult, progress: UpdateCycleProgress? = nil) {
         latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled, needsLatestReleaseNote: cachedUpdateResult.needsLatestReleaseNote)
-        Logger.updates.log("🔍 refreshUpdateFromCache: latestUpdate.releaseNotes.count=\(self.latestUpdate?.releaseNotes.count ?? -1)")
         let isInstalled = latestUpdate?.isInstalled == false
         // Use passed progress if available (avoids @Published willSet timing issue)
         let currentProgress = progress ?? progressState.updateProgress

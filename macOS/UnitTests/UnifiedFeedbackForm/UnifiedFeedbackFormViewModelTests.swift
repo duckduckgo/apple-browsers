@@ -90,7 +90,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func disabledTestWhenDuckAiFeatureIsEnabledAndSubscriptionIncludesPaidAIChat_ThenDuckAiCategoryIsAvailable() async throws {
         let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        subscriptionManager.resultFeatures = [.paidAIChat]
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.paidAIChat]
 
@@ -114,7 +114,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func testWhenDuckAiFeatureIsDisabled_ThenDuckAiCategoryIsNotAvailable() async throws {
         let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        subscriptionManager.resultFeatures = [.paidAIChat]
         let featureFlagger = MockFeatureFlagger()
 
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
@@ -129,7 +129,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func testWhenSubscriptionDoesNotIncludePaidAIChat_ThenDuckAiCategoryIsNotAvailable() async throws {
         let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.subscriptionFeatures = []
+        subscriptionManager.resultFeatures = []
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.paidAIChat]
 
@@ -358,20 +358,4 @@ private class MockVPNFeedbackFormViewModelDelegate: UnifiedFeedbackFormViewModel
         receivedDismissedViewCallback = true
     }
 
-}
-
-extension SubscriptionManagerMock {
-
-    convenience init() {
-        let accountManager = AccountManagerMock()
-        accountManager.accessToken = "token"
-        self.init(accountManager: accountManager,
-                  subscriptionEndpointService: SubscriptionEndpointServiceMock(),
-                  authEndpointService: AuthEndpointServiceMock(),
-                  storePurchaseManager: StorePurchaseManagerMock(),
-                  currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
-                                                              purchasePlatform: .appStore),
-                  hasAppStoreProductsAvailable: false,
-                  subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
-    }
 }

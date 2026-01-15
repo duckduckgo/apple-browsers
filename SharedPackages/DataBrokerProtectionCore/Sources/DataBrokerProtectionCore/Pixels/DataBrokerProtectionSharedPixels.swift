@@ -151,8 +151,8 @@ public enum DataBrokerProtectionSharedPixels {
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
     case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
     case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
-    case scanningEventNewMatch
-    case scanningEventReAppearance
+    case scanningEventNewMatch(dataBrokerURL: String)
+    case scanningEventReAppearance(dataBrokerURL: String)
 
     // Additional opt out metrics
     case optOutJobAt7DaysConfirmed(dataBroker: String)
@@ -478,9 +478,10 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .weeklyActiveUser(let isAuthenticated),
                 .monthlyActiveUser(let isAuthenticated):
             return [Consts.isAuthenticated: isAuthenticated.description]
-        case .scanningEventNewMatch,
-                .scanningEventReAppearance,
-                .secureVaultInitError,
+        case .scanningEventNewMatch(let dataBrokerURL),
+                .scanningEventReAppearance(let dataBrokerURL):
+            return [Consts.dataBrokerParamKey: dataBrokerURL]
+        case .secureVaultInitError,
                 .secureVaultKeyStoreUpdateError,
                 .secureVaultError,
                 .secureVaultDatabaseRecreated,

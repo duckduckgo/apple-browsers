@@ -19,129 +19,98 @@
 import Foundation
 import StoreKit
 import os.log
+import Networking
+import Common
 
-public enum AppStoreRestoreFlowError: Swift.Error, Equatable, LocalizedError {
+public enum AppStoreRestoreFlowError: DDGError {
     case missingAccountOrTransactions
     case pastTransactionAuthenticationError
     case failedToObtainAccessToken
     case failedToFetchAccountDetails
     case failedToFetchSubscriptionDetails
-    case subscriptionExpired(accountDetails: RestoredAccountDetails)
+    case subscriptionExpired
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
-        case .missingAccountOrTransactions:
-            return "No Apple ID or transactions found."
-        case .pastTransactionAuthenticationError:
-            return "Failed to authenticate with Apple ID."
-        case .failedToObtainAccessToken:
-            return "Failed to obtain access token."
-        case .failedToFetchAccountDetails:
-            return "Failed to fetch account details."
-        case .failedToFetchSubscriptionDetails:
-            return "Failed to fetch subscription details."
-        case .subscriptionExpired(accountDetails: let accountDetails):
-            return "Subscription expired for \(accountDetails.email ?? "unknown email")"
+        case .missingAccountOrTransactions: "No account or past transactions found"
+        case .pastTransactionAuthenticationError: "Failed to authenticate with past Apple ID transaction"
+        case .failedToObtainAccessToken: "Unable to obtain access token from authentication service"
+        case .failedToFetchAccountDetails: "Failed to retrieve account details from server"
+        case .failedToFetchSubscriptionDetails: "Unable to fetch subscription information from server"
+        case .subscriptionExpired: "The subscription associated with this account has expired"
         }
     }
 
-    public var localizedDescription: String {
-        errorDescription ?? "Unknown"
-    }
-}
+    public static var errorDomain: String { "com.duckduckgo.subscription.AppStoreRestoreFlowErrorV2" }
 
-public struct RestoredAccountDetails: Equatable {
-    let authToken: String
-    let accessToken: String
-    let externalID: String
-    let email: String?
+    public var errorCode: Int {
+        switch self {
+        case .missingAccountOrTransactions: 13000
+        case .pastTransactionAuthenticationError: 13001
+        case .failedToObtainAccessToken: 13002
+        case .failedToFetchAccountDetails: 13003
+        case .failedToFetchSubscriptionDetails: 13004
+        case .subscriptionExpired: 13005
+        }
+    }
 }
 
 @available(macOS 12.0, iOS 15.0, *)
 public protocol AppStoreRestoreFlow {
-    @discardableResult func restoreAccountFromPastPurchase() async -> Result<Void, AppStoreRestoreFlowError>
+    @discardableResult func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError>
+    func restoreSubscriptionAfterExpiredRefreshToken() async throws
 }
 
 @available(macOS 12.0, iOS 15.0, *)
 public final class DefaultAppStoreRestoreFlow: AppStoreRestoreFlow {
-    private let accountManager: AccountManager
-    private let storePurchaseManager: StorePurchaseManager
-    private let subscriptionEndpointService: SubscriptionEndpointService
-    private let authEndpointService: AuthEndpointService
+    private let subscriptionManager: any SubscriptionManager
+    private let storePurchaseManager: any StorePurchaseManager
 
-    public init(accountManager: any AccountManager,
-                storePurchaseManager: any StorePurchaseManager,
-                subscriptionEndpointService: any SubscriptionEndpointService,
-                authEndpointService: any AuthEndpointService) {
-        self.accountManager = accountManager
+    public init(subscriptionManager: any SubscriptionManager,
+                storePurchaseManager: any StorePurchaseManager) {
+        self.subscriptionManager = subscriptionManager
         self.storePurchaseManager = storePurchaseManager
-        self.subscriptionEndpointService = subscriptionEndpointService
-        self.authEndpointService = authEndpointService
     }
 
     @discardableResult
-    public func restoreAccountFromPastPurchase() async -> Result<Void, AppStoreRestoreFlowError> {
+    public func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError> {
+        Logger.subscriptionAppStoreRestoreFlow.log("Restoring account from past purchase")
 
         // Clear subscription Cache
-        subscriptionEndpointService.signOut()
-
-        Logger.subscription.info("[AppStoreRestoreFlow] restoreAccountFromPastPurchase")
+        subscriptionManager.clearSubscriptionCache()
 
         guard let lastTransactionJWSRepresentation = await storePurchaseManager.mostRecentTransaction() else {
-            Logger.subscription.error("[AppStoreRestoreFlow] Error: missingAccountOrTransactions")
+            Logger.subscriptionAppStoreRestoreFlow.error("Missing last transaction")
             return .failure(.missingAccountOrTransactions)
         }
 
-        // Do the store login to get short-lived token
-        let authToken: String
-
-        switch await authEndpointService.storeLogin(signature: lastTransactionJWSRepresentation) {
-        case .success(let response):
-            authToken = response.authToken
-        case .failure:
-            Logger.subscription.error("[AppStoreRestoreFlow] Error: pastTransactionAuthenticationError")
+        do {
+            if let subscription = try await subscriptionManager.getSubscriptionFrom(lastTransactionJWSRepresentation: lastTransactionJWSRepresentation),
+               subscription.isActive {
+                return .success(lastTransactionJWSRepresentation)
+            } else {
+                Logger.subscriptionAppStoreRestoreFlow.error("Subscription expired")
+                // Removing all traces of the subscription and the account
+                await subscriptionManager.signOut(notifyUI: false)
+                return .failure(.subscriptionExpired)
+            }
+        } catch {
+            Logger.subscriptionAppStoreRestoreFlow.error("Error activating past transaction: \(error, privacy: .public)")
             return .failure(.pastTransactionAuthenticationError)
         }
+    }
 
-        let accessToken: String
-        let email: String?
-        let externalID: String
+    public func restoreSubscriptionAfterExpiredRefreshToken() async throws {
+        Logger.subscriptionAppStoreRestoreFlow.log("Restoring subscription after expired refresh token")
 
-        switch await accountManager.exchangeAuthTokenToAccessToken(authToken) {
-        case .success(let exchangedAccessToken):
-            accessToken = exchangedAccessToken
-        case .failure:
-            Logger.subscription.error("[AppStoreRestoreFlow] Error: failedToObtainAccessToken")
-            return .failure(.failedToObtainAccessToken)
+        // Clear subscription Cache
+        subscriptionManager.clearSubscriptionCache()
+
+        guard let lastTransactionJWSRepresentation = await storePurchaseManager.mostRecentTransaction() else {
+            Logger.subscriptionAppStoreRestoreFlow.error("Missing last transaction")
+            throw AppStoreRestoreFlowError.missingAccountOrTransactions
         }
 
-        switch await accountManager.fetchAccountDetails(with: accessToken) {
-        case .success(let accountDetails):
-            email = accountDetails.email
-            externalID = accountDetails.externalID
-        case .failure:
-            Logger.subscription.error("[AppStoreRestoreFlow] Error: failedToFetchAccountDetails")
-            return .failure(.failedToFetchAccountDetails)
-        }
-
-        var isSubscriptionActive = false
-
-        switch await subscriptionEndpointService.getSubscription(accessToken: accessToken, cachePolicy: .reloadIgnoringLocalCacheData) {
-        case .success(let subscription):
-            isSubscriptionActive = subscription.isActive
-        case .failure:
-            Logger.subscription.error("[AppStoreRestoreFlow] Error: failedToFetchSubscriptionDetails")
-            return .failure(.failedToFetchSubscriptionDetails)
-        }
-
-        if isSubscriptionActive {
-            accountManager.storeAuthToken(token: authToken)
-            accountManager.storeAccount(token: accessToken, email: email, externalID: externalID)
-            return .success(())
-        } else {
-            let details = RestoredAccountDetails(authToken: authToken, accessToken: accessToken, externalID: externalID, email: email)
-            Logger.subscription.error("[AppStoreRestoreFlow] Error: subscriptionExpired")
-            return .failure(.subscriptionExpired(accountDetails: details))
-        }
+        _ = try await subscriptionManager.getSubscriptionFrom(lastTransactionJWSRepresentation: lastTransactionJWSRepresentation)
     }
 }

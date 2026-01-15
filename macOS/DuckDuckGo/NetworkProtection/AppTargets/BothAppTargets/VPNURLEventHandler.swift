@@ -88,7 +88,7 @@ final class VPNURLEventHandler {
     }
 
     func showSubscription() {
-        let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .purchase)
+        let url = Application.appDelegate.subscriptionManager.url(for: .purchase)
         windowControllersManager.showTab(with: .subscription(url))
 
         PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)

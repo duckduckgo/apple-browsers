@@ -39,9 +39,8 @@ final class DBPService: NSObject {
         }
 
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-            runTypeProvider: appDependencies.dbpSettings,
-            isAuthV2Enabled: appDependencies.isUsingAuthV2)
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            runTypeProvider: appDependencies.dbpSettings)
         let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
         let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
 
@@ -72,7 +71,7 @@ final class DBPService: NSObject {
                 },
                 feedbackViewCreator: {
                     let viewModel = UnifiedFeedbackFormViewModel(
-                        subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                        subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                         vpnMetadataCollector: DefaultVPNMetadataCollector(),
                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
                         isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },

@@ -21,13 +21,10 @@ import Subscription
 
 public enum VPNSubscriptionClientCheckPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     case vpnFeatureEnabled(isSubscriptionActive: Bool?,
-                    isAuthV2Enabled: Bool,
-                    trigger: Trigger)
+                           trigger: Trigger)
     case vpnFeatureDisabled(isSubscriptionActive: Bool?,
-                     isAuthV2Enabled: Bool,
-                     trigger: Trigger)
+                            trigger: Trigger)
     case failed(isSubscriptionActive: Bool?,
-                isAuthV2Enabled: Bool,
                 trigger: Trigger,
                 error: Error)
 
@@ -43,9 +40,9 @@ public enum VPNSubscriptionClientCheckPixel: PixelKitEvent, PixelKitEventWithCus
     public var namePrefix: String {
         let trigger: Trigger = {
             switch self {
-            case .vpnFeatureEnabled(_, _, let trigger),
-                    .vpnFeatureDisabled(_, _, let trigger),
-                    .failed(_, _, let trigger, _):
+            case .vpnFeatureEnabled(_, let trigger),
+                    .vpnFeatureDisabled(_, let trigger),
+                    .failed(_, let trigger, _):
                 return trigger
             }
         }()
@@ -80,9 +77,9 @@ public enum VPNSubscriptionClientCheckPixel: PixelKitEvent, PixelKitEventWithCus
 
     public var parameters: [String: String]? {
         switch self {
-        case .vpnFeatureEnabled(let isSubscriptionActive, let isAuthV2, _),
-                .vpnFeatureDisabled(let isSubscriptionActive, let isAuthV2, _),
-                .failed(let isSubscriptionActive, let isAuthV2, _, _):
+        case .vpnFeatureEnabled(let isSubscriptionActive, _),
+                .vpnFeatureDisabled(let isSubscriptionActive, _),
+                .failed(let isSubscriptionActive, _, _):
 
             let isSubscriptionActiveString = {
                 guard let isSubscriptionActive else {
@@ -94,7 +91,7 @@ public enum VPNSubscriptionClientCheckPixel: PixelKitEvent, PixelKitEventWithCus
 
             return [
                 "vpnSubscriptionActive": isSubscriptionActiveString,
-                "vpnAuthVersion": isAuthV2 ? "v2" : "v1"
+                "vpnAuthVersion": "v2"
             ]
         }
     }

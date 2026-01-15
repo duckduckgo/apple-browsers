@@ -20,20 +20,31 @@ import Foundation
 import Subscription
 
 public final class AppStorePurchaseFlowMock: AppStorePurchaseFlow {
-    public var purchaseSubscriptionResult: Result<TransactionJWS, AppStorePurchaseFlowError>?
+    public var purchaseSubscriptionResult: Result<PurchaseResult, AppStorePurchaseFlowError>?
     public var completeSubscriptionPurchaseResult: Result<PurchaseUpdate, AppStorePurchaseFlowError>?
-    public var purchaseSubscriptionBlock: (() -> Void)?
-    public var completeSubscriptionAdditionalParams: [String: String]?
+    public var changeTierResult: Result<TransactionJWS, AppStorePurchaseFlowError>?
+
+    public var purchaseSubscriptionCalled = false
+    public var purchaseSubscriptionIncludeProTier: Bool?
+    public var changeTierCalled = false
+    public var changeTierSubscriptionIdentifier: String?
 
     public init() { }
 
-    public func purchaseSubscription(with subscriptionIdentifier: String, emailAccessToken: String?) async -> Result<TransactionJWS, AppStorePurchaseFlowError> {
-        purchaseSubscriptionBlock?()
+    public func purchaseSubscription(with subscriptionIdentifier: String, includeProTier: Bool) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
+        purchaseSubscriptionCalled = true
+        purchaseSubscriptionIncludeProTier = includeProTier
         return purchaseSubscriptionResult!
     }
 
+    @discardableResult
     public func completeSubscriptionPurchase(with transactionJWS: TransactionJWS, additionalParams: [String: String]?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
-        completeSubscriptionAdditionalParams = additionalParams
-        return completeSubscriptionPurchaseResult!
+        completeSubscriptionPurchaseResult!
+    }
+
+    public func changeTier(to subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError> {
+        changeTierCalled = true
+        changeTierSubscriptionIdentifier = subscriptionIdentifier
+        return changeTierResult!
     }
 }

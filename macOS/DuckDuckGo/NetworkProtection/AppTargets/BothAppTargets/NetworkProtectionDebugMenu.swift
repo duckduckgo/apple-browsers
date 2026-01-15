@@ -66,13 +66,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
         let settings = Application.appDelegate.vpnSettings
         let keyStore = NetworkProtectionKeychainKeyStore(keychainType: .default,
                                                          errorEvents: .networkProtectionAppDebugEvents)
-        var tokenHandler: any SubscriptionTokenHandling
-        if !Application.appDelegate.isUsingAuthV2 {
-            tokenHandler = NetworkProtectionKeychainTokenStore()
-        } else {
-            // swiftlint:disable:next force_cast
-            tokenHandler = Application.appDelegate.subscriptionManagerV2 as! DefaultSubscriptionManagerV2
-        }
+        // swiftlint:disable:next force_cast
+        var tokenHandler: any SubscriptionTokenHandling = Application.appDelegate.subscriptionManager as! DefaultSubscriptionManager
         networkProtectionDeviceManager = NetworkProtectionDeviceManager(environment: settings.selectedEnvironment,
                                                                         tokenHandler: tokenHandler,
                                                                         keyStore: keyStore,
@@ -313,7 +308,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     ///
     @objc func logFeedbackMetadataToConsole(_ sender: Any?) {
         Task { @MainActor in
-            let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+            let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionManager)
             let metadata = await collector.collectMetadata()
 
             print(metadata.toPrettyPrintedJSON()!)

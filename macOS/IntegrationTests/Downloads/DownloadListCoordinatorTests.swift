@@ -657,14 +657,14 @@ final class DownloadListCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testSync() {
+    func testSync() async {
         let e = expectation(description: "sync called")
         store.syncBlock = {
             e.fulfill()
         }
         setUpCoordinator()
-        coordinator.sync()
-        waitForExpectations(timeout: 0)
+        await coordinator.sync()
+        await fulfillment(of: [e], timeout: 0)
     }
 
 }

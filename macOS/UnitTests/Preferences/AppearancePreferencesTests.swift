@@ -182,6 +182,21 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertTrue(persister2.syncAppIconWithTheme)
     }
 
+    func testMaxNextStepsCardsDemonstrationDaysUpdatesWhenFeatureFlagIsUpdated() {
+        let featureFlagger = MockFeatureFlagger()
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 9)
+
+        featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
+
+        XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 14)
+    }
+
     func testContinueSetUpIsNotDismissedAfterSeveralDemonstrationsWithinSeveralDays() {
         // 1. app installed and launched
         var now = Date()
@@ -202,7 +217,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         // check during N hours
         // eObjectWillChange shouldn‘t be called until N days
-        for i in 0..<max(AppearancePreferences.Constants.dismissNextStepsCardsAfterDays, 48) {
+        for i in 0..<max(model.maxNextStepsCardsDemonstrationDays, 48) {
             XCTAssertTrue(model.isContinueSetUpVisible, "\(i)")
             XCTAssertFalse(model.isContinueSetUpCardsViewOutdated, "\(i)")
             incrementDate()
@@ -232,7 +247,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         // check during N days
         // eObjectWillChange shouldn‘t be called until N days
-        for i in 0..<AppearancePreferences.Constants.dismissNextStepsCardsAfterDays {
+        for i in 0..<model.maxNextStepsCardsDemonstrationDays {
             XCTAssertTrue(model.isContinueSetUpVisible, "\(i)")
             XCTAssertFalse(model.isContinueSetUpCardsViewOutdated, "\(i)")
             model.continueSetUpCardsViewDidAppear()
@@ -247,7 +262,7 @@ final class AppearancePreferencesTests: XCTestCase {
         waitForExpectations(timeout: 1)
 
         // shouldn‘t change after being set once
-        for i in (AppearancePreferences.Constants.dismissNextStepsCardsAfterDays + 1)..<(AppearancePreferences.Constants.dismissNextStepsCardsAfterDays + 20) {
+        for i in (model.maxNextStepsCardsDemonstrationDays + 1)..<(model.maxNextStepsCardsDemonstrationDays + 20) {
             XCTAssertFalse(model.isContinueSetUpVisible, "\(i)")
             XCTAssertTrue(model.isContinueSetUpCardsViewOutdated, "\(i)")
             incrementDate()
@@ -259,7 +274,9 @@ final class AppearancePreferencesTests: XCTestCase {
 
     // MARK: - Pixel firing tests
 
-    func testWhenCurrentThemeIsUpdatedThenPixelIsFired() {
+    func testWhenCurrentThemeIsUpdatedThenNoPixelIsFiredFromModel() {
+        // Pixel firing has been moved to the call sites (Settings view and NTP customizer)
+        // to track the source of the change. The model itself no longer fires pixels.
         let pixelFiringMock = PixelKitMock()
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
@@ -273,12 +290,11 @@ final class AppearancePreferencesTests: XCTestCase {
         model.themeAppearance = ThemeAppearance.dark
         model.themeAppearance = ThemeAppearance.systemDefault
 
-        pixelFiringMock.expectedFireCalls = [
-            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
-            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
-            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard),
-            .init(pixel: SettingsPixel.themeAppearanceChanged, frequency: .standard)
-        ]
+        model.themeName = ThemeName.default
+        model.themeName = ThemeName.green
+
+        // No pixel should be fired from the model - pixels are fired at call sites
+        pixelFiringMock.expectedFireCalls = []
 
         pixelFiringMock.verifyExpectations()
     }

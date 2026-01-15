@@ -97,13 +97,34 @@ public struct RemoteMessageModel: Equatable, Codable {
                 guard let translatedItem = translation.listItems?[item.id] else {
                     return item
                 }
+
+                let translatedItemType: RemoteMessageModelType.ListItem.ListItemType
+                switch item.type {
+                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, primaryActionText, primaryAction):
+                    translatedItemType = .featuredTwoLinesSingleActionItem(
+                        titleText: translatedItem.titleText ?? titleText,
+                        descriptionText: translatedItem.descriptionText ?? descriptionText,
+                        placeholderImage: placeholderImage,
+                        primaryActionText: translatedItem.primaryActionText ?? primaryActionText,
+                        primaryAction: primaryAction
+                    )
+                case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):
+                    translatedItemType = .twoLinesItem(
+                        titleText: translatedItem.titleText ?? titleText,
+                        descriptionText: translatedItem.descriptionText ?? descriptionText,
+                        placeholderImage: placeholderImage,
+                        action: action
+                    )
+                case let .titledSection(titleText, itemIDs):
+                    translatedItemType = .titledSection(
+                        titleText: translatedItem.titleText ?? titleText,
+                        itemIDs: itemIDs
+                    )
+                }
+
                 return RemoteMessageModelType.ListItem(
                     id: item.id,
-                    type: item.type,
-                    titleText: translatedItem.titleText ?? item.titleText,
-                    descriptionText: translatedItem.descriptionText ?? item.descriptionText,
-                    placeholderImage: item.placeholderImage,
-                    action: item.action,
+                    type: translatedItemType,
                     matchingRules: item.matchingRules,
                     exclusionRules: item.exclusionRules
                 )
@@ -169,20 +190,12 @@ public extension RemoteMessageModelType {
     struct ListItem: Codable, Equatable {
         public let id: String
         public let type: ListItemType
-        public let titleText: String
-        public let descriptionText: String
-        public let placeholderImage: RemotePlaceholder
-        public let action: RemoteAction?
         public let matchingRules: [Int]
         public let exclusionRules: [Int]
 
-        public init(id: String, type: ListItemType, titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, action: RemoteAction?, matchingRules: [Int], exclusionRules: [Int]) {
+        public init(id: String, type: ListItemType, matchingRules: [Int], exclusionRules: [Int]) {
             self.id = id
             self.type = type
-            self.titleText = titleText
-            self.descriptionText = descriptionText
-            self.placeholderImage = placeholderImage
-            self.action = action
             self.matchingRules = matchingRules
             self.exclusionRules = exclusionRules
         }
@@ -192,7 +205,37 @@ public extension RemoteMessageModelType {
 public extension RemoteMessageModelType.ListItem {
 
     enum ListItemType: Codable, Equatable {
-        case twoLinesItem
+        /// Represents a featured two-line card with an icon, title, description, and optional action with title.
+        /// - Parameters:
+        ///   - titleText: The main title of the card (required, translatable)
+        ///   - descriptionText: Supporting description text (required, translatable)
+        ///   - placeholderImage: Image to display alongside the text
+        ///   - primaryActionText: Optional title for the action triggered when the card is tapped
+        ///   - primaryAction: Optional action triggered when the card is tapped
+        case featuredTwoLinesSingleActionItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, primaryActionText: String?, primaryAction: RemoteAction?)
+
+        /// Represents a standard two-line card with an icon, title, description, and optional action.
+        /// - Parameters:
+        ///   - titleText: The main title of the card (required, translatable)
+        ///   - descriptionText: Supporting description text (required, translatable)
+        ///   - placeholderImage: Image to display alongside the text
+        ///   - action: Optional action triggered when the card is tapped
+        case twoLinesItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, action: RemoteAction?)
+
+        /// Represents a section header with a title and an array of item IDs belonging to this section.
+        /// - Parameters:
+        ///   - titleText: The section header text (required, translatable)
+        ///   - itemIDs: Array of item IDs that belong to this section. Used to determine if the section should be displayed after filtering.
+        case titledSection(titleText: String, itemIDs: [String])
+
+        var isFeaturedItem: Bool {
+            switch self {
+            case .featuredTwoLinesSingleActionItem:
+                return true
+            case .titledSection, .twoLinesItem:
+                return false
+            }
+        }
     }
 
 }

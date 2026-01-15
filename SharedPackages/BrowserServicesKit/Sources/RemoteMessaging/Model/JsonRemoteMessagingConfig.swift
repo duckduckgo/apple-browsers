@@ -72,13 +72,21 @@ public enum RemoteMessageResponse {
         let titleText: String
         let descriptionText: String?
         let placeholder: String?
+        let primaryActionText: String?
         let primaryAction: JsonMessageAction?
         let matchingRules: [Int]?
         let exclusionRules: [Int]?
+        /// Array of item IDs that belong to this section. Only applicable for `section_title` type.
+        /// Used to determine which items belong under a section header. After filtering items
+        /// by their rules, sections are removed if none of their referenced itemIds exist.
+        /// Ignored for `two_line_list_item` type.
+        let itemIDs: [String]?
     }
 
     enum JsonListItemType: String, CaseIterable {
-       case twoLinesItem = "two_line_list_item"
+        case featuredTwoLinesSingleActionItem = "featured_two_line_single_action_list_item"
+        case twoLinesItem = "two_line_list_item"
+        case titledSection = "section_title"
     }
 
     enum JsonSurface: String, CaseIterable {
@@ -107,6 +115,7 @@ public enum RemoteMessageResponse {
     struct JsonListItemTranslation: Decodable {
         let titleText: String?
         let descriptionText: String?
+        let primaryActionText: String?
     }
 
     struct JsonTargetPercentile: Decodable {

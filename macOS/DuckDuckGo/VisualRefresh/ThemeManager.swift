@@ -54,7 +54,7 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 
     @Published private(set) var designColorPalette: DesignResourcesKit.ColorPalette
 
-    init(appearancePreferences: AppearancePreferences, internalUserDecider: InternalUserDecider, featureFlagger: FeatureFlagger) {
+    init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger) {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
 
@@ -64,8 +64,10 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 
         switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
-        subscribeToInternalUserChanges(internalUserDecider: internalUserDecider)
+        subscribeToThemesFlagChanges(featureFlagger: featureFlagger)
         subscribeToSystemAppearance()
+
+        resetThemeNameIfNeeded(featureFlagger: featureFlagger)
     }
 
     private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
@@ -78,11 +80,11 @@ final class ThemeManager: ObservableObject, ThemeManaging {
             .store(in: &cancellables)
     }
 
-    private func subscribeToInternalUserChanges(internalUserDecider: InternalUserDecider) {
-        internalUserDecider.isInternalUserPublisher
+    private func subscribeToThemesFlagChanges(featureFlagger: FeatureFlagger) {
+        featureFlagger.updatesPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] isInternalUser in
-                self?.resetThemeNameIfNeeded(isInternalUser: isInternalUser)
+            .sink { [weak self] in
+                self?.resetThemeNameIfNeeded(featureFlagger: featureFlagger)
             }
             .store(in: &cancellables)
     }
@@ -112,9 +114,9 @@ private extension ThemeManager {
         designColorPalette = palette
     }
 
-    /// Non Internal Users should only see the `.default` theme
-    func resetThemeNameIfNeeded(isInternalUser: Bool) {
-        if isInternalUser == false, appearancePreferences.themeName != .default {
+    /// Ensure the `.default` theme is set, whenever the `.themes` Feature Flag is disabled
+    func resetThemeNameIfNeeded(featureFlagger: FeatureFlagger) {
+        if featureFlagger.isFeatureOn(.themes) == false, appearancePreferences.themeName != .default {
             appearancePreferences.themeName = .default
         }
     }

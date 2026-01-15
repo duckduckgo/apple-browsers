@@ -2,6 +2,42 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Dzēst no %1$d vietnēm. Var izrakstīt tevi no kontiem.</string>
+			<key>one</key>
+			<string>Dzēst no 1 vietnes. Var izrakstīt tevi no kontiem.</string>
+			<key>other</key>
+			<string>Dzēst no %1$d vietnēm. Var izrakstīt tevi no kontiem.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Aizvērt visas %1$d cilnes</string>
+			<key>one</key>
+			<string>Aizvērt cilni</string>
+			<key>other</key>
+			<string>Aizvērt visas %1$d cilnes</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

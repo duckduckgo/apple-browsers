@@ -304,6 +304,13 @@ final class Fire: FireProtocol {
                     includeCookiesAndSiteData: Bool,
                     includeChatHistory: Bool,
                     completion: (@MainActor () -> Void)?) {
+        // Prevent re-entry if burn is already in progress
+        guard dispatchGroup == nil, burningData == nil else {
+            assertionFailure("burnEntity called while burn already in progress")
+            completion?()
+            return
+        }
+
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -386,6 +393,13 @@ final class Fire: FireProtocol {
                  includeCookiesAndSiteData: Bool,
                  includeChatHistory: Bool,
                  completion: (@MainActor () -> Void)?) {
+        // Prevent re-entry if burn is already in progress
+        guard dispatchGroup == nil, burningData == nil else {
+            assertionFailure("burnAll called while burn already in progress")
+            completion?()
+            return
+        }
+
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -526,6 +540,7 @@ final class Fire: FireProtocol {
         assert(dispatchGroup != nil)
 
         dispatchGroup?.leave()
+        dispatchGroup = nil
     }
 
     // MARK: - Closing windows

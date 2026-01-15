@@ -15,43 +15,29 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-
 import XCTest
 @testable import Subscription
 import SubscriptionTestingUtilities
+import Networking
 
 final class StripePurchaseFlowTests: XCTestCase {
 
     private struct Constants {
-        static let authToken = UUID().uuidString
         static let accessToken = UUID().uuidString
         static let externalID = UUID().uuidString
         static let email = "dax@duck.com"
-
-        static let unknownServerError = APIServiceError.serverError(statusCode: 401, statusDescription: "unknown_error")
     }
 
-    var accountManager: AccountManagerMock!
-    var subscriptionService: SubscriptionEndpointServiceMock!
-    var authEndpointService: AuthEndpointServiceMock!
-
+    var subscriptionManager: SubscriptionManagerMock!
     var stripePurchaseFlow: StripePurchaseFlow!
 
     override func setUpWithError() throws {
-        accountManager = AccountManagerMock()
-        subscriptionService = SubscriptionEndpointServiceMock()
-        authEndpointService = AuthEndpointServiceMock()
-
-        stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionEndpointService: subscriptionService,
-                                                       authEndpointService: authEndpointService,
-                                                       accountManager: accountManager)
+        subscriptionManager = SubscriptionManagerMock()
+        stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
     }
 
     override func tearDownWithError() throws {
-        accountManager = nil
-        subscriptionService = nil
-        authEndpointService = nil
-
+        subscriptionManager = nil
         stripePurchaseFlow = nil
     }
 
@@ -59,7 +45,7 @@ final class StripePurchaseFlowTests: XCTestCase {
 
     func testSubscriptionOptionsSuccess() async throws {
         // Given
-        subscriptionService .getProductsResult = .success(SubscriptionMockFactory.productsItems)
+        subscriptionManager.productsResponse = .success(SubscriptionMockFactory.productsItems)
 
         // When
         let result = await stripePurchaseFlow.subscriptionOptions()
@@ -69,193 +55,227 @@ final class StripePurchaseFlowTests: XCTestCase {
         case .success(let success):
             XCTAssertEqual(success.platform, SubscriptionPlatformName.stripe)
             XCTAssertEqual(success.options.count, SubscriptionMockFactory.productsItems.count)
-            XCTAssertEqual(success.features.count, 3)
-            let allFeatures = [Entitlement.ProductName.networkProtection, Entitlement.ProductName.dataBrokerProtection, Entitlement.ProductName.identityTheftRestoration]
+            XCTAssertEqual(success.features.count, 4)
+            let allFeatures = [Entitlement.ProductName.networkProtection,
+                               Entitlement.ProductName.dataBrokerProtection,
+                               Entitlement.ProductName.identityTheftRestoration,
+                               Entitlement.ProductName.paidAIChat]
             let allNames = success.features.compactMap({ feature in feature.name })
 
             for feature in allFeatures {
-                XCTAssertTrue(allNames.contains(feature))
+                XCTAssertTrue(allNames.contains(feature.subscriptionEntitlement))
             }
         case .failure(let error):
             XCTFail("Unexpected failure: \(error)")
         }
     }
 
-    func testSubscriptionOptionsErrorWhenNoProductsAreFetched() async throws {
+    // MARK: - Tests for subscriptionTierOptions
+
+    func testSubscriptionTierOptionsSuccess() async throws {
         // Given
-        subscriptionService.getProductsResult = .failure(.unknownServerError)
+        subscriptionManager.tierProductsResponse = .success(SubscriptionMockFactory.tierProductsResponse)
 
         // When
-        let result = await stripePurchaseFlow.subscriptionOptions()
-
-        // Then
-        switch result {
-        case .success:
-            XCTFail("Unexpected success")
-        case .failure(let error):
-            switch error {
-            case .noProductsFound: break
-            default: XCTFail("Expected noProductsFound")
-            }
-        }
-    }
-
-    // MARK: - Tests for prepareSubscriptionPurchase
-
-    func testPrepareSubscriptionPurchaseSuccess() async throws {
-        // Given
-        authEndpointService.createAccountResult = .success(CreateAccountResponse(authToken: Constants.authToken,
-                                                                                 externalID: Constants.externalID,
-                                                                                 status: "created"))
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-
-        // When
-        let result = await stripePurchaseFlow.prepareSubscriptionPurchase(emailAccessToken: nil)
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
 
         // Then
         switch result {
         case .success(let success):
-            XCTAssertEqual(success.type, "redirect")
-            XCTAssertEqual(success.token, Constants.authToken)
+            XCTAssertEqual(success.platform, SubscriptionPlatformName.stripe)
+            XCTAssertEqual(success.products.count, 1)
 
-            XCTAssertTrue(authEndpointService.createAccountCalled)
-            XCTAssertEqual(accountManager.authToken, Constants.authToken)
+            let tier = success.products[0]
+            XCTAssertEqual(tier.tier, .plus)
+            XCTAssertEqual(tier.features.count, 4)
+            XCTAssertEqual(tier.options.count, 2)
+
+            // Verify features
+            let expectedFeatures: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+            for expectedFeature in expectedFeatures {
+                XCTAssertTrue(tier.features.contains(where: { $0.product == expectedFeature }))
+            }
+
+            // Verify options
+            XCTAssertTrue(tier.options.contains(where: { $0.id == "monthly-plus" }))
+            XCTAssertTrue(tier.options.contains(where: { $0.id == "yearly-plus" }))
         case .failure(let error):
             XCTFail("Unexpected failure: \(error)")
         }
     }
 
-    func testPrepareSubscriptionPurchaseSuccessWhenSignedInAndSubscriptionExpired() async throws {
+    func testSubscriptionTierOptionsFiltersOutProTierWhenDisabled() async throws {
         // Given
-        let subscription = SubscriptionMockFactory.expiredSubscription
+        let responseWithProTier = GetTierProductsResponse(products: [
+            TierProduct(
+                productName: "Plus Subscription",
+                tier: .plus,
+                regions: ["us", "row"],
+                entitlements: [
+                    TierFeature(product: .networkProtection, name: .plus)
+                ],
+                billingCycles: [
+                    BillingCycle(productId: "monthly-plus", period: "Monthly", price: "9.99", currency: "USD")
+                ]
+            ),
+            TierProduct(
+                productName: "Pro Subscription",
+                tier: .pro,
+                regions: ["us", "row"],
+                entitlements: [
+                    TierFeature(product: .networkProtection, name: .pro),
+                    TierFeature(product: .paidAIChat, name: .pro)
+                ],
+                billingCycles: [
+                    BillingCycle(productId: "monthly-pro", period: "Monthly", price: "19.99", currency: "USD")
+                ]
+            )
+        ])
+        subscriptionManager.tierProductsResponse = .success(responseWithProTier)
 
-        accountManager.accessToken = Constants.accessToken
+        // When - includeProTier is false
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
 
-        subscriptionService.getSubscriptionResult = .success(subscription)
-        subscriptionService.getProductsResult = .success(SubscriptionMockFactory.productsItems)
-
-        XCTAssertTrue(accountManager.isUserAuthenticated)
-        XCTAssertFalse(subscription.isActive)
-
-        // When
-        let result = await stripePurchaseFlow.prepareSubscriptionPurchase(emailAccessToken: nil)
-
-        // Then
+        // Then - Only plus tier should be returned
         switch result {
         case .success(let success):
-            XCTAssertEqual(success.type, "redirect")
-            XCTAssertEqual(success.token, Constants.accessToken)
-
-            XCTAssertTrue(subscriptionService.signOutCalled)
-            XCTAssertFalse(authEndpointService.createAccountCalled)
+            XCTAssertEqual(success.products.count, 1)
+            XCTAssertEqual(success.products[0].tier, .plus)
         case .failure(let error):
             XCTFail("Unexpected failure: \(error)")
         }
     }
 
-    func testPrepareSubscriptionPurchaseErrorWhenAccountCreationFailed() async throws {
+    func testSubscriptionTierOptionsIncludesProTierWhenEnabled() async throws {
         // Given
-        authEndpointService.createAccountResult = .failure(Constants.unknownServerError)
-        XCTAssertFalse(accountManager.isUserAuthenticated)
+        let responseWithProTier = GetTierProductsResponse(products: [
+            TierProduct(
+                productName: "Plus Subscription",
+                tier: .plus,
+                regions: ["us", "row"],
+                entitlements: [
+                    TierFeature(product: .networkProtection, name: .plus)
+                ],
+                billingCycles: [
+                    BillingCycle(productId: "monthly-plus", period: "Monthly", price: "9.99", currency: "USD")
+                ]
+            ),
+            TierProduct(
+                productName: "Pro Subscription",
+                tier: .pro,
+                regions: ["us", "row"],
+                entitlements: [
+                    TierFeature(product: .networkProtection, name: .pro),
+                    TierFeature(product: .paidAIChat, name: .pro)
+                ],
+                billingCycles: [
+                    BillingCycle(productId: "monthly-pro", period: "Monthly", price: "19.99", currency: "USD")
+                ]
+            )
+        ])
+        subscriptionManager.tierProductsResponse = .success(responseWithProTier)
+
+        // When - includeProTier is true
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: true)
+
+        // Then - Both tiers should be returned
+        switch result {
+        case .success(let success):
+            XCTAssertEqual(success.products.count, 2)
+            XCTAssertTrue(success.products.contains(where: { $0.tier == .plus }))
+            XCTAssertTrue(success.products.contains(where: { $0.tier == .pro }))
+        case .failure(let error):
+            XCTFail("Unexpected failure: \(error)")
+        }
+    }
+
+    func testSubscriptionTierOptionsFailureEmptyProductsFromAPI() async throws {
+        // Given
+        subscriptionManager.tierProductsResponse = .success(GetTierProductsResponse(products: []))
 
         // When
-        let result = await stripePurchaseFlow.prepareSubscriptionPurchase(emailAccessToken: nil)
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
 
         // Then
         switch result {
         case .success:
-            XCTFail("Unexpected success")
+            XCTFail("Expected failure but got success")
         case .failure(let error):
-            switch error {
-            case .accountCreationFailed: break
-            default: XCTFail("Expected accountCreationFailed")
-            }
+            XCTAssertEqual(error, .tieredProductsEmptyProductsFromAPI)
         }
     }
 
-    // MARK: - Tests for completeSubscriptionPurchase
-
-    func testCompleteSubscriptionPurchaseSuccessOnInitialPurchase() async throws {
+    func testSubscriptionTierOptionsFailureAPIError() async throws {
         // Given
-        // Initial purchase flow: authToken is present but no accessToken yet
-        accountManager.authToken = Constants.authToken
-        XCTAssertNil(accountManager.accessToken)
-
-        accountManager.exchangeAuthTokenToAccessTokenResult = .success(Constants.accessToken)
-        accountManager.onExchangeAuthTokenToAccessToken = { authToken in
-            XCTAssertEqual(authToken, Constants.authToken)
-        }
-
-        accountManager.fetchAccountDetailsResult = .success(AccountManager.AccountDetails(email: nil, externalID: Constants.externalID))
-        accountManager.onFetchAccountDetails = { accessToken in
-            XCTAssertEqual(accessToken, Constants.accessToken)
-        }
-
-        accountManager.onStoreAuthToken = { authToken in
-            XCTAssertEqual(authToken, Constants.authToken)
-        }
-
-        accountManager.onStoreAccount = { accessToken, email, externalID in
-            XCTAssertEqual(accessToken, Constants.accessToken)
-            XCTAssertEqual(externalID, Constants.externalID)
-            XCTAssertNil(email)
-        }
-
-        accountManager.onCheckForEntitlements = { wait, retry in
-            XCTAssertEqual(wait, 2.0)
-            XCTAssertEqual(retry, 5)
-            return true
-        }
-
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-        XCTAssertNotNil(accountManager.authToken)
+        subscriptionManager.tierProductsResponse = .failure(SubscriptionEndpointServiceError.noData)
 
         // When
-        await stripePurchaseFlow.completeSubscriptionPurchase()
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
 
         // Then
-        XCTAssertTrue(subscriptionService.signOutCalled)
-        XCTAssertTrue(accountManager.exchangeAuthTokenToAccessTokenCalled)
-        XCTAssertTrue(accountManager.fetchAccountDetailsCalled)
-        XCTAssertTrue(accountManager.storeAuthTokenCalled)
-        XCTAssertTrue(accountManager.storeAccountCalled)
-        XCTAssertTrue(accountManager.checkForEntitlementsCalled)
-
-        XCTAssertTrue(accountManager.isUserAuthenticated)
-        XCTAssertEqual(accountManager.accessToken, Constants.accessToken)
-        XCTAssertEqual(accountManager.externalID, Constants.externalID)
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .tieredProductsApiCallFailed(SubscriptionEndpointServiceError.noData))
+        }
     }
 
-    func testCompleteSubscriptionPurchaseSuccessOnRepurchase() async throws {
-        // Given
-        // Repurchase flow: authToken, accessToken and externalID are present
-        accountManager.authToken = Constants.authToken
-        accountManager.accessToken = Constants.accessToken
-        accountManager.externalID = Constants.externalID
+    func testSubscriptionTierOptionsFailureEmptyAfterFiltering() async throws {
+        // Given - Only pro tier products, but pro tier is disabled
+        let responseWithOnlyProTier = GetTierProductsResponse(products: [
+            TierProduct(
+                productName: "Pro Subscription",
+                tier: .pro,
+                regions: ["us", "row"],
+                entitlements: [
+                    TierFeature(product: .networkProtection, name: .pro),
+                    TierFeature(product: .paidAIChat, name: .pro)
+                ],
+                billingCycles: [
+                    BillingCycle(productId: "monthly-pro", period: "Monthly", price: "19.99", currency: "USD")
+                ]
+            )
+        ])
+        subscriptionManager.tierProductsResponse = .success(responseWithOnlyProTier)
 
-        accountManager.fetchAccountDetailsResult = .success(AccountManager.AccountDetails(email: Constants.email, externalID: Constants.externalID))
+        // When - includeProTier is false, which should filter out all products
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
 
-        accountManager.onCheckForEntitlements = { wait, retry in
-            XCTAssertEqual(wait, 2.0)
-            XCTAssertEqual(retry, 5)
-            return true
+        // Then
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .tieredProductsEmptyAfterFiltering)
         }
+    }
 
-        XCTAssertTrue(accountManager.isUserAuthenticated)
+    func testSubscriptionTierOptionsFailureTierCreationFailed() async throws {
+        // Given - Products with no billing cycles (tier creation will fail)
+        let responseWithNoBillingCycles = GetTierProductsResponse(products: [
+            TierProduct(
+                productName: "Plus Subscription",
+                tier: .plus,
+                regions: ["us", "row"],
+                entitlements: [
+                    TierFeature(product: .networkProtection, name: .plus)
+                ],
+                billingCycles: [] // No billing cycles = tier creation fails
+            )
+        ])
+        subscriptionManager.tierProductsResponse = .success(responseWithNoBillingCycles)
 
         // When
-        await stripePurchaseFlow.completeSubscriptionPurchase()
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
 
         // Then
-        XCTAssertTrue(subscriptionService.signOutCalled)
-        XCTAssertFalse(accountManager.exchangeAuthTokenToAccessTokenCalled)
-        XCTAssertFalse(accountManager.fetchAccountDetailsCalled)
-        XCTAssertFalse(accountManager.storeAuthTokenCalled)
-        XCTAssertFalse(accountManager.storeAccountCalled)
-        XCTAssertTrue(accountManager.checkForEntitlementsCalled)
-
-        XCTAssertTrue(accountManager.isUserAuthenticated)
-        XCTAssertEqual(accountManager.accessToken, Constants.accessToken)
-        XCTAssertEqual(accountManager.externalID, Constants.externalID)
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .tieredProductsTierCreationFailed)
+        }
     }
+
 }

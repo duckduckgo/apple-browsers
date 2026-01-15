@@ -33,6 +33,7 @@ import Common
 @testable import PersistenceTestingUtils
 import SystemSettingsPiPTutorialTestSupport
 import Combine
+import PrivacyConfig
 import AIChatTestingUtilities
 
 // swiftlint:disable force_try
@@ -86,7 +87,8 @@ import AIChatTestingUtilities
                                                                               privacyConfigurationManager: mockConfigManager,
                                                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
                                                                               fireproofing: fireproofing,
-                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager())
+                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager(),
+                                                                              internalUserDecider: MockInternalUserDecider())
 
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
@@ -163,7 +165,7 @@ import AIChatTestingUtilities
             dbpIOSPublicInterface: nil,
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
-            mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
+            mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             fireExecutor: fireExecutor,

@@ -24,7 +24,6 @@ struct OnboardingSearchExperiencePicker: View {
 
     var body: some View {
         SettingsAIExperimentalPickerView(
-            isDuckAISelected: viewModel.isSearchAndAIChatEnabled,
-            showNewBadgeForDuckAI: false)
+            isDuckAISelected: viewModel.isSearchAndAIChatEnabled)
     }
 }

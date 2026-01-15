@@ -134,6 +134,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
     case appStoreUpdateFlow
 
+    /// Warn before quit confirmation overlay
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
+    case warnBeforeQuit
+
     /// Feature flag for a macOS Tahoe fix only
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
@@ -282,9 +286,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
-    /// Append the kbg disable parameter only when Duck AI features are not shown
-    case duckAISearchParameter
-
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
 
@@ -309,6 +310,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
 
+    /// Enables the omnibar onboarding for AI Chat
+    case omnibarOnboarding
+
     /// Enables the omnibar cluster for AI Chat
     case omnibarCluster
 
@@ -320,6 +324,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
+
+    /// Enables ATB measurement for Duck.ai usage on iOS
+    case aiChatAtb
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

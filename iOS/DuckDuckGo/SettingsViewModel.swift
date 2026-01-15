@@ -72,8 +72,7 @@ final class SettingsViewModel: ObservableObject {
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
 
     // Subscription Dependencies
-    let subscriptionManagerV2: (any SubscriptionManagerV2)?
-    let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManager
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var subscriptionSignOutObserver: Any?
     var duckPlayerContingencyHandler: DuckPlayerContingencyHandler {
@@ -604,7 +603,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var enablesUnifiedFeedbackForm: Bool {
-        subscriptionAuthV1toV2Bridge.isUserAuthenticated
+        subscriptionManager.isUserAuthenticated
     }
 
     // Indicates if the Paid AI Chat entitlement flag is available for the current user
@@ -620,8 +619,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
-         subscriptionManagerV2: (any SubscriptionManagerV2)?,
-         subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          deepLink: SettingsDeepLinkSection? = nil,
@@ -655,8 +653,7 @@ final class SettingsViewModel: ObservableObject {
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
         self.legacyViewProvider = legacyViewProvider
-        self.subscriptionManagerV2 = subscriptionManagerV2
-        self.subscriptionAuthV1toV2Bridge = subscriptionAuthV1toV2Bridge
+        self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.deepLinkTarget = deepLink
@@ -1194,13 +1191,13 @@ extension SettingsViewModel {
         }
 
         // Update if can purchase based on App Store product availability
-        updatedSubscription.hasAppStoreProductsAvailable = subscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable
+        updatedSubscription.hasAppStoreProductsAvailable = subscriptionManager.hasAppStoreProductsAvailable
 
         // Update if user is signed in based on the presence of token
-        updatedSubscription.isSignedIn = subscriptionAuthV1toV2Bridge.isUserAuthenticated
+        updatedSubscription.isSignedIn = subscriptionManager.isUserAuthenticated
 
         // Active subscription check
-        guard let token = try? await subscriptionAuthV1toV2Bridge.getAccessToken() else {
+        guard let token = try? await subscriptionManager.getAccessToken() else {
             // Reset state in case cache was outdated
             updatedSubscription.hasSubscription = false
             updatedSubscription.hasActiveSubscription = false
@@ -1218,7 +1215,7 @@ extension SettingsViewModel {
         }
 
         do {
-            let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .cacheFirst)
+            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
             updatedSubscription.platform = subscription.platform
             updatedSubscription.hasSubscription = true
             updatedSubscription.hasActiveSubscription = subscription.isActive
@@ -1230,17 +1227,14 @@ extension SettingsViewModel {
             let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
-                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isFeatureEnabled(entitlement),
+                if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(entitlement),
                     hasEntitlement {
                     currentEntitlements.append(entitlement)
                 }
             }
 
             updatedSubscription.entitlements = currentEntitlements
-
-            // This requires follow-up work:
-            // https://app.asana.com/1/137249556945/task/1210799126744217
-            updatedSubscription.subscriptionFeatures = (try? await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()) ?? []
+            updatedSubscription.subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures()
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.debug("No subscription data available")
             updatedSubscription.hasSubscription = false
@@ -1309,16 +1303,10 @@ extension SettingsViewModel {
     }
 
     func restoreAccountPurchaseV2() async {
-
-        guard let subscriptionManagerV2 else {
-            assertionFailure("Missing dependency: subscriptionManagerV2")
-            return
-        }
-
         DispatchQueue.main.async { self.state.subscription.isRestoring = true }
 
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                             storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                             storePurchaseManager: subscriptionManager.storePurchaseManager())
         let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
         switch result {
         case .success:
@@ -1357,7 +1345,7 @@ extension SettingsViewModel {
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
     private func isUserEligibleForTrialOffer() async -> Bool {
-        return subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
+        return subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
     }
 
 }

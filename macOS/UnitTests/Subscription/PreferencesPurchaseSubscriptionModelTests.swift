@@ -26,7 +26,7 @@ import XCTest
 final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
 
     var sut: PreferencesPurchaseSubscriptionModel!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockWinBackOfferManager: MockWinBackOfferVisibilityManager!
     var mockBlackFridayCampaignProvider: MockBlackFridayCampaignProvider!
@@ -36,7 +36,7 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockFeatureFlagger = MockFeatureFlagger()
         mockWinBackOfferManager = MockWinBackOfferVisibilityManager()
         mockBlackFridayCampaignProvider = MockBlackFridayCampaignProvider()

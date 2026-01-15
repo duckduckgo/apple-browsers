@@ -32,7 +32,8 @@ final class ContentBlockingService {
          contentBlocking: ContentBlocking,
          sync: DDGSyncing,
          fireproofing: Fireproofing,
-         contentScopeExperimentsManager: ContentScopeExperimentsManaging) {
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
+         internalUserDecider: InternalUserDecider) {
 
         common = contentBlocking
 
@@ -41,7 +42,8 @@ final class ContentBlockingService {
                                                                            privacyConfigurationManager: common.privacyConfigurationManager,
                                                                            contentBlockingManager: common.contentBlockingManager,
                                                                            fireproofing: fireproofing,
-                                                                           contentScopeExperimentsManager: contentScopeExperimentsManager)
+                                                                           contentScopeExperimentsManager: contentScopeExperimentsManager,
+                                                                           internalUserDecider: internalUserDecider)
 
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies)
     }

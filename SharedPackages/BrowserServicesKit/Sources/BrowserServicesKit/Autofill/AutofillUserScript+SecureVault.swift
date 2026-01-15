@@ -1139,19 +1139,19 @@ extension AutofillUserScript.NoActionResponse {
 
 extension AutofillUserScript {
     private func registerReplyCallback(for messageType: String, reply: @escaping MessageReplyHandler) {
-        Task { @MainActor in
+        Task {
             await replyQueue.register(reply, for: messageType)
         }
     }
 
     private func sendReply(for messageType: String, withResponse response: String?) {
-        Task { @MainActor in
+        Task {
             await replyQueue.send(response: response, for: messageType)
         }
     }
 
     public func cancelAllPendingReplies() {
-        Task { @MainActor in
+        Task {
             await replyQueue.cancelAll()
         }
     }

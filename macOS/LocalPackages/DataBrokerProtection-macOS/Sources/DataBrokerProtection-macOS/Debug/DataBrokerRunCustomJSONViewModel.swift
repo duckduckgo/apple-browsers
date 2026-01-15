@@ -48,16 +48,6 @@ struct ProfileUrl: Codable {
     let identifier: String
 }
 
-struct ScrapedData: Codable {
-    let name: String?
-    let alternativeNamesList: [String]?
-    let age: String?
-    let addressCityState: String?
-    let addressCityStateList: [ExtractedAddress]?
-    let relativesList: [String]?
-    let profileUrl: ProfileUrl?
-}
-
 struct AlertUI {
     var title: String = ""
     var description: String = ""
@@ -134,7 +124,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
     var error: Error?
-    private var profileQueryLabels: [Int64: String] = [:]
+    var profileQueryLabels: [Int64: String] = [:]
 
     let brokers: [DataBroker]
 
@@ -152,6 +142,20 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     var nextExtractedProfileId: Int64 = 1
     private var isSyncingAgeFields = false
+
+    var combinedDebugEvents: [DebugEventRow] {
+        let debugRows = debugEvents.map { event in
+            DebugEventRow(
+                id: event.id.uuidString,
+                timestamp: event.timestamp,
+                kind: event.kind.rawValue,
+                profileQueryLabel: event.profileQueryLabel,
+                summary: event.summary,
+                details: event.details
+            )
+        }
+        return debugRows.sorted(by: { $0.timestamp < $1.timestamp })
+    }
 
     private class DebugDBPFeatureFlagger: DBPFeatureFlagging {
         private let featureFlagger: FeatureFlagger
@@ -274,22 +278,19 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     Task {
                         do {
                             addScanStartedEvent(for: query)
-                            let stageCalculator = FakeStageDurationCalculator(
-                                stepType: .scan,
-                                onDebugEvent: { [weak self] kind, actionType, details in
-                                    let profileQuery = self?.profileQueryText(for: query.profileQuery) ?? "-"
-                                    let summary = self?.actionSummary(stepType: .scan,
-                                                                      actionType: actionType) ?? "-"
-                                    let progressText = self?.currentActionText(stepType: .scan,
-                                                                               actionType: actionType,
-                                                                               prefix: kind.rawValue) ?? "-"
-                                    self?.addDebugEvent(kind: kind,
-                                                        summary: summary,
-                                                        profileQueryLabel: profileQuery,
-                                                        details: details,
-                                                        progressText: progressText)
-                                }
-                            )
+                            let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
+                                let profileQuery = self?.profileQueryText(for: query.profileQuery) ?? "-"
+                                let summary = self?.actionSummary(stepType: .scan,
+                                                                  actionType: actionType) ?? "-"
+                                let progressText = self?.currentActionText(stepType: .scan,
+                                                                           actionType: actionType,
+                                                                           prefix: kind.rawValue) ?? "-"
+                                self?.addDebugEvent(kind: kind,
+                                                    summary: summary,
+                                                    profileQueryLabel: profileQuery,
+                                                    details: details,
+                                                    progressText: progressText)
+                            }
                             let runner = BrokerProfileScanSubJobWebRunner(
                                 privacyConfig: self.privacyConfigManager,
                                 prefs: self.contentScopeProperties,
@@ -304,8 +305,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             )
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
                             let assignedProfiles = extractedProfiles.map { assignExtractedProfileIdIfNeeded($0) }
-                            addScanResultEvents(for: query,
-                                                extractedProfiles: assignedProfiles)
+                            addScanResultEvents(for: query, extractedProfiles: assignedProfiles)
 
                             DispatchQueue.main.async {
                                 for extractedProfile in assignedProfiles {
@@ -357,21 +357,18 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         )
         Task {
             do {
-                let stageCalculator = FakeStageDurationCalculator(
-                    stepType: .optOut,
-                    onDebugEvent: { [weak self] kind, actionType, details in
-                        let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
-                        let summary = self?.actionSummary(stepType: .optOut, actionType: actionType) ?? "-"
-                        let progressText = self?.currentActionText(stepType: .optOut,
-                                                                   actionType: actionType,
-                                                                   prefix: kind.rawValue) ?? "-"
-                        self?.addDebugEvent(kind: kind,
-                                            summary: summary,
-                                            profileQueryLabel: profileQuery,
-                                            details: details,
-                                            progressText: progressText)
-                    }
-                )
+                let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
+                    let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
+                    let summary = self?.actionSummary(stepType: .optOut, actionType: actionType) ?? "-"
+                    let progressText = self?.currentActionText(stepType: .optOut,
+                                                               actionType: actionType,
+                                                               prefix: kind.rawValue) ?? "-"
+                    self?.addDebugEvent(kind: kind,
+                                        summary: summary,
+                                        profileQueryLabel: profileQuery,
+                                        details: details,
+                                        progressText: progressText)
+                }
                 let runner = BrokerProfileOptOutSubJobWebRunner(
                     privacyConfig: self.privacyConfigManager,
                     prefs: self.contentScopeProperties,
@@ -541,20 +538,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         updateProgress(progressText)
     }
 
-    var combinedDebugEvents: [DebugEventRow] {
-        let debugRows = debugEvents.map { event in
-            DebugEventRow(
-                id: event.id.uuidString,
-                timestamp: event.timestamp,
-                kind: event.kind.rawValue,
-                profileQueryLabel: event.profileQueryLabel,
-                summary: event.summary,
-                details: event.details
-            )
-        }
-        return debugRows.sorted(by: { $0.timestamp < $1.timestamp })
-    }
-
     private func actionSummary(stepType: StepType, actionType: ActionType?) -> String {
         let typeText = actionType?.rawValue ?? "unknown"
         return "\(stepType.rawValue) > \(typeText)"
@@ -576,35 +559,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             self.progressText = text
             self.isProgressActive = true
         }
-    }
-
-    func historyEventDescription(_ event: HistoryEvent) -> String {
-        switch event.type {
-        case .noMatchFound:
-            return "No Match"
-        case .matchesFound(let count):
-            return "Matches (\(count))"
-        case .error(let error):
-            return "Error: \(error.name) - \(error.localizedDescription)"
-        case .optOutStarted:
-            return "Opt-out Started"
-        case .optOutRequested:
-            return "Opt-out Requested"
-        case .optOutSubmittedAndAwaitingEmailConfirmation:
-            return "Opt-out Awaiting Email"
-        case .optOutConfirmed:
-            return "Opt-out Confirmed"
-        case .scanStarted:
-            return "Scan Started"
-        case .reAppearence:
-            return "Reappearance"
-        case .matchRemovedByUser:
-            return "Removed by User"
-        }
-    }
-
-    func historyEventDetails(_ event: HistoryEvent) -> String {
-        profileQueryLabels[event.profileQueryId] ?? "-"
     }
 }
 
@@ -631,12 +585,9 @@ final class FakeStageDurationCalculator: StageDurationCalculator, DebugEventRepo
     var attemptId: UUID = UUID()
     var isImmediateOperation: Bool = false
     var tries = 1
-    private let stepType: StepType
     private let onDebugEvent: ((DebugEventKind, ActionType?, String) -> Void)?
 
-    init(stepType: StepType = .scan,
-         onDebugEvent: ((DebugEventKind, ActionType?, String) -> Void)? = nil) {
-        self.stepType = stepType
+    init(onDebugEvent: ((DebugEventKind, ActionType?, String) -> Void)? = nil) {
         self.onDebugEvent = onDebugEvent
     }
 
@@ -754,66 +705,8 @@ extension DataBrokerProtectionError {
         default: return "Error"
         }
     }
-
-    var description: String {
-        switch self {
-        case .httpError(let code):
-            if code == 404 {
-                return "No results were found. (404 was returned)"
-            } else {
-                return "Failed with HTTP error code: \(code)"
-            }
-        default: return name
-        }
-    }
-
-    var is404: Bool {
-        switch self {
-        case .httpError(let code):
-            return code == 404
-        default: return false
-        }
-    }
 }
 
-extension ScrapedData {
-
-    var nameCSV: String {
-        if let name = self.name {
-            return name.replacingOccurrences(of: ",", with: "-")
-        } else if let alternativeNamesList = self.alternativeNamesList {
-            return alternativeNamesList.joined(separator: "/").replacingOccurrences(of: ",", with: "-")
-        } else {
-            return ""
-        }
-    }
-
-    var ageCSV: String {
-        if let age = self.age {
-            return age
-        } else {
-            return ""
-        }
-    }
-
-    var addressesCSV: String {
-        if let address = self.addressCityState {
-            return address
-        } else if let addressFull = self.addressCityStateList {
-            return addressFull.map { "\($0.city)-\($0.state)" }.joined(separator: "/")
-        } else {
-            return ""
-        }
-    }
-
-    var relativesCSV: String {
-        if let relatives = self.relativesList {
-            return relatives.joined(separator: "-").replacingOccurrences(of: ",", with: "-")
-        } else {
-            return ""
-        }
-    }
-}
 // swiftlint:enable force_try
 
 private struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {

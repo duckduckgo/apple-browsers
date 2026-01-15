@@ -21,16 +21,6 @@ import BrowserServicesKit
 import DataBrokerProtectionCore
 
 struct DataBrokerRunCustomJSONView: View {
-    @ObservedObject var viewModel: DataBrokerRunCustomJSONViewModel
-
-    @State private var jsonText: String = ""
-    @State private var selectedResultId: UUID?
-    @State private var selectedBrokerUrl: String?
-    @State private var brokerFilter: BrokerFilter = .all
-    @State private var brokerSearchText: String = ""
-    @State private var selectedTab: Tab = .scan
-    @State private var selectedDebugEventId: String?
-
     private enum Constants {
         static let maxNames = 3
         static let maxAddresses = 5
@@ -43,16 +33,28 @@ struct DataBrokerRunCustomJSONView: View {
         static let eventColumnCount = 4
     }
 
+    @ObservedObject var viewModel: DataBrokerRunCustomJSONViewModel
+
+    @State private var jsonText: String = ""
+    @State private var selectedResultId: UUID?
+    @State private var selectedBrokerUrl: String?
+    @State private var brokerFilter: BrokerFilter = .all
+    @State private var brokerSearchText: String = ""
+    @State private var selectedTab: Tab = .scan
+    @State private var selectedDebugEventId: String?
+
     var body: some View {
         HStack(alignment: .top, spacing: 24) {
             TabView(selection: $selectedTab) {
-                contentContainer(scanView)
+                scanView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .tabItem {
                         Text("Scan")
                     }
                     .tag(Tab.scan)
 
-                contentContainer(resultsView)
+                resultsView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .tabItem {
                         Text(extractedProfilesTitle)
                     }
@@ -63,7 +65,7 @@ struct DataBrokerRunCustomJSONView: View {
             brokerConfigView
         }
         .padding(24)
-        .frame(minWidth: 1100, minHeight: 800)
+        .frame(minWidth: 1080, minHeight: 800)
         .alert(isPresented: $viewModel.showAlert) {
             Alert(title: Text(viewModel.alert?.title ?? "-"),
                   message: Text(viewModel.alert?.description ?? "-"),
@@ -72,95 +74,7 @@ struct DataBrokerRunCustomJSONView: View {
         }
     }
 
-    private var scanView: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Scan")
-                .font(.headline)
-
-            Divider()
-
-            Text("macOS App version: \(viewModel.appVersion())")
-
-            Divider()
-
-            ForEach(0..<min(viewModel.names.count, Constants.maxNames), id: \.self) { index in
-                HStack(spacing: 12) {
-                    TextField("First name", text: $viewModel.names[index].first)
-                        .frame(maxWidth: .infinity)
-                        .textFieldStyle(.roundedBorder)
-                    TextField("Middle", text: $viewModel.names[index].middle)
-                        .frame(minWidth: 120)
-                        .textFieldStyle(.roundedBorder)
-                    TextField("Last name", text: $viewModel.names[index].last)
-                        .frame(maxWidth: .infinity)
-                        .textFieldStyle(.roundedBorder)
-                }
-            }
-
-            Button("Add other name") {
-                viewModel.names.append(.empty())
-            }
-            .disabled(viewModel.names.count >= Constants.maxNames)
-
-            Divider()
-
-            ForEach(0..<min(viewModel.addresses.count, Constants.maxAddresses), id: \.self) { index in
-                HStack(spacing: 12) {
-                    TextField("City", text: $viewModel.addresses[index].city)
-                        .frame(maxWidth: .infinity)
-                        .textFieldStyle(.roundedBorder)
-                    TextField("State (two characters format)", text: $viewModel.addresses[index].state)
-                        .onChange(of: viewModel.addresses[index].state) { newValue in
-                            if newValue.count > 2 {
-                                viewModel.addresses[index].state = String(newValue.prefix(2))
-                            }
-                        }
-                        .frame(minWidth: 180)
-                        .textFieldStyle(.roundedBorder)
-                }
-            }
-
-            Button("Add other address") {
-                viewModel.addresses.append(.empty())
-            }
-            .disabled(viewModel.addresses.count >= Constants.maxAddresses)
-
-            Divider()
-
-            HStack(spacing: 12) {
-                TextField("Birth year (YYYY)", text: $viewModel.birthYear)
-                    .onChange(of: viewModel.birthYear) { newValue in
-                        viewModel.syncAge(fromBirthYear: newValue)
-                    }
-                    .frame(maxWidth: 200)
-                    .textFieldStyle(.roundedBorder)
-                TextField("Age (years)", text: $viewModel.age)
-                    .onChange(of: viewModel.age) { newValue in
-                        viewModel.syncBirthYear(fromAge: newValue)
-                    }
-                    .frame(maxWidth: 200)
-                    .textFieldStyle(.roundedBorder)
-            }
-
-            Divider()
-            VStack(alignment: .leading, spacing: 6) {
-                Button("Run") {
-                    viewModel.runJSON(jsonString: jsonText)
-                    selectedTab = .extractedProfiles
-                }
-                .disabled(jsonText.isEmpty)
-
-                if jsonText.isEmpty {
-                    Text("Please enter broker JSON to enable scan")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
+    // MARK: - Broker list + JSON side bar
 
     private var brokerConfigView: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -173,7 +87,6 @@ struct DataBrokerRunCustomJSONView: View {
             .horizontalRadioGroupLayout()
 
             TextField("Type to search", text: $brokerSearchText)
-                .textFieldStyle(.roundedBorder)
 
             Divider()
 
@@ -209,6 +122,183 @@ struct DataBrokerRunCustomJSONView: View {
         .frame(maxHeight: .infinity, alignment: .topLeading)
     }
 
+    private var filteredBrokers: [DataBroker] {
+        let trimmedSearch = brokerSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let searchKey = trimmedSearch.lowercased()
+        let sorted = viewModel.brokers.sorted(by: { $0.url.lowercased() < $1.url.lowercased() })
+        return sorted.filter { broker in
+            guard brokerFilter.includes(broker) else { return false }
+            guard !searchKey.isEmpty else { return true }
+            let urlMatch = broker.url.lowercased().contains(searchKey)
+            let nameMatch = broker.name.lowercased().contains(searchKey)
+            return urlMatch || nameMatch
+        }
+    }
+
+    // MARK: - Tab 1: Scan
+
+    private var scanView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Scan")
+                .font(.headline)
+
+            Divider()
+
+            Text("macOS App version: \(viewModel.appVersion())")
+
+            Divider()
+
+            ForEach(0..<min(viewModel.names.count, Constants.maxNames), id: \.self) { index in
+                HStack(spacing: 12) {
+                    TextField("First name", text: $viewModel.names[index].first)
+                        .frame(maxWidth: .infinity)
+                    TextField("Middle", text: $viewModel.names[index].middle)
+                        .frame(minWidth: 120)
+                    TextField("Last name", text: $viewModel.names[index].last)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            Button("Add other name") {
+                viewModel.names.append(.empty())
+            }
+            .disabled(viewModel.names.count >= Constants.maxNames)
+
+            Divider()
+
+            ForEach(0..<min(viewModel.addresses.count, Constants.maxAddresses), id: \.self) { index in
+                HStack(spacing: 12) {
+                    TextField("City", text: $viewModel.addresses[index].city)
+                        .frame(maxWidth: .infinity)
+                    TextField("State (two characters format)", text: $viewModel.addresses[index].state)
+                        .onChange(of: viewModel.addresses[index].state) { newValue in
+                            if newValue.count > 2 {
+                                viewModel.addresses[index].state = String(newValue.prefix(2))
+                            }
+                        }
+                        .frame(minWidth: 180)
+                }
+            }
+
+            Button("Add other address") {
+                viewModel.addresses.append(.empty())
+            }
+            .disabled(viewModel.addresses.count >= Constants.maxAddresses)
+
+            Divider()
+
+            HStack(spacing: 12) {
+                TextField("Birth year (YYYY)", text: $viewModel.birthYear)
+                    .onChange(of: viewModel.birthYear) { newValue in
+                        viewModel.syncAge(fromBirthYear: newValue)
+                    }
+                    .frame(maxWidth: 200)
+                TextField("Age (years)", text: $viewModel.age)
+                    .onChange(of: viewModel.age) { newValue in
+                        viewModel.syncBirthYear(fromAge: newValue)
+                    }
+                    .frame(maxWidth: 200)
+            }
+
+            Divider()
+            VStack(alignment: .leading, spacing: 6) {
+                Button("Run") {
+                    viewModel.runJSON(jsonString: jsonText)
+                    selectedTab = .extractedProfiles
+                }
+                .disabled(jsonText.isEmpty)
+
+                if jsonText.isEmpty {
+                    Text("Please enter broker JSON to enable scan")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    // MARK: - Tab 2: Extracted profiles
+
+    private var resultsList: some View {
+        List(selection: $selectedResultId) {
+            ForEach(viewModel.results, id: \.id) { scanResult in
+                HStack {
+                    Text(scanResult.extractedProfile.name ?? "No name")
+                        .padding(.horizontal, 10)
+                    Divider()
+                    Text(scanResult.extractedProfile.addresses?.map { $0.fullAddress }.joined(separator: ", ") ?? "No address")
+                        .padding(.horizontal, 10)
+                    Divider()
+                    Text(scanResult.extractedProfile.relatives?.joined(separator: ",") ?? "No relatives")
+                        .padding(.horizontal, 10)
+                    Divider()
+                    Button("Opt-out") {
+                        viewModel.runOptOut(scanResult: scanResult)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectedResultId = scanResult.id
+                }
+                .tag(scanResult.id)
+            }
+        }
+        .frame(maxHeight: 220)
+        .listStyle(.plain)
+    }
+
+    private var eventsTable: some View {
+        GeometryReader { proxy in
+            let detailsHeight = debugEventDetailsHeight
+            let listHeight = max(200, proxy.size.height - detailsHeight - 12)
+            let listWidth = max(debugEventTableMinWidth, proxy.size.width)
+
+            VStack(alignment: .leading, spacing: 12) {
+                if viewModel.combinedDebugEvents.isEmpty {
+                    Text("No events yet.")
+                        .foregroundColor(.secondary)
+                } else {
+                    ScrollView([.horizontal, .vertical], showsIndicators: true) {
+                        LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                            Section(header: eventTableHeader
+                                .frame(width: listWidth, alignment: .leading)
+                                .padding(.vertical, 4)
+                                .background(Color(NSColor.controlBackgroundColor))
+                            ) {
+                                ForEach(viewModel.combinedDebugEvents, id: \DebugEventRow.id) { event in
+                                    DebugEventRowView(
+                                        event: event,
+                                        isSelected: selectedDebugEventId == event.id,
+                                        listWidth: listWidth,
+                                        eventTimeColumnWidth: Constants.eventTimeColumnWidth,
+                                        eventProfileQueryColumnWidth: Constants.eventProfileQueryColumnWidth,
+                                        eventKindColumnWidth: Constants.eventKindColumnWidth,
+                                        eventSummaryColumnWidth: Constants.eventSummaryColumnWidth,
+                                        eventDetailsMinWidth: Constants.eventDetailsMinWidth,
+                                        historyDateFormatter: historyDateFormatter
+                                    ) {
+                                        selectedDebugEventId = event.id
+                                    }
+
+                                    Divider()
+                                }
+                            }
+                        }
+                        .frame(minHeight: listHeight, alignment: .topLeading)
+                    }
+                    .background(Color(NSColor.textBackgroundColor))
+                    .frame(height: listHeight)
+                }
+
+                TextEditor(text: .constant(selectedDebugEventDetails))
+                    .border(Color.gray, width: 1)
+                    .frame(height: detailsHeight)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
     private var resultsView: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
@@ -218,95 +308,13 @@ struct DataBrokerRunCustomJSONView: View {
                 }
                 Text(viewModel.progressText)
                     .font(.headline)
-                if #available(macOS 12.0, *) {
-                    Spacer()
-                    TimelineView(.periodic(from: .now, by: 1.0)) { context in
-                        Text(clockFormatter.string(from: context.date))
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .monospacedDigit()
-                    }
-                }
             }
-
             Divider()
 
-            List(selection: $selectedResultId) {
-                ForEach(viewModel.results, id: \.id) { scanResult in
-                    HStack {
-                        Text(scanResult.extractedProfile.name ?? "No name")
-                            .padding(.horizontal, 10)
-                        Divider()
-                        Text(scanResult.extractedProfile.addresses?.map { $0.fullAddress }.joined(separator: ", ") ?? "No address")
-                            .padding(.horizontal, 10)
-                        Divider()
-                        Text(scanResult.extractedProfile.relatives?.joined(separator: ",") ?? "No relatives")
-                            .padding(.horizontal, 10)
-                        Divider()
-                        Button("Opt-out") {
-                            viewModel.runOptOut(scanResult: scanResult)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedResultId = scanResult.id
-                    }
-                    .tag(scanResult.id)
-                }
-            }
-            .frame(maxHeight: 220)
-            .listStyle(.plain)
-
+            resultsList
             Divider()
 
-            GeometryReader { proxy in
-                let detailsHeight = debugEventDetailsHeight
-                let listHeight = max(200, proxy.size.height - detailsHeight - 12)
-                let listWidth = max(debugEventTableMinWidth, proxy.size.width)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    if viewModel.combinedDebugEvents.isEmpty {
-                        Text("No events yet.")
-                            .foregroundColor(.secondary)
-                    } else {
-                        ScrollView([.horizontal, .vertical], showsIndicators: true) {
-                            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                                Section(header: eventTableHeader
-                                    .frame(width: listWidth, alignment: .leading)
-                                    .padding(.vertical, 4)
-                                    .background(Color(NSColor.controlBackgroundColor))
-                                ) {
-                                    ForEach(viewModel.combinedDebugEvents, id: \DebugEventRow.id) { event in
-                                        DebugEventRowView(
-                                            event: event,
-                                            isSelected: selectedDebugEventId == event.id,
-                                            listWidth: listWidth,
-                                            eventTimeColumnWidth: Constants.eventTimeColumnWidth,
-                                            eventProfileQueryColumnWidth: Constants.eventProfileQueryColumnWidth,
-                                            eventKindColumnWidth: Constants.eventKindColumnWidth,
-                                            eventSummaryColumnWidth: Constants.eventSummaryColumnWidth,
-                                            eventDetailsMinWidth: Constants.eventDetailsMinWidth,
-                                            historyDateFormatter: historyDateFormatter
-                                        ) {
-                                            selectedDebugEventId = event.id
-                                        }
-
-                                        Divider()
-                                    }
-                                }
-                            }
-                            .frame(minHeight: listHeight, alignment: .topLeading)
-                        }
-                        .background(Color(NSColor.textBackgroundColor))
-                        .frame(height: listHeight)
-                    }
-
-                    TextEditor(text: .constant(selectedDebugEventDetails))
-                        .border(Color.gray, width: 1)
-                        .frame(height: detailsHeight)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
+            eventsTable
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -338,12 +346,6 @@ struct DataBrokerRunCustomJSONView: View {
         + Constants.eventColumnSpacing * CGFloat(Constants.eventColumnCount)
     }
     private var debugEventDetailsHeight: CGFloat { 160 }
-    private var clockFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        return formatter
-    }
-
     private var selectedResult: ScanResult? {
         guard let selectedResultId else { return nil }
         return viewModel.results.first { $0.id == selectedResultId }
@@ -356,24 +358,6 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var extractedProfilesTitle: String {
         "Extracted Profiles (\(viewModel.results.count))"
-    }
-
-    private var filteredBrokers: [DataBroker] {
-        let trimmedSearch = brokerSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let searchKey = trimmedSearch.lowercased()
-        let sorted = viewModel.brokers.sorted(by: { $0.url.lowercased() < $1.url.lowercased() })
-        return sorted.filter { broker in
-            guard brokerFilter.includes(broker) else { return false }
-            guard !searchKey.isEmpty else { return true }
-            let urlMatch = broker.url.lowercased().contains(searchKey)
-            let nameMatch = broker.name.lowercased().contains(searchKey)
-            return urlMatch || nameMatch
-        }
-    }
-
-    private func contentContainer<Content: View>(_ content: Content) -> some View {
-        content
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var historyDateFormatter: DateFormatter {
@@ -395,23 +379,17 @@ private enum BrokerFilter: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .all:
-            return "All"
-        case .active:
-            return "Active"
-        case .deprecated:
-            return "Deprecated"
+        case .all: return "All"
+        case .active: return "Active"
+        case .deprecated: return "Deprecated"
         }
     }
 
     func includes(_ broker: DataBroker) -> Bool {
         switch self {
-        case .all:
-            return true
-        case .active:
-            return broker.removedAt == nil
-        case .deprecated:
-            return broker.removedAt != nil
+        case .all: return true
+        case .active: return broker.removedAt == nil
+        case .deprecated: return broker.removedAt != nil
         }
     }
 }
@@ -428,24 +406,6 @@ private struct DebugEventRowView: View {
     let historyDateFormatter: DateFormatter
     let onSelect: () -> Void
 
-    private var rowForegroundColor: Color {
-        isSelected
-        ? Color(NSColor.selectedControlTextColor)
-        : Color.primary
-    }
-
-    private var detailsForegroundColor: Color {
-        isSelected
-        ? rowForegroundColor
-        : Color.secondary
-    }
-
-    private var selectionBackgroundColor: Color {
-        isSelected
-        ? Color(NSColor.selectedControlColor)
-        : Color.clear
-    }
-
     var body: some View {
         HStack(spacing: 12) {
             Text(historyDateFormatter.string(from: event.timestamp))
@@ -457,19 +417,16 @@ private struct DebugEventRowView: View {
             Text(event.summary)
                 .frame(width: eventSummaryColumnWidth, alignment: .leading)
             Text(event.details)
-                .foregroundColor(detailsForegroundColor)
                 .lineLimit(10)
                 .help(event.details)
                 .frame(minWidth: eventDetailsMinWidth,
                        maxWidth: .infinity,
                        alignment: .leading)
         }
-        .foregroundColor(rowForegroundColor)
+        .foregroundColor(isSelected ? Color(NSColor.selectedControlTextColor) : Color.primary)
         .frame(width: listWidth, alignment: .leading)
         .padding(.vertical, 6)
-        .background(
-            selectionBackgroundColor
-        )
+        .background(isSelected ? Color(NSColor.selectedControlColor) : Color.clear)
         .contentShape(Rectangle())
         .onTapGesture {
             onSelect()

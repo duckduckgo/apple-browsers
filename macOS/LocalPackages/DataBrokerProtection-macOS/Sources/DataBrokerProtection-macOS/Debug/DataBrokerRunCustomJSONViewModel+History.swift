@@ -22,54 +22,42 @@ import DataBrokerProtectionCore
 extension DataBrokerRunCustomJSONViewModel {
 
     func addScanStartedEvent(for query: BrokerProfileQueryData) {
-        let brokerId = query.dataBroker.id ?? 0
-        let profileQueryId = query.profileQuery.id ?? 0
-        addHistoryEvent(HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .scanStarted))
+        addHistoryEvent(HistoryEvent(brokerId: query.dataBroker.id ?? 0,
+                                     profileQueryId: query.profileQuery.id ?? 0,
+                                     type: .scanStarted))
     }
 
     func addScanResultEvents(for query: BrokerProfileQueryData, extractedProfiles: [ExtractedProfile]) {
-        let brokerId = query.dataBroker.id ?? 0
-        let profileQueryId = query.profileQuery.id ?? 0
-        let eventType: HistoryEvent.EventType = extractedProfiles.isEmpty ? .noMatchFound : .matchesFound(count: extractedProfiles.count)
-        addHistoryEvent(HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: eventType))
+        addHistoryEvent(HistoryEvent(brokerId: query.dataBroker.id ?? 0,
+                                     profileQueryId: query.profileQuery.id ?? 0,
+                                     type: extractedProfiles.isEmpty ? .noMatchFound : .matchesFound(count: extractedProfiles.count)))
     }
 
     func addScanErrorEvent(for query: BrokerProfileQueryData, error: Error) {
-        let brokerId = query.dataBroker.id ?? 0
-        let profileQueryId = query.profileQuery.id ?? 0
-        let dbpError = (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription)
-        addHistoryEvent(HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .error(error: dbpError)))
+        addHistoryEvent(HistoryEvent(brokerId: query.dataBroker.id ?? 0,
+                                     profileQueryId: query.profileQuery.id ?? 0,
+                                     type: .error(error: (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription))))
     }
 
     func addOptOutStartedEvent(for scanResult: ScanResult) {
-        let brokerId = scanResult.dataBroker.id ?? 0
-        let profileQueryId = scanResult.profileQuery.id ?? 0
-        let extractedProfileId = scanResult.extractedProfile.id ?? 0
-        addHistoryEvent(HistoryEvent(extractedProfileId: extractedProfileId,
-                                     brokerId: brokerId,
-                                     profileQueryId: profileQueryId,
+        addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
+                                     brokerId: scanResult.dataBroker.id ?? 0,
+                                     profileQueryId: scanResult.profileQuery.id ?? 0,
                                      type: .optOutStarted))
     }
 
     func addOptOutConfirmedEvent(for scanResult: ScanResult) {
-        let brokerId = scanResult.dataBroker.id ?? 0
-        let profileQueryId = scanResult.profileQuery.id ?? 0
-        let extractedProfileId = scanResult.extractedProfile.id ?? 0
-        addHistoryEvent(HistoryEvent(extractedProfileId: extractedProfileId,
-                                     brokerId: brokerId,
-                                     profileQueryId: profileQueryId,
+        addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
+                                     brokerId: scanResult.dataBroker.id ?? 0,
+                                     profileQueryId: scanResult.profileQuery.id ?? 0,
                                      type: .optOutConfirmed))
     }
 
     func addOptOutErrorEvent(for scanResult: ScanResult, error: Error) {
-        let brokerId = scanResult.dataBroker.id ?? 0
-        let profileQueryId = scanResult.profileQuery.id ?? 0
-        let extractedProfileId = scanResult.extractedProfile.id ?? 0
-        let dbpError = (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription)
-        addHistoryEvent(HistoryEvent(extractedProfileId: extractedProfileId,
-                                     brokerId: brokerId,
-                                     profileQueryId: profileQueryId,
-                                     type: .error(error: dbpError)))
+        addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
+                                     brokerId: scanResult.dataBroker.id ?? 0,
+                                     profileQueryId: scanResult.profileQuery.id ?? 0,
+                                     type: .error(error: (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription))))
     }
 
     func assignExtractedProfileIdIfNeeded(_ extractedProfile: ExtractedProfile) -> ExtractedProfile {
@@ -96,14 +84,31 @@ extension DataBrokerRunCustomJSONViewModel {
     }
 
     private func addHistoryEvent(_ event: HistoryEvent) {
-        let summary = historyEventDescription(event)
-        let profileQueryLabel = historyEventDetails(event)
         DispatchQueue.main.async {
             self.debugEvents.append(DebugLogEvent(timestamp: event.date,
                                                   kind: .history,
-                                                  profileQueryLabel: profileQueryLabel,
-                                                  summary: summary,
+                                                  profileQueryLabel: self.historyEventDetails(event),
+                                                  summary: self.historyEventDescription(event),
                                                   details: ""))
         }
+    }
+
+    func historyEventDescription(_ event: HistoryEvent) -> String {
+        switch event.type {
+        case .noMatchFound: return "No Match"
+        case .matchesFound(let count): return "Matches (\(count))"
+        case .error(let error): return "Error: \(error.name) - \(error.localizedDescription)"
+        case .optOutStarted: return "Opt-out Started"
+        case .optOutRequested: return "Opt-out Requested"
+        case .optOutSubmittedAndAwaitingEmailConfirmation: return "Opt-out Awaiting Email"
+        case .optOutConfirmed: return "Opt-out Confirmed"
+        case .scanStarted: return "Scan Started"
+        case .reAppearence: return "Reappearance"
+        case .matchRemovedByUser: return "Removed by User"
+        }
+    }
+
+    func historyEventDetails(_ event: HistoryEvent) -> String {
+        profileQueryLabels[event.profileQueryId] ?? "-"
     }
 }

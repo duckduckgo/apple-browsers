@@ -97,8 +97,9 @@ final class UpdateProgressState: UpdateProgressManaging {
         }
 
         Logger.updates.log("🔍 transition: \(String(describing: self.updateProgress), privacy: .public) → \(String(describing: newProgress), privacy: .public)")
-        updateProgress = newProgress
+        // Set callback before updateProgress because @Published fires on willSet
         resumeCallback = resume
+        updateProgress = newProgress
         return true
     }
 

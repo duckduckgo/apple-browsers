@@ -23,6 +23,16 @@ import SwiftUI
 
 struct AIChatContextualOnboardingView: View {
 
+    private enum Constants {
+        static let contentSpacing: CGFloat = 24
+        static let textSpacing: CGFloat = 16
+        static let buttonSpacing: CGFloat = 12
+        static let buttonTopPadding: CGFloat = 8
+        static let horizontalPadding: CGFloat = 20
+        static let buttonHeight: CGFloat = 50
+        static let buttonCornerRadius: CGFloat = 12
+    }
+
     let onConfirm: () -> Void
     let onViewSettings: () -> Void
 
@@ -30,21 +40,21 @@ struct AIChatContextualOnboardingView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 24) {
+            VStack(spacing: Constants.contentSpacing) {
                 Image(uiImage: DesignSystemImages.Color.Size128.contentUpload)
 
-                VStack(spacing: 16) {
+                VStack(spacing: Constants.textSpacing) {
                     titleText
                     bodyText
                 }
 
-                VStack(spacing: 12) {
+                VStack(spacing: Constants.buttonSpacing) {
                     confirmButton
                     viewSettingsButton
                 }
-                .padding(.top, 8)
+                .padding(.top, Constants.buttonTopPadding)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, Constants.horizontalPadding)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -72,9 +82,9 @@ struct AIChatContextualOnboardingView: View {
                 .daxButton()
                 .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(height: Constants.buttonHeight)
                 .background(Color(designSystemColor: .buttonsPrimaryDefault))
-                .cornerRadius(12)
+                .cornerRadius(Constants.buttonCornerRadius)
         }
     }
 
@@ -84,7 +94,7 @@ struct AIChatContextualOnboardingView: View {
                 .daxButton()
                 .foregroundColor(Color(designSystemColor: .accent))
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(height: Constants.buttonHeight)
         }
         .contentShape(Rectangle())
     }

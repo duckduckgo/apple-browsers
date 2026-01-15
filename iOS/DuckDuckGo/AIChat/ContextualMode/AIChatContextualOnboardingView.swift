@@ -44,9 +44,7 @@ struct AIChatContextualOnboardingView: View {
                 }
                 .padding(.top, 8)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 48)
-
+            .padding(.horizontal, 20)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -55,7 +53,7 @@ struct AIChatContextualOnboardingView: View {
 
     private var titleText: some View {
         Text(UserText.aiChatContextualOnboardingTitle)
-            .daxTitle2()
+            .daxTitle1()
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .multilineTextAlignment(.center)
     }
@@ -85,7 +83,10 @@ struct AIChatContextualOnboardingView: View {
             Text(UserText.aiChatContextualOnboardingViewSettings)
                 .daxButton()
                 .foregroundColor(Color(designSystemColor: .accent))
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
         }
+        .contentShape(Rectangle())
     }
 }
 

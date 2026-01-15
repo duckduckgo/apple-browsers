@@ -25,7 +25,6 @@ extension WKWebView {
     func preventFlashOnLoad() {
         isOpaque = false
 
-        // let color = UIColor(singleUseColor: .webViewPreLoadBackground)
         let color = UIColor(designSystemColor: .surfaceCanvas)
         backgroundColor = color
         scrollView.backgroundColor = color

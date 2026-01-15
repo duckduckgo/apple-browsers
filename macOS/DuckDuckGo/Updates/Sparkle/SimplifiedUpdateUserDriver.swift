@@ -74,14 +74,17 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func resetState() {
+        Logger.updates.log("🔍 SimplifiedUpdateUserDriver.resetState: onResuming=\(self.onResuming != nil, privacy: .public)")
         onResuming = nil
     }
 
     func configureResumeBlock(_ block: @escaping () -> Void) {
+        Logger.updates.log("🔍 SimplifiedUpdateUserDriver.configureResumeBlock: setting onResuming")
         onResuming = block
     }
 
     private func dismissCurrentUpdate() {
+        Logger.updates.log("🔍 SimplifiedUpdateUserDriver.dismissCurrentUpdate: clearing onResuming")
         onDismiss()
         pendingUpdateSince = .distantPast
         onResuming = nil

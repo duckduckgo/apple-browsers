@@ -20,6 +20,7 @@
 
 import Combine
 import Foundation
+import os.log
 
 /// Protocol for managing update progress state transitions.
 protocol UpdateProgressManaging: AnyObject {
@@ -51,9 +52,11 @@ final class UpdateProgressState: UpdateProgressManaging {
         // Don't overwrite error state with "dismissed"
         if case .updaterError = updateProgress,
            case .updateCycleDone(.dismissedWithNoError) = newProgress {
+            Logger.updates.log("🔍 UpdateProgressState.transition: REJECTED \(String(describing: newProgress), privacy: .public) (current is error)")
             return false
         }
 
+        Logger.updates.log("🔍 UpdateProgressState.transition: \(String(describing: self.updateProgress), privacy: .public) → \(String(describing: newProgress), privacy: .public)")
         updateProgress = newProgress
         return true
     }

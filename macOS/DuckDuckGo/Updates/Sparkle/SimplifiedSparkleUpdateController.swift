@@ -90,10 +90,12 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         }
     }
 
-    private func refreshUpdateFromCache(_ cachedUpdateResult: UpdateCheckResult) {
+    private func refreshUpdateFromCache(_ cachedUpdateResult: UpdateCheckResult, progress: UpdateCycleProgress? = nil) {
         latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled, needsLatestReleaseNote: cachedUpdateResult.needsLatestReleaseNote)
         let isInstalled = latestUpdate?.isInstalled == false
-        let isDone = progressState.updateProgress.isDone
+        // Use passed progress if available (avoids @Published willSet timing issue)
+        let currentProgress = progress ?? progressState.updateProgress
+        let isDone = currentProgress.isDone
         let isResumable = userDriver?.isResumable == true
         hasPendingUpdate = isInstalled && isDone && isResumable
         Logger.updates.log("🔍 refreshUpdateFromCache: isInstalled=\(isInstalled), isDone=\(isDone), isResumable=\(isResumable) → hasPendingUpdate=\(self.hasPendingUpdate)")
@@ -108,10 +110,12 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { progressState.updateProgressPublisher }
 
     private func handleProgressChange(_ progress: UpdateCycleProgress) {
-        Logger.updates.log("🔍 Controller.updateProgress didSet: \(progress, privacy: .public)")
+        Logger.updates.log("🔍 Controller.handleProgressChange: \(progress, privacy: .public)")
+        Logger.updates.log("🔍 Controller.handleProgressChange: cachedUpdateResult=\(self.cachedUpdateResult != nil, privacy: .public), hasPendingUpdate(before)=\(self.hasPendingUpdate, privacy: .public)")
         if let cachedUpdateResult {
-            refreshUpdateFromCache(cachedUpdateResult)
+            refreshUpdateFromCache(cachedUpdateResult, progress: progress)
         }
+        Logger.updates.log("🔍 Controller.handleProgressChange: hasPendingUpdate(after)=\(self.hasPendingUpdate, privacy: .public)")
         handleUpdateNotification()
 
         // Dismiss stale "update available" popover when download begins

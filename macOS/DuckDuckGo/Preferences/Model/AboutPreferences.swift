@@ -20,6 +20,7 @@ import SwiftUI
 import Common
 import Combine
 import FeatureFlags
+import os.log
 import PixelKit
 import PrivacyConfig
 
@@ -179,7 +180,11 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     private func refreshUpdateState() {
         guard let updateController else { return }
-        updateState = UpdateState(from: updateController.latestUpdate, progress: updateController.updateProgress)
+        let latestUpdate = updateController.latestUpdate
+        let progress = updateController.updateProgress
+        Logger.updates.log("🔍 AboutPreferences.refreshUpdateState: latestUpdate=\(latestUpdate != nil, privacy: .public), progress=\(progress, privacy: .public), hasPendingUpdate=\(updateController.hasPendingUpdate, privacy: .public)")
+        updateState = UpdateState(from: latestUpdate, progress: progress)
+        Logger.updates.log("🔍 AboutPreferences.refreshUpdateState: updateState=\(String(describing: self.updateState), privacy: .public)")
     }
 
 #if SPARKLE

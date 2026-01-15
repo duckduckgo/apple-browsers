@@ -650,7 +650,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         if currentEnvironment.purchasePlatform == .stripe {
             return true
         }
-        guard #available(macOS 12.0, *) else { return false }
+        guard #available(macOS 12.0, iOS 15.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 

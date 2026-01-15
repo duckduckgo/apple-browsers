@@ -158,15 +158,6 @@ struct DataBrokerRunCustomJSONView: View {
                 }
             }
 
-            if viewModel.isRunningOnAllBrokers {
-                ProgressView("Scanning...")
-            } else {
-                Button("Run all brokers") {
-                    viewModel.runAllBrokers()
-                    selectedTab = .extractedProfiles
-                }
-            }
-
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

@@ -139,7 +139,6 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
         recordDebugEvent(kind: .actionResponse,
-                         stepType: .scan,
                          actionType: .extract,
                          details: prettyPrintedJSON(from: profiles, meta: meta))
         complete(profiles)
@@ -150,7 +149,6 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
         recordDebugEvent(kind: .wait,
-                         stepType: .scan,
                          details: "Waiting \(operationAwaitTime)s (between actions)")
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)

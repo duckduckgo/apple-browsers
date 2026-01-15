@@ -112,7 +112,6 @@ public extension SubJobWebRunning {
                 await executeNextStep()
             } catch {
                 recordDebugEvent(kind: .actionResponse,
-                                 stepType: stepType,
                                  actionType: emailConfirmationAction.actionType,
                                  details: errorDetails(error))
                 await onError(error: DataBrokerProtectionError.emailError(error as? EmailError))
@@ -132,7 +131,6 @@ public extension SubJobWebRunning {
                 stageCalculator.fireOptOutCaptchaSolve()
                 let params = Params(state: ActionRequest(action: action, data: .solveCaptcha(CaptchaToken(token: captchaData))))
                 recordDebugEvent(kind: .actionPayload,
-                                 stepType: stepType,
                                  actionType: action.actionType,
                                  details: prettyPrintedJSON(from: params))
                 await webViewHandler?.execute(action: action,
@@ -171,14 +169,12 @@ public extension SubJobWebRunning {
         if featureFlagger.isClickActionDelayReductionOptimizationOn && action is ClickAction {
             Logger.action.log("Executing click action delay BEFORE click: \(self.clickAwaitTime)s")
             recordDebugEvent(kind: .wait,
-                             stepType: stepType,
                              details: "Waiting \(clickAwaitTime)s (click delay before click)")
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
         }
 
         let params = Params(state: ActionRequest(action: action, data: .userData(context.profileQuery, self.extractedProfile)))
         recordDebugEvent(kind: .actionPayload,
-                         stepType: stepType,
                          actionType: action.actionType,
                          details: prettyPrintedJSON(from: params))
         await webViewHandler?.execute(action: action,
@@ -189,7 +185,6 @@ public extension SubJobWebRunning {
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {
         if let email = extractedProfile?.email {
             recordDebugEvent(kind: .actionResponse,
-                             stepType: actionsHandler?.stepType,
                              actionType: action.actionType,
                              details: "Email confirmation started (polling inverval \(action.pollingTime)s)")
             stageCalculator.setStage(.emailReceive)
@@ -210,7 +205,6 @@ public extension SubJobWebRunning {
             }
 
             recordDebugEvent(kind: .actionResponse,
-                             stepType: actionsHandler?.stepType,
                              actionType: action.actionType,
                              details: "Email confirmation link received")
             stageCalculator.fireOptOutEmailConfirm()
@@ -270,7 +264,6 @@ public extension SubJobWebRunning {
             do  {
                 try await webViewHandler?.load(url: url)
                 recordDebugEvent(kind: .actionResponse,
-                                 stepType: actionsHandler?.stepType,
                                  actionType: .navigate,
                                  details: prettyPrintedJSON(from: ["url": url.absoluteString]))
                 await successNextSteps()
@@ -306,7 +299,6 @@ public extension SubJobWebRunning {
 
     func success(actionId: String, actionType: ActionType) async {
         recordDebugEvent(kind: .actionResponse,
-                         stepType: actionsHandler?.stepType,
                          actionType: actionType,
                          details: prettyPrintedJSON(from: ["actionId": actionId, "actionType": actionType.rawValue]))
         let isForOptOut = actionsHandler?.isForOptOut == true
@@ -321,7 +313,6 @@ public extension SubJobWebRunning {
             if !featureFlagger.isClickActionDelayReductionOptimizationOn {
                 Logger.action.log("Executing click action delay AFTER click: \(self.clickAwaitTime)s")
                 recordDebugEvent(kind: .wait,
-                                 stepType: actionsHandler?.stepType,
                                  details: "Waiting \(clickAwaitTime)s (click delay after click)")
                 try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
             }
@@ -338,7 +329,6 @@ public extension SubJobWebRunning {
     func conditionSuccess(actions: [Action]) async {
         let actionDescriptions = actions.map { String(describing: $0) }
         recordDebugEvent(kind: .actionResponse,
-                         stepType: actionsHandler?.stepType,
                          details: prettyPrintedJSON(from: actionDescriptions))
         if actions.isEmpty {
             Logger.action.log(loggerContext(), message: "Condition action completed with no follow-up actions")
@@ -364,7 +354,6 @@ public extension SubJobWebRunning {
             "type": captchaInfo.type
         ])
         recordDebugEvent(kind: .actionResponse,
-                         stepType: actionsHandler?.stepType,
                          actionType: .getCaptchaInfo,
                          details: details)
         do {
@@ -394,7 +383,6 @@ public extension SubJobWebRunning {
             ]
         ])
         recordDebugEvent(kind: .actionResponse,
-                         stepType: actionsHandler?.stepType,
                          actionType: .solveCaptcha,
                          details: details)
         do {
@@ -409,7 +397,6 @@ public extension SubJobWebRunning {
     func onError(error: Error) async {
         let errorPayload = errorDetails(error)
         recordDebugEvent(kind: .actionResponse,
-                         stepType: actionsHandler?.stepType,
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: errorPayload)
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
@@ -435,7 +422,6 @@ public extension SubJobWebRunning {
     func executeCurrentAction() async {
         let waitTimeUntilRunningTheActionAgain: TimeInterval = 3
         recordDebugEvent(kind: .wait,
-                         stepType: actionsHandler?.stepType,
                          details: "Waiting \(waitTimeUntilRunningTheActionAgain)s (retry)")
         try? await Task.sleep(nanoseconds: UInt64(waitTimeUntilRunningTheActionAgain) * 1_000_000_000)
 
@@ -443,7 +429,6 @@ public extension SubJobWebRunning {
             decrementRetriesCountOnError()
             Logger.dataBrokerProtection.log("Retrying current action")
             recordDebugEvent(kind: .actionRetry,
-                             stepType: actionsHandler?.stepType,
                              actionType: currentAction.actionType,
                              details: "Retrying action")
             await runNextAction(currentAction)

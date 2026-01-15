@@ -23,22 +23,20 @@ public enum DebugEventKind: String {
     case actionResponse = "Response"
     case actionRetry = "Retry"
     case wait = "Wait"
+    case history = "History"
 }
 
 public protocol DebugEventReporting {
     func recordDebugEvent(kind: DebugEventKind,
-                          stepType: StepType?,
                           actionType: ActionType?,
                           details: String)
 }
 
 public extension DebugEventReporting {
     func recordDebugEvent(kind: DebugEventKind,
-                          stepType: StepType?,
                           actionType: ActionType? = nil,
                           details: String) {
         recordDebugEvent(kind: kind,
-                         stepType: stepType,
                          actionType: actionType,
                          details: details)
     }
@@ -46,12 +44,10 @@ public extension DebugEventReporting {
 
 public extension SubJobWebRunning {
     func recordDebugEvent(kind: DebugEventKind,
-                          stepType: StepType?,
                           actionType: ActionType? = nil,
                           details: String) {
         guard let reporter = stageCalculator as? DebugEventReporting else { return }
         reporter.recordDebugEvent(kind: kind,
-                                  stepType: stepType,
                                   actionType: actionType,
                                   details: details)
     }

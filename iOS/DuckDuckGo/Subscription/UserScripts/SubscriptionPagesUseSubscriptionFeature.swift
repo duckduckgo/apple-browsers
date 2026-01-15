@@ -139,12 +139,12 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func cleanup()
 }
 
-final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
+final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
-    private let subscriptionManager: SubscriptionManagerV2
-    private let appStorePurchaseFlow: AppStorePurchaseFlowV2
-    private let appStoreRestoreFlow: AppStoreRestoreFlowV2
+    private let subscriptionManager: SubscriptionManager
+    private let appStorePurchaseFlow: AppStorePurchaseFlow
+    private let appStoreRestoreFlow: AppStoreRestoreFlow
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let subscriptionDataReporter: SubscriptionDataReporting?
     private let internalUserDecider: InternalUserDecider
@@ -153,11 +153,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private var wideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
 
-    init(subscriptionManager: SubscriptionManagerV2,
+    init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionAttributionOrigin: String?,
-         appStorePurchaseFlow: AppStorePurchaseFlowV2,
-         appStoreRestoreFlow: AppStoreRestoreFlowV2,
+         appStorePurchaseFlow: AppStorePurchaseFlow,
+         appStoreRestoreFlow: AppStoreRestoreFlow,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
          internalUserDecider: InternalUserDecider,
          wideEvent: WideEventManaging,
@@ -340,7 +340,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         } else {
             Logger.subscription.error("Failed to obtain subscription options")
             setTransactionError(.failedToGetSubscriptionOptions)
-            return SubscriptionOptionsV2.empty
+            return SubscriptionOptions.empty
         }
     }
 
@@ -755,7 +755,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     // MARK: Utility Methods
 
-    func mapAppStoreRestoreErrorToTransactionError(_ error: AppStoreRestoreFlowErrorV2) -> UseSubscriptionError {
+    func mapAppStoreRestoreErrorToTransactionError(_ error: AppStoreRestoreFlowError) -> UseSubscriptionError {
         Logger.subscription.error("\(#function): \(error.localizedDescription)")
         switch error {
         case .subscriptionExpired:
@@ -780,7 +780,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
 // MARK: - Wide Pixel
 
-private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
+private extension DefaultSubscriptionPagesUseSubscriptionFeature {
     
     func markEmailAddressRestoreWideEventFlowAsSuccess() {
         guard let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }

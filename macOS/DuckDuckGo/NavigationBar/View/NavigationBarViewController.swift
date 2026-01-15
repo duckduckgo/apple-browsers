@@ -120,8 +120,8 @@ final class NavigationBarViewController: NSViewController {
     private let permissionManager: PermissionManagerProtocol
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
 
-    private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
-        Application.appDelegate.subscriptionAuthV1toV2Bridge
+    private var subscriptionManager: SubscriptionManager {
+        Application.appDelegate.subscriptionManager
     }
 
     var addressBarViewController: AddressBarViewController?
@@ -1434,7 +1434,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func toggleNetworkProtectionPopover() {
-        guard Application.appDelegate.subscriptionAuthV1toV2Bridge.isUserAuthenticated else {
+        guard Application.appDelegate.subscriptionManager.isUserAuthenticated else {
             popovers.toggleVPNUpsellPopover(from: networkProtectionButton)
             vpnUpsellVisibilityManager.dismissNotificationDot()
             return

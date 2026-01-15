@@ -33,7 +33,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
     }
 
     func testThatPublicInitializerSetsUpHandlerWithCorrectArguments() throws {
-        let subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        let subscriptionManager = SubscriptionManagerMock()
         let featureFlagProvider = MockSubscriptionFeatureFlagProvider()
         userScript = SubscriptionUserScript(platform: .ios,
                                             subscriptionManager: subscriptionManager,

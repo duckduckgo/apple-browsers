@@ -24,19 +24,20 @@ import BrowserServicesKit
 import SubscriptionTestingUtilities
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser
+import NetworkingTestingUtils
 
 @MainActor
 final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
 
     var sut: NetworkProtectionNavBarButtonModel!
     fileprivate var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var cancellable: AnyCancellable?
 
     override func setUp() {
         super.setUp()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
     }
 
@@ -165,7 +166,7 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
             }
 
         // When
-        mockSubscriptionManager.accessTokenResult = .success("mock-token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         NotificationCenter.default.post(name: .entitlementsDidChange, object: nil)
 
         // Then

@@ -703,7 +703,7 @@ final class MainMenu: NSMenu {
             toggleDownloadsShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .downloads)
             toggleShareShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .share)
 
-            if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isVPNVisible() {
+            if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager).isVPNVisible() {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = false
                 toggleNetworkProtectionShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .networkProtection)
             } else {
@@ -863,29 +863,28 @@ final class MainMenu: NSMenu {
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
 
-            var currentEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+            var currentEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
             let updateServiceEnvironment: (SubscriptionEnvironment.ServiceEnvironment) -> Void = { env in
                 currentEnvironment.serviceEnvironment = env
-                DefaultSubscriptionManagerV2.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
+                DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
             let updatePurchasingPlatform: (SubscriptionEnvironment.PurchasePlatform) -> Void = { platform in
                 currentEnvironment.purchasePlatform = platform
-                DefaultSubscriptionManagerV2.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
+                DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
 
             let updateCustomBaseSubscriptionURL: (URL?) -> Void = { url in
                 currentEnvironment.customBaseSubscriptionURL = url
-                DefaultSubscriptionManagerV2.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
+                DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
 
             // Closure to handle subscription selection via the user script handler
             let subscriptionSelectionHandler: SubscriptionSelectionHandler? = {
                 if #available(macOS 12.0, *) {
                     return { @MainActor (productId: String, changeType: String?) async in
-                        guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else { return }
-
-                        let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
-                        let feature = SubscriptionPagesUseSubscriptionFeatureV2(
+                        let subscriptionManager = Application.appDelegate.subscriptionManager
+                        let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
+                        let feature = SubscriptionPagesUseSubscriptionFeature(
                             subscriptionManager: subscriptionManager,
                             stripePurchaseFlow: stripePurchaseFlow,
                             uiHandler: Application.appDelegate.subscriptionUIHandler,
@@ -916,8 +915,7 @@ final class MainMenu: NSMenu {
                                   updateCustomBaseSubscriptionURL: updateCustomBaseSubscriptionURL,
                                   currentViewController: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController },
                                   openSubscriptionTab: { Application.appDelegate.windowControllersManager.showTab(with: .subscription($0)) },
-                                  subscriptionAuthV1toV2Bridge: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                  subscriptionManagerV2: Application.appDelegate.subscriptionManagerV2,
+                                  subscriptionManager: Application.appDelegate.subscriptionManager,
                                   subscriptionUserDefaults: subscriptionUserDefaults,
                                   wideEvent: Application.appDelegate.wideEvent,
                                   subscriptionSelectionHandler: subscriptionSelectionHandler)

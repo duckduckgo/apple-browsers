@@ -202,7 +202,7 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             delegate?.aiChatContentHandlerDidReceivePromptSubmission(self)
 
-            if featureFlagger.isFeatureOn(.iOSAIChatAtb) {
+            if featureFlagger.isFeatureOn(.aiChatAtb) {
                 DispatchQueue.main.async {
                     let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
                                                                         application: UIApplication.shared)

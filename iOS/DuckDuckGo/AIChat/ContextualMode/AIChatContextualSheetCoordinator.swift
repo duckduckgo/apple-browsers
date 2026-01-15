@@ -113,7 +113,10 @@ final class AIChatContextualSheetCoordinator {
                 settings: aiChatSettings,
                 onOpenSettings: { [weak self] in
                     guard let self else { return }
-                    self.delegate?.aiChatContextualSheetCoordinatorDidRequestOpenSettings(self)
+                    self.sheetViewController?.dismiss(animated: true) { [weak self] in
+                        guard let self else { return }
+                        self.delegate?.aiChatContextualSheetCoordinatorDidRequestOpenSettings(self)
+                    }
                 }
             )
             sheetVC.delegate = self

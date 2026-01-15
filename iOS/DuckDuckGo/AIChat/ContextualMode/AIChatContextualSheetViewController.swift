@@ -552,9 +552,7 @@ private extension AIChatContextualSheetViewController {
                 self?.dismissOnboarding()
             },
             onViewSettings: { [weak self] in
-                self?.dismissOnboarding {
-                    self?.onOpenSettings()
-                }
+                self?.onOpenSettings()
             }
         )
 

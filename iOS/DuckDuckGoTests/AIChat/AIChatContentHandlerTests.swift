@@ -309,6 +309,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var payloadHandlerSet = false
     var submitPromptCallCount = 0
     var lastSubmittedPrompt: String?
+    var lastSubmittedPageContext: AIChatPageContextData?
     var submitStartChatActionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
@@ -322,9 +323,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         lastDisplayModeSet = displayMode
     }
 
-    func submitPrompt(_ prompt: String) {
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
+        lastSubmittedPageContext = pageContext
     }
 
     func submitStartChatAction() {

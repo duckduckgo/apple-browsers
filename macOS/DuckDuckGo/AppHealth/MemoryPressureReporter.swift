@@ -97,7 +97,7 @@ final class MemoryPressureReporter {
     func startMonitoring() {
         guard memoryPressureSource == nil, featureFlagger.isFeatureOn(.memoryPressureReporting) else { return }
 
-        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.normal, .warning, .critical], queue: .main)
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
 
         source.setEventHandler { [weak self] in
             guard let self else { return }
@@ -125,8 +125,6 @@ final class MemoryPressureReporter {
             logger?.warning("Memory pressure: warning")
             notificationCenter.post(name: .memoryPressureWarning, object: self)
             pixelFiring?.fire(MemoryPressurePixel.memoryPressureWarning, frequency: .dailyAndStandard)
-        } else if event.contains(.normal) {
-            logger?.info("Memory pressure: normal")
         }
     }
 

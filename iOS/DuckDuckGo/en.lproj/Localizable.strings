@@ -3193,9 +3193,6 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sync & Backup";
 
-/* Settings screen cell title for toggling tracker count banner in tab switcher */
-"settings.tab.switcher.show.tracker.count" = "Show Tracker Count in Tab Switcher";
-
 /* Settings screen cell text for text size */
 "settings.text.size" = "Default Text Zoom";
 
@@ -3676,14 +3673,17 @@ Take back control of your personal information with the browser designed for dat
 /* Accessibility label for tracker count info button */
 "tab.switcher.tracker.count.info.a11y" = "Tracker count options";
 
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Double tap to show options for hiding this banner";
+
 /* Action button to keep showing tracker count banner */
 "tab.switcher.tracker.count.keep.action" = "Keep";
 
 /* Subtitle for tracker count banner indicating time window */
 "tab.switcher.tracker.count.subtitle" = "in the last 7 days";
 
-/* Title showing total blocked trackers in the tab switcher banner. Placeholder is a number. */
-"tab.switcher.tracker.count.title" = "%lld trackers blocked";
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Increase or decrease text size across all sites.";
@@ -4053,4 +4053,3 @@ https://duckduckgo.com/windows";
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "What do you want to import?";
-

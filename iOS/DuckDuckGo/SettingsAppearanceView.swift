@@ -80,14 +80,18 @@ struct SettingsAppearanceView: View {
 
                 showFullSiteAddressSetting()
 
-                if viewModel.isTabSwitcherTrackerCountEnabled {
-                    showTrackerCountSetting()
-                }
-
                 showReloadButtonSetting()
 
             } header: {
                 Text(UserText.addressBar)
+            }
+
+            if viewModel.isTabSwitcherTrackerCountEnabled {
+                Section {
+                    showTrackerCountSetting()
+                } header: {
+                    Text("TABS")
+                }
             }
 
             // Customizable buttons specific settings.
@@ -126,14 +130,18 @@ struct SettingsAppearanceView: View {
 
             showFullSiteAddressSetting()
 
-            if viewModel.isTabSwitcherTrackerCountEnabled {
-                showTrackerCountSetting()
-            }
-
             showReloadButtonSetting()
 
         } header: {
             Text(UserText.addressBar)
+        }
+
+        if viewModel.isTabSwitcherTrackerCountEnabled {
+            Section {
+                showTrackerCountSetting()
+            } header: {
+                Text("TABS")
+            }
         }
 
         Section {
@@ -208,7 +216,7 @@ struct SettingsAppearanceView: View {
 
     @ViewBuilder
     func showTrackerCountSetting() -> some View {
-        SettingsCellView(label: UserText.tabSwitcherShowTrackerCount,
+        SettingsCellView(label: "7-Day Tracker Count",
                          accessory: .toggle(isOn: viewModel.showTrackerCountInTabSwitcherBinding))
     }
 

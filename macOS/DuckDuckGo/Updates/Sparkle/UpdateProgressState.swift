@@ -29,6 +29,10 @@ protocol UpdateProgressManaging: AnyObject {
 
     /// Attempt to transition to a new state. Returns false if transition was rejected.
     @discardableResult
+    func transition(to newProgress: UpdateCycleProgress) -> Bool
+
+    /// Attempt to transition to a new state with a resume callback.
+    @discardableResult
     func transition(to newProgress: UpdateCycleProgress, resume: (() -> Void)?) -> Bool
 
     /// Reset state for a new update cycle
@@ -73,7 +77,12 @@ final class UpdateProgressState: UpdateProgressManaging {
     }
 
     @discardableResult
-    func transition(to newProgress: UpdateCycleProgress, resume: (() -> Void)? = nil) -> Bool {
+    func transition(to newProgress: UpdateCycleProgress) -> Bool {
+        transition(to: newProgress, resume: nil)
+    }
+
+    @discardableResult
+    func transition(to newProgress: UpdateCycleProgress, resume: (() -> Void)?) -> Bool {
         // Preserve error state so UI can show the error instead of clearing it
         if case .updaterError = updateProgress,
            case .updateCycleDone(.dismissedWithNoError) = newProgress {

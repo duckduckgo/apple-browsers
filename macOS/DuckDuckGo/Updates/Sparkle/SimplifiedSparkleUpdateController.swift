@@ -468,7 +468,7 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         } else {
             Logger.updates.log("Sparkle update state: Unknown")
         }
-        Logger.updates.log("isResumable: \(progressState.isResumable, privacy: .public)")
+        Logger.updates.log("isResumable: \(self.progressState.isResumable, privacy: .public)")
     }
 
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES

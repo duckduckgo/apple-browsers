@@ -96,7 +96,7 @@ final class UpdateProgressState: UpdateProgressManaging {
             return false
         }
 
-        Logger.updates.debug("State: \(String(describing: self.updateProgress), privacy: .public) → \(String(describing: newProgress), privacy: .public)")
+        Logger.updates.debug("State: \(String(describing: self.updateProgress), privacy: .public) -> \(String(describing: newProgress), privacy: .public)")
         // Set callback before updateProgress because @Published fires on willSet
         resumeCallback = resume
         updateProgress = newProgress

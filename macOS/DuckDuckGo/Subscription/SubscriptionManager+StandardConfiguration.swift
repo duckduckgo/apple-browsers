@@ -94,8 +94,11 @@ extension DefaultSubscriptionManager {
         }
         let isInternalUserEnabled = { featureFlagger?.internalUserDecider.isInternalUser ?? false }
         if #available(macOS 12.0, *) {
+            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: userDefaults,
+                                                                             pixelHandler: pixelHandler)
             self.init(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                                          subscriptionFeatureFlagger: subscriptionFeatureFlagger),
+                                                                        subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                                        pendingTransactionHandler: pendingTransactionHandler),
                       oAuthClient: authClient,
                       userDefaults: userDefaults,
                       subscriptionEndpointService: subscriptionEndpointService,

@@ -194,8 +194,11 @@ final class AppDependencyProvider: DependencyProvider {
                                                                         subscriptionEnvironment: subscriptionEnvironment,
                                                                         subscriptionUserDefaults: subscriptionUserDefaults)
 
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: pixelHandler)
         let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                                 subscriptionFeatureFlagger: subscriptionFeatureFlagger)
+                                                               subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                               pendingTransactionHandler: pendingTransactionHandler)
         let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
@@ -206,7 +209,9 @@ final class AppDependencyProvider: DependencyProvider {
             ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
         })
         self.tokenHandlerProvider = subscriptionManager
-        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager, storePurchaseManager: storePurchaseManager)
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                     storePurchaseManager: storePurchaseManager,
+                                                     pendingTransactionHandler: pendingTransactionHandler)
         subscriptionManager.tokenRecoveryHandler = {
             try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
         }

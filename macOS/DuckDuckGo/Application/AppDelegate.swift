@@ -650,28 +650,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let isInternalUserEnabled = { featureFlagger.internalUserDecider.isInternalUser }
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: pixelHandler)
         let defaultSubscriptionManager: DefaultSubscriptionManager
         if #available(macOS 12.0, *) {
             defaultSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                                                                                   subscriptionFeatureFlagger: subscriptionFeatureFlagger),
-                                                               oAuthClient: authClient,
-                                                               userDefaults: subscriptionUserDefaults,
-                                                               subscriptionEndpointService: subscriptionEndpointService,
-                                                               subscriptionEnvironment: subscriptionEnvironment,
-                                                               pixelHandler: pixelHandler,
-                                                               isInternalUserEnabled: isInternalUserEnabled)
+                                                                                                                      subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                                                                                      pendingTransactionHandler: pendingTransactionHandler),
+                                                                    oAuthClient: authClient,
+                                                                    userDefaults: subscriptionUserDefaults,
+                                                                    subscriptionEndpointService: subscriptionEndpointService,
+                                                                    subscriptionEnvironment: subscriptionEnvironment,
+                                                                    pixelHandler: pixelHandler,
+                                                                    isInternalUserEnabled: isInternalUserEnabled)
         } else {
             defaultSubscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
-                                                               userDefaults: subscriptionUserDefaults,
-                                                               subscriptionEndpointService: subscriptionEndpointService,
-                                                               subscriptionEnvironment: subscriptionEnvironment,
-                                                               pixelHandler: pixelHandler,
-                                                               isInternalUserEnabled: isInternalUserEnabled)
+                                                                    userDefaults: subscriptionUserDefaults,
+                                                                    subscriptionEndpointService: subscriptionEndpointService,
+                                                                    subscriptionEnvironment: subscriptionEnvironment,
+                                                                    pixelHandler: pixelHandler,
+                                                                    isInternalUserEnabled: isInternalUserEnabled)
         }
 
         // Expired refresh token recovery
         if #available(iOS 15.0, macOS 12.0, *) {
-            let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager, storePurchaseManager: defaultSubscriptionManager.storePurchaseManager())
+            let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
+                                                         storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
+                                                         pendingTransactionHandler: pendingTransactionHandler)
             defaultSubscriptionManager.tokenRecoveryHandler = {
                 try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
             }

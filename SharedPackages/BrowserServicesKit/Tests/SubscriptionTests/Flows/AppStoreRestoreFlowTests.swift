@@ -28,14 +28,17 @@ final class AppStoreRestoreFlowTests: XCTestCase {
     private var sut: DefaultAppStoreRestoreFlow!
     private var subscriptionManagerMock: SubscriptionManagerMock!
     private var storePurchaseManagerMock: StorePurchaseManagerMock!
+    private var pendingTransactionHandlerMock: MockPendingTransactionHandler!
 
     override func setUp() {
         super.setUp()
         subscriptionManagerMock = SubscriptionManagerMock()
         storePurchaseManagerMock = StorePurchaseManagerMock()
+        pendingTransactionHandlerMock = MockPendingTransactionHandler()
         sut = DefaultAppStoreRestoreFlow(
             subscriptionManager: subscriptionManagerMock,
-            storePurchaseManager: storePurchaseManagerMock
+            storePurchaseManager: storePurchaseManagerMock,
+            pendingTransactionHandler: pendingTransactionHandlerMock
         )
     }
 
@@ -43,6 +46,7 @@ final class AppStoreRestoreFlowTests: XCTestCase {
         sut = nil
         subscriptionManagerMock = nil
         storePurchaseManagerMock = nil
+        pendingTransactionHandlerMock = nil
         super.tearDown()
     }
 
@@ -105,5 +109,80 @@ final class AppStoreRestoreFlowTests: XCTestCase {
         case .success:
             break
         }
+    }
+
+    // MARK: - PendingTransactionHandler Tests
+
+    func test_restoreAccountFromPastPurchase_withSuccess_callsHandleSubscriptionActivated() async {
+        // Given
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+
+        // When
+        let result = await sut.restoreAccountFromPastPurchase()
+
+        // Then
+        switch result {
+        case .success:
+            XCTAssertTrue(pendingTransactionHandlerMock.handleSubscriptionActivatedCalled)
+        case .failure:
+            XCTFail("Unexpected failure")
+        }
+    }
+
+    func test_restoreAccountFromPastPurchase_withMissingTransaction_doesNotCallHandleSubscriptionActivated() async {
+        // Given
+        storePurchaseManagerMock.mostRecentTransactionResult = nil
+
+        // When
+        let result = await sut.restoreAccountFromPastPurchase()
+
+        // Then
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .missingAccountOrTransactions)
+            XCTAssertFalse(pendingTransactionHandlerMock.handleSubscriptionActivatedCalled)
+        case .success:
+            XCTFail("Unexpected success")
+        }
+    }
+
+    func test_restoreAccountFromPastPurchase_withExpiredSubscription_doesNotCallHandleSubscriptionActivated() async {
+        // Given
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.expiredSubscription)
+
+        // When
+        let result = await sut.restoreAccountFromPastPurchase()
+
+        // Then
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .subscriptionExpired)
+            XCTAssertFalse(pendingTransactionHandlerMock.handleSubscriptionActivatedCalled)
+        case .success:
+            XCTFail("Unexpected success")
+        }
+    }
+}
+
+// MARK: - Mock
+
+@available(macOS 12.0, iOS 15.0, *)
+private final class MockPendingTransactionHandler: PendingTransactionHandling {
+    var markPurchasePendingCalled = false
+    var handleSubscriptionActivatedCalled = false
+    var handlePendingTransactionApprovedCalled = false
+
+    func markPurchasePending() {
+        markPurchasePendingCalled = true
+    }
+
+    func handleSubscriptionActivated() {
+        handleSubscriptionActivatedCalled = true
+    }
+
+    func handlePendingTransactionApproved() {
+        handlePendingTransactionApprovedCalled = true
     }
 }

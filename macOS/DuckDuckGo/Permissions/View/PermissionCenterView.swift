@@ -27,27 +27,37 @@ struct PermissionCenterView: View {
 
     @ObservedObject var viewModel: PermissionCenterViewModel
 
-    static let widthWithPopups: [String?: CGFloat] = [
-        "ru": 630,
-        "pl": 590,
-        "es": 590,
-        "fr": 630,
-        "it": 490,
-        "nl": 490,
-        "de": 490,
-        "pt": 490,
-    ]
+    private enum PopoverWidth {
+        static let base: CGFloat = 360
+        static let withExternalApps: CGFloat = 380
+        static let withPopups: CGFloat = 450
+
+        /// Wider widths for languages with longer popup permission strings
+        static let withPopupsByLanguage: [String: CGFloat] = [
+            "de": 490,
+            "es": 590,
+            "fr": 630,
+            "it": 490,
+            "nl": 490,
+            "pl": 590,
+            "pt": 490,
+            "ru": 630,
+        ]
+    }
 
     /// Use a wider popover when popup or external app permissions are present due to longer content
     private var popoverWidth: CGFloat {
         let hasPopups = viewModel.permissionItems.contains { $0.permissionType == .popups }
         let hasExternalApps = viewModel.permissionItems.contains { $0.isGroupedExternalApps }
         if hasPopups {
-            return Self.widthWithPopups[Locale.current.languageCode] ?? 450
+            if let languageCode = Locale.current.languageCode {
+                return PopoverWidth.withPopupsByLanguage[languageCode] ?? PopoverWidth.withPopups
+            }
+            return PopoverWidth.withPopups
         } else if hasExternalApps {
-            return 380
+            return PopoverWidth.withExternalApps
         }
-        return 360
+        return PopoverWidth.base
     }
 
     var body: some View {

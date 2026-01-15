@@ -90,7 +90,7 @@ struct SettingsAppearanceView: View {
                 Section {
                     showTrackerCountSetting()
                 } header: {
-                    Text("TABS")
+                    Text(UserText.settingsTabsSection)
                 }
             }
 
@@ -120,35 +120,6 @@ struct SettingsAppearanceView: View {
                                     viewModel: viewModel)
         .onFirstAppear {
             Pixel.fire(pixel: .settingsAppearanceOpen)
-        }
-    }
-
-    @ViewBuilder
-    func customizableSettings() -> some View {
-        Section {
-            addressBarPositionSetting()
-
-            showFullSiteAddressSetting()
-
-            showReloadButtonSetting()
-
-        } header: {
-            Text(UserText.addressBar)
-        }
-
-        if viewModel.isTabSwitcherTrackerCountEnabled {
-            Section {
-                showTrackerCountSetting()
-            } header: {
-                Text("TABS")
-            }
-        }
-
-        Section {
-            addressBarButtonSetting()
-            toolbarButtonSetting()
-        } header: {
-            Text(UserText.mobileCustomizationSectionTitle)
         }
     }
 
@@ -216,7 +187,7 @@ struct SettingsAppearanceView: View {
 
     @ViewBuilder
     func showTrackerCountSetting() -> some View {
-        SettingsCellView(label: "7-Day Tracker Count",
+        SettingsCellView(label: UserText.tabSwitcherShowTrackerCount,
                          accessory: .toggle(isOn: viewModel.showTrackerCountInTabSwitcherBinding))
     }
 

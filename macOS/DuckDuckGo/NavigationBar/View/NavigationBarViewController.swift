@@ -120,8 +120,8 @@ final class NavigationBarViewController: NSViewController {
     private let permissionManager: PermissionManagerProtocol
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
 
-    private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
-        Application.appDelegate.subscriptionAuthV1toV2Bridge
+    private var subscriptionManager: SubscriptionManager {
+        Application.appDelegate.subscriptionManager
     }
 
     var addressBarViewController: AddressBarViewController?
@@ -523,43 +523,6 @@ final class NavigationBarViewController: NSViewController {
         super.viewWillLayout()
 
         updateNavigationBarForCurrentWidth()
-    }
-
-    /**
-     * Presents History View onboarding.
-     *
-     * This is gater by the decider that takes into account whether the user is new,
-     * whether they've seen the popover already and whether the feature flag is enabled.
-     *
-     * > `force` parameter is only used by `HistoryDebugMenu`.
-     */
-    func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
-        guard !isInPopUpWindow else { return }
-
-        let onboardingDecider = HistoryViewOnboardingDecider()
-        guard force || onboardingDecider.shouldPresentOnboarding,
-              !tabCollectionViewModel.isBurner,
-              view.window?.isKeyWindow == true
-        else {
-            return
-        }
-
-        // If we're on history tab, we don't show the onboarding and mark it as shown,
-        // assuming that the user is onboarded
-        guard tabCollectionViewModel.selectedTabViewModel?.tab.content.isHistory != true else {
-            onboardingDecider.skipPresentingOnboarding()
-            return
-        }
-
-        popovers.showHistoryViewOnboardingPopover(from: optionsButton, withDelegate: self) { [weak self] showHistory in
-            guard let self else { return }
-
-            popovers.closeHistoryViewOnboardingViewPopover()
-
-            if showHistory {
-                tabCollectionViewModel.insertOrAppendNewTab(.anyHistoryPane, selected: true)
-            }
-        }
     }
 
     func resizeAddressBar(for sizeClass: AddressBarSizeClass, animated: Bool) {
@@ -1471,7 +1434,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func toggleNetworkProtectionPopover() {
-        guard Application.appDelegate.subscriptionAuthV1toV2Bridge.isUserAuthenticated else {
+        guard Application.appDelegate.subscriptionManager.isUserAuthenticated else {
             popovers.toggleVPNUpsellPopover(from: networkProtectionButton)
             vpnUpsellVisibilityManager.dismissNotificationDot()
             return

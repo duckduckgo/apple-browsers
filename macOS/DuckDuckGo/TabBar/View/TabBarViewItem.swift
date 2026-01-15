@@ -34,7 +34,7 @@ protocol TabBarViewModel {
     var tabContent: Tab.TabContent { get }
     var isPinned: Bool { get }
     var title: String { get }
-    var titlePublisher: Published<String>.Publisher { get }
+    var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> { get }
     var url: URL? { get }
     var favicon: NSImage? { get }
     var faviconPublisher: Published<NSImage?>.Publisher { get }
@@ -53,8 +53,11 @@ extension TabViewModel: TabBarViewModel {
     var isPinned: Bool {
         tab.isPinned
     }
-
-    var titlePublisher: Published<String>.Publisher { $title }
+    var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> {
+        $title
+            .combineLatest($isLoading)
+            .eraseToAnyPublisher()
+    }
     var url: URL? { tab.content.urlForWebView }
     var faviconPublisher: Published<NSImage?>.Publisher { $favicon }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { tab.$content.eraseToAnyPublisher() }
@@ -65,7 +68,6 @@ extension TabViewModel: TabBarViewModel {
     var crashIndicatorModel: TabCrashIndicatorModel { tab.crashIndicatorModel }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
         tab.$isLoading
-            .eraseToAnyPublisher()
             .combineLatest(tab.$error)
             .eraseToAnyPublisher()
     }
@@ -608,13 +610,13 @@ final class TabBarItemCellView: NSView {
         return title == UserText.burnerTabHomeTitle
     }
 
-    func displayTabTitleIfNeeded(title: String, url: URL?) {
+    func displayTabTitleIfNeeded(title: String, url: URL?, isLoading: Bool) {
         guard displaysTabsProgressIndicator else {
             titleTextField.stringValue = title
             return
         }
 
-        titleView.displayTitleIfNeeded(title: title, url: url)
+        titleView.displayTitleIfNeeded(title: title, url: url, isLoading: isLoading)
     }
 
     func refreshProgressColors(rendered: Bool, url: URL?) {
@@ -990,8 +992,8 @@ final class TabBarViewItem: NSCollectionViewItem {
         clearSubscriptions()
 
         representedObject = tabViewModel
-        tabViewModel.titlePublisher.sink { [weak self] title in
-            self?.displayTabTitle(title)
+        tabViewModel.titleAndLoadingStatusPublisher.sink { [weak self] title, isLoading in
+            self?.displayTabTitle(title, isLoading: isLoading)
         }.store(in: &cancellables)
 
         tabViewModel.faviconPublisher.sink { [weak self] favicon in
@@ -1337,9 +1339,9 @@ final class TabBarViewItem: NSCollectionViewItem {
         }
     }
 
-    private func displayTabTitle(_ title: String) {
+    private func displayTabTitle(_ title: String, isLoading: Bool) {
         let url = tabViewModel?.url
-        cell.displayTabTitleIfNeeded(title: title, url: url)
+        cell.displayTabTitleIfNeeded(title: title, url: url, isLoading: isLoading)
     }
 
     private func startSpinnerIfNeeded(isLoading: Bool, error: WKError?) {
@@ -1754,7 +1756,11 @@ extension TabBarViewItem {
             var width: CGFloat
             var isSelected: Bool
             @Published var title: String = ""
-            var titlePublisher: Published<String>.Publisher { $title }
+            var titleAndLoadingStatusPublisher: AnyPublisher<(String, Bool), Never> {
+                $title
+                    .combineLatest($isLoading)
+                    .eraseToAnyPublisher()
+            }
             @Published var favicon: NSImage?
             var faviconPublisher: Published<NSImage?>.Publisher { $favicon }
             var isPinned: Bool
@@ -1774,7 +1780,6 @@ extension TabBarViewItem {
             @Published var error: WKError?
             var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
                 $isLoading
-                    .eraseToAnyPublisher()
                     .combineLatest($error)
                     .eraseToAnyPublisher()
             }

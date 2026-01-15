@@ -86,7 +86,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             fatalError("Failed to make secure storage vault")
         }
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
-            subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+            subscriptionManager: Application.appDelegate.subscriptionManager)
         let featureFlagger = DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger)
 
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
@@ -387,7 +387,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func runCustomJSON() {
-        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionManager)
         let viewController = DataBrokerRunCustomJSONViewController(authenticationManager: authenticationManager)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],

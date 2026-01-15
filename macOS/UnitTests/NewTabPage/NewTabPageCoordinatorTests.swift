@@ -174,6 +174,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             nextStepsCardsPersistor: MockNewTabPageNextStepsCardsPersistor(),
             subscriptionCardPersistor: MockHomePageSubscriptionCardPersisting(),
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }

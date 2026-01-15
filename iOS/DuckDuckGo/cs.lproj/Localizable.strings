@@ -3727,6 +3727,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nastavit synchronizaci";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synchronizace a zálohování platebních karet";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synchronizace a zálohování tvých dat";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, děkuji";
 

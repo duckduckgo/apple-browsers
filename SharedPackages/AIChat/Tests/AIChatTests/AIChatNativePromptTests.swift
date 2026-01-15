@@ -174,6 +174,75 @@ struct AIChatNativePromptTests {
         #expect(NSDictionary(dictionary: jsonDict).isEqual(to: expected))
     }
 
+    @Test
+    func encodingQueryWithPageContext() throws {
+        let pageContext = AIChatPageContextData(
+            title: "Example Page",
+            favicon: [AIChatPageContextData.PageContextFavicon(href: "data:image/png;base64,abc", rel: "icon")],
+            url: "https://example.com",
+            content: "Page content here",
+            truncated: false,
+            fullContentLength: 100
+        )
+        let prompt = AIChatNativePrompt.queryPrompt("Summarize this", autoSubmit: true, pageContext: pageContext)
+        let jsonDict = try encodePrompt(prompt)
+
+        #expect(jsonDict["platform"] as? String == Platform.name)
+        #expect(jsonDict["tool"] as? String == "query")
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        #expect(queryDict["prompt"] as? String == "Summarize this")
+        #expect(queryDict["autoSubmit"] as? Bool == true)
+
+        let pageContextDict = try #require(jsonDict["pageContext"] as? [String: Any])
+        #expect(pageContextDict["title"] as? String == "Example Page")
+        #expect(pageContextDict["url"] as? String == "https://example.com")
+        #expect(pageContextDict["content"] as? String == "Page content here")
+        #expect(pageContextDict["truncated"] as? Bool == false)
+        #expect(pageContextDict["fullContentLength"] as? Int == 100)
+
+        let faviconArray = try #require(pageContextDict["favicon"] as? [[String: String]])
+        #expect(faviconArray.count == 1)
+        #expect(faviconArray[0]["href"] == "data:image/png;base64,abc")
+        #expect(faviconArray[0]["rel"] == "icon")
+    }
+
+    @Test
+    func decodingQueryWithPageContext() throws {
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "query",
+                "query": {
+                    "prompt": "Summarize this",
+                    "autoSubmit": true
+                },
+                "pageContext": {
+                    "title": "Example Page",
+                    "favicon": [{"href": "data:image/png;base64,abc", "rel": "icon"}],
+                    "url": "https://example.com",
+                    "content": "Page content here",
+                    "truncated": false,
+                    "fullContentLength": 100
+                }
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+
+        let expectedPageContext = AIChatPageContextData(
+            title: "Example Page",
+            favicon: [AIChatPageContextData.PageContextFavicon(href: "data:image/png;base64,abc", rel: "icon")],
+            url: "https://example.com",
+            content: "Page content here",
+            truncated: false,
+            fullContentLength: 100
+        )
+        let expectedPrompt = AIChatNativePrompt.queryPrompt("Summarize this", autoSubmit: true, pageContext: expectedPageContext)
+
+        #expect(prompt == expectedPrompt)
+    }
+
     // MARK: - Helpers
 
     private func decodePrompt(from json: String) throws -> AIChatNativePrompt {

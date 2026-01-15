@@ -70,6 +70,7 @@ private struct Handlers {
 
 enum UseSubscriptionError: Error {
     case purchaseFailed,
+         purchasePendingTransaction,
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
@@ -139,29 +140,31 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func cleanup()
 }
 
-final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
+final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
-    private let subscriptionManager: SubscriptionManagerV2
-    private let appStorePurchaseFlow: AppStorePurchaseFlowV2
-    private let appStoreRestoreFlow: AppStoreRestoreFlowV2
+    private let subscriptionManager: SubscriptionManager
+    private let appStorePurchaseFlow: AppStorePurchaseFlow
+    private let appStoreRestoreFlow: AppStoreRestoreFlow
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let subscriptionDataReporter: SubscriptionDataReporting?
     private let internalUserDecider: InternalUserDecider
     private let wideEvent: WideEventManaging
     private let tierEventReporter: SubscriptionTierEventReporting
+    private let pendingTransactionHandler: PendingTransactionHandling
     private var wideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
 
-    init(subscriptionManager: SubscriptionManagerV2,
+    init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionAttributionOrigin: String?,
-         appStorePurchaseFlow: AppStorePurchaseFlowV2,
-         appStoreRestoreFlow: AppStoreRestoreFlowV2,
+         appStorePurchaseFlow: AppStorePurchaseFlow,
+         appStoreRestoreFlow: AppStoreRestoreFlow,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
          internalUserDecider: InternalUserDecider,
          wideEvent: WideEventManaging,
-         tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter()) {
+         tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter(),
+         pendingTransactionHandler: PendingTransactionHandling) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -171,6 +174,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         self.internalUserDecider = internalUserDecider
         self.wideEvent = wideEvent
         self.tierEventReporter = tierEventReporter
+        self.pendingTransactionHandler = pendingTransactionHandler
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -340,7 +344,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         } else {
             Logger.subscription.error("Failed to obtain subscription options")
             setTransactionError(.failedToGetSubscriptionOptions)
-            return SubscriptionOptionsV2.empty
+            return SubscriptionOptions.empty
         }
     }
 
@@ -475,6 +479,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                     wideEventData.markAsFailed(at: .accountPayment, error: internalError ?? error)
                     wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
                 }
+            case .transactionPendingAuthentication:
+                pendingTransactionHandler.markPurchasePending()
+                setTransactionError(.purchasePendingTransaction)
+                
+                if let wideEventData {
+                    wideEventData.markAsFailed(at: .accountPayment, error: error)
+                    wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
+                }
             default:
                 setTransactionError(.purchaseFailed)
 
@@ -585,6 +597,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             switch error {
             case .cancelledByUser:
                 setTransactionError(.cancelledByUser)
+            case .transactionPendingAuthentication:
+                pendingTransactionHandler.markPurchasePending()
+                setTransactionError(.purchasePendingTransaction)
             case .purchaseFailed:
                 setTransactionError(.purchaseFailed)
             case .internalError:
@@ -755,7 +770,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     // MARK: Utility Methods
 
-    func mapAppStoreRestoreErrorToTransactionError(_ error: AppStoreRestoreFlowErrorV2) -> UseSubscriptionError {
+    func mapAppStoreRestoreErrorToTransactionError(_ error: AppStoreRestoreFlowError) -> UseSubscriptionError {
         Logger.subscription.error("\(#function): \(error.localizedDescription)")
         switch error {
         case .subscriptionExpired:
@@ -780,7 +795,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
 // MARK: - Wide Pixel
 
-private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
+private extension DefaultSubscriptionPagesUseSubscriptionFeature {
     
     func markEmailAddressRestoreWideEventFlowAsSuccess() {
         guard let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }

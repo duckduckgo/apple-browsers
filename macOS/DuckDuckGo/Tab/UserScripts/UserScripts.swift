@@ -84,7 +84,7 @@ final class UserScripts: UserScriptsProvider {
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
-            subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: NSApp.delegateTyped.subscriptionManager,
             featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
@@ -218,21 +218,23 @@ final class UserScripts: UserScriptsProvider {
         }
 
         var delegate: Subfeature
-        guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
-            assertionFailure("subscriptionManager is not available")
-            return
-        }
-        let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
-        delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
-                                                             stripePurchaseFlow: stripePurchaseFlow,
-                                                             uiHandler: Application.appDelegate.subscriptionUIHandler,
-                                                             aiChatURL: AIChatRemoteSettings().aiChatURL,
-                                                             wideEvent: WideEvent())
+        let subscriptionManager = Application.appDelegate.subscriptionManager
+        let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+        delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                           stripePurchaseFlow: stripePurchaseFlow,
+                                                           uiHandler: Application.appDelegate.subscriptionUIHandler,
+                                                           aiChatURL: AIChatRemoteSettings().aiChatURL,
+                                                           wideEvent: WideEvent(),
+                                                           pendingTransactionHandler: pendingTransactionHandler)
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
 
-        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionManager)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }

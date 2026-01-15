@@ -498,10 +498,11 @@ class TabViewController: UIViewController {
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
-            settings: aiChatSettings,
+            aiChatSettings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            featureDiscovery: featureDiscovery
+            featureDiscovery: featureDiscovery,
+            featureFlagger: featureFlagger
         )
         coordinator.delegate = self
         return coordinator
@@ -567,12 +568,14 @@ class TabViewController: UIViewController {
         self.daxDialogsManager = daxDialogsManager
         self.sharedSecureVault = sharedSecureVault
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
-            return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.isSubscriptionPurchaseEligible
+            return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
         
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
-        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
+        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
+                                                         featureDiscovery: featureDiscovery,
+                                                         featureFlagger: featureFlagger)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
 
@@ -2145,11 +2148,15 @@ extension TabViewController: WKNavigationDelegate {
                     if !url.isDuckAIURL {
                         NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
                     }
-                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
-                                                                        application: UIApplication.shared)
-                    StatisticsLoader.shared.refreshSearchRetentionAtb {
-                        DispatchQueue.main.async {
-                            backgroundAssertion.release()
+
+                    let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL && featureFlagger.isFeatureOn(.aiChatAtb)
+                    if !shouldSkipSearchAtbForDuckAI {
+                        let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
+                                                                            application: UIApplication.shared)
+                        StatisticsLoader.shared.refreshSearchRetentionAtb {
+                            DispatchQueue.main.async {
+                                backgroundAssertion.release()
+                            }
                         }
                     }
                     subscriptionDataReporter.saveSearchCount()

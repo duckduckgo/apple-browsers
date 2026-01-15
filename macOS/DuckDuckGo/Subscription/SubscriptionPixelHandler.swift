@@ -56,6 +56,10 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
             PixelKit.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
         case .invalidRefreshTokenRecovered:
             PixelKit.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
+        case .purchaseSuccessAfterPendingTransaction:
+            PixelKit.fire(SubscriptionPixel.subscriptionPurchaseSuccessAfterPendingTransaction(source), frequency: .dailyAndCount)
+        case .pendingTransactionApproved:
+            PixelKit.fire(SubscriptionPixel.subscriptionPendingTransactionApproved(source), frequency: .dailyAndCount)
         }
     }
 

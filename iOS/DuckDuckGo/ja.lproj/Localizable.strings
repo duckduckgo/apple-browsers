@@ -3634,6 +3634,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "同期を設定";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "クレジットカードを同期・バックアップ";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "データを同期・バックアップ";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "いいえ、結構です";
 

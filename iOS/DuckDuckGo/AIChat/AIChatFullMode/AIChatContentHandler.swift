@@ -19,6 +19,8 @@
 
 import AIChat
 import BrowserServicesKit
+import Core
+import PrivacyConfig
 import Foundation
 import WebKit
 
@@ -28,10 +30,16 @@ protocol AIChatUserScriptProviding: AnyObject {
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
-    func submitPrompt(_ prompt: String)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
     func submitStartChatAction()
     func submitOpenSettingsAction()
     func submitToggleSidebarAction()
+}
+
+extension AIChatUserScriptProviding {
+    func submitPrompt(_ prompt: String) {
+        submitPrompt(prompt, pageContext: nil)
+    }
 }
 
 extension AIChatUserScript: AIChatUserScriptProviding { }
@@ -65,8 +73,8 @@ protocol AIChatContentHandling {
     /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
     func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL
     
-    /// Submits a prompt to the AI Chat.
-    func submitPrompt(_ prompt: String)
+    /// Submits a prompt to the AI Chat with optional page context.
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction()
@@ -81,6 +89,12 @@ protocol AIChatContentHandling {
     func fireChatOpenPixelAndSetWasUsed()
 }
 
+extension AIChatContentHandling {
+    func submitPrompt(_ prompt: String) {
+        submitPrompt(prompt, pageContext: nil)
+    }
+}
+
 final class AIChatContentHandler: AIChatContentHandling {
     
     // MARK: - Dependencies
@@ -88,6 +102,8 @@ final class AIChatContentHandler: AIChatContentHandling {
     private var payloadHandler: AIChatPayloadHandler
     private let pixelMetricHandler: (any AIChatPixelMetricHandling)?
     private let featureDiscovery: FeatureDiscovery
+    private let featureFlagger: FeatureFlagger
+    private lazy var statisticsLoader: StatisticsLoader = .shared
     
     private var userScript: AIChatUserScriptProviding?
     
@@ -98,11 +114,13 @@ final class AIChatContentHandler: AIChatContentHandling {
     init(aiChatSettings: AIChatSettingsProvider,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
          pixelMetricHandler: any AIChatPixelMetricHandling = AIChatPixelMetricHandler(),
-         featureDiscovery: FeatureDiscovery) {
+         featureDiscovery: FeatureDiscovery,
+         featureFlagger: FeatureFlagger) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
         self.featureDiscovery = featureDiscovery
+        self.featureFlagger = featureFlagger
     }
 
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
@@ -148,8 +166,8 @@ final class AIChatContentHandler: AIChatContentHandling {
         return components.url ?? aiChatSettings.aiChatURL
     }
     
-    func submitPrompt(_ prompt: String) {
-        userScript?.submitPrompt(prompt)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+        userScript?.submitPrompt(prompt, pageContext: pageContext)
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
@@ -195,6 +213,18 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             delegate?.aiChatContentHandlerDidReceivePromptSubmission(self)
+
+            if featureFlagger.isFeatureOn(.aiChatAtb) {
+                DispatchQueue.main.async {
+                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
+                                                                        application: UIApplication.shared)
+                    self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
+                        DispatchQueue.main.async {
+                            backgroundAssertion.release()
+                        }
+                    }
+                }
+            }
         }
 
         pixelMetricHandler?.firePixelWithMetric(metric)

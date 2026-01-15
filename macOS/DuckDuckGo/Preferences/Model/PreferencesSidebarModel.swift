@@ -58,7 +58,7 @@ final class PreferencesSidebarModel: ObservableObject {
     }
 
     let vpnTunnelIPCClient: VPNControllerXPCClient
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManager
     let settingsIconProvider: SettingsIconsProviding
     let defaultBrowserPreferences: DefaultBrowserPreferences
     let downloadsPreferences: DownloadsPreferences
@@ -104,7 +104,7 @@ final class PreferencesSidebarModel: ObservableObject {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         syncService: DDGSyncing,
         vpnTunnelIPCClient: VPNControllerXPCClient = .shared,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         notificationCenter: NotificationCenter = .default,
         featureFlagger: FeatureFlagger,
         settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.themeManager.theme.iconsProvider.settingsIconProvider,
@@ -167,7 +167,7 @@ final class PreferencesSidebarModel: ObservableObject {
         includeDuckPlayer: Bool,
         includeAIChat: Bool,
         userDefaults: UserDefaults = .netP,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         defaultBrowserPreferences: DefaultBrowserPreferences,
         downloadsPreferences: DownloadsPreferences,
         searchPreferences: SearchPreferences,

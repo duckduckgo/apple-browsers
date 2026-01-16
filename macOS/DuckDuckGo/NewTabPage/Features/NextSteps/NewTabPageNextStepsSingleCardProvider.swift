@@ -19,6 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Combine
+import DDGSync
 import Foundation
 import NewTabPage
 
@@ -39,6 +40,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let emailManager: EmailManager
     private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
+    private let syncService: DDGSyncing?
 
     enum Constants {
         /// Maximum times a card can be dismissed before it is permanently hidden.
@@ -93,7 +95,8 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          dataImportProvider: DataImportStatusProviding,
          emailManager: EmailManager = EmailManager(),
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
-         subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging) {
+         subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
+         syncService: DDGSyncing?) {
         self.cardActionHandler = cardActionHandler
         self.pixelHandler = pixelHandler
         self.persistor = persistor
@@ -106,6 +109,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.emailManager = emailManager
         self.duckPlayerPreferences = duckPlayerPreferences
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
+        self.syncService = syncService
 
         refreshCardList()
         observeSubscriptionCardVisibilityChanges()
@@ -180,6 +184,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
             return !emailManager.isSignedIn
         case .subscription:
             return subscriptionCardVisibilityManager.shouldShowSubscriptionCard
+        case .personalizeBrowser:
+            return !appearancePreferences.didOpenCustomizationSettings
+        case .sync:
+            return syncService?.featureFlags.contains(.all) == true && syncService?.authState == .inactive
         }
     }
 
@@ -198,6 +206,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
             dismissedLegacySetting = !legacyPersistor.shouldShowImportSetting
         case .subscription:
             dismissedLegacySetting = !legacySubscriptionCardPersistor.shouldShowSubscriptionSetting
+        default:
+            dismissedLegacySetting = false // No legacy setting for other (new) cards
         }
 
         // Checks the card's legacy setting first, to respect if the card was dismissed in the previous Next Steps implementation.

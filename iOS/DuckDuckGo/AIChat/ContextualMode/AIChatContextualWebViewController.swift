@@ -20,6 +20,7 @@
 import AIChat
 import BrowserServicesKit
 import Combine
+import Common
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -53,6 +54,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     private var pendingPrompt: String?
+    private var pendingPageContext: AIChatPageContextData?
     private var userContentController: UserContentController?
     private var isPageReady = false
     private var isContentHandlerReady = false
@@ -118,11 +120,12 @@ final class AIChatContextualWebViewController: UIViewController {
     // MARK: - Public Methods
 
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
-    func submitPrompt(_ prompt: String) {
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         if isPageReady && isContentHandlerReady {
-            aiChatContentHandler.submitPrompt(prompt)
+            aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
         } else {
             pendingPrompt = prompt
+            pendingPageContext = pageContext
         }
     }
 
@@ -131,6 +134,8 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func reload() {
+        isPageReady = false
+        isContentHandlerReady = false
         webView.reload()
     }
 
@@ -172,7 +177,8 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func loadAIChat() {
         loadingView.startAnimating()
-        let request = URLRequest(url: aiChatSettings.aiChatURL)
+        let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+        let request = URLRequest(url: contextualURL)
         webView.load(request)
     }
 
@@ -182,8 +188,10 @@ final class AIChatContextualWebViewController: UIViewController {
               isPageReady,
               isContentHandlerReady else { return }
 
+        let pageContext = pendingPageContext
         pendingPrompt = nil
-        aiChatContentHandler.submitPrompt(prompt)
+        pendingPageContext = nil
+        aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
     }
 
     // MARK: - URL Observation
@@ -219,6 +227,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         }
 
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
+
         isContentHandlerReady = true
         submitPendingPromptIfReady()
     }

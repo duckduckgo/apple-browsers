@@ -84,7 +84,7 @@ public struct UserText {
     static let connectWithServerSheetTitle = NSLocalizedString("connect.with.server.sheet.title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Connect With Server Sheet - Title")
     static let connectWithServerSheetDescriptionPart1 = NSLocalizedString("connect.with.server.sheet.description.part1", bundle: Bundle.module, value: "This creates an encrypted backup of your bookmarks and autofill data on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Connect With Server Sheet - Description Part 1")
     static let connectWithServerSheetDescriptionPart2 = NSLocalizedString("connect.with.server.sheet.description.part2", bundle: Bundle.module, value: "The encryption key is only stored on your device, DuckDuckGo cannot access it.", comment: "Connect With Server Sheet - Description Part 2")
-    static let connectWithServerSheetButton = NSLocalizedString("connect.with.server.sheet.button", bundle: Bundle.module, value: "Turn On Sync & Back Up", comment: "Connect With Server Sheet - Button")
+    static let connectWithServerSheetButton = NSLocalizedString("connect.with.server.sheet.button", bundle: Bundle.module, value: "Turn On Sync & Backup", comment: "Connect With Server Sheet - Button")
     static let connectWithServerSheetFooter = NSLocalizedString("connect.with.server.sheet.footer", bundle: Bundle.module, value: "You can sync with your other devices later.", comment: "Connect With Server Sheet - Footer")
 
     // Preparing To Sync Sheet

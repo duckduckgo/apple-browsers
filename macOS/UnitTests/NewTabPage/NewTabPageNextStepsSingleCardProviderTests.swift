@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import DDGSync
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
@@ -43,6 +44,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     private var emailManager: EmailManager!
     private var duckPlayerPreferences: DuckPlayerPreferencesPersistorMock!
     private var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
+    private var syncService: MockDDGSyncing!
 
     @MainActor
     override func setUp() async throws {
@@ -66,6 +68,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         emailManager = EmailManager(storage: MockEmailStorage())
         duckPlayerPreferences = DuckPlayerPreferencesPersistorMock()
         subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
+        syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
 
         keyValueStore = try MockKeyValueFileStore()
         legacyKeyValueStore = MockKeyValueStore()
@@ -82,7 +85,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             dataImportProvider: dataImportProvider,
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            syncService: syncService
         )
     }
 
@@ -102,6 +106,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         emailManager = nil
         duckPlayerPreferences = nil
         subscriptionCardVisibilityManager = nil
+        syncService = nil
         super.tearDown()
     }
 
@@ -116,16 +121,19 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     func testWhenInitializedWithNoVisibleCardsThenContinueSetUpCardsClosedIsSet() {
         // Set up all conditions to hide all cards
+        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: true)
         let testProvider = createProvider(
             defaultBrowserIsDefault: true,
             dataImportDidImport: true,
             dockStatus: true,
             duckPlayerModeBool: true,
             emailManagerSignedIn: true,
-            subscriptionCardShouldShow: false
+            subscriptionCardShouldShow: false,
+            syncConnected: true,
+            appearancePreferences: testAppearancePreferences
         )
 
-        XCTAssertTrue(appearancePreferences.continueSetUpCardsClosed)
+        XCTAssertTrue(testAppearancePreferences.continueSetUpCardsClosed)
         XCTAssertTrue(testProvider.cards.isEmpty)
     }
 
@@ -387,6 +395,34 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertFalse(cards.contains(.subscription))
     }
 
+    // Personalize Browser Card
+    func testWhenPersonalizeBrowserCardShouldShowThenPersonalizeBrowserCardIsVisible() {
+        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: false)
+        let testProvider = createProvider(appearancePreferences: testAppearancePreferences)
+
+        XCTAssertTrue(testProvider.cards.contains(.personalizeBrowser))
+    }
+
+    func testWhenPersonalizeBrowserCardShouldNotShowThenPersonalizeBrowserCardIsNotVisible() {
+        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: true)
+        let testProvider = createProvider(appearancePreferences: testAppearancePreferences)
+
+        XCTAssertFalse(testProvider.cards.contains(.personalizeBrowser))
+    }
+
+    // Sync Card
+    func testWhenSyncCardShouldShowThenSyncCardIsVisible() {
+        let testProvider = createProvider(syncConnected: false)
+
+        XCTAssertTrue(testProvider.cards.contains(.sync))
+    }
+
+    func testWhenSyncCardShouldNotShowThenSyncCardIsNotVisible() {
+        let testProvider = createProvider(syncConnected: true)
+
+        XCTAssertFalse(testProvider.cards.contains(.sync))
+    }
+
     // MARK: - Permanent Dismissal Tests
 
     func testWhenCardDismissedMaxTimesThenCardIsPermanentlyDismissed() {
@@ -594,14 +630,17 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     func testWhenAllCardsAreNotVisibleThenCardsListIsEmpty() {
-        appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: true)
+        testAppearancePreferences.isContinueSetUpCardsViewOutdated = false
         let testProvider = createProvider(
             defaultBrowserIsDefault: true,
             dataImportDidImport: true,
             dockStatus: true,
             duckPlayerModeBool: true,
             emailManagerSignedIn: true,
-            subscriptionCardShouldShow: false
+            subscriptionCardShouldShow: false,
+            syncConnected: true,
+            appearancePreferences: testAppearancePreferences
         )
 
         let cards = testProvider.cards
@@ -618,6 +657,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         youtubeOverlayAnyButtonPressed: Bool? = nil,
         emailManagerSignedIn: Bool? = nil,
         subscriptionCardShouldShow: Bool? = nil,
+        syncConnected: Bool? = nil,
         appearancePreferences: AppearancePreferences? = nil,
         persistor: MockNewTabPageNextStepsCardsPersistor? = nil,
         legacyPersistor: MockHomePageContinueSetUpModelPersisting? = nil,
@@ -682,6 +722,14 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             return subscriptionCardVisibilityManager!
         }()
 
+        let testSyncService: MockDDGSyncing = {
+            if let syncConnected {
+                let authState: SyncAuthState = syncConnected ? .active : .inactive
+                return MockDDGSyncing(authState: authState, isSyncInProgress: false)
+            }
+            return syncService!
+        }()
+
         let testAppearancePreferences = appearancePreferences ?? self.appearancePreferences!
         let testPersistor = persistor ?? self.persistor!
         let testLegacyPersistor = legacyPersistor ?? self.legacyPersistor!
@@ -699,7 +747,17 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             dataImportProvider: testDataImportProvider,
             emailManager: testEmailManager,
             duckPlayerPreferences: testDuckPlayerPreferences,
-            subscriptionCardVisibilityManager: testSubscriptionCardVisibilityManager
+            subscriptionCardVisibilityManager: testSubscriptionCardVisibilityManager,
+            syncService: testSyncService
+        )
+    }
+
+    private func createAppearancePrefs(didOpenCustomizationSettings: Bool = false) -> AppearancePreferences {
+        let persistor = MockAppearancePreferencesPersistor(didOpenCustomizationSettings: didOpenCustomizationSettings)
+        return AppearancePreferences(
+            persistor: persistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
     }
 }

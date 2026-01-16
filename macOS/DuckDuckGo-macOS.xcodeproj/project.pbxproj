@@ -1059,6 +1059,10 @@
 		372042D52DF9B0AD00CE099A /* InternalFeedbackFormTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372042D32DF9B0A400CE099A /* InternalFeedbackFormTabExtension.swift */; };
 		372042E12DF9C04400CE099A /* internal-feedback-autofiller.js in Resources */ = {isa = PBXBuildFile; fileRef = 372042DF2DF9C04400CE099A /* internal-feedback-autofiller.js */; };
 		372042E22DF9C04400CE099A /* internal-feedback-autofiller.js in Resources */ = {isa = PBXBuildFile; fileRef = 372042DF2DF9C04400CE099A /* internal-feedback-autofiller.js */; };
+		3727A5A72F17F57A002E10E1 /* MemoryPressureReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3727A5A62F17F57A002E10E1 /* MemoryPressureReporter.swift */; };
+		3727A5A82F17F57A002E10E1 /* MemoryPressureReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3727A5A62F17F57A002E10E1 /* MemoryPressureReporter.swift */; };
+		3727A5AA2F180136002E10E1 /* MemoryPressureReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3727A5A92F180136002E10E1 /* MemoryPressureReporterTests.swift */; };
+		3727A5AB2F180136002E10E1 /* MemoryPressureReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3727A5A92F180136002E10E1 /* MemoryPressureReporterTests.swift */; };
 		372A0FEC2B2379310033BF7F /* SyncMetricsEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372A0FEB2B2379310033BF7F /* SyncMetricsEventsHandler.swift */; };
 		372A0FED2B2379310033BF7F /* SyncMetricsEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372A0FEB2B2379310033BF7F /* SyncMetricsEventsHandler.swift */; };
 		372BC2A12A4AFA47001D8FD5 /* SyncCredentialsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372BC2A02A4AFA47001D8FD5 /* SyncCredentialsAdapter.swift */; };
@@ -4645,6 +4649,8 @@
 		372042D32DF9B0A400CE099A /* InternalFeedbackFormTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalFeedbackFormTabExtension.swift; sourceTree = "<group>"; };
 		372042DF2DF9C04400CE099A /* internal-feedback-autofiller.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "internal-feedback-autofiller.js"; sourceTree = "<group>"; };
 		3720B7F82D00DA4500D20F23 /* WebKitExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = WebKitExtensions; sourceTree = "<group>"; };
+		3727A5A62F17F57A002E10E1 /* MemoryPressureReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryPressureReporter.swift; sourceTree = "<group>"; };
+		3727A5A92F180136002E10E1 /* MemoryPressureReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryPressureReporterTests.swift; sourceTree = "<group>"; };
 		372A0FEB2B2379310033BF7F /* SyncMetricsEventsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMetricsEventsHandler.swift; sourceTree = "<group>"; };
 		372BC2A02A4AFA47001D8FD5 /* SyncCredentialsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCredentialsAdapter.swift; sourceTree = "<group>"; };
 		372D15EB2D00FA1400A11576 /* AppearancePreferences+NewTabPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppearancePreferences+NewTabPage.swift"; sourceTree = "<group>"; };
@@ -12057,6 +12063,7 @@
 		ED7478162E845958008628A1 /* AppHealth */ = {
 			isa = PBXGroup;
 			children = (
+				3727A5A62F17F57A002E10E1 /* MemoryPressureReporter.swift */,
 				37E4778F2EF006E1006369D6 /* MemoryUsageMonitor.swift */,
 				ED4470142EB2676A003DC918 /* HangReportingFeatureMonitor.swift */,
 				EDCFFF812E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift */,
@@ -12070,6 +12077,7 @@
 		EDF339152E8BFD110062E7C3 /* AppHealth */ = {
 			isa = PBXGroup;
 			children = (
+				3727A5A92F180136002E10E1 /* MemoryPressureReporterTests.swift */,
 				ED4B8BD82E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift */,
 				EDF339132E8BFD110062E7C3 /* MockWatchdogDiagnosticProvider.swift */,
 				EDF339142E8BFD110062E7C3 /* WatchdogEventMapperTests.swift */,
@@ -15015,6 +15023,7 @@
 				3706FC9E293F65D500E42796 /* PreferencesAppearanceView.swift in Sources */,
 				CCAED3B42EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDecider+ActiveUser.swift in Sources */,
 				CCAED3B52EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDecider+InactiveUser.swift in Sources */,
+				3727A5A82F17F57A002E10E1 /* MemoryPressureReporter.swift in Sources */,
 				CCAED3B62EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDeciding.swift in Sources */,
 				3706FC9F293F65D500E42796 /* NSMenuItemExtension.swift in Sources */,
 				1E54E8E62EB376B000EB24CD /* AutoconsentTabExtension.swift in Sources */,
@@ -15509,6 +15518,7 @@
 				3706FE86293F661700E42796 /* FileDownloadManagerTests.swift in Sources */,
 				BDA7648E2BC4E4EF00D0400C /* DefaultVPNLocationFormatterTests.swift in Sources */,
 				1E2A88812E2E532600C29AC0 /* AIChatSidebarPresenterTests.swift in Sources */,
+				3727A5AB2F180136002E10E1 /* MemoryPressureReporterTests.swift in Sources */,
 				56D5B3982DD3765D00407440 /* ScriptSourceProviderTests.swift in Sources */,
 				373B2F862C387B840013A94B /* ActiveRemoteMessageModelTests.swift in Sources */,
 			);
@@ -16691,6 +16701,7 @@
 				B688B4DA273E6D3B0087BEAF /* MainView.swift in Sources */,
 				B61E2CD5294346C000773D8A /* Tab+Navigation.swift in Sources */,
 				4B65143E263924B5005B46EB /* EmailUrlExtensions.swift in Sources */,
+				3727A5A72F17F57A002E10E1 /* MemoryPressureReporter.swift in Sources */,
 				EE650D5F2EB112CA00B3D1D7 /* NewProfilePickerView.swift in Sources */,
 				1DBFD9132D6C7387003F8D98 /* PinnedTabsManagerProvider.swift in Sources */,
 				85CC1D7D26A05F250062F04E /* PasswordManagementItemModel.swift in Sources */,
@@ -17135,6 +17146,7 @@
 				9F97B31F2DE8311000653C0D /* DefaultBrowserAndDockPromptFeatureFlaggerTests.swift in Sources */,
 				4B9DB05A2A983B55000927DB /* MockWaitlistRequest.swift in Sources */,
 				BB9851922E3102ED00FED56A /* NetworkProtectionNavBarButtonModelTests.swift in Sources */,
+				3727A5AA2F180136002E10E1 /* MemoryPressureReporterTests.swift in Sources */,
 				1D9EB31B2D43C2F7004B7270 /* WebExtensionLoaderMock.swift in Sources */,
 				4B6D15722EA09ADF003ADCEA /* WideEventServiceTests.swift in Sources */,
 				37D2377C287EBDA300BCE03B /* TabIndexTests.swift in Sources */,

@@ -70,6 +70,7 @@ private struct Handlers {
 
 enum UseSubscriptionError: Error {
     case purchaseFailed,
+         purchasePendingTransaction,
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
@@ -150,6 +151,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let internalUserDecider: InternalUserDecider
     private let wideEvent: WideEventManaging
     private let tierEventReporter: SubscriptionTierEventReporting
+    private let pendingTransactionHandler: PendingTransactionHandling
     private var wideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
 
@@ -161,7 +163,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
          internalUserDecider: InternalUserDecider,
          wideEvent: WideEventManaging,
-         tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter()) {
+         tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter(),
+         pendingTransactionHandler: PendingTransactionHandling) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -171,6 +174,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.internalUserDecider = internalUserDecider
         self.wideEvent = wideEvent
         self.tierEventReporter = tierEventReporter
+        self.pendingTransactionHandler = pendingTransactionHandler
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -475,6 +479,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                     wideEventData.markAsFailed(at: .accountPayment, error: internalError ?? error)
                     wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
                 }
+            case .transactionPendingAuthentication:
+                pendingTransactionHandler.markPurchasePending()
+                setTransactionError(.purchasePendingTransaction)
+                
+                if let wideEventData {
+                    wideEventData.markAsFailed(at: .accountPayment, error: error)
+                    wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
+                }
             default:
                 setTransactionError(.purchaseFailed)
 
@@ -585,6 +597,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             switch error {
             case .cancelledByUser:
                 setTransactionError(.cancelledByUser)
+            case .transactionPendingAuthentication:
+                pendingTransactionHandler.markPurchasePending()
+                setTransactionError(.purchasePendingTransaction)
             case .purchaseFailed:
                 setTransactionError(.purchaseFailed)
             case .internalError:

@@ -77,16 +77,17 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockEventReporter = MockSubscriptionEventReporter()
 
         sut = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                        subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
-                                                        stripePurchaseFlow: mockStripePurchaseFlowV2,
-                                                        uiHandler: mockUIHandler,
-                                                        subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
-                                                        freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
-                                                        notificationCenter: mockNotificationCenter,
-                                                        dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-                                                        aiChatURL: URL.duckDuckGo,
-                                                        wideEvent: mockWideEvent,
-                                                        subscriptionEventReporter: mockEventReporter)
+                                                      subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
+                                                      stripePurchaseFlow: mockStripePurchaseFlowV2,
+                                                      uiHandler: mockUIHandler,
+                                                      subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+                                                      freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
+                                                      notificationCenter: mockNotificationCenter,
+                                                      dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+                                                      aiChatURL: URL.duckDuckGo,
+                                                      wideEvent: mockWideEvent,
+                                                      subscriptionEventReporter: mockEventReporter,
+                                                      pendingTransactionHandler: MockPendingTransactionHandler())
         sut.with(broker: broker)
     }
 
@@ -581,7 +582,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             notificationCenter: mockNotificationCenter,
             dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
             aiChatURL: URL.duckDuckGo,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
         stripeSut.with(broker: broker)
 
@@ -642,7 +644,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             notificationCenter: mockNotificationCenter,
             dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
             aiChatURL: URL.duckDuckGo,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
         stripeSut.with(broker: broker)
 
@@ -1005,4 +1008,22 @@ final class MockURLWebView: WKWebView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override var url: URL? { mockedURL }
+}
+
+final class MockPendingTransactionHandler: PendingTransactionHandling {
+    var markPurchasePendingCalled = false
+    var handleSubscriptionActivatedCalled = false
+    var handlePendingTransactionApprovedCalled = false
+
+    func markPurchasePending() {
+        markPurchasePendingCalled = true
+    }
+
+    func handleSubscriptionActivated() {
+        handleSubscriptionActivatedCalled = true
+    }
+
+    func handlePendingTransactionApproved() {
+        handlePendingTransactionApprovedCalled = true
+    }
 }

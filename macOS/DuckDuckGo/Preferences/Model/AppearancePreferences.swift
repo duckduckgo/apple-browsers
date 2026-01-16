@@ -47,6 +47,7 @@ protocol AppearancePreferencesPersistor {
     var homePageCustomBackground: String? { get set }
     var centerAlignedBookmarksBar: Bool { get set }
     var showTabsAndBookmarksBarOnFullScreen: Bool { get set }
+    var didOpenCustomizationSettings: Bool { get set }
 }
 
 struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersistor {
@@ -54,6 +55,12 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
     enum Key: String {
         case newTabPageIsOmnibarVisible = "new-tab-page.omnibar.is-visible"
         case newTabPageIsProtectionsReportVisible = "new-tab-page.protections-report.is-visible"
+        case newTabPageDidOpenCustomizationSettings = "new-tab-page.did-open-customization-settings"
+    }
+
+    var didOpenCustomizationSettings: Bool {
+        get { (try? keyValueStore.object(forKey: Key.newTabPageDidOpenCustomizationSettings.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.newTabPageDidOpenCustomizationSettings.rawValue) }
     }
 
     var isOmnibarVisible: Bool {
@@ -165,10 +172,12 @@ final class DefaultNewTabPageNavigator: NewTabPageNavigator {
                 if Application.appDelegate.featureFlagger.isFeatureOn(.newTabPagePerTab) {
                     if let webView = window.mainViewController.browserTabViewController.webView {
                         Application.appDelegate.newTabPageCustomizationModel.customizerOpener.openSettings(for: webView)
+                        NSApp.delegateTyped.appearancePreferences.markCustomizationSettingsOpened()
                     }
                 } else {
                     let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
                     NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
+                    NSApp.delegateTyped.appearancePreferences.markCustomizationSettingsOpened()
                 }
             }
         }
@@ -422,6 +431,14 @@ final class AppearancePreferences: ObservableObject {
 
     func updateUserInterfaceStyle() {
         NSApp.appearance = themeAppearance.appearance
+    }
+
+    var didOpenCustomizationSettings: Bool {
+        persistor.didOpenCustomizationSettings
+    }
+
+    func markCustomizationSettingsOpened() {
+        persistor.didOpenCustomizationSettings = true
     }
 
     func openNewTabPageBackgroundCustomizationSettings() {

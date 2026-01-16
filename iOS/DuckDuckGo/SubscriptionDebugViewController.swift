@@ -627,16 +627,22 @@ final class SubscriptionDebugViewController: UITableViewController {
         // Create the subscription selection handler that routes to the appropriate feature method
         let handler: SubscriptionSelectionHandler = { productId, changeType in
             let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp))
             // Create the flows and feature
             let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(
                 subscriptionManager: subscriptionManager,
-                storePurchaseManager: subscriptionManager.storePurchaseManager()
+                storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                pendingTransactionHandler: pendingTransactionHandler
             )
             let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(
                 subscriptionManager: subscriptionManager,
                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
                 appStoreRestoreFlow: appStoreRestoreFlow,
-                wideEvent: AppDependencyProvider.shared.wideEvent
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                pendingTransactionHandler: pendingTransactionHandler
             )
 
             let subscriptionFeatureAvailability = BrowserServicesKit.DefaultSubscriptionFeatureAvailability(
@@ -652,7 +658,8 @@ final class SubscriptionDebugViewController: UITableViewController {
                 appStorePurchaseFlow: appStorePurchaseFlow,
                 appStoreRestoreFlow: appStoreRestoreFlow,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                wideEvent: AppDependencyProvider.shared.wideEvent
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                pendingTransactionHandler: pendingTransactionHandler
             )
 
             // Create params matching what the web would send

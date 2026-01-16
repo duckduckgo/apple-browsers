@@ -3571,6 +3571,12 @@ Take back control of your personal information with the browser designed for dat
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Set Up Sync";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Sync & Back Up Your Credit Cards";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Sync & Back Up Your Data";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "No Thanks";
 

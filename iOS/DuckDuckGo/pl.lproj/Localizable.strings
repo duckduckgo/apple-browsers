@@ -3727,6 +3727,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Skonfiguruj synchronizację";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synchronizuj i twórz kopie zapasowe kart kredytowych";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synchronizuj dane i twórz ich kopie zapasowe";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nie, dziękuję";
 

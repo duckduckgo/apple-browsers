@@ -3727,6 +3727,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Senkronizasyonu Ayarla";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Kredi Kartlarınızı Senkronize Edin ve Yedekleyin";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Verilerinizi Senkronize Edin ve Yedekleyin";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Hayır Teşekkürler";
 

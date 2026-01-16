@@ -54,6 +54,10 @@ final class AIChatContextualSheetViewModel {
     /// The page context to attach (when available from the parent tab)
     var pageContext: PageContext?
 
+    /// Full page context data for submission to duck.ai
+    /// Contains the complete content extracted from the page
+    var fullPageContext: AIChatPageContextData?
+
     // MARK: - Initialization
 
     init(settings: AIChatSettingsProvider, hasExistingChat: Bool = false) {
@@ -125,6 +129,12 @@ final class AIChatContextualSheetViewModel {
     func setInitialContextualChatURL(_ url: URL?) {
         contextualChatURL = url
         updateExpandButtonState()
+    }
+
+    /// Clears the page context (called when user removes the context chip)
+    func clearPageContext() {
+        pageContext = nil
+        fullPageContext = nil
     }
 
     // MARK: - Private Methods

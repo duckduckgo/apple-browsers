@@ -3688,6 +3688,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Ställ in synk";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synkronisera och säkerhetskopiera dina kreditkort";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synkronisera och säkerhetskopiera dina data";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nej tack";
 

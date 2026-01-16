@@ -169,6 +169,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
+
+    /// Memory Pressure Reporter
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
+    case memoryPressureReporting
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -553,6 +557,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case dataImportWideEventMeasurement
     case newDataImportExperience
+    case dataImportSummarySyncPromotion
 }
 
 public enum SERPSubfeature: String, PrivacySubfeature {

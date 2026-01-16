@@ -268,6 +268,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212783502979551?focus=true
+    case memoryPressureReporting
+
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
     case aiChatSync
 
@@ -315,7 +318,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
                 .themes,
-                .wideEventPostEndpoint:
+                .wideEventPostEndpoint,
+                .memoryPressureReporting,
+                .themes:
             true
         default:
             false
@@ -402,6 +407,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .warnBeforeQuit,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
+                .memoryPressureReporting,
                 .aiChatSync,
                 .heuristicAction,
                 .nextStepsSingleCardIteration,
@@ -575,6 +581,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
             return .disabled
+        case .memoryPressureReporting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryPressureReporting))
         case .aiChatSync:
             return .disabled
         case .heuristicAction:

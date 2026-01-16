@@ -21,6 +21,7 @@ import AppKit
 import AutoconsentStats
 import BrowserServicesKit
 import Common
+import DDGSync
 import History
 import NewTabPage
 import Persistence
@@ -61,7 +62,8 @@ extension NewTabPageActionsManager {
         homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting,
         nextStepsCardsPersistor: NewTabPageNextStepsCardsPersisting,
         subscriptionCardPersistor: HomePageSubscriptionCardPersisting,
-        duckPlayerPreferences: DuckPlayerPreferencesPersistor
+        duckPlayerPreferences: DuckPlayerPreferencesPersistor,
+        syncService: DDGSyncing?
     ) {
         self.init(
             appearancePreferences: appearancePreferences,
@@ -90,7 +92,8 @@ extension NewTabPageActionsManager {
             homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor,
             nextStepsCardsPersistor: nextStepsCardsPersistor,
             subscriptionCardPersistor: subscriptionCardPersistor,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            syncService: syncService
         )
     }
 
@@ -122,7 +125,8 @@ extension NewTabPageActionsManager {
         homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting,
         nextStepsCardsPersistor: NewTabPageNextStepsCardsPersisting,
         subscriptionCardPersistor: HomePageSubscriptionCardPersisting,
-        duckPlayerPreferences: DuckPlayerPreferencesPersistor
+        duckPlayerPreferences: DuckPlayerPreferencesPersistor,
+        syncService: DDGSyncing?
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -216,12 +220,14 @@ extension NewTabPageActionsManager {
                         dataImportProvider: dataImportProvider,
                         tabOpener: NewTabPageTabOpener(),
                         privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
-                        pixelHandler: nextStepsPixelHandler
+                        pixelHandler: nextStepsPixelHandler,
+                        newTabPageNavigator: DefaultNewTabPageNavigator()
                     ),
                     appearancePreferences: appearancePreferences,
                     legacySubscriptionCardPersistor: subscriptionCardPersistor,
                     persistor: nextStepsCardsPersistor,
-                    duckPlayerPreferences: duckPlayerPreferences
+                    duckPlayerPreferences: duckPlayerPreferences,
+                    syncService: syncService
                 )
             ),
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),

@@ -30,10 +30,16 @@ protocol AIChatUserScriptProviding: AnyObject {
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
-    func submitPrompt(_ prompt: String)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
     func submitStartChatAction()
     func submitOpenSettingsAction()
     func submitToggleSidebarAction()
+}
+
+extension AIChatUserScriptProviding {
+    func submitPrompt(_ prompt: String) {
+        submitPrompt(prompt, pageContext: nil)
+    }
 }
 
 extension AIChatUserScript: AIChatUserScriptProviding { }
@@ -67,8 +73,8 @@ protocol AIChatContentHandling {
     /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
     func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL
     
-    /// Submits a prompt to the AI Chat.
-    func submitPrompt(_ prompt: String)
+    /// Submits a prompt to the AI Chat with optional page context.
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction()
@@ -81,6 +87,12 @@ protocol AIChatContentHandling {
 
     /// Fires 'chat open' pixel and sets the AI Chat features as 'used before'
     func fireChatOpenPixelAndSetWasUsed()
+}
+
+extension AIChatContentHandling {
+    func submitPrompt(_ prompt: String) {
+        submitPrompt(prompt, pageContext: nil)
+    }
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -154,8 +166,8 @@ final class AIChatContentHandler: AIChatContentHandling {
         return components.url ?? aiChatSettings.aiChatURL
     }
     
-    func submitPrompt(_ prompt: String) {
-        userScript?.submitPrompt(prompt)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+        userScript?.submitPrompt(prompt, pageContext: pageContext)
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.

@@ -90,12 +90,12 @@ extension Preferences {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.orange)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Updates Are Using a Custom Feed URL")
+                        Text(verbatim: "Updates Are Using a Custom Feed URL")
                             .fontWeight(.semibold)
-                        Text(customURL)
+                        Text(verbatim: customURL)
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text("To disable, go to Debug → Updates → Reset feed URL to default")
+                        Text(verbatim: "To disable, go to Debug → Updates → Reset feed URL to default")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }

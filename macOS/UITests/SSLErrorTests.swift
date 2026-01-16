@@ -142,7 +142,7 @@ final class SSLErrorTests: UITestCase {
         let badSSL = URL(string: "https://expired.badssl.com/")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(badSSL, pressingEnter: true)
-        
+
         // Verify the SSL warning title appears
         let warningTitle = app.staticTexts["Warning: This site may be insecure"].firstMatch
         XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),

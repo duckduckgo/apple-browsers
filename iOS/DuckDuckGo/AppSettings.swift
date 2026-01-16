@@ -73,7 +73,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var recentlyVisitedSites: Bool { get set }
     var currentThemeStyle: ThemeStyle { get set }
     
-    var autoClearAction: FireOptions { get set }
+    var autoClearAction: FireRequest.Options { get set }
     var autoClearTiming: AutoClearSettingsModel.Timing { get set }
 
     var longPressPreviews: Bool { get set }

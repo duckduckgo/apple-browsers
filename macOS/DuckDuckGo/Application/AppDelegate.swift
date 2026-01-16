@@ -759,7 +759,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(
             persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
-            windowControllersManager: windowControllersManager,
             appearancePreferences: appearancePreferences
         )
         defaultBrowserPreferences = DefaultBrowserPreferences()

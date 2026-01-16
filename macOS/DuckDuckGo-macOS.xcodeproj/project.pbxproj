@@ -13515,7 +13515,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/../scripts/swiftlint.sh\" --modified-only\n";
+			shellScript = "if [[ \"${CONFIGURATION}\" != \"Debug\" ]] || [ \"$ENABLE_PREVIEWS\" = \"YES\" ]; then\n    # run only for Debug builds\n    exit 0\nfi\n\n\"${SRCROOT}/../scripts/swiftlint.sh\" --modified-only\n";
 		};
 		3121F62B2B64266A002F706A /* Copy Swift Package resources */ = {
 			isa = PBXShellScriptBuildPhase;

@@ -279,7 +279,6 @@ fileprivate extension StartupPreferences {
     convenience init(persistor: StartupPreferencesPersistor = StartupPreferencesPersistorMock()) {
         self.init(
             persistor: persistor,
-            windowControllersManager: WindowControllersManagerMock(),
             appearancePreferences: AppearancePreferences(
                 persistor: AppearancePreferencesPersistorMock(),
                 privacyConfigurationManager: MockPrivacyConfigurationManaging(),

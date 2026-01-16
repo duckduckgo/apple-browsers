@@ -652,4 +652,3 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
 }
 
 #endif
-

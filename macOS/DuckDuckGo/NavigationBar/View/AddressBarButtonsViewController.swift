@@ -29,6 +29,7 @@ import AppKitExtensions
 import AIChat
 import UIComponents
 import DesignResourcesKitIcons
+import SwiftUI
 
 // MARK: - Toggle Interaction Tracking
 
@@ -623,6 +624,14 @@ final class AddressBarButtonsViewController: NSViewController {
             .dropFirst().sink { [weak self] _ in
                 self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
+
+        // Show informational popover when notification blocked due to system being disabled
+        tabViewModel?.tab.permissions.notificationBlockedBySystem
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] domain in
+                self?.showSystemDisabledInfoPopover(for: domain)
+            }
+            .store(in: &permissionsCancellables)
     }
 
     private func subscribeToPrivacyEntryPointIconUpdateTrigger() {
@@ -1690,6 +1699,19 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionAuthorizationPopover?.close()
         popupBlockedPopover?.close()
         permissionCenterPopover?.close()
+    }
+
+    private func showSystemDisabledInfoPopover(for domain: String) {
+        let view = SystemDisabledNotificationInfoView(domain: domain)
+        let controller = NSHostingController(rootView: view)
+        controller.preferredContentSize = controller.view.fittingSize
+
+        let popover = NSPopover()
+        popover.contentViewController = controller
+        popover.behavior = .transient  // Click outside to dismiss
+        popover.show(relativeTo: permissionCenterButton.bounds,
+                     of: permissionCenterButton,
+                     preferredEdge: .maxY)
     }
 
     func openPrivacyDashboard() {

@@ -29,6 +29,36 @@ final class SSLErrorTests: UITestCase {
         app.buttons["AddressBarButtonsViewController.imageButton"]
     }
 
+    /// The privacy dashboard button (shield icon) in the address bar
+    private var privacyDashboardButton: XCUIElement {
+        app.buttons.matching(identifier: "AddressBarButtonsViewController.privacyDashboardButton").firstMatch
+    }
+
+    /// The SSL warning page title
+    private var warningTitle: XCUIElement {
+        app.staticTexts["Warning: This site may be insecure"].firstMatch
+    }
+
+    /// The "expired." text shown on expired.badssl.com
+    private var expiredSiteContent: XCUIElement {
+        app.staticTexts["expired."].firstMatch
+    }
+
+    /// The home page element
+    private var homePageElement: XCUIElement {
+        app.groups["DuckDuckGo"].firstMatch
+    }
+
+    /// Back navigation button
+    private var backButton: XCUIElement {
+        app.buttons["NavigationBarViewController.BackButton"].firstMatch
+    }
+
+    /// Forward navigation button
+    private var forwardButton: XCUIElement {
+        app.buttons["NavigationBarViewController.ForwardButton"].firstMatch
+    }
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -47,14 +77,72 @@ final class SSLErrorTests: UITestCase {
         super.tearDown()
     }
 
-    // MARK: - Test Cases
+    // MARK: - Helper Methods
+
+    /// Navigates to the given URL
+    private func navigateTo(_ url: URL) {
+        app.activateAddressBar()
+        addressBarTextField.pasteURL(url, pressingEnter: true)
+    }
+
+    /// Clicks "Advanced..." then "Accept Risk and Visit Site" to bypass the SSL warning
+    private func acceptRiskAndVisitSite() {
+        let advancedButton = app.buttons["Advanced..."].firstMatch
+        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Advanced button should be available")
+        advancedButton.click()
+
+        let acceptRiskLink = app.staticTexts["Accept Risk and Visit Site"].firstMatch
+        XCTAssertTrue(acceptRiskLink.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Accept Risk and Visit Site link should be available")
+        acceptRiskLink.click()
+    }
+
+    /// Verifies the address bar contains the expected URL substring
+    private func verifyAddressBarContains(_ substring: String, message: String) {
+        let addressBarValue = app.addressBarValueActivatingIfNeeded()
+        XCTAssertTrue(
+            addressBarValue?.contains(substring) == true,
+            "\(message), got: \(addressBarValue ?? "nil")"
+        )
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
+    /// Verifies the address bar is empty (home page)
+    private func verifyAddressBarIsEmpty(message: String) {
+        let addressBarValue = app.addressBarValueActivatingIfNeeded()
+        XCTAssertTrue(
+            addressBarValue?.isEmpty == true,
+            "\(message), got: \(addressBarValue ?? "nil")"
+        )
+    }
+
+    /// Verifies we're on the SSL site with the expected content, URL, and shield with dot
+    private func verifyOnSSLSite(context: String) {
+        XCTAssertTrue(expiredSiteContent.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "SSL site content should be visible \(context)")
+        verifyAddressBarContains("expired.badssl.com", message: "Address bar should show SSL site URL \(context)")
+        XCTAssertTrue(privacyDashboardButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Privacy dashboard button should be visible \(context)")
+        XCTAssertEqual(privacyDashboardButton.value as? String, "shieldDot",
+                       "Shield should show dot indicator \(context)")
+    }
+
+    /// Verifies we're on the home page with the expected element and empty address bar
+    private func verifyOnHomePage(context: String) {
+        XCTAssertTrue(homePageElement.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Home page should be displayed \(context)")
+        verifyAddressBarIsEmpty(message: "Address bar should be empty \(context)")
+    }
+
+    // MARK: - Error Page Content Tests
 
     func testWhenNavigatingToExpiredCertificate_ShowsExpectedSSLWarningPage() throws {
         // Navigate to an expired certificate page
         let badSSL = URL(string: "https://expired.badssl.com/")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(badSSL, pressingEnter: true)
-
+        
         // Verify the SSL warning title appears
         let warningTitle = app.staticTexts["Warning: This site may be insecure"].firstMatch
         XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -235,6 +323,232 @@ final class SSLErrorTests: UITestCase {
         let leaveButton = app.buttons["Leave This Site"].firstMatch
         XCTAssertTrue(leaveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Leave This Site button should be available")
+    }
+
+    // MARK: - Navigation Tests
+
+    func testWhenClickingLeaveSiteButton_NavigatesToHomePageAndCanGoBackAndForward() throws {
+        // Navigate to an SSL error page
+        let badSSL = URL(string: "https://expired.badssl.com/")!
+        app.activateAddressBar()
+        addressBarTextField.pasteURL(badSSL, pressingEnter: true)
+
+        // Wait for SSL warning page to appear
+        let warningTitle = app.staticTexts["Warning: This site may be insecure"].firstMatch
+        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "SSL warning page should appear")
+
+        // Click "Leave This Site" button
+        let leaveButton = app.buttons["Leave This Site"].firstMatch
+        XCTAssertTrue(leaveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Leave This Site button should be available")
+        leaveButton.click()
+
+        // Verify home page is displayed by checking for the DuckDuckGo home page element
+        let homePageElement = app.groups["DuckDuckGo"].firstMatch
+        XCTAssertTrue(homePageElement.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Home page should be displayed after leaving SSL error site")
+        let addressBarValue = app.addressBarValueActivatingIfNeeded()
+        XCTAssertTrue(
+            addressBarValue?.isEmpty == true,
+            "Address bar should be empty on home page, got: \(addressBarValue ?? "nil")"
+        )
+
+        // Navigate forward using the forward button
+        let forwardButton = app.buttons["NavigationBarViewController.ForwardButton"].firstMatch
+        XCTAssertTrue(forwardButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Forward button should exist")
+        XCTAssertTrue(forwardButton.isEnabled, "Forward button should be enabled after leaving site")
+        forwardButton.click()
+
+        // Verify we're back on the SSL error page
+        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "SSL warning page should appear again after navigating forward")
+
+        // Navigate back using the back button
+        let backButton = app.buttons["NavigationBarViewController.BackButton"].firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Back button should exist")
+        XCTAssertTrue(backButton.isEnabled, "Back button should be enabled on SSL error page")
+        backButton.click()
+
+        // Verify we're back on the home page
+        XCTAssertTrue(homePageElement.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Home page should be displayed after navigating back from SSL error")
+        let finalAddressBarValue = app.addressBarValueActivatingIfNeeded()
+        XCTAssertTrue(
+            finalAddressBarValue?.isEmpty == true,
+            "Address bar should be empty after navigating back to home page, got: \(finalAddressBarValue ?? "nil")"
+        )
+    }
+
+    func testWhenClickingAdvancedThenLeaveSite_NavigatesToHomePage() throws {
+        // Navigate to an SSL error page
+        let badSSL = URL(string: "https://expired.badssl.com/")!
+        app.activateAddressBar()
+        addressBarTextField.pasteURL(badSSL, pressingEnter: true)
+
+        // Wait for SSL warning page to appear
+        let warningTitle = app.staticTexts["Warning: This site may be insecure"].firstMatch
+        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "SSL warning page should appear")
+
+        // Click "Advanced..." button
+        let advancedButton = app.buttons["Advanced..."].firstMatch
+        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Advanced button should be available")
+        advancedButton.click()
+
+        // Verify the advanced section is expanded (check for expanded warning text)
+        let expandedWarningText = app.staticTexts.containing(
+            NSPredicate(format: "value CONTAINS[c] %@", "DuckDuckGo warns you when a website has an invalid certificate")
+        ).firstMatch
+        XCTAssertTrue(expandedWarningText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Advanced section should be expanded")
+
+        // Click "Leave This Site" button
+        let leaveButton = app.buttons["Leave This Site"].firstMatch
+        XCTAssertTrue(leaveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Leave This Site button should be available")
+        leaveButton.click()
+
+        // Verify home page is displayed
+        let homePageElement = app.groups["DuckDuckGo"].firstMatch
+        XCTAssertTrue(homePageElement.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Home page should be displayed after leaving SSL error site")
+        let addressBarValue = app.addressBarValueActivatingIfNeeded()
+        XCTAssertTrue(
+            addressBarValue?.isEmpty == true,
+            "Address bar should be empty on home page, got: \(addressBarValue ?? "nil")"
+        )
+    }
+
+    func testWhenClickingAcceptRiskAndVisitSite_LoadsSiteAndCanNavigateBackAndForward() throws {
+        // Navigate to an SSL error page
+        let badSSL = URL(string: "https://expired.badssl.com/")!
+        app.activateAddressBar()
+        addressBarTextField.pasteURL(badSSL, pressingEnter: true)
+
+        // Wait for SSL warning page to appear
+        let warningTitle = app.staticTexts["Warning: This site may be insecure"].firstMatch
+        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "SSL warning page should appear")
+
+        // Click "Advanced..." button
+        let advancedButton = app.buttons["Advanced..."].firstMatch
+        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Advanced button should be available")
+        advancedButton.click()
+
+        // Verify the advanced section is expanded
+        let expandedWarningText = app.staticTexts.containing(
+            NSPredicate(format: "value CONTAINS[c] %@", "DuckDuckGo warns you when a website has an invalid certificate")
+        ).firstMatch
+        XCTAssertTrue(expandedWarningText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Advanced section should be expanded")
+
+        // Click "Accept Risk and Visit Site" link
+        let acceptRiskLink = app.staticTexts["Accept Risk and Visit Site"].firstMatch
+        XCTAssertTrue(acceptRiskLink.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Accept Risk and Visit Site link should be available")
+        acceptRiskLink.click()
+
+        // Verify the actual site content is loaded (badssl.com shows "expired." text prominently)
+        let siteContent = app.staticTexts["expired."].firstMatch
+        XCTAssertTrue(siteContent.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Site content should be visible after accepting risk")
+
+        // Verify address bar shows the site URL
+        let siteAddressBarValue = app.addressBarValueActivatingIfNeeded()
+        XCTAssertTrue(
+            siteAddressBarValue?.contains("expired.badssl.com") == true,
+            "Address bar should show the site URL, got: \(siteAddressBarValue ?? "nil")"
+        )
+
+        // Navigate back using the back button
+        let backButton = app.buttons["NavigationBarViewController.BackButton"].firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Back button should exist")
+        XCTAssertTrue(backButton.isEnabled, "Back button should be enabled after visiting site")
+        backButton.click()
+
+        // Verify we're on the home page
+        let homePageElement = app.groups["DuckDuckGo"].firstMatch
+        XCTAssertTrue(homePageElement.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Home page should be displayed after navigating back")
+        let homeAddressBarValue = app.addressBarValueActivatingIfNeeded()
+        XCTAssertTrue(
+            homeAddressBarValue?.isEmpty == true,
+            "Address bar should be empty on home page, got: \(homeAddressBarValue ?? "nil")"
+        )
+
+        // Navigate forward using the forward button
+        let forwardButton = app.buttons["NavigationBarViewController.ForwardButton"].firstMatch
+        XCTAssertTrue(forwardButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Forward button should exist")
+        XCTAssertTrue(forwardButton.isEnabled, "Forward button should be enabled after going back")
+        forwardButton.click()
+
+        // Verify we're back on the site (not the error page)
+        let finalAddressBarValue = app.addressBarValueActivatingIfNeeded()
+        XCTAssertTrue(
+            finalAddressBarValue?.contains("expired.badssl.com") == true,
+            "Address bar should show the site URL after navigating forward, got: \(finalAddressBarValue ?? "nil")"
+        )
+
+        // Verify the warning is NOT shown (we should see the actual site, not the error page)
+        XCTAssertFalse(warningTitle.exists,
+                       "SSL warning should not appear - should show actual site after accepting risk")
+    }
+
+    func testWhenOnAcceptedRiskSite_ShowsShieldWithDotAndPrivacyDashboardShowsCertificateError() throws {
+        // Navigate to SSL error page and verify address bar shows URL
+        let badSSL = URL(string: "https://expired.badssl.com/")!
+        navigateTo(badSSL)
+        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "SSL warning page should appear")
+        verifyAddressBarContains("expired.badssl.com", message: "Address bar should show site URL on error page")
+
+        // Accept risk and verify we're on the SSL site
+        acceptRiskAndVisitSite()
+        verifyOnSSLSite(context: "after accepting risk")
+
+        // Verify privacy dashboard shows certificate error
+        privacyDashboardButton.click()
+        let certificateErrorInDashboard = app.staticTexts.containing(
+            NSPredicate(format: "value CONTAINS[c] %@", "certificate")
+        ).firstMatch
+        XCTAssertTrue(certificateErrorInDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Privacy dashboard should show certificate error information")
+        let domainInDashboard = app.staticTexts.containing(
+            NSPredicate(format: "value CONTAINS[c] %@", "expired.badssl.com")
+        ).firstMatch
+        XCTAssertTrue(domainInDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Privacy dashboard should show the domain name")
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Navigate to Wikipedia and verify shield without dot
+        let wikipediaURL = URL(string: "https://www.wikipedia.org/")!
+        navigateTo(wikipediaURL)
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Wikipedia should load")
+        verifyAddressBarContains("wikipedia.org", message: "Address bar should show Wikipedia URL")
+        XCTAssertTrue(privacyDashboardButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Privacy dashboard button should be visible on Wikipedia")
+        XCTAssertEqual(privacyDashboardButton.value as? String, "shield",
+                       "Shield should NOT show dot indicator for normal secure site")
+
+        // Navigate back to SSL site and verify
+        backButton.click()
+        verifyOnSSLSite(context: "after navigating back from Wikipedia")
+
+        // Navigate back to home page and verify
+        backButton.click()
+        verifyOnHomePage(context: "after navigating back from SSL site")
+
+        // Navigate forward to SSL site and verify
+        forwardButton.click()
+        verifyOnSSLSite(context: "after navigating forward from home")
     }
 
 }

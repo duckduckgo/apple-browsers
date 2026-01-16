@@ -984,7 +984,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 shieldDotAnimationView.isHidden = true
                 privacyDashboardButton.isAnimationEnabled = true
                 privacyDashboardButton.image = privacyShieldStyle.iconWithDot
-                privacyDashboardButton.setAccessibilityValue("shield")
+                privacyDashboardButton.setAccessibilityValue("shieldDot")
 
                 let animationNames = MouseOverAnimationButton.AnimationNames(
                     aqua: privacyShieldStyle.hoverAnimationWithDot(forLightMode: true),

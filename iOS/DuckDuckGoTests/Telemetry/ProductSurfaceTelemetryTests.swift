@@ -59,6 +59,7 @@ final class ProductSurfaceTelemetryTests: XCTestCase {
         telemetry.bookmarksPageUsed()
         telemetry.passwordsPageUsed()
 
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
     }
 
     // MARK: - Individual events

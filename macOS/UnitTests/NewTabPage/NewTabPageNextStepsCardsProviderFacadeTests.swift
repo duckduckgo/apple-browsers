@@ -254,7 +254,8 @@ private extension NewTabPageNextStepsCardsProviderFacadeTests {
             appearancePreferences: appearancePreferences,
             legacySubscriptionCardPersistor: MockHomePageSubscriptionCardPersisting(),
             persistor: MockNewTabPageNextStepsCardsPersistor(),
-            duckPlayerPreferences: DuckPlayerPreferencesPersistorMock()
+            duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
         )
     }
 }

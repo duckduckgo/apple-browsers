@@ -50,7 +50,6 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let windowControllersManager = WindowControllersManagerMock()
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            windowControllersManager: windowControllersManager,
             appearancePreferences: appearancePreferences
         )
 

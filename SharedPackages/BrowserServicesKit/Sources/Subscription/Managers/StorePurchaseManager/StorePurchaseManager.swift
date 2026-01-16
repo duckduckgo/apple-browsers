@@ -189,6 +189,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     private let storeSubscriptionConfiguration: any StoreSubscriptionConfiguration
     private let subscriptionFeatureMappingCache: any SubscriptionFeatureMappingCache
     private let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags>?
+    private let pendingTransactionHandler: PendingTransactionHandling?
 
     @Published public private(set) var availableProducts: [any SubscriptionProduct] = []
     @Published public private(set) var purchasedProductIDs: [String] = []
@@ -208,22 +209,27 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     public private(set) var currentStorefrontRegion: SubscriptionRegion = .usa
     private var transactionUpdates: Task<Void, Never>?
     private var storefrontChanges: Task<Void, Never>?
+    private var unfinishedTransactionUpdates: Task<Void, Never>?
     private var productFetcher: ProductFetching
 
     public init(subscriptionFeatureMappingCache: any SubscriptionFeatureMappingCache,
                 subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags>? = nil,
-                productFetcher: ProductFetching = DefaultProductFetcher()) {
+                productFetcher: ProductFetching = DefaultProductFetcher(),
+                pendingTransactionHandler: PendingTransactionHandling? = nil) {
         self.storeSubscriptionConfiguration = DefaultStoreSubscriptionConfiguration()
         self.subscriptionFeatureMappingCache = subscriptionFeatureMappingCache
         self.subscriptionFeatureFlagger = subscriptionFeatureFlagger
         self.productFetcher = productFetcher
+        self.pendingTransactionHandler = pendingTransactionHandler
         transactionUpdates = observeTransactionUpdates()
         storefrontChanges = observeStorefrontChanges()
+        unfinishedTransactionUpdates = observeUnfinishedTransactions()
     }
 
     deinit {
         transactionUpdates?.cancel()
         storefrontChanges?.cancel()
+        unfinishedTransactionUpdates?.cancel()
     }
 
     @MainActor
@@ -591,6 +597,24 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
 
                 if case .verified(let transaction) = result {
                     await transaction.finish()
+                    self?.pendingTransactionHandler?.handlePendingTransactionApproved()
+                }
+
+                await self?.updatePurchasedProducts()
+            }
+        }
+    }
+
+    /// When a transaction gets approved while the app is not running,
+    /// it will notify the app via Transaction.unfinished.
+    private func observeUnfinishedTransactions() -> Task<Void, Never> {
+        Task.detached { [weak self] in
+            for await result in Transaction.unfinished {
+                Logger.subscriptionStorePurchaseManager.log("observeUnfinishedTransactions")
+
+                if case .verified(let transaction) = result {
+                    self?.pendingTransactionHandler?.handlePendingTransactionApproved()
+                    await transaction.finish()
                 }
 
                 await self?.updatePurchasedProducts()
@@ -657,6 +681,7 @@ public extension UserDefaults {
         static let storefrontRegionOverrideKey = "Subscription.debug.storefrontRegionOverride"
         static let usaValue = "usa"
         static let rowValue = "row"
+        static let hasPurchasePendingTransactionKey = "Subscription.hasPurchasePendingTransaction"
     }
 
     dynamic var storefrontRegionOverride: SubscriptionRegion? {
@@ -681,5 +706,13 @@ public extension UserDefaults {
                 removeObject(forKey: Constants.storefrontRegionOverrideKey)
             }
         }
+    }
+
+    /// Indicates that a subscription purchase entered the pending state (e.g., Ask to Buy, payment issues).
+    /// This flag is set when StoreKit returns a pending transaction and is used to track
+    /// whether users successfully complete their purchases after resolving the pending state.
+    var hasPurchasePendingTransaction: Bool {
+        get { bool(forKey: Constants.hasPurchasePendingTransactionKey) }
+        set { set(newValue, forKey: Constants.hasPurchasePendingTransactionKey) }
     }
 }

@@ -1159,6 +1159,8 @@ extension Pixel {
         case subscriptionInvalidRefreshTokenSignedOut
         case subscriptionInvalidRefreshTokenRecovered
         case subscriptionAuthV2GetTokensError2
+        case subscriptionPurchaseSuccessAfterPendingTransaction
+        case subscriptionPendingTransactionApproved
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
 
@@ -2613,6 +2615,8 @@ extension Pixel.Event {
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
         case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
+        case .subscriptionPurchaseSuccessAfterPendingTransaction: return "m_privacy-pro_purchase_success_after_pending_transaction"
+        case .subscriptionPendingTransactionApproved: return "m_privacy-pro_app_subscription-purchase_pending_transaction_approved"
 
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 

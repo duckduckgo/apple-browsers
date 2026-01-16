@@ -135,7 +135,7 @@ extension Preferences {
                             VStack(alignment: .leading, spacing: 1) {
                                 TextMenuItemCaption(UserText.disableAutoClearToEnableSessionRestore)
                                 TextButton(UserText.showDataClearingSettings) {
-                                    startupModel.show(url: .settingsPane(.dataClearing))
+                                    NSApp.delegateTyped.windowControllersManager.show(url: .settingsPane(.dataClearing), source: .appOpenUrl)
                                 }
                             }
                             .padding(.leading, 19)

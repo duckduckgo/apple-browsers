@@ -3727,6 +3727,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Настройка на синхронизиране";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Синхронизирай и архивирай кредитните си карти";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Синхронизирай и архивирай данните си";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Не, благодаря";
 

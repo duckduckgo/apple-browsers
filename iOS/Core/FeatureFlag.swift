@@ -261,7 +261,12 @@ public enum FeatureFlag: String {
     case dataImportWideEventMeasurement
 
     /// Sort domain matches higher than other matches when searching saved passwords
+    /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1212324661709006?focus=true
     case autofillPasswordSearchPrioritizeDomain
+
+    /// Feature flag for new sync promotion footer in data import summary
+    /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1209629138021290?focus=true
+    case dataImportSummarySyncPromotion
 
     // https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
     case appRatingPrompt
@@ -301,7 +306,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .browsingMenuSheetPresentation,
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
-             .showWhatsNewPromptOnDemand:
+             .showWhatsNewPromptOnDemand,
+             .dataImportSummarySyncPromotion:
             true
         default:
             false
@@ -368,6 +374,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .contextualDuckAIMode,
              .aiChatSync,
              .showWhatsNewPromptOnDemand,
+             .dataImportSummarySyncPromotion,
              .aiChatAtb,
              .enhancedDataClearingSettings:
             return true
@@ -574,6 +581,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
+        case .dataImportSummarySyncPromotion:
+            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportSummarySyncPromotion))
         case .appRatingPrompt:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt))
         case .contextualDuckAIMode:

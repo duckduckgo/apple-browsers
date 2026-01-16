@@ -50,13 +50,11 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         static let externalRegular: TimeInterval = .days(2)
 
         static func delay(for updateType: Update.UpdateType, isInternalUser: Bool) -> TimeInterval {
-            // TEMPORARY: hardcoded 60s for testing
-            return 60
-//            if updateType == .critical {
-//                return critical
-//            }
-//
-//            return isInternalUser ? internalRegular : externalRegular
+            if updateType == .critical {
+                return critical
+            }
+
+            return isInternalUser ? internalRegular : externalRegular
         }
     }
 
@@ -304,7 +302,7 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
     /// Handles update notification and blue dot logic with delays for automatic updates.
     ///
-    /// For automatic updates, regular notifications and the blue dot are delayed by 1 hour
+    /// For automatic updates, regular notifications and the blue dot are delayed.
     /// to reduce noise - users who quit within that time get the update silently.
     /// Critical updates show immediately. Manual updates show immediately (unchanged behavior).
     private func handleUpdateNotification() {

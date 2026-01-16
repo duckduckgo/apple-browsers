@@ -234,8 +234,7 @@ class MainViewController: UIViewController {
 
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(
         using: featureFlagger,
-        keyValueStore: keyValueStore,
-        internalUserDecider: featureFlagger.internalUserDecider
+        keyValueStore: keyValueStore
     )
 
     let themeManager: ThemeManaging

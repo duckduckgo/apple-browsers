@@ -32,9 +32,9 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger()
-        mockKeyValueStore = MockThrowingKeyValueStore()
         mockInternalUserDecider = MockInternalUserDecider()
+        mockFeatureFlagger = MockFeatureFlagger(internalUserDecider: mockInternalUserDecider)
+        mockKeyValueStore = MockThrowingKeyValueStore()
     }
 
     override func tearDown() {
@@ -211,8 +211,7 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
     private func createCapability() -> BrowsingMenuSheetDefaultCapability {
         return BrowsingMenuSheetDefaultCapability(
             featureFlagger: mockFeatureFlagger,
-            keyValueStore: mockKeyValueStore,
-            internalUserDecider: mockInternalUserDecider
+            keyValueStore: mockKeyValueStore
         )
     }
 }

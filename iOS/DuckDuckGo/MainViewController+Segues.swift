@@ -393,8 +393,7 @@ extension MainViewController {
                                                   userScriptsDependencies: userScriptsDependencies,
                                                   browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(
                                                       using: featureFlagger,
-                                                      keyValueStore: keyValueStore,
-                                                      internalUserDecider: AppDependencyProvider.shared.internalUserDecider
+                                                      keyValueStore: keyValueStore
                                                   ),
                                                   whatsNewCoordinator: whatsNewCoordinator)
 

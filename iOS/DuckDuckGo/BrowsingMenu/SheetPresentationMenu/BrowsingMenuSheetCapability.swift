@@ -34,13 +34,11 @@ enum BrowsingMenuSheetCapability {
     static func create(
         using featureFlagger: FeatureFlagger,
         keyValueStore: ThrowingKeyValueStoring,
-        internalUserDecider: InternalUserDecider
     ) -> BrowsingMenuSheetCapable {
         if #available(iOS 17, *) {
             return BrowsingMenuSheetDefaultCapability(
                 featureFlagger: featureFlagger,
-                keyValueStore: keyValueStore,
-                internalUserDecider: internalUserDecider
+                keyValueStore: keyValueStore
             )
         } else {
             return BrowsingMenuSheetUnavailableCapability()
@@ -62,12 +60,10 @@ struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
 struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
     let featureFlagger: FeatureFlagger
     private let keyValueStore: ThrowingKeyValueStoring
-    private let internalUserDecider: InternalUserDecider
 
-    init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring, internalUserDecider: InternalUserDecider) {
+    init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) {
         self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
-        self.internalUserDecider = internalUserDecider
     }
 
     var isExperimentalMenuOptInEnabled: Bool {
@@ -76,7 +72,7 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
 
     var isEnabled: Bool {
         if isEnabledByDefault {
-            if internalUserDecider.isInternalUser {
+            if featureFlagger.internalUserDecider.isInternalUser {
                 return storedEnabledValue ?? true
             }
             return true
@@ -86,7 +82,7 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
 
     var isSettingsOptionVisible: Bool {
         if isEnabledByDefault {
-            return internalUserDecider.isInternalUser
+            return featureFlagger.internalUserDecider.isInternalUser
         }
         return isExperimentalMenuOptInEnabled
     }

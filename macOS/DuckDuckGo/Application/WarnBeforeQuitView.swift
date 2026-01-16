@@ -22,6 +22,32 @@ import DesignResourcesKit
 
 struct WarnBeforeQuitView: View {
 
+    // MARK: - Layout Constants
+    
+    enum Constants {
+        static let shadowPadding: CGFloat = 120  // 60px padding on each side
+        static let arrowHeight: CGFloat = 7
+        static let arrowWidth: CGFloat = 16
+        static let arrowOffset: CGFloat = 40  // From left edge
+        static let tabGapOffset: CGFloat = 4  // Gap between notification and tab (combined with internal spacing = 8px)
+        static let quitPanelTopOffset: CGFloat = 56  // Distance from top of window for quit panel
+    }
+    
+    /// Returns the content size for the notification based on action type
+    static func contentSize(for action: ConfirmationAction) -> CGSize {
+        action == .close ? CGSize(width: 480, height: 86) : CGSize(width: 550, height: 100)
+    }
+    
+    /// Returns the full window size including arrow and shadow padding
+    static func windowSize(for action: ConfirmationAction) -> CGSize {
+        let content = contentSize(for: action)
+        let height = content.height + (action == .close ? Constants.arrowHeight : 0)
+        return CGSize(
+            width: content.width + Constants.shadowPadding,
+            height: height + Constants.shadowPadding
+        )
+    }
+
     @ObservedObject var viewModel: WarnBeforeQuitViewModel
     @State private var isButtonHovered = false
     @Environment(\.colorScheme) private var colorScheme
@@ -47,21 +73,21 @@ struct WarnBeforeQuitView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             mainContent
-                .offset(y: isCloseAction ? 7 : 0)
+                .offset(y: isCloseAction ? Constants.arrowHeight : 0)
 
             // Arrow pointing up for close pinned tab action
             if viewModel.action == .close {
                 Triangle()
                     .fill(backgroundColor)
-                    .frame(width: 16, height: 7)
-                    .offset(x: 40, y: 0)
+                    .frame(width: Constants.arrowWidth, height: Constants.arrowHeight)
+                    .offset(x: Constants.arrowOffset, y: 0)
             }
         }
         .compositingGroup()
         .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 40, x: 0, y: 20)
         .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 4)
-        .frame(width: windowSize.width, height: windowSize.height + (isCloseAction ? 7 : 0))
-        .padding(60)
+        .frame(width: windowSize.width, height: windowSize.height + (isCloseAction ? Constants.arrowHeight : 0))
+        .padding(Constants.shadowPadding / 2)
         .clipped()
     }
 
@@ -116,7 +142,7 @@ struct WarnBeforeQuitView: View {
 
             Spacer()
 
-            // "Don't Show Again" button
+            // "Don‘t Show Again" button
             Text(UserText.confirmDontShowAgain)
                 .font(.system(size: buttonFontSize, weight: .regular))
                 .foregroundColor(Color(designSystemColor: .textPrimary))

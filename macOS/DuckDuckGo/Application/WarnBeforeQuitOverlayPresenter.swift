@@ -98,11 +98,9 @@ final class WarnBeforeQuitOverlayPresenter {
 
         guard let overlayWindow else { return }
 
-        // Dynamic size based on action type
-        let baseSize = viewModel.action == .close ? CGSize(width: 480, height: 86) : CGSize(width: 550, height: 100)
-        let contentSize = viewModel.action == .close ? CGSize(width: baseSize.width, height: baseSize.height + 7) : baseSize
-        let shadowPadding: CGFloat = 120 // 60px padding on each side for shadow
-        let overlaySize = CGSize(width: contentSize.width + shadowPadding, height: contentSize.height + shadowPadding)
+        // Get window size from view
+        let contentSize = WarnBeforeQuitView.contentSize(for: viewModel.action)
+        let overlaySize = WarnBeforeQuitView.windowSize(for: viewModel.action)
         let overlayOrigin: CGPoint
 
         // Position overlay relative to anchor view (tab) or window center
@@ -111,18 +109,24 @@ final class WarnBeforeQuitOverlayPresenter {
             let anchorFrameInWindow = anchorView.convert(anchorView.bounds, to: nil)
             let anchorFrameInScreen = window.convertToScreen(anchorFrameInWindow)
 
-            // Position notification so arrow (at 40px from left + 60px padding + 8px half arrow width) points to tab center
-            let x = anchorFrameInScreen.midX - 40 - 60 - 8
+            // Position notification so arrow points to tab center
+            let shadowPadding = WarnBeforeQuitView.Constants.shadowPadding / 2
+            let arrowOffset = WarnBeforeQuitView.Constants.arrowOffset
+            let halfArrowWidth = WarnBeforeQuitView.Constants.arrowWidth / 2
+            let tabGapOffset = WarnBeforeQuitView.Constants.tabGapOffset
+            let x = anchorFrameInScreen.midX - arrowOffset - halfArrowWidth - shadowPadding
             overlayOrigin = CGPoint(
                 x: x,
-                y: anchorFrameInScreen.minY - contentSize.height - 4 - 60  // 8px gap: 4px + 3px internal spacing, minus padding
+                y: anchorFrameInScreen.minY - contentSize.height - tabGapOffset - shadowPadding
             )
         } else {
             // Default: Position at top center of the key window
             let windowFrame = keyWindow.frame
+            let shadowPadding = WarnBeforeQuitView.Constants.shadowPadding / 2
+            let quitPanelTopOffset = WarnBeforeQuitView.Constants.quitPanelTopOffset
             overlayOrigin = CGPoint(
                 x: windowFrame.midX - overlaySize.width / 2,
-                y: windowFrame.maxY - overlaySize.height - 56 + 60  // Add padding offset
+                y: windowFrame.maxY - overlaySize.height - quitPanelTopOffset + shadowPadding
             )
         }
 

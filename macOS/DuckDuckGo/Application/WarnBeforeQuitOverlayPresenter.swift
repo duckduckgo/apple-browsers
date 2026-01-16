@@ -98,7 +98,9 @@ final class WarnBeforeQuitOverlayPresenter {
 
         guard let overlayWindow else { return }
 
-        let overlaySize = CGSize(width: 520, height: 90)
+        // Get window size from view
+        let contentSize = WarnBeforeQuitView.contentSize(for: viewModel.action)
+        let overlaySize = WarnBeforeQuitView.windowSize(for: viewModel.action)
         let overlayOrigin: CGPoint
 
         // Position overlay relative to anchor view (tab) or window center
@@ -106,22 +108,25 @@ final class WarnBeforeQuitOverlayPresenter {
             // Get anchor view's frame in screen coordinates
             let anchorFrameInWindow = anchorView.convert(anchorView.bounds, to: nil)
             let anchorFrameInScreen = window.convertToScreen(anchorFrameInWindow)
-            let windowFrame = window.frame
 
-            // Position below the anchor (tab), left-aligned
-            let x = anchorFrameInScreen.minX
-            let clampedX = max(windowFrame.minX, min(x, windowFrame.maxX - overlaySize.width))
-
+            // Position notification so arrow points to tab center
+            let shadowPadding = WarnBeforeQuitView.Constants.shadowPadding / 2
+            let arrowOffset = WarnBeforeQuitView.Constants.arrowOffset
+            let halfArrowWidth = WarnBeforeQuitView.Constants.arrowWidth / 2
+            let tabGapOffset = WarnBeforeQuitView.Constants.tabGapOffset
+            let x = anchorFrameInScreen.midX - arrowOffset - halfArrowWidth - shadowPadding
             overlayOrigin = CGPoint(
-                x: clampedX,
-                y: anchorFrameInScreen.minY - overlaySize.height - 12
+                x: x,
+                y: anchorFrameInScreen.minY - contentSize.height - tabGapOffset - shadowPadding
             )
         } else {
             // Default: Position at top center of the key window
             let windowFrame = keyWindow.frame
+            let shadowPadding = WarnBeforeQuitView.Constants.shadowPadding / 2
+            let quitPanelTopOffset = WarnBeforeQuitView.Constants.quitPanelTopOffset
             overlayOrigin = CGPoint(
                 x: windowFrame.midX - overlaySize.width / 2,
-                y: windowFrame.maxY - overlaySize.height - 80
+                y: windowFrame.maxY - overlaySize.height - quitPanelTopOffset + shadowPadding
             )
         }
 
@@ -133,19 +138,24 @@ final class WarnBeforeQuitOverlayPresenter {
     }
 
     private func hide() {
+        guard let overlayWindow else { return }
         progressTask?.cancel()
         viewModel.resetProgress()
+        self.overlayWindow = nil
 
-        if let parentWindow = overlayWindow?.parent {
-            parentWindow.removeChildWindow(overlayWindow!)
+        // hide the window contents and give it some time to redraw
+        // otherwise the shadow dirt keeps shown on the main window
+        overlayWindow.contentView = NSView(frame: .zero)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            overlayWindow.parent?.removeChildWindow(overlayWindow)
+            overlayWindow.orderOut(nil)
         }
-        overlayWindow?.orderOut(nil)
     }
 
     private func createOverlayWindow() -> NSWindow {
         let window = NSWindow(
             contentRect: .zero,
-            styleMask: [.borderless],
+            styleMask: [],
             backing: .buffered,
             defer: false
         )
@@ -153,10 +163,14 @@ final class WarnBeforeQuitOverlayPresenter {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.level = .floating
-        window.hasShadow = true
+        window.hasShadow = false
         window.isReleasedWhenClosed = false
+        window.isMovable = false
 
         let hostingView = NSHostingView(rootView: WarnBeforeQuitView(viewModel: viewModel))
+        hostingView.wantsLayer = true
+        hostingView.layer?.masksToBounds = true
+
         window.contentView = hostingView
 
         return window

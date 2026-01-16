@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "fiókodhoz";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Összes lap bezárása";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohorsz: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfiguráció";
@@ -1408,6 +1417,15 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "A YouTube legutóbbi módosításai érintik a Duck Player működését. Dolgozunk a problémák megoldásán, és köszönjük a megértésedet.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Oldal tartalmának csatolása";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Üzeneteddel együtt elküldve a Duck.ai-nak";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Oldal tartalma";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "A DuckDuckGo AI-funkciói privátak és opcionálisak. Az adataidat nem használjuk fel az AI tanítására.";
 
@@ -1670,7 +1688,7 @@
 "empty.search" = "Nincs találat";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Beiratkozott: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1728,9 +1746,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Csak mobilon lévő kedvencek";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funkció: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Hirdetések és felugró ablakok letiltása";
@@ -2206,6 +2221,9 @@
 /* No comment provided by engineer. */
 "Messages" = "Üzenetek";
 
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Címsori gomb";
 
@@ -2492,6 +2510,9 @@
 "No existing subscription found" = "Nem található meglévő előfizetés";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Nincsenek naplók";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2523,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Nincsenek előfizetések";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2891,6 +2915,9 @@
 "Results" = "Találatok";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Keresés vagy cím megadása";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2935,9 +2962,6 @@
 /* about tagline */
 "settings.about.tagline" = "Védelem. Adatvédelem. Nyugalom.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "A DuckDuckGo független online adatvédelmi cég azoknak kínál megoldást, akik vissza akarják venni a személyes adataik feletti irányítást.\n\nÚgy gondoljuk, hogy a legjobb módja annak, hogy megvédjük a személyes adataidat a hekkerektől, a csalóktól és az adatvédelmet sértő cégektől az, ha egyáltalán nem gyűjtjük őket. Emberek milliói ezért [választják a DuckDuckGót a Chrome és más böngészők helyett](ddgQuickLink://duckduckgo.com/compare-privacy) az online kereséshez és böngészéshez. Beépített keresőmotorunk olyan, mint a Google, de sosem követi a kereséseidet. Böngészési védelmeink, mint például a hirdetéskövetők és a sütik blokkolása, segítenek megakadályozni, hogy más cégek összegyűjtsék az adataidat. Ja, és a böngészőnk ingyenes – a bevételünket az [adatvédelmet tiszteletben tartó keresési hirdetésekből](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/) szerezzük, nem az adataid kihasználásából. \n\n%@ \n\nVedd vissza az irányítást a személyes adataid felett az adatgyűjtés helyett adatvédelemre tervezett böngészővel.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Kisegítő lehetőségek";
 
@@ -2955,6 +2979,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Teljes webhelycím megjelenítése";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Blokkolt nyomkövetők animációjának megjelenítése";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Keresés és Duck.ai";
@@ -3024,6 +3051,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Törlés";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Lapok és adatok törlése";
 
@@ -3036,17 +3064,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Lapok";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Kilépés az alkalmazásból 15 perc inaktivitás után";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Kilépés az alkalmazásból 1 óra inaktivitás után";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Kilépés az alkalmazásból 30 perc inaktivitás után";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Kilépés az alkalmazásból 5 perc inaktivitás után";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Kilépés az alkalmazásból 15 perc inaktivitás után";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Kilépés az alkalmazásból 30 perc inaktivitás után";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Kilépés csak az alkalmazásból";
@@ -3059,6 +3087,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Az adatok az alkalmazás újraindításakor törlődnek.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Keresési javaslatok";
 
@@ -3079,6 +3108,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatikus adattörlés";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Böngésző-visszajelzés";
 
@@ -3090,6 +3120,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Böngészési adatok törlése";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Adatok automatikus törlése";
 
@@ -3119,6 +3150,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Az adatok törlése segíthet az online adatvédelemben. A Fire Button segítségével manuálisan törölhetők az adatok, illetve beállítható automatikus törlés is.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Alapértelmezett böngésző";
 
@@ -3166,6 +3198,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Tűzálló webhelyek";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Általános";
 
@@ -3183,9 +3216,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Új";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Előnézet";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Billentyűzet";
@@ -3461,6 +3491,9 @@
 "siteFeedback.urlPlaceholder" = "Melyik weboldal nem működik?”";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Állapot";
 
 /* No comment provided by engineer. */
@@ -3468,9 +3501,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tárolt állomásnév: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Alfunkció: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Hozzáadás az eszközhöz";
@@ -3619,9 +3649,6 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Előfizetés visszaállítása…";
 
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "A Privacy Pro mostantól egyszerűen DuckDuckGo-előfizetés néven fut";
-
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eltávolítás erről az eszközről";
 
@@ -3726,12 +3753,6 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Szinkronizálás beállítása";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.credit-cards.title" = "Hitelkártyák szinkronizálása és biztonsági mentése";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.data.import.title" = "Adatok szinkronizálása és biztonsági mentése";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nem, köszönöm";

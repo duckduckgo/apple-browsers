@@ -22,6 +22,7 @@ on:
         options:
            - Alpha
            - Release
+           - Experimental
 
 jobs:
   make-adhoc:
@@ -55,9 +56,14 @@ jobs:
       - name: Add commit SHA to plist
         run: |
           echo "Setting DDG_COMMIT_SHA to ${{ github.sha }}"
+
           plist_path="DuckDuckGo/Info.plist"
           /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${{ github.sha }}" "${plist_path}" \
             || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${plist_path}"
+
+          experimental_plist_path="DuckDuckGo/Info-Experimental.plist"
+          /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${{ github.sha }}" "${experimental_plist_path}" \
+            || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${experimental_plist_path}"
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby
@@ -81,6 +87,8 @@ jobs:
           lane_to_use="adhoc"
           if [[ "${{ github.event.inputs.build-type }}" == "Release" ]]; then
             lane_to_use="release_adhoc"
+          elif [[ "${{ github.event.inputs.build-type }}" == "Experimental" ]]; then
+            lane_to_use="experimental_adhoc"
           fi
 
           if [[ -n "${{ github.event.inputs.suffix }}" ]]; then

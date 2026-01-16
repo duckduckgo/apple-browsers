@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "account";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Cerrar todas las pestañas";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Cohorte: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Configuración";
@@ -1408,6 +1417,15 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "La funcionalidad de Duck Player se ha visto afectada por los cambios recientes en YouTube. Estamos trabajando para solucionar estos problemas y agradecemos tu comprensión.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Adjuntar contenido de la página";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Enviado con tu mensaje a Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Contenido de la página";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Las funciones de IA de DuckDuckGo son privadas y opcionales. Tus datos no se utilizan para entrenar a la IA.";
 
@@ -1670,7 +1688,7 @@
 "empty.search" = "No se han encontrado coincidencias";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Inscritos: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1728,9 +1746,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Solo favoritos móviles";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Característica: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Bloquear anuncios y mensajes emergentes";
@@ -2206,6 +2221,9 @@
 /* No comment provided by engineer. */
 "Messages" = "Mensajes";
 
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Botón de la barra de direcciones";
 
@@ -2492,6 +2510,9 @@
 "No existing subscription found" = "No se ha encontrado ninguna suscripción existente";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Sin registros";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2523,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "No hay suscripciones disponibles";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "De acuerdo";
@@ -2891,6 +2915,9 @@
 "Results" = "Resultados";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Buscar o introducir dirección";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2935,9 +2962,6 @@
 /* about tagline */
 "settings.about.tagline" = "Protección. Privacidad. Tranquilidad.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGo es la empresa independiente de protección en Internet para quienes quieren recuperar el control de su información personal.\n\nCreemos que la mejor manera de proteger tu información personal contra hackers, estafadores y empresas que invaden la privacidad es evitar que se recopile. Por eso, millones de personas [eligen DuckDuckGo en lugar de Chrome y otros navegadores](ddgQuickLink://duckduckgo.com/compare-privacy) para buscar y navegar en Internet. Nuestro motor de búsqueda integrado es como Google, pero nunca rastrea tus búsquedas. Y nuestras protecciones de navegación, como el bloqueo de rastreadores de anuncios y el bloqueo de cookies, ayudan a impedir que otras empresas recopilen tus datos. Ah, y nuestro navegador es gratuito: ganamos dinero con [anuncios de búsqueda que respetan la privacidad](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), no explotando tus datos. \n\n%@ \n\nRecupera el control de tu información personal con el navegador diseñado para proteger tus datos, no para recopilarlos.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Accesibilidad";
 
@@ -2955,6 +2979,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Mostrar dirección completa del sitio";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Mostrar animación de rastreadores bloqueados";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Búsqueda y Duck.ai";
@@ -3024,11 +3051,12 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Borrar";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Borrar datos y pestañas";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Borra pestañas, datos y chats de Duck.ai";
+"settings.autoclear.tabs.and.data.with.aichat" = "Borrar pestañas, datos y chats de Duck.ai";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Cierra todas las pestañas";
@@ -3036,17 +3064,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Pestañas";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Salir de la aplicación (15 minutos de inactividad)";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Salir de la aplicación (1 hora de inactividad)";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Salir de la aplicación (30 minutos de inactividad)";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Salir de la aplicación (5 minutos de inactividad)";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Salir de la aplicación (15 minutos de inactividad)";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Salir de la aplicación (30 minutos de inactividad)";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Salir de la aplicación";
@@ -3059,6 +3087,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Los datos se borrarán al reiniciar la aplicación.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugerencias de búsqueda";
 
@@ -3079,6 +3108,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Borrado automático de datos";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Comentarios sobre el navegador";
 
@@ -3090,6 +3120,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Borrar datos de navegación";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Borrar datos automáticamente";
 
@@ -3119,6 +3150,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Eliminar tus datos puede ayudar a proteger tu privacidad en línea. Usa el Fire Button para borrar los datos manualmente o configura el borrado automático.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Navegador predeterminado";
 
@@ -3166,6 +3198,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Sitios Fireproof";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "General";
 
@@ -3183,9 +3216,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nuevo";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Avance";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Teclado";
@@ -3461,6 +3491,9 @@
 "siteFeedback.urlPlaceholder" = "¿Qué sitio web no funciona?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Estado";
 
 /* No comment provided by engineer. */
@@ -3468,9 +3501,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nombre de host almacenado: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Subcaracterística: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Añadir al dispositivo";
@@ -3619,9 +3649,6 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restaurando suscripción...";
 
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro ahora se llama simplemente suscripción a DuckDuckGo";
-
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eliminar de este dispositivo";
 
@@ -3726,12 +3753,6 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Configurar la sincronización";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.credit-cards.title" = "Sincroniza y haz copias de seguridad de tus tarjetas de crédito";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.data.import.title" = "Sincroniza y haz copias de seguridad de tus datos";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "No, gracias";

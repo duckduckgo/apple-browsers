@@ -246,6 +246,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211992061067315?focus=true
     case browsingMenuSheetPresentation
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260?focus=true
+    case browsingMenuSheetEnabledByDefault
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
     case autofillExtensionSettings
     case canPromoteAutofillExtensionInBrowser
@@ -285,6 +288,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
+    
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
+    case burnSingleTab
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -365,6 +371,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .tierMessagingEnabled,
              .allowProTierPurchase,
              .browsingMenuSheetPresentation,
+             .browsingMenuSheetEnabledByDefault,
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
@@ -376,7 +383,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showWhatsNewPromptOnDemand,
              .dataImportSummarySyncPromotion,
              .aiChatAtb,
-             .enhancedDataClearingSettings:
+             .enhancedDataClearingSettings,
+             .burnSingleTab:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -567,6 +575,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .browsingMenuSheetPresentation:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.experimentalBrowsingMenu))
+        case .browsingMenuSheetEnabledByDefault:
+            return .internalOnly()
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -594,6 +604,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAtb:
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
+            return .disabled
+        case .burnSingleTab:
             return .disabled
         }
     }

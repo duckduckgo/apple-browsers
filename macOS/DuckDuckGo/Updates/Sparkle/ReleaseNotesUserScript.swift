@@ -26,7 +26,7 @@ import Common
 
 final class ReleaseNotesUserScript: NSObject, Subfeature {
 
-    lazy var updateController: SparkleUpdateController? = Application.appDelegate.updateController as? SparkleUpdateController
+    lazy var updateController: (any SparkleUpdateControllerProtocol)? = Application.appDelegate.updateController as? any SparkleUpdateControllerProtocol
     var messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "release-notes")])
     let featureName: String = "release-notes"
     weak var broker: UserScriptMessageBroker?
@@ -78,7 +78,7 @@ final class ReleaseNotesUserScript: NSObject, Subfeature {
             return
         }
 
-        guard let updateController = Application.appDelegate.updateController as? SparkleUpdateController else {
+        guard let updateController = Application.appDelegate.updateController as? any SparkleUpdateControllerProtocol else {
             return
         }
 

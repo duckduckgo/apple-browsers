@@ -439,7 +439,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     @ViewBuilder
     private var stepTwoView: some View {
-        let isEnabled = systemPermissionState == .authorized
+        let isEnabled = systemPermissionState != .initial && systemPermissionState != .waiting
 
         HStack(spacing: 12) {
             stepIndicator(step: 2, isActive: isEnabled)

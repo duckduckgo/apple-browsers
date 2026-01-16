@@ -201,9 +201,9 @@ class FireExecutor: FireExecuting {
         switch scope {
         case .all:
             tabManager.prepareAllTabsExceptCurrentForDataClearing()
-        case .tab(let viewModel):
+        case .tab:
             return
-            // TODO: Prepare the tab if it's the current tab
+            // TODO: Prepare the tab if it's not the current tab
         }
     }
     
@@ -214,9 +214,9 @@ class FireExecutor: FireExecuting {
             tabManager.prepareCurrentTabForDataClearing()
             tabManager.removeAll()
             Favicons.shared.clearCache(.tabs)
-        case .tab(let viewModel):
+        case .tab:
             return
-            // TODO:Prepare the tab if it's the current tab (non-current tabs were prepared earlier)
+            // TODO: Prepare the tab if it's the current tab (non-current tabs were prepared earlier)
             // TODO: Remove just this tab from TabManager
         }
     }

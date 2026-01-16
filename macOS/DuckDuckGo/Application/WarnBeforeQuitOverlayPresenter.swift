@@ -141,16 +141,14 @@ final class WarnBeforeQuitOverlayPresenter {
         guard let overlayWindow else { return }
         progressTask?.cancel()
         viewModel.resetProgress()
+        self.overlayWindow = nil
 
         // hide the window contents and give it some time to redraw
         // otherwise the shadow dirt keeps shown on the main window
         overlayWindow.contentView = NSView(frame: .zero)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            if let parentWindow = overlayWindow.parent {
-                parentWindow.removeChildWindow(overlayWindow)
-            }
+            overlayWindow.parent?.removeChildWindow(overlayWindow)
             overlayWindow.orderOut(nil)
-            self.overlayWindow = nil
         }
     }
 

@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "hesap";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Tüm Sekmeleri Kapat";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Grup: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Yapılandırma";
@@ -1408,6 +1417,15 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Player'ın işlevselliği YouTube'da yapılan son değişikliklerden etkilendi. Bu sorunları çözmeye çalışıyoruz. Anlayışınız için teşekkür ederiz.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Sayfa İçeriğini Ekle";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Duck.ai'a mesajınızla gönderildi";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Sayfa İçeriği";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI özellikleri gizli ve isteğe bağlıdır. Verileriniz yapay zekayı eğitmek için kullanılmaz.";
 
@@ -1670,7 +1688,7 @@
 "empty.search" = "Eşleşme bulunamadı";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Kayıtlı: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1728,9 +1746,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Yalnızca Mobil Favoriler";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Özellik: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklam ve pop-up engelleme";
@@ -2206,6 +2221,9 @@
 /* No comment provided by engineer. */
 "Messages" = "Mesajlar";
 
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Adres Çubuğu Düğmesi";
 
@@ -2492,6 +2510,9 @@
 "No existing subscription found" = "Abonelik bulunamadı";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Günlük Yok";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2523,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Kullanılabilir abonelik yok";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "Tamam";
@@ -2891,6 +2915,9 @@
 "Results" = "Sonuçlar";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Adres ara veya gir";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2935,9 +2962,6 @@
 /* about tagline */
 "settings.about.tagline" = "Koruma. Gizlilik. İçiniz rahat olsun.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGo, kişisel bilgilerinin kontrolünü geri almak isteyen herkes için bağımsız bir online koruma şirketidir.\n\nKişisel bilgilerinizi bilgisayar korsanlarından, dolandırıcılardan ve gizliliğinizi ihlal eden şirketlerden korumanın en iyi yolunun, bu bilgilerin toplanmasını tamamen durdurmak olduğuna inanıyoruz. Bu yüzden milyonlarca insan internette arama yapmak ve gezinmek için [Chrome ve diğer tarayıcılar yerine DuckDuckGo'yu tercih ediyor](ddgQuickLink://duckduckgo.com/compare-privacy). Yerleşik arama motorumuz Google gibidir ancak aramalarınızı asla izlemez. Reklam izleyici ve çerezleri engelleme gibi tarama korumalarımız, diğer şirketlerin verilerinizi toplamasını önlemeye de yardımcı olur. Ayrıca, tarayıcımız ücretsizdir. Verilerinizi kullanarak değil, [gizliliğe saygılı arama reklamlarından](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/) para kazanıyoruz. \n\n%@ \n\nVeri koruma için tasarlanmış, veri toplama amacı gütmeyen tarayıcıyla kişisel bilgilerinizin kontrolünü geri alın.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Erişilebilirlik";
 
@@ -2955,6 +2979,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Tam Site Adresini Göster";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Engellenen İzleyiciler Animasyonunu Göster";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Arama ve Duck.ai";
@@ -3024,6 +3051,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Temizle";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Sekmeleri ve Verileri Temizle";
 
@@ -3036,17 +3064,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Sekmeler";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Uygulamadan Çık, 15 Dakika Boyunca İnaktif";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "1 Saat Boyunca Hareket Yoksa Uygulamadan Çık";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Uygulamadan Çık, 30 Dakika Boyunca İnaktif";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Uygulamadan Çık, 5 Dakika Boyunca İnaktif";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Uygulamadan Çık, 15 Dakika Boyunca İnaktif";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Uygulamadan Çık, 30 Dakika Boyunca İnaktif";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Yalnızca Uygulamadan Çıkma";
@@ -3059,6 +3087,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Uygulama yeniden başlatıldığında veriler silinecektir.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Arama Önerileri";
 
@@ -3079,6 +3108,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Otomatik Veri Temizleme";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Tarayıcı Geri Bildirimi";
 
@@ -3090,6 +3120,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Tarama Verilerini Temizle";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Verileri Otomatik Olarak Temizle";
 
@@ -3119,6 +3150,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Kişisel verilerini silmek, çevrimiçi gizliliğini korumana yardımcı olabilir. Verileri manuel olarak silmek için Fire Button'ı kullan veya otomatik silme işlemini ayarla.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Varsayılan Tarayıcı";
 
@@ -3166,6 +3198,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof Uygulanan Siteler";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Genel";
 
@@ -3183,9 +3216,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Yeni";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Önizleme";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klavye";
@@ -3461,6 +3491,9 @@
 "siteFeedback.urlPlaceholder" = "Hangi web sitesi hatalı?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Durum";
 
 /* No comment provided by engineer. */
@@ -3468,9 +3501,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Alt özellik: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Cihaza Ekle";
@@ -3619,9 +3649,6 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Abonelik geri yükleniyor...";
 
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro artık sadece DuckDuckGo aboneliği olarak adlandırılıyor";
-
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Bu Cihazdan Kaldır";
 
@@ -3726,12 +3753,6 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Senkronizasyonu Ayarla";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.credit-cards.title" = "Kredi Kartlarınızı Senkronize Edin ve Yedekleyin";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.data.import.title" = "Verilerinizi Senkronize Edin ve Yedekleyin";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Hayır Teşekkürler";

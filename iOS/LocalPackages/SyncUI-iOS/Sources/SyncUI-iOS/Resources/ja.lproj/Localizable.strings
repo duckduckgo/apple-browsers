@@ -31,9 +31,6 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "キャンセル";
 
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "同期とバックアップをオンにする";
-
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "これにより、ブックマークと自動入力データの暗号化されたバックアップがDuckDuckGoの安全なサーバー上に作成され、他のデバイスと同期できるようになります。";
 

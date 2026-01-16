@@ -563,7 +563,9 @@ private extension AIChatContextualSheetViewController {
 private extension AIChatContextualSheetViewController {
 
     func showOnboardingIfNeeded() {
-       // guard !settings.hasSeenContextualOnboarding else { return }
+        // guard !settings.hasSeenContextualOnboarding else { return }
+
+        isModalInPresentation = true
 
         let onboardingView = AIChatContextualOnboardingView(
             onConfirm: { [weak self] in
@@ -610,6 +612,7 @@ private extension AIChatContextualSheetViewController {
             hostingController.view.removeFromSuperview()
             hostingController.removeFromParent()
             self?.onboardingHostingController = nil
+            self?.isModalInPresentation = false
             completion?()
         }
     }

@@ -295,11 +295,11 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var isOmnibarAvailable: Bool {
-        return featureFlagger.isFeatureOn(.newTabPageOmnibar)
+        return featureFlagger?.isFeatureOn(.newTabPageOmnibar) ?? true
     }
 
     var areThemesAvailable: Bool {
-        return featureFlagger.isFeatureOn(.themes)
+        return featureFlagger?.isFeatureOn(.themes) ?? true
     }
 
     @Published var isOmnibarVisible: Bool {
@@ -323,7 +323,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var maxNextStepsCardsDemonstrationDays: Int {
-        featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
+        (featureFlagger?.isFeatureOn(.nextStepsSingleCardIteration) ?? true) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
     }
 
     private var shouldHideNextStepsCards: Bool {
@@ -426,7 +426,7 @@ final class AppearancePreferences: ObservableObject {
 
     var isContinueSetUpAvailable: Bool {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        return privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) && osVersion.majorVersion >= 12
+        return (privacyConfigurationManager?.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) ?? true) && osVersion.majorVersion >= 12
     }
 
     func updateUserInterfaceStyle() {
@@ -447,11 +447,11 @@ final class AppearancePreferences: ObservableObject {
 
     convenience init(
         keyValueStore: ThrowingKeyValueStoring,
-        privacyConfigurationManager: PrivacyConfigurationManaging,
+        privacyConfigurationManager: PrivacyConfigurationManaging?,
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
         dateTimeProvider: @escaping () -> Date = Date.init,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger?
     ) {
         self.init(
             persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
@@ -465,11 +465,11 @@ final class AppearancePreferences: ObservableObject {
 
     init(
         persistor: AppearancePreferencesPersistor,
-        privacyConfigurationManager: PrivacyConfigurationManaging,
+        privacyConfigurationManager: PrivacyConfigurationManaging?,
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
         dateTimeProvider: @escaping () -> Date = Date.init,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger?
     ) {
         self.persistor = persistor
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -522,11 +522,11 @@ final class AppearancePreferences: ObservableObject {
     }
 
     private var persistor: AppearancePreferencesPersistor
-    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let privacyConfigurationManager: PrivacyConfigurationManaging?
     private var pixelFiring: PixelFiring?
     private var newTabPageNavigator: NewTabPageNavigator
     private let dateTimeProvider: () -> Date
-    private let featureFlagger: FeatureFlagger
+    private let featureFlagger: FeatureFlagger?
     private var cancellables = Set<AnyCancellable>()
 
     private func requestSync() {
@@ -538,7 +538,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     private func subscribeToOmnibarFeatureFlagChanges() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+        guard let overridesHandler = featureFlagger?.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
             return
         }
 

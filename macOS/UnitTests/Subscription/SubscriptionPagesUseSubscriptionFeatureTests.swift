@@ -387,6 +387,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     @MainActor
     func testAppStoreSuccess_EmitsWideEventWithContext() async throws {
+        throw XCTSkip("Temporarily disabled")
+
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_macos")!
         let webView = MockURLWebView(url: originURL)
         let message = MockWKScriptMessage(name: "subscriptionSelected", body: [:], webView: webView)

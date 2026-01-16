@@ -25,8 +25,6 @@ import NetworkingTestingUtils
 
 public final class SubscriptionManagerMock: SubscriptionManager {
 
-    public var email: String?
-
     public var isEligibleForFreeTrialResult: Bool = false
 
     public init() {}
@@ -43,8 +41,6 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     public var currentEnvironment: SubscriptionEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
 
     public func loadInitialData() async {}
-
-    public func refreshCachedSubscription(completion: @escaping (Bool) -> Void) {}
 
     public var resultSubscription: Result<DuckDuckGoSubscription, Error>?
     public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription? {
@@ -108,19 +104,19 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         switch policy {
         case .local, .localValid, .localForceRefresh:
             guard let resultTokenContainer else {
-                throw OAuthClientError.missingTokenContainer
+                throw SubscriptionManagerError.noTokenAvailable
             }
             return resultTokenContainer
         case .createIfNeeded:
             guard let resultCreateAccountTokenContainer else {
-                throw OAuthClientError.missingTokenContainer
+                throw SubscriptionManagerError.noTokenAvailable
             }
             resultTokenContainer = resultCreateAccountTokenContainer
             return resultCreateAccountTokenContainer
         }
     }
 
-    public func signOut(notifyUI: Bool, userInitiated: Bool) {
+    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
         resultTokenContainer = nil
     }
 
@@ -139,15 +135,6 @@ public final class SubscriptionManagerMock: SubscriptionManager {
             return result
         case .failure(let error):
             throw error
-        }
-    }
-
-    public func refreshAccount() async {}
-
-    public var confirmPurchaseError: Error?
-    public func confirmPurchase(signature: String) async throws {
-        if let confirmPurchaseError {
-            throw confirmPurchaseError
         }
     }
 
@@ -187,24 +174,20 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public var resultFeatures: [SubscriptionEntitlement] = []
-    public func currentSubscriptionFeatures(forceRefresh: Bool) async -> [SubscriptionEntitlement] {
+    public func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement] {
         resultFeatures
-    }
-
-    public func isSubscriptionFeatureEnabled(_ entitlement: Networking.SubscriptionEntitlement) async throws -> Bool {
-        resultFeatures.contains { $0 == entitlement }
-    }
-
-    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
-        resultFeatures.contains { $0 == feature.subscriptionEntitlement }
-    }
-
-    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async -> Bool {
-        resultFeatures.contains { $0 == feature.subscriptionEntitlement }
     }
 
     public func isFeatureIncludedInSubscription(_ feature: Networking.SubscriptionEntitlement) async throws -> Bool {
         resultFeatures.contains(feature)
+    }
+
+    public func isFeatureEnabled(_ feature: Networking.SubscriptionEntitlement) async throws -> Bool {
+        resultFeatures.contains(feature)
+    }
+
+    public func getAllEntitlementStatus() async -> EntitlementStatus {
+        EntitlementStatus(enabledEntitlements: resultFeatures)
     }
 
     // MARK: - Subscription Token Provider
@@ -214,46 +197,6 @@ public final class SubscriptionManagerMock: SubscriptionManager {
             throw SubscriptionManagerError.noTokenAvailable
         }
         return accessToken
-    }
-
-    public func removeAccessToken() {
-        resultTokenContainer = nil
-    }
-
-    public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
-        switch feature {
-        case .networkProtection:
-            return await isFeatureEnabled(.networkProtection)
-        case .dataBrokerProtection:
-            return await isFeatureEnabled(.dataBrokerProtection)
-        case .identityTheftRestoration:
-            return await isFeatureEnabled(.identityTheftRestoration)
-        case .identityTheftRestorationGlobal:
-            return await isFeatureEnabled(.identityTheftRestorationGlobal)
-        case .paidAIChat:
-            return await isFeatureEnabled(.paidAIChat)
-        case .unknown:
-            return false
-        }
-    }
-
-    public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
-        await currentSubscriptionFeatures(forceRefresh: false).compactMap { feature in
-            switch feature {
-            case .networkProtection:
-                return .networkProtection
-            case .dataBrokerProtection:
-                return .dataBrokerProtection
-            case .identityTheftRestoration:
-                return .identityTheftRestoration
-            case .identityTheftRestorationGlobal:
-                return .identityTheftRestorationGlobal
-            case .paidAIChat:
-                return .paidAIChat
-            case .unknown:
-                return nil
-            }
-        }
     }
 
     public var adoptResult: Result<Networking.TokenContainer, Error>?

@@ -30,19 +30,22 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockPayloadHandler: AIChatPayloadHandler!
     var mockMetricHandler: MockAIChatPixelMetricHandler!
     var mockFeatureFlagger: MockFeatureFlagger!
+    var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
 
     override func setUpWithError() throws {
         mockSettings = MockAIChatSettingsProvider()
         mockPayloadHandler = AIChatPayloadHandler()
         mockMetricHandler = MockAIChatPixelMetricHandler()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
             featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: mockFeatureFlagger
+            featureFlagger: mockFeatureFlagger,
+            productSurfaceTelemetry: mockProductSurfaceTelemetry
         )
     }
 
@@ -341,6 +344,16 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.submitPromptCallCount, 1)
         XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Hello")
         XCTAssertNil(mockUserScript.lastSubmittedPageContext)
+    }
+    
+    // MARK: - fireAIChatTelemetry
+
+    func testFireAIChatTelemetryCallsProductSurfaceTelemetry() throws {
+        // When
+        handler.fireAIChatTelemetry()
+
+        // Then
+        XCTAssertEqual(mockProductSurfaceTelemetry.duckAIUsedCallCount, 1)
     }
 }
 

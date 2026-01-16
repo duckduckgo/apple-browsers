@@ -58,6 +58,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615802881
     case updatesWontAutomaticallyRestartApp
 
+    /// Simplified update flow without expiration logic
+    /// Requires: .updatesWontAutomaticallyRestartApp (via subfeature)
+    case updatesSimplifiedFlow
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
 
@@ -341,6 +345,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
+                .updatesSimplifiedFlow,
                 .scamSiteProtection,
                 .tabCrashDebugging,
                 .maliciousSiteProtection,
@@ -440,6 +445,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
             return .remoteReleasable(.feature(.updatesWontAutomaticallyRestartApp))
+        case .updatesSimplifiedFlow:
+            return .remoteReleasable(.subfeature(UpdatesSubfeature.simplifiedFlow))
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .autocompleteTabs:

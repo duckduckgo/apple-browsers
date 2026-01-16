@@ -325,7 +325,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         do {
             guard let syncHandler = makeSyncHandler() else {
-                return makeErrorResponse("sync off")
+                return makeErrorResponse("internal error")
             }
             return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
         } catch {

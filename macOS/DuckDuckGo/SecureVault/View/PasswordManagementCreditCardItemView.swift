@@ -123,8 +123,13 @@ private struct HeaderView: View {
 
         HStack(alignment: .center, spacing: 0) {
 
-            Image(.card)
-                .padding(.trailing, 10)
+            if let card = model.card {
+                Image(nsImage: card.iconImage)
+                    .padding(.trailing, 10)
+            } else {
+                Image(.card)
+                    .padding(.trailing, 10)
+            }
 
             if model.isNew || model.isEditing {
 

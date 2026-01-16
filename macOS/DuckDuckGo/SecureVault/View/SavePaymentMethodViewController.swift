@@ -50,6 +50,7 @@ final class SavePaymentMethodViewController: NSViewController {
     @IBOutlet weak var titleLabel: NSTextField!
     @IBOutlet weak var saveButton: NSButton!
     @IBOutlet weak var notNowButton: NSButton!
+    @IBOutlet weak var cardIconImageView: NSImageView!
 
     weak var delegate: SavePaymentMethodDelegate?
 
@@ -73,6 +74,8 @@ final class SavePaymentMethodViewController: NSViewController {
         } else {
             cardExpirationLabel.stringValue = ""
         }
+
+        cardIconImageView.image = paymentMethod.iconImage
     }
 
     // MARK: - Actions

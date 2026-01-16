@@ -51,7 +51,6 @@ extension FeatureFlag: FeatureFlagCategorization {
         switch self {
         case .aiChatPageContext,
                 .aiChatKeepSession,
-                .aiChatDataClearing,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
                 .aiChatOmnibarOnboarding,

@@ -84,7 +84,6 @@ public enum PrivacyFeature: String {
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport
-    case duckAiDataClearing
     case serp
     case popupBlocking
     case combinedPermissionView

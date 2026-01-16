@@ -62,7 +62,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     }
     
     var showAIChatsToggle: Bool {
-        return aiChatSettings.isAIChatEnabled && featureFlagger.isFeatureOn(.duckAiDataClearing)
+        return aiChatSettings.isAIChatEnabled
     }
     
     // MARK: - Elements Content

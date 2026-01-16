@@ -144,6 +144,10 @@ final class AIChatSettings: AIChatSettingsProvider {
         keyValueStore.set(true, forKey: .hasSeenContextualOnboardingKey)
     }
 
+    func resetContextualOnboarding() {
+        keyValueStore.set(false, forKey: .hasSeenContextualOnboardingKey)
+    }
+
     func enableAIChat(enable: Bool) {
         keyValueStore.set(enable, forKey: .isAIChatEnabledKey)
         triggerSettingsChangedNotification()

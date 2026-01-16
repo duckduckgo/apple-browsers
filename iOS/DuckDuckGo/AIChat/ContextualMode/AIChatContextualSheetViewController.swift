@@ -563,7 +563,7 @@ private extension AIChatContextualSheetViewController {
 private extension AIChatContextualSheetViewController {
 
     func showOnboardingIfNeeded() {
-        // guard !settings.hasSeenContextualOnboarding else { return }
+        guard !settings.hasSeenContextualOnboarding else { return }
 
         isModalInPresentation = true
         Pixel.fire(pixel: .aiChatContextualOnboardingDisplayed)

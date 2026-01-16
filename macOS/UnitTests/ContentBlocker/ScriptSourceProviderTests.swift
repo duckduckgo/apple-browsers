@@ -96,7 +96,8 @@ final class ScriptSourceProviderTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             fireCoordinator: fireCoordinator,
             autoconsentManagement: AutoconsentManagement(),
-            newTabPageActionsManager: nil
+            newTabPageActionsManager: nil,
+            syncServiceProvider: { nil }
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

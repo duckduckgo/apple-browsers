@@ -42,6 +42,18 @@ public class AIChatSyncHandler: AIChatSyncHandling {
         let deviceId: String?
         let deviceName: String?
         let deviceType: String?
+
+        public init(syncAvailable: Bool,
+                    userId: String? = nil,
+                    deviceId: String? = nil,
+                    deviceName: String? = nil,
+                    deviceType: String? = nil) {
+            self.syncAvailable = syncAvailable
+            self.userId = userId
+            self.deviceId = deviceId
+            self.deviceName = deviceName
+            self.deviceType = deviceType
+        }
     }
 
     public struct SyncToken: Encodable {

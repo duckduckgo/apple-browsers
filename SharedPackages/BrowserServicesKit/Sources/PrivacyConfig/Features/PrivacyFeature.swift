@@ -46,6 +46,7 @@ public enum PrivacyFeature: String {
     case dbp
     case sync
     case privacyDashboard
+    case updates
     case updatesWontAutomaticallyRestartApp
     case performanceMetrics
     case privacyPro
@@ -583,7 +584,7 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
 
 public enum UpdatesSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature {
-        .updatesWontAutomaticallyRestartApp
+        .updates
     }
 
     /// Simplified update flow without expiration logic

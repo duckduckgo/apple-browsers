@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Subscription
+import Networking
 
 struct SettingsState {
     
@@ -42,8 +43,8 @@ struct SettingsState {
         var hasActiveSubscription: Bool
         var isRestoring: Bool
         var shouldDisplayRestoreSubscriptionError: Bool
-        var subscriptionFeatures: [Entitlement.ProductName]
-        var entitlements: [Entitlement.ProductName]
+        var subscriptionFeatures: [SubscriptionEntitlement]
+        var entitlements: [SubscriptionEntitlement]
         var platform: DuckDuckGoSubscription.Platform
         var isShowingStripeView: Bool
         var isActiveTrialOffer: Bool

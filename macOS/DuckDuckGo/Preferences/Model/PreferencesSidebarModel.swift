@@ -29,6 +29,7 @@ import PixelKit
 import PreferencesUI_macOS
 import PrivacyConfig
 import SubscriptionUI
+import os.log
 
 protocol AIFeaturesStatusProviding: AnyObject {
     var isAIFeaturesEnabled: Bool { get }
@@ -378,54 +379,61 @@ final class PreferencesSidebarModel: ObservableObject {
 
     private func refreshSubscriptionStateAndSectionsIfNeeded() {
         Task { @MainActor in
-            let updatedState = await makeSubscriptionState()
+            do {
+                let updatedState = try await makeSubscriptionState()
 
-            if self.currentSubscriptionState != updatedState {
-                hasLoadedInitialSubscriptionState = true
+                if self.currentSubscriptionState != updatedState {
+                    hasLoadedInitialSubscriptionState = true
 
-                if self.currentSubscriptionState.isPersonalInformationRemovalEnabled != updatedState.isPersonalInformationRemovalEnabled {
-                    personalInformationRemovalSubject.send(personalInformationRemovalStatus().status ?? .off)
+                    if self.currentSubscriptionState.isPersonalInformationRemovalEnabled != updatedState.isPersonalInformationRemovalEnabled {
+                        personalInformationRemovalSubject.send(personalInformationRemovalStatus().status ?? .off)
+                    }
+
+                    if self.currentSubscriptionState.isPaidAIChatEnabled != updatedState.isPaidAIChatEnabled {
+                        paidAIChatSubject.send(updatedState.isPaidAIChatEnabled && aiChatPreferences.isAIFeaturesEnabled ? .on : .off)
+                    }
+
+                    if self.currentSubscriptionState.isIdentityTheftRestorationEnabled != updatedState.isIdentityTheftRestorationEnabled {
+                        identityTheftRestorationSubject.send(updatedState.isIdentityTheftRestorationEnabled ? .on : .off)
+                    }
+
+                    self.currentSubscriptionState = updatedState
+
+                    self.refreshSections()
                 }
-
-                if self.currentSubscriptionState.isPaidAIChatEnabled != updatedState.isPaidAIChatEnabled {
-                    paidAIChatSubject.send(updatedState.isPaidAIChatEnabled && aiChatPreferences.isAIFeaturesEnabled ? .on : .off)
-                }
-
-                if self.currentSubscriptionState.isIdentityTheftRestorationEnabled != updatedState.isIdentityTheftRestorationEnabled {
-                    identityTheftRestorationSubject.send(updatedState.isIdentityTheftRestorationEnabled ? .on : .off)
-                }
-
-                self.currentSubscriptionState = updatedState
-
-                self.refreshSections()
+            } catch {
+                Logger.general.error("Failed to refresh subscription state: \(error, privacy: .public)")
             }
         }
     }
 
-    private func makeSubscriptionState() async -> PreferencesSidebarSubscriptionState {
-        // This requires follow-up work:
-        // https://app.asana.com/1/137249556945/task/1210799126744217
+    private func makeSubscriptionState() async throws -> PreferencesSidebarSubscriptionState {
         let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.hasAppStoreProductsAvailable == false
 
-        let isIdentityTheftRestorationAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestoration)) ?? false
-        let isIdentityTheftRestorationEnabled = await (try? subscriptionManager.isFeatureEnabled(.identityTheftRestoration)) ?? false
-        let isIdentityTheftRestorationGlobalEnabled = await (try? subscriptionManager.isFeatureEnabled(.identityTheftRestorationGlobal)) ?? false
-        let isIdentityTheftRestorationGlobalAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestorationGlobal)) ?? false
+        // Enabled: Is the entitlement in the token?
+        let entitlementStatus = await subscriptionManager.getAllEntitlementStatus()
 
-        let isPaidAIChatAvailable = (try? await subscriptionManager.isFeatureIncludedInSubscription(.paidAIChat)) ?? false
+        // Availability: Is included in the purchased subscription?
+        let subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures()
+        let isIdentityTheftRestorationAvailable = subscriptionFeatures.contains(.identityTheftRestoration)
+        let isIdentityTheftRestorationGlobalAvailable = subscriptionFeatures.contains(.identityTheftRestorationGlobal)
+        let isPaidAIChatAvailable = subscriptionFeatures.contains(.paidAIChat)
+        let isNetworkProtectionAvailable = subscriptionFeatures.contains(.networkProtection)
+        let isDataBrokerProtectionAvailable = subscriptionFeatures.contains(.dataBrokerProtection)
 
-        return await PreferencesSidebarSubscriptionState(hasSubscription: subscriptionManager.isSubscriptionPresent(),
-                                                         shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
+        return PreferencesSidebarSubscriptionState(
+            hasSubscription: subscriptionManager.isSubscriptionPresent(),
+            shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
 
-                                                         isNetworkProtectionRemovalEnabled: (try? subscriptionManager.isFeatureEnabled(.networkProtection)) ?? false,
-                                                         isPersonalInformationRemovalEnabled: (try? subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false,
-                                                         isIdentityTheftRestorationEnabled: isIdentityTheftRestorationEnabled || isIdentityTheftRestorationGlobalEnabled,
-                                                         isPaidAIChatEnabled: (try? subscriptionManager.isFeatureEnabled(.paidAIChat)) ?? false,
+            isNetworkProtectionRemovalEnabled: entitlementStatus.networkProtection,
+            isPersonalInformationRemovalEnabled: entitlementStatus.dataBrokerProtection,
+            isIdentityTheftRestorationEnabled: entitlementStatus.identityTheftRestoration || entitlementStatus.identityTheftRestorationGlobal,
+            isPaidAIChatEnabled: entitlementStatus.paidAIChat,
 
-                                                         isNetworkProtectionRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)) ?? false,
-                                                         isPersonalInformationRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false,
-                                                         isIdentityTheftRestorationAvailable: isIdentityTheftRestorationAvailable || isIdentityTheftRestorationGlobalAvailable,
-                                                         isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && isPaidAIChatAvailable)
+            isNetworkProtectionRemovalAvailable: isNetworkProtectionAvailable,
+            isPersonalInformationRemovalAvailable: isDataBrokerProtectionAvailable,
+            isIdentityTheftRestorationAvailable: isIdentityTheftRestorationAvailable || isIdentityTheftRestorationGlobalAvailable,
+            isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && isPaidAIChatAvailable)
     }
 
     func refreshSections() {

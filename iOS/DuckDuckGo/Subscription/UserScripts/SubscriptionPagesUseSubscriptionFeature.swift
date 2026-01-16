@@ -108,7 +108,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
 
     var onSetSubscription: (() -> Void)? { get set }
     var onBackToSettings: (() -> Void)? { get set }
-    var onFeatureSelected: ((Entitlement.ProductName) -> Void)? { get set }
+    var onFeatureSelected: ((SubscriptionEntitlement) -> Void)? { get set }
     var onActivateSubscription: (() -> Void)? { get set }
 
     func with(broker: UserScriptMessageBroker)
@@ -186,7 +186,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     // Subscription Activation Actions
     var onSetSubscription: (() -> Void)?
     var onBackToSettings: (() -> Void)?
-    var onFeatureSelected: ((Entitlement.ProductName) -> Void)?
+    var onFeatureSelected: ((SubscriptionEntitlement) -> Void)?
     var onActivateSubscription: (() -> Void)?
 
     struct FeatureSelection: Codable {

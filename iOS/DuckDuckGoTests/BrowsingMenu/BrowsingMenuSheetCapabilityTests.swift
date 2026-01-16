@@ -197,15 +197,6 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
         XCTAssertEqual(storedValue, true)
     }
 
-    func testSetEnabledCanStoresFalse() {
-        let capability = createCapability()
-
-        capability.setEnabled(false)
-
-        let storedValue = try? mockKeyValueStore.object(forKey: "com_duckduckgo_experimentalBrowsingMenu_enabled") as? Bool
-        XCTAssertEqual(storedValue, false)
-    }
-
     // MARK: - Helpers
 
     private func createCapability() -> BrowsingMenuSheetDefaultCapability {

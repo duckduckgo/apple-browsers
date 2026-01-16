@@ -72,7 +72,8 @@ public extension SubJobWebRunning {
         }
 
         // Foundation object
-        if let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted, .sortedKeys]) {
+        if JSONSerialization.isValidJSONObject(value),
+           let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted, .sortedKeys]) {
             return String(data: data, encoding: .utf8) ?? fallback
         }
 

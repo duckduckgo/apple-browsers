@@ -575,6 +575,7 @@ private extension AIChatContextualSheetViewController {
             },
             onViewSettings: { [weak self] in
                 Pixel.fire(pixel: .aiChatContextualOnboardingSettingsPressed)
+                self?.settings.markContextualOnboardingSeen()
                 self?.onOpenSettings()
             }
         )

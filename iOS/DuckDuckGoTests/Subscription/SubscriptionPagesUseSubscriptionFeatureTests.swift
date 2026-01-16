@@ -61,7 +61,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent,
-            tierEventReporter: mockTierEventReporter)
+            tierEventReporter: mockTierEventReporter,
+            pendingTransactionHandler: MockPendingTransactionHandler())
     }
     
     override func tearDown() {
@@ -492,7 +493,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
@@ -535,7 +537,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
@@ -566,7 +569,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
@@ -592,7 +596,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -622,7 +627,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -651,7 +657,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -681,7 +688,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -708,7 +716,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
 
         // Invalid params - missing "id"
@@ -738,7 +747,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
         )
 
         let params: [String: Any] = ["id": "monthly-plus", "change": "downgrade"]
@@ -751,6 +761,41 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertTrue(purchaseFlow.changeTierCalled)
         XCTAssertEqual(purchaseFlow.changeTierSubscriptionIdentifier, "monthly-plus")
     }
+    
+    // MARK: - Pending Transaction Tests
+    
+    @MainActor
+    func testSubscriptionSelected_WhenTransactionPendingAuthentication_CallsMarkPurchasePending() async throws {
+        // Given
+        let mockPendingTransactionHandler = MockPendingTransactionHandler()
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.transactionPendingAuthentication)
+        
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+        
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: "",
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: mockPendingTransactionHandler
+        )
+        
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        let webView = MockURLWebView(url: originURL)
+        let message = MockWKScriptMessage(name: "subscriptionSelected", body: "", webView: webView)
+        
+        // When
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+        
+        // Then
+        XCTAssertTrue(mockPendingTransactionHandler.markPurchasePendingCalled, "markPurchasePending should be called when transaction is pending authentication")
+    }
 }
 
 final class MockURLWebView: WKWebView {
@@ -762,6 +807,25 @@ final class MockURLWebView: WKWebView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override var url: URL? { mockedURL }
 }
+
+final class MockPendingTransactionHandler: PendingTransactionHandling {
+    var markPurchasePendingCalled = false
+    var handleSubscriptionActivatedCalled = false
+    var handlePendingTransactionApprovedCalled = false
+    
+    func markPurchasePending() {
+        markPurchasePendingCalled = true
+    }
+    
+    func handleSubscriptionActivated() {
+        handleSubscriptionActivatedCalled = true
+    }
+    
+    func handlePendingTransactionApproved() {
+        handlePendingTransactionApprovedCalled = true
+    }
+}
+
 
 final class MockSubscriptionTierEventReporter: SubscriptionTierEventReporting {
     var requestedCalled = false

@@ -81,6 +81,8 @@ public enum SubscriptionPixelType: Equatable {
     case getTokensError(AuthTokensCachePolicy, Error)
     case invalidRefreshTokenSignedOut
     case invalidRefreshTokenRecovered
+    case purchaseSuccessAfterPendingTransaction
+    case pendingTransactionApproved
 
     public static func == (lhs: SubscriptionPixelType, rhs: SubscriptionPixelType) -> Bool {
         switch (lhs, rhs) {
@@ -88,7 +90,9 @@ public enum SubscriptionPixelType: Equatable {
             (.subscriptionIsActive, .subscriptionIsActive),
             (.invalidRefreshTokenSignedOut, .invalidRefreshTokenSignedOut),
             (.invalidRefreshTokenRecovered, .invalidRefreshTokenRecovered),
-            (.getTokensError, .getTokensError):
+            (.getTokensError, .getTokensError),
+            (.purchaseSuccessAfterPendingTransaction, .purchaseSuccessAfterPendingTransaction),
+            (.pendingTransactionApproved, .pendingTransactionApproved):
             return true
         default:
             return false

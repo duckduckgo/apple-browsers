@@ -101,7 +101,7 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
     // MARK: - isEnabled (when isEnabledByDefault is true)
 
     func testIsEnabledReturnsTrueWhenEnabledByDefaultAndInternalUserWithNoStoredValue() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuEnabledByDefault]
+        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetEnabledByDefault]
         mockInternalUserDecider.isInternalUser = true
 
         let capability = createCapability()
@@ -110,7 +110,7 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
     }
 
     func testIsEnabledReturnsFalseWhenEnabledByDefaultAndInternalUserWithStoredValueFalse() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuEnabledByDefault]
+        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetEnabledByDefault]
         mockInternalUserDecider.isInternalUser = true
         try? mockKeyValueStore.set(false, forKey: "com_duckduckgo_experimentalBrowsingMenu_enabled")
 
@@ -120,7 +120,7 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
     }
 
     func testIsEnabledReturnsTrueWhenEnabledByDefaultAndInternalUserWithStoredValueTrue() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuEnabledByDefault]
+        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetEnabledByDefault]
         mockInternalUserDecider.isInternalUser = true
         try? mockKeyValueStore.set(true, forKey: "com_duckduckgo_experimentalBrowsingMenu_enabled")
 
@@ -130,7 +130,7 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
     }
 
     func testIsEnabledReturnsTrueWhenEnabledByDefaultAndExternalUser() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuEnabledByDefault]
+        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetEnabledByDefault]
         mockInternalUserDecider.isInternalUser = false
 
         let capability = createCapability()
@@ -139,7 +139,7 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
     }
 
     func testIsEnabledReturnsTrueWhenEnabledByDefaultAndExternalUserEvenWithStoredValueFalse() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuEnabledByDefault]
+        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetEnabledByDefault]
         mockInternalUserDecider.isInternalUser = false
         try? mockKeyValueStore.set(false, forKey: "com_duckduckgo_experimentalBrowsingMenu_enabled")
 
@@ -169,7 +169,7 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
     // MARK: - isSettingsOptionVisible (when isEnabledByDefault is true)
 
     func testIsSettingsOptionVisibleReturnsTrueWhenEnabledByDefaultAndInternalUser() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuEnabledByDefault]
+        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetEnabledByDefault]
         mockInternalUserDecider.isInternalUser = true
 
         let capability = createCapability()
@@ -178,7 +178,7 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
     }
 
     func testIsSettingsOptionVisibleReturnsFalseWhenEnabledByDefaultAndExternalUser() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuEnabledByDefault]
+        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetEnabledByDefault]
         mockInternalUserDecider.isInternalUser = false
 
         let capability = createCapability()

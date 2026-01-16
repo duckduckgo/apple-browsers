@@ -98,7 +98,7 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
     // MARK: - Private
 
     private var isEnabledByDefault: Bool {
-        featureFlagger.isFeatureOn(.browsingMenuEnabledByDefault)
+        featureFlagger.isFeatureOn(.browsingMenuSheetEnabledByDefault)
     }
 
     private var storedEnabledValue: Bool? {

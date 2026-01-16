@@ -186,7 +186,7 @@ public extension SubJobWebRunning {
         if let email = extractedProfile?.email {
             recordDebugEvent(kind: .actionResponse,
                              actionType: action.actionType,
-                             details: "Email confirmation started (polling inverval \(action.pollingTime)s)")
+                             details: "Email confirmation started (polling interval \(action.pollingTime)s)")
             stageCalculator.setStage(.emailReceive)
             let url = try await emailConfirmationDataService.getConfirmationLink(
                 from: email,

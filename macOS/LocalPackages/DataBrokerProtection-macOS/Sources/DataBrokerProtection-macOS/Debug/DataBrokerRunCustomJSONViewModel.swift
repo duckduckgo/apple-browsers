@@ -336,6 +336,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     }
                 }
             } catch {
+                self.isProgressActive = false
+                self.progressText = "Idle"
                 showAlert(for: error)
             }
         }

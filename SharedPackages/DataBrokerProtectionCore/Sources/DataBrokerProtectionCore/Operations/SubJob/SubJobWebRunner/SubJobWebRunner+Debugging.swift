@@ -27,18 +27,12 @@ public enum DebugEventKind: String {
 }
 
 public protocol DebugEventReporting {
-    func recordDebugEvent(kind: DebugEventKind,
-                          actionType: ActionType?,
-                          details: String)
+    func recordDebugEvent(kind: DebugEventKind, actionType: ActionType?, details: String)
 }
 
 public extension DebugEventReporting {
-    func recordDebugEvent(kind: DebugEventKind,
-                          actionType: ActionType? = nil,
-                          details: String) {
-        recordDebugEvent(kind: kind,
-                         actionType: actionType,
-                         details: details)
+    func recordDebugEvent(kind: DebugEventKind, details: String) {
+        recordDebugEvent(kind: kind, actionType: nil, details: details)
     }
 }
 
@@ -47,9 +41,7 @@ public extension SubJobWebRunning {
                           actionType: ActionType? = nil,
                           details: String) {
         guard let reporter = stageCalculator as? DebugEventReporting else { return }
-        reporter.recordDebugEvent(kind: kind,
-                                  actionType: actionType,
-                                  details: details)
+        reporter.recordDebugEvent(kind: kind, actionType: actionType, details: details)
     }
 
     func errorDetails(_ error: Error) -> String {

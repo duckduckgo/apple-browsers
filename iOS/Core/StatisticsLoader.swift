@@ -152,12 +152,12 @@ public class StatisticsLoader {
         }
     }
 
-    public func refreshAppRetentionAtb(completion: @escaping Completion = {}) {
+    public func refreshAppRetentionAtb() {
         fireAppRetentionExperimentPixels()
         guard let url = StatisticsDependentURLFactory(statisticsStore: statisticsStore).makeAppAtbURL() else {
             requestInstallStatistics {
                 self.updateUsageSegmentationAfterInstall(activityType: .appUse)
-                completion()
+                // completion()
             }
             return
         }
@@ -168,7 +168,7 @@ public class StatisticsLoader {
         request.fetch { response, error in
             if let error = error {
                 Logger.general.error("App atb request failed with error: \(error.localizedDescription, privacy: .public)")
-                completion()
+                // completion()
                 return
             }
             if let data = response?.data, let atb = try? self.parser.convert(fromJsonData: data) {
@@ -176,7 +176,7 @@ public class StatisticsLoader {
                 self.storeUpdateVersionIfPresent(atb)
                 self.updateUsageSegmentationWithAtb(atb, activityType: .appUse)
             }
-            completion()
+            // completion()
         }
     }
 

@@ -30,9 +30,13 @@ import AttributedMetric
 @MainActor
 class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
-    struct Constants {
+    struct SourceConstants {
         static let startSyncFlow = "sync-start"
         static let startBackupFlow = "sync-backup"
+        static let dataImportSummary = "data_import_summary"
+        static let dataImportSummarySyncPromotion = "promotion_data_import_summary"
+        static let bookmarksPromotion = "promotion_bookmarks"
+        static let passwordsPromotion = "promotion_passwords"
     }
 
     lazy var authenticator = Authenticator()
@@ -336,7 +340,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     }
 
     private func startSyncWithAnotherDeviceIfNecessary() {
-        guard source == Constants.startSyncFlow,
+        guard source == SourceConstants.startSyncFlow,
               syncService.account == nil else {
             return
         }
@@ -350,7 +354,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     }
 
     private func startSyncBackupIfNecessary() {
-        guard source == Constants.startBackupFlow,
+        let autoShowSources = [SourceConstants.startBackupFlow, SourceConstants.dataImportSummarySyncPromotion]
+        guard let source = source, autoShowSources.contains(source),
               syncService.account == nil else {
             return
         }

@@ -165,6 +165,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
+
+    /// Memory Pressure Reporter
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
+    case memoryPressureReporting
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -545,6 +549,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case dataImportWideEventMeasurement
     case newDataImportExperience
+    case dataImportSummarySyncPromotion
 }
 
 public enum SERPSubfeature: String, PrivacySubfeature {

@@ -30,10 +30,16 @@ protocol AIChatUserScriptProviding: AnyObject {
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
-    func submitPrompt(_ prompt: String)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
     func submitStartChatAction()
     func submitOpenSettingsAction()
     func submitToggleSidebarAction()
+}
+
+extension AIChatUserScriptProviding {
+    func submitPrompt(_ prompt: String) {
+        submitPrompt(prompt, pageContext: nil)
+    }
 }
 
 extension AIChatUserScript: AIChatUserScriptProviding { }
@@ -67,8 +73,8 @@ protocol AIChatContentHandling {
     /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
     func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL
     
-    /// Submits a prompt to the AI Chat.
-    func submitPrompt(_ prompt: String)
+    /// Submits a prompt to the AI Chat with optional page context.
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction()
@@ -79,8 +85,14 @@ protocol AIChatContentHandling {
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction()
 
-    /// Fires 'chat open' pixel and sets the AI Chat features as 'used before'
-    func fireChatOpenPixelAndSetWasUsed()
+    /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
+    func fireAIChatTelemetry()
+}
+
+extension AIChatContentHandling {
+    func submitPrompt(_ prompt: String) {
+        submitPrompt(prompt, pageContext: nil)
+    }
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -91,6 +103,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let pixelMetricHandler: (any AIChatPixelMetricHandling)?
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private lazy var statisticsLoader: StatisticsLoader = .shared
     
     private var userScript: AIChatUserScriptProviding?
@@ -103,12 +116,14 @@ final class AIChatContentHandler: AIChatContentHandling {
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
          pixelMetricHandler: any AIChatPixelMetricHandling = AIChatPixelMetricHandler(),
          featureDiscovery: FeatureDiscovery,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        self.productSurfaceTelemetry = productSurfaceTelemetry
     }
 
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
@@ -154,8 +169,8 @@ final class AIChatContentHandler: AIChatContentHandling {
         return components.url ?? aiChatSettings.aiChatURL
     }
     
-    func submitPrompt(_ prompt: String) {
-        userScript?.submitPrompt(prompt)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+        userScript?.submitPrompt(prompt, pageContext: pageContext)
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
@@ -173,8 +188,9 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.submitToggleSidebarAction()
     }
     
-    /// Fires 'chat open' pixel and sets the AI Chat features as 'used before'
-    func fireChatOpenPixelAndSetWasUsed() {
+    /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
+    func fireAIChatTelemetry() {
+        productSurfaceTelemetry.duckAIUsed()
         pixelMetricHandler?.fireOpenAIChat()
         featureDiscovery.setWasUsedBefore(.aiChat)
     }

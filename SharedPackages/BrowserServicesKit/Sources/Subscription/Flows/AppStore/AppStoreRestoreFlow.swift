@@ -65,11 +65,14 @@ public protocol AppStoreRestoreFlow {
 public final class DefaultAppStoreRestoreFlow: AppStoreRestoreFlow {
     private let subscriptionManager: any SubscriptionManager
     private let storePurchaseManager: any StorePurchaseManager
+    private let pendingTransactionHandler: PendingTransactionHandling?
 
     public init(subscriptionManager: any SubscriptionManager,
-                storePurchaseManager: any StorePurchaseManager) {
+                storePurchaseManager: any StorePurchaseManager,
+                pendingTransactionHandler: PendingTransactionHandling? = nil) {
         self.subscriptionManager = subscriptionManager
         self.storePurchaseManager = storePurchaseManager
+        self.pendingTransactionHandler = pendingTransactionHandler
     }
 
     @discardableResult
@@ -87,6 +90,7 @@ public final class DefaultAppStoreRestoreFlow: AppStoreRestoreFlow {
         do {
             if let subscription = try await subscriptionManager.getSubscriptionFrom(lastTransactionJWSRepresentation: lastTransactionJWSRepresentation),
                subscription.isActive {
+                pendingTransactionHandler?.handleSubscriptionActivated()
                 return .success(lastTransactionJWSRepresentation)
             } else {
                 Logger.subscriptionAppStoreRestoreFlow.error("Subscription expired")

@@ -3727,6 +3727,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Ρύθμιση συγχρονισμού";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας των πιστωτικών καρτών σας";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας των δεδομένων σας";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Όχι, ευχαριστώ";
 

@@ -23,16 +23,25 @@ import Persistence
 import PrivacyConfig
 
 protocol BrowsingMenuSheetCapable {
-    var isAvailable: Bool { get }
+    var isExperimentalMenuOptInEnabled: Bool { get }
     var isEnabled: Bool { get }
+    var isSettingsOptionVisible: Bool { get }
 
     func setEnabled(_ enabled: Bool)
 }
 
 enum BrowsingMenuSheetCapability {
-    static func create(using featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) -> BrowsingMenuSheetCapable {
+    static func create(
+        using featureFlagger: FeatureFlagger,
+        keyValueStore: ThrowingKeyValueStoring,
+        internalUserDecider: InternalUserDecider
+    ) -> BrowsingMenuSheetCapable {
         if #available(iOS 17, *) {
-            return BrowsingMenuSheetDefaultCapability(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
+            return BrowsingMenuSheetDefaultCapability(
+                featureFlagger: featureFlagger,
+                keyValueStore: keyValueStore,
+                internalUserDecider: internalUserDecider
+            )
         } else {
             return BrowsingMenuSheetUnavailableCapability()
         }
@@ -40,8 +49,9 @@ enum BrowsingMenuSheetCapability {
 }
 
 struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
-    let isAvailable: Bool = false
+    let isExperimentalMenuOptInEnabled: Bool = false
     let isEnabled: Bool = false
+    let isSettingsOptionVisible: Bool = false
 
     func setEnabled(_ enabled: Bool) {
         // no-op
@@ -52,26 +62,47 @@ struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
 struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
     let featureFlagger: FeatureFlagger
     private let keyValueStore: ThrowingKeyValueStoring
+    private let internalUserDecider: InternalUserDecider
 
-    init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) {
+    init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring, internalUserDecider: InternalUserDecider) {
         self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
+        self.internalUserDecider = internalUserDecider
     }
 
-    var isAvailable: Bool {
+    var isExperimentalMenuOptInEnabled: Bool {
         featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
     }
 
     var isEnabled: Bool {
-        get {
-            guard isAvailable else { return false }
-
-            return (try? keyValueStore.object(forKey: StorageKey.experimentalBrowsingMenuEnabled) as? Bool) ?? false
+        if isEnabledByDefault {
+            if internalUserDecider.isInternalUser {
+                return storedEnabledValue ?? true
+            }
+            return true
         }
+        return isExperimentalMenuOptInEnabled && (storedEnabledValue ?? false)
+    }
+
+    var isSettingsOptionVisible: Bool {
+        if isEnabledByDefault {
+            return internalUserDecider.isInternalUser
+        }
+        return isExperimentalMenuOptInEnabled
     }
 
     func setEnabled(_ enabled: Bool) {
         try? keyValueStore.set(enabled, forKey: StorageKey.experimentalBrowsingMenuEnabled)
+    }
+
+    // MARK: - Private
+
+    private var isEnabledByDefault: Bool {
+        featureFlagger.isFeatureOn(.browsingMenuEnabledByDefault)
+    }
+
+    private var storedEnabledValue: Bool? {
+        try? keyValueStore.object(forKey: StorageKey.experimentalBrowsingMenuEnabled) as? Bool
     }
 
     private struct StorageKey {

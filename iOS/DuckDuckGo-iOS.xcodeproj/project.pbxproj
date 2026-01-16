@@ -1897,7 +1897,7 @@
 		D664C7C92B289AA200CBFA76 /* AsyncHeadlessWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D664C7AF2B289AA000CBFA76 /* AsyncHeadlessWebView.swift */; };
 		D664C7CC2B289AA200CBFA76 /* SubscriptionPagesUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = D664C7B32B289AA000CBFA76 /* SubscriptionPagesUserScript.swift */; };
 		D664C7CE2B289AA200CBFA76 /* SubscriptionPagesUseSubscriptionFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D664C7B52B289AA000CBFA76 /* SubscriptionPagesUseSubscriptionFeature.swift */; };
-		D66825582F17A2C000156863 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 374E76092EF56C2000PACKET /* PrivacyConfig */; };
+		ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */; };
 		D668D9252B693778008E2FF2 /* SubscriptionITPView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D668D9242B693778008E2FF2 /* SubscriptionITPView.swift */; };
 		D668D9272B6937D2008E2FF2 /* SubscriptionITPViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D668D9262B6937D2008E2FF2 /* SubscriptionITPViewModel.swift */; };
 		D668D9292B69681C008E2FF2 /* IdentityTheftRestorationPagesUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = D668D9282B69681C008E2FF2 /* IdentityTheftRestorationPagesUserScript.swift */; };
@@ -4528,7 +4528,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D66825582F17A2C000156863 /* PrivacyConfig in Frameworks */,
+				ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */,
 				02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */,
 				4BC95EB12D7417BF002FAB32 /* Subscription in Frameworks */,
 				7BC26CA22DFC0CB800E52480 /* VPN in Frameworks */,
@@ -9984,7 +9984,7 @@
 				4BC8948B2C7902E6009AA141 /* WireGuard */,
 				4BC95EB02D7417BF002FAB32 /* Subscription */,
 				7BC26CA12DFC0CB800E52480 /* VPN */,
-				374E76092EF56C2000PACKET /* PrivacyConfig */,
+				ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */,
 			);
 			productName = PacketTunnelProvider;
 			productReference = 02025662298818B100E694E7 /* PacketTunnelProvider.appex */;
@@ -15794,10 +15794,6 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = PrivacyConfig;
 		};
-		374E76092EF56C2000PACKET /* PrivacyConfig */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = PrivacyConfig;
-		};
 		374E760B2EF56D7F00F8AADE /* PrivacyConfigTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = PrivacyConfigTestsUtils;
@@ -16240,6 +16236,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 854007E52B57FB020001BD98 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
+		};
+		ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfig;
 		};
 		F11595D02E854C7400CC0481 /* AttributedMetric */ = {
 			isa = XCSwiftPackageProductDependency;

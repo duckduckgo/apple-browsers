@@ -132,7 +132,7 @@ public struct DaxDialogView<Content: View>: View {
 #if os(iOS)
         let backgroundColor = Color(designSystemColor: .surface)
 #else
-        let backgroundColor = Color(designSystemColor: .surfacePrimary)
+        let backgroundColor = Color(designSystemColor: .surfaceTertiary)
 #endif
         let shadowColors: (Color, Color) = colorScheme == .light
         ? (.black.opacity(0.08), .black.opacity(0.1))

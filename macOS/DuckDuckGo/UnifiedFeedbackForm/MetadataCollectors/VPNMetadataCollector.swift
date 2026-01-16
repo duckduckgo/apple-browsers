@@ -126,11 +126,11 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     private let statusReporter: NetworkProtectionStatusReporter
     private let ipcClient: VPNControllerXPCClient
     private let defaults: UserDefaults
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let settings: VPNSettings
 
     init(defaults: UserDefaults = .netP,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+         subscriptionManager: any SubscriptionManager) {
 
         let ipcClient = VPNControllerXPCClient.shared
         ipcClient.register { _ in }

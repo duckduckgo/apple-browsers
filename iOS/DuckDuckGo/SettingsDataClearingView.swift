@@ -45,8 +45,7 @@ struct SettingsDataClearingView: View {
 
             Section {
                     // Fire Button Animation
-                    SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                           label: UserText.settingsFirebutton,
+                    SettingsPickerCellView(label: UserText.settingsFirebutton,
                                            options: FireButtonAnimationType.allCases,
                                            selectedOption: viewModel.fireButtonAnimationBinding)
                 }

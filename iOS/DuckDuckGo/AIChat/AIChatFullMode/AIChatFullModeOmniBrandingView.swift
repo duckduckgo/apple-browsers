@@ -47,6 +47,7 @@ final class AIChatFullModeOmniBrandingView: UIView {
 
     private func setupViews() {
         backgroundColor = .clear
+        accessibilityIdentifier = "AIChatFullModeBranding"
 
         stackView.axis = .horizontal
         stackView.alignment = .center

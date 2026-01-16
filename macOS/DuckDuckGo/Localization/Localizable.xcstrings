@@ -16118,6 +16118,246 @@
         }
       }
     },
+    "confirm.close.action" : {
+      "comment" : "Action text shown in the close confirmation overlay",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Schließen gedrückt halten oder erneut drücken."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold or press again to close"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado o pulsa de nuevo para cerrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenir la touche enfoncée ou appuyer à nouveau pour fermer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuto o premi di nuovo per chiudere"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingedrukt houden of nogmaals indrukken om te sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przytrzymaj lub naciśnij ponownie, żeby zamknąć"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prime sem soltar ou prime novamente para fechar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживайте или нажмите снова, чтобы закрыть"
+          }
+        }
+      }
+    },
+    "confirm.dont.show.again" : {
+      "comment" : "Button to disable confirmation dialogs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht erneut anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don‘t Show Again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No volver a mostrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne plus afficher"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non mostrare più"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet meer weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie pokazuj więcej"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não mostrar novamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не показывать снова"
+          }
+        }
+      }
+    },
+    "confirm.quit.action" : {
+      "comment" : "Action text shown in the quit confirmation overlay",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Beenden gedrückt halten oder erneut drücken"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold or press again to quit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado o presiona de nuevo para salir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenir la touche enfoncée ou appuyer à nouveau pour quitter"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuto o premi di nuovo per uscire"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd ingedrukt of druk opnieuw om af te sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przytrzymaj lub naciśnij ponownie, aby zakończyć"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prime sem soltar ou prime novamente para sair"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживайте или нажмите снова, чтобы выйти"
+          }
+        }
+      }
+    },
+    "confirm.quit.subtitle" : {
+      "comment" : "Subtitle shown in the quit confirmation overlay explaining that tabs will be restored",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Tabs werden für das nächste Mal gespeichert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tabs will be saved for next time."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las pestañas se guardarán para la próxima vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les onglets seront sauvegardés pour la prochaine fois."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le schede verranno salvate per la prossima volta."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen worden opgeslagen voor de volgende keer."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karty zostaną zapisane na następny raz."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os separadores serão guardados para a próxima ocasião."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладки будут сохранены для следующего раза."
+          }
+        }
+      }
+    },
     "Contact Info" : {
       "comment" : "Title of the section of the Identities manager where the user can add/modify contact info (phone, email address)",
       "localizations" : {
@@ -90452,6 +90692,126 @@
         }
       }
     },
+    "settings.confirm.close.checkbox" : {
+      "comment" : "Checkbox label in Settings to enable close confirmation for pinned tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vor dem Schließen angehefteter Tabs mit ⌘W eine Bestätigung anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show confirmation before closing pinned tabs with ⌘W"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar confirmación antes de cerrar pestañas ancladas con ⌘W"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher une confirmation avant de fermer les onglets épinglés avec ⌘W"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra una conferma prima di chiudere le schede fissate con ⌘W"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toon een bevestiging voordat je vastgezette tabbladen sluit met ⌘W"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż potwierdzenie przed zamknięciem przypiętych kart za pomocą ⌘W"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar confirmação antes de fechar separadores afixados com ⌘W"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать подтверждение перед закрытием закрепленных вкладок с помощью ⌘W"
+          }
+        }
+      }
+    },
+    "settings.confirm.quit.checkbox" : {
+      "comment" : "Checkbox label in Settings to enable quit confirmation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vor dem Beenden mit ⌘Q eine Bestätigung anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show confirmation before quitting with ⌘Q"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar confirmación antes de salir con ⌘Q"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher une confirmation avant de quitter avec ⌘Q"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra conferma prima di uscire con ⌘Q"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevestiging tonen voordat je afsluit met ⌘Q"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż potwierdzenie przed zakończeniem za pomocą ⌘Q"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar confirmação antes de sair com ⌘Q"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запрашивать подтверждение перед закрытием при нажатии ⌘Q"
+          }
+        }
+      }
+    },
     "settings.downloading.update" : {
       "comment" : "Label informing users the app is currently downloading the update. This will contain a percentage",
       "extractionState" : "extracted_with_value",
@@ -90928,6 +91288,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Доступна более новая версия"
+          }
+        }
+      }
+    },
+    "settings.on.quit.section" : {
+      "comment" : "Settings section header for quit-related preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Beenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On Quit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al salir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À la fermeture"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando esci"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bij afsluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przy zakończeniu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobre a saída"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "При закрытии"
           }
         }
       }

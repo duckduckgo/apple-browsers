@@ -19,72 +19,181 @@
 import XCTest
 import Common
 @testable import Subscription
+@testable import Networking
 import SubscriptionTestingUtilities
+import NetworkingTestingUtils
 
-final class SubscriptionManagerTests: XCTestCase {
+class SubscriptionManagerTests: XCTestCase {
 
     struct Constants {
-        static let userDefaultsSuiteName = "SubscriptionManagerTests"
-
-        static let accessToken = UUID().uuidString
-
-        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, statusDescription: "invalid_token")
-
         static let tld = TLD()
-
-        static let defaultBaseSubscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
     }
 
-    var storePurchaseManager: StorePurchaseManagerMock!
-    var accountManager: AccountManagerMock!
-    var subscriptionService: SubscriptionEndpointServiceMock!
-    var authService: AuthEndpointServiceMock!
-    var subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock!
-    var subscriptionEnvironment: SubscriptionEnvironment!
+    var subscriptionManager: DefaultSubscriptionManager!
+    var mockOAuthClient: MockOAuthClient!
+    var mockSubscriptionEndpointService: SubscriptionEndpointServiceMock!
+    var mockStorePurchaseManager: StorePurchaseManagerMock!
+    var mockAppStoreRestoreFlowV2: AppStoreRestoreFlowMock!
+    var overrideTokenResponseInRecoveryHandler: Result<Networking.TokenContainer, Error>?
 
-    var subscriptionManager: SubscriptionManager!
+    override func setUp() {
+        super.setUp()
 
-    override func setUpWithError() throws {
-        storePurchaseManager = StorePurchaseManagerMock()
-        accountManager = AccountManagerMock()
-        subscriptionService = SubscriptionEndpointServiceMock()
-        authService = AuthEndpointServiceMock()
-        subscriptionFeatureMappingCache = SubscriptionFeatureMappingCacheMock()
-        subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
-                                                          purchasePlatform: .appStore)
+        mockOAuthClient = MockOAuthClient()
+        mockSubscriptionEndpointService = SubscriptionEndpointServiceMock()
+        mockStorePurchaseManager = StorePurchaseManagerMock()
+        mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMock()
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        subscriptionManager = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
+            pixelHandler: MockPixelHandler()
+        )
 
-        subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                         accountManager: accountManager,
-                                                         subscriptionEndpointService: subscriptionService,
-                                                         authEndpointService: authService,
-                                                         subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                         subscriptionEnvironment: subscriptionEnvironment)
-
+        subscriptionManager.tokenRecoveryHandler = {
+            if let overrideTokenResponse = self.overrideTokenResponseInRecoveryHandler {
+                self.mockOAuthClient.getTokensResponse = overrideTokenResponse
+                switch overrideTokenResponse {
+                case .success(let token):
+                    self.mockOAuthClient.internalCurrentTokenContainer = token
+                case .failure:
+                    self.mockOAuthClient.internalCurrentTokenContainer = nil
+                }
+            }
+            try await DeadTokenRecoverer().attemptRecoveryFromPastPurchase(purchasePlatform: self.subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: self.mockAppStoreRestoreFlowV2)
+        }
     }
 
-    override func tearDownWithError() throws {
-        storePurchaseManager = nil
-        accountManager = nil
-        subscriptionService = nil
-        authService = nil
-        subscriptionEnvironment = nil
-
+    override func tearDown() {
         subscriptionManager = nil
+        mockOAuthClient = nil
+        mockSubscriptionEndpointService = nil
+        mockStorePurchaseManager = nil
+        super.tearDown()
+    }
+
+    // MARK: - Token Retrieval Tests
+
+    func testGetTokenContainer_Success() async throws {
+        let expectedTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(expectedTokenContainer)
+
+        let result = try await subscriptionManager.getTokenContainer(policy: .localValid)
+        XCTAssertEqual(result, expectedTokenContainer)
+    }
+
+    // MARK: - Subscription Status Tests
+
+    func testRefreshCachedSubscription_ActiveSubscription() async throws {
+        let activeSubscription = DuckDuckGoSubscription(
+            productId: "testProduct",
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date().addingTimeInterval(.minutes(-5)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil
+        )
+        mockSubscriptionEndpointService.getSubscriptionResult = .success(activeSubscription)
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+
+        let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+        XCTAssertTrue(subscription.isActive)
+    }
+
+    func testRefreshCachedSubscription_ExpiredSubscription() async {
+        let expiredSubscription = DuckDuckGoSubscription(
+            productId: "testProduct",
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date().addingTimeInterval(.days(-30)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(-1)), // expired
+            platform: .apple,
+            status: .expired,
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil
+        )
+        mockSubscriptionEndpointService.getSubscriptionResult = .success(expiredSubscription)
+        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        do {
+            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+        } catch SubscriptionEndpointServiceError.noData {
+
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    // MARK: - URL Generation Tests
+
+    func testURLGeneration_ForCustomerPortal() async throws {
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        let customerPortalURLString = "https://example.com/customer-portal"
+        mockSubscriptionEndpointService.getCustomerPortalURLResult = .success(GetCustomerPortalURLResponse(customerPortalUrl: customerPortalURLString))
+
+        let url = try await subscriptionManager.getCustomerPortalURL()
+        XCTAssertEqual(url.absoluteString, customerPortalURLString)
+    }
+
+    func testURLGeneration_ForSubscriptionTypes() {
+        let environment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        subscriptionManager = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: environment,
+            pixelHandler: MockPixelHandler()
+        )
+
+        let helpURL = subscriptionManager.url(for: .purchase)
+        XCTAssertEqual(helpURL.absoluteString, "https://duckduckgo.com/subscriptions")
+    }
+
+    // MARK: - Purchase Confirmation Tests
+
+    func testConfirmPurchase_ErrorHandling() async throws {
+        let testSignature = "invalidSignature"
+        mockSubscriptionEndpointService.confirmPurchaseResult = .failure(APIRequestV2Error.invalidResponse)
+        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        do {
+            _ = try await subscriptionManager.confirmPurchase(signature: testSignature, additionalParams: nil)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? APIRequestV2Error, APIRequestV2Error.invalidResponse)
+        }
     }
 
     // MARK: - Tests for save and loadEnvironmentFrom
 
+    var subscriptionEnvironment: SubscriptionEnvironment!
+
     func testLoadEnvironmentFromUserDefaults() async throws {
+        subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
+                                                          purchasePlatform: .appStore)
+        let userDefaultsSuiteName = "SubscriptionManagerTests"
         // Given
-        let userDefaults = UserDefaults(suiteName: Constants.userDefaultsSuiteName)!
-        userDefaults.removePersistentDomain(forName: Constants.userDefaultsSuiteName)
+        let userDefaults = UserDefaults(suiteName: userDefaultsSuiteName)!
+        userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
 
         var loadedEnvironment = DefaultSubscriptionManager.loadEnvironmentFrom(userDefaults: userDefaults)
         XCTAssertNil(loadedEnvironment)
 
         // When
         DefaultSubscriptionManager.save(subscriptionEnvironment: subscriptionEnvironment,
-                                        userDefaults: userDefaults)
+                                          userDefaults: userDefaults)
         loadedEnvironment = DefaultSubscriptionManager.loadEnvironmentFrom(userDefaults: userDefaults)
 
         // Then
@@ -92,123 +201,20 @@ final class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(loadedEnvironment?.purchasePlatform, subscriptionEnvironment.purchasePlatform)
     }
 
-    // MARK: - Tests for setup for App Store
-
-    func testSetupForAppStore() async throws {
-        // Given
-        self.storePurchaseManager.areProductsAvailable = true
-        // When
-        // triggered on DefaultSubscriptionManager's init
-        try await Task.sleep(seconds: 0.5)
-
-        // Then
-        XCTAssertTrue(storePurchaseManager.updateAvailableProductsCalled, "StorePurchaseManager should have called updateAvailableProducts")
-        XCTAssertTrue(subscriptionManager.hasAppStoreProductsAvailable, "SubscriptionManager should be able to purchase")
-    }
-
-    // MARK: - Tests for loadInitialData
-
-    func testLoadInitialData() async throws {
-        // Given
-        accountManager.accessToken = Constants.accessToken
-
-        subscriptionService.onGetSubscription = { _, cachePolicy in
-            XCTAssertEqual(cachePolicy, .reloadIgnoringLocalCacheData)
-        }
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
-
-        accountManager.onFetchEntitlements = { cachePolicy in
-            XCTAssertEqual(cachePolicy, .reloadIgnoringLocalCacheData)
-        }
-
-        // When
-        await subscriptionManager.loadInitialData()
-
-        try await Task.sleep(seconds: 0.5)
-
-        // Then
-        XCTAssertTrue(subscriptionService.getSubscriptionCalled)
-        XCTAssertTrue(accountManager.fetchEntitlementsCalled)
-    }
-
-    func testLoadInitialDataNotCalledWhenUnauthenticated() async throws {
-        // Given
-        XCTAssertNil(accountManager.accessToken)
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-
-        // When
-        await subscriptionManager.loadInitialData()
-
-        // Then
-        XCTAssertFalse(subscriptionService.getSubscriptionCalled)
-        XCTAssertFalse(accountManager.fetchEntitlementsCalled)
-    }
-
-    // MARK: - Tests for refreshCachedSubscriptionAndEntitlements
-
-    func testForRefreshCachedSubscriptionAndEntitlements() async throws {
-        // Given
-        let subscription = SubscriptionMockFactory.appleSubscription
-
-        accountManager.accessToken = Constants.accessToken
-
-        subscriptionService.onGetSubscription = { _, cachePolicy in
-            XCTAssertEqual(cachePolicy, .reloadIgnoringLocalCacheData)
-        }
-        subscriptionService.getSubscriptionResult = .success(subscription)
-
-        accountManager.onFetchEntitlements = { cachePolicy in
-            XCTAssertEqual(cachePolicy, .reloadIgnoringLocalCacheData)
-        }
-
-        // When
-        let completionCalled = expectation(description: "completion called")
-        subscriptionManager.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
-            completionCalled.fulfill()
-            XCTAssertEqual(isSubscriptionActive, subscription.isActive)
-        }
-
-        // Then
-        await fulfillment(of: [completionCalled], timeout: 0.5)
-        XCTAssertTrue(subscriptionService.getSubscriptionCalled)
-        XCTAssertTrue(accountManager.fetchEntitlementsCalled)
-    }
-
-    func testForRefreshCachedSubscriptionAndEntitlementsSignOutUserOn401() async throws {
-        // Given
-        accountManager.accessToken = Constants.accessToken
-
-        subscriptionService.onGetSubscription = { _, cachePolicy in
-            XCTAssertEqual(cachePolicy, .reloadIgnoringLocalCacheData)
-        }
-        subscriptionService.getSubscriptionResult = .failure(.apiError(Constants.invalidTokenError))
-
-        // When
-        let completionCalled = expectation(description: "completion called")
-        subscriptionManager.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
-            completionCalled.fulfill()
-            XCTAssertFalse(isSubscriptionActive)
-        }
-
-        // Then
-        await fulfillment(of: [completionCalled], timeout: 0.5)
-        XCTAssertTrue(accountManager.signOutCalled)
-        XCTAssertTrue(subscriptionService.getSubscriptionCalled)
-        XCTAssertFalse(accountManager.fetchEntitlementsCalled)
-    }
-
     // MARK: - Tests for url
 
     func testForProductionURL() throws {
         // Given
         let productionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
-
-        let productionSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                                       accountManager: accountManager,
-                                                                       subscriptionEndpointService: subscriptionService,
-                                                                       authEndpointService: authService,
-                                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                                       subscriptionEnvironment: productionEnvironment)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let productionSubscriptionManager = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: productionEnvironment,
+            pixelHandler: MockPixelHandler()
+        )
 
         // When
         let productionPurchaseURL = productionSubscriptionManager.url(for: .purchase)
@@ -220,13 +226,15 @@ final class SubscriptionManagerTests: XCTestCase {
     func testForStagingURL() throws {
         // Given
         let stagingEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
-
-        let stagingSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                                    accountManager: accountManager,
-                                                                    subscriptionEndpointService: subscriptionService,
-                                                                    authEndpointService: authService,
-                                                                    subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                                    subscriptionEnvironment: stagingEnvironment)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let stagingSubscriptionManager = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: stagingEnvironment,
+            pixelHandler: MockPixelHandler()
+        )
 
         // When
         let stagingPurchaseURL = stagingSubscriptionManager.url(for: .purchase)
@@ -235,18 +243,70 @@ final class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(stagingPurchaseURL, SubscriptionURL.purchase.subscriptionURL(environment: .staging))
     }
 
+    // MARK: - Dead token recovery
+
+    func testDeadTokenRecoverySuccess() async throws {
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest)
+        overrideTokenResponseInRecoveryHandler = .success(OAuthTokensFactory.makeValidTokenContainer())
+        mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
+        mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .success("some")
+        let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+        XCTAssertFalse(tokenContainer.decodedAccessToken.isExpired())
+    }
+
+    func testDeadTokenRecoveryFailure() async throws {
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest)
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = SubscriptionManagerError.errorRetrievingTokenContainer(error: nil)
+
+        do {
+            try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
+        } catch SubscriptionManagerError.noTokenAvailable {
+
+        } catch {
+            XCTFail("Wrong error: \(error)")
+        }
+    }
+
+    /// Dead token error loop detector: this case shouldn't be possible, but if the BE starts to send back expired tokens we risk to enter in an infinite loop.
+    func testDeadTokenRecoveryLoop() async throws {
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest)
+        mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
+        mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .success("some")
+        do {
+            try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
+        } catch SubscriptionManagerError.noTokenAvailable {
+
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        do {
+            try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
+        } catch SubscriptionManagerError.noTokenAvailable {
+
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     // MARK: - Tests for Free Trial Eligibility
 
     func testWhenPlatformIsStripeUserIsEligibleForFreeTrialThenReturnsEligible() throws {
         // Given
-        storePurchaseManager.isEligibleForFreeTrialResult = false
+        mockStorePurchaseManager.isEligibleForFreeTrialResult = false
         let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
-        let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                                       accountManager: accountManager,
-                                                                       subscriptionEndpointService: subscriptionService,
-                                                                       authEndpointService: authService,
-                                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                                       subscriptionEnvironment: stripeEnvironment)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let sut = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: stripeEnvironment,
+            pixelHandler: MockPixelHandler()
+        )
 
         // When
         let result = sut.isUserEligibleForFreeTrial()
@@ -257,14 +317,17 @@ final class SubscriptionManagerTests: XCTestCase {
 
     func testWhenPlatformIsAppStoreAndUserIsEligibleForFreeTrialThenReturnsEligible() throws {
         // Given
-        storePurchaseManager.isEligibleForFreeTrialResult = true
+        mockStorePurchaseManager.isEligibleForFreeTrialResult = true
         let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
-        let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                                       accountManager: accountManager,
-                                                                       subscriptionEndpointService: subscriptionService,
-                                                                       authEndpointService: authService,
-                                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                                       subscriptionEnvironment: appStoreEnvironment)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let sut = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: appStoreEnvironment,
+            pixelHandler: MockPixelHandler()
+        )
 
         // When
         let result = sut.isUserEligibleForFreeTrial()
@@ -275,14 +338,17 @@ final class SubscriptionManagerTests: XCTestCase {
 
     func testWhenPlatformIsAppStoreAndUserIsNotEligibleForFreeTrialThenReturnsNotEligible() throws {
         // Given
-        storePurchaseManager.isEligibleForFreeTrialResult = false
+        mockStorePurchaseManager.isEligibleForFreeTrialResult = false
         let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
-        let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                                       accountManager: accountManager,
-                                                                       subscriptionEndpointService: subscriptionService,
-                                                                       authEndpointService: authService,
-                                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                                       subscriptionEnvironment: appStoreEnvironment)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let sut = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: appStoreEnvironment,
+            pixelHandler: MockPixelHandler()
+        )
 
         // When
         let result = sut.isUserEligibleForFreeTrial()
@@ -306,7 +372,7 @@ final class SubscriptionManagerTests: XCTestCase {
             }
 
         // Simulate store purchase manager emitting a value
-        storePurchaseManager.areProductsAvailableSubject.send(true)
+        mockStorePurchaseManager.areProductsAvailableSubject.send(true)
 
         // Then
         await fulfillment(of: [expectation], timeout: 0.5)
@@ -334,8 +400,8 @@ final class SubscriptionManagerTests: XCTestCase {
             }
 
         // Simulate store purchase manager emitting multiple values
-        storePurchaseManager.areProductsAvailableSubject.send(true)
-        storePurchaseManager.areProductsAvailableSubject.send(false)
+        mockStorePurchaseManager.areProductsAvailableSubject.send(true)
+        mockStorePurchaseManager.areProductsAvailableSubject.send(false)
 
         // Then
         await fulfillment(of: [expectation1, expectation2], timeout: 0.5)

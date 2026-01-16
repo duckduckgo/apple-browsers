@@ -55,7 +55,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let subFeature: any SubscriptionPagesUseSubscriptionFeature
     var webViewModel: AsyncHeadlessWebViewViewModel
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManager
     weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let purchaseURL: URL
     let flowType: SubscriptionFlowType
@@ -114,7 +114,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          userScript: SubscriptionPagesUserScript,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
-         subscriptionManager: SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: SubscriptionManager,
          selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil,
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
@@ -217,6 +217,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
             DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureStoreError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .purchaseFailed
+        case .purchasePendingTransaction:
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureStoreError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            state.transactionError = .purchasePendingTransaction
         case .missingEntitlements:
             DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureBackendError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)

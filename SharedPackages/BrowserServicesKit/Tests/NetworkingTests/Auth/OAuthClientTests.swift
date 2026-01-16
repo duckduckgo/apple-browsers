@@ -61,16 +61,13 @@ final class OAuthClientTests: XCTestCase {
     var oAuthClient: DefaultOAuthClient!
     var mockOAuthService: MockOAuthService!
     var tokenStorage: MockTokenStorage!
-    var legacyTokenStorage: MockLegacyTokenStorage!
     var eventCapture: OAuthEventCapture!
 
     override func setUp() async throws {
         mockOAuthService = MockOAuthService()
         tokenStorage = MockTokenStorage()
-        legacyTokenStorage = MockLegacyTokenStorage()
         eventCapture = OAuthEventCapture()
         oAuthClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                         legacyTokenStorage: legacyTokenStorage,
                                          authService: mockOAuthService,
                                          refreshEventMapping: eventCapture.eventMapping)
     }
@@ -79,7 +76,6 @@ final class OAuthClientTests: XCTestCase {
         mockOAuthService = nil
         oAuthClient = nil
         tokenStorage = nil
-        legacyTokenStorage = nil
         eventCapture = nil
     }
 

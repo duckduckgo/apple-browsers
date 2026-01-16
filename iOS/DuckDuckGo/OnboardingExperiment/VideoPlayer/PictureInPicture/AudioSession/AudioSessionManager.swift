@@ -64,7 +64,7 @@ extension AudioSessionManager: AudioSessionManaging {
             try audioSession.setCategory(.playback, mode: .moviePlayback, options: AVAudioSession.CategoryOptions(option))
             try audioSession.setActive(true)
             Logger.videoPlayer.debug("[Video Player] - Audio session activated successfully.")
-        } catch{
+        } catch {
             Logger.videoPlayer.debug("[Video Player] - Failed to activate audio session. Reason: \(error.localizedDescription)")
         }
     }

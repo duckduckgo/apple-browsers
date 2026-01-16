@@ -269,7 +269,7 @@ class SuggestionTrayViewController: UIViewController {
     private func displayFavoritesIfNeeded(animated: Bool, onInstall: @escaping () -> Void = {}) {
         if newTabPage == nil {
             installNewTabPage(animated: animated, onInstall: onInstall)
-        } else  {
+        } else {
             onInstall()
         }
     }

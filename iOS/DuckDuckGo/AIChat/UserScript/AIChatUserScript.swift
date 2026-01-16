@@ -190,6 +190,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.setPayloadHandler(payloadHandler)
     }
 
+    func setDisplayMode(_ displayMode: AIChatDisplayMode) {
+        handler.displayMode = displayMode
+    }
+
     // MARK: - Input Box Event Subscription
 
     private func subscribeToInputBoxEvents() {
@@ -214,8 +218,8 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     // MARK: - AI Chat Actions
 
-    func submitPrompt(_ prompt: String) {
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, pageContext: pageContext)
         push(.submitPrompt(promptPayload))
     }
     

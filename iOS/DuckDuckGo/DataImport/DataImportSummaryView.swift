@@ -29,98 +29,87 @@ struct DataImportSummaryView: View {
     @ObservedObject var viewModel: DataImportSummaryViewModel
 
     @State private var isAnimating = false
+    
+    init(viewModel: DataImportSummaryViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
-
         VStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    AnimationView(isAnimating: $isAnimating)
-
-                    Text(UserText.dataImportSummaryTitle)
-                        .daxTitle1()
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 8)
-
-                    if viewModel.isAllSuccessful() {
-                        SuccessContainer(
-                            passwordsSuccessCount: viewModel.passwordsSummary?.successful ?? 0,
-                            bookmarksSuccessCount: viewModel.bookmarksSummary?.successful ?? 0,
-                            creditCardsSuccessCount: viewModel.creditCardsSummary?.successful
-                        )
-                    } else {
-                        if let passwordsSummary = viewModel.passwordsSummary {
-                            Text(UserText.dataImportSummaryPasswordsSubtitle)
-                                .daxSubheadRegular()
-                                .multilineTextAlignment(.center)
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                                .padding(.horizontal)
-                                .padding(.top, 8)
-
-                            StatsContainer(
-                                successString: UserText.dataImportSummaryPasswordsSuccess,
-                                successCount: passwordsSummary.successful,
-                                failureCount: passwordsSummary.failed,
-                                duplicatesCount: passwordsSummary.duplicate
-                            )
-                            .padding(.top, 28)
-                        }
-
-                        if let bookmarksSummary = viewModel.bookmarksSummary {
-                            StatsContainer(
-                                successString: UserText.dataImportSummaryBookmarksSuccess,
-                                successCount: bookmarksSummary.successful,
-                                failureCount: bookmarksSummary.failed,
-                                duplicatesCount: bookmarksSummary.duplicate
-                            )
-                            .padding(.top, 28)
-                        }
-                        
-                        if let creditCardsSummary = viewModel.creditCardsSummary {
-                            StatsContainer(
-                                successString: UserText.dataImportSummaryCreditCardsSuccess,
-                                successCount: creditCardsSummary.successful,
-                                failureCount: creditCardsSummary.failed,
-                                duplicatesCount: creditCardsSummary.duplicate
-                            )
-                            .padding(.top, 28)
-                        }
+            VStack(spacing: 0) {
+                AnimationView(isAnimating: $isAnimating)
+                
+                Text(UserText.dataImportSummaryTitle)
+                    .daxTitle1()
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 8)
+                
+                if viewModel.isAllSuccessful() {
+                    SuccessContainer(
+                        passwordsSuccessCount: viewModel.passwordsSummary?.successful ?? 0,
+                        bookmarksSuccessCount: viewModel.bookmarksSummary?.successful ?? 0,
+                        creditCardsSuccessCount: viewModel.creditCardsSummary?.successful
+                    )
+                } else {
+                    if viewModel.passwordsSummary != nil {
+                        Text(UserText.dataImportSummaryPasswordsSubtitle)
+                            .daxSubheadRegular()
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                            .padding(.horizontal)
+                            .padding(.top, 8)
                     }
+                    
+                    ScrollView {
+                        
+                        VStack(spacing: 28) {
+                            if let passwordsSummary = viewModel.passwordsSummary {
+                                StatsContainer(
+                                    successString: UserText.dataImportSummaryPasswordsSuccess,
+                                    successCount: passwordsSummary.successful,
+                                    failureCount: passwordsSummary.failed,
+                                    duplicatesCount: passwordsSummary.duplicate
+                                )
+                            }
+                            
+                            if let bookmarksSummary = viewModel.bookmarksSummary {
+                                StatsContainer(
+                                    successString: UserText.dataImportSummaryBookmarksSuccess,
+                                    successCount: bookmarksSummary.successful,
+                                    failureCount: bookmarksSummary.failed,
+                                    duplicatesCount: bookmarksSummary.duplicate
+                                )
+                            }
+                            
+                            if let creditCardsSummary = viewModel.creditCardsSummary {
+                                StatsContainer(
+                                    successString: UserText.dataImportSummaryCreditCardsSuccess,
+                                    successCount: creditCardsSummary.successful,
+                                    failureCount: creditCardsSummary.failed,
+                                    duplicatesCount: creditCardsSummary.duplicate
+                                )
+                            }
+                        }
+                        .padding(.trailing, 16) // Used to position scroll indicator outside of content area
+                        
+                    }
+                    .padding(.trailing, -16)
+                    .padding(.top, 28)
                 }
             }
             .frame(maxWidth: 360)
-
-
+            
+            
             Spacer()
-
-            VStack {
-                Button {
-                    viewModel.dismiss()
-                } label: {
-                    Text(UserText.dataImportSummaryDone)
-                }
-                .buttonStyle(PrimaryButtonStyle())
-
-                switch viewModel.footer {
-                case .syncButton(let title):
-                    syncButton(title: title)
-                case .message(let body):
-                    footerMessage(body: body)
-                        .padding(.top, 8)
-                case .none:
-                    EmptyView()
-                }
-            }
-            .frame(maxWidth: 360)
-            .padding(.top, 16)
-            .padding(.bottom, 36)
-
+            
+            footer
+            
         }
         .frame(maxWidth: .infinity)
         .ignoresSafeArea()
         .padding(.horizontal, 24)
         .background(Rectangle()
-            .foregroundColor(Color(designSystemColor: .backgroundSheets))
+            .foregroundColor(Color(designSystemColor: .surfaceTertiary))
             .ignoresSafeArea())
         .onFirstAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -131,7 +120,7 @@ struct DataImportSummaryView: View {
 
     private func syncButton(title: String) -> some View {
         Button {
-            viewModel.launchSync()
+            viewModel.launchSync(source: SyncSettingsViewController.SourceConstants.dataImportSummary)
         } label: {
             VStack {
                 Text(title)
@@ -144,6 +133,43 @@ struct DataImportSummaryView: View {
         .onFirstAppear {
             viewModel.fireSyncButtonShownPixel()
         }
+    }
+
+    private var footer: some View {
+        VStack {
+            switch viewModel.footer {
+            case .syncButton(let title):
+                dismissButton
+                
+                syncButton(title: title)
+            case .syncPromo(let title):
+                SyncAndBackupCard(title: title, onSyncTapped: {
+                    viewModel.launchSync(source: SyncSettingsViewController.SourceConstants.dataImportSummarySyncPromotion)
+                }, viewModel: viewModel)
+                .onFirstAppear {
+                    viewModel.fireSyncPromoDisplayedPixel()
+                }
+            case .message(let body):
+                dismissButton
+                
+                footerMessage(body: body)
+                    .padding(.top, 8)
+            case .none:
+                dismissButton
+            }
+        }
+        .frame(maxWidth: 360)
+        .padding(.top, 16)
+        .padding(.bottom, 36)
+    }
+    
+    private var dismissButton: some View {
+        Button {
+            viewModel.dismiss()
+        } label: {
+            Text(UserText.dataImportSummaryDone)
+        }
+        .buttonStyle(PrimaryButtonStyle())
     }
 
     private func footerMessage(body: String) -> some View {
@@ -282,5 +308,82 @@ struct DataImportSummaryView: View {
 
         }
     }
-
+        
+    private struct SyncAndBackupCard: View {
+        let title: String
+        let onSyncTapped: () -> Void
+        @ObservedObject var viewModel: DataImportSummaryViewModel
+        
+        var body: some View {
+            VStack(alignment: .center, spacing: 0) {
+                Image("Sync-Pending-96")
+                    .resizable()
+                    .frame(width: Metrics.imageSize, height: Metrics.imageSize)
+                    .padding(.top, 16)
+                
+                Text(title)
+                    .daxHeadline()
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 12)
+                
+                HStack(spacing: 8) {
+                    Button {
+                        viewModel.dismissSyncPromo()
+                    } label: {
+                        Text(UserText.syncPromoDismissAction)
+                            .font(Font(UIFont.boldSystemFont(ofSize: Metrics.buttonFontSize)))
+                            .foregroundStyle(Color(designSystemColor: .textPrimary))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: Metrics.buttonHeight)
+                    }
+                    .buttonStyle(SecondarySyncButtonStyle())
+                    
+                    Button {
+                        onSyncTapped()
+                    } label: {
+                        Text(UserText.syncPromoConfirmAction)
+                            .font(Font(UIFont.boldSystemFont(ofSize: Metrics.buttonFontSize)))
+                            .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: Metrics.buttonHeight)
+                    }
+                    .buttonStyle(PrimarySyncButtonStyle())
+                    .onFirstAppear {
+                        viewModel.fireSyncButtonShownPixel()
+                    }
+                }
+                .padding(.top, 24)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color(designSystemColor: .panel))
+            )
+        }
+        
+        fileprivate enum Metrics {
+            static let buttonCornerRadius: CGFloat = 12
+            static let buttonHeight: CGFloat = 40
+            static let buttonFontSize: CGFloat = 15
+            static let imageSize: CGFloat = 64
+        }
+        
+        private struct SecondarySyncButtonStyle: ButtonStyle {
+            func makeBody(configuration: Configuration) -> some View {
+                configuration.label
+                    .background(configuration.isPressed ? Color(designSystemColor: .controlsFillSecondary) : Color(designSystemColor: .controlsFillPrimary))
+                    .cornerRadius(Metrics.buttonCornerRadius)
+            }
+        }
+        
+        private struct PrimarySyncButtonStyle: ButtonStyle {
+            func makeBody(configuration: Configuration) -> some View {
+                configuration.label
+                    .background(configuration.isPressed ? Color(designSystemColor: .buttonsPrimaryPressed) : Color(designSystemColor: .buttonsPrimaryDefault))
+                    .cornerRadius(Metrics.buttonCornerRadius)
+            }
+        }
+    }
 }

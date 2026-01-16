@@ -141,7 +141,7 @@ final class SuggestionTrayManager: NSObject {
             controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             controller.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.bottomAnchor)
+            controller.view.bottomAnchor.constraint(lessThanOrEqualTo: containerView.safeAreaLayoutGuide.bottomAnchor)
         ])
 
         controller.autocompleteDelegate = self

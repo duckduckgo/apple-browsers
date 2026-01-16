@@ -50,11 +50,11 @@ extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
         case .aiChatPageContext,
-                .duckAISearchParameter,
                 .aiChatKeepSession,
                 .aiChatDataClearing,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
+                .aiChatOmnibarOnboarding,
                 .standaloneMigration:
             return .duckAI
         case .osSupportForceUnsupportedMessage,

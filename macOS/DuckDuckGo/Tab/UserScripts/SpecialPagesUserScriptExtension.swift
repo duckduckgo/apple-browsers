@@ -61,7 +61,8 @@ extension SpecialPagesUserScript {
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: NSApp.delegateTyped.appearancePreferences,
             startupPreferences: NSApp.delegateTyped.startupPreferences,
-            bookmarkManager: NSApp.delegateTyped.bookmarkManager
+            bookmarkManager: NSApp.delegateTyped.bookmarkManager,
+            featureFlagger: NSApp.delegateTyped.featureFlagger
         )
     }
 }

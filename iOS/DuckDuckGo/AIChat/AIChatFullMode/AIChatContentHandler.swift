@@ -19,6 +19,8 @@
 
 import AIChat
 import BrowserServicesKit
+import Core
+import PrivacyConfig
 import Foundation
 import WebKit
 
@@ -27,9 +29,17 @@ protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    func setDisplayMode(_ displayMode: AIChatDisplayMode)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
     func submitStartChatAction()
     func submitOpenSettingsAction()
     func submitToggleSidebarAction()
+}
+
+extension AIChatUserScriptProviding {
+    func submitPrompt(_ prompt: String) {
+        submitPrompt(prompt, pageContext: nil)
+    }
 }
 
 extension AIChatUserScript: AIChatUserScriptProviding { }
@@ -44,6 +54,9 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 
     /// Called when the content handler receives a request to open Sync settings.
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling)
+
+    /// Called when the user submits a prompt.
+    func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling)
 }
 
 /// Handles content initialization, payload management, and URL building for AIChat.
@@ -51,8 +64,8 @@ protocol AIChatContentHandling {
 
     var delegate: AIChatContentHandlingDelegate? { get set }
 
-    /// Configures the user script and WebView for AIChat interaction.
-    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView)
+    /// Configures the user script, WebView and display mode for AIChat interaction.
+    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode)
 
     /// Sets the initial payload data for the AIChat session.
     func setPayload(payload: Any?)
@@ -60,17 +73,26 @@ protocol AIChatContentHandling {
     /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
     func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL
     
+    /// Submits a prompt to the AI Chat with optional page context.
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
+
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction()
-    
+
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction()
-    
+
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction()
-    
-    /// Fires 'chat open' pixel and sets the AI Chat features as 'used before'
-    func fireChatOpenPixelAndSetWasUsed()
+
+    /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
+    func fireAIChatTelemetry()
+}
+
+extension AIChatContentHandling {
+    func submitPrompt(_ prompt: String) {
+        submitPrompt(prompt, pageContext: nil)
+    }
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -80,6 +102,9 @@ final class AIChatContentHandler: AIChatContentHandling {
     private var payloadHandler: AIChatPayloadHandler
     private let pixelMetricHandler: (any AIChatPixelMetricHandling)?
     private let featureDiscovery: FeatureDiscovery
+    private let featureFlagger: FeatureFlagger
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+    private lazy var statisticsLoader: StatisticsLoader = .shared
     
     private var userScript: AIChatUserScriptProviding?
     
@@ -90,17 +115,21 @@ final class AIChatContentHandler: AIChatContentHandling {
     init(aiChatSettings: AIChatSettingsProvider,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
          pixelMetricHandler: any AIChatPixelMetricHandling = AIChatPixelMetricHandler(),
-         featureDiscovery: FeatureDiscovery) {
+         featureDiscovery: FeatureDiscovery,
+         featureFlagger: FeatureFlagger,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
         self.featureDiscovery = featureDiscovery
+        self.featureFlagger = featureFlagger
+        self.productSurfaceTelemetry = productSurfaceTelemetry
     }
-    
-    /// Configures the user script and WebView for AIChat interaction.
-    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView) {
+
+    func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
         self.userScript = userScript
         self.userScript?.delegate = self
+        self.userScript?.setDisplayMode(displayMode)
         self.userScript?.setPayloadHandler(payloadHandler)
         self.userScript?.webView = webView
     }
@@ -140,6 +169,10 @@ final class AIChatContentHandler: AIChatContentHandling {
         return components.url ?? aiChatSettings.aiChatURL
     }
     
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+        userScript?.submitPrompt(prompt, pageContext: pageContext)
+    }
+
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction() {
         userScript?.submitStartChatAction()
@@ -155,8 +188,9 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.submitToggleSidebarAction()
     }
     
-    /// Fires 'chat open' pixel and sets the AI Chat features as 'used before'
-    func fireChatOpenPixelAndSetWasUsed() {
+    /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
+    func fireAIChatTelemetry() {
+        productSurfaceTelemetry.duckAIUsed()
         pixelMetricHandler?.fireOpenAIChat()
         featureDiscovery.setWasUsedBefore(.aiChat)
     }
@@ -182,8 +216,21 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
         if metric.metricName == .userDidSubmitPrompt
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+            delegate?.aiChatContentHandlerDidReceivePromptSubmission(self)
+
+            if featureFlagger.isFeatureOn(.aiChatAtb) {
+                DispatchQueue.main.async {
+                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - duckai",
+                                                                        application: UIApplication.shared)
+                    self.statisticsLoader.refreshRetentionAtbOnDuckAIPromptSubmission {
+                        DispatchQueue.main.async {
+                            backgroundAssertion.release()
+                        }
+                    }
+                }
+            }
         }
-        
+
         pixelMetricHandler?.firePixelWithMetric(metric)
     }
 }

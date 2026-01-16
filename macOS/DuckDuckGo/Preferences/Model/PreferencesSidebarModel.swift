@@ -58,7 +58,7 @@ final class PreferencesSidebarModel: ObservableObject {
     }
 
     let vpnTunnelIPCClient: VPNControllerXPCClient
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManager
     let settingsIconProvider: SettingsIconsProviding
     let defaultBrowserPreferences: DefaultBrowserPreferences
     let downloadsPreferences: DownloadsPreferences
@@ -70,7 +70,6 @@ final class PreferencesSidebarModel: ObservableObject {
     let aboutPreferences: AboutPreferences
     let accessibilityPreferences: AccessibilityPreferences
     let duckPlayerPreferences: DuckPlayerPreferences
-    let isUsingAuthV2: Bool
 
     @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .init()
 
@@ -105,11 +104,10 @@ final class PreferencesSidebarModel: ObservableObject {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         syncService: DDGSyncing,
         vpnTunnelIPCClient: VPNControllerXPCClient = .shared,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         notificationCenter: NotificationCenter = .default,
         featureFlagger: FeatureFlagger,
         settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.themeManager.theme.iconsProvider.settingsIconProvider,
-        isUsingAuthV2: Bool,
         pixelFiring: PixelFiring?,
         defaultBrowserPreferences: DefaultBrowserPreferences,
         downloadsPreferences: DownloadsPreferences,
@@ -129,7 +127,6 @@ final class PreferencesSidebarModel: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.notificationCenter = notificationCenter
         self.settingsIconProvider = settingsIconProvider
-        self.isUsingAuthV2 = isUsingAuthV2
         self.pixelFiring = pixelFiring
         self.featureFlagger = featureFlagger
         self.defaultBrowserPreferences = defaultBrowserPreferences
@@ -170,7 +167,7 @@ final class PreferencesSidebarModel: ObservableObject {
         includeDuckPlayer: Bool,
         includeAIChat: Bool,
         userDefaults: UserDefaults = .netP,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         defaultBrowserPreferences: DefaultBrowserPreferences,
         downloadsPreferences: DownloadsPreferences,
         searchPreferences: SearchPreferences,
@@ -198,7 +195,6 @@ final class PreferencesSidebarModel: ObservableObject {
                   syncService: syncService,
                   subscriptionManager: subscriptionManager,
                   featureFlagger: featureFlagger,
-                  isUsingAuthV2: subscriptionManager is DefaultSubscriptionManagerV2,
                   pixelFiring: PixelKit.shared,
                   defaultBrowserPreferences: defaultBrowserPreferences,
                   downloadsPreferences: downloadsPreferences,
@@ -429,7 +425,7 @@ final class PreferencesSidebarModel: ObservableObject {
                                                          isNetworkProtectionRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)) ?? false,
                                                          isPersonalInformationRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false,
                                                          isIdentityTheftRestorationAvailable: isIdentityTheftRestorationAvailable || isIdentityTheftRestorationGlobalAvailable,
-                                                         isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && isPaidAIChatAvailable && isUsingAuthV2)
+                                                         isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && isPaidAIChatAvailable)
     }
 
     func refreshSections() {
@@ -504,8 +500,6 @@ final class PreferencesSidebarModel: ObservableObject {
     ///   longer considered new (typically 1-2 app releases after launch)
     func isPaneNew(pane: PreferencePaneIdentifier) -> Bool {
         switch pane {
-        case .paidAIChat:
-            true
         default:
             false
         }

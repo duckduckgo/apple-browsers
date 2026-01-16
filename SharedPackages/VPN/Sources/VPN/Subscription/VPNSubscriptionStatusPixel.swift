@@ -21,16 +21,12 @@ import Subscription
 
 public enum VPNSubscriptionStatusPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     case vpnFeatureEnabled(isSubscriptionActive: Bool?,
-                    isAuthV2Enabled: Bool,
                     sourceObject: Any?)
     case vpnFeatureDisabled(isSubscriptionActive: Bool?,
-                     isAuthV2Enabled: Bool,
                      sourceObject: Any?)
     case signedIn(isSubscriptionActive: Bool?,
-                  isAuthV2Enabled: Bool,
                   sourceObject: Any?)
     case signedOut(isSubscriptionActive: Bool?,
-                   isAuthV2Enabled: Bool,
                    sourceObject: Any?)
 
     public var namePrefix: String {
@@ -56,10 +52,10 @@ public enum VPNSubscriptionStatusPixel: PixelKitEvent, PixelKitEventWithCustomPr
 
     public var parameters: [String: String]? {
         switch self {
-        case .signedIn(let isSubscriptionActive, let isAuthV2, let sourceObject),
-                .signedOut(let isSubscriptionActive, let isAuthV2, let sourceObject),
-                .vpnFeatureEnabled(let isSubscriptionActive, let isAuthV2, let sourceObject),
-                .vpnFeatureDisabled(let isSubscriptionActive, let isAuthV2, let sourceObject):
+        case .signedIn(let isSubscriptionActive, let sourceObject),
+                .signedOut(let isSubscriptionActive, let sourceObject),
+                .vpnFeatureEnabled(let isSubscriptionActive, let sourceObject),
+                .vpnFeatureDisabled(let isSubscriptionActive, let sourceObject):
 
             let isSubscriptionActiveString = {
                 guard let isSubscriptionActive else {
@@ -71,7 +67,7 @@ public enum VPNSubscriptionStatusPixel: PixelKitEvent, PixelKitEventWithCustomPr
 
             return [
                 "isSubscriptionActive": isSubscriptionActiveString,
-                "authVersion": isAuthV2 ? "v2" : "v1",
+                "authVersion": "v2",
                 "notificationObjectClass": Self.sourceClass(from: sourceObject)
             ]
         }
@@ -95,7 +91,7 @@ public enum VPNSubscriptionStatusPixel: PixelKitEvent, PixelKitEventWithCustomPr
         // This is odd, but for `DefaultSubscriptionEndpointServiceV2` we can't get the class name
         // and it's not very clear why, so we're setting it manually.
         switch sourceObject {
-        case is DefaultSubscriptionEndpointServiceV2:
+        case is DefaultSubscriptionEndpointService:
             return "DefaultSubscriptionEndpointServiceV2"
         default:
             return String(describing: type(of: sourceObject))

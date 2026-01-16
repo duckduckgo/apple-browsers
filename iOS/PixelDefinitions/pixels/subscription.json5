@@ -76,6 +76,38 @@
         ]
     },
 
+    // Pending Transaction Recovery
+    "m_privacy-pro_purchase_success_after_pending_transaction": {
+        "description": "Fired when a subscription purchase succeeds after previously being in a pending transaction state (e.g., Ask to Buy was approved)",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            }
+        ]
+    },
+    "m_privacy-pro_app_subscription-purchase_pending_transaction_approved": {
+        "description": "Fired when a verified transaction update is received while the pending transaction flag is set, indicating a previously pending transaction (e.g., Ask to Buy) has been approved via the App Store.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            }
+        ]
+    },
+
     // Tier Options Pixels
     "m_subscription_tier-options_requested": {
         "description": "Fired when subscription tier options are requested from the purchase page",

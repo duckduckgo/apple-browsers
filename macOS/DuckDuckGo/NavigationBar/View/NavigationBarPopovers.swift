@@ -64,7 +64,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private(set) var autofillPopoverPresenter: AutofillPopoverPresenter
     private(set) var downloadsPopover: DownloadsPopover?
     private(set) var autofillOnboardingPopover: AutofillToolbarOnboardingPopover?
-    private(set) var historyViewOnboardingPopover: HistoryViewOnboardingPopover?
 
     private var privacyDashboardPopover: PrivacyDashboardPopover?
     private var privacyInfoCancellable: AnyCancellable?
@@ -126,7 +125,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         savePaymentMethodPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         downloadsPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         autofillOnboardingPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-        historyViewOnboardingPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         privacyDashboardPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         bookmarkPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         zoomPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
@@ -310,17 +308,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         return true
     }
 
-    func showHistoryViewOnboardingPopover(from button: MouseOverButton,
-                                          withDelegate delegate: NSPopoverDelegate,
-                                          ctaCallback: @escaping (Bool) -> Void) {
-        guard closeTransientPopovers() else { return }
-        let popover = historyViewOnboardingPopover ?? HistoryViewOnboardingPopover(ctaCallback: ctaCallback)
-
-        popover.delegate = delegate
-        historyViewOnboardingPopover = popover
-        show(popover, positionedBelow: button, simulatingMouseDown: false)
-    }
-
     func showAutofillOnboardingPopover(from button: MouseOverButton,
                                        withDelegate delegate: NSPopoverDelegate,
                                        ctaCallback: @escaping (Bool) -> Void) {
@@ -386,10 +373,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     func closeZoomPopover() {
         zoomPopover?.close()
-    }
-
-    func closeHistoryViewOnboardingViewPopover() {
-        historyViewOnboardingPopover?.close()
     }
 
     func closeAutofillOnboardingPopover() {

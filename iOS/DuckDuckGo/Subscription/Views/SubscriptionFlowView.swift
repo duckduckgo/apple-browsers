@@ -58,10 +58,9 @@ struct SubscriptionFlowView: View {
                        isActive: $isShowingNetP,
                        label: { EmptyView() })
         
-        NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+        NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                                                      userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
-                                                                                                     isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)).navigationViewStyle(.stack)),
+                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
         if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
@@ -161,7 +160,7 @@ struct SubscriptionFlowView: View {
                     case .hasActiveSubscription:
                         errorMessage = .activeSubscription
                         return true
-                    case .failedToRestorePastPurchase, .purchaseFailed:
+                    case .failedToRestorePastPurchase, .purchaseFailed, .purchasePendingTransaction:
                         errorMessage = .appStore
                         return true
                     case .failedToGetSubscriptionOptions, .generalError:

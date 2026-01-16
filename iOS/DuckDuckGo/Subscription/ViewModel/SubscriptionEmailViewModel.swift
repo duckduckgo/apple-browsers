@@ -28,7 +28,7 @@ import PixelKit
 
 final class SubscriptionEmailViewModel: ObservableObject {
     
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let userScript: SubscriptionPagesUserScript
@@ -95,7 +95,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
          userScript: SubscriptionPagesUserScript,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
@@ -166,7 +166,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
         }
 
         // Load the URL unless the user has activated a subscription or is on the welcome page
-        if !isCurrentURL(matching: .welcome) && !isCurrentURL(matching: .activationFlowSuccess){
+        if !isCurrentURL(matching: .welcome) && !isCurrentURL(matching: .activationFlowSuccess) {
             self.webViewModel.navigationCoordinator.navigateTo(url: url)
             setupSubscriptionRestoreWideEventData()
         }
@@ -262,7 +262,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
     
     private func updateBackButton(canNavigateBack: Bool) {
         // If the view is not Activation Success, or Welcome page, allow WebView Back Navigation
-        if !isCurrentURL(matching: .welcome) && !isCurrentURL(matching: .activationFlowSuccess){
+        if !isCurrentURL(matching: .welcome) && !isCurrentURL(matching: .activationFlowSuccess) {
             self.state.canNavigateBack = canNavigateBack
             self.state.backButtonTitle = UserText.backButtonTitle
         } else {
@@ -291,7 +291,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
             contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
         )
         self.restoreWideEventData = data
-        if let subFeatureV2 = subFeature as? DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
+        if let subFeatureV2 = subFeature as? DefaultSubscriptionPagesUseSubscriptionFeature {
             subFeatureV2.subscriptionRestoreEmailAddressWideEventData = data
         }
         data.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()

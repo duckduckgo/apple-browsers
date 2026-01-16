@@ -41,10 +41,10 @@ extension WindowControllersManager: SubscriptionTabsShowing {}
 final class SubscriptionNavigationCoordinator {
 
     private let tabShower: SubscriptionTabsShowing
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
 
     init(tabShower: SubscriptionTabsShowing,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+         subscriptionManager: any SubscriptionManager) {
         self.tabShower = tabShower
         self.subscriptionManager = subscriptionManager
     }
@@ -71,6 +71,20 @@ extension SubscriptionNavigationCoordinator: SubscriptionUserScriptNavigationDel
     /// Called when Duck.ai need to start a new subscription purchase.
     func navigateToSubscriptionPurchase(origin: String?, featurePage: String?) {
         var url = subscriptionManager.url(for: .purchase)
+        if let featurePage {
+            url = url.appendingParameter(name: "featurePage", value: featurePage)
+        }
+        if let origin {
+            url = url.appendingParameter(name: AttributionParameter.origin, value: origin)
+        }
+
+        tabShower.showTab(with: .subscription(url))
+    }
+
+    /// Opens the subscription upgrade flow in a new tab.
+    /// Called when Duck.ai needs to start a new subscription upgrade.
+    func navigateToSubscriptionPlans(origin: String?, featurePage: String?) {
+        var url = subscriptionManager.url(for: .plans)
         if let featurePage {
             url = url.appendingParameter(name: "featurePage", value: featurePage)
         }

@@ -95,11 +95,11 @@ jobs:
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
     env:
-      RUNS_ON: macos-15 # keep this in sync with runs-on above
+      RUNS_ON: macos-26 # keep this in sync with runs-on above
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
     outputs:
@@ -153,7 +153,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "18.6,18.2"
+        preferred-versions: "26.1"
 
     - name: Build and test
       id: run-unit-tests
@@ -242,11 +242,11 @@ jobs:
       inputs.skip-release != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
     env:
-      RUNS_ON: macos-15 # keep this in sync with runs-on above
+      RUNS_ON: macos-26 # keep this in sync with runs-on above
 
     steps:
 
@@ -296,7 +296,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "18.6,18.2"
+        preferred-versions: "26.1"
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -333,6 +333,41 @@ jobs:
         pixel-name: m_ci_apple_duration_ios_release_build
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
+
+  translation-check:
+    name: Translated Strings
+
+    runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    # Only run for PRs targeting main, release/*, or hotfix/* branches
+    if: >
+      github.event_name == 'pull_request' &&
+      needs.should-run-checks.outputs.should_run == 'true' &&
+      (github.base_ref == 'main' ||
+       startsWith(github.base_ref, 'release/ios/') ||
+       startsWith(github.base_ref, 'hotfix/ios/'))
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Allows scripts to diff against the base branch
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify string extraction
+        run: python3 scripts/translation-pr-checks/verify_string_extraction.py --platform iOS
+
+      - name: Check translations
+        run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform iOS
 
   create-asana-task:
     name: Create Asana Task

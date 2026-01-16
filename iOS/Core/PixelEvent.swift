@@ -488,9 +488,6 @@ extension Pixel {
         case autofillCardsManagementSaveCard
         case autofillCardsManagementUpdateCard
 
-        case autofillCardsAutofilledInMainframe
-        case autofillCardsAutofilledInIframe
-
         case autofillManagementScreenVisitSurveyAvailable
 
         case getDesktopCopy
@@ -877,7 +874,11 @@ extension Pixel {
         // Return user measurement
         case debugReturnUserAddATB
         case debugReturnUserUpdateATB
-        
+
+        // Feature flag validation
+        case debugTelemetryDAUPreFF
+        case debugTelemetryDAUPostFF
+
         // Errors from Bookmarks Module
         case bookmarkFolderExpected
         case bookmarksListIndexNotMatchingBookmark
@@ -1153,11 +1154,13 @@ extension Pixel {
         case subscriptionKeychainManagerDeallocatedWithBacklog
         case subscriptionKeychainManagerDataWroteFromBacklog
         case subscriptionKeychainManagerFailedToWriteDataFromBacklog
-        // AUth V2
+        // Auth
         case subscriptionInvalidRefreshTokenDetected
         case subscriptionInvalidRefreshTokenSignedOut
         case subscriptionInvalidRefreshTokenRecovered
         case subscriptionAuthV2GetTokensError2
+        case subscriptionPurchaseSuccessAfterPendingTransaction
+        case subscriptionPendingTransactionApproved
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
 
@@ -1241,6 +1244,7 @@ extension Pixel {
         case settingsDataClearingClearDataOpen
         case settingsAutomaticallyClearDataOn
         case settingsAutomaticallyClearDataOff
+        case settingsAutomaticDataClearingOptionsUpdated
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
@@ -1537,6 +1541,8 @@ extension Pixel {
         // MARK: - Dax Easter Egg
         case daxEasterEggLogoDisplayed
         case daxEasterEggLogoTapped
+        case daxEasterEggLogoSetAsPermanent
+        case daxEasterEggLogoResetToDefault
 
         // MARK: - Product surface telemetery
         case productTelemeterySurfaceUsageMenu
@@ -1643,6 +1649,7 @@ extension Pixel.Event {
         case .settingsDataClearingClearDataOpen: return "m_settings_data_clearing_clear_data_open"
         case .settingsAutomaticallyClearDataOn: return "m_settings_automatically_clear_data_on"
         case .settingsAutomaticallyClearDataOff: return "m_settings_automatically_clear_data_off"
+        case .settingsAutomaticDataClearingOptionsUpdated: return "m_automatic_data_clearing_options_updated"
         case .settingsNextStepsAddAppToDock: return "m_settings_next_steps_add_app_to_dock"
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
@@ -1980,9 +1987,6 @@ extension Pixel.Event {
         case .autofillCardsManagementSaveCard: return "autofill_cards_management_save_card"
         case .autofillCardsManagementUpdateCard: return "autofill_cards_management_update_card"
 
-        case .autofillCardsAutofilledInMainframe: return "autofill_cards_autofilled_in_mainframe"
-        case .autofillCardsAutofilledInIframe: return "autofill_cards_autofilled_in_iframe"
-
         case .autofillManagementScreenVisitSurveyAvailable: return "m_autofill_management_screen_visit_survey_available"
 
         case .getDesktopCopy: return "m_get_desktop_copy"
@@ -2227,6 +2231,13 @@ extension Pixel.Event {
         case .dbRemoteMessagingUpdateMessageShownError: return "m_d_db_rm_update_message_shown"
         case .dbRemoteMessagingUpdateMessageStatusError: return "m_d_db_rm_update_message_status"
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
+
+        /// These debug pixels are extremely short lived.  We want to validate that the feature flag is working correctly.
+        /// To do so there should be an almost exact equal number of daily pixels, but it's possible for the count to be fairly different (though not massively).
+        /// The reason it might not be exact is that it could be the feature flag does not get enabled until "the next day" so the 'daily' part doesn't kick in.
+        /// This will let us reason about why the DAU data in Grafana is different to our ATB data (by about 15%)
+        case .debugTelemetryDAUPreFF: return "m_debug_validate_telemetry_pre-feature-flag"
+        case .debugTelemetryDAUPostFF: return "m_debug_validate_telemetry_post-feature-flag"
 
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
 
@@ -2599,11 +2610,13 @@ extension Pixel.Event {
         case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
         case .subscriptionKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
         case .subscriptionKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
-            // Auth V2
+            // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
         case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
+        case .subscriptionPurchaseSuccessAfterPendingTransaction: return "m_privacy-pro_purchase_success_after_pending_transaction"
+        case .subscriptionPendingTransactionApproved: return "m_privacy-pro_app_subscription-purchase_pending_transaction_approved"
 
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
@@ -3021,6 +3034,8 @@ extension Pixel.Event {
         // MARK: - Dax Easter Egg
         case .daxEasterEggLogoDisplayed: return "m_dax_easter_egg_logo_displayed"
         case .daxEasterEggLogoTapped: return "m_dax_easter_egg_logo_tapped"
+        case .daxEasterEggLogoSetAsPermanent: return "m_dax_easter_egg_logo_set_as_permanent"
+        case .daxEasterEggLogoResetToDefault: return "m_dax_easter_egg_logo_reset_to_default"
 
         // MARK: - Product surface telemetery
         case .productTelemeterySurfaceUsageMenu: return "m_product_telemetry_surface_usage_menu"

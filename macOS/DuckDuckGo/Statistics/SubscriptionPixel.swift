@@ -78,11 +78,14 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionTierOptionsSuccess
     case subscriptionTierOptionsFailure(error: Error)
     case subscriptionTierOptionsUnexpectedProTier
-    // Auth v2
+    // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionInvalidRefreshTokenSignedOut
     case subscriptionInvalidRefreshTokenRecovered
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
+    // Pending Transaction
+    case subscriptionPurchaseSuccessAfterPendingTransaction(SubscriptionPixelHandler.Source)
+    case subscriptionPendingTransactionApproved(SubscriptionPixelHandler.Source)
     // KeychainManager
     case subscriptionKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source)
     case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
@@ -164,11 +167,13 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionTierOptionsSuccess: return "m_mac_\(appDistribution)_subscription_tier-options_success"
         case .subscriptionTierOptionsFailure: return "m_mac_\(appDistribution)_subscription_tier-options_failure"
         case .subscriptionTierOptionsUnexpectedProTier: return "m_mac_\(appDistribution)_subscription_tier-options_unexpected-pro-tier"
-            // Auth v2
+            // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_recovered"
         case .subscriptionAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
+        case .subscriptionPurchaseSuccessAfterPendingTransaction: return "m_mac_\(appDistribution)_privacy-pro_purchase_success_after_pending_transaction"
+        case .subscriptionPendingTransactionApproved: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_pending_transaction_approved"
             // KeychainManager
         case .subscriptionKeychainManagerDataAddedToTheBacklog: return "m_mac_privacy-pro_keychain_manager_data_added_to_backlog"
         case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_mac_privacy-pro_keychain_manager_deallocated_with_backlog"
@@ -214,6 +219,8 @@ enum SubscriptionPixel: PixelKitEvent {
     var parameters: [String: String]? {
         switch self {
         case .subscriptionInvalidRefreshTokenDetected(let source),
+                .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
+                .subscriptionPendingTransactionApproved(let source),
                 .subscriptionKeychainManagerDataAddedToTheBacklog(let source),
                 .subscriptionKeychainManagerDeallocatedWithBacklog(let source),
                 .subscriptionKeychainManagerDataWroteFromBacklog(let source),
@@ -277,6 +284,8 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionInvalidRefreshTokenSignedOut,
                 .subscriptionInvalidRefreshTokenRecovered,
                 .subscriptionAuthV2GetTokensError,
+                .subscriptionPurchaseSuccessAfterPendingTransaction,
+                .subscriptionPendingTransactionApproved,
                 .subscriptionKeychainManagerDataAddedToTheBacklog,
                 .subscriptionKeychainManagerDeallocatedWithBacklog,
                 .subscriptionKeychainManagerDataWroteFromBacklog,

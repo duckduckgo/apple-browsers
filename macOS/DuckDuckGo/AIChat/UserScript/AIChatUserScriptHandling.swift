@@ -51,6 +51,7 @@ protocol AIChatUserScriptHandling {
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
+    var syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
@@ -79,11 +80,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
     public let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
+    public let syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
+    private let syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
+    private var cancellables = Set<AnyCancellable>()
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
@@ -115,6 +119,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
+        self.syncStatusPublisher = syncStatusSubject.eraseToAnyPublisher()
+
+        setUpSyncStatusObserver()
     }
 
     enum AIChatKeys {
@@ -300,6 +307,29 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         return migrationStore.clear()
+    }
+
+    // MARK: - Sync
+
+    private func setUpSyncStatusObserver() {
+        guard let syncService = syncServiceProvider() else { return }
+        syncService.authStatePublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleSyncStatusChanged()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func handleSyncStatusChanged() {
+        guard let syncHandler = makeSyncHandler() else { return }
+        do {
+            let status = try syncHandler.getSyncStatus(featureAvailable: featureFlagger.isFeatureOn(.aiChatSync))
+            syncStatusSubject.send(status)
+        } catch {
+            return
+        }
     }
 
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable? {

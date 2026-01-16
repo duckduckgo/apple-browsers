@@ -2097,6 +2097,14 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         mockDuckPlayerSettings.welcomeMessageShown = false
         mockDuckPlayerSettings.primingMessagePresented = true
         
+        var receivedTimestamps: [TimeInterval?] = []
+        let timestampExpectation = XCTestExpectation(description: "Dismissal timestamp update should be received")
+        
+        sut.duckPlayerTimestampUpdate.sink { timestamp in
+            receivedTimestamps.append(timestamp)
+            timestampExpectation.fulfill()
+        }.store(in: &cancellables)
+        
         // Present first DuckPlayer
         _ = sut.presentDuckPlayer(
             videoID: videoID1,
@@ -2124,15 +2132,13 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // When - First player's dismiss publisher fires
         firstPlayerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for delayed execution (0.3s delay + buffer)
-        let expectation = XCTestExpectation(description: "First player dismissal should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 2.0)
+        // Wait for dismissal update
+        wait(for: [timestampExpectation], timeout: 2.0)
         
         // Then - State should reflect the current video (videoID2), not the dismissed one (videoID1)
         XCTAssertEqual(sut.state.videoID, videoID2, "State should reflect the current video ID")
+        XCTAssertEqual(receivedTimestamps.count, 1, "Should receive exactly one timestamp update")
+        XCTAssertEqual(receivedTimestamps.first, timestamp, "Should receive the correct timestamp")
         
         // Verify the pill presented matches the current video context
         if let containerViewController = sut.containerViewController {

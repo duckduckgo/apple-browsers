@@ -276,6 +276,18 @@ extension Preferences {
                             .accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
                     }
                 }
+
+                // SECTION: On Quit
+                if featureFlagger.isFeatureOn(.warnBeforeQuit) {
+                    PreferencePaneSection(UserText.settingsOnQuitSection) {
+                        PreferencePaneSubSection {
+                            ToggleMenuItem(UserText.settingsConfirmQuitCheckbox, isOn: $tabsModel.warnBeforeQuitting)
+                                .accessibilityIdentifier("PreferencesGeneralView.warnBeforeQuitting")
+                            ToggleMenuItem(UserText.settingsConfirmCloseCheckbox, isOn: $tabsModel.warnBeforeClosingPinnedTabs)
+                                .accessibilityIdentifier("PreferencesGeneralView.warnBeforeClosingPinnedTabs")
+                        }
+                    }
+                }
             }
         }
     }

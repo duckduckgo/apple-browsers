@@ -23,7 +23,7 @@ import DesignResourcesKit
 struct WarnBeforeQuitView: View {
 
     // MARK: - Layout Constants
-    
+
     enum Constants {
         static let shadowPadding: CGFloat = 120  // 60px padding on each side
         static let arrowHeight: CGFloat = 7
@@ -32,12 +32,12 @@ struct WarnBeforeQuitView: View {
         static let tabGapOffset: CGFloat = 4  // Gap between notification and tab (combined with internal spacing = 8px)
         static let quitPanelTopOffset: CGFloat = 56  // Distance from top of window for quit panel
     }
-    
+
     /// Returns the content size for the notification based on action type
     static func contentSize(for action: ConfirmationAction) -> CGSize {
         action == .close ? CGSize(width: 480, height: 86) : CGSize(width: 550, height: 100)
     }
-    
+
     /// Returns the full window size including arrow and shadow padding
     static func windowSize(for action: ConfirmationAction) -> CGSize {
         let content = contentSize(for: action)

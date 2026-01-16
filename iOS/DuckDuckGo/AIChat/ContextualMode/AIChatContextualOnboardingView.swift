@@ -31,6 +31,8 @@ struct AIChatContextualOnboardingView: View {
         static let horizontalPadding: CGFloat = 20
         static let buttonHeight: CGFloat = 50
         static let buttonCornerRadius: CGFloat = 12
+        static let heroImageTopPadding: CGFloat = 25
+
     }
 
     let onConfirm: () -> Void
@@ -42,6 +44,7 @@ struct AIChatContextualOnboardingView: View {
 
             VStack(spacing: Constants.contentSpacing) {
                 Image(uiImage: DesignSystemImages.Color.Size128.contentUpload)
+                    .padding(.top, Constants.heroImageTopPadding)
 
                 VStack(spacing: Constants.textSpacing) {
                     titleText

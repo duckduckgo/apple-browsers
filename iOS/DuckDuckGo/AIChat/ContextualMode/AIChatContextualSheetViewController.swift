@@ -566,12 +566,15 @@ private extension AIChatContextualSheetViewController {
         // guard !settings.hasSeenContextualOnboarding else { return }
 
         isModalInPresentation = true
+        Pixel.fire(pixel: .aiChatContextualOnboardingDisplayed)
 
         let onboardingView = AIChatContextualOnboardingView(
             onConfirm: { [weak self] in
+                Pixel.fire(pixel: .aiChatContextualOnboardingConfirmPressed)
                 self?.dismissOnboarding()
             },
             onViewSettings: { [weak self] in
+                Pixel.fire(pixel: .aiChatContextualOnboardingSettingsPressed)
                 self?.onOpenSettings()
             }
         )

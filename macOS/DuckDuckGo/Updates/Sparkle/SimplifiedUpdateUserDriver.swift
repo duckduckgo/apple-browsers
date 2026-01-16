@@ -95,6 +95,7 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         if appcastItem.isInformationOnlyUpdate {
             Logger.updates.log("Updater dismissed due to information only update")
             reply(.dismiss)
+            return
         }
 
         onDismiss = {

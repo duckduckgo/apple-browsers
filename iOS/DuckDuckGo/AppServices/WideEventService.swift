@@ -24,10 +24,12 @@ import PixelKit
 import Subscription
 import VPN
 
-final class WideEventService {
+actor WideEventService {
     private let wideEvent: WideEventManaging
     private let featureFlagger: FeatureFlagger
     private let subscriptionManager: SubscriptionManager
+
+    private var isProcessing = false
 
     init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionManager: SubscriptionManager) {
         self.wideEvent = wideEvent
@@ -35,26 +37,27 @@ final class WideEventService {
         self.subscriptionManager = subscriptionManager
     }
 
-    func resume() {
-        sendPendingEvents(trigger: .appLaunch) { }
+    nonisolated func resume() {
+        Task {
+            await sendPendingEvents(trigger: .appLaunch)
+        }
     }
 
-    func sendPendingEvents(trigger: WideEventCompletionTrigger, completion: @escaping () -> Void) {
+    func sendPendingEvents(trigger: WideEventCompletionTrigger) async {
+        guard !isProcessing else { return }
+        isProcessing = true
+
         let shouldSendDataImportWideEvent = featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
 
-        Task {
-            await processCompletion(SubscriptionRestoreWideEventData.self, trigger: trigger)
-            await processCompletion(VPNConnectionWideEventData.self, trigger: trigger)
-            await processSubscriptionPurchaseCompletion(trigger: trigger)
+        await processCompletion(SubscriptionRestoreWideEventData.self, trigger: trigger)
+        await processCompletion(VPNConnectionWideEventData.self, trigger: trigger)
+        await processSubscriptionPurchaseCompletion(trigger: trigger)
 
-            if shouldSendDataImportWideEvent {
-                await processCompletion(DataImportWideEventData.self, trigger: trigger)
-            }
-
-            await MainActor.run {
-                completion()
-            }
+        if shouldSendDataImportWideEvent {
+            await processCompletion(DataImportWideEventData.self, trigger: trigger)
         }
+
+        isProcessing = false
     }
 
     private func processCompletion<T: WideEventData>(_ type: T.Type, trigger: WideEventCompletionTrigger) async {

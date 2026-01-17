@@ -27,7 +27,8 @@ struct WideEventLaunchCleanupTask: LaunchTask {
     var name: String = "Wide Event Launch Cleanup"
 
     func run(context: LaunchTaskContext) {
-        wideEventService.sendPendingEvents(trigger: .appLaunch) {
+        Task {
+            await wideEventService.sendPendingEvents(trigger: .appLaunch)
             context.finish()
         }
     }

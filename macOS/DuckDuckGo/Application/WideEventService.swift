@@ -23,10 +23,12 @@ import PrivacyConfig
 import Subscription
 import VPN
 
-final class WideEventService {
+actor WideEventService {
     private let wideEvent: WideEventManaging
     private let featureFlagger: FeatureFlagger
     private let subscriptionManager: SubscriptionManager
+
+    private var isProcessing = false
 
     init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionManager: SubscriptionManager) {
         self.wideEvent = wideEvent
@@ -39,13 +41,20 @@ final class WideEventService {
     }
 
     func sendPendingEvents(trigger: WideEventCompletionTrigger) async {
+        guard !isProcessing else { return }
+        isProcessing = true
+
+        let shouldSendDataImportWideEvent = featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
+
         await processCompletion(SubscriptionRestoreWideEventData.self, trigger: trigger)
         await processCompletion(VPNConnectionWideEventData.self, trigger: trigger)
         await processSubscriptionPurchaseCompletion(trigger: trigger)
 
-        if featureFlagger.isFeatureOn(.dataImportWideEventMeasurement) {
+        if shouldSendDataImportWideEvent {
             await processCompletion(DataImportWideEventData.self, trigger: trigger)
         }
+
+        isProcessing = false
     }
 
     private func processCompletion<T: WideEventData>(_ type: T.Type, trigger: WideEventCompletionTrigger) async {

@@ -49,32 +49,22 @@ final class WideEventServiceTests: XCTestCase {
         super.tearDown()
     }
 
-    func testRunCleanup_withoutPendingData_completesImmediately() {
-        let expectation = expectation(description: "Completion called")
-        service.sendPendingEvents(trigger: .appLaunch) {
-            expectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 1.0)
+    func testRunCleanup_withoutPendingData_completesImmediately() async {
+        await service.sendPendingEvents(trigger: .appLaunch)
         XCTAssertTrue(wideEventMock.completions.isEmpty)
     }
 
-    func testPerformCleanup_withActivateAccountDuration_recentStart_doesNotSendPixel() {
+    func testPerformCleanup_withActivateAccountDuration_recentStart_doesNotSendPixel() async {
         let recentStart = Date().addingTimeInterval(-60)
         let interval = WideEvent.MeasuredInterval(start: recentStart, end: nil)
         let data = createMockWideEventData(activateAccountDuration: interval)
         wideEventMock.started = [data]
 
-        let expectation = expectation(description: "Completion called")
-        service.sendPendingEvents(trigger: .appLaunch) {
-            expectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 1.0)
+        await service.sendPendingEvents(trigger: .appLaunch)
         XCTAssertTrue(wideEventMock.completions.isEmpty)
     }
 
-    func testPerformCleanup_withActivateAccountDuration_oldStart_noEntitlements_sendsUnknownPixel() {
+    func testPerformCleanup_withActivateAccountDuration_oldStart_noEntitlements_sendsUnknownPixel() async {
         subscriptionManager.resultFeatures = []
 
         let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
@@ -82,12 +72,7 @@ final class WideEventServiceTests: XCTestCase {
         let data = createMockWideEventData(activateAccountDuration: interval)
         wideEventMock.started = [data]
 
-        let expectation = expectation(description: "Completion called")
-        service.sendPendingEvents(trigger: .appLaunch) {
-            expectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 2.0)
+        await service.sendPendingEvents(trigger: .appLaunch)
 
         XCTAssertEqual(wideEventMock.completions.count, 1, "Expected one completion but got \(wideEventMock.completions.count)")
         let completion = wideEventMock.completions.first
@@ -99,7 +84,7 @@ final class WideEventServiceTests: XCTestCase {
         }
     }
 
-    func testPerformCleanup_withActivateAccountDuration_hasEntitlements_sendsSuccessPixel() {
+    func testPerformCleanup_withActivateAccountDuration_hasEntitlements_sendsSuccessPixel() async {
         subscriptionManager.resultFeatures = [.networkProtection]
 
         let oldStart = Date().addingTimeInterval(-3 * 60 * 60)
@@ -107,12 +92,7 @@ final class WideEventServiceTests: XCTestCase {
         let data = createMockWideEventData(activateAccountDuration: interval)
         wideEventMock.started = [data]
 
-        let expectation = expectation(description: "Completion called")
-        service.sendPendingEvents(trigger: .appLaunch) {
-            expectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 2.0)
+        await service.sendPendingEvents(trigger: .appLaunch)
 
         XCTAssertEqual(wideEventMock.completions.count, 1)
         let completion = wideEventMock.completions.first
@@ -124,18 +104,13 @@ final class WideEventServiceTests: XCTestCase {
         }
     }
 
-    func testPerformCleanup_withActivateAccountDuration_userNotAuthenticated_sendsUnknownPixel() {
+    func testPerformCleanup_withActivateAccountDuration_userNotAuthenticated_sendsUnknownPixel() async {
         let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
         let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
         let data = createMockWideEventData(activateAccountDuration: interval)
         wideEventMock.started = [data]
 
-        let expectation = expectation(description: "Completion called")
-        service.sendPendingEvents(trigger: .appLaunch) {
-            expectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 2.0)
+        await service.sendPendingEvents(trigger: .appLaunch)
 
         XCTAssertEqual(wideEventMock.completions.count, 1)
         let completion = wideEventMock.completions.first
@@ -147,7 +122,7 @@ final class WideEventServiceTests: XCTestCase {
         }
     }
 
-    func testPerformCleanup_withActivateAccountDuration_entitlementsError_sendsUnknownPixel() {
+    func testPerformCleanup_withActivateAccountDuration_entitlementsError_sendsUnknownPixel() async {
         subscriptionManager.resultFeatures = []
 
         let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
@@ -155,12 +130,7 @@ final class WideEventServiceTests: XCTestCase {
         let data = createMockWideEventData(activateAccountDuration: interval)
         wideEventMock.started = [data]
 
-        let expectation = expectation(description: "Completion called")
-        service.sendPendingEvents(trigger: .appLaunch) {
-            expectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 2.0)
+        await service.sendPendingEvents(trigger: .appLaunch)
 
         XCTAssertEqual(wideEventMock.completions.count, 1)
         let completion = wideEventMock.completions.first
@@ -172,16 +142,11 @@ final class WideEventServiceTests: XCTestCase {
         }
     }
 
-    func testPerformCleanup_withoutActivateAccountDuration_sendsPartialDataPixel() {
+    func testPerformCleanup_withoutActivateAccountDuration_sendsPartialDataPixel() async {
         let data = createMockWideEventData()
         wideEventMock.started = [data]
 
-        let expectation = expectation(description: "Completion called")
-        service.sendPendingEvents(trigger: .appLaunch) {
-            expectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 1.0)
+        await service.sendPendingEvents(trigger: .appLaunch)
 
         XCTAssertEqual(wideEventMock.completions.count, 1)
         let completion = wideEventMock.completions.first
@@ -193,7 +158,7 @@ final class WideEventServiceTests: XCTestCase {
         }
     }
 
-    func testPerformCleanup_withMultipleData_processesAll() {
+    func testPerformCleanup_withMultipleData_processesAll() async {
         subscriptionManager.resultFeatures = [.networkProtection]
 
         let start = Date().addingTimeInterval(-1 * 60 * 60)
@@ -203,11 +168,7 @@ final class WideEventServiceTests: XCTestCase {
 
         wideEventMock.started = [dataWithActivation, dataWithoutActivation]
 
-        let expectation = expectation(description: "sendPendingEvents completion called")
-        service.sendPendingEvents(trigger: .appLaunch) {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 5.0)
+        await service.sendPendingEvents(trigger: .appLaunch)
 
         XCTAssertEqual(wideEventMock.completions.count, 2)
 

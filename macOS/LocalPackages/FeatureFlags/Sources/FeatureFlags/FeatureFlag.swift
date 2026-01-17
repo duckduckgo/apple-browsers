@@ -321,7 +321,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarOnboarding,
                 .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
-                .themes,
                 .wideEventPostEndpoint,
                 .memoryPressureReporting,
                 .themes:

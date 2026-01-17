@@ -41,7 +41,11 @@ public struct OnboardingBorderedButton<Content: View>: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .inset(by: 0.5)
+#if os(iOS)
                 .stroke(.blue, lineWidth: 1)
+#else
+                .stroke(Color(designSystemColor: .accentPrimary), lineWidth: 1)
+#endif
         )
     }
 }

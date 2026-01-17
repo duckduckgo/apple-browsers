@@ -246,6 +246,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211992061067315?focus=true
     case browsingMenuSheetPresentation
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260?focus=true
+    case browsingMenuSheetEnabledByDefault
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
     case autofillExtensionSettings
     case canPromoteAutofillExtensionInBrowser
@@ -289,6 +292,9 @@ public enum FeatureFlag: String {
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
+    
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
+    case burnSingleTab
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -370,6 +376,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .tierMessagingEnabled,
              .allowProTierPurchase,
              .browsingMenuSheetPresentation,
+             .browsingMenuSheetEnabledByDefault,
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
@@ -382,7 +389,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
              .aiChatAtb,
-             .enhancedDataClearingSettings:
+             .enhancedDataClearingSettings,
+             .burnSingleTab:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -573,6 +581,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .browsingMenuSheetPresentation:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.experimentalBrowsingMenu))
+        case .browsingMenuSheetEnabledByDefault:
+            return .internalOnly()
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -603,6 +613,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint))
+        case .burnSingleTab:
+            return .disabled
         }
     }
 }

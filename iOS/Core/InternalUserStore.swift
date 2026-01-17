@@ -23,7 +23,7 @@ import PrivacyConfig
 public class InternalUserStore: InternalUserStoring {
     public init() {
     }
-#if ALPHA
+#if ALPHA || EXPERIMENTAL
     @UserDefaultsWrapper(key: .featureFlaggingDidVerifyInternalUser, defaultValue: true)
 #else
     @UserDefaultsWrapper(key: .featureFlaggingDidVerifyInternalUser, defaultValue: false)

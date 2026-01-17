@@ -21,6 +21,7 @@ import AIChat
 import BrowserServicesKit
 import Combine
 import Common
+import Core
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -92,10 +93,13 @@ final class AIChatContextualWebViewController: UIViewController {
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            productSurfaceTelemetry: productSurfaceTelemetry
         )
         super.init(nibName: nil, bundle: nil)
     }

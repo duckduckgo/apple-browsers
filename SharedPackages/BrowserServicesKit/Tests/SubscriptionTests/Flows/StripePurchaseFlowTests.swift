@@ -56,14 +56,11 @@ final class StripePurchaseFlowTests: XCTestCase {
             XCTAssertEqual(success.platform, SubscriptionPlatformName.stripe)
             XCTAssertEqual(success.options.count, SubscriptionMockFactory.productsItems.count)
             XCTAssertEqual(success.features.count, 4)
-            let allFeatures = [Entitlement.ProductName.networkProtection,
-                               Entitlement.ProductName.dataBrokerProtection,
-                               Entitlement.ProductName.identityTheftRestoration,
-                               Entitlement.ProductName.paidAIChat]
+            let allFeatures: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
             let allNames = success.features.compactMap({ feature in feature.name })
 
             for feature in allFeatures {
-                XCTAssertTrue(allNames.contains(feature.subscriptionEntitlement))
+                XCTAssertTrue(allNames.contains(feature))
             }
         case .failure(let error):
             XCTFail("Unexpected failure: \(error)")

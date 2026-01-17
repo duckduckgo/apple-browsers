@@ -398,4 +398,78 @@ final class VPNConnectionWideEventTests: XCTestCase {
             }
         }
     }
+
+    func testCompletionDecision_noOverallDurationStart_returnsPartialData() async {
+        let eventData = VPNConnectionWideEventData(
+            extensionType: .app,
+            startupMethod: .manualByMainApp,
+            contextData: WideEventContextData()
+        )
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: VPNConnectionWideEventData.StatusReason.partialData.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with partial data")
+        }
+    }
+
+    func testCompletionDecision_intervalAlreadyCompleted_returnsPartialData() async {
+        let eventData = VPNConnectionWideEventData(
+            extensionType: .app,
+            startupMethod: .manualByMainApp,
+            contextData: WideEventContextData()
+        )
+        let start = Date()
+        eventData.overallDuration = WideEvent.MeasuredInterval(start: start, end: start.addingTimeInterval(1))
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: VPNConnectionWideEventData.StatusReason.partialData.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with partial data")
+        }
+    }
+
+    func testCompletionDecision_connectionTimeoutExceeded_returnsTimeout() async {
+        let eventData = VPNConnectionWideEventData(
+            extensionType: .app,
+            startupMethod: .manualByMainApp,
+            contextData: WideEventContextData()
+        )
+        let start = Date().addingTimeInterval(-VPNConnectionWideEventData.connectionTimeout - 1)
+        eventData.overallDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: VPNConnectionWideEventData.StatusReason.timeout.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with timeout")
+        }
+    }
+
+    func testCompletionDecision_withinTimeout_returnsKeepPending() async {
+        let eventData = VPNConnectionWideEventData(
+            extensionType: .app,
+            startupMethod: .manualByMainApp,
+            contextData: WideEventContextData()
+        )
+        let start = Date().addingTimeInterval(-VPNConnectionWideEventData.connectionTimeout + 1)
+        eventData.overallDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .keepPending:
+            break
+        case .complete:
+            XCTFail("Expected keep pending")
+        }
+    }
 }

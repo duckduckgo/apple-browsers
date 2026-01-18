@@ -198,20 +198,12 @@ public struct WideEventAppData: Codable {
 extension WideEventAppData: WideEventParameterProviding {
 
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        parameters[WideEventParameter.App.name] = name
-        parameters[WideEventParameter.App.version] = version
-
-        if let formFactor = formFactor {
-            parameters[WideEventParameter.App.formFactor] = formFactor
-        }
-
-        if let internalUser {
-            parameters[WideEventParameter.App.internalUser] = internalUser ? "true" : nil
-        }
-
-        return parameters
+        Dictionary(compacting: [
+            (WideEventParameter.App.name, name),
+            (WideEventParameter.App.version, version),
+            (WideEventParameter.App.formFactor, formFactor),
+            (WideEventParameter.App.internalUser, internalUser == true ? "true" : nil),
+        ])
     }
 
 }
@@ -231,9 +223,9 @@ public struct WideEventContextData: Codable {
 extension WideEventContextData: WideEventParameterProviding {
 
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-        if let name = name { parameters[WideEventParameter.Context.name] = name }
-        return parameters
+        Dictionary(compacting: [
+            (WideEventParameter.Context.name, name),
+        ])
     }
 
 }

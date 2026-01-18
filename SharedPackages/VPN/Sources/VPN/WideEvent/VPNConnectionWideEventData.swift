@@ -180,21 +180,14 @@ extension VPNConnectionWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var params: [String: String] = [:]
-
-        params[WideEventParameter.Feature.name] = Self.featureName
-        params[WideEventParameter.VPNConnectionFeature.extensionType] = extensionType.rawValue
-        params[WideEventParameter.VPNConnectionFeature.startupMethod] = startupMethod.rawValue
-        params[WideEventParameter.VPNConnectionFeature.isSetup] = isSetup.rawValue
-
-        if let onboardingStatus {
-            params[WideEventParameter.VPNConnectionFeature.onboardingStatus] = onboardingStatus.rawValue
-        }
-
-        // Overall latency
-        if let overallDuration = overallDuration?.durationMilliseconds {
-            params[WideEventParameter.VPNConnectionFeature.latency] = String(Int(overallDuration))
-        }
+        var params = Dictionary(compacting: [
+            (WideEventParameter.Feature.name, Self.featureName),
+            (WideEventParameter.VPNConnectionFeature.extensionType, extensionType.rawValue),
+            (WideEventParameter.VPNConnectionFeature.startupMethod, startupMethod.rawValue),
+            (WideEventParameter.VPNConnectionFeature.isSetup, isSetup.rawValue),
+            (WideEventParameter.VPNConnectionFeature.onboardingStatus, onboardingStatus?.rawValue),
+            (WideEventParameter.VPNConnectionFeature.latency, overallDuration?.stringValue(.noBucketing)),
+        ])
 
         for step in Step.allCases {
             addStepLatency(self[keyPath: step.durationPath], step: step, to: &params)

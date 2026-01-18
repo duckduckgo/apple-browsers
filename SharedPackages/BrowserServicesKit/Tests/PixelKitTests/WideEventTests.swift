@@ -24,6 +24,7 @@ import Foundation
 
 final class MockWideEventData: WideEventData {
     static let pixelName = "mock-wide-event"
+    static let featureName = "mock-wide-event"
 
     enum FailingStep: String, Codable {
         case step1 = "step_1"
@@ -240,6 +241,7 @@ final class WideEventTests: XCTestCase {
     func testSerializationFailure() throws {
         struct NonSerializableData: WideEventData {
             static let pixelName = "non_serializable"
+            static let featureName = "non_serializable"
             let closure: () -> Void = { }
             var contextData: WideEventContextData = WideEventContextData()
             var appData: WideEventAppData = WideEventAppData()
@@ -357,7 +359,7 @@ final class WideEventTests: XCTestCase {
         parameters["app.name"] = typed.appData.name
         parameters["app.version"] = typed.appData.version
         if let formFactor = typed.appData.formFactor { parameters["app.form_factor"] = formFactor }
-        parameters["feature.name"] = MockWideEventData.pixelName
+        parameters["feature.name"] = MockWideEventData.featureName
         if let name = typed.contextData.name { parameters["context.name"] = name }
 
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })

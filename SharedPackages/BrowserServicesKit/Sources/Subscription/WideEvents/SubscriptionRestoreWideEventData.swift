@@ -126,25 +126,13 @@ extension SubscriptionRestoreWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var params: [String: String] = [:]
-
-        params[WideEventParameter.Feature.name] = Self.featureName
-        params[WideEventParameter.SubscriptionRestoreFeature.restorePlatform] = restorePlatform.rawValue
-
-        if let lastURL = emailAddressRestoreLastURL {
-            params[WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLastURL] = lastURL.rawValue
-        }
-
-        setBucketedLatency(appleAccountRestoreDuration,
-                           key: WideEventParameter.SubscriptionRestoreFeature.appleAccountRestoreLatency,
-                           bucket: appleAccountBucket,
-                           into: &params)
-
-        setBucketedLatency(emailAddressRestoreDuration,
-                           key: WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLatency,
-                           bucket: emailAddressBucket,
-                           into: &params)
-        return params
+        Dictionary(compacting: [
+            (WideEventParameter.Feature.name, Self.featureName),
+            (WideEventParameter.SubscriptionRestoreFeature.restorePlatform, restorePlatform.rawValue),
+            (WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLastURL, emailAddressRestoreLastURL?.rawValue),
+            (WideEventParameter.SubscriptionRestoreFeature.appleAccountRestoreLatency, appleAccountRestoreDuration?.stringValue(.bucketed(Self.appleAccountBucket))),
+            (WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLatency, emailAddressRestoreDuration?.stringValue(.bucketed(Self.emailAddressBucket))),
+        ])
     }
 }
 
@@ -152,16 +140,7 @@ extension SubscriptionRestoreWideEventData {
 
 private extension SubscriptionRestoreWideEventData {
 
-    func setBucketedLatency(_ interval: WideEvent.MeasuredInterval?,
-                            key: String,
-                            bucket: (Int) -> Int,
-                            into params: inout [String: String]) {
-        guard let start = interval?.start, let end = interval?.end else { return }
-        let ms = max(0, Int(end.timeIntervalSince(start) * 1000))
-        params[key] = String(bucket(ms))
-    }
-
-    func appleAccountBucket(_ ms: Int) -> Int {
+    static func appleAccountBucket(_ ms: Double) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000
@@ -173,7 +152,7 @@ private extension SubscriptionRestoreWideEventData {
         }
     }
 
-    func emailAddressBucket(_ ms: Int) -> Int {
+    static func emailAddressBucket(_ ms: Double) -> Int {
         switch ms {
         case 0..<10000: return 10000
         case 10000..<30000: return 30000

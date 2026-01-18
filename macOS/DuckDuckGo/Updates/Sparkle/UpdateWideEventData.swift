@@ -222,10 +222,10 @@ final class UpdateWideEventData: WideEventData {
             ("feature.data.ext.cancellation_reason", cancellationReason?.rawValue),
             ("feature.data.ext.disk_space_remaining_bytes", diskSpaceRemainingBytes.map { String($0) }),
             ("feature.data.ext.time_since_last_update", timeSinceLastUpdateBucket?.rawValue),
-            ("feature.data.ext.update_check_duration_ms", updateCheckDuration?.durationMilliseconds.map { String(Int($0)) }),
-            ("feature.data.ext.download_duration_ms", downloadDuration?.durationMilliseconds.map { String(Int($0)) }),
-            ("feature.data.ext.extraction_duration_ms", extractionDuration?.durationMilliseconds.map { String(Int($0)) }),
-            ("feature.data.ext.total_duration_ms", totalDuration?.durationMilliseconds.map { String(Int($0)) }),
+            ("feature.data.ext.update_check_duration_ms", updateCheckDuration?.stringValue(.noBucketing)),
+            ("feature.data.ext.download_duration_ms", downloadDuration?.stringValue(.noBucketing)),
+            ("feature.data.ext.extraction_duration_ms", extractionDuration?.stringValue(.noBucketing)),
+            ("feature.data.ext.total_duration_ms", totalDuration?.stringValue(.noBucketing)),
         ])
     }
 

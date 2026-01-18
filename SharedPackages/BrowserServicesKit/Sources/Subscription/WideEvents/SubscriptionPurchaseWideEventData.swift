@@ -123,34 +123,18 @@ extension SubscriptionPurchaseWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
+        let bucket: DurationBucket = .bucketed(Self.bucket)
 
-        parameters[WideEventParameter.Feature.name] = "subscription-purchase"
-        parameters[WideEventParameter.SubscriptionFeature.purchasePlatform] = purchasePlatform.rawValue
-
-        if let failingStep = failingStep {
-            parameters[WideEventParameter.SubscriptionFeature.failingStep] = failingStep.rawValue
-        }
-
-        if let subscriptionIdentifier = subscriptionIdentifier {
-            parameters[WideEventParameter.SubscriptionFeature.subscriptionIdentifier] = subscriptionIdentifier
-        }
-
-        parameters[WideEventParameter.SubscriptionFeature.freeTrialEligible] = String(freeTrialEligible)
-
-        if let duration = createAccountDuration?.durationMilliseconds {
-            parameters[WideEventParameter.SubscriptionFeature.accountCreationLatency] = String(bucket(duration))
-        }
-
-        if let duration = completePurchaseDuration?.durationMilliseconds {
-            parameters[WideEventParameter.SubscriptionFeature.accountPaymentLatency] = String(bucket(duration))
-        }
-
-        if let duration = activateAccountDuration?.durationMilliseconds {
-            parameters[WideEventParameter.SubscriptionFeature.accountActivationLatency] = String(bucket(duration))
-        }
-
-        return parameters
+        return Dictionary(compacting: [
+            (WideEventParameter.Feature.name, "subscription-purchase"),
+            (WideEventParameter.SubscriptionFeature.purchasePlatform, purchasePlatform.rawValue),
+            (WideEventParameter.SubscriptionFeature.failingStep, failingStep?.rawValue),
+            (WideEventParameter.SubscriptionFeature.subscriptionIdentifier, subscriptionIdentifier),
+            (WideEventParameter.SubscriptionFeature.freeTrialEligible, String(freeTrialEligible)),
+            (WideEventParameter.SubscriptionFeature.accountCreationLatency, createAccountDuration?.stringValue(bucket)),
+            (WideEventParameter.SubscriptionFeature.accountPaymentLatency, completePurchaseDuration?.stringValue(bucket)),
+            (WideEventParameter.SubscriptionFeature.accountActivationLatency, activateAccountDuration?.stringValue(bucket)),
+        ])
     }
 
     public func markAsFailed(at step: FailingStep, error: Error) {
@@ -158,7 +142,7 @@ extension SubscriptionPurchaseWideEventData {
         self.errorData = WideEventErrorData(error: error)
     }
 
-    private func bucket(_ ms: Double) -> Int {
+    private static func bucket(_ ms: Double) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000

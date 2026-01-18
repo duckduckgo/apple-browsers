@@ -243,6 +243,8 @@ extension WideEventContextData: WideEventParameterProviding {
 
 }
 
+// MARK: - WideEventErrorData
+
 public struct WideEventErrorData: Codable {
 
     public var domain: String

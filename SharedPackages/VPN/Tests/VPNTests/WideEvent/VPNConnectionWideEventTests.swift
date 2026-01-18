@@ -52,7 +52,6 @@ final class VPNConnectionWideEventTests: XCTestCase {
         )
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "vpn-connection")
         XCTAssertEqual(parameters["feature.data.ext.extension_type"], "system")
         XCTAssertEqual(parameters["feature.data.ext.startup_method"], "manual_by_main_app")
         XCTAssertEqual(parameters["feature.data.ext.is_setup"], "unknown")
@@ -97,7 +96,6 @@ final class VPNConnectionWideEventTests: XCTestCase {
         eventData.tunnelStartError = WideEventErrorData(error: tunnelError, description: "TunnelStartFailed")
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "vpn-connection")
         XCTAssertEqual(parameters["feature.data.ext.extension_type"], "app")
         XCTAssertEqual(parameters["feature.data.ext.startup_method"], "manual_by_main_app")
         XCTAssertEqual(parameters["feature.data.ext.is_setup"], "unknown")

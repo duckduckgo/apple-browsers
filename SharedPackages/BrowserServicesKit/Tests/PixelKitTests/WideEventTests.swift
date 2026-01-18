@@ -359,7 +359,6 @@ final class WideEventTests: XCTestCase {
         parameters["app.name"] = typed.appData.name
         parameters["app.version"] = typed.appData.version
         if let formFactor = typed.appData.formFactor { parameters["app.form_factor"] = formFactor }
-        parameters["feature.name"] = MockWideEventData.featureName
         if let name = typed.contextData.name { parameters["context.name"] = name }
 
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
@@ -383,8 +382,6 @@ final class WideEventTests: XCTestCase {
         XCTAssertEqual(parameters["global.type"], "app")
         XCTAssertEqual(parameters["global.sample_rate"], "1.0")
 
-        // Feature metadata
-        XCTAssertEqual(parameters["feature.name"], "mock-wide-event")
         XCTAssertNil(parameters["feature.status"])
     }
 

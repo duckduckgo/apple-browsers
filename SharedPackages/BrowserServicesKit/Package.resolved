@@ -1,15 +1,6 @@
 {
   "pins" : [
     {
-      "identity" : "duckduckgo-autofill",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
-      "state" : {
-        "revision" : "8f6c384312a9b27824333e7d23382481ee1183e9",
-        "version" : "18.5.0"
-      }
-    },
-    {
       "identity" : "gzipswift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/1024jp/GzipSwift.git",

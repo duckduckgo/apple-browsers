@@ -22,6 +22,7 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
+import DuckUI
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -60,7 +61,7 @@ struct BrowsingMenuSheetView: View {
         static let websiteHeaderHeight: CGFloat = 56
     }
 
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.verticalSizeClass) var verticalSizeClass
 
     private let model: BrowsingMenuModel
@@ -100,7 +101,7 @@ struct BrowsingMenuSheetView: View {
         .floatingToolbar(
             footerItems: model.footerItems,
             actionToPerform: $actionToPerform,
-            presentationMode: presentationMode,
+            dismiss: dismiss,
             showsLabels: model.footerItems.count < 2
         )
         .safeAreaInset(edge: .top, content: {
@@ -108,7 +109,7 @@ struct BrowsingMenuSheetView: View {
                 HStack {
                     Spacer()
                     Button(UserText.navigationTitleDone, role: .cancel) {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                     .padding(.top, 16)
                     .padding(.bottom, 16)
@@ -131,6 +132,7 @@ struct BrowsingMenuSheetView: View {
                         url: headerDataSource.url,
                         favicon: headerDataSource.favicon,
                         easterEggLogoURL: headerDataSource.easterEggLogoURL
+                        onDismiss: { dismiss() }
                     )
                 }
 
@@ -139,7 +141,7 @@ struct BrowsingMenuSheetView: View {
                         ForEach(model.headerItems) { headerItem in
                             MenuHeaderButton(entryData: headerItem) {
                                 actionToPerform = { headerItem.action() }
-                                presentationMode.wrappedValue.dismiss()
+                                dismiss()
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -161,7 +163,7 @@ struct BrowsingMenuSheetView: View {
 
                     MenuRowButton(entryData: item, isHighlighted: isHighlighted) {
                         actionToPerform = { item.action() }
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                     .listRowBackground(Color.rowBackgroundColor)
                 }
@@ -300,6 +302,7 @@ private struct BrowsingMenuHeaderView: View {
     let url: URL?
     let favicon: UIImage?
     let easterEggLogoURL: URL?
+    let onDismiss: () -> Void
 
     private var displayURL: String? {
         url?.host
@@ -311,9 +314,21 @@ private struct BrowsingMenuHeaderView: View {
 
             textContent
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            closeButton
         }
         .padding(.bottom, MenuHeaderConstant.bottomPadding)
         .frame(maxWidth: .infinity)
+    }
+
+    private var closeButton: some View {
+        Button(action: onDismiss) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                .foregroundStyle(Color(designSystemColor: .textSecondary))
+        }
+        .buttonStyle(GhostButtonStyle())
+        .frame(width: MenuHeaderConstant.closeButtonSize, height: MenuHeaderConstant.closeButtonSize)
+        .accessibilityLabel(UserText.keyCommandClose)
     }
 
     @ViewBuilder
@@ -371,6 +386,7 @@ private enum MenuHeaderConstant {
     static let contentSpacing: CGFloat = 12
     static let textSpacing: CGFloat = 2
     static let bottomPadding: CGFloat = 8
+    static let closeButtonSize: CGFloat = 44
 }
 
 private extension View {
@@ -401,13 +417,13 @@ private extension View {
     func floatingToolbar(
         footerItems: [BrowsingMenuModel.Entry],
         actionToPerform: Binding<(() -> Void)?>,
-        presentationMode: Binding<PresentationMode>,
+        dismiss: DismissAction,
         showsLabels: Bool
     ) -> some View {
         modifier(FloatingToolbarModifier(
             footerItems: footerItems,
             actionToPerform: actionToPerform,
-            presentationMode: presentationMode,
+            dismiss: dismiss,
             showsLabels: showsLabels
         ))
     }
@@ -416,7 +432,7 @@ private extension View {
 private struct FloatingToolbarModifier: ViewModifier {
     let footerItems: [BrowsingMenuModel.Entry]
     @Binding var actionToPerform: (() -> Void)?
-    let presentationMode: Binding<PresentationMode>
+    let dismiss: DismissAction
     let showsLabels: Bool
 
     func body(content: Content) -> some View {
@@ -449,7 +465,7 @@ private struct FloatingToolbarModifier: ViewModifier {
             ForEach(footerItems) { footerItem in
                 Button(action: {
                     actionToPerform = { footerItem.action() }
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     HStack(spacing: 4) {
                         Image(uiImage: footerItem.image)

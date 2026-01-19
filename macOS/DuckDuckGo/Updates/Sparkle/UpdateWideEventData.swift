@@ -42,6 +42,7 @@ import PixelKit
 /// - Incomplete intervals (not completed before flow ends) won't be included in pixel parameters
 final class UpdateWideEventData: WideEventData {
     static let pixelName = "sparkle_update_cycle"
+    static let featureName = "sparkle-update"
 
     // Required protocol properties
     var globalData: WideEventGlobalData
@@ -208,7 +209,6 @@ final class UpdateWideEventData: WideEventData {
 
     func pixelParameters() -> [String: String] {
         Dictionary(compacting: [
-            ("feature.name", "sparkle-update"),
             ("feature.data.ext.from_version", fromVersion),
             ("feature.data.ext.from_build", fromBuild),
             ("feature.data.ext.to_version", toVersion),

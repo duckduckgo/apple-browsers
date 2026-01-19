@@ -20,11 +20,8 @@ import Foundation
 import PixelKit
 
 public class SubscriptionPurchaseWideEventData: WideEventData {
-    #if DEBUG
-    public static let pixelName = "subscription_purchase_debug"
-    #else
     public static let pixelName = "subscription_purchase"
-    #endif
+    public static let featureName = "subscription-purchase"
 
     public static let activationTimeout: TimeInterval = .hours(4)
 
@@ -126,7 +123,6 @@ extension SubscriptionPurchaseWideEventData {
         let bucket: DurationBucket = .bucketed(Self.bucket)
 
         return Dictionary(compacting: [
-            (WideEventParameter.Feature.name, "subscription-purchase"),
             (WideEventParameter.SubscriptionFeature.purchasePlatform, purchasePlatform.rawValue),
             (WideEventParameter.SubscriptionFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.SubscriptionFeature.subscriptionIdentifier, subscriptionIdentifier),

@@ -26,7 +26,7 @@ final class UpdateNotificationPresenter {
 
     static let presentationTimeInterval: TimeInterval = 10
 
-    private weak var currentPopover: PopoverMessageViewController?
+    private var currentPopover: PopoverMessageViewController?
 
     func showUpdateNotification(icon: NSImage, text: String, buttonText: String? = nil, presentMultiline: Bool = false) {
         Logger.updates.log("Notification presented: \(text, privacy: .public)")
@@ -58,6 +58,9 @@ final class UpdateNotificationPresenter {
                                                               buttonAction: buttonAction,
                                                               clickAction: { [weak self] in
                 self?.openUpdatesPage()
+            },
+                                                              onDismiss: { [weak self] in
+                self?.currentPopover = nil
             })
 
             self.currentPopover = viewController

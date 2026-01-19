@@ -22,11 +22,8 @@ import Networking
 import PixelKit
 
 public class AuthV2TokenAdoptionWideEventData: WideEventData {
-    #if DEBUG
-    public static let pixelName = "auth_v2_token_adoption_debug"
-    #else
     public static let pixelName = "auth_v2_token_adoption"
-    #endif
+    public static let featureName = "authv2-token-adoption"
 
     public enum FailingStep: String, Codable, CaseIterable {
         case adoptingToken = "token_adoption"
@@ -59,7 +56,6 @@ extension AuthV2TokenAdoptionWideEventData {
 
     public func pixelParameters() -> [String: String] {
         Dictionary(compacting: [
-            (WideEventParameter.Feature.name, "authv2-token-adoption"),
             (WideEventParameter.AuthV2AdoptionFeature.failingStep, failingStep?.rawValue),
         ])
     }

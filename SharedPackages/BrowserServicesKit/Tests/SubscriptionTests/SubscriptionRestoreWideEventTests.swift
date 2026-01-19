@@ -38,7 +38,6 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
         )
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "subscription-restore")
         XCTAssertEqual(parameters["feature.data.ext.restore_platform"], "apple_account")
         XCTAssertEqual(parameters["feature.data.ext.apple_account_restore_latency_ms_bucketed"], "5000")
 
@@ -61,7 +60,6 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
         eventData.emailAddressRestoreLastURL = .activationFlowActivateEmailOTP
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "subscription-restore")
         XCTAssertEqual(parameters["feature.data.ext.restore_platform"], "email_address")
         XCTAssertEqual(parameters["feature.data.ext.email_address_restore_latency_ms_bucketed"], "10000")
         XCTAssertEqual(parameters["feature.data.ext.email_address_restore_last_url"], "activation_flow_activate_email_otp")

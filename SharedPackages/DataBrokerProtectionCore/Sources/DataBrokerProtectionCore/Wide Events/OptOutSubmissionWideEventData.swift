@@ -21,7 +21,7 @@ import PixelKit
 
 public final class OptOutSubmissionWideEventData: WideEventData {
     public static let pixelName = "pir_opt_out_submission"
-    private static let featureName = "pir-opt-out-submission"
+    public static let featureName = "pir-opt-out-submission"
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData

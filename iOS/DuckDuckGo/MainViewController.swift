@@ -158,6 +158,9 @@ class MainViewController: UIViewController {
     private lazy var faviconLoader: FavoritesFaviconLoading = FavoritesFaviconLoader()
     private lazy var faviconsFetcherOnboarding = FaviconsFetcherOnboarding(syncService: syncService, syncBookmarksAdapter: syncDataProviders.bookmarksAdapter)
 
+    private lazy var browsingMenuHeaderDataSource = BrowsingMenuHeaderDataSource()
+    private lazy var browsingMenuHeaderStateProvider = BrowsingMenuHeaderStateProvider()
+
     lazy var menuBookmarksViewModel: MenuBookmarksInteracting = {
         let viewModel = MenuBookmarksViewModel(bookmarksDatabase: bookmarksDatabase, syncService: syncService)
         viewModel.favoritesDisplayMode = appSettings.favoritesDisplayMode
@@ -1516,6 +1519,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
+            updateBrowsingMenuHeaderDataSource()
             return
         }
 
@@ -1537,6 +1541,21 @@ class MainViewController: UIViewController {
         } else {
             viewCoordinator.omniBar.startBrowsing()
         }
+
+        updateBrowsingMenuHeaderDataSource()
+    }
+
+    private func updateBrowsingMenuHeaderDataSource() {
+        guard browsingMenuSheetCapability.isEnabled else { return }
+
+        browsingMenuHeaderStateProvider.update(
+            dataSource: browsingMenuHeaderDataSource,
+            isNewTabPage: newTabPageViewController != nil,
+            isAITab: currentTab?.isAITab ?? false,
+            hasLink: currentTab?.link != nil,
+            url: currentTab?.url,
+            title: currentTab?.title
+        )
     }
 
     private func updateOmniBarLoadingState() {
@@ -2795,15 +2814,19 @@ extension MainViewController: OmniBarDelegate {
             highlightTag = .favorite
         }
 
+
+        let view = BrowsingMenuSheetView(model: model,
+                                         headerDataSource: browsingMenuHeaderDataSource,
+                                         highlightRowWithTag: highlightTag,
+                                         onDismiss: { wasActionSelected in
+                                             self.viewCoordinator.menuToolbarButton.isEnabled = true
+                                             if !wasActionSelected {
+                                                 Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
+                                             }
+                                         })
+
         let controller = BrowsingMenuSheetViewController(
-            rootView: BrowsingMenuSheetView(model: model,
-                                            highlightRowWithTag: highlightTag,
-                                            onDismiss: { wasActionSelected in
-                                                self.viewCoordinator.menuToolbarButton.isEnabled = true
-                                                if !wasActionSelected {
-                                                    Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
-                                                }
-                                            })
+            rootView: view
         )
 
         func configureSheetPresentationController(_ sheet: UISheetPresentationController) {

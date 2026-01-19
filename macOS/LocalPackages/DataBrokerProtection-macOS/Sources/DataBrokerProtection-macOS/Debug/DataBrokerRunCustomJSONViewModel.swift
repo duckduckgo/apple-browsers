@@ -130,6 +130,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     private let emailService: EmailService
     private let emailConfirmationDataService: EmailConfirmationDataServiceProvider
+    private let emailConfirmationStore = DebugEmailConfirmationStore()
     private let captchaService: CaptchaService
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
@@ -140,7 +141,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let featureFlagger: DBPFeatureFlagging
 
-    var nextExtractedProfileId: Int64 = 1
     private var isSyncingAgeFields = false
 
     var combinedDebugEvents: [DebugEventRow] {
@@ -248,8 +248,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
                                            settings: dbpSettings,
                                            servicePixel: backendServicePixels)
-        self.emailConfirmationDataService = EmailConfirmationDataService(emailConfirmationStore: database,
-                                                                         database: database,
+        self.emailConfirmationDataService = EmailConfirmationDataService(emailConfirmationStore: emailConfirmationStore,
+                                                                         database: nil,
                                                                          emailServiceV0: emailService,
                                                                          emailServiceV1: emailServiceV1,
                                                                          featureFlagger: featureFlagger,
@@ -305,7 +305,11 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 shouldRunNextStep: { true }
                             )
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
-                            let assignedProfiles = extractedProfiles.map { assignExtractedProfileIdIfNeeded($0) }
+                            let assignedProfiles = extractedProfiles.map {
+                                emailConfirmationStore.storeExtractedProfile($0,
+                                                                             brokerId: query.dataBroker.id ?? 1,
+                                                                             profileQueryId: query.profileQuery.id ?? 1)
+                            }
                             addScanResultEvents(for: query, extractedProfiles: assignedProfiles)
 
                             DispatchQueue.main.async {

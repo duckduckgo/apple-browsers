@@ -60,29 +60,6 @@ extension DataBrokerRunCustomJSONViewModel {
                                      type: .error(error: (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription))))
     }
 
-    func assignExtractedProfileIdIfNeeded(_ extractedProfile: ExtractedProfile) -> ExtractedProfile {
-        if extractedProfile.id != nil {
-            return extractedProfile
-        }
-
-        let assignedId = nextExtractedProfileId
-        nextExtractedProfileId += 1
-
-        return ExtractedProfile(id: assignedId,
-                                name: extractedProfile.name,
-                                alternativeNames: extractedProfile.alternativeNames,
-                                addressFull: extractedProfile.addressFull,
-                                addresses: extractedProfile.addresses,
-                                phoneNumbers: extractedProfile.phoneNumbers,
-                                relatives: extractedProfile.relatives,
-                                profileUrl: extractedProfile.profileUrl,
-                                reportId: extractedProfile.reportId,
-                                age: extractedProfile.age,
-                                email: extractedProfile.email,
-                                removedDate: extractedProfile.removedDate,
-                                identifier: extractedProfile.identifier)
-    }
-
     private func addHistoryEvent(_ event: HistoryEvent) {
         DispatchQueue.main.async {
             self.debugEvents.append(DebugLogEvent(timestamp: event.date,

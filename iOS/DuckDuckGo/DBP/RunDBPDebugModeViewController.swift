@@ -356,6 +356,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
     private let contentScopeProperties: ContentScopeProperties
     private let emailConfirmationDataService: EmailConfirmationDataService
+    private let emailConfirmationStore = DebugEmailConfirmationStore()
     private let captchaService: CaptchaService
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
@@ -457,8 +458,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: pixelHandler!, vault: vault, localBrokerService: localBrokerService)
         
         self.emailConfirmationDataService = EmailConfirmationDataService(
-            emailConfirmationStore: database,
-            database: database,
+            emailConfirmationStore: emailConfirmationStore,
+            database: nil,
             emailServiceV0: emailService,
             emailServiceV1: emailServiceV1,
             featureFlagger: featureFlagger,
@@ -546,10 +547,13 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         
                         let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
                         for profile in extractedProfiles {
+                            let storedProfile = emailConfirmationStore.storeExtractedProfile(profile,
+                                                                                             brokerId: broker.id ?? 1,
+                                                                                             profileQueryId: queryWithId.id ?? 1)
                             let result = ScanResult(
                                 dataBroker: broker,
                                 profileQuery: queryWithId,
-                                extractedProfile: profile
+                                extractedProfile: storedProfile
                             )
 
                             allResults.append(result)

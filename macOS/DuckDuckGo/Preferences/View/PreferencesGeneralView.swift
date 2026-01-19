@@ -283,6 +283,11 @@ extension Preferences {
                         PreferencePaneSubSection {
                             ToggleMenuItem(UserText.settingsConfirmQuitCheckbox, isOn: $tabsModel.warnBeforeQuitting)
                                 .accessibilityIdentifier("PreferencesGeneralView.warnBeforeQuitting")
+                                .onChange(of: tabsModel.warnBeforeQuitting) { newValue in
+                                    if !newValue {
+                                        PixelKit.fire(GeneralPixel.warnBeforeQuitSettingsDisabled, frequency: .dailyAndCount)
+                                    }
+                                }
                             ToggleMenuItem(UserText.settingsConfirmCloseCheckbox, isOn: $tabsModel.warnBeforeClosingPinnedTabs)
                                 .accessibilityIdentifier("PreferencesGeneralView.warnBeforeClosingPinnedTabs")
                         }

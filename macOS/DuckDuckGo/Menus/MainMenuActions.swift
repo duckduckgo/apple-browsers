@@ -989,6 +989,7 @@ extension MainViewController {
     private func showPinnedTabCloseConfirmation(for tab: Tab, atPinnedIndex pinnedIndex: Int, currentEvent: NSEvent) -> Bool {
         guard let manager = WarnBeforeQuitManager(
             currentEvent: currentEvent,
+            action: .close,
             isWarningEnabled: { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs }
         ) else { return false }
 

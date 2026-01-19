@@ -63,7 +63,6 @@ public final class ScanWideEventData: WideEventData {
 extension ScanWideEventData {
     public func pixelParameters() -> [String: String] {
         Dictionary(compacting: [
-            (WideEventParameter.Feature.name, Self.featureName),
             (DBPWideEventParameter.ScanFeature.dataBrokerURL, dataBrokerURL),
             (DBPWideEventParameter.ScanFeature.dataBrokerVersion, dataBrokerVersion),
             (DBPWideEventParameter.ScanFeature.attemptType, attemptType.rawValue),

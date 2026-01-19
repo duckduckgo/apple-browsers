@@ -122,7 +122,6 @@ extension DataImportWideEventData {
 
     public func pixelParameters() -> [String: String] {
         var params = Dictionary(compacting: [
-            (WideEventParameter.Feature.name, Self.featureName),
             (WideEventParameter.DataImportFeature.source, source.id),
             (WideEventParameter.DataImportFeature.latency, overallDuration?.stringValue(.noBucketing)),
         ])

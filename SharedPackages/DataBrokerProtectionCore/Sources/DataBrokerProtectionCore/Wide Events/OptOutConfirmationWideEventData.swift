@@ -57,7 +57,6 @@ extension OptOutConfirmationWideEventData {
 
     public func pixelParameters() -> [String: String] {
         Dictionary(compacting: [
-            (WideEventParameter.Feature.name, Self.featureName),
             (DBPWideEventParameter.OptOutConfirmationFeature.dataBrokerURL, dataBrokerURL),
             (DBPWideEventParameter.OptOutConfirmationFeature.dataBrokerVersion, dataBrokerVersion),
             (DBPWideEventParameter.OptOutConfirmationFeature.confirmationLatency, confirmationInterval?.stringValue(.noBucketing)),

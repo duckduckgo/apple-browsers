@@ -176,7 +176,6 @@ extension VPNConnectionWideEventData {
 
     public func pixelParameters() -> [String: String] {
         var params = Dictionary(compacting: [
-            (WideEventParameter.Feature.name, Self.featureName),
             (WideEventParameter.VPNConnectionFeature.extensionType, extensionType.rawValue),
             (WideEventParameter.VPNConnectionFeature.startupMethod, startupMethod.rawValue),
             (WideEventParameter.VPNConnectionFeature.isSetup, isSetup.rawValue),

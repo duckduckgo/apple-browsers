@@ -116,7 +116,9 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
              didOpenSubscriptionSettings,
              didClickChangePlanOrBilling,
              didClickRemoveSubscription,
-             openWinBackOfferLandingPage
+             openWinBackOfferLandingPage,
+             didClickViewAllPlans,
+             didClickUpgradeToPro
     }
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModel.UserEvent) -> Void,
@@ -147,7 +149,8 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
                 }
 
                 await self?.fetchEmail()
-                await self?.updateSubscription(cachePolicy: .cacheFirst)
+                // Use remoteFirst to ensure fresh data after subscription changes
+                await self?.updateSubscription(cachePolicy: .remoteFirst)
             }
         }
 
@@ -221,6 +224,13 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     /// - Parameter url: The subscription URL to navigate to (defaults to `.plans`)
     @MainActor
     func viewAllPlansAction(url: SubscriptionURL = .plans) -> ViewAllPlansAction {
+        // Fire appropriate event for pixel tracking
+        if url == .upgrade {
+            userEventHandler(.didClickUpgradeToPro)
+        } else {
+            userEventHandler(.didClickViewAllPlans)
+        }
+
         guard let subscriptionPlatform = subscriptionPlatform else {
             assertionFailure("Missing or unknown subscriptionPlatform")
             return .navigateToPlans { }
@@ -421,6 +431,11 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
                 subscriptionTier = subscription.tier
                 isSubscriptionActive = subscription.isActive
                 availableChanges = subscription.availableChanges
+
+                // Debug: Log subscription tier and available changes
+                Logger.subscription.debug("[SubscriptionSettings] Tier: \(String(describing: subscription.tier), privacy: .public)")
+                Logger.subscription.debug("[SubscriptionSettings] Available upgrades: \(String(describing: subscription.availableChanges?.upgrade), privacy: .public)")
+                Logger.subscription.debug("[SubscriptionSettings] Available downgrades: \(String(describing: subscription.availableChanges?.downgrade), privacy: .public)")
             }
         } catch {
             Logger.subscription.error("Error getting subscription: \(error, privacy: .public)")

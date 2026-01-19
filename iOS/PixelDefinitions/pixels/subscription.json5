@@ -76,7 +76,7 @@
         ]
     },
 
-// Pending Transaction Recovery
+    // Pending Transaction Recovery
     "m_privacy-pro_purchase_success_after_pending_transaction": {
         "description": "Fired when a subscription purchase succeeds after previously being in a pending transaction state (e.g., Ask to Buy was approved)",
         "owners": ["jozsef-vesza"],

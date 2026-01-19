@@ -76,7 +76,7 @@ public final class SuggestionsReader: SuggestionsReading {
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfigurationManaging
 
-    private static let duckAIURL = URL(string: "https://duck.ai")!
+    private static let duckAIURL = URL(string: "https://duckduckgo.com")!
 
     // MARK: - Initialization
 
@@ -89,11 +89,8 @@ public final class SuggestionsReader: SuggestionsReading {
 
     @MainActor
     public func fetchSuggestions(query: String?) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
-        Logger.aiChat.debug("SuggestionsReader.fetchSuggestions called, isWebViewReady=\(self.isWebViewReady), isSettingUp=\(self.isSettingUp)")
-
         // Prevent re-entrant setup
         if isSettingUp {
-            Logger.aiChat.debug("SuggestionsReader: Setup in progress, skipping")
             return .failure(ReaderError.webViewNotInitialized)
         }
 
@@ -103,17 +100,14 @@ public final class SuggestionsReader: SuggestionsReading {
             defer { isSettingUp = false }
 
             do {
-                Logger.aiChat.debug("SuggestionsReader: Setting up WebView")
                 try setupWebView()
 
-                Logger.aiChat.debug("SuggestionsReader: Navigating to site")
                 let navigationResult = await navigateToSite()
                 if case .failure(let error) = navigationResult {
                     Logger.aiChat.error("SuggestionsReader: Navigation failed: \(error.localizedDescription)")
                     return .failure(error)
                 }
 
-                Logger.aiChat.debug("SuggestionsReader: Navigation complete, WebView ready")
                 isWebViewReady = true
             } catch {
                 Logger.aiChat.error("SuggestionsReader: Setup failed: \(error.localizedDescription)")
@@ -126,8 +120,6 @@ public final class SuggestionsReader: SuggestionsReading {
             return .failure(ReaderError.scriptNotInitialized)
         }
 
-        Logger.aiChat.debug("SuggestionsReader: Sending fetch request")
-
         // Send fetch request and wait for callback
         return await withCheckedContinuation { continuation in
             self.fetchContinuation = continuation
@@ -137,7 +129,6 @@ public final class SuggestionsReader: SuggestionsReading {
 
     @MainActor
     public func tearDown() {
-        Logger.aiChat.debug("SuggestionsReader.tearDown()")
         webView?.stopLoading()
         webView?.navigationDelegate = nil
         webView = nil
@@ -201,6 +192,13 @@ public final class SuggestionsReader: SuggestionsReading {
         let webView = WKWebView(frame: .zero, configuration: configuration)
         let coordinator = Coordinator(reader: self)
         webView.navigationDelegate = coordinator
+
+        // Enable Web Inspector for debugging (macOS 13.3+)
+        #if DEBUG
+        if #available(macOS 13.3, iOS 16.4, *) {
+            webView.isInspectable = true
+        }
+        #endif
 
         // Set up callback to resume continuation when results arrive
         suggestionsScript.onChatsReceived = { [weak self] result in

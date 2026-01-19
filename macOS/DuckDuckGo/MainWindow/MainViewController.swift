@@ -1269,8 +1269,7 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
 
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion) {
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
-        // TODO: Use suggestion.chatId to open the specific chat when real data is available
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .newChat, behavior: .currentTab)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
     }
 }
 

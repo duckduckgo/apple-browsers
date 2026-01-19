@@ -69,24 +69,26 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
 
     /// Individual chat data from JS
     private struct ChatData: Decodable {
-        let id: String
+        let chatId: String
         let title: String?
         let pinned: Bool?
-        let timestamp: Int64?
+        let lastEdit: String?  // ISO date string like "2026-01-19T11:48:10.903Z"
 
         func toAIChatSuggestion() -> AIChatSuggestion {
             let date: Date?
-            if let ts = timestamp {
-                date = Date(timeIntervalSince1970: TimeInterval(ts) / 1000)
+            if let lastEdit = lastEdit {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                date = formatter.date(from: lastEdit)
             } else {
                 date = nil
             }
 
             return AIChatSuggestion(
-                id: id,
+                id: chatId,
                 title: title ?? "Untitled Chat",
                 isPinned: pinned ?? false,
-                chatId: id,
+                chatId: chatId,
                 timestamp: date
             )
         }
@@ -122,7 +124,10 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
     // MARK: - Initialization
 
     public override init() {
-        self.messageOriginPolicy = .only(rules: [.exact(hostname: "duck.ai")])
+        self.messageOriginPolicy = .only(rules: [
+            .exact(hostname: "duck.ai"),
+            .exact(hostname: "duckduckgo.com")
+        ])
         super.init()
     }
 
@@ -133,7 +138,6 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
     }
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        Logger.aiChat.debug("AIChatSuggestionsUserScript.handler(forMethodNamed: \(methodName))")
 
         guard let message = MessageName(rawValue: methodName) else {
             Logger.aiChat.debug("Unhandled message: \(methodName) in AIChatSuggestionsUserScript")
@@ -142,7 +146,6 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
 
         switch message {
         case .duckAiChatsResult:
-            Logger.aiChat.debug("AIChatSuggestionsUserScript: Returning handler for duckAiChatsResult")
             return handleChatsResult
         case .getDuckAiChats:
             return nil
@@ -196,10 +199,11 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
                 onChatsReceived?(.success((pinned: pinnedSuggestions, recent: recentSuggestions)))
             } else {
                 let errorMessage = response.error ?? "Unknown error"
+                Logger.aiChat.debug("Response indicated failure: \(errorMessage)")
                 onChatsReceived?(.failure(SuggestionsError.fetchFailed(errorMessage)))
             }
         } catch {
-            Logger.aiChat.error("Failed to decode chats response: \(error.localizedDescription)")
+            Logger.aiChat.error("Failed to decode chats response: \(error)")
             onChatsReceived?(.failure(SuggestionsError.invalidResponse))
         }
 

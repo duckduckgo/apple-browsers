@@ -61,6 +61,9 @@
         }
       }
     },
+    "Change Tier" : {
+      "shouldTranslate" : false
+    },
     "Close" : {
       "localizations" : {
         "de" : {
@@ -112,9 +115,6 @@
           }
         }
       }
-    },
-    "Change Tier" : {
-      "shouldTranslate" : false
     },
     "subscription.add.subscription.modal.title" : {
       "comment" : "Title of a view for adding subscription to the device",
@@ -1986,7 +1986,8 @@
             "value" : "View All Plans"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "subscription.preferences.button.view.plans" : {
       "comment" : "Button for viewing subscription plans on expired subscription",
@@ -5474,65 +5475,18 @@
         }
       }
     },
-    "subscription.preferences.subscription.rebranding.message" : {
-      "comment" : "Message informing users that Subscription is now called the DuckDuckGo subscription",
-      "extractionState" : "stale",
+    "subscription.preferences.subscription.pending.downgrade.caption" : {
+      "comment" : "Pending downgrade info. Parameters are tier name, billing period, and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro heißt jetzt einfach DuckDuckGo-Abo"
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Privacy Pro is now just called the DuckDuckGo subscription"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro ahora se llama simplemente suscripción a DuckDuckGo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro s'appelle désormais simplement l'abonnement DuckDuckGo"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro ora si chiama semplicemente abbonamento DuckDuckGo"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro heet nu gewoon het DuckDuckGo-abonnement"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro obecnie nazywa się po prostu subskrypcją DuckDuckGo"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Privacy Pro chama-se agora subscrição da DuckDuckGo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пакет Privacy Pro теперь называется просто подпиской DuckDuckGo."
+            "value" : "Your plan will downgrade to %1$@ %2$@ on %3$@."
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "subscription.preferences.subscription.settings.activating" : {
       "comment" : "Title for the status indicator informing that user's subscription is still activating",
@@ -5893,6 +5847,19 @@
           }
         }
       }
+    },
+    "subscription.preferences.manage.payment.or.cancel.button" : {
+      "comment" : "Button to manage payment or cancel subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage Payment or Cancel"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "subscription.preferences.view.faqs.button" : {
       "comment" : "Button to open page for FAQs",

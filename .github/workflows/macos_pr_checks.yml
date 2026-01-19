@@ -337,6 +337,7 @@ jobs:
 
     - name: Report job duration
       if: success() || (always() && steps.run-integration-tests.outcome == 'failure')
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
@@ -502,6 +503,7 @@ jobs:
           | xcbeautify
 
     - name: Report job duration
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop

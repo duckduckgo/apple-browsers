@@ -53,6 +53,13 @@ extension DataBrokerRunCustomJSONViewModel {
                                      type: .optOutConfirmed))
     }
 
+    func addOptOutAwaitingEmailConfirmationEvent(for scanResult: ScanResult) {
+        addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
+                                     brokerId: scanResult.dataBroker.id ?? 0,
+                                     profileQueryId: scanResult.profileQuery.id ?? 0,
+                                     type: .optOutSubmittedAndAwaitingEmailConfirmation))
+    }
+
     func addOptOutErrorEvent(for scanResult: ScanResult, error: Error) {
         addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
                                      brokerId: scanResult.dataBroker.id ?? 0,
@@ -69,6 +76,7 @@ extension DataBrokerRunCustomJSONViewModel {
                                                   details: ""),
                                     at: 0)
         }
+        updateEmailConfirmationState(for: event)
     }
 
     func historyEventDescription(_ event: HistoryEvent) -> String {

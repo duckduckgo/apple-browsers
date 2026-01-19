@@ -20,6 +20,8 @@
 import AIChat
 import BrowserServicesKit
 import Combine
+import Common
+import Core
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -42,6 +44,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
+    private let featureFlagger: FeatureFlagger
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -52,6 +55,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     private var pendingPrompt: String?
+    private var pendingPageContext: AIChatPageContextData?
     private var userContentController: UserContentController?
     private var isPageReady = false
     private var isContentHandlerReady = false
@@ -82,14 +86,20 @@ final class AIChatContextualWebViewController: UIViewController {
     init(aiChatSettings: AIChatSettingsProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
-         featureDiscovery: FeatureDiscovery) {
+         featureDiscovery: FeatureDiscovery,
+         featureFlagger: FeatureFlagger) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
+        self.featureFlagger = featureFlagger
+
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
-            featureDiscovery: featureDiscovery
+            featureDiscovery: featureDiscovery,
+            featureFlagger: featureFlagger,
+            productSurfaceTelemetry: productSurfaceTelemetry
         )
         super.init(nibName: nil, bundle: nil)
     }
@@ -114,11 +124,12 @@ final class AIChatContextualWebViewController: UIViewController {
     // MARK: - Public Methods
 
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
-    func submitPrompt(_ prompt: String) {
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         if isPageReady && isContentHandlerReady {
-            aiChatContentHandler.submitPrompt(prompt)
+            aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
         } else {
             pendingPrompt = prompt
+            pendingPageContext = pageContext
         }
     }
 
@@ -127,6 +138,8 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func reload() {
+        isPageReady = false
+        isContentHandlerReady = false
         webView.reload()
     }
 
@@ -168,7 +181,8 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func loadAIChat() {
         loadingView.startAnimating()
-        let request = URLRequest(url: aiChatSettings.aiChatURL)
+        let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+        let request = URLRequest(url: contextualURL)
         webView.load(request)
     }
 
@@ -178,8 +192,10 @@ final class AIChatContextualWebViewController: UIViewController {
               isPageReady,
               isContentHandlerReady else { return }
 
+        let pageContext = pendingPageContext
         pendingPrompt = nil
-        aiChatContentHandler.submitPrompt(prompt)
+        pendingPageContext = nil
+        aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
     }
 
     // MARK: - URL Observation
@@ -214,7 +230,8 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
             return
         }
 
-        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
+
         isContentHandlerReady = true
         submitPendingPromptIfReady()
     }

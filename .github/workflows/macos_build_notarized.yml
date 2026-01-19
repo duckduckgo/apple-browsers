@@ -217,6 +217,7 @@ jobs:
         fi
 
     - name: Report job duration
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
@@ -421,6 +422,7 @@ jobs:
         echo "dmg=${dmg}" >> $GITHUB_OUTPUT
 
     - name: Report job duration
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop

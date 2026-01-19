@@ -26,6 +26,8 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
     public static let pixelName = "subscription_purchase"
     #endif
 
+    public static let activationTimeout: TimeInterval = .hours(4)
+
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
     public var appData: WideEventAppData
@@ -40,6 +42,15 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
 
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
+
+    public var entitlementsChecker: (() async -> Bool)?
+
+    private enum CodingKeys: String, CodingKey {
+        case globalData, contextData, appData
+        case purchasePlatform, subscriptionIdentifier, freeTrialEligible
+        case createAccountDuration, completePurchaseDuration, activateAccountDuration
+        case failingStep, errorData
+    }
 
     public init(purchasePlatform: PurchasePlatform,
                 failingStep: FailingStep? = nil,
@@ -63,6 +74,31 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
+    }
+
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        switch trigger {
+        case .appLaunch:
+            guard var interval = activateAccountDuration, let start = interval.start else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            guard interval.end == nil else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            if let checker = entitlementsChecker, await checker() {
+                interval.complete()
+                activateAccountDuration = interval
+                return .complete(.success(reason: StatusReason.missingEntitlementsDelayedActivation.rawValue))
+            }
+
+            if Date() >= start.addingTimeInterval(Self.activationTimeout) {
+                return .complete(.unknown(reason: StatusReason.missingEntitlements.rawValue))
+            }
+
+            return .keepPending
+        }
     }
 }
 
@@ -100,7 +136,7 @@ extension SubscriptionPurchaseWideEventData {
             parameters[WideEventParameter.SubscriptionFeature.subscriptionIdentifier] = subscriptionIdentifier
         }
 
-        parameters[WideEventParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
+        parameters[WideEventParameter.SubscriptionFeature.freeTrialEligible] = String(freeTrialEligible)
 
         if let duration = createAccountDuration?.durationMilliseconds {
             parameters[WideEventParameter.SubscriptionFeature.accountCreationLatency] = String(bucket(duration))

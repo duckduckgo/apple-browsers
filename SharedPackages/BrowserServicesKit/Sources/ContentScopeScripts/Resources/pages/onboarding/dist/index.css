@@ -35,7 +35,12 @@
   --sp-2: 0.5rem;
   --sp-1: 0.25rem;
   --ddg-color-primary: #3969ef;
+  --ddg-color-primary-tint-12: rgba(57, 105, 239, 0.12);
   --ddg-color-primary-dark: #7295F6;
+  --ddg-color-primary-dark-tint-15: rgba(114, 149, 246, 0.15);
+  --color-blue-60: #2b55ca;
+  --color-blue-20: #8fabf9;
+  --color-blue-0: #ccdaff;
   --color-black-at-1: rgba(0, 0, 0, 0.01);
   --color-black-at-3: rgba(0, 0, 0, 0.03);
   --color-black-at-6: rgba(0, 0, 0, 0.06);
@@ -55,6 +60,7 @@
   --color-black-at-90: rgba(0, 0, 0, 0.9);
   --color-black-at-96: rgba(0, 0, 0, 0.96);
   --color-gray85-at-80: rgba(51, 51, 51, 0.8);
+  --color-gray-82: #3d3d3d;
   --color-white-at-3: rgba(255, 255, 255, 0.03);
   --color-white-at-6: rgba(255, 255, 255, 0.06);
   --color-white-at-9: rgba(255, 255, 255, 0.09);
@@ -1295,6 +1301,185 @@ h2 {
 }
 .DuckPlayerStep_animationContainer canvas {
   border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* pages/onboarding/app/components/ToggleButton.module.css */
+.ToggleButton_button {
+  --btn-bg: #ffffff;
+  --btn-border: var(--color-black-at-6);
+  --btn-color: var(--color-black-at-84);
+  --btn-selected-bg: var(--ddg-color-primary-tint-12);
+  --btn-selected-border: var(--ddg-color-primary);
+  --btn-selected-color: var(--ddg-color-primary);
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background-color: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: var(--sp-3);
+  color: var(--btn-color);
+  cursor: pointer;
+  font-size: inherit;
+  font-weight: 400;
+}
+@media (prefers-color-scheme: dark) {
+  .ToggleButton_button {
+    --btn-bg: var(--color-gray-82);
+    --btn-border: var(--color-white-at-15);
+    --btn-color: var(--color-white-at-84);
+    --btn-selected-bg: var(--color-blue-60);
+    --btn-selected-border: var(--color-blue-0);
+    --btn-selected-color: var(--color-blue-0);
+  }
+}
+.ToggleButton_button.ToggleButton_selected {
+  background-color: var(--btn-selected-bg);
+  border-color: var(--btn-selected-border);
+  color: var(--btn-selected-color);
+}
+.ToggleButton_buttonText {
+  flex: 1;
+  text-align: left;
+}
+.ToggleButton_radioButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ToggleButton_radioCircle {
+  --radio-circle: #3969ef;
+  fill: var(--radio-circle);
+}
+@media (prefers-color-scheme: dark) {
+  .ToggleButton_radioCircle {
+    --radio-circle: #8fabf9;
+  }
+}
+.ToggleButton_radioCheckmark {
+  --radio-checkmark: #ffffff;
+  fill: var(--radio-checkmark);
+}
+@media (prefers-color-scheme: dark) {
+  .ToggleButton_radioCheckmark {
+    --radio-checkmark: #051133;
+  }
+}
+.ToggleButton_radioCircleUnselected {
+  --radio-unselected: rgba(0, 0, 0, 0.36);
+  stroke: var(--radio-unselected);
+  fill: none;
+}
+@media (prefers-color-scheme: dark) {
+  .ToggleButton_radioCircleUnselected {
+    --radio-unselected: rgba(255, 255, 255, 0.24);
+  }
+}
+
+/* pages/onboarding/app/pages/AddressBarMode/AddressBarPreview.module.css */
+.AddressBarPreview_wrapper {
+  position: relative;
+  width: 100%;
+}
+.AddressBarPreview_image {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+.AddressBarPreview_wrapper {
+  --address-bar-left: 20.83%;
+  --address-bar-top: 23.56%;
+  --address-bar-width: 58.33%;
+  --address-bar-height: 23.08%;
+  --address-bar-height-reduced: 13.85%;
+  --address-bar-transition: height 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.AddressBarPreview_bgOverlay {
+  position: absolute;
+  z-index: 1;
+  left: var(--address-bar-left);
+  top: var(--address-bar-top);
+  width: var(--address-bar-width);
+  height: var(--address-bar-height);
+  background-color: #fff;
+  border-radius: 8px;
+  pointer-events: none;
+  transition: var(--address-bar-transition), background-color 300ms ease;
+}
+.AddressBarPreview_bgReduced {
+  height: var(--address-bar-height-reduced);
+}
+.AddressBarPreview_borderOverlay {
+  position: absolute;
+  z-index: 2;
+  left: var(--address-bar-left);
+  top: var(--address-bar-top);
+  width: var(--address-bar-width);
+  height: var(--address-bar-height);
+  border: 2px solid;
+  border-radius: 8px;
+  pointer-events: none;
+  box-sizing: border-box;
+  transition: var(--address-bar-transition);
+}
+.AddressBarPreview_borderReduced {
+  height: var(--address-bar-height-reduced);
+}
+.AddressBarPreview_regularIcon {
+  position: absolute;
+  z-index: 3;
+  right: 23%;
+  top: 27%;
+  width: 2.78%;
+  height: auto;
+  pointer-events: none;
+}
+.AddressBarPreview_extendedIcon {
+  position: absolute;
+  z-index: 3;
+  right: 21.9%;
+  top: 26.5%;
+  width: 12.96%;
+  height: auto;
+  pointer-events: none;
+}
+
+/* pages/onboarding/app/pages/AddressBarMode/AddressBarMode.module.css */
+.AddressBarMode_container {
+  align-items: center;
+  font-size: calc(13 * var(--px-in-rem));
+  gap: 0;
+}
+.AddressBarMode_body {
+  align-items: center;
+  max-width: 432px;
+  gap: calc(10 * var(--px-in-rem));
+  margin-bottom: var(--sp-10);
+}
+.AddressBarMode_buttons {
+  display: flex;
+  width: 100%;
+  gap: var(--sp-2);
+}
+.AddressBarMode_footer {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-7);
+}
+.AddressBarMode_starIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.AddressBarMode_footerText {
+  color: var(--theme-txt-color-progress);
+}
+.AddressBarMode_footerText :where(b) {
+  font-weight: 600;
 }
 
 /* pages/onboarding/app/components/v3/ElasticButton.module.css */

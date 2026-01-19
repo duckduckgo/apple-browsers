@@ -29,6 +29,8 @@ public class DataImportWideEventData: WideEventData {
     public static let pixelName = "data_import"
     #endif
 
+    public static let importTimeout: TimeInterval = .minutes(15)
+
     // Protocol Properties
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
@@ -90,6 +92,25 @@ public class DataImportWideEventData: WideEventData {
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
+    }
+
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        switch trigger {
+        case .appLaunch:
+            guard let start = overallDuration?.start else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            guard overallDuration?.end == nil else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            if Date() >= start.addingTimeInterval(Self.importTimeout) {
+                return .complete(.unknown(reason: StatusReason.timeout.rawValue))
+            }
+
+            return .keepPending
+        }
     }
 
     private static let featureName = "data-import"

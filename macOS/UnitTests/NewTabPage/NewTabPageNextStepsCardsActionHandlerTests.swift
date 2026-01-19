@@ -30,6 +30,8 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var privacyConfigManager: MockPrivacyConfigurationManager!
     private var dockCustomizer: DockCustomization!
     private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
+    private var navigator: MockNavigator!
+    private var syncLauncher: MockSyncLauncher!
 
     @MainActor override func setUp() {
         capturingDefaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -40,6 +42,8 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         let config = MockPrivacyConfiguration()
         privacyConfigManager.privacyConfig = config
         pixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
+        navigator = MockNavigator()
+        syncLauncher = MockSyncLauncher()
 
         actionHandler = NewTabPageNextStepsCardsActionHandler(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -47,7 +51,9 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: tabOpener,
             privacyConfigurationManager: privacyConfigManager,
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            newTabPageNavigator: navigator,
+            syncLauncher: syncLauncher
         )
     }
 
@@ -59,6 +65,8 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         dockCustomizer = nil
         privacyConfigManager = nil
         pixelHandler = nil
+        navigator = nil
+        syncLauncher = nil
     }
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserCardThenItPresentsTheDefaultBrowserPrompt() {
@@ -113,6 +121,20 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertEqual(tabOpener.openedTabs.first?.url, expectedURL)
     }
 
+    @MainActor func testWhenAskedToPerformActionForPersonalizeBrowserThenItOpensCustomization() {
+        actionHandler.performAction(for: .personalizeBrowser, refreshCardsAction: nil)
+
+        XCTAssertTrue(navigator.customizationSettingsOpened)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForSyncThenItStartsSyncFlow() {
+        actionHandler.performAction(for: .sync, refreshCardsAction: { })
+
+        XCTAssertTrue(syncLauncher.startDeviceSyncFlowCalled)
+        XCTAssertEqual(syncLauncher.syncSource, .nextStepsCard)
+        XCTAssertNotNil(syncLauncher.capturedCompletion)
+    }
+
     // MARK: - Pixel Tests
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserThenItFiresPixels() {
@@ -154,6 +176,18 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .subscription)
     }
 
+    @MainActor func testWhenAskedToPerformActionForPersonalizeBrowserThenItFiresPixel() {
+        actionHandler.performAction(for: .personalizeBrowser, refreshCardsAction: nil)
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .personalizeBrowser)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForSyncThenItFiresPixel() {
+        actionHandler.performAction(for: .sync, refreshCardsAction: nil)
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .sync)
+    }
+
 }
 
 private final class MockTabOpener: NewTabPageNextStepsCardsTabOpening {
@@ -162,5 +196,25 @@ private final class MockTabOpener: NewTabPageNextStepsCardsTabOpening {
     @MainActor
     func openTab(_ tab: Tab) {
         openedTabs.append(tab)
+    }
+}
+
+private class MockNavigator: NewTabPageNavigator {
+    private(set) var customizationSettingsOpened = false
+
+    func openNewTabPageBackgroundCustomizationSettings() {
+        customizationSettingsOpened = true
+    }
+}
+
+private class MockSyncLauncher: SyncDeviceFlowLaunching {
+    private(set) var startDeviceSyncFlowCalled = false
+    private(set) var syncSource: SyncDeviceButtonTouchpoint?
+    private(set) var capturedCompletion: (() -> Void)?
+
+    func startDeviceSyncFlow(source: SyncDeviceButtonTouchpoint, completion: (() -> Void)?) {
+        startDeviceSyncFlowCalled = true
+        syncSource = source
+        capturedCompletion = completion
     }
 }

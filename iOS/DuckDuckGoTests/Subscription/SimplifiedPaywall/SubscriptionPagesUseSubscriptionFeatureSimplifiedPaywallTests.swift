@@ -35,25 +35,25 @@ import NetworkingTestingUtils
 //
 //    private var sut: (any SubscriptionPagesUseSubscriptionFeature)!
 //
-//    private var mockSubscriptionManager: SubscriptionManagerMockV2!
+//    private var mockSubscriptionManager: SubscriptionManagerMock!
 //
-//    private var mockStorePurchaseManager: StorePurchaseManagerMockV2!
-//    private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMockV2!
-//    private var mockAppStoreRestoreFlow: AppStoreRestoreFlowMockV2!
+//    private var mockStorePurchaseManager: StorePurchaseManagerMock!
+//    private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
+//    private var mockAppStoreRestoreFlow: AppStoreRestoreFlowMock!
 //    private var mockInternalUserDecider: MockInternalUserDecider!
 //    private var mockWideEvent: WideEventMock!
 //
 //    override func setUp() async throws {
 //        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(), eventTracker: ExperimentEventTracker(), fire: { _, _, _ in })
 //
-//        mockStorePurchaseManager = StorePurchaseManagerMockV2()
-//        mockSubscriptionManager = SubscriptionManagerMockV2()
-//        mockAppStorePurchaseFlow = AppStorePurchaseFlowMockV2()
-//        mockAppStoreRestoreFlow = AppStoreRestoreFlowMockV2()
+//        mockStorePurchaseManager = StorePurchaseManagerMock()
+//        mockSubscriptionManager = SubscriptionManagerMock()
+//        mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
+//        mockAppStoreRestoreFlow = AppStoreRestoreFlowMock()
 //        mockInternalUserDecider = MockInternalUserDecider()
 //        mockWideEvent = WideEventMock()
 //
-//        sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+//        sut = DefaultSubscriptionPagesUseSubscriptionFeature(
 //            subscriptionManager: mockSubscriptionManager,
 //            subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
 //            subscriptionAttributionOrigin: nil,

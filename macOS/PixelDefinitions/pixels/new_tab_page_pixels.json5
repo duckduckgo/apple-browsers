@@ -190,5 +190,47 @@
         "triggers": ["new_tab"],
         "suffixes": [],
         "parameters": []
+    },
+    "m_mac_new-tab-page_next-steps_personalizeBrowser_clicked": {
+        "description": "Fires when a user clicks on the Personalize Browser Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion"]
+    },
+    "m_mac_new-tab-page_next-steps_personalizeBrowser_dismissed": {
+        "description": "Fires when a user dismisses the Personalize Browser Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion"]
+    },
+    "m_mac_new-tab-page_next-steps_personalizeBrowser_shown": {
+        "description": "Fires when the Personalize Browser Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["new_tab"],
+        "suffixes": [],
+        "parameters": []
+    },
+    "m_mac_new-tab-page_next-steps_sync_clicked": {
+        "description": "Fires when a user clicks on the Sync Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion"]
+    },
+    "m_mac_new-tab-page_next-steps_sync_dismissed": {
+        "description": "Fires when a user dismisses the Sync Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion"]
+    },
+    "m_mac_new-tab-page_next-steps_sync_shown": {
+        "description": "Fires when the Sync Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["new_tab"],
+        "suffixes": [],
+        "parameters": []
     }
 }

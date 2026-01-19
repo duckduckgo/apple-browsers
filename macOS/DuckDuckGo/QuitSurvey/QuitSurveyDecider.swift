@@ -125,7 +125,6 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
 // MARK: - App Termination Decider
 
 /// Handles quit survey presentation during app termination.
-/// Returns a task if the survey needs to be presented, nil otherwise.
 @MainActor
 struct QuitSurveyAppTerminationDecider {
     let featureFlagger: FeatureFlagger
@@ -135,10 +134,12 @@ struct QuitSurveyAppTerminationDecider {
     let persistor: QuitSurveyPersistor
     let reinstallUserDetection: ReinstallingUserDetecting
     let showQuitSurvey: @MainActor () async -> Void
+}
 
-    /// Presents the quit survey if needed.
-    /// - Returns: A task that completes when the survey is dismissed, or nil if survey should not be shown.
-    func presentQuitSurveyIfNeeded() -> Task<Void, Never>? {
+// MARK: - ApplicationTerminationDecider
+
+extension QuitSurveyAppTerminationDecider: ApplicationTerminationDecider {
+    func shouldTerminate(isAsync: Bool) -> TerminationQuery {
         let decider = QuitSurveyDecider(
             featureFlagger: featureFlagger,
             dataClearingPreferences: dataClearingPreferences,
@@ -149,15 +150,17 @@ struct QuitSurveyAppTerminationDecider {
         )
 
         guard decider.shouldShowQuitSurvey else {
-            return nil
+            return .sync(.next)
         }
 
         decider.markQuitSurveyShown()
 
         // Show survey and wait for completion
-        return Task { @MainActor in
+        return .async(Task { @MainActor in
             await showQuitSurvey()
-        }
+            // Survey completed - user chose to quit
+            return .next
+        })
     }
 }
 

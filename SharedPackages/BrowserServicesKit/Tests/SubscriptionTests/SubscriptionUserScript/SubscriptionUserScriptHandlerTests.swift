@@ -21,15 +21,16 @@ import SubscriptionTestingUtilities
 import UserScript
 import WebKit
 import XCTest
+import NetworkingTestingUtils
 
 final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
-    var subscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var subscriptionManager: SubscriptionManagerMock!
     var handler: SubscriptionUserScriptHandler!
     var mockNavigationDelegate: MockNavigationDelegate!
 
     override func setUp() async throws {
-        subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        subscriptionManager = SubscriptionManagerMock()
         mockNavigationDelegate = await MockNavigationDelegate()
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
@@ -66,7 +67,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
     func testWhenSubscriptionFailsToBeFetchedThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
         struct SampleError: Error {}
-        subscriptionManager.returnSubscription = .failure(SampleError())
+        subscriptionManager.resultSubscription = .failure(SampleError())
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
@@ -87,10 +88,12 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
             platform: .stripe,
             status: .autoRenewable,
             activeOffers: [],
-            tier: nil
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
         )
 
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
@@ -109,7 +112,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenSubscriptionIsExpiredThenSubscriptionDetailsReturnsSubscriptionData() async throws {
         let subscription = DuckDuckGoSubscription(status: .expired)
 
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
@@ -121,7 +124,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenSubscriptionIsInactiveThenSubscriptionDetailsReturnsSubscriptionData() async throws {
         let subscription = DuckDuckGoSubscription(status: .inactive)
 
-        subscriptionManager.returnSubscription = .success(subscription)
+        subscriptionManager.resultSubscription = .success(subscription)
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
@@ -131,16 +134,16 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenAccessTokenIsAvailableThenGetAuthAccessTokenReturnsToken() async throws {
-        let expectedToken = "test_access_token"
-        subscriptionManager.accessTokenResult = .success(expectedToken)
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        subscriptionManager.resultTokenContainer = tokenContainer
 
         let response = try await handler.getAuthAccessToken(params: [], message: WKScriptMessage())
-        XCTAssertEqual(response.accessToken, expectedToken)
+        XCTAssertEqual(response.accessToken, tokenContainer.accessToken)
     }
 
     func testWhenAccessTokenIsNotAvailableThenGetAuthAccessTokenReturnsEmptyString() async throws {
         struct SampleError: Error {}
-        subscriptionManager.accessTokenResult = .failure(SampleError())
+        subscriptionManager.resultTokenContainer = nil
 
         let response = try await handler.getAuthAccessToken(params: [], message: WKScriptMessage())
         XCTAssertEqual(response.accessToken, "")
@@ -294,7 +297,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
 private extension DuckDuckGoSubscription {
     init(status: Status) {
-        self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [], tier: nil)
+        self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [], tier: nil, availableChanges: nil, pendingPlans: nil)
     }
 }
 

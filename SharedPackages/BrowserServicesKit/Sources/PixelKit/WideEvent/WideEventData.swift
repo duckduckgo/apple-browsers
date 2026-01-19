@@ -35,6 +35,10 @@ public protocol WideEventData: Codable, WideEventParameterProviding {
     /// Optional error data.
     /// All layers of underlying errors will be reported.
     var errorData: WideEventErrorData? { get set }
+
+    /// Returns the completion decision for this event based on the given trigger.
+    /// Override this method to provide custom completion logic for your event type.
+    func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision
 }
 
 public enum WideEventStatus: Codable, Equatable, CustomStringConvertible {

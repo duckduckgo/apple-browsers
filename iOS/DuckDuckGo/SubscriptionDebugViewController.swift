@@ -19,7 +19,8 @@
 
 import UIKit
 import SwiftUI
-
+import WebKit
+import BrowserServicesKit
 import Subscription
 import Core
 import VPN
@@ -33,14 +34,14 @@ final class SubscriptionDebugViewController: UITableViewController {
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
 
-    private var subscriptionManagerV2: SubscriptionManagerV2 {
-        AppDependencyProvider.shared.subscriptionManagerV2!
+    private var subscriptionManager: SubscriptionManager {
+        AppDependencyProvider.shared.subscriptionManager
     }
     private var featureFlagger: FeatureFlagger {
         AppDependencyProvider.shared.featureFlagger
     }
     var currentEnvironment: SubscriptionEnvironment {
-        AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.currentEnvironment
+        AppDependencyProvider.shared.subscriptionManager.currentEnvironment
     }
 
     init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting) {
@@ -132,7 +133,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     var serviceEnvironment: SubscriptionEnvironment.ServiceEnvironment {
-        return subscriptionManagerV2.currentEnvironment.serviceEnvironment
+        return subscriptionManager.currentEnvironment.serviceEnvironment
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -176,7 +177,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .syncAppStoreAccount:
                 cell.textLabel?.text = "Sync App Store Account"
             case .buyProductionSubscriptions:
-                cell.textLabel?.text = "Buy Production Subscriptions"
+                cell.textLabel?.text = "Change Tier"
                 cell.accessoryType = .disclosureIndicator
             case .none:
                 break
@@ -240,7 +241,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .currentRegionOverride:
                 cell.textLabel?.text = "Current override"
 
-                var buttonConfiguration = UIButton.Configuration.plain()
+                let buttonConfiguration = UIButton.Configuration.plain()
                 let button = UIButton(configuration: buttonConfiguration)
 
                 let adjustMenuButtonWidth = {
@@ -405,18 +406,18 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func clearAuthData() {
         Task {
-            await subscriptionManagerV2.signOut(notifyUI: true)
+            await subscriptionManager.signOut(notifyUI: true)
             showAlert(title: "Data cleared!")
         }
     }
 
     private func showAccountDetails() {
         Task {
-            let tokenContainer = try? await subscriptionManagerV2.getTokenContainer(policy: .local)
+            let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .local)
             let authenticated = tokenContainer != nil
             let title = authenticated ? "Authenticated" : "Not Authenticated"
             let message = authenticated ?
-            ["Service Environment: \(subscriptionManagerV2.currentEnvironment.serviceEnvironment)",
+            ["Service Environment: \(subscriptionManager.currentEnvironment.serviceEnvironment)",
              "AuthToken: \(tokenContainer?.accessToken ?? "")",
              "Email: \(tokenContainer?.decodedAccessToken.email ?? "")"].joined(separator: "\n") : nil
             DispatchQueue.main.async {
@@ -456,7 +457,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func syncAppleIDAccount() {
         Task {
             do {
-                try await subscriptionManagerV2.storePurchaseManager().syncAppleIDAccount()
+                try await subscriptionManager.storePurchaseManager().syncAppleIDAccount()
             } catch {
                 showAlert(title: "Error syncing!", message: error.localizedDescription)
                 return
@@ -469,7 +470,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func validateToken() {
         Task {
             do {
-                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
                 showAlert(title: "Token details", message: "\(tokenContainer.debugDescription)")
             } catch OAuthClientError.missingTokenContainer {
                 showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
@@ -482,7 +483,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func getSubscriptionDetails() {
         Task {
             do {
-                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .remoteFirst)
+                let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
                 showAlert(title: "Subscription info", message: subscription.debugDescription)
             } catch {
                 showAlert(title: "Subscription info", message: "\(error)")
@@ -492,31 +493,22 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func checkEntitlements() {
         Task {
-            do {
-                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
-                let entitlementsDescription = tokenContainer.decodedAccessToken.subscriptionEntitlements.map { entitlement in
-                    return entitlement.rawValue
-                }.joined(separator: "\n")
-                showAlert(title: "Available Entitlements", message: entitlementsDescription)
-            } catch OAuthClientError.missingTokenContainer {
-                showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
-            } catch {
-                showAlert(title: "Error retrieving entitlements", message: "\(error)")
-            }
+            let entitlementsStatus = await subscriptionManager.getAllEntitlementStatus()
+            showAlert(title: "Available Entitlements", message: entitlementsStatus.debugDescription)
         }
     }
 
     private func setEnvironment(_ environment: SubscriptionEnvironment.ServiceEnvironment) async {
 
-        let currentSubscriptionEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        let currentSubscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var newSubscriptionEnvironment = SubscriptionEnvironment.default
         newSubscriptionEnvironment.serviceEnvironment = environment
 
         if newSubscriptionEnvironment.serviceEnvironment != currentSubscriptionEnvironment.serviceEnvironment {
-            await AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.signOut(notifyUI: true)
+            await AppDependencyProvider.shared.subscriptionManager.signOut(notifyUI: true)
 
             // Save Subscription environment
-            DefaultSubscriptionManagerV2.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
+            DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
 
             // The VPN environment is forced to match the subscription environment
             let settings = AppDependencyProvider.shared.vpnSettings
@@ -532,14 +524,14 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func setCustomBaseSubscriptionURL(_ url: URL?) {
 
-        let currentSubscriptionEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        let currentSubscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
 
         if currentSubscriptionEnvironment.customBaseSubscriptionURL != url {
             var newSubscriptionEnvironment = currentSubscriptionEnvironment
             newSubscriptionEnvironment.customBaseSubscriptionURL = url
 
             // Save Subscription environment
-            DefaultSubscriptionManagerV2.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
+            DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
         }
     }
 
@@ -623,7 +615,59 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func showBuyProductionSubscriptions() {
-        let hostingController = UIHostingController(rootView: ProductionSubscriptionPurchaseDebugView())
+        // Create the subscription selection handler that routes to the appropriate feature method
+        let handler: SubscriptionSelectionHandler = { productId, changeType in
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+            // Create the flows and feature
+            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(
+                subscriptionManager: subscriptionManager,
+                storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                pendingTransactionHandler: pendingTransactionHandler
+            )
+            let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(
+                subscriptionManager: subscriptionManager,
+                storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                appStoreRestoreFlow: appStoreRestoreFlow,
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                pendingTransactionHandler: pendingTransactionHandler
+            )
+
+            let subscriptionFeatureAvailability = BrowserServicesKit.DefaultSubscriptionFeatureAvailability(
+                privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                purchasePlatform: SubscriptionEnvironment.PurchasePlatform.appStore,
+                featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: AppDependencyProvider.shared.featureFlagger)
+            )
+
+            let feature = DefaultSubscriptionPagesUseSubscriptionFeature(
+                subscriptionManager: subscriptionManager,
+                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                subscriptionAttributionOrigin: nil,
+                appStorePurchaseFlow: appStorePurchaseFlow,
+                appStoreRestoreFlow: appStoreRestoreFlow,
+                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                pendingTransactionHandler: pendingTransactionHandler
+            )
+
+            // Create params matching what the web would send
+            var params: [String: Any] = ["id": productId]
+            if let changeType = changeType {
+                params["change"] = changeType
+            }
+
+            // Call the appropriate handler based on whether it's a tier change or new purchase
+            if changeType != nil {
+                _ = await feature.subscriptionChangeSelected(params: params, original: WKScriptMessage())
+            } else {
+                _ = await feature.subscriptionSelected(params: params, original: WKScriptMessage())
+            }
+        }
+
+        let hostingController = UIHostingController(rootView: ProductionSubscriptionPurchaseDebugView(subscriptionSelectionHandler: handler))
         navigationController?.pushViewController(hostingController, animated: true)
     }
 }

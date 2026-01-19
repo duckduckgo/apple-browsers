@@ -232,7 +232,10 @@ class MainViewController: UIViewController {
         return manager
     }()
 
-    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore)
+    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(
+        using: featureFlagger,
+        keyValueStore: keyValueStore
+    )
 
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
@@ -241,7 +244,7 @@ class MainViewController: UIViewController {
     private let syncAIChatsCleaner: SyncAIChatsCleaning
 
     private var duckPlayerEntryPointVisible = false
-    private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+    private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
     private let daxEasterEggLogoStore: DaxEasterEggLogoStoring
@@ -495,6 +498,7 @@ class MainViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        productSurfaceTelemetry.dailyActiveUser()
         productSurfaceTelemetry.iPadUsed(isPad: isPad)
 
         defer {
@@ -2174,7 +2178,7 @@ class MainViewController: UIViewController {
     @objc
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
@@ -2282,7 +2286,7 @@ class MainViewController: UIViewController {
     @objc
     private func onNetworkProtectionAccountSignOut(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(

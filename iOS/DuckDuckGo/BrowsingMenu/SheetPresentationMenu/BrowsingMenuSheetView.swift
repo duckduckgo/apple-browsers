@@ -22,16 +22,6 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-class BrowsingMenuSheetViewController: UIHostingController<BrowsingMenuSheetView> {
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        // Required for material background to become effective
-        view.backgroundColor = .clear
-    }
-}
-
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
     var sections: [BrowsingMenuModel.Section]

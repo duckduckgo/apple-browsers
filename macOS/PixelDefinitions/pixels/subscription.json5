@@ -597,10 +597,7 @@
                 "key": "context.name",
                 "type": "string",
                 "description": "Context name for the flow",
-                "enum": [
-                    "funnel_appsettings_macos",
-                    "funnel_app_macos"
-                ]
+                "enum": ["funnel_appsettings_macos", "funnel_app_macos"]
             }
         ]
     },

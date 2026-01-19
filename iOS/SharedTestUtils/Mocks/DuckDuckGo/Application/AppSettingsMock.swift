@@ -36,7 +36,9 @@ class AppSettingsMock: AppSettings {
     var currentRefreshButtonPosition: DuckDuckGo.RefreshButtonPosition = .addressBar
 
     var showFullSiteAddress: Bool = false
-    
+
+    var showTrackersBlockedAnimation: Bool = true
+
     var autofillCredentialsEnabled: Bool = false
     
     var autofillCredentialsSavePromptShowAtLeastOnce: Bool = false

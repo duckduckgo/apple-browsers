@@ -173,6 +173,14 @@ enum AIChatPixel: PixelKitEvent {
     case aiChatSyncDecryptionError(reason: String)
     case aiChatSyncHistoryEnabledError(reason: String)
 
+    // MARK: - Prompt Metrics
+
+    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation
+    case aiChatMetricStartNewConversation
+
+    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation
+    case aiChatMetricSentPromptOngoingChat
+
     // MARK: - Onboarding
 
     /// Event Trigger: User enables the Duck.ai toggle during onboarding
@@ -293,6 +301,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_onboarding_finished_toggle_on"
         case .aiChatOnboardingFinishedToggleOff:
             return "aichat_onboarding_finished_toggle_off"
+        case .aiChatMetricStartNewConversation:
+            return "aichat_start_new_conversation"
+        case .aiChatMetricSentPromptOngoingChat:
+            return "aichat_sent_prompt_ongoing_chat"
         }
     }
 
@@ -336,7 +348,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatOnboardingTogglePreferenceOn,
                 .aiChatOnboardingTogglePreferenceOff,
                 .aiChatOnboardingFinishedToggleOn,
-                .aiChatOnboardingFinishedToggleOff:
+                .aiChatOnboardingFinishedToggleOff,
+                .aiChatMetricStartNewConversation,
+                .aiChatMetricSentPromptOngoingChat:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -413,7 +427,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatOnboardingTogglePreferenceOn,
                 .aiChatOnboardingTogglePreferenceOff,
                 .aiChatOnboardingFinishedToggleOn,
-                .aiChatOnboardingFinishedToggleOff:
+                .aiChatOnboardingFinishedToggleOff,
+                .aiChatMetricStartNewConversation,
+                .aiChatMetricSentPromptOngoingChat:
             return [.pixelSource]
         }
     }

@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "account";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Zapri vse zavihke";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohorta: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfiguracija";
@@ -1408,6 +1417,15 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Nedavne spremembe v YouTubu so vplivale na delovanje predvajalnika Duck Player. Prizadevamo si za odpravljanje teh težav in cenimo vaše razumevanje.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Priloži vsebino strani";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Poslano z vašim sporočilom Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Vsebina strani";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcije umetne inteligence DuckDuckGo so zasebne in neobvezne. Vaši podatki se ne uporabljajo za usposabljanje umetne inteligence.";
 
@@ -1670,7 +1688,7 @@
 "empty.search" = "Ni zadetkov";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Včlanjenih: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1728,9 +1746,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Priljubljene samo iz mobilne naprave";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funkcija: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokiranje oglasov in pojavnih oken";
@@ -2206,6 +2221,9 @@
 /* No comment provided by engineer. */
 "Messages" = "Sporočila";
 
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Gumb naslovne vrstice";
 
@@ -2492,6 +2510,9 @@
 "No existing subscription found" = "Ni najdena obstoječa naročnina";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Ni dnevnikov";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2523,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Na voljo ni nobena naročnina";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "V REDU";
@@ -2891,6 +2915,9 @@
 "Results" = "Rezultati";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Poišči ali vnesi naslov";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2935,9 +2962,6 @@
 /* about tagline */
 "settings.about.tagline" = "Zaščita. Zasebnost. Zaupanje.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGo je neodvisno podjetje za spletno zaščito za vse, ki želijo znova prevzeti nadzor nad svojimi osebnimi podatki.\n\nVerjamemo, da je najboljši način za zaščito vaših osebnih podatkov pred hekerji, prevaranti in podjetji, ki posegajo v zasebnost, da preprečimo njihovo zbiranje. Zato na milijone ljudi za iskanje in brskanje po spletu [namesto brskalnika Chrome in drugih brskalnikov izbere DuckDuckGo](ddgQuickLink://duckduckgo.com/compare-privacy). Naš vgrajeni iskalnik je kot Google, vendar nikoli ne sledi vašim iskanjem. Naše zaščite pri brskanju, kot sta blokiranje sledilnikov oglasov in piškotkov, pomagajo drugim podjetjem preprečevati zbiranje vaših podatkov. In še to, naš brskalnik je brezplačen – zaslužimo z [oglasi v iskanju, ki spoštujejo zasebnost](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), ne z izkoriščanjem vaših podatkov. \n\n%@ \n\nPrevzemite nadzor nad svojimi osebnimi podatki z brskalnikom, ki je zasnovan za varstvo podatkov, ne za zbiranje podatkov.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Dostopnost";
 
@@ -2955,6 +2979,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Prikaži polni naslov spletnega mesta";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Prikaži animacijo blokiranih sledilnikov";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Iskanje in Duck.ai";
@@ -3024,6 +3051,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Počisti";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Počisti zavihke in podatke";
 
@@ -3036,17 +3064,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Zavihki";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Izhod iz aplikacije, neaktivnost 15 minut";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Izhod iz aplikacije, neaktivnost 1 ura";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Izhod iz aplikacije, neaktivnost 30 minut";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Izhod iz aplikacije, neaktivnost 5 minut";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Izhod iz aplikacije, neaktivnost 15 minut";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Izhod iz aplikacije, neaktivnost 30 minut";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Samo izhod iz aplikacije";
@@ -3059,6 +3087,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Podatki bodo izbrisani ob ponovnem zagonu aplikacije.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Predlogi za iskanje";
 
@@ -3079,6 +3108,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Samodejno čiščenje podatkov";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Povratne informacije o brskalniku";
 
@@ -3090,6 +3120,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Čiščenje podatkov o brskanju";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Samodejno počisti podatke";
 
@@ -3119,6 +3150,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Brisanje podatkov lahko pomaga zaščititi vašo zasebnost na spletu. Uporabite gumb Fire Button za ročno brisanje podatkov ali nastavite samodejno brisanje.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Privzet brskalnik";
 
@@ -3166,6 +3198,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Požarno zaščitena mesta";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Splošno";
 
@@ -3183,9 +3216,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nov";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Predogled";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tipkovnica";
@@ -3461,6 +3491,9 @@
 "siteFeedback.urlPlaceholder" = "Katera spletna stran je poškodovana?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Stanje";
 
 /* No comment provided by engineer. */
@@ -3468,9 +3501,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Shranjeno ime gostitelja: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Podfunkcija: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodajte v napravo";
@@ -3619,9 +3649,6 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnavljanje naročnine ...";
 
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro se zdaj imenuje le naročnina DuckDuckGo";
-
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odstrani iz te naprave";
 
@@ -3726,12 +3753,6 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nastavitev sinhronizacije";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.credit-cards.title" = "Sinhronizirajte in varnostno kopirajte svoje kreditne kartice";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.data.import.title" = "Sinhronizirajte in varnostno kopirajte svoje podatke";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, hvala";

@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "konto";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Lukk alle faner";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohort: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfigurasjon";
@@ -1408,6 +1417,15 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Players funksjonalitet har blitt påvirket av nylige endringer i YouTube. Vi jobber med å løse disse problemene og setter pris på forståelsen din.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Legg ved sideinnhold";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Sendt med meldingen din til Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Sideinnhold";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "AI-funksjonene i DuckDuckGo er private og valgfrie. Dataene dine brukes ikke til å trene AI.";
 
@@ -1670,7 +1688,7 @@
 "empty.search" = "Ingen match ble funnet";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Påmeldt: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1728,9 +1746,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Kun favoritter på mobil";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funksjon: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokkering av reklame og popups";
@@ -2206,6 +2221,9 @@
 /* No comment provided by engineer. */
 "Messages" = "Meldinger";
 
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Adresselinjeknapp";
 
@@ -2492,6 +2510,9 @@
 "No existing subscription found" = "Ingen eksisterende abonnementer er funnet";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Ingen logger";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2523,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Ingen abonnementer er tilgjengelige";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2891,6 +2915,9 @@
 "Results" = "Resultater";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Søk eller skriv inn adresse";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2935,9 +2962,6 @@
 /* about tagline */
 "settings.about.tagline" = "Beskyttelse. Personvern. Ro i sjelen.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGo er et uavhengig selskap som gir bedre personvern til alle som ønsker å ta tilbake kontrollen over personopplysninger på nettet.\n\nVi mener at den beste måten å beskytte personopplysninger mot hackere, svindlere og selskaper som krenker personvernet på, er å hindre at de samles inn i det hele tatt. Det er derfor millioner av mennesker [velger DuckDuckGo over Chrome og andre nettlesere](ddgQuickLink://duckduckgo.com/compare-privacy) til å søke og surfe på nettet. Vår innebygde søkemotor er som Google, men sporer aldri søkene dine. Og surfebeskyttelsene våre, som blokkering av annonsesporing og informasjonskapsler, hindrer andre selskaper i å samle inn opplysningene dine. Og – ikke minst – nettleseren vår er gratis. Vi tjener penger på [søkeannonser som respekterer personvernet](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), ikke ved å utnytte dataene dine. \n\n%@ \n\nTa tilbake kontrollen over personopplysningene dine med en nettleser som er utviklet for databeskyttelse, ikke datainnsamling.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Tilgjengelighet";
 
@@ -2955,6 +2979,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Vis fullstendig nettstedsadresse";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Vis animasjon av blokkerte sporere";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Søk og Duck.ai";
@@ -3024,6 +3051,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Tilbakestill";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Lukk faner og slett data";
 
@@ -3036,17 +3064,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Faner";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "når appen lukkes eller har vært inaktiv i 15 minutter";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "når appen lukkes eller har vært inaktiv i 1 time";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "når appen lukkes eller har vært inaktiv i 30 minutter";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "når appen lukkes eller har vært inaktiv i 5 minutter";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "når appen lukkes eller har vært inaktiv i 15 minutter";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "når appen lukkes eller har vært inaktiv i 30 minutter";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "kun når appen lukkes";
@@ -3059,6 +3087,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Dataene blir slettet når appen startes på nytt.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Søkeforslag";
 
@@ -3079,6 +3108,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatisk fjerning av data";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Nettlesertilbakemelding";
 
@@ -3090,6 +3120,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Fjern nettleserdata";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Slett data automatisk";
 
@@ -3119,6 +3150,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Sletting av nettleserdata kan gi sterkere personvern på nettet. Bruk Fire Button til å fjerne data manuelt, eller sett opp automatisk fjerning.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardnettleser";
 
@@ -3166,6 +3198,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Nettsteder med Fireproof";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Generelt";
 
@@ -3183,9 +3216,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Ny";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Forhåndsvisning";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
@@ -3461,6 +3491,9 @@
 "siteFeedback.urlPlaceholder" = "Hvilket nettsted fungerer ikke?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Status";
 
 /* No comment provided by engineer. */
@@ -3468,9 +3501,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagret vertsnavn: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Underfunksjon: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Legg til på enheten";
@@ -3619,9 +3649,6 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Gjenoppretter abonnementet...";
 
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro kalles nå bare DuckDuckGo-abonnementet";
-
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Fjern fra denne enheten";
 
@@ -3726,12 +3753,6 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Sett opp synkronisering";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.credit-cards.title" = "Synkroniser og sikkerhetskopier kredittkortene dine";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.data.import.title" = "Synkroniser og sikkerhetskopier dataene dine";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nei takk";

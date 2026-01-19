@@ -440,7 +440,8 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
             status: status,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
     }
 }

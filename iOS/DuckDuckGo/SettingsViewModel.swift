@@ -296,6 +296,16 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var showTrackersBlockedAnimationBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.showTrackersBlockedAnimation },
+            set: {
+                self.state.showTrackersBlockedAnimation = $0
+                self.appSettings.showTrackersBlockedAnimation = $0
+            }
+        )
+    }
+
     var applicationLockBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.applicationLock },
@@ -707,6 +717,7 @@ extension SettingsViewModel {
             textZoom: SettingsState.TextZoom(level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
+            showTrackersBlockedAnimation: appSettings.showTrackersBlockedAnimation,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,

@@ -288,6 +288,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
+    
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
+    case burnSingleTab
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -380,7 +383,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showWhatsNewPromptOnDemand,
              .dataImportSummarySyncPromotion,
              .aiChatAtb,
-             .enhancedDataClearingSettings:
+             .enhancedDataClearingSettings,
+             .burnSingleTab:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -600,6 +604,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAtb:
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
+            return .disabled
+        case .burnSingleTab:
             return .disabled
         }
     }

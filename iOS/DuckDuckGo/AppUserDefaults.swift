@@ -276,6 +276,9 @@ public class AppUserDefaults: AppSettings {
         }
     }
 
+    @UserDefaultsWrapper(key: .showTrackersBlockedAnimation, defaultValue: true)
+    var showTrackersBlockedAnimation: Bool
+
     @UserDefaultsWrapper(key: .textZoom, defaultValue: 100)
     private var textZoom: Int {
         didSet {

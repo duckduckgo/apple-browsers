@@ -32,7 +32,8 @@ final class SubscriptionTests: XCTestCase {
                                 status: .autoRenewable,
                                 activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)],
                                 tier: nil,
-                                availableChanges: nil)
+                                availableChanges: nil,
+                                pendingPlans: nil)
         let b = DuckDuckGoSubscription(productId: "1",
                                 name: "a",
                                 billingPeriod: .monthly,
@@ -42,7 +43,8 @@ final class SubscriptionTests: XCTestCase {
                                 status: .autoRenewable,
                                 activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)],
                                 tier: nil,
-                                availableChanges: nil)
+                                availableChanges: nil,
+                                pendingPlans: nil)
         let c = DuckDuckGoSubscription(productId: "2",
                                 name: "a",
                                 billingPeriod: .monthly,
@@ -52,7 +54,8 @@ final class SubscriptionTests: XCTestCase {
                                 status: .autoRenewable,
                                 activeOffers: [],
                                 tier: nil,
-                                availableChanges: nil)
+                                availableChanges: nil,
+                                pendingPlans: nil)
         XCTAssertEqual(a, b)
         XCTAssertNotEqual(a, c)
     }
@@ -542,11 +545,232 @@ final class SubscriptionTests: XCTestCase {
 
         XCTAssertNil(subscription.availableChanges)
     }
+
+    // MARK: - PendingPlan Decoding Tests
+
+    func testPendingPlanDecoding_WithAllFields() throws {
+        let rawPendingPlan = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"billingPeriod\": \"Monthly\",
+            \"effectiveAt\": 1711557633000,
+            \"status\": \"pending\",
+            \"tier\": \"plus\"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let pendingPlan = try decoder.decode(DuckDuckGoSubscription.PendingPlan.self, from: Data(rawPendingPlan.utf8))
+
+        XCTAssertEqual(pendingPlan.productId, "ddg-privacy-pro-sandbox-monthly-renews-us")
+        XCTAssertEqual(pendingPlan.billingPeriod, .monthly)
+        XCTAssertEqual(pendingPlan.effectiveAt, Date(timeIntervalSince1970: 1711557633))
+        XCTAssertEqual(pendingPlan.status, "pending")
+        XCTAssertEqual(pendingPlan.tier, .plus)
+    }
+
+    func testPendingPlanDecoding_WithYearlyBillingPeriod() throws {
+        let rawPendingPlan = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-yearly-renews-us\",
+            \"billingPeriod\": \"Yearly\",
+            \"effectiveAt\": 1711557633000,
+            \"status\": \"pending\",
+            \"tier\": \"pro\"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let pendingPlan = try decoder.decode(DuckDuckGoSubscription.PendingPlan.self, from: Data(rawPendingPlan.utf8))
+
+        XCTAssertEqual(pendingPlan.billingPeriod, .yearly)
+        XCTAssertEqual(pendingPlan.tier, .pro)
+    }
+
+    // MARK: - Subscription with PendingPlans Tests
+
+    func testSubscriptionDecoding_WithPendingPlans() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": [],
+            \"tier\": \"pro\",
+            \"pendingPlans\": [
+                {
+                    \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+                    \"billingPeriod\": \"Monthly\",
+                    \"effectiveAt\": 1711557633000,
+                    \"status\": \"pending\",
+                    \"tier\": \"plus\"
+                }
+            ]
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertNotNil(subscription.pendingPlans)
+        XCTAssertEqual(subscription.pendingPlans?.count, 1)
+        XCTAssertEqual(subscription.pendingPlans?.first?.tier, .plus)
+        XCTAssertEqual(subscription.pendingPlans?.first?.billingPeriod, .monthly)
+        XCTAssertEqual(subscription.pendingPlans?.first?.status, "pending")
+    }
+
+    func testSubscriptionDecoding_WithoutPendingPlans() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": [],
+            \"tier\": \"plus\"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertNil(subscription.pendingPlans)
+    }
+
+    func testSubscriptionDecoding_WithNullPendingPlans() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": [],
+            \"tier\": \"plus\",
+            \"pendingPlans\": null
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertNil(subscription.pendingPlans)
+    }
+
+    func testSubscriptionDecoding_WithEmptyPendingPlans() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": [],
+            \"tier\": \"plus\",
+            \"pendingPlans\": []
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertNotNil(subscription.pendingPlans)
+        XCTAssertEqual(subscription.pendingPlans?.count, 0)
+    }
+
+    // MARK: - firstPendingPlan Tests
+
+    func testFirstPendingPlan_WithPendingPlans_ReturnsFirst() {
+        let pendingPlan = DuckDuckGoSubscription.PendingPlan(
+            productId: "test-product",
+            billingPeriod: .monthly,
+            effectiveAt: Date(),
+            status: "pending",
+            tier: .plus
+        )
+        let subscription = DuckDuckGoSubscription.make(
+            withStatus: .autoRenewable,
+            pendingPlans: [pendingPlan]
+        )
+
+        XCTAssertNotNil(subscription.firstPendingPlan)
+        XCTAssertEqual(subscription.firstPendingPlan?.productId, "test-product")
+        XCTAssertEqual(subscription.firstPendingPlan?.tier, .plus)
+    }
+
+    func testFirstPendingPlan_WithEmptyArray_ReturnsNil() {
+        let subscription = DuckDuckGoSubscription.make(
+            withStatus: .autoRenewable,
+            pendingPlans: []
+        )
+
+        XCTAssertNil(subscription.firstPendingPlan)
+    }
+
+    func testFirstPendingPlan_WithNilArray_ReturnsNil() {
+        let subscription = DuckDuckGoSubscription.make(
+            withStatus: .autoRenewable,
+            pendingPlans: nil
+        )
+
+        XCTAssertNil(subscription.firstPendingPlan)
+    }
+
+    func testFirstPendingPlan_WithMultiplePlans_ReturnsEarliestEffectiveDate() {
+        let laterDate = Date().addingTimeInterval(TimeInterval.days(30))
+        let earlierDate = Date().addingTimeInterval(TimeInterval.days(7))
+
+        let laterPlan = DuckDuckGoSubscription.PendingPlan(
+            productId: "later-product",
+            billingPeriod: .yearly,
+            effectiveAt: laterDate,
+            status: "pending",
+            tier: .plus
+        )
+        let earlierPlan = DuckDuckGoSubscription.PendingPlan(
+            productId: "earlier-product",
+            billingPeriod: .monthly,
+            effectiveAt: earlierDate,
+            status: "pending",
+            tier: .plus
+        )
+
+        // Pass later plan first to verify sorting by effectiveAt, not array order
+        let subscription = DuckDuckGoSubscription.make(
+            withStatus: .autoRenewable,
+            pendingPlans: [laterPlan, earlierPlan]
+        )
+
+        XCTAssertNotNil(subscription.firstPendingPlan)
+        XCTAssertEqual(subscription.firstPendingPlan?.productId, "earlier-product")
+        XCTAssertEqual(subscription.firstPendingPlan?.tier, .plus)
+    }
 }
 
 extension DuckDuckGoSubscription {
 
-    static func make(withStatus status: DuckDuckGoSubscription.Status, activeOffers: [DuckDuckGoSubscription.Offer] = [], tier: TierName? = nil, availableChanges: DuckDuckGoSubscription.AvailableChanges? = nil) -> DuckDuckGoSubscription {
+    static func make(withStatus status: DuckDuckGoSubscription.Status, activeOffers: [DuckDuckGoSubscription.Offer] = [], tier: TierName? = nil, availableChanges: DuckDuckGoSubscription.AvailableChanges? = nil, pendingPlans: [DuckDuckGoSubscription.PendingPlan]? = nil) -> DuckDuckGoSubscription {
         DuckDuckGoSubscription(productId: UUID().uuidString,
                      name: "Subscription test #1",
                      billingPeriod: .monthly,
@@ -556,6 +780,7 @@ extension DuckDuckGoSubscription {
                      status: status,
                      activeOffers: activeOffers,
                      tier: tier,
-                    availableChanges: availableChanges)
+                     availableChanges: availableChanges,
+                     pendingPlans: pendingPlans)
     }
 }

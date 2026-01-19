@@ -2498,6 +2498,7 @@
 		4B2DF8A52E64C67000FBF11E /* WideEventServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WideEventServiceTests.swift; sourceTree = "<group>"; };
 		4B37E04F2B928CA6009E81CA /* vpn-light-mode.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vpn-light-mode.json"; sourceTree = "<group>"; };
 		4B412ACB2BBB3D0900A39F5E /* LazyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyView.swift; sourceTree = "<group>"; };
+		4B4A6D122F0EC5620074444F /* DuckDuckGoExperimental.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoExperimental.entitlements; sourceTree = "<group>"; };
 		4B52648A25F9613B00CB4C24 /* trackerData.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trackerData.json; sourceTree = "<group>"; };
 		4B53648926718D0E001AA041 /* EmailWaitlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailWaitlist.swift; sourceTree = "<group>"; };
 		4B60AC96252EC07B00E8D219 /* fullscreenvideo.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = fullscreenvideo.js; sourceTree = "<group>"; };
@@ -2509,6 +2510,8 @@
 		4B6701272E3BE3660066176A /* LogFilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogFilterViewController.swift; sourceTree = "<group>"; };
 		4B6701282E3BE3660066176A /* LogViewerDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewerDataSource.swift; sourceTree = "<group>"; };
 		4B6701292E3BE3660066176A /* LogViewerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewerViewController.swift; sourceTree = "<group>"; };
+		4B6D43042F0F64E0006AB68F /* PacketTunnelProviderExperimental.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PacketTunnelProviderExperimental.entitlements; sourceTree = "<group>"; };
+		4B6D43062F0F6988006AB68F /* Info-Experimental.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-Experimental.plist"; sourceTree = "<group>"; };
 		4B6ED9442B992FE4007F5CAA /* vpn-dark-mode.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vpn-dark-mode.json"; sourceTree = "<group>"; };
 		4B74A1C02E49510400277779 /* NetworkProtectionLogViewerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionLogViewerViewController.swift; sourceTree = "<group>"; };
 		4B74A1C22E49512500277779 /* NetworkProtectionLogManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionLogManager.swift; sourceTree = "<group>"; };
@@ -2521,6 +2524,7 @@
 		4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWaitlistUserText.swift; sourceTree = "<group>"; };
 		4BC21A2C272388BD00229F0E /* RunLoopExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLoopExtensionTests.swift; sourceTree = "<group>"; };
 		4BC5E8602E174B6A00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/Infrastructure/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
+		4BC991252F0F4EF1001F6575 /* Configuration-Experimental.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Configuration-Experimental.xcconfig"; path = "Configuration/Configuration-Experimental.xcconfig"; sourceTree = "<group>"; };
 		4BCBE45D2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BCBE45F2BA7E87100FC75A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BCD14662B05B682000B1E4C /* NetworkProtectionTermsAndConditionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionTermsAndConditionsStore.swift; sourceTree = "<group>"; };
@@ -4309,6 +4313,27 @@
 		D6BFCB5E2B7524AA0051FF81 /* SubscriptionPIRMoveToDesktopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPIRMoveToDesktopView.swift; sourceTree = "<group>"; };
 		D6BFCB602B7525160051FF81 /* SubscriptionPIRViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPIRViewModel.swift; sourceTree = "<group>"; };
 		D6D357002DC4384C00B91D35 /* DuckPlayerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerViewModelTests.swift; sourceTree = "<group>"; };
+		D6D7186D2F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D6D7186E2F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
+		D6D7186F2F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D6D718702F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Authentication.strings; sourceTree = "<group>"; };
+		D6D718712F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Bookmarks.strings; sourceTree = "<group>"; };
+		D6D718722F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Feedback.strings; sourceTree = "<group>"; };
+		D6D718732F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/HomeRow.strings; sourceTree = "<group>"; };
+		D6D718742F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Onboarding.strings; sourceTree = "<group>"; };
+		D6D718752F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Settings.strings; sourceTree = "<group>"; };
+		D6D718762F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Tab.strings; sourceTree = "<group>"; };
+		D6D718772F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/TabSwitcher.strings; sourceTree = "<group>"; };
+		D6D718782F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D6D718792F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
+		D6D7187A2F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = ja; path = ja.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		D6D7187B2F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/MainInterface.strings; sourceTree = "<group>"; };
+		D6D7187C2F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D6D7187D2F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D6D7187E2F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
+		D6D7187F2F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D6D718802F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D6D718812F17A3D800616AD1 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
 		D6D95CE22B6D9F8800960317 /* AsyncHeadlessWebViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncHeadlessWebViewModel.swift; sourceTree = "<group>"; };
 		D6DFF7D32DC513200077867C /* DuckPlayerWelcomePillViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerWelcomePillViewModel.swift; sourceTree = "<group>"; };
 		D6E0C1822B7A2B1E00D5E1E9 /* DesktopDownloadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopDownloadView.swift; sourceTree = "<group>"; };
@@ -4513,12 +4538,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */,
 				02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */,
 				4BC95EB12D7417BF002FAB32 /* Subscription in Frameworks */,
 				7BC26CA22DFC0CB800E52480 /* VPN in Frameworks */,
 				4B470EE4299C6DFB0086EBDC /* Core.framework in Frameworks */,
 				4BC8948C2C7902E6009AA141 /* WireGuard in Frameworks */,
-				ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4751,6 +4776,7 @@
 			children = (
 				EE3766DC2AC5940A00AAB575 /* NetworkProtection */,
 				EE3B98EC2A963538002F63A0 /* PacketTunnelProviderAlpha.entitlements */,
+				4B6D43042F0F64E0006AB68F /* PacketTunnelProviderExperimental.entitlements */,
 				02025668298818B200E694E7 /* Info.plist */,
 				CB1143DC2AF6D4B600C1CCD3 /* InfoPlist.strings */,
 				02025669298818B200E694E7 /* PacketTunnelProvider.entitlements */,
@@ -6299,6 +6325,7 @@
 				EE3B98EB2A963515002F63A0 /* WidgetsExtensionAlpha.entitlements */,
 				6FB030C7234331B400A10DB9 /* Configuration.xcconfig */,
 				EEB8FDB92A990AEE00EBEDCF /* Configuration-Alpha.xcconfig */,
+				4BC991252F0F4EF1001F6575 /* Configuration-Experimental.xcconfig */,
 				84E341941E2F7EFB00BDBA6F /* DuckDuckGo */,
 				F143C2E51E4A4CD400CFDE3A /* Core */,
 				8390446D20BDCE10006461CD /* ShareExtension */,
@@ -6372,6 +6399,7 @@
 				310D09192799EF5C00DC0060 /* Downloads */,
 				F143C2C51E4A08F300CFDE3A /* DuckDuckGo.entitlements */,
 				EE3B98EA2A9634CC002F63A0 /* DuckDuckGoAlpha.entitlements */,
+				4B4A6D122F0EC5620074444F /* DuckDuckGoExperimental.entitlements */,
 				D63FF8922C1B67D1006DE24D /* DuckPlayer */,
 				C159DF052A430B36007834BB /* EmailProtection */,
 				3157B43627F4C8380042D3D7 /* Favicons */,
@@ -6379,6 +6407,7 @@
 				85F2FFFE2215C163006BB258 /* FindInPage */,
 				809F9D142EE12CF600943E8A /* Fire */,
 				84E341A11E2F7EFB00BDBA6F /* Info.plist */,
+				4B6D43062F0F6988006AB68F /* Info-Experimental.plist */,
 				98B001B1251EABB40090EC07 /* InfoPlist.strings */,
 				85DFEDEB24C7CC7600973FE7 /* iPad */,
 				F1C5ECFA1E37B15B00C599A4 /* Main */,
@@ -12902,6 +12931,7 @@
 				9866DCE3251CAA3700612E3A /* sk */,
 				9866DCFA251CAA4B00612E3A /* sl */,
 				981DCA922521EFAB00CD4C18 /* nb */,
+				D6D7187F2F17A3D800616AD1 /* ja */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -12998,6 +13028,7 @@
 				9866DE78251CBC6400612E3A /* fr */,
 				9866DE7A251CBC6400612E3A /* fi */,
 				981685572521EEF600FA91A1 /* nb */,
+				D6D7187B2F17A3D800616AD1 /* ja */,
 			);
 			name = MainInterface.storyboard;
 			sourceTree = "<group>";
@@ -13030,6 +13061,7 @@
 				9866DE18251CB92700612E3A /* sv */,
 				9866DE1A251CB95500612E3A /* tr */,
 				981685512521EEF400FA91A1 /* nb */,
+				D6D718742F17A3D800616AD1 /* ja */,
 			);
 			name = Onboarding.storyboard;
 			sourceTree = "<group>";
@@ -13062,6 +13094,7 @@
 				9866DD58251CB0F100612E3A /* sv */,
 				9866DD5A251CB0F200612E3A /* tr */,
 				981685452521EEF000FA91A1 /* nb */,
+				D6D718722F17A3D800616AD1 /* ja */,
 			);
 			name = Feedback.storyboard;
 			sourceTree = "<group>";
@@ -13094,6 +13127,7 @@
 				9866DD90251CB12E00612E3A /* sv */,
 				9866DD92251CB12E00612E3A /* tr */,
 				981685492521EEF100FA91A1 /* nb */,
+				D6D718702F17A3D800616AD1 /* ja */,
 			);
 			name = Authentication.storyboard;
 			sourceTree = "<group>";
@@ -13134,6 +13168,7 @@
 				9866DDC8251CB7A000612E3A /* sv */,
 				9866DDCA251CB7A100612E3A /* tr */,
 				9816854D2521EEF300FA91A1 /* nb */,
+				D6D718762F17A3D800616AD1 /* ja */,
 			);
 			name = Tab.storyboard;
 			sourceTree = "<group>";
@@ -13166,6 +13201,7 @@
 				9866DE00251CB90500612E3A /* sv */,
 				9866DE02251CB90700612E3A /* tr */,
 				981685502521EEF400FA91A1 /* nb */,
+				D6D718732F17A3D800616AD1 /* ja */,
 			);
 			name = HomeRow.storyboard;
 			sourceTree = "<group>";
@@ -13198,6 +13234,7 @@
 				98788EC32521DA3900D55218 /* sv */,
 				98788EC42521DA3900D55218 /* tr */,
 				981685A825221ACF00FA91A1 /* nb */,
+				D6D7187A2F17A3D800616AD1 /* ja */,
 			);
 			name = Localizable.stringsdict;
 			sourceTree = "<group>";
@@ -13230,6 +13267,7 @@
 				982F402C251EAC4A009D48CD /* tr */,
 				98788E992521D8DA00D55218 /* en */,
 				981DCA942521EFAB00CD4C18 /* nb */,
+				D6D718802F17A3D800616AD1 /* ja */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -13262,6 +13300,7 @@
 				982F402F251EAC4A009D48CD /* tr */,
 				98788E982521D8C900D55218 /* en */,
 				981DCA952521EFAB00CD4C18 /* nb */,
+				D6D7187C2F17A3D800616AD1 /* ja */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -13294,6 +13333,7 @@
 				982F4031251EAC4A009D48CD /* tr */,
 				98B029E92521C27200C1CF2F /* en */,
 				981DCA972521EFAB00CD4C18 /* nb */,
+				D6D718812F17A3D800616AD1 /* ja */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -13326,6 +13366,7 @@
 				982F402D251EAC4A009D48CD /* tr */,
 				98788E952521D82100D55218 /* en */,
 				981DCA932521EFAB00CD4C18 /* nb */,
+				D6D7186F2F17A3D800616AD1 /* ja */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -13358,6 +13399,7 @@
 				982F4032251EAC4A009D48CD /* tr */,
 				98788E942521D76F00D55218 /* en */,
 				981DCA982521EFAB00CD4C18 /* nb */,
+				D6D718782F17A3D800616AD1 /* ja */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -13403,6 +13445,7 @@
 				C1E490582D08646400F86C5A /* sl */,
 				C11C4D302D08648100288E85 /* sv */,
 				C14D37D62D08649E00FCFC59 /* tr */,
+				D6D7186D2F17A3D800616AD1 /* ja */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -13434,6 +13477,7 @@
 				C1E490592D08646400F86C5A /* sl */,
 				C11C4D312D08648100288E85 /* sv */,
 				C14D37D72D08649E00FCFC59 /* tr */,
+				D6D7186E2F17A3D800616AD1 /* ja */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -13465,6 +13509,7 @@
 				CB75AA132AF6D5AA00AED266 /* sl */,
 				CBD7AE812AF6D5B6009052FD /* sv */,
 				CB29792D2AF6D5C1006C461D /* tr */,
+				D6D7187D2F17A3D800616AD1 /* ja */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -13497,6 +13542,7 @@
 				EEDFE2F22AC6EDA400F0E19C /* es */,
 				EEDFE2F32AC6EDA500F0E19C /* sv */,
 				EEDFE2F42AC6EDA700F0E19C /* tr */,
+				D6D7187E2F17A3D800616AD1 /* ja */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -13529,6 +13575,7 @@
 				9866DDB8251CB6FC00612E3A /* sv */,
 				9866DDBA251CB73700612E3A /* tr */,
 				9816854C2521EEF200FA91A1 /* nb */,
+				D6D718752F17A3D800616AD1 /* ja */,
 			);
 			name = Settings.storyboard;
 			sourceTree = "<group>";
@@ -13561,6 +13608,7 @@
 				9866DD20251CACE600612E3A /* sv */,
 				9866DD22251CACE700612E3A /* tr */,
 				981685442521EEEF00FA91A1 /* nb */,
+				D6D718712F17A3D800616AD1 /* ja */,
 			);
 			name = Bookmarks.storyboard;
 			sourceTree = "<group>";
@@ -13593,6 +13641,7 @@
 				9866DDE0251CB87D00612E3A /* sv */,
 				9866DDE2251CB8B200612E3A /* tr */,
 				9816854E2521EEF300FA91A1 /* nb */,
+				D6D718772F17A3D800616AD1 /* ja */,
 			);
 			name = TabSwitcher.storyboard;
 			sourceTree = "<group>";
@@ -13625,6 +13674,7 @@
 				9866DD01251CAC8E00612E3A /* fr */,
 				9866DD02251CAC8F00612E3A /* fi */,
 				981DCA992521EFAB00CD4C18 /* nb */,
+				D6D718792F17A3D800616AD1 /* ja */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -13703,6 +13753,459 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
+		};
+		4B4A6CF52F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4BC991252F0F4EF1001F6575 /* Configuration-Experimental.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = HKE973VLUW;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "ALPHA EXPERIMENTAL";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+			};
+			name = Experimental;
+		};
+		4B4A6CF62F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Yellow AppIcon-Blue AppIcon-Purple AppIcon-Green AppIcon-Black";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "DDG-AppIcon-Experimental";
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = DuckDuckGo/DuckDuckGoExperimental.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_ASSET_PATHS = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HKE973VLUW;
+				ENABLE_TESTABILITY = NO;
+				INFOPLIST_FILE = "DuckDuckGo/Info-Experimental.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.mobile.ios.experimental;
+				PRODUCT_MODULE_NAME = DuckDuckGo;
+				PRODUCT_NAME = "$(TARGET_NAME)-Experimental";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore com.duckduckgo.mobile.ios.experimental";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Experimental;
+		};
+		4B4A6CF72F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HKE973VLUW;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_ID).ShareExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore com.duckduckgo.mobile.ios.experimental.ShareExtension";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Experimental;
+		};
+		4B4A6CF82F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = ActionIcons;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HKE973VLUW;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = OpenAction/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_ID).OpenAction2";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore com.duckduckgo.mobile.ios.experimental.OpenAction2";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Experimental;
+		};
+		4B4A6CF92F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = WidgetsExtensionAlpha.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				DEAD_CODE_STRIPPING = NO;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HKE973VLUW;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_ID).Widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore com.duckduckgo.mobile.ios.experimental.Widgets";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Experimental;
+		};
+		4B4A6CFA2F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = PacketTunnelProvider/PacketTunnelProviderExperimental.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HKE973VLUW;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PacketTunnelProvider/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PacketTunnelProvider;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2023 DuckDuckGo. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MTL_FAST_MATH = YES;
+				OTHER_CFLAGS = "";
+				OTHER_SWIFT_FLAGS = "-D NETWORK_EXTENSION";
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.mobile.ios.experimental.NetworkExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore com.duckduckgo.mobile.ios.experimental.NetworkExtension";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Experimental;
+		};
+		4B4A6CFB2F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = AutofillCredentialProvider/AutofillCredentialProviderAlpha.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HKE973VLUW;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AutofillCredentialProvider/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DuckDuckGo;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 DuckDuckGo. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.mobile.ios.experimental.CredentialExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore com.duckduckgo.mobile.ios.experimental.CredentialExtension";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Experimental;
+		};
+		4B4A6CFC2F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 2;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = Core/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.mobile.ios.Core;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Experimental;
+		};
+		4B4A6CFD2F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Instruments/Packages";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				VERSIONING_SYSTEM = "";
+			};
+			name = Experimental;
+		};
+		4B4A6CFE2F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = IntegrationTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.IntegrationTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = DuckDuckGo;
+			};
+			name = Experimental;
+		};
+		4B4A6CFF2F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HKE973VLUW;
+				INFOPLIST_FILE = DuckDuckGoTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.mobile.ios.Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DuckDuckGo.app/DuckDuckGo";
+			};
+			name = Experimental;
+		};
+		4B4A6D002F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = IntegrationTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.mobile.ios.IntegrationTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DuckDuckGo.app/DuckDuckGo";
+			};
+			name = Experimental;
+		};
+		4B4A6D012F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.mobile.ios.IntegrationTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DuckDuckGo.app/DuckDuckGo";
+			};
+			name = Experimental;
+		};
+		4B4A6D032F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HKE973VLUW;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.mobile.ios.WebViewUnitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DuckDuckGo.app/DuckDuckGo";
+			};
+			name = Experimental;
+		};
+		4B4A6D042F0EBA640074444F /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HKE973VLUW;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.SharedStateTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DuckDuckGo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DuckDuckGo";
+			};
+			name = Experimental;
 		};
 		8390447820BDCE10006461CD /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -13900,7 +14403,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_ID)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Development - App";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -14724,7 +15226,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_ID)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Development App - Alpha";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG ALPHA";
 				SWIFT_VERSION = 5.0;
 			};
 			name = "Alpha Debug";
@@ -15082,7 +15583,6 @@
 				PRODUCT_MODULE_NAME = DuckDuckGo;
 				PRODUCT_NAME = "$(TARGET_NAME)-Alpha";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore com.duckduckgo.mobile.ios.alpha";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = ALPHA;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Alpha;
@@ -15441,6 +15941,7 @@
 				0202566D298818B200E694E7 /* Debug */,
 				D664C7E32B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C4B2A82BBB700387C84 /* Alpha */,
+				4B4A6CFA2F0EBA640074444F /* Experimental */,
 				0202566E298818B200E694E7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15452,6 +15953,7 @@
 				8390447820BDCE10006461CD /* Debug */,
 				D664C7E02B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C482A82BBB700387C84 /* Alpha */,
+				4B4A6CF72F0EBA640074444F /* Experimental */,
 				8390447920BDCE10006461CD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15463,6 +15965,7 @@
 				84E341B81E2F7EFC00BDBA6F /* Debug */,
 				D664C7DE2B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C462A82BBB700387C84 /* Alpha */,
+				4B4A6CF52F0EBA640074444F /* Experimental */,
 				84E341B91E2F7EFC00BDBA6F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15474,6 +15977,7 @@
 				84E341BB1E2F7EFC00BDBA6F /* Debug */,
 				D664C7DF2B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C472A82BBB700387C84 /* Alpha */,
+				4B4A6CF62F0EBA640074444F /* Experimental */,
 				84E341BC1E2F7EFC00BDBA6F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15485,6 +15989,7 @@
 				84E341BE1E2F7EFC00BDBA6F /* Debug */,
 				D664C7E72B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C4F2A82BBB700387C84 /* Alpha */,
+				4B4A6CFF2F0EBA640074444F /* Experimental */,
 				84E341BF1E2F7EFC00BDBA6F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15496,6 +16001,7 @@
 				8512EA5E24ED30D30073EE19 /* Debug */,
 				D664C7E22B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C4A2A82BBB700387C84 /* Alpha */,
+				4B4A6CF92F0EBA640074444F /* Experimental */,
 				8512EA5F24ED30D30073EE19 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15507,6 +16013,7 @@
 				85482D952462DCD100EDEDD1 /* Debug */,
 				D664C7E12B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C492A82BBB700387C84 /* Alpha */,
+				4B4A6CF82F0EBA640074444F /* Experimental */,
 				85482D962462DCD100EDEDD1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15518,6 +16025,7 @@
 				85D33FD325C97B6E002B91A6 /* Debug */,
 				D664C7E92B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C512A82BBB700387C84 /* Alpha */,
+				4B4A6D002F0EBA640074444F /* Experimental */,
 				85D33FD425C97B6E002B91A6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15529,6 +16037,7 @@
 				85F21DB4210F5E32002631A6 /* Debug */,
 				D664C7E62B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C4E2A82BBB700387C84 /* Alpha */,
+				4B4A6CFE2F0EBA640074444F /* Experimental */,
 				85F21DB5210F5E32002631A6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15540,6 +16049,7 @@
 				9825F9D5293F2DE900F220F2 /* Debug */,
 				D664C7EA2B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C522A82BBB700387C84 /* Alpha */,
+				4B4A6D012F0EBA640074444F /* Experimental */,
 				9825F9D6293F2DE900F220F2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15551,6 +16061,7 @@
 				98424AA52CED4F430071C7DB /* Debug */,
 				98424AA62CED4F430071C7DB /* Alpha Debug */,
 				98424AA72CED4F430071C7DB /* Alpha */,
+				4B4A6D032F0EBA640074444F /* Experimental */,
 				98424AA82CED4F430071C7DB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15562,6 +16073,7 @@
 				98A54A8622AFCB2D00E541F4 /* Debug */,
 				D664C7E52B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C4D2A82BBB700387C84 /* Alpha */,
+				4B4A6CFD2F0EBA640074444F /* Experimental */,
 				98A54A8722AFCB2D00E541F4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15573,6 +16085,7 @@
 				98E564452DE8DDA200E6E75F /* Debug */,
 				98E564462DE8DDA200E6E75F /* Alpha Debug */,
 				98E564472DE8DDA200E6E75F /* Alpha */,
+				4B4A6D042F0EBA640074444F /* Experimental */,
 				98E564482DE8DDA200E6E75F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15584,6 +16097,7 @@
 				C1EF5B2F2CC0457B002980E6 /* Debug */,
 				C1EF5B302CC0457B002980E6 /* Alpha Debug */,
 				C1EF5B312CC0457B002980E6 /* Alpha */,
+				4B4A6CFB2F0EBA640074444F /* Experimental */,
 				C1EF5B322CC0457B002980E6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -15595,6 +16109,7 @@
 				F143C2EE1E4A4CD400CFDE3A /* Debug */,
 				D664C7E42B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C4C2A82BBB700387C84 /* Alpha */,
+				4B4A6CFC2F0EBA640074444F /* Experimental */,
 				F143C2EF1E4A4CD400CFDE3A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;

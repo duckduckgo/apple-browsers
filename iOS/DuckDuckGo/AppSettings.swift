@@ -86,6 +86,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var currentAddressBarPosition: AddressBarPosition { get set }
     var currentRefreshButtonPosition: RefreshButtonPosition { get set }
     var showFullSiteAddress: Bool { get set }
+    var showTrackersBlockedAnimation: Bool { get set }
 
     var defaultTextZoomLevel: TextZoomLevel { get set }
 

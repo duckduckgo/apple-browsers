@@ -774,7 +774,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         notificationCenter.post(name: .subscriptionDidChange, object: self)
 
         // Complete the appropriate wide event based on whether this is a new purchase or tier change
-        if changeType != nil, let data = self.planChangeWideEventData {
+        // Check planChangeWideEventData first - if it exists, this is a tier change
+        if let data = self.planChangeWideEventData {
             // Tier change - complete plan change wide event
             data.confirmationDuration?.complete()
             wideEvent.updateFlow(data)

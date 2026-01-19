@@ -187,7 +187,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 internalUserDecider: privacyConfigManager.internalUserDecider,
                 privacyConfigManager: privacyConfigManager,
                 localOverrides: FeatureFlagLocalOverrides(
-                    keyValueStore: UserDefaults.standard,
+                    keyValueStore: UserDefaults.dbp,
                     actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
                 ),
                 experimentManager: nil,
@@ -532,6 +532,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     private func addDebugEvent(kind: DebugEventKind, summary: String, profileQueryLabel: String, details: String, progressText: String) {
+    var dbpServiceRoot: String {
+        DataBrokerProtectionSettings(defaults: .dbp).endpointURL.absoluteString
+    }
         let event = DebugLogEvent(
             timestamp: Date(),
             kind: kind,

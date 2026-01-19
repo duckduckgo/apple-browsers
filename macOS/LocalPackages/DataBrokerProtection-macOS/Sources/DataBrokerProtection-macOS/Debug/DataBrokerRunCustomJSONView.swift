@@ -140,6 +140,14 @@ struct DataBrokerRunCustomJSONView: View {
         }
     }
 
+    private var dbpFeatureFlagLines: [(name: String, value: String)] {
+        [
+            ("dbpRemoteBrokerDelivery", viewModel.featureFlagger.isRemoteBrokerDeliveryFeatureOn.description),
+            ("dbpEmailConfirmationDecoupling", viewModel.featureFlagger.isEmailConfirmationDecouplingFeatureOn.description),
+            ("dbpClickActionDelayReductionOptimization", viewModel.featureFlagger.isClickActionDelayReductionOptimizationOn.description),
+        ]
+    }
+
     // MARK: - Tab 1: Scan
 
     private var scanView: some View {
@@ -150,6 +158,14 @@ struct DataBrokerRunCustomJSONView: View {
             Divider()
 
             Text("macOS App version: \(viewModel.appVersion())")
+            Text("DBP API service root: \(viewModel.dbpServiceRoot)")
+
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(dbpFeatureFlagLines, id: \.name) { flag in
+                    Text("\(flag.name): \(flag.value)")
+                        .padding(.top, 6)
+                }
+            }
 
             Divider()
 

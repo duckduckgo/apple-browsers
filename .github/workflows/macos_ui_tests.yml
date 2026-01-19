@@ -435,6 +435,7 @@ jobs:
         skip_annotations: true
 
     - name: Report workflow duration
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop

@@ -70,14 +70,14 @@ extension Preferences {
                 }
 
                 // Autofill Content  Button
-                PreferencePaneSection {
+                PreferencePaneSection(spacing: 12) {
                     Button(UserText.autofillViewContentButtonPasswords) {
                         model.showAutofillPopover(.logins, source: .settings)
                     }
                     Button(UserText.autofillViewContentButtonIdentities) {
                         model.showAutofillPopover(.identities, source: .settings)
                     }
-                    Button(UserText.autofillViewContentButtonPaymentMethods) {
+                    Button(UserText.autofillViewContentButtonCreditCards) {
                         model.showAutofillPopover(.cards, source: .settings)
                     }
 #if APPSTORE
@@ -89,6 +89,8 @@ extension Preferences {
                     }
 #endif
 
+                    Text(UserText.autofillContentStoredSecurelyInfo)
+                        .foregroundColor(.textSecondary)
                 }
 
 #if !APPSTORE
@@ -101,7 +103,7 @@ extension Preferences {
                     }
 
                     if shouldShowImportExportButtons {
-                        VStack {
+                        VStack(spacing: 12) {
                             Button(UserText.importPasswords) {
                                 model.openImportPasswordsWindow()
                             }
@@ -110,6 +112,7 @@ extension Preferences {
                             }
                         }
                         .padding(.leading, 15)
+                        .padding(.bottom, 4)
                     }
 
                     VStack(alignment: .leading, spacing: 6) {

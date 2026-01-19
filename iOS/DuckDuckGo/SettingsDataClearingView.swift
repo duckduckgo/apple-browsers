@@ -23,10 +23,20 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 
+private struct ClearButtonFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {}
+}
+
 struct SettingsDataClearingView: View {
 
     @EnvironmentObject var settingsViewModel: SettingsViewModel
     @ObservedObject private var viewModel: DataClearingSettingsViewModel
+    @State private var clearButtonFrame: CGRect = .zero {
+        didSet {
+            print("HG: clearButtonFrame = \(clearButtonFrame)")
+        }
+    }
     
     init(viewModel: DataClearingSettingsViewModel) {
         self.viewModel = viewModel
@@ -77,10 +87,21 @@ struct SettingsDataClearingView: View {
                 
                 Section {
                     SettingsCellView(action: {
-                        viewModel.presentFireConfirmation()
+                        viewModel.presentFireConfirmation(from: clearButtonFrame)
                     }, customView: {
                         forgetAllButtonContent
                     }, isButton: true)
+                    .background(
+                        GeometryReader { geometryProxy in
+                            Color.clear
+                                .preference(key: ClearButtonFrameKey.self, value: geometryProxy.frame(in: .global))
+                        }
+                    )
+                    .onPreferenceChange(ClearButtonFrameKey.self) { newFrame in
+                        if UIDevice.current.userInterfaceIdiom == .pad {
+                            self.clearButtonFrame = newFrame
+                        }
+                    }
                     .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
                 } footer: {
                     if !viewModel.newUIEnabled {

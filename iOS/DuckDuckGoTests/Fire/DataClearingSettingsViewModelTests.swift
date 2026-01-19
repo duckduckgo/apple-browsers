@@ -40,7 +40,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
             navigateToAutoClearDataCalled = true
         }
 
-        func presentFireConfirmation() {
+        func presentFireConfirmation(from sourceRect: CGRect) {
             presentFireConfirmationCalled = true
         }
     }
@@ -226,7 +226,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
         let viewModel = makeViewModel()
 
         // When
-        viewModel.presentFireConfirmation()
+        viewModel.presentFireConfirmation(from: .zero)
 
         // Then
         XCTAssertTrue(mockDelegate.presentFireConfirmationCalled)

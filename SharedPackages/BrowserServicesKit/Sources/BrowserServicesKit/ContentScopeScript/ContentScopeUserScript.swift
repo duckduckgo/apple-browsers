@@ -48,10 +48,11 @@ public enum ContentScopeScriptContext {
     case contentScope
     case contentScopeIsolated
     case aiChatDataClearing
+    case aiChatHistory
 
     public var isIsolated: Bool {
         switch self {
-        case .contentScope, .aiChatDataClearing:
+        case .contentScope, .aiChatDataClearing, .aiChatHistory:
             return false
         case .contentScopeIsolated:
             return true
@@ -66,6 +67,8 @@ public enum ContentScopeScriptContext {
             return "contentScopeIsolated"
         case .aiChatDataClearing:
             return "duckAiDataClearing"
+        case .aiChatHistory:
+            return "duckAiChatHistory"
         }
     }
 
@@ -75,6 +78,8 @@ public enum ContentScopeScriptContext {
             return "contentScopeScripts"
         case .aiChatDataClearing:
             return "duckAiDataClearing"
+        case .aiChatHistory:
+            return "duckAiChatHistory"
         case .contentScopeIsolated:
             return "contentScopeScriptsIsolated"
         }

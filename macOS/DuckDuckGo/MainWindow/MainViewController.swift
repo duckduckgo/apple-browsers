@@ -273,9 +273,14 @@ final class MainViewController: NSViewController {
         )
 
         // Create the shared AI Chat omnibar controller
+        let suggestionsReader = AIChatSuggestionsReader(
+            featureFlagger: featureFlagger,
+            privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager
+        )
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
-            tabCollectionViewModel: tabCollectionViewModel
+            tabCollectionViewModel: tabCollectionViewModel,
+            suggestionsReader: suggestionsReader
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
@@ -497,6 +502,9 @@ final class MainViewController: NSViewController {
 
             // Suppress mouse hover until mouse actually moves
             aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.suppressMouseHoverUntilMouseMoves()
+
+            // Trigger suggestions fetch
+            aiChatOmnibarContainerViewController.omnibarController.onOmnibarActivated()
 
             let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
             aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)

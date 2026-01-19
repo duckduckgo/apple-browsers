@@ -70,6 +70,8 @@
 		1D2EE7092E267D6B00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2EE7072E267D4F00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift */; };
 		1D2FA6542E968BBD008C53F8 /* NewTabPageStateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2FA6532E968BBD008C53F8 /* NewTabPageStateProvider.swift */; };
 		1D2FA6552E968BBD008C53F8 /* NewTabPageStateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2FA6532E968BBD008C53F8 /* NewTabPageStateProvider.swift */; };
+		1D368E542F1E38F300D3F0EA /* AIChatSuggestionsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D368E532F1E38EE00D3F0EA /* AIChatSuggestionsReader.swift */; };
+		1D368E552F1E38F300D3F0EA /* AIChatSuggestionsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D368E532F1E38EE00D3F0EA /* AIChatSuggestionsReader.swift */; };
 		1D36E658298AA3BA00AA485D /* InternalUserDeciderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36E657298AA3BA00AA485D /* InternalUserDeciderStore.swift */; };
 		1D36E659298AA3BA00AA485D /* InternalUserDeciderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36E657298AA3BA00AA485D /* InternalUserDeciderStore.swift */; };
 		1D36E65B298ACD2900AA485D /* AppIconChanger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36E65A298ACD2900AA485D /* AppIconChanger.swift */; };
@@ -4420,6 +4422,7 @@
 		1D2EE7042E26625300F51C57 /* Logger+NewTabPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+NewTabPage.swift"; sourceTree = "<group>"; };
 		1D2EE7072E267D4F00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarConfigProviderTests.swift; sourceTree = "<group>"; };
 		1D2FA6532E968BBD008C53F8 /* NewTabPageStateProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewTabPageStateProvider.swift; sourceTree = "<group>"; };
+		1D368E532F1E38EE00D3F0EA /* AIChatSuggestionsReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSuggestionsReader.swift; sourceTree = "<group>"; };
 		1D36E657298AA3BA00AA485D /* InternalUserDeciderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalUserDeciderStore.swift; sourceTree = "<group>"; };
 		1D36E65A298ACD2900AA485D /* AppIconChanger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconChanger.swift; sourceTree = "<group>"; };
 		1D36F4232A3B85C50052B527 /* TabCleanupPreparer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCleanupPreparer.swift; sourceTree = "<group>"; };
@@ -7009,6 +7012,7 @@
 			isa = PBXGroup;
 			children = (
 				1D5C23282F150A630055046E /* AIChatSuggestionsView.swift */,
+				1D368E532F1E38EE00D3F0EA /* AIChatSuggestionsReader.swift */,
 				1D5C232B2F150A6E0055046E /* AIChatSuggestionRowView.swift */,
 			);
 			path = Suggestions;
@@ -13882,6 +13886,7 @@
 				3706FA7E293F65D500E42796 /* LottieAnimationCache.swift in Sources */,
 				9F982F0E2B8224BF00231028 /* AddEditBookmarkFolderDialogViewModel.swift in Sources */,
 				3706FA7F293F65D500E42796 /* TabIndex.swift in Sources */,
+				1D368E552F1E38F300D3F0EA /* AIChatSuggestionsReader.swift in Sources */,
 				3706FA80293F65D500E42796 /* TabLazyLoaderDataSource.swift in Sources */,
 				1D5C232C2F150A750055046E /* AIChatSuggestionRowView.swift in Sources */,
 				C13909FC2B861039001626ED /* AutofillActionPresenter.swift in Sources */,
@@ -16872,6 +16877,7 @@
 				566B736C2BECC3C600FF1959 /* SyncPausedStateManaging.swift in Sources */,
 				37C7493B2D55FE710065B48B /* HistoryViewActionsHandler.swift in Sources */,
 				4BD18F01283F0BC500058124 /* BookmarksBarViewController.swift in Sources */,
+				1D368E542F1E38F300D3F0EA /* AIChatSuggestionsReader.swift in Sources */,
 				379DE4BD27EA31AC002CC3DE /* PreferencesAutofillView.swift in Sources */,
 				F1476FC02C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */,
 				1DCFBC8A29ADF32B00313531 /* BurnerHomePageView.swift in Sources */,

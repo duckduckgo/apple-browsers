@@ -41,9 +41,11 @@ final class AIChatOmnibarController {
     private let promptHandler: AIChatPromptHandler
     private let tabCollectionViewModel: TabCollectionViewModel
     private let featureFlagger: FeatureFlagger
+    private let suggestionsReader: AIChatSuggestionsReading?
     private var cancellables = Set<AnyCancellable>()
     private var sharedTextStateCancellable: AnyCancellable?
     private var isUpdatingFromSharedState = false
+    private var currentFetchTask: Task<Void, Never>?
 
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
     let suggestionsViewModel = AIChatSuggestionsViewModel()
@@ -64,33 +66,53 @@ final class AIChatOmnibarController {
         aiChatTabOpener: AIChatTabOpening,
         tabCollectionViewModel: TabCollectionViewModel,
         promptHandler: AIChatPromptHandler = .shared,
-        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        suggestionsReader: AIChatSuggestionsReading? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.tabCollectionViewModel = tabCollectionViewModel
         self.promptHandler = promptHandler
         self.featureFlagger = featureFlagger
+        self.suggestionsReader = suggestionsReader
 
-        setupSuggestions()
         subscribeToSelectedTabViewModel()
         subscribeToTextChangesForSuggestions()
-    }
-
-    private func setupSuggestions() {
-        // Load mock data for development
-        suggestionsViewModel.setChats(
-            pinned: AIChatSuggestion.mockPinnedChats,
-            recent: AIChatSuggestion.mockRecentChats
-        )
     }
 
     private func subscribeToTextChangesForSuggestions() {
         $currentText
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
-                self?.suggestionsViewModel.updateQuery(text)
+                guard let self else { return }
+                self.suggestionsViewModel.updateQuery(text)
+                self.fetchSuggestionsIfNeeded(query: text)
             }
             .store(in: &cancellables)
+    }
+
+    // MARK: - Suggestions Fetching
+
+    /// Called when the duck.ai omnibar becomes visible. Triggers initial suggestions fetch.
+    func onOmnibarActivated() {
+        fetchSuggestionsIfNeeded(query: currentText)
+    }
+
+    private func fetchSuggestionsIfNeeded(query: String) {
+        guard isSuggestionsEnabled, let reader = suggestionsReader else { return }
+
+        // Cancel any in-flight fetch
+        currentFetchTask?.cancel()
+
+        currentFetchTask = Task { [weak self] in
+            guard let self else { return }
+
+            let suggestions = await reader.fetchSuggestions(query: query.isEmpty ? nil : query)
+
+            // Check if task was cancelled
+            guard !Task.isCancelled else { return }
+
+            self.suggestionsViewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
+        }
     }
 
     // MARK: - Public Methods
@@ -107,6 +129,9 @@ final class AIChatOmnibarController {
     func cleanup() {
         currentText = ""
         suggestionsViewModel.reset()
+        currentFetchTask?.cancel()
+        currentFetchTask = nil
+        suggestionsReader?.tearDown()
     }
 
     // MARK: - Suggestion Navigation

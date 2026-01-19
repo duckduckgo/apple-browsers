@@ -492,7 +492,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatOmnibarCluster:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
         case .aiChatSuggestions:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.suggestions))
+            return .remoteReleasable(.feature(.duckAiChatHistory))
         case .aiChatOmnibarOnboarding:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarOnboarding))
         case .osSupportForceUnsupportedMessage:

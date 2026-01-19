@@ -31,6 +31,11 @@ struct DataBrokerRunCustomJSONView: View {
         static let eventDetailsMinWidth: CGFloat = 320
         static let eventColumnSpacing: CGFloat = 12
         static let eventColumnCount = 4
+        static let resultNameColumnWidth: CGFloat = 180
+        static let resultAddressColumnWidth: CGFloat = 340
+        static let resultRelativesMinWidth: CGFloat = 240
+        static let resultColumnSpacing: CGFloat = 12
+        static let resultColumnCount = 2
     }
 
     @ObservedObject var viewModel: DataBrokerRunCustomJSONViewModel
@@ -221,31 +226,37 @@ struct DataBrokerRunCustomJSONView: View {
     // MARK: - Tab 2: Extracted profiles
 
     private var resultsList: some View {
-        List(selection: $selectedResultId) {
-            ForEach(viewModel.results, id: \.id) { scanResult in
-                HStack {
-                    Text(scanResult.extractedProfile.name ?? "No name")
-                        .padding(.horizontal, 10)
-                    Divider()
-                    Text(scanResult.extractedProfile.addresses?.map { $0.fullAddress }.joined(separator: ", ") ?? "No address")
-                        .padding(.horizontal, 10)
-                    Divider()
-                    Text(scanResult.extractedProfile.relatives?.joined(separator: ",") ?? "No relatives")
-                        .padding(.horizontal, 10)
-                    Divider()
-                    Button("Opt-out") {
-                        viewModel.runOptOut(scanResult: scanResult)
+        GeometryReader { proxy in
+            let listHeight: CGFloat = 220
+            let listWidth = max(resultsTableMinWidth, proxy.size.width)
+
+            ScrollView([.horizontal, .vertical], showsIndicators: true) {
+                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    Section(header: resultsTableHeader
+                        .frame(width: listWidth, alignment: .leading)
+                        .padding(.vertical, 4)
+                        .background(Color(NSColor.controlBackgroundColor))
+                    ) {
+                        if viewModel.results.isEmpty {
+                            Text("No results yet.")
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 6)
+                        } else {
+                            ForEach(viewModel.results, id: \.id) { scanResult in
+                                resultsRow(for: scanResult, listWidth: listWidth)
+                                Divider()
+                            }
+                        }
                     }
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    selectedResultId = scanResult.id
-                }
-                .tag(scanResult.id)
+                .frame(minHeight: listHeight, alignment: .topLeading)
             }
+            .background(Color(NSColor.textBackgroundColor))
+            .frame(height: listHeight)
         }
-        .frame(maxHeight: 220)
-        .listStyle(.plain)
+        .frame(height: 220)
     }
 
     private var eventsTable: some View {
@@ -314,9 +325,62 @@ struct DataBrokerRunCustomJSONView: View {
             resultsList
             Divider()
 
+            HStack(spacing: 12) {
+                Button("Opt-out Selected") {
+                    if let selectedResult {
+                        viewModel.runOptOut(scanResult: selectedResult)
+                    }
+                }
+                .disabled(selectedResult == nil)
+
+                if let selectedResult {
+                    Text("Selected: \(selectedResult.extractedProfile.name ?? "No name")")
+                        .foregroundColor(.secondary)
+                } else {
+                    Text("Select a row to opt out")
+                        .foregroundColor(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             eventsTable
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var resultsTableHeader: some View {
+        HStack(spacing: Constants.resultColumnSpacing) {
+            Text("Name")
+                .frame(width: Constants.resultNameColumnWidth, alignment: .leading)
+            Text("Address")
+                .frame(width: Constants.resultAddressColumnWidth, alignment: .leading)
+            Text("Relatives")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(minWidth: resultsTableMinWidth, alignment: .leading)
+        .font(.caption)
+        .foregroundColor(.secondary)
+    }
+
+    private func resultsRow(for scanResult: ScanResult, listWidth: CGFloat) -> some View {
+        HStack(spacing: Constants.resultColumnSpacing) {
+            Text(scanResult.extractedProfile.name ?? "No name")
+                .frame(width: Constants.resultNameColumnWidth, alignment: .leading)
+            Text(scanResult.extractedProfile.addresses?.map { $0.fullAddress }.joined(separator: ", ") ?? "No address")
+                .frame(width: Constants.resultAddressColumnWidth, alignment: .leading)
+            Text(scanResult.extractedProfile.relatives?.joined(separator: ", ") ?? "No relatives")
+                .frame(minWidth: Constants.resultRelativesMinWidth,
+                       maxWidth: .infinity,
+                       alignment: .leading)
+        }
+        .frame(width: listWidth, alignment: .leading)
+        .padding(.vertical, 6)
+        .foregroundColor(selectedResultId == scanResult.id ? Color(NSColor.selectedControlTextColor) : Color.primary)
+        .background(selectedResultId == scanResult.id ? Color(NSColor.selectedControlColor) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            selectedResultId = scanResult.id
+        }
     }
 
     private var eventTableHeader: some View {
@@ -344,6 +408,12 @@ struct DataBrokerRunCustomJSONView: View {
         + Constants.eventSummaryColumnWidth
         + Constants.eventDetailsMinWidth
         + Constants.eventColumnSpacing * CGFloat(Constants.eventColumnCount)
+    }
+    private var resultsTableMinWidth: CGFloat {
+        Constants.resultNameColumnWidth
+        + Constants.resultAddressColumnWidth
+        + Constants.resultRelativesMinWidth
+        + Constants.resultColumnSpacing * CGFloat(Constants.resultColumnCount)
     }
     private var debugEventDetailsHeight: CGFloat { 160 }
     private var selectedResult: ScanResult? {

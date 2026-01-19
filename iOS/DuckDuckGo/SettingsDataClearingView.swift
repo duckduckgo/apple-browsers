@@ -32,11 +32,7 @@ struct SettingsDataClearingView: View {
 
     @EnvironmentObject var settingsViewModel: SettingsViewModel
     @ObservedObject private var viewModel: DataClearingSettingsViewModel
-    @State private var clearButtonFrame: CGRect = .zero {
-        didSet {
-            print("HG: clearButtonFrame = \(clearButtonFrame)")
-        }
-    }
+    @State private var clearButtonFrame: CGRect = .zero
     
     init(viewModel: DataClearingSettingsViewModel) {
         self.viewModel = viewModel

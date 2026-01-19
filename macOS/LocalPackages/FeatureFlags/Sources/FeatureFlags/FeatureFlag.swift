@@ -310,7 +310,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
                 .memoryPressureReporting,
-                .themes:
+                .themes,
+                .nextStepsSingleCardIteration:
             true
         default:
             false
@@ -574,7 +575,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .heuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         case .nextStepsSingleCardIteration:
-            return .disabled
+            return .internalOnly()
         }
     }
 }

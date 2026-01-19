@@ -59,6 +59,11 @@ final class SSLErrorTests: UITestCase {
         app.buttons["NavigationBarViewController.ForwardButton"].firstMatch
     }
 
+    /// The Advanced button on SSL warning pages
+    private var advancedButton: XCUIElement {
+        app.buttons["Advanced..."].firstMatch
+    }
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -87,9 +92,7 @@ final class SSLErrorTests: UITestCase {
 
     /// Clicks "Advanced..." then "Accept Risk and Visit Site" to bypass the SSL warning
     private func acceptRiskAndVisitSite() {
-        let advancedButton = app.buttons["Advanced..."].firstMatch
-        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Advanced button should be available")
+        verifyAdvancedButtonIsAvailable()
         advancedButton.click()
 
         let acceptRiskLink = app.staticTexts["Accept Risk and Visit Site"].firstMatch
@@ -135,6 +138,28 @@ final class SSLErrorTests: UITestCase {
         verifyAddressBarIsEmpty(message: "Address bar should be empty \(context)")
     }
 
+    /// Verifies the SSL warning title appears
+    private func verifySSLWarningTitleAppears(for certificateType: String) {
+        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "SSL warning title should appear for \(certificateType)")
+    }
+
+    /// Verifies the certificate error message appears
+    private func verifyCertificateErrorMessageAppears(for certificateType: String? = nil) {
+        let certificateErrorText = app.staticTexts.containing(
+            NSPredicate(format: "value CONTAINS[c] %@", "certificate for this site is invalid")
+        ).firstMatch
+        let context = certificateType.map { " for \($0)" } ?? ""
+        XCTAssertTrue(certificateErrorText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Certificate error message should be displayed\(context)")
+    }
+
+    /// Verifies the Advanced button is available
+    private func verifyAdvancedButtonIsAvailable() {
+        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Advanced button should be available")
+    }
+
     // MARK: - Error Page Content Tests
 
     func testWhenNavigatingToExpiredCertificate_ShowsExpectedSSLWarningPage() throws {
@@ -144,25 +169,17 @@ final class SSLErrorTests: UITestCase {
         addressBarTextField.pasteURL(badSSL, pressingEnter: true)
 
         // Verify the SSL warning title appears
-        let warningTitle = app.staticTexts["Warning: This site may be insecure"].firstMatch
-        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "SSL warning title should appear for expired certificate")
+        verifySSLWarningTitleAppears(for: "expired certificate")
 
         // Verify the address bar shows globe icon (indicating error page, not the privacy shield)
         XCTAssertTrue(addressBarImageButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Globe icon should be visible in address bar for SSL error page")
 
         // Verify the certificate error message appears
-        let certificateErrorText = app.staticTexts.containing(
-            NSPredicate(format: "value CONTAINS[c] %@", "certificate for this site is invalid")
-        ).firstMatch
-        XCTAssertTrue(certificateErrorText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Certificate error message should be displayed")
+        verifyCertificateErrorMessageAppears()
 
         // Verify the Advanced button is available
-        let advancedButton = app.buttons["Advanced..."].firstMatch
-        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Advanced button should be available")
+        verifyAdvancedButtonIsAvailable()
 
         // Click Advanced to reveal more options
         advancedButton.click()
@@ -174,7 +191,7 @@ final class SSLErrorTests: UITestCase {
         XCTAssertTrue(expandedWarningText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Expanded warning text should appear after clicking Advanced")
 
-        // Verify the expired-specific message - mentions "expired" or "system clock"
+        // Verify the expired-specific message (contains "is expired")
         let expiredSpecificText = app.staticTexts.containing(
             NSPredicate(format: "value CONTAINS[c] %@", "is expired")
         ).firstMatch
@@ -194,21 +211,13 @@ final class SSLErrorTests: UITestCase {
         addressBarTextField.pasteURL(wrongHostURL, pressingEnter: true)
 
         // Verify the SSL warning title appears
-        let warningTitle = app.staticTexts["Warning: This site may be insecure"].firstMatch
-        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "SSL warning title should appear for wrong host certificate")
+        verifySSLWarningTitleAppears(for: "wrong host certificate")
 
         // Verify the certificate error message appears
-        let certificateErrorText = app.staticTexts.containing(
-            NSPredicate(format: "value CONTAINS[c] %@", "certificate for this site is invalid")
-        ).firstMatch
-        XCTAssertTrue(certificateErrorText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Certificate error message should be displayed for wrong host")
+        verifyCertificateErrorMessageAppears(for: "wrong host")
 
         // Verify the Advanced button is available
-        let advancedButton = app.buttons["Advanced..."].firstMatch
-        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Advanced button should be available")
+        verifyAdvancedButtonIsAvailable()
 
         // Click Advanced to reveal more options
         advancedButton.click()
@@ -240,21 +249,13 @@ final class SSLErrorTests: UITestCase {
         addressBarTextField.pasteURL(selfSignedURL, pressingEnter: true)
 
         // Verify the SSL warning title appears
-        let warningTitle = app.staticTexts["Warning: This site may be insecure"].firstMatch
-        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "SSL warning title should appear for self-signed certificate")
+        verifySSLWarningTitleAppears(for: "self-signed certificate")
 
         // Verify the certificate error message appears
-        let certificateErrorText = app.staticTexts.containing(
-            NSPredicate(format: "value CONTAINS[c] %@", "certificate for this site is invalid")
-        ).firstMatch
-        XCTAssertTrue(certificateErrorText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Certificate error message should be displayed for self-signed")
+        verifyCertificateErrorMessageAppears(for: "self-signed")
 
         // Verify the Advanced button is available
-        let advancedButton = app.buttons["Advanced..."].firstMatch
-        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Advanced button should be available")
+        verifyAdvancedButtonIsAvailable()
 
         // Click Advanced to reveal more options
         advancedButton.click()
@@ -286,21 +287,13 @@ final class SSLErrorTests: UITestCase {
         addressBarTextField.pasteURL(untrustedRootURL, pressingEnter: true)
 
         // Verify the SSL warning title appears
-        let warningTitle = app.staticTexts["Warning: This site may be insecure"].firstMatch
-        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "SSL warning title should appear for untrusted root certificate")
+        verifySSLWarningTitleAppears(for: "untrusted root certificate")
 
         // Verify the certificate error message appears
-        let certificateErrorText = app.staticTexts.containing(
-            NSPredicate(format: "value CONTAINS[c] %@", "certificate for this site is invalid")
-        ).firstMatch
-        XCTAssertTrue(certificateErrorText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Certificate error message should be displayed for untrusted root")
+        verifyCertificateErrorMessageAppears(for: "untrusted root")
 
         // Verify the Advanced button is available
-        let advancedButton = app.buttons["Advanced..."].firstMatch
-        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Advanced button should be available")
+        verifyAdvancedButtonIsAvailable()
 
         // Click Advanced to reveal more options
         advancedButton.click()
@@ -394,9 +387,7 @@ final class SSLErrorTests: UITestCase {
                       "SSL warning page should appear")
 
         // Click "Advanced..." button
-        let advancedButton = app.buttons["Advanced..."].firstMatch
-        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Advanced button should be available")
+        verifyAdvancedButtonIsAvailable()
         advancedButton.click()
 
         // Verify the advanced section is expanded (check for expanded warning text)
@@ -435,9 +426,7 @@ final class SSLErrorTests: UITestCase {
                       "SSL warning page should appear")
 
         // Click "Advanced..." button
-        let advancedButton = app.buttons["Advanced..."].firstMatch
-        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Advanced button should be available")
+        verifyAdvancedButtonIsAvailable()
         advancedButton.click()
 
         // Verify the advanced section is expanded

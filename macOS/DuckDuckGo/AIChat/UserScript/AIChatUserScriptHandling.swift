@@ -87,7 +87,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     private let syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
-    private var cancellables = Set<AnyCancellable>()
+    private var syncObserverCancellable: AnyCancellable?
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
@@ -121,7 +121,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
         self.syncStatusPublisher = syncStatusSubject.eraseToAnyPublisher()
 
-        setUpSyncStatusObserver()
+        setUpSyncStatusObserverIfNeeded()
     }
 
     enum AIChatKeys {
@@ -311,15 +311,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     // MARK: - Sync
 
-    private func setUpSyncStatusObserver() {
-        guard let syncService = syncServiceProvider() else { return }
-        syncService.authStatePublisher
+    private func setUpSyncStatusObserverIfNeeded(syncService: DDGSyncing? = nil) {
+        guard syncObserverCancellable == nil else { return }
+        guard let syncService = syncService ?? syncServiceProvider() else { return }
+
+        syncObserverCancellable = syncService.authStatePublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.handleSyncStatusChanged()
             }
-            .store(in: &cancellables)
     }
 
     private func handleSyncStatusChanged() {
@@ -464,7 +465,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     private func makeSyncHandler() -> AIChatSyncHandler? {
-        guard let sync = syncServiceProvider(), sync.authState != .initializing else {
+        guard let sync = syncServiceProvider() else {
+            return nil
+        }
+        setUpSyncStatusObserverIfNeeded(syncService: sync)
+        guard sync.authState != .initializing else {
             return nil
         }
         return AIChatSyncHandler(sync: sync)

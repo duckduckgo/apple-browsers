@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "account";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Închide toate filele";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Cohortă: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Configurație";
@@ -1408,6 +1417,15 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Funcționalitatea Duck Player a fost afectată de modificările recente ale YouTube. Lucrăm pentru a remedia aceste probleme și apreciem înțelegerea ta.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Atașează conținutul paginii";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Trimis cu mesajul tău către Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Conținutul paginii";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funcțiile AI ale DuckDuckGo sunt private și opționale. Datele tale nu sunt folosite pentru a antrena AI.";
 
@@ -1670,7 +1688,7 @@
 "empty.search" = "Nu s-au găsit potriviri";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Înscris: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1728,9 +1746,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Doar favoritele pentru mobil";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funcție: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blocarea anunțurilor și ferestrelor pop-up";
@@ -2206,6 +2221,9 @@
 /* No comment provided by engineer. */
 "Messages" = "Mesaje";
 
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Butonul barei de adrese";
 
@@ -2492,6 +2510,9 @@
 "No existing subscription found" = "Nu s-a găsit niciun abonament";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Niciun jurnal";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2523,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Nu există abonamente disponibile";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2891,6 +2915,9 @@
 "Results" = "Rezultate";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Caută sau introdu adresa";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2935,9 +2962,6 @@
 /* about tagline */
 "settings.about.tagline" = "Protecție. Confidențialitate. Liniște sufletească.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGo este o companie independentă din domeniul protecției online care se adresează oricărei persoane care dorește să recâștige controlul asupra datelor cu caracter personal.\n\nCredem că cel mai bun mod de a-ți proteja datele cu caracter personal împotriva hackerilor, a escrocilor și a companiilor care încalcă viața privată este să împiedici colectarea lor. De aceea, milioane de persoane [aleg DuckDuckGo în locul Chrome și al altor browsere](ddgQuickLink://duckduckgo.com/compare-privacy) pentru a căuta și naviga online. Motorul nostru de căutare încorporat este asemănător cu Google, dar nu îți urmărește niciodată căutările. Iar mecanismele noastre de protecție pentru navigare, cum ar fi blocarea tehnologiilor de urmărire a reclamelor și blocarea modulelor cookie, contribuie la împiedicarea colectării datelor tale de alte companii. Oh, și browserul nostru este gratuit: obținem câștiguri din [anunțuri de căutare care respectă viața privată](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), nu din exploatarea datelor tale. \n\n%@ \n\nPreia din nou controlul asupra informațiilor tale personale cu browserul conceput pentru protecția datelor, nu pentru colectarea lor.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Accesibilitate";
 
@@ -2955,6 +2979,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Afișați adresa completă a site-ului";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Afișează animația de blocare a tehnologiilor de urmărire";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Caută pe Duck.ai";
@@ -3024,6 +3051,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Şterge";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Șterge filele și datele";
 
@@ -3036,17 +3064,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "File";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Ieșire din aplicație, inactiv timp de 15 minute";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Ieșire din aplicație, inactiv timp de 1 oră";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Ieșire din aplicație, inactiv timp de 30 de minute";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Ieșire din aplicație, inactiv timp de 5 minute";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Ieșire din aplicație, inactiv timp de 15 minute";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Ieșire din aplicație, inactiv timp de 30 de minute";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Doar ieșire din aplicație";
@@ -3059,6 +3087,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Datele vor fi șterse la repornirea aplicației.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugestii de căutare";
 
@@ -3079,6 +3108,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Ștergerea automată a datelor";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Feedback browser";
 
@@ -3090,6 +3120,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Șterge datele de navigare";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Șterge automat datele";
 
@@ -3119,6 +3150,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Ștergerea datelor poate ajuta la protejarea confidențialității online. Folosește Fire Button pentru a șterge datele manual sau configurează ștergerea automată.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Browser implicit";
 
@@ -3166,6 +3198,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Site-uri protejate cu Fireproof";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Generale";
 
@@ -3183,9 +3216,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nouă";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Previzualizare";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatură";
@@ -3461,6 +3491,9 @@
 "siteFeedback.urlPlaceholder" = "Ce site este defect?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Stare";
 
 /* No comment provided by engineer. */
@@ -3468,9 +3501,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Numele gazdă stocat: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Sub-funcție: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Adaugă pe dispozitiv";
@@ -3619,9 +3649,6 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Se restabilește abonamentul...";
 
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro se numește acum doar abonament DuckDuckGo";
-
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Elimină de pe acest dispozitiv";
 
@@ -3726,12 +3753,6 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Configurează sincronizarea";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.credit-cards.title" = "Sincronizează și creează copii de rezervă pentru cardurile tale de credit";
-
-/* Title for the Sync Promotion banner */
-"sync.promo.data.import.title" = "Sincronizează și creează copii de rezervă pentru datele tale";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nu, mulțumesc";

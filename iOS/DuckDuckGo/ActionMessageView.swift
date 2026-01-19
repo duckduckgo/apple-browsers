@@ -18,6 +18,8 @@
 //
 
 import UIKit
+import Core
+import DesignResourcesKit
 
 extension ActionMessageView: NibLoading {}
 
@@ -94,6 +96,23 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         super.awakeFromNib()
         
         layer.cornerRadius = Constants.cornerRadius
+        applySystemFonts()
+    }
+
+    private func applySystemFonts() {
+        let messageFont = UIFont.daxSubheadRegular()
+        if let attributedText = message.attributedText {
+            message.attributedText = attributedText.withFont(messageFont)
+        } else {
+            message.font = messageFont
+        }
+
+        let buttonFont = UIFont.daxSubheadSemibold()
+        if let attributedTitle = actionButton.attributedTitle(for: .normal) {
+            actionButton.setAttributedTitle(attributedTitle.withFont(buttonFont), for: .normal)
+        } else {
+            actionButton.titleLabel?.font = buttonFont
+        }
     }
     
     static func present(message: NSAttributedString,

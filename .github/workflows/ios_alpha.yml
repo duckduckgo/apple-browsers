@@ -22,7 +22,7 @@ jobs:
   build-alpha:
     runs-on: macos-15
     name: Build Alpha
-    timeout-minutes: 20
+    timeout-minutes: 30
     
     concurrency:
       group: ios-alpha-build-${{ github.ref }}

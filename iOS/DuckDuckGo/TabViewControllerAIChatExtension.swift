@@ -44,13 +44,11 @@ extension TabViewController: AITabController {
 
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
     func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
-        
+
         aiChatContentHandler.setPayload(payload: payload)
 
         let queryURL = aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, tools: tools)
-        
-        aiChatContentHandler.fireChatOpenPixelAndSetWasUsed()
-        
+
         load(url: queryURL)
     }
     

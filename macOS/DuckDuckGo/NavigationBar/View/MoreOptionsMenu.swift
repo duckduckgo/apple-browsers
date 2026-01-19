@@ -480,7 +480,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         }
 
         #if SPARKLE
-        guard let updateController = updateController as? SparkleUpdateController else { return }
+        guard let updateController = updateController as? any SparkleUpdateControllerProtocol else { return }
 
         // Log edge cases where menu item appears but doesn't function
         // To be removed in a future version
@@ -489,13 +489,15 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         }
         #endif
 
-        guard updateController.hasPendingUpdate else {
+        guard updateController.hasPendingUpdate && updateController.mustShowUpdateIndicators else {
             return
         }
 
+        let isMenuItemCreatedFromUpdateController = featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) || featureFlagger.isFeatureOn(.updatesSimplifiedFlow)
+
         let menuItem: NSMenuItem = {
             #if SPARKLE
-            if featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) {
+            if isMenuItemCreatedFromUpdateController {
                 return SparkleUpdateMenuItemFactory.menuItem(for: updateController)
             } else {
                 return SparkleUpdateMenuItemFactory.menuItem(for: update)
@@ -753,7 +755,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         guard let updateController = Application.appDelegate.updateController else { return }
 
-        if updateController.hasPendingUpdate && updateController.needsNotificationDot {
+        if updateController.clearsNotificationDotOnMenuOpen,
+           updateController.hasPendingUpdate,
+           updateController.needsNotificationDot {
             updateController.needsNotificationDot = false
         }
 
@@ -1345,27 +1349,17 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     private func refreshAvailabilityBasedOnEntitlements() {
         guard subscriptionManager.isUserAuthenticated else { return }
 
-        @Sendable func hasEntitlement(for productName: Entitlement.ProductName) async -> Bool {
-            // Note by Diego: this is bad as it will default to `false` on transient errors
-            (try? await subscriptionManager.isFeatureEnabled(productName)) ?? false
-        }
-
         Task.detached(priority: .background) { [weak self] in
             guard let self else { return }
 
-            let isNetworkProtectionItemEnabled = await hasEntitlement(for: .networkProtection)
-            let isDataBrokerProtectionItemEnabled = await hasEntitlement(for: .dataBrokerProtection)
-            let isPaidAIChatItemEnabled = await hasEntitlement(for: .paidAIChat)
-
-            let hasIdentityTheftRestoration = await hasEntitlement(for: .identityTheftRestoration)
-            let hasIdentityTheftRestorationGlobal = await hasEntitlement(for: .identityTheftRestorationGlobal)
-            let isIdentityTheftRestorationItemEnabled = hasIdentityTheftRestoration || hasIdentityTheftRestorationGlobal
+            let status = await subscriptionManager.getAllEntitlementStatus()
+            let isIdentityTheftRestorationItemEnabled = status.identityTheftRestoration || status.identityTheftRestorationGlobal
 
             Task { @MainActor in
-                self.networkProtectionItem.isEnabled = isNetworkProtectionItemEnabled
-                self.dataBrokerProtectionItem.isEnabled = isDataBrokerProtectionItemEnabled
+                self.networkProtectionItem.isEnabled = status.networkProtection
+                self.dataBrokerProtectionItem.isEnabled = status.dataBrokerProtection
                 self.identityTheftRestorationItem.isEnabled = isIdentityTheftRestorationItemEnabled
-                self.paidAIChatItem.isEnabled = isPaidAIChatItemEnabled
+                self.paidAIChatItem.isEnabled = status.paidAIChat
             }
         }
     }

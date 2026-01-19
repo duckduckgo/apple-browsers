@@ -232,7 +232,10 @@ class MainViewController: UIViewController {
         return manager
     }()
 
-    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore)
+    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(
+        using: featureFlagger,
+        keyValueStore: keyValueStore
+    )
 
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
@@ -495,6 +498,7 @@ class MainViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        productSurfaceTelemetry.dailyActiveUser()
         productSurfaceTelemetry.iPadUsed(isPad: isPad)
 
         defer {

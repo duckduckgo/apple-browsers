@@ -23,12 +23,8 @@ public class DataImportWideEventData: WideEventData {
 
     typealias DataType = DataImport.DataType
 
-    #if DEBUG
-    public static let pixelName = "data_import_debug"
-    #else
     public static let pixelName = "data_import"
-    #endif
-
+    public static let featureName = "data-import"
     public static let importTimeout: TimeInterval = .minutes(15)
 
     // Protocol Properties
@@ -112,8 +108,6 @@ public class DataImportWideEventData: WideEventData {
             return .keepPending
         }
     }
-
-    private static let featureName = "data-import"
 }
 
 // MARK: - Public
@@ -129,7 +123,6 @@ extension DataImportWideEventData {
     public func pixelParameters() -> [String: String] {
         var params: [String: String] = [:]
 
-        params[WideEventParameter.Feature.name] = Self.featureName
         params[WideEventParameter.DataImportFeature.source] = source.id
 
         if let overallDuration = overallDuration?.durationMilliseconds {

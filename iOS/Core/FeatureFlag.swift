@@ -94,9 +94,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
     case autofillSurveys
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468784743
-    case autocompleteTabs
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711151217
     case adAttributionReporting
 
@@ -413,7 +410,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .syncPromotionBookmarks,
                .syncPromotionPasswords,
                .autofillSurveys,
-               .autocompleteTabs,
                .adAttributionReporting,
                .crashReportOptInStatusResetting,
                .syncSeamlessAccountSwitching,
@@ -481,8 +477,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.passwords))
         case .autofillSurveys:
             return .remoteReleasable(.feature(.autofillSurveys))
-        case .autocompleteTabs:
-            return .remoteReleasable(.feature(.autocompleteTabs))
         case .adAttributionReporting:
             return .remoteReleasable(.feature(.adAttributionReporting))
         case .dbpRemoteBrokerDelivery:

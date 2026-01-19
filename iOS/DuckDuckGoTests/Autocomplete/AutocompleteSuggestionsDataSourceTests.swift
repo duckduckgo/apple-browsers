@@ -54,20 +54,12 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
 
     @MainActor
     func testDataSourceReturnsHistory() {
-        let dataSource = makeDataSource(tabsEnabled: false)
+        let dataSource = makeDataSource()
         XCTAssertEqual(dataSource.history(for: MockSuggestionLoading()).count, 2)
     }
 
     @MainActor
-    func testWhenSuggestTabsFeatureIsDisable_ThenNoTabsReturned() {
-        let dataSource = makeDataSource(tabsEnabled: false)
-
-        let result = dataSource.openTabs(for: MockSuggestionLoading())
-        XCTAssertTrue(result.isEmpty)
-    }
-
-    @MainActor
-    func testWhenSuggestTabsFeatureIsEnabled_ThenProvidesOpenTabsExcludingCurrent() {
+    func testDataSourceProvidesOpenTabsExcludingCurrent() {
         let dataSource = makeDataSource()
 
         // Current tab is the last one added, which has two tabs with the same URL, so only 2 of the 4 will be returned.
@@ -91,7 +83,7 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
     }
 
     @MainActor
-    private func makeDataSource(tabsEnabled: Bool = true) -> AutocompleteSuggestionsDataSource {
+    private func makeDataSource() -> AutocompleteSuggestionsDataSource {
 
         var mockHistoryCoordinator = MockHistoryCoordinator()
         mockHistoryCoordinator.history = [
@@ -103,18 +95,10 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
         return AutocompleteSuggestionsDataSource(
             historyManager: MockHistoryManager(historyCoordinator: mockHistoryCoordinator, isEnabledByUser: true, historyFeatureEnabled: true),
             bookmarksDatabase: db,
-            featureFlagger: makeFeatureFlagger(tabsEnabled: tabsEnabled),
+            featureFlagger: MockFeatureFlagger(),
             tabsModel: makeTabsModel()) { _, completion in
                 completion("[]".data(using: .utf8), nil)
         }
-    }
-
-    private func makeFeatureFlagger(tabsEnabled: Bool = true) -> FeatureFlagger {
-        let mock = MockFeatureFlagger()
-        if tabsEnabled {
-            mock.enabledFeatureFlags.append(.autocompleteTabs)
-        }
-        return mock
     }
 
     private func makeTabsModel() -> TabsModel {

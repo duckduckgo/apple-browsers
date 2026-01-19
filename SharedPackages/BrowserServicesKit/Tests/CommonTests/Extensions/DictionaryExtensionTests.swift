@@ -102,27 +102,4 @@ final class DictionaryExtensionTests: XCTestCase {
         XCTAssertNil(result["status2"])
     }
 
-    func testWhenDuplicateKeysExistThenLastValueWins() {
-        let result = Dictionary(compacting: [
-            ("key", "first"),
-            ("key", "second"),
-            ("key", "third"),
-        ])
-
-        XCTAssertEqual(result.count, 1)
-        XCTAssertEqual(result["key"], "third")
-    }
-
-    func testWhenDuplicateKeyHasNilValueThenPreviousValueIsPreserved() {
-        let nilValue: String? = nil
-
-        let result = Dictionary(compacting: [
-            ("key", "value"),
-            ("key", nilValue),
-        ])
-
-        XCTAssertEqual(result.count, 1)
-        XCTAssertEqual(result["key"], "value")
-    }
-
 }

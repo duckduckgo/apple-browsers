@@ -1552,6 +1552,7 @@ class MainViewController: UIViewController {
             dataSource: browsingMenuHeaderDataSource,
             isNewTabPage: newTabPageViewController != nil,
             isAITab: currentTab?.isAITab ?? false,
+            isError: currentTab?.isError ?? false,
             hasLink: currentTab?.link != nil,
             url: currentTab?.url,
             title: currentTab?.title

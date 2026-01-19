@@ -29,11 +29,12 @@ final class BrowsingMenuHeaderStateProvider {
         dataSource: BrowsingMenuHeaderDataSource,
         isNewTabPage: Bool,
         isAITab: Bool,
+        isError: Bool,
         hasLink: Bool,
         url: URL?,
         title: String?
     ) {
-        let isHeaderVisible = !isNewTabPage && !isAITab && hasLink
+        let isHeaderVisible = !isNewTabPage && !isAITab && !isError && hasLink
 
         if isHeaderVisible {
             dataSource.update(isHeaderVisible: true, title: title, url: url)
@@ -52,8 +53,8 @@ final class BrowsingMenuHeaderStateProvider {
         let result = FaviconsHelper.loadFaviconSync(
             forDomain: domain,
             usingCache: .tabs,
-            useFakeFavicon: true
+            useFakeFavicon: false
         )
-        dataSource.update(favicon: result.image)
+        dataSource.update(favicon: result.isFake ? nil : result.image)
     }
 }

@@ -816,7 +816,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: .plus,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -872,7 +873,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: .plus,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -918,7 +920,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: .pro,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -967,7 +970,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: .pro,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 

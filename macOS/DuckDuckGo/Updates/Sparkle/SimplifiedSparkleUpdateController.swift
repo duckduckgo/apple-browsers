@@ -263,10 +263,20 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     }
 
     func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress) {
-        if updateProgress.isDone, shouldCheckNewApplicationVersion {
-            if case .updateCycleDone(.finishedWithNoUpdateFound) = updateProgress {
-               checkNewApplicationVersion()
-            }
+        guard shouldCheckNewApplicationVersion else { return }
+
+        if areAutomaticUpdatesEnabled {
+            // Automatic updates: show "browser updated" immediately.
+            // The "update available" notification is delayed for automatic updates,
+            // so there's no risk of overlapping notifications.
+            checkNewApplicationVersion()
+            shouldCheckNewApplicationVersion = false
+        } else if updateProgress.isDone,
+                  case .updateCycleDone(.finishedWithNoUpdateFound) = updateProgress {
+            // Manual updates: only show if no newer update is available.
+            // Manual mode shows "update available" immediately, so showing
+            // "browser updated" at the same time would cause overlapping notifications.
+            checkNewApplicationVersion()
             shouldCheckNewApplicationVersion = false
         }
     }

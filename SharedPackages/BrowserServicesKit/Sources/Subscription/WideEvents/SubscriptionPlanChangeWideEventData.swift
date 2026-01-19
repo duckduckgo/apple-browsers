@@ -26,6 +26,7 @@ public class SubscriptionPlanChangeWideEventData: WideEventData {
     #else
     public static let pixelName = "subscription_plan_change"
     #endif
+    public static let featureName = "subscription-plan-change"
 
     public static let confirmationTimeout: TimeInterval = .hours(4)
 
@@ -131,7 +132,6 @@ extension SubscriptionPlanChangeWideEventData {
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
-        parameters[WideEventParameter.Feature.name] = "subscription-plan-change"
         parameters[WideEventParameter.PlanChangeFeature.purchasePlatform] = purchasePlatform.rawValue
         parameters[WideEventParameter.PlanChangeFeature.fromPlan] = fromPlan
         parameters[WideEventParameter.PlanChangeFeature.toPlan] = toPlan

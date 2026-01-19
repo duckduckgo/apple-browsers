@@ -49,7 +49,7 @@ final class SavePaymentMethodViewController: NSViewController {
     @IBOutlet weak var cardExpirationLabel: NSTextField!
     @IBOutlet weak var titleLabel: NSTextField!
     @IBOutlet weak var saveButton: NSButton!
-    @IBOutlet weak var notNowButton: NSButton!
+    @IBOutlet weak var dontSaveButton: NSButton!
     @IBOutlet weak var cardIconImageView: NSImageView!
 
     weak var delegate: SavePaymentMethodDelegate?
@@ -70,7 +70,8 @@ final class SavePaymentMethodViewController: NSViewController {
         cardDetailsLabel.stringValue = "\(type.displayName) ••••\(paymentMethod.cardSuffix)"
 
         if let expirationMonth = paymentMethod.expirationMonth, let expirationYear = paymentMethod.expirationYear {
-            cardExpirationLabel.stringValue = "\(expirationMonth)/\(expirationYear)"
+            let formattedDate = String(format: "%02d/%d", expirationMonth, expirationYear)
+            cardExpirationLabel.stringValue = String(format: UserText.pmCardExpiresFormat, formattedDate)
         } else {
             cardExpirationLabel.stringValue = ""
         }
@@ -80,7 +81,7 @@ final class SavePaymentMethodViewController: NSViewController {
 
     // MARK: - Actions
 
-    @IBAction func onNotNowClicked(sender: NSButton) {
+    @IBAction func onDontSaveClicked(sender: NSButton) {
         self.delegate?.shouldCloseSavePaymentMethodViewController(self)
     }
 
@@ -114,8 +115,8 @@ final class SavePaymentMethodViewController: NSViewController {
     }
 
     private func setUpStrings() {
-        titleLabel.stringValue = UserText.passwordManagementSavePayment
-        notNowButton.title = UserText.notNow
+        titleLabel.stringValue = UserText.passwordManagementSaveCard
+        dontSaveButton.title = UserText.dontSave
         saveButton.title = UserText.save
     }
 }

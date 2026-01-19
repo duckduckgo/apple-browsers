@@ -64002,6 +64002,18 @@
         }
       }
     },
+    "password.management.save.card" : {
+      "comment" : "Title of dialog that allows the user to save a credit card",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Save Card?"
+          }
+        }
+      }
+    },
     "password.management.title" : {
       "comment" : "Used as the title for menu item and related Settings page",
       "extractionState" : "extracted_with_value",
@@ -70985,6 +70997,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Срок действия"
+          }
+        }
+      }
+    },
+    "pm.card.expires.format" : {
+      "comment" : "Label for credit card expiration date. %@ will be replaced with the formatted date (e.g., '02/2025')",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Expires: %@"
           }
         }
       }

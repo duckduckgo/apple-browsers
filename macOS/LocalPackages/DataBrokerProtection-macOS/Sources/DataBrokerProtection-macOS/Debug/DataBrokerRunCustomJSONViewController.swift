@@ -22,9 +22,12 @@ import DataBrokerProtectionCore
 
 public final class DataBrokerRunCustomJSONViewController: NSViewController {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
+    private let featureFlagger: DBPFeatureFlagging
 
-    public init(authenticationManager: DataBrokerProtectionAuthenticationManaging) {
+    public init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                featureFlagger: DBPFeatureFlagging) {
         self.authenticationManager = authenticationManager
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -33,7 +36,8 @@ public final class DataBrokerRunCustomJSONViewController: NSViewController {
     }
 
     public override func loadView() {
-        let contentView = DataBrokerRunCustomJSONView(viewModel: DataBrokerRunCustomJSONViewModel(authenticationManager: authenticationManager))
+        let contentView = DataBrokerRunCustomJSONView(viewModel: DataBrokerRunCustomJSONViewModel(authenticationManager: authenticationManager,
+                                                                                                  featureFlagger: featureFlagger))
         let hostingController = NSHostingController(rootView: contentView)
         hostingController.view.autoresizingMask = [.width, .height]
         self.view = hostingController.view

@@ -157,48 +157,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         return debugRows.sorted(by: { $0.timestamp < $1.timestamp })
     }
 
-    private class DebugDBPFeatureFlagger: DBPFeatureFlagging {
-        private let featureFlagger: FeatureFlagger
-
-        var isRemoteBrokerDeliveryFeatureOn: Bool {
-            featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
-        }
-
-        var isEmailConfirmationDecouplingFeatureOn: Bool {
-            featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
-        }
-
-        var isForegroundRunningOnAppActiveFeatureOn: Bool {
-            // Not relevant to macOS
-            return false
-        }
-
-        var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
-            // Not relevant to macOS
-            return false
-        }
-
-        var isClickActionDelayReductionOptimizationOn: Bool {
-            featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
-        }
-
-        init(privacyConfigManager: PrivacyConfigurationManaging) {
-            self.featureFlagger = DefaultFeatureFlagger(
-                internalUserDecider: privacyConfigManager.internalUserDecider,
-                privacyConfigManager: privacyConfigManager,
-                localOverrides: FeatureFlagLocalOverrides(
-                    keyValueStore: UserDefaults.dbp,
-                    actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
-                ),
-                experimentManager: nil,
-                for: FeatureFlag.self
-            )
-        }
-    }
-
-    init(authenticationManager: DataBrokerProtectionAuthenticationManaging) {
+    init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
+         featureFlagger: DBPFeatureFlagging) {
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
-        self.featureFlagger = DebugDBPFeatureFlagger(privacyConfigManager: privacyConfigurationManager)
+        self.featureFlagger = featureFlagger
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
                                                   credentialsAutofill: false,

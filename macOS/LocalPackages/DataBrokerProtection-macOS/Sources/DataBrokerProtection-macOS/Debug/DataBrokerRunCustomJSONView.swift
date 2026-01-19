@@ -157,18 +157,6 @@ struct DataBrokerRunCustomJSONView: View {
 
             Divider()
 
-            Text("macOS App version: \(viewModel.appVersion())")
-            Text("DBP API service root: \(viewModel.dbpServiceRoot)")
-
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(dbpFeatureFlagLines, id: \.name) { flag in
-                    Text("\(flag.name): \(flag.value)")
-                        .padding(.top, 6)
-                }
-            }
-
-            Divider()
-
             ForEach(0..<min(viewModel.names.count, Constants.maxNames), id: \.self) { index in
                 HStack(spacing: 12) {
                     TextField("First name", text: $viewModel.names[index].first)
@@ -233,6 +221,18 @@ struct DataBrokerRunCustomJSONView: View {
                     Text("Please enter broker JSON to enable scan")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                }
+            }
+
+            Divider()
+
+            Text("macOS App version: \(viewModel.appVersion())")
+            Text("DBP API endpoint: \(viewModel.dbpEndpoint)")
+
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(dbpFeatureFlagLines, id: \.name) { flag in
+                    Text("\(flag.name): \(flag.value)")
+                        .padding(.top, 6)
                 }
             }
         }
@@ -348,6 +348,18 @@ struct DataBrokerRunCustomJSONView: View {
                     }
                 }
                 .disabled(selectedResult == nil)
+
+                if let selectedResult, selectedResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
+                    Button("Check for email confirmation") {
+                        viewModel.checkForEmailConfirmation()
+                    }
+                    .disabled(!viewModel.canCheckEmailConfirmation(for: selectedResult))
+
+                    Button("Continue opt-out") {
+                        viewModel.continueOptOutAfterEmailConfirmation(scanResult: selectedResult)
+                    }
+                    .disabled(!viewModel.canContinueOptOutAfterEmailConfirmation(for: selectedResult))
+                }
 
                 if let selectedResult {
                     Text("Selected: \(selectedResult.extractedProfile.name ?? "No name")")

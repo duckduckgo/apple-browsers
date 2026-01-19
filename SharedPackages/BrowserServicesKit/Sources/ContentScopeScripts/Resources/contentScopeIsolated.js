@@ -2074,6 +2074,7 @@
       "duckPlayer",
       "duckPlayerNative",
       "duckAiDataClearing",
+      "duckAiChatHistory",
       "harmfulApis",
       "webCompat",
       "webInterferenceDetection",
@@ -2101,6 +2102,7 @@
       "favicon"
     ],
     "apple-ai-clear": ["duckAiDataClearing"],
+    "apple-ai-history": ["duckAiChatHistory"],
     android: [...baseFeatures, "webCompat", "webInterferenceDetection", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
     "android-autofill-import": ["autofillImport"],
@@ -2128,7 +2130,8 @@
       "messageBridge",
       "webCompat",
       "pageContext",
-      "duckAiDataClearing"
+      "duckAiDataClearing",
+      "duckAiChatHistory"
     ],
     firefox: ["cookie", ...baseFeatures, "clickToLoad", "webInterferenceDetection", "breakageReporting"],
     chrome: ["cookie", ...baseFeatures, "clickToLoad", "webInterferenceDetection", "breakageReporting"],

@@ -337,8 +337,8 @@ enum Preferences {
                         showTab(.subscription(url))
                     case .didClickViewAllPlans:
                         pixelHandler(.subscriptionViewAllPlansClick, .standard)
-case .didClickUpgradeToPro:
-                    pixelHandler(.subscriptionUpgradeClick, .standard)
+                    case .didClickUpgradeToPro:
+                        pixelHandler(.subscriptionUpgradeClick, .standard)
                     }
                 }
             }

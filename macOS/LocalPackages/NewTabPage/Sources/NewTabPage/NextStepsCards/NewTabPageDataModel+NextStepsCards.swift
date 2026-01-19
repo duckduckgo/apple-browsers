@@ -27,6 +27,8 @@ public extension NewTabPageDataModel {
         case duckplayer
         case addAppToDockMac
         case subscription
+        case personalizeBrowser
+        case sync
     }
 }
 

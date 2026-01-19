@@ -412,6 +412,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         let trackerCount = privacyInfo.trackerInfo.trackersBlocked.count
         let privacyIcon = PrivacyIconLogic.privacyIcon(for: privacyInfo)
 
+        // If tracker animation is disabled, just show the shield without animation
+        guard dependencies.appSettings.showTrackersBlockedAnimation else {
+            barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
+            return
+        }
+
         // Don't show notification on SERP pages (DuckDuckGo search)
         guard !privacyInfo.url.isDuckDuckGoSearch else {
             barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)

@@ -27,6 +27,8 @@ public class SubscriptionRestoreWideEventData: WideEventData {
     public static let pixelName = "subscription_restore"
     #endif
 
+    public static let restoreTimeout: TimeInterval = .minutes(15)
+
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
     public var appData: WideEventAppData
@@ -54,6 +56,27 @@ public class SubscriptionRestoreWideEventData: WideEventData {
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
+    }
+
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        switch trigger {
+        case .appLaunch:
+            let interval = appleAccountRestoreDuration ?? emailAddressRestoreDuration
+
+            guard let start = interval?.start else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            guard interval?.end == nil else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            if Date() >= start.addingTimeInterval(Self.restoreTimeout) {
+                return .complete(.unknown(reason: StatusReason.timeout.rawValue))
+            }
+
+            return .keepPending
+        }
     }
 
     private static let featureName = "subscription-restore"

@@ -94,9 +94,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
     case autofillSurveys
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468784743
-    case autocompleteTabs
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711151217
     case adAttributionReporting
 
@@ -246,6 +243,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211992061067315?focus=true
     case browsingMenuSheetPresentation
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260?focus=true
+    case browsingMenuSheetEnabledByDefault
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
     case autofillExtensionSettings
     case canPromoteAutofillExtensionInBrowser
@@ -261,7 +261,12 @@ public enum FeatureFlag: String {
     case dataImportWideEventMeasurement
 
     /// Sort domain matches higher than other matches when searching saved passwords
+    /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1212324661709006?focus=true
     case autofillPasswordSearchPrioritizeDomain
+
+    /// Feature flag for new sync promotion footer in data import summary
+    /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1209629138021290?focus=true
+    case dataImportSummarySyncPromotion
 
     // https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
     case appRatingPrompt
@@ -283,6 +288,9 @@ public enum FeatureFlag: String {
 
     /// Shows tracker count banner in Tab Switcher and related settings item
     case tabSwitcherTrackerCount
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
+    case burnSingleTab
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -304,7 +312,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .browsingMenuSheetPresentation,
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
-             .showWhatsNewPromptOnDemand:
+             .showWhatsNewPromptOnDemand,
+             .dataImportSummarySyncPromotion:
             true
         default:
             false
@@ -362,6 +371,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .tierMessagingEnabled,
              .allowProTierPurchase,
              .browsingMenuSheetPresentation,
+             .browsingMenuSheetEnabledByDefault,
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
@@ -371,9 +381,11 @@ extension FeatureFlag: FeatureFlagDescribing {
              .contextualDuckAIMode,
              .aiChatSync,
              .showWhatsNewPromptOnDemand,
+             .dataImportSummarySyncPromotion,
              .aiChatAtb,
              .enhancedDataClearingSettings,
-             .tabSwitcherTrackerCount:
+             .tabSwitcherTrackerCount,
+             .burnSingleTab:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -402,7 +414,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .syncPromotionBookmarks,
                .syncPromotionPasswords,
                .autofillSurveys,
-               .autocompleteTabs,
                .adAttributionReporting,
                .crashReportOptInStatusResetting,
                .syncSeamlessAccountSwitching,
@@ -470,8 +481,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.passwords))
         case .autofillSurveys:
             return .remoteReleasable(.feature(.autofillSurveys))
-        case .autocompleteTabs:
-            return .remoteReleasable(.feature(.autocompleteTabs))
         case .adAttributionReporting:
             return .remoteReleasable(.feature(.adAttributionReporting))
         case .dbpRemoteBrokerDelivery:
@@ -564,6 +573,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .browsingMenuSheetPresentation:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.experimentalBrowsingMenu))
+        case .browsingMenuSheetEnabledByDefault:
+            return .internalOnly()
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -578,6 +589,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
+        case .dataImportSummarySyncPromotion:
+            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportSummarySyncPromotion))
         case .appRatingPrompt:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt))
         case .contextualDuckAIMode:
@@ -591,6 +604,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .enhancedDataClearingSettings:
             return .disabled
         case .tabSwitcherTrackerCount:
+        case .burnSingleTab:
             return .disabled
         }
     }

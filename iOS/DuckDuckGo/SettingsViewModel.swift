@@ -34,6 +34,7 @@ import AIChat
 import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
+import Networking
 
 final class SettingsViewModel: ObservableObject {
 
@@ -296,6 +297,16 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 ? .settingsShowFullURLOn : .settingsShowFullURLOff)
                 self.state.showsFullURL = $0
                 self.appSettings.showFullSiteAddress = $0
+            }
+        )
+    }
+
+    var showTrackersBlockedAnimationBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.showTrackersBlockedAnimation },
+            set: {
+                self.state.showTrackersBlockedAnimation = $0
+                self.appSettings.showTrackersBlockedAnimation = $0
             }
         )
     }
@@ -608,7 +619,7 @@ final class SettingsViewModel: ObservableObject {
 
     // Indicates if the Paid AI Chat entitlement flag is available for the current user
     var isPaidAIChatAvailable: Bool {
-        state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
+        state.subscription.subscriptionFeatures.contains(.paidAIChat)
     }
 
     // Indicates if AI features are generally enabled
@@ -713,6 +724,7 @@ extension SettingsViewModel {
             textZoom: SettingsState.TextZoom(level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
+            showTrackersBlockedAnimation: appSettings.showTrackersBlockedAnimation,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
@@ -1223,8 +1235,8 @@ extension SettingsViewModel {
             updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
             // Check entitlements and update state
-            var currentEntitlements: [Entitlement.ProductName] = []
-            let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
+            var currentEntitlements: [SubscriptionEntitlement] = []
+            let entitlementsToCheck: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
                 if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(entitlement),
@@ -1345,7 +1357,7 @@ extension SettingsViewModel {
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
     private func isUserEligibleForTrialOffer() async -> Bool {
-        return subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
+        return subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
     }
 
 }

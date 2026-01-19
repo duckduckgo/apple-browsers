@@ -580,7 +580,8 @@ class TabViewController: UIViewController {
         self.aiChatFullModeFeature = aiChatFullModeFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
-                                                         featureFlagger: featureFlagger)
+                                                         featureFlagger: featureFlagger,
+                                                         productSurfaceTelemetry: productSurfaceTelemetry)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
 
@@ -1692,8 +1693,9 @@ extension TabViewController: WKNavigationDelegate {
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
-        productSurfaceTelemetry.navigationCompleted(url: webView.url)
 
+        fireProductTelemetry(for: webView)
+        
         // definitely finished with any potential login cycle by this point, so don't try and handle it any more
         detectedLoginURL = nil
         updatePreview()
@@ -1709,6 +1711,17 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
         specialErrorPageNavigationHandler.handleWebView(webView, didFinish: navigation)
+    }
+    
+    /// Fires product telemetry related to the current URL
+    private func fireProductTelemetry(for webView: WKWebView) {
+        guard let url = webView.url else { return }
+
+        if url.isDuckAIURL {
+            aiChatContentHandler.fireAIChatTelemetry()
+        } else {
+            productSurfaceTelemetry.navigationCompleted(url: webView.url)
+        }
     }
 
     var specialErrorPageUserScript: SpecialErrorPageUserScript? {

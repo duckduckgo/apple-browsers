@@ -935,9 +935,9 @@ public struct UserText {
             value: """
     DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.
     
-    We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data.
+    We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. 
     
-    %@
+    %@ 
     
     Take back control of your personal information with the browser designed for data protection, not data collection.
     """,
@@ -1212,6 +1212,8 @@ public struct UserText {
     // Mark: Sync Promotion
     public static let syncPromoBookmarksTitle = NSLocalizedString("sync.promo.bookmarks.title", value: "Sync & Back Up Your Bookmarks", comment: "Title for the Sync Promotion banner")
     public static let syncPromoPasswordsTitle = NSLocalizedString("sync.promo.passwords.title", value: "Sync & Back Up Your Passwords", comment: "Title for the Sync Promotion banner")
+    public static let syncPromoCreditCardsTitle = NSLocalizedString("sync.promo.credit-cards.title", value: "Sync & Back Up Your Credit Cards", comment: "Title for the Sync Promotion banner")
+    public static let syncPromoDataImportTitle = NSLocalizedString("sync.promo.data.import.title", value: "Sync & Back Up Your Data", comment: "Title for the Sync Promotion banner")
     public static let syncPromoBookmarksMessage = NSLocalizedString("sync.promo.bookmarks.message", value: "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.", comment: "Message for the Sync Promotion banner when user has bookmarks that can be synced")
     public static let syncPromoPasswordsMessage = NSLocalizedString("sync.promo.passwords.message", value: "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.", comment: "Message for the Sync Promotion banner when user has passwords that can be synced")
     public static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value: "Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
@@ -1418,6 +1420,7 @@ public struct UserText {
     public static let settingsAddressBarPosition = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
     public static let tabSwitcherShowTrackerCount = NSLocalizedString("settings.tab.switcher.show.tracker.count", value: "7-Day Tracker Count", comment: "Settings screen cell title for toggling tracker count banner in tab switcher")
+    public static let settingsTrackersBlockedAnimation = NSLocalizedString("settings.address.trackers.animation", value: "Show Trackers Blocked Animation", comment: "Settings screen cell title for toggling trackers blocked animation in address bar")
     public static let settingsRefreshButtonPositionTitle = NSLocalizedString("settings.refreshButton.position.title", value: "Reload Button Position", comment: "Settings screen cell text for setting the refresh button position.")
     public static let settingsRefreshButtonPositionAddressBar = NSLocalizedString("settings.refreshButton.position.addressBar", value: "Address Bar", comment: "Settings screen option to set refresh button in the address bar")
     public static let settingsRefreshButtonPositionMenu = NSLocalizedString("settings.refreshButton.position.menu", value: "Menu", comment: "Settings screen option to set refresh button in the menu")
@@ -1649,6 +1652,13 @@ public struct UserText {
         return String(format: localized, expiryDate)
     }
 
+    static func pendingDowngradeInfo(tierName: String, billingPeriod: String, effectiveDate: String) -> String {
+        let format = NotLocalizedString("subscription.subscription.pending.downgrade.caption",
+                                        value: "Your plan will downgrade to %@ %@ on %@.",
+                                        comment: "Pending downgrade info. Parameters are tier name, billing period, and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'")
+        return String(format: format, tierName, billingPeriod, effectiveDate)
+    }
+
     public static let subscriptionDevicesSectionHeader = NSLocalizedString("duckduckgo.subscription.add.to.devices.header", value: "Add your subscription to other devices", comment: "Header for section for activating subscription on other devices")
     public static let subscriptionDevicesSectionNoEmailFooter = NSLocalizedString("duckduckgo.subscription.add.to.devices.no.email.footer", value: "Add your subscription to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
     public static let subscriptionDevicesSectionWithEmailFooter = NSLocalizedString("duckduckgo.subscription.add.to.devices.with.email.footer", value: "Use this email to add your subscription on your other devices in the DuckDuckGo app, go to Settings > DuckDuckGo Subscription > I Have a Subscription. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email is added")
@@ -1664,6 +1674,7 @@ public struct UserText {
         return String(format: format, tierName.capitalized)
     }
     public static let subscriptionChangePlan = NSLocalizedString("subscription.change.plan", value: "Update Plan or Cancel", comment: "Change plan or cancel title")
+    public static let subscriptionManagePayment = NotLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
     public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Share Feedback", comment: "Share Feedback Button")
@@ -2138,7 +2149,7 @@ public struct UserText {
     public static let dataImportSummarySyncBookmarks = NSLocalizedString("data.import.summary.button.title.sync.bookmarks", value: "Bookmarks", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncData = NSLocalizedString("data.import.summary.button.title.sync.data", value: "Data", comment: "Parameter for data.import.summary.button.title.sync")
     public static let dataImportSummaryVisitSyncSettings = NotLocalizedString("data.import.summary.message.sync.settings", value: "Visit Settings to securely sync bookmarks and passwords between your devices.", comment: "Message informing the user to visit settings to sync bookmarks and passwords. Used from What's New and for en_US locale only.")
-
+    
     public enum SubscriptionPromotionOnboarding {
         public enum Promo {
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")

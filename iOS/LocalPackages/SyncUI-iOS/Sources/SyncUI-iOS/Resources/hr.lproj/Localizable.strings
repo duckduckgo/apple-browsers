@@ -31,9 +31,6 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Otkaži";
 
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Uključi sinkronizaciju i sigurnosno kopiranje";
-
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Time se stvara šifrirana sigurnosna kopija tvojih oznaka i podataka za automatsko popunjavanje na sigurnom poslužitelju DuckDuckGo, koja se može sinkronizirati s tvojim drugim uređajima.";
 

@@ -462,10 +462,15 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
     func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)? = nil) {
         switch metric.metricName {
-        case .userDidSubmitFirstPrompt, .userDidSubmitPrompt:
-
+        case .userDidSubmitFirstPrompt:
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
-
+            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)
+            DispatchQueue.main.async { [self] in
+                refreshAtbs(completion: completion)
+            }
+        case .userDidSubmitPrompt:
+            notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }

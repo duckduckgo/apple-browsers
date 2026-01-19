@@ -30,6 +30,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     public let activeOffers: [Offer]
     public let tier: TierName?
     public let availableChanges: AvailableChanges?
+    public let pendingPlans: [PendingPlan]?
 
     /// Not parsed from 
     public var features: [SubscriptionEntitlement]?
@@ -76,6 +77,36 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
 
         private enum CodingKeys: String, CodingKey {
             case tier, productIds, order
+        }
+    }
+
+    /// Represents a pending plan change that will take effect at a future date
+    public struct PendingPlan: Codable, Equatable {
+        public let productId: String
+        public let billingPeriod: BillingPeriod
+        public let effectiveAt: Date
+        public let status: String
+        public let tier: TierName
+
+        public init(productId: String, billingPeriod: BillingPeriod, effectiveAt: Date, status: String, tier: TierName) {
+            self.productId = productId
+            self.billingPeriod = billingPeriod
+            self.effectiveAt = effectiveAt
+            self.status = status
+            self.tier = tier
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.productId = try container.decode(String.self, forKey: .productId)
+            self.billingPeriod = (try? container.decode(BillingPeriod.self, forKey: .billingPeriod)) ?? .unknown
+            self.effectiveAt = (try? container.decode(Date.self, forKey: .effectiveAt)) ?? Date.distantFuture
+            self.status = (try? container.decode(String.self, forKey: .status)) ?? "pending"
+            self.tier = (try? container.decode(TierName.self, forKey: .tier)) ?? .plus
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case productId, billingPeriod, effectiveAt, status, tier
         }
     }
 
@@ -164,6 +195,11 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         activeOffers.contains(where: { $0.type == .trial })
     }
 
+    /// Returns the pending plan with the earliest effective date if one exists, nil otherwise.
+    public var firstPendingPlan: PendingPlan? {
+        pendingPlans?.min(by: { $0.effectiveAt < $1.effectiveAt })
+    }
+
     public var debugDescription: String {
         return """
         Subscription:
@@ -176,6 +212,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         - Status: \(status.rawValue)
         - Tier: \(tier?.rawValue ?? "unknown")
         - Features: \(features?.map { $0.debugDescription } ?? [])
+        - Pending Plans: \(pendingPlans?.count ?? 0)
         """
     }
 
@@ -199,6 +236,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         lhs.status == rhs.status &&
         lhs.tier == rhs.tier &&
         lhs.availableChanges == rhs.availableChanges &&
+        lhs.pendingPlans == rhs.pendingPlans &&
         Set(lhs.activeOffers) == Set(rhs.activeOffers) &&
         Set(lhs.features ?? []) == Set(rhs.features ?? [])
     }

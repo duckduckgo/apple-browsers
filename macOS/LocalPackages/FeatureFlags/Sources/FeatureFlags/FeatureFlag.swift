@@ -58,11 +58,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615802881
     case updatesWontAutomaticallyRestartApp
 
+    /// Simplified update flow without expiration logic
+    /// Requires: .updatesWontAutomaticallyRestartApp (via subfeature)
+    case updatesSimplifiedFlow
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714296474
-    case autocompleteTabs
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
@@ -268,6 +269,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212783502979551?focus=true
+    case memoryPressureReporting
+
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
     case aiChatSync
 
@@ -310,6 +314,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarOnboarding,
                 .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
+                .memoryPressureReporting,
                 .themes:
             true
         default:
@@ -329,7 +334,6 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .autofillPartialFormSaves,
-                .autocompleteTabs,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
@@ -337,6 +341,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
+                .updatesSimplifiedFlow,
                 .scamSiteProtection,
                 .tabCrashDebugging,
                 .maliciousSiteProtection,
@@ -397,6 +402,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .warnBeforeQuit,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
+                .memoryPressureReporting,
                 .aiChatSync,
                 .heuristicAction,
                 .nextStepsSingleCardIteration:
@@ -435,10 +441,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
             return .remoteReleasable(.feature(.updatesWontAutomaticallyRestartApp))
+        case .updatesSimplifiedFlow:
+            return .remoteReleasable(.subfeature(UpdatesSubfeature.simplifiedFlow))
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
-        case .autocompleteTabs:
-            return .remoteReleasable(.feature(.autocompleteTabs))
         case .webExtensions:
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
@@ -569,6 +575,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
             return .disabled
+        case .memoryPressureReporting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryPressureReporting))
         case .aiChatSync:
             return .disabled
         case .heuristicAction:

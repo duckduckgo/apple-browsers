@@ -68,7 +68,8 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         mockSubscriptionManager.resultSubscription = .success(subscription)
 

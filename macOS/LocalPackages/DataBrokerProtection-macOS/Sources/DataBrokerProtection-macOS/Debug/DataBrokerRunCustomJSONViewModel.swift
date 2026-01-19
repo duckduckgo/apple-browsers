@@ -248,11 +248,12 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
                                            settings: dbpSettings,
                                            servicePixel: backendServicePixels)
-        self.emailConfirmationDataService = EmailConfirmationDataService(database: database,
-                                                                     emailServiceV0: emailService,
-                                                                     emailServiceV1: emailServiceV1,
-                                                                     featureFlagger: featureFlagger,
-                                                                     pixelHandler: sharedPixelsHandler)
+        self.emailConfirmationDataService = EmailConfirmationDataService(emailConfirmationStore: database,
+                                                                         database: database,
+                                                                         emailServiceV0: emailService,
+                                                                         emailServiceV1: emailServiceV1,
+                                                                         featureFlagger: featureFlagger,
+                                                                         pixelHandler: sharedPixelsHandler)
 
         self.brokers = try! vault.fetchAllBrokers()
     }

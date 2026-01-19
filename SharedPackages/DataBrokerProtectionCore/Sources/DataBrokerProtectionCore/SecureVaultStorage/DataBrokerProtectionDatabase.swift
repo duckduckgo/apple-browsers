@@ -22,7 +22,7 @@ import SecureStorage
 import struct GRDB.DatabaseError
 import os.log
 
-public protocol DataBrokerProtectionRepository {
+public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func save(_ profile: DataBrokerProtectionProfile) async throws
     func fetchProfile() throws -> DataBrokerProtectionProfile?
     func deleteProfileData() throws
@@ -83,34 +83,11 @@ public protocol DataBrokerProtectionRepository {
 
     func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData?
 
-    func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
-
     func fetchFirstEligibleJobDate() throws -> Date?
 
     func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws
     func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
     func deleteBackgroundTaskEvents(olderThan date: Date) throws
-
-    func saveOptOutEmailConfirmation(profileQueryId: Int64,
-                                     brokerId: Int64,
-                                     extractedProfileId: Int64,
-                                     generatedEmail: String,
-                                     attemptID: String) throws
-    func deleteOptOutEmailConfirmation(profileQueryId: Int64,
-                                       brokerId: Int64,
-                                       extractedProfileId: Int64) throws
-    func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData]
-    func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData]
-    func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData]
-    func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier>
-    func updateOptOutEmailConfirmationLink(_ emailConfirmationLink: String?,
-                                           emailConfirmationLinkObtainedOnBEDate: Date?,
-                                           profileQueryId: Int64,
-                                           brokerId: Int64,
-                                           extractedProfileId: Int64) throws
-    func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
-                                                      brokerId: Int64,
-                                                      extractedProfileId: Int64) throws
 
     func haveAllScansRunAtLeastOnce() throws -> Bool
 }

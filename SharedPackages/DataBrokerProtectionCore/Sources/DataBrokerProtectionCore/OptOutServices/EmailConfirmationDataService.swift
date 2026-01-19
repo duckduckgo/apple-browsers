@@ -38,17 +38,20 @@ public protocol EmailConfirmationDataServiceProvider {
 }
 
 public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider {
-    private let database: DataBrokerProtectionRepository
+    private let emailConfirmationStore: EmailConfirmationSupporting
+    private let database: DataBrokerProtectionRepository?
     private let emailServiceV0: EmailServiceProtocol
     private let emailServiceV1: EmailServiceV1Protocol
     private let featureFlagger: DBPFeatureFlagging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
 
-    public init(database: DataBrokerProtectionRepository,
+    public init(emailConfirmationStore: EmailConfirmationSupporting,
+                database: DataBrokerProtectionRepository?,
                 emailServiceV0: EmailServiceProtocol,
                 emailServiceV1: EmailServiceV1Protocol,
                 featureFlagger: DBPFeatureFlagging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?) {
+        self.emailConfirmationStore = emailConfirmationStore
         self.database = database
         self.emailServiceV0 = emailServiceV0
         self.emailServiceV1 = emailServiceV1
@@ -71,11 +74,11 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                 throw DataBrokerProtectionError.dataNotInDatabase
             }
 
-            try database.saveOptOutEmailConfirmation(profileQueryId: profileQueryId,
-                                                     brokerId: dataBrokerId,
-                                                     extractedProfileId: extractedProfileId,
-                                                     generatedEmail: emailData.emailAddress,
-                                                     attemptID: attemptId.uuidString)
+            try emailConfirmationStore.saveOptOutEmailConfirmation(profileQueryId: profileQueryId,
+                                                                   brokerId: dataBrokerId,
+                                                                   extractedProfileId: extractedProfileId,
+                                                                   generatedEmail: emailData.emailAddress,
+                                                                   attemptID: attemptId.uuidString)
         }
 
         return emailData
@@ -98,8 +101,8 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
 
         Logger.service.log("✉️ [EmailConfirmationDataService] Checking for email confirmation data...")
 
-        let recordsAwaitingLink = try database.fetchOptOutEmailConfirmationsAwaitingLink()
-        let activeConfirmationIdentifiers = try database.fetchIdentifiersForActiveEmailConfirmations()
+        let recordsAwaitingLink = try emailConfirmationStore.fetchOptOutEmailConfirmationsAwaitingLink()
+        let activeConfirmationIdentifiers = try emailConfirmationStore.fetchIdentifiersForActiveEmailConfirmations()
 
         let filteredRecords = recordsAwaitingLink.filter { record in
             activeConfirmationIdentifiers.contains(where: {
@@ -123,13 +126,13 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                 switch item.status {
                 case .ready:
                     if let record = records[email: item.email, attemptId: item.attemptId] {
-                        let broker = try? database.fetchBroker(with: record.brokerId)
+                        let broker = try? database?.fetchBroker(with: record.brokerId)
                         Logger.service.log("✉️ [EmailConfirmationDataService] Email confirmation link ready for profileQuery: \(record.profileQueryId, privacy: .public), broker: \(broker?.url ?? "unknown", privacy: .public) (\(record.brokerId, privacy: .public))")
-                        try database.updateOptOutEmailConfirmationLink(item.confirmationLink,
-                                                                       emailConfirmationLinkObtainedOnBEDate: item.linkObtainedOnBEDate,
-                                                                       profileQueryId: record.profileQueryId,
-                                                                       brokerId: record.brokerId,
-                                                                       extractedProfileId: record.extractedProfileId)
+                        try emailConfirmationStore.updateOptOutEmailConfirmationLink(item.confirmationLink,
+                                                                                     emailConfirmationLinkObtainedOnBEDate: item.linkObtainedOnBEDate,
+                                                                                     profileQueryId: record.profileQueryId,
+                                                                                     brokerId: record.brokerId,
+                                                                                     extractedProfileId: record.extractedProfileId)
                         if let broker, let beDate = item.linkObtainedOnBEDate {
                             let ageMs = Date().timeIntervalSince(beDate) * 1000
                             pixelHandler?.fire(.serviceEmailConfirmationLinkClientReceived(dataBrokerURL: broker.url,
@@ -144,20 +147,21 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                     // These are unrecoverable errors and we'll need to set it up for future retry
                     Logger.service.error("✉️ [EmailConfirmationDataService] Email confirmation failed for \(item.email, privacy: .public): status=\(item.status.rawValue, privacy: .public), error=\(item.errorCode?.rawValue ?? "", privacy: .public)")
                     if let record = records[email: item.email, attemptId: item.attemptId] {
-                        if let broker = try? database.fetchBroker(with: record.brokerId) {
+                        if let broker = try? database?.fetchBroker(with: record.brokerId) {
                             pixelHandler?.fire(.serviceEmailConfirmationLinkBackendStatusError(dataBrokerURL: broker.url,
                                                                                                brokerVersion: broker.version,
                                                                                                status: item.status.rawValue,
                                                                                                errorCode: item.errorCode?.rawValue))
                         }
-                        try database.deleteOptOutEmailConfirmation(profileQueryId: record.profileQueryId,
-                                                                   brokerId: record.brokerId,
-                                                                   extractedProfileId: record.extractedProfileId)
-                        try database.add(.init(extractedProfileId: record.extractedProfileId,
-                                               brokerId: record.brokerId,
-                                               profileQueryId: record.profileQueryId,
-                                               type: .error(error: .emailError(item.errorCode?.asEmailError))))
-                        if let broker = try database.fetchBroker(with: record.brokerId) {
+                        try emailConfirmationStore.deleteOptOutEmailConfirmation(profileQueryId: record.profileQueryId,
+                                                                                 brokerId: record.brokerId,
+                                                                                 extractedProfileId: record.extractedProfileId)
+                        try database?.add(.init(extractedProfileId: record.extractedProfileId,
+                                                brokerId: record.brokerId,
+                                                profileQueryId: record.profileQueryId,
+                                                type: .error(error: .emailError(item.errorCode?.asEmailError))))
+                        if let database,
+                           let broker = try database.fetchBroker(with: record.brokerId) {
                             try updateOperationDataDates(origin: .emailConfirmation,
                                                          brokerId: record.brokerId,
                                                          profileQueryId: record.profileQueryId,

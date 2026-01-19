@@ -111,11 +111,6 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             refreshUpdateFromCache(cachedUpdateResult, progress: progress)
         }
         handleUpdateNotification()
-
-        // Dismiss stale "update available" popover when download begins
-        if case .downloadDidStart = progress {
-            notificationPresenter.dismissIfPresented()
-        }
     }
 
     @Published private(set) var latestUpdate: Update?

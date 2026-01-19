@@ -187,4 +187,3 @@ extension WideEventParameter {
         public static let confirmationLatency = "feature.data.ext.confirmation_latency_ms_bucketed"
     }
 }
-

@@ -516,4 +516,3 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
     }
 
 }
-

@@ -40,7 +40,8 @@ struct FireConfirmationPresenter {
                                  attachPopoverTo source: AnyObject,
                                  onConfirm: @escaping (FireOptions) -> Void,
                                  onCancel: @escaping () -> Void) {
-        presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: source.bounds, onConfirm: onConfirm, onCancel: onCancel)
+        let sourceRect = (source as? UIView)?.bounds ?? .zero
+        presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
     }
     
     @MainActor

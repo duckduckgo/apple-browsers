@@ -130,9 +130,20 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let brokers: [DataBroker]
 
     private let emailService: EmailService
-    let emailConfirmationDataService: EmailConfirmationDataServiceProvider
+    lazy var emailConfirmationDataService: EmailConfirmationDataServiceProvider = {
+        EmailConfirmationDataService(emailConfirmationStore: emailConfirmationStore,
+                                     database: nil,
+                                     emailServiceV0: emailService,
+                                     emailServiceV1: emailServiceV1,
+                                     featureFlagger: featureFlagger,
+                                     pixelHandler: pixelHandler,
+                                     debugEventHandler: { [weak self] message in
+                                        self?.addHistoryDebugEvent(summary: "Email confirmation", details: message)
+                                     })
+    }()
     let emailConfirmationStore = DebugEmailConfirmationStore()
     let captchaService: CaptchaService
+    private let emailServiceV1: EmailServiceV1Protocol
     let privacyConfigManager: PrivacyConfigurationManaging
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
@@ -209,17 +220,11 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(), pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: MockLocalBrokerJSONService())
 
-        let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
-                                           settings: dbpSettings,
-                                           servicePixel: backendServicePixels)
-        self.emailConfirmationDataService = EmailConfirmationDataService(emailConfirmationStore: emailConfirmationStore,
-                                                                         database: nil,
-                                                                         emailServiceV0: emailService,
-                                                                         emailServiceV1: emailServiceV1,
-                                                                         featureFlagger: featureFlagger,
-                                                                         pixelHandler: sharedPixelsHandler)
-
         self.brokers = try! vault.fetchAllBrokers()
+
+        self.emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
+                                             settings: dbpSettings,
+                                             servicePixel: backendServicePixels)
     }
 
     @MainActor
@@ -542,6 +547,19 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             self.debugEvents.append(event)
         }
         updateProgress(progressText)
+    }
+
+    func addHistoryDebugEvent(summary: String, details: String) {
+        let event = DebugLogEvent(
+            timestamp: Date(),
+            kind: .history,
+            profileQueryLabel: "-",
+            summary: summary,
+            details: details
+        )
+        DispatchQueue.main.async {
+            self.debugEvents.append(event)
+        }
     }
 
     func actionSummary(stepType: StepType, actionType: ActionType?) -> String {

@@ -33,7 +33,8 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
                                                         emailServiceV0: mockEmailServiceV0,
                                                         emailServiceV1: mockEmailServiceV1,
                                                         featureFlagger: mockFeatureFlagger,
-                                                        pixelHandler: nil)
+                                                        pixelHandler: nil,
+                                                        debugEventHandler: nil)
 
     func testCheckForEmailConfirmationDataWith50Items() async throws {
         let records = createOptOutEmailConfirmationRecords(count: 50)

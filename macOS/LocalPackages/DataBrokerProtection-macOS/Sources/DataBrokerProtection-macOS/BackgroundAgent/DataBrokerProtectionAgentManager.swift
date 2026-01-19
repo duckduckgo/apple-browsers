@@ -135,7 +135,8 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
                                                                         featureFlagger: featureFlagger,
-                                                                        pixelHandler: sharedPixelsHandler)
+                                                                        pixelHandler: sharedPixelsHandler,
+                                                                        debugEventHandler: nil)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let agentstopper = DefaultDataBrokerProtectionAgentStopper(dataManager: dataManager,

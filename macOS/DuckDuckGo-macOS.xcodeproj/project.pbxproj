@@ -4161,6 +4161,8 @@
 		F41D174125CB131900472416 /* NSColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41D174025CB131900472416 /* NSColorExtension.swift */; };
 		F44C130225C2DA0400426E3E /* NSAppearanceExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44C130125C2DA0400426E3E /* NSAppearanceExtension.swift */; };
 		F4A6198C283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A6198B283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift */; };
+		F62F9B9B2F119023001528BC /* AIChatHistoryTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62F9B9A2F119023001528BC /* AIChatHistoryTester.swift */; };
+		F62F9B9C2F119023001528BC /* AIChatHistoryTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62F9B9A2F119023001528BC /* AIChatHistoryTester.swift */; };
 		FD23FD2B28816606007F6985 /* AutoconsentMessageProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD23FD2A28816606007F6985 /* AutoconsentMessageProtocolTests.swift */; };
 		FD23FD2D2886A81D007F6985 /* AutoconsentManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */; };
 /* End PBXBuildFile section */
@@ -6428,6 +6430,7 @@
 		F41D174025CB131900472416 /* NSColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColorExtension.swift; sourceTree = "<group>"; };
 		F44C130125C2DA0400426E3E /* NSAppearanceExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAppearanceExtension.swift; sourceTree = "<group>"; };
 		F4A6198B283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopeFeatureFlagging.swift; sourceTree = "<group>"; };
+		F62F9B9A2F119023001528BC /* AIChatHistoryTester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryTester.swift; sourceTree = "<group>"; };
 		FD23FD2A28816606007F6985 /* AutoconsentMessageProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AutoconsentMessageProtocolTests.swift; path = UnitTests/Autoconsent/AutoconsentMessageProtocolTests.swift; sourceTree = SOURCE_ROOT; };
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -7266,6 +7269,7 @@
 		31E3FD712CE39C4600A392C8 /* Debug */ = {
 			isa = PBXGroup;
 			children = (
+				F62F9B9A2F119023001528BC /* AIChatHistoryTester.swift */,
 				31E3FD702CE39C4600A392C8 /* AIChatDebugURLSettingsRepresentable.swift */,
 			);
 			path = Debug;
@@ -13960,6 +13964,7 @@
 				3706FAA2293F65D500E42796 /* MainWindow.swift in Sources */,
 				4B44FEF42B1FEF5A000619D8 /* FocusableTextEditor.swift in Sources */,
 				7BFF35742C10D75000F89673 /* IPCServiceLauncher.swift in Sources */,
+				F62F9B9B2F119023001528BC /* AIChatHistoryTester.swift in Sources */,
 				ED190E112E8BD33F00CA3816 /* MacWatchdogDiagnosticProvider.swift in Sources */,
 				BBC6E3DA2E736A54005C08EB /* LatestReleaseChecker.swift in Sources */,
 				CCB36B132E56383500DBFE3A /* UserScriptError+Pixel.swift in Sources */,
@@ -16716,6 +16721,7 @@
 				1DBFD9132D6C7387003F8D98 /* PinnedTabsManagerProvider.swift in Sources */,
 				85CC1D7D26A05F250062F04E /* PasswordManagementItemModel.swift in Sources */,
 				AAD86E52267A0DFF005C11BE /* UpdateController.swift in Sources */,
+				F62F9B9C2F119023001528BC /* AIChatHistoryTester.swift in Sources */,
 				85A0118225AF60E700FA6A0C /* FindInPageModel.swift in Sources */,
 				BBBD2A062E2FE4C6005E7664 /* ViewExtensions.swift in Sources */,
 				7BA7CC4E2AD11F6F0042E5CE /* NetworkProtectionIPCTunnelController.swift in Sources */,

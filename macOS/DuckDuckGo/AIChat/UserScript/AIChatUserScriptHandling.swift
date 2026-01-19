@@ -71,6 +71,7 @@ protocol AIChatUserScriptHandling {
     func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable?
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable?
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
+
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -422,6 +423,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         syncHandler.setAIChatHistoryEnabled(enabled)
         return nil
     }
+
 }
 // swiftlint:enable inclusive_language
 

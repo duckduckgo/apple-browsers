@@ -49,8 +49,15 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem(title: "Reset Toggle Animation", action: #selector(resetToggleAnimation))
                 .targetting(self)
+
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Fetch Chat History", action: #selector(fetchChatHistoryDedicated))
+                .targetting(self)
         }
     }
+
+    private var historyTester: AIChatHistoryTester?
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -79,6 +86,81 @@ final class AIChatDebugMenu: NSMenu {
 
     @objc func resetToggleAnimation() {
         UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = false
+    }
+
+    @MainActor @objc func fetchChatHistoryDedicated() {
+        // Ask for search query
+        let alert = NSAlert()
+        alert.messageText = "Fetch Chat History"
+        alert.informativeText = "Enter search query (leave empty to get all chats):"
+        alert.addButton(withTitle: "Fetch")
+        alert.addButton(withTitle: "Cancel")
+
+        let inputTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+        inputTextField.placeholderString = "Search..."
+        alert.accessoryView = inputTextField
+
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn else { return }
+
+        let queryInput = inputTextField.stringValue.trimmingCharacters(in: .whitespaces)
+        let query: String? = queryInput.isEmpty ? nil : queryInput
+
+        // Run the fetch in the background
+        historyTester = AIChatHistoryTester()
+
+        Task { @MainActor in
+            let result = await historyTester?.fetchChatHistory(query: query)
+            self.historyTester = nil
+
+            switch result {
+            case .success(let chatsResult):
+                self.showChatsResult(chatsResult)
+            case .failure(let error):
+                // Show detailed error info
+                let errorDetails = """
+                Error: \(error.localizedDescription)
+                
+                Type: \(type(of: error))
+                
+                Full description: \(String(describing: error))
+                """
+                self.showErrorAlert(errorDetails)
+            case .none:
+                self.showErrorAlert("Tester was deallocated")
+            }
+        }
+    }
+
+    private func showChatsResult(_ result: AIChatChatHistoryUserScript.ChatsResult) {
+        let alert = NSAlert()
+        alert.messageText = "Chat History Response"
+
+        // Always show the raw JSON response
+        let rawJSON = result.rawJSON
+        let maxLength = 3000
+        
+        var info = "Raw Response:\n\n"
+        if rawJSON.count > maxLength {
+            info += "\(String(rawJSON.prefix(maxLength)))...\n\n[Truncated - full response is \(rawJSON.count) chars]"
+        } else {
+            info += rawJSON
+        }
+        
+        info += "\n\n---\nParsed \(result.chats.count) chat(s)"
+        
+        alert.informativeText = info
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    private func showErrorAlert(_ message: String) {
+        let alert = NSAlert()
+        alert.messageText = "Error"
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     @MainActor @objc func showTogglePopover() {

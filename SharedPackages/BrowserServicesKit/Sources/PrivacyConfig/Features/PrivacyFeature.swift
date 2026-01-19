@@ -85,6 +85,7 @@ public enum PrivacyFeature: String {
     case attributedMetrics
     case dataImport
     case duckAiDataClearing
+    case duckAiChatHistory
     case serp
     case popupBlocking
     case combinedPermissionView

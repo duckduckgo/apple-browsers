@@ -28,6 +28,7 @@ import WebKit
 protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
+    var pageContextProvider: (() -> AIChatPageContextData?)? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
@@ -63,6 +64,9 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 protocol AIChatContentHandling {
 
     var delegate: AIChatContentHandlingDelegate? { get set }
+
+    /// Closure to provide page context for getAIChatPageContext requests from the frontend.
+    var pageContextProvider: (() -> AIChatPageContextData?)? { get set }
 
     /// Configures the user script, WebView and display mode for AIChat interaction.
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode)
@@ -107,11 +111,20 @@ final class AIChatContentHandler: AIChatContentHandling {
     private lazy var statisticsLoader: StatisticsLoader = .shared
     
     private var userScript: AIChatUserScriptProviding?
+    private var _pageContextProvider: (() -> AIChatPageContextData?)?
     
     // MARK: - Public API
-    
+
     weak var delegate: AIChatContentHandlingDelegate?
-    
+
+    var pageContextProvider: (() -> AIChatPageContextData?)? {
+        get { _pageContextProvider }
+        set {
+            _pageContextProvider = newValue
+            userScript?.pageContextProvider = newValue
+        }
+    }
+
     init(aiChatSettings: AIChatSettingsProvider,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
          pixelMetricHandler: any AIChatPixelMetricHandling = AIChatPixelMetricHandler(),
@@ -132,6 +145,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.userScript?.setDisplayMode(displayMode)
         self.userScript?.setPayloadHandler(payloadHandler)
         self.userScript?.webView = webView
+        self.userScript?.pageContextProvider = _pageContextProvider
     }
     
     /// Sets the initial payload data for the AIChat session.

@@ -88,6 +88,11 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
 
+    var pageContextProvider: (() -> AIChatPageContextData?)? {
+        get { handler.pageContextProvider }
+        set { handler.pageContextProvider = newValue }
+    }
+
     private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private var cancellables = Set<AnyCancellable>()
@@ -147,6 +152,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatNativeConfigValues
         case .getAIChatNativeHandoffData:
             return handler.getAIChatNativeHandoffData
+        case .getAIChatPageContext:
+            Logger.aiChat.debug("[PageContext] Routing message, handler provider nil: \(self.handler.pageContextProvider == nil)")
+            return handler.getAIChatPageContext
         case .openAIChat:
             return handler.openAIChat
         case .hideChatInput:

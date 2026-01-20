@@ -249,3 +249,55 @@ final class MockAIChatSyncHandling: AIChatSyncHandling {
         setAIChatHistoryEnabledCalls.append(enabled)
     }
 }
+
+// MARK: - getAIChatPageContext Tests
+
+extension AIChatUserScriptHandlerTests {
+
+    func testGetAIChatPageContextReturnsNilContextWhenNoProvider() {
+        // Given
+        aiChatUserScriptHandler.pageContextProvider = nil
+
+        // When
+        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+
+        // Then
+        XCTAssertNotNil(response)
+        XCTAssertNil(response?.pageContext)
+    }
+
+    func testGetAIChatPageContextReturnsContextWhenProviderSet() {
+        // Given
+        let expectedContext = AIChatPageContextData(
+            title: "Test Page",
+            favicon: [],
+            url: "https://example.com",
+            content: "Test content",
+            truncated: false,
+            fullContentLength: 12
+        )
+        aiChatUserScriptHandler.pageContextProvider = { expectedContext }
+
+        // When
+        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+
+        // Then
+        XCTAssertNotNil(response)
+        XCTAssertNotNil(response?.pageContext)
+        XCTAssertEqual(response?.pageContext?.title, "Test Page")
+        XCTAssertEqual(response?.pageContext?.url, "https://example.com")
+        XCTAssertEqual(response?.pageContext?.content, "Test content")
+    }
+
+    func testGetAIChatPageContextReturnsNilContextWhenProviderReturnsNil() {
+        // Given
+        aiChatUserScriptHandler.pageContextProvider = { nil }
+
+        // When
+        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+
+        // Then
+        XCTAssertNotNil(response)
+        XCTAssertNil(response?.pageContext)
+    }
+}

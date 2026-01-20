@@ -47,6 +47,16 @@ struct OpenKeyboardResponse: Encodable {
     }
 }
 
+/// Request structure for getAIChatPageContext
+struct GetPageContextRequest: Codable {
+    let reason: String
+}
+
+/// Response structure for getAIChatPageContext
+struct PageContextResponse: Encodable {
+    let pageContext: AIChatPageContextData?
+}
+
 protocol AIChatMetricReportingHandling: AnyObject {
     func didReportMetric(_ metric: AIChatMetric)
 }
@@ -54,8 +64,10 @@ protocol AIChatMetricReportingHandling: AnyObject {
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
     var displayMode: AIChatDisplayMode? { get set }
+    var pageContextProvider: (() -> AIChatPageContextData?)? { get set }
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
@@ -94,6 +106,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
+
+    /// Closure to provide page context for getAIChatPageContext requests.
+    var pageContextProvider: (() -> AIChatPageContextData?)?
 
     init(experimentalAIChatManager: ExperimentalAIChatManager,
          syncHandler: AIChatSyncHandling,
@@ -208,6 +223,20 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
         AIChatNativeHandoffData.defaultValuesWithPayload(payloadHandler?.consumeData() as? AIChatPayload)
+    }
+
+    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable? {
+        Logger.aiChat.debug("[PageContext] Handler called, provider nil: \(self.pageContextProvider == nil)")
+
+        let pageContext = pageContextProvider?()
+
+        if let context = pageContext {
+            Logger.aiChat.debug("[PageContext] Returning title: \(context.title ?? "nil"), contentLength: \(context.content.count)")
+        } else {
+            Logger.aiChat.debug("[PageContext] No context available")
+        }
+
+        return PageContextResponse(pageContext: pageContext)
     }
 
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {

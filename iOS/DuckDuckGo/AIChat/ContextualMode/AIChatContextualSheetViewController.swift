@@ -82,8 +82,6 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let viewModel: AIChatContextualSheetViewModel
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let webViewControllerFactory: WebViewControllerFactory
-    private let settings: AIChatSettingsProvider
-    private let onOpenSettings: () -> Void
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
     private var cancellables = Set<AnyCancellable>()
@@ -583,7 +581,7 @@ private extension AIChatContextualSheetViewController {
 private extension AIChatContextualSheetViewController {
 
     func showOnboardingIfNeeded() {
-        guard !settings.hasSeenContextualOnboarding else { return }
+        guard !viewModel.hasSeenContextualOnboarding else { return }
 
         isModalInPresentation = true
         Pixel.fire(pixel: .aiChatContextualOnboardingDisplayed)
@@ -594,9 +592,10 @@ private extension AIChatContextualSheetViewController {
                 self?.dismissOnboarding()
             },
             onViewSettings: { [weak self] in
+                guard let self else { return }
                 Pixel.fire(pixel: .aiChatContextualOnboardingSettingsPressed)
-                self?.settings.markContextualOnboardingSeen()
-                self?.onOpenSettings()
+                self.viewModel.markContextualOnboardingSeen()
+                self.delegate?.aiChatContextualSheetViewControllerDidRequestOpenSettings(self)
             }
         )
 
@@ -622,7 +621,7 @@ private extension AIChatContextualSheetViewController {
     }
 
     func dismissOnboarding(completion: (() -> Void)? = nil) {
-        settings.markContextualOnboardingSeen()
+        viewModel.markContextualOnboardingSeen()
 
         guard let hostingController = onboardingHostingController else {
             completion?()

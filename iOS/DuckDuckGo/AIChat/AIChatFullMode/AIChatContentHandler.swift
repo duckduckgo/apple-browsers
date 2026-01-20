@@ -24,12 +24,17 @@ import PrivacyConfig
 import Foundation
 import WebKit
 
+/// Protocol for providing page context to the AI Chat frontend.
+protocol AIChatPageContextHandling: AnyObject {
+    func getPageContext() -> AIChatPageContextData?
+}
+
 /// Mockable interface to AIChatUserScript
 protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
-    var pageContextProvider: (() -> AIChatPageContextData?)? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    func setPageContextHandler(_ handler: AIChatPageContextHandling?)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
     func submitStartChatAction()
@@ -62,12 +67,9 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 }
 
 /// Handles content initialization, payload management, and URL building for AIChat.
-protocol AIChatContentHandling {
+protocol AIChatContentHandling: AIChatPageContextHandling {
 
     var delegate: AIChatContentHandlingDelegate? { get set }
-
-    /// Closure to provide page context for getAIChatPageContext requests from the frontend.
-    var pageContextProvider: (() -> AIChatPageContextData?)? { get set }
 
     /// Configures the user script, WebView and display mode for AIChat interaction.
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode)
@@ -115,19 +117,9 @@ final class AIChatContentHandler: AIChatContentHandling {
     private lazy var statisticsLoader: StatisticsLoader = .shared
     
     private var userScript: AIChatUserScriptProviding?
-    private var _pageContextProvider: (() -> AIChatPageContextData?)?
-    
-    // MARK: - Public API
+    private var storedPageContext: AIChatPageContextData?
 
     weak var delegate: AIChatContentHandlingDelegate?
-
-    var pageContextProvider: (() -> AIChatPageContextData?)? {
-        get { _pageContextProvider }
-        set {
-            _pageContextProvider = newValue
-            userScript?.pageContextProvider = newValue
-        }
-    }
 
     init(aiChatSettings: AIChatSettingsProvider,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
@@ -149,7 +141,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.userScript?.setDisplayMode(displayMode)
         self.userScript?.setPayloadHandler(payloadHandler)
         self.userScript?.webView = webView
-        self.userScript?.pageContextProvider = _pageContextProvider
+        self.userScript?.setPageContextHandler(self)
     }
     
     /// Sets the initial payload data for the AIChat session.
@@ -191,9 +183,14 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.submitPrompt(prompt, pageContext: pageContext)
     }
 
-    /// Submits page context to the frontend (push update).
+    /// Submits page context to the frontend (push update) and stores it for lazy requests.
     func submitPageContext(_ context: AIChatPageContextData?) {
+        storedPageContext = context
         userScript?.submitPageContext(context)
+    }
+
+    func getPageContext() -> AIChatPageContextData? {
+        storedPageContext
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.

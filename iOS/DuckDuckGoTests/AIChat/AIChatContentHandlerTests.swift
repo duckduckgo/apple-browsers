@@ -99,6 +99,18 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.lastDisplayModeSet, .contextual)
     }
 
+    func testSetupSetsPageContextHandler() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+
+        // When
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+
+        // Then
+        XCTAssertTrue(mockUserScript.pageContextHandlerSet)
+    }
+
     // MARK: - setPayload(payload:)
 
     func testSetPayloadWithValidPayload() throws {
@@ -374,11 +386,11 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         get { nil }
         set { webViewSet = true }
     }
-    var pageContextProvider: (() -> AIChatPageContextData?)?
 
     var delegateSet = false
     var webViewSet = false
     var payloadHandlerSet = false
+    var pageContextHandlerSet = false
     var submitPromptCallCount = 0
     var lastSubmittedPrompt: String?
     var lastSubmittedPageContext: AIChatPageContextData?
@@ -389,6 +401,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true
+    }
+
+    func setPageContextHandler(_ handler: AIChatPageContextHandling?) {
+        pageContextHandlerSet = true
     }
 
     func setDisplayMode(_ displayMode: AIChatDisplayMode) {

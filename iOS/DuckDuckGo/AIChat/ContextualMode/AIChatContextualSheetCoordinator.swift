@@ -185,17 +185,13 @@ private extension AIChatContextualSheetCoordinator {
 
     /// Factory method for creating web view controllers, avoids prop drilling through the Sheet VC.
     func makeWebViewController() -> AIChatContextualWebViewController {
-        let webVC = AIChatContextualWebViewController(
+        AIChatContextualWebViewController(
             aiChatSettings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger
         )
-        webVC.pageContextProvider = { [weak self] in
-            self?.viewModel?.fullPageContext
-        }
-        return webVC
     }
 
     /// Decodes a base64-encoded favicon from the page context data.

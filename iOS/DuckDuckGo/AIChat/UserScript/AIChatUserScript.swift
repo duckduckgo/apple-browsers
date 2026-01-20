@@ -88,11 +88,6 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
 
-    var pageContextProvider: (() -> AIChatPageContextData?)? {
-        get { handler.pageContextProvider }
-        set { handler.pageContextProvider = newValue }
-    }
-
     private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private var cancellables = Set<AnyCancellable>()
@@ -200,6 +195,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func setDisplayMode(_ displayMode: AIChatDisplayMode) {
         handler.displayMode = displayMode
+    }
+
+    func setPageContextHandler(_ handler: AIChatPageContextHandling?) {
+        self.handler.setPageContextHandler(handler)
     }
 
     // MARK: - Input Box Event Subscription

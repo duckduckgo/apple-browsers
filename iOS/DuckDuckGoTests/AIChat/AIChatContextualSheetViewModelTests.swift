@@ -168,6 +168,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
         // Then
         XCTAssertFalse(sut.hasSubmittedPrompt)
         XCTAssertNil(sut.contextualChatURL)
+        XCTAssertFalse(sut.isNewChatButtonVisible)
         XCTAssertTrue(sut.isExpandEnabled)
     }
 

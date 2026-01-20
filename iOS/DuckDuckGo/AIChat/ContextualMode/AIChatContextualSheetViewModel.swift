@@ -104,6 +104,16 @@ final class AIChatContextualSheetViewModel {
         settings.isAutomaticContextAttachmentEnabled
     }
 
+    /// Whether the contextual onboarding has been seen
+    var hasSeenContextualOnboarding: Bool {
+        settings.hasSeenContextualOnboarding
+    }
+
+    /// Marks the contextual onboarding as seen
+    func markContextualOnboardingSeen() {
+        settings.markContextualOnboardingSeen()
+    }
+
     /// Called when a prompt is submitted
     func didSubmitPrompt() {
         hasSubmittedPrompt = true
@@ -121,6 +131,7 @@ final class AIChatContextualSheetViewModel {
     func didStartNewChat() {
         hasSubmittedPrompt = false
         contextualChatURL = nil
+        isNewChatButtonVisible = false
         updateExpandButtonState()
     }
 

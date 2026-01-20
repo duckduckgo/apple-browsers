@@ -64,7 +64,7 @@ protocol AIChatMetricReportingHandling: AnyObject {
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
     var displayMode: AIChatDisplayMode? { get set }
-    var pageContextProvider: (() -> AIChatPageContextData?)? { get set }
+    func setPageContextHandler(_ handler: AIChatPageContextHandling?)
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
@@ -107,8 +107,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
 
-    /// Closure to provide page context for getAIChatPageContext requests.
-    var pageContextProvider: (() -> AIChatPageContextData?)?
+    /// Handler for providing page context on getAIChatPageContext requests.
+    private weak var pageContextHandler: AIChatPageContextHandling?
 
     init(experimentalAIChatManager: ExperimentalAIChatManager,
          syncHandler: AIChatSyncHandling,
@@ -226,7 +226,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable? {
-        PageContextResponse(pageContext: pageContextProvider?())
+        PageContextResponse(pageContext: pageContextHandler?.getPageContext())
     }
 
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {
@@ -239,6 +239,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {
         self.metricReportingHandler = metricHandler
+    }
+
+    func setPageContextHandler(_ handler: AIChatPageContextHandling?) {
+        self.pageContextHandler = handler
     }
 
     // Workaround for WKWebView: see https://app.asana.com/1/137249556945/task/1211361207345641/comment/1211365575147531?focus=true

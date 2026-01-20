@@ -149,6 +149,19 @@ public final class AIChatContextChipView: UIView {
         faviconView.image = favicon ?? placeholderFavicon()
         accessibilityLabel = title
     }
+
+    /// Updates the chip content, preserving the existing favicon if the new one is nil.
+    ///
+    /// - Parameters:
+    ///   - title: The new page title to display.
+    ///   - favicon: The new favicon image. If nil, the existing favicon is preserved.
+    public func update(title: String, favicon: UIImage?) {
+        titleLabel.text = title
+        if let favicon {
+            faviconView.image = favicon
+        }
+        accessibilityLabel = title
+    }
 }
 
 // MARK: - Private Setup

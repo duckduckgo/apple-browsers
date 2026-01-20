@@ -56,5 +56,44 @@ final class AIChatContextChipViewTests: XCTestCase {
         // Then
         XCTAssertNotNil(sut.onRemove)
     }
+
+    func testUpdateSetsNewTitle() {
+        // Given
+        let sut = AIChatContextChipView()
+        sut.configure(title: "Original Title", favicon: nil)
+
+        // When
+        sut.update(title: "Updated Title", favicon: nil)
+
+        // Then
+        XCTAssertEqual(sut.accessibilityLabel, "Updated Title")
+    }
+
+    func testUpdateSetsNewFaviconWhenProvided() {
+        // Given
+        let sut = AIChatContextChipView()
+        let originalFavicon = UIImage()
+        let newFavicon = UIImage()
+        sut.configure(title: "Title", favicon: originalFavicon)
+
+        // When
+        sut.update(title: "Title", favicon: newFavicon)
+
+        // Then
+        XCTAssertNotNil(sut.subviews.first)
+    }
+
+    func testUpdatePreservesFaviconWhenNil() {
+        // Given
+        let sut = AIChatContextChipView()
+        let originalFavicon = UIImage()
+        sut.configure(title: "Original", favicon: originalFavicon)
+
+        // When
+        sut.update(title: "Updated", favicon: nil)
+
+        // Then
+        XCTAssertEqual(sut.accessibilityLabel, "Updated")
+    }
 }
 #endif

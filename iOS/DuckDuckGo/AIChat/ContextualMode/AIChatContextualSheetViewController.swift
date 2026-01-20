@@ -270,11 +270,16 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Called when page context has been collected (after requesting attachment)
     func didReceivePageContext() {
-        guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
-            self?.contextualInputViewController.hideContextChip()
-        }) else { return }
+        guard let context = viewModel.pageContext else { return }
 
-        contextualInputViewController.showContextChip(chipView)
+        if contextualInputViewController.isContextChipVisible {
+            contextualInputViewController.updateContextChip(title: context.title, favicon: context.favicon)
+        } else {
+            guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
+                self?.contextualInputViewController.hideContextChip()
+            }) else { return }
+            contextualInputViewController.showContextChip(chipView)
+        }
     }
 }
 
@@ -435,6 +440,7 @@ extension AIChatContextualSheetViewController: AIChatContextualWebViewController
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?) {
         Logger.aiChat.debug("[AIChatContextual] Received contextual chat URL update: \(String(describing: url?.absoluteString))")
         viewModel.didUpdateContextualChatURL(url)
+        delegate?.aiChatContextualSheetViewController(self, didUpdateContextualChatURL: url)
     }
 }
 

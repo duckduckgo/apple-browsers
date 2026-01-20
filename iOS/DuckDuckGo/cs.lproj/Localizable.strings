@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Obsah stránky";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai teď může odpovídat na otázky týkající se stránky, kterou si prohlížíš.\n\nObsah stránky se zobrazí, jen pokud ji přiložíš. Můžeš to kdykoli změnit v Nastavení.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Mám to";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Zeptej se na tuhle stránku";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Zobrazit nastavení";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkce AI u DuckDuckGo jsou soukromé a volitelné. Tvoje data se nepoužívají k trénování umělé inteligence.";
 

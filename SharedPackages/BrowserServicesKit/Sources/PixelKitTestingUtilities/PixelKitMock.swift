@@ -48,6 +48,12 @@ public final class PixelKitMock: PixelFiring {
         actualFireCalls.append(fireCall)
     }
 
+    public func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, onComplete: @escaping PixelKit.CompletionBlock) {
+        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, additionalParameters: nil)
+        actualFireCalls.append(fireCall)
+        onComplete(true, nil)
+    }
+
     public func verifyExpectations(file: StaticString = #file, line: UInt = #line) {
         XCTAssertEqual(expectedFireCalls, actualFireCalls, file: file, line: line)
     }

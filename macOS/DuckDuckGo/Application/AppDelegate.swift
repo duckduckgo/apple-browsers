@@ -1416,6 +1416,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               let currentEvent = NSApp.currentEvent,
               let manager = WarnBeforeQuitManager(
                 currentEvent: currentEvent,
+                action: .quit,
                 isWarningEnabled: { [tabsPreferences] in
                     tabsPreferences.warnBeforeQuitting
                 }
@@ -1424,6 +1425,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let presenter = WarnBeforeQuitOverlayPresenter(
             startupPreferences: startupPreferences,
             onDontAskAgain: { [tabsPreferences] in
+                PixelKit.fire(GeneralPixel.warnBeforeQuitDontShowAgain, frequency: .standard)
                 tabsPreferences.warnBeforeQuitting = false
             },
             onHoverChange: { [weak manager] isHovering in

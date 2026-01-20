@@ -173,9 +173,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620280912
     case syncIdentities
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866478543578
-    case aiChatDataClearing
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
 
@@ -371,7 +368,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
-                .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
                 .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
@@ -515,8 +511,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
-        case .aiChatDataClearing:
-            return .remoteReleasable(.feature(.duckAiDataClearing))
         case .storeSerpSettings:
             return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:

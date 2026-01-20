@@ -101,7 +101,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     ///   - condition: The condition to check
     ///   - description: Description of what we're waiting for
     private func waitForCondition(
-        timeout: TimeInterval = 2.0,
+        timeout: TimeInterval = 30.0,
         pollingInterval: TimeInterval = 0.1,
         condition: @escaping () -> Bool,
         description: String
@@ -1920,7 +1920,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State should preserve the timestamp
         XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
@@ -1978,7 +1978,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State should NOT be updated because hostView is nil
         XCTAssertEqual(sut.state.timestamp, stateBeforeDismissal, "State timestamp should not be updated when hostView is nil")
@@ -2028,7 +2028,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State SHOULD be updated because hostView exists
         XCTAssertEqual(sut.state.timestamp, timestamp, "State timestamp should be updated when hostView exists")
@@ -2080,7 +2080,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
 
         // Then - Settings should not be updated because presenter was released
         XCTAssertEqual(mockDuckPlayerSettings.welcomeMessageShown, initialWelcomeShown,

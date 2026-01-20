@@ -1408,6 +1408,27 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Playeri funktsionaalsust on mõjutanud hiljutised YouTube'i muudatused. Töötame nende probleemide lahendamise nimel ja täname sind mõistva suhtumise eest.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Lisa lehe sisu";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Saadetud koos sinu sõnumiga Duck.ai-le";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Lehe sisu";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai aitab nüüd aidata leida vastused küsimustele lehe kohta, mida parasjagu vaatate.\n\nLehe sisu lisatakse ainult siis, kui selle manustate. Seda saate seadetes igal ajal muuta.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Sain aru";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Küsi selle lehekülje kohta";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Vaata sätteid";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo tehisintellekti funktsioonid on privaatsed ja valikulised. Sinu andmeid ei kasutata tehisintellekti treenimiseks.";
 

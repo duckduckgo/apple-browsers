@@ -1705,6 +1705,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func showSystemDisabledInfoPopover(for domain: String, permissionType: PermissionType) {
+        guard permissionCenterButton.isVisible else { return }
+
         let view = SystemDisabledPermissionInfoView(domain: domain, permissionType: permissionType)
         let controller = NSHostingController(rootView: view)
         controller.preferredContentSize = controller.view.fittingSize

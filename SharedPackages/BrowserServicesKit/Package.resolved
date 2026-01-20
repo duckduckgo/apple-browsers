@@ -1,6 +1,24 @@
 {
   "pins" : [
     {
+      "identity" : "content-scope-scripts",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
+      "state" : {
+        "revision" : "cb3431f467bab6b0cec2abd180766f17f6c8e905",
+        "version" : "12.22.0"
+      }
+    },
+    {
+      "identity" : "duckduckgo-autofill",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
+      "state" : {
+        "revision" : "c8ce2e7cdcca4226c96350dcd49323298b941592",
+        "version" : "19.0.0"
+      }
+    },
+    {
       "identity" : "gzipswift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/1024jp/GzipSwift.git",

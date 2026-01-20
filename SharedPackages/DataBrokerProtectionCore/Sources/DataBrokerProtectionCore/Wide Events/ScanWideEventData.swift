@@ -21,7 +21,7 @@ import PixelKit
 
 public final class ScanWideEventData: WideEventData {
     public static let pixelName = "pir_scan_attempt"
-    private static let featureName = "pir-scan-attempt"
+    public static let featureName = "pir-scan-attempt"
 
     public enum AttemptType: String, Codable {
         case newScan = "new-data"
@@ -62,25 +62,14 @@ public final class ScanWideEventData: WideEventData {
 
 extension ScanWideEventData {
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        parameters[WideEventParameter.Feature.name] = Self.featureName
-        parameters[DBPWideEventParameter.ScanFeature.dataBrokerURL] = dataBrokerURL
-
-        if let dataBrokerVersion {
-            parameters[DBPWideEventParameter.ScanFeature.dataBrokerVersion] = dataBrokerVersion
-        }
-
-        parameters[DBPWideEventParameter.ScanFeature.attemptType] = attemptType.rawValue
-        parameters[DBPWideEventParameter.ScanFeature.attemptNumber] = String(attemptNumber)
-
-        if let duration = scanInterval?.durationMilliseconds {
-            parameters[DBPWideEventParameter.ScanFeature.scanLatency] = String(duration)
-        }
-
-        return parameters
+        Dictionary(compacting: [
+            (DBPWideEventParameter.ScanFeature.dataBrokerURL, dataBrokerURL),
+            (DBPWideEventParameter.ScanFeature.dataBrokerVersion, dataBrokerVersion),
+            (DBPWideEventParameter.ScanFeature.attemptType, attemptType.rawValue),
+            (DBPWideEventParameter.ScanFeature.attemptNumber, String(attemptNumber)),
+            (DBPWideEventParameter.ScanFeature.scanLatency, scanInterval?.stringValue(.noBucketing)),
+        ])
     }
-
 }
 
 extension ScanWideEventData: WideEventDataMeasuringInterval {

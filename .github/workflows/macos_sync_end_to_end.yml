@@ -226,6 +226,7 @@ jobs:
 
     - name: Report job duration
       if: success() || (always() && steps.run-ui-tests.outcome == 'failure')
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop

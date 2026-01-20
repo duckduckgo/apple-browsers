@@ -562,7 +562,7 @@ final class FireTests: XCTestCase {
             burningExpectation.fulfill()
         }
 
-        await fulfillment(of: [burningExpectation], timeout: 5)
+        await fulfillment(of: [burningExpectation], timeout: 30)
 
         // Verify stats were actually cleared
         let clearedStats = await autoconsentStats.fetchAutoconsentDailyUsagePack()

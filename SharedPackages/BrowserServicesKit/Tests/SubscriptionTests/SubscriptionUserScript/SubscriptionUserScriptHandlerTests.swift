@@ -89,7 +89,8 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
 
         subscriptionManager.resultSubscription = .success(subscription)
@@ -296,7 +297,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
 private extension DuckDuckGoSubscription {
     init(status: Status) {
-        self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [], tier: nil, availableChanges: nil)
+        self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [], tier: nil, availableChanges: nil, pendingPlans: nil)
     }
 }
 

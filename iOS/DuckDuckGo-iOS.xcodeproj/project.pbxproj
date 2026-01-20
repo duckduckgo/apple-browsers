@@ -8715,7 +8715,6 @@
 		CBAD0F042CFE1DA2006267B8 /* AppLifecycle */ = {
 			isa = PBXGroup;
 			children = (
-				CB971BF92F1FB584006EC657 /* BackgroundTaskManager.swift */,
 				CBF5D4222EA92031000530AF /* SceneDelegate.swift */,
 				84E341951E2F7EFB00BDBA6F /* AppDelegate.swift */,
 				CBAD0F0B2CFF4EDD006267B8 /* AppDependencies.swift */,
@@ -9711,6 +9710,7 @@
 				EE9D68D72AE15AD600B55EF4 /* UIApplicationExtension.swift */,
 				36F2CA582E604C4700C7039D /* UNUserNotificationCenterRepresentable.swift */,
 				CB69F31A2D581CF4008550E7 /* ShortcutKey.swift */,
+				CB971BF92F1FB584006EC657 /* BackgroundTaskManager.swift */,
 				83BE9BC2215D69C1009844D9 /* AppConfigurationFetch.swift */,
 				CB24F70E29A3EB15006DCC58 /* AppConfigurationURLProvider.swift */,
 				85BA58591F3506AE00C6E8CA /* AppSettings.swift */,

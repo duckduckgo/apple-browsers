@@ -20,6 +20,7 @@
 import UIKit
 import os.log
 import Core
+import PrivacyConfig
 
 /// Simple background task manager that provides a 15-second safety net when app goes to background
 /// to allow ongoing operations to complete gracefully.

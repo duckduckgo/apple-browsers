@@ -476,7 +476,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         }
     }
 
-
     func syncAge(fromBirthYear newValue: String) {
         guard !isSyncingAgeFields else { return }
         if newValue.isEmpty {
@@ -575,7 +574,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         }
     }
 }
-
 
 struct DebugLogEvent: Identifiable {
     let id = UUID()

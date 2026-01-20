@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Välilehdet";
+"settings.tab.switcher.show.tracker.count" = "Viimeisten 7 päivän seurantamäärä";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "viimeisten 7 päivän aikana";
+"tab.switcher.tracker.count.hide.title" = "Piilotetaanko seurantamäärä?";
+"tab.switcher.tracker.count.hide.message" = "Voit ottaa tämän uudelleen käyttöön kohdassa Asetukset > Ulkoasu.";
+"tab.switcher.tracker.count.hide.action" = "Piilota";
+"tab.switcher.tracker.count.keep.action" = "Pidä";
+"tab.switcher.tracker.count.info.a11y" = "Seurantamäärän valinnat";
+"tab.switcher.tracker.count.info.hint.a11y" = "Näytä tämän bannerin piilotusvaihtoehdot kaksoisnapauttamalla";

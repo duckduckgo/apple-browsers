@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Što želiš uvesti?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Kartice";
+"settings.tab.switcher.show.tracker.count" = "Broj pratitelja u 7 dana";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "u posljednjih 7 dana";
+"tab.switcher.tracker.count.hide.title" = "Sakriti broj pratitelja?";
+"tab.switcher.tracker.count.hide.message" = "Ovo možeš ponovno uključiti u Postavke > Izgled.";
+"tab.switcher.tracker.count.hide.action" = "Sakrij";
+"tab.switcher.tracker.count.keep.action" = "Zadrži";
+"tab.switcher.tracker.count.info.a11y" = "Mogućnosti broja pratitelja";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dvaput dodirni za prikaz mogućnosti skrivanja ovog natpisa";

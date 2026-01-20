@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Lapok";
+"settings.tab.switcher.show.tracker.count" = "Az elmúlt 7 nap követőszáma";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "az elmúlt 7 napban";
+"tab.switcher.tracker.count.hide.title" = "Elrejti a követők számát?";
+"tab.switcher.tracker.count.hide.message" = "Ezt újra bekapcsolhatod a Beállítások > Megjelenés menüben.";
+"tab.switcher.tracker.count.hide.action" = "Elrejtés";
+"tab.switcher.tracker.count.keep.action" = "Megtartás";
+"tab.switcher.tracker.count.info.a11y" = "Követőszám beállításai";
+"tab.switcher.tracker.count.info.hint.a11y" = "Koppints duplán a banner elrejtési lehetőségeinek megjelenítéséhez";

@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Karty";
+"settings.tab.switcher.show.tracker.count" = "Počet sledovačů za 7 dní";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "za posledních 7 dní";
+"tab.switcher.tracker.count.hide.title" = "Skrýt počet sledovačů?";
+"tab.switcher.tracker.count.hide.message" = "Můžete to znovu zapnout v Nastavení > Vzhled.";
+"tab.switcher.tracker.count.hide.action" = "Skrýt";
+"tab.switcher.tracker.count.keep.action" = "Ponechat";
+"tab.switcher.tracker.count.info.a11y" = "Možnosti počtu sledovačů";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dvojitým klepnutím zobrazíte možnosti pro skrytí tohoto banneru";

@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "File";
+"settings.tab.switcher.show.tracker.count" = "Numărul de trackere din ultimele 7 zile";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "în ultimele 7 zile";
+"tab.switcher.tracker.count.hide.title" = "Ascundeți numărul de trackere?";
+"tab.switcher.tracker.count.hide.message" = "Îl puteți activa din nou în Setări > Aspect.";
+"tab.switcher.tracker.count.hide.action" = "Ascunde";
+"tab.switcher.tracker.count.keep.action" = "Păstrează";
+"tab.switcher.tracker.count.info.a11y" = "Opțiuni pentru numărul de trackere";
+"tab.switcher.tracker.count.info.hint.a11y" = "Atingeți de două ori pentru a afișa opțiunile de ascundere a acestui banner";

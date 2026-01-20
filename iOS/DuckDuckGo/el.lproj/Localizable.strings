@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Καρτέλες";
+"settings.tab.switcher.show.tracker.count" = "Αριθμός ιχνηλατών τελευταίων 7 ημερών";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "τις τελευταίες 7 ημέρες";
+"tab.switcher.tracker.count.hide.title" = "Απόκρυψη αριθμού ιχνηλατών;";
+"tab.switcher.tracker.count.hide.message" = "Μπορείτε να το ενεργοποιήσετε ξανά από Ρυθμίσεις > Εμφάνιση.";
+"tab.switcher.tracker.count.hide.action" = "Απόκρυψη";
+"tab.switcher.tracker.count.keep.action" = "Διατήρηση";
+"tab.switcher.tracker.count.info.a11y" = "Επιλογές αριθμού ιχνηλατών";
+"tab.switcher.tracker.count.info.hint.a11y" = "Διπλό πάτημα για εμφάνιση επιλογών απόκρυψης αυτού του πανό";

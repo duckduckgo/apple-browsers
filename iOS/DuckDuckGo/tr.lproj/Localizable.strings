@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Sekmeler";
+"settings.tab.switcher.show.tracker.count" = "7 Günlük İzleyici Sayısı";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "son 7 günde";
+"tab.switcher.tracker.count.hide.title" = "İzleyici sayısı gizlensin mi?";
+"tab.switcher.tracker.count.hide.message" = "Bunu Ayarlar > Görünüm bölümünden tekrar açabilirsiniz.";
+"tab.switcher.tracker.count.hide.action" = "Gizle";
+"tab.switcher.tracker.count.keep.action" = "Koru";
+"tab.switcher.tracker.count.info.a11y" = "İzleyici sayısı seçenekleri";
+"tab.switcher.tracker.count.info.hint.a11y" = "Bu başlığı gizleme seçeneklerini göstermek için iki kez dokunun";

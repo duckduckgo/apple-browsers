@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "タブ";
+"settings.tab.switcher.show.tracker.count" = "過去7日間のトラッカー数";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "過去7日間";
+"tab.switcher.tracker.count.hide.title" = "トラッカー数を非表示にしますか？";
+"tab.switcher.tracker.count.hide.message" = "設定 > 外観 で再び有効にできます。";
+"tab.switcher.tracker.count.hide.action" = "非表示";
+"tab.switcher.tracker.count.keep.action" = "保持";
+"tab.switcher.tracker.count.info.a11y" = "トラッカー数のオプション";
+"tab.switcher.tracker.count.info.hint.a11y" = "ダブルタップしてこのバナーを非表示にするオプションを表示します";

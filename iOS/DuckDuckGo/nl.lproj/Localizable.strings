@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Tabbladen";
+"settings.tab.switcher.show.tracker.count" = "Tracker-aantal van de afgelopen 7 dagen";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "in de afgelopen 7 dagen";
+"tab.switcher.tracker.count.hide.title" = "Tracker-aantal verbergen?";
+"tab.switcher.tracker.count.hide.message" = "Je kunt dit weer inschakelen via Instellingen > Weergave.";
+"tab.switcher.tracker.count.hide.action" = "Verbergen";
+"tab.switcher.tracker.count.keep.action" = "Behouden";
+"tab.switcher.tracker.count.info.a11y" = "Opties voor tracker-aantal";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dubbeltik om opties te tonen om deze banner te verbergen";

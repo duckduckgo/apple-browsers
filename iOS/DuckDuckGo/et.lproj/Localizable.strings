@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Vahekaardid";
+"settings.tab.switcher.show.tracker.count" = "Viimase 7 päeva jälgijate arv";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "viimase 7 päeva jooksul";
+"tab.switcher.tracker.count.hide.title" = "Peita jälgijate arv?";
+"tab.switcher.tracker.count.hide.message" = "Saate selle uuesti sisse lülitada jaotises Seaded > Välimus.";
+"tab.switcher.tracker.count.hide.action" = "Peida";
+"tab.switcher.tracker.count.keep.action" = "Jäta";
+"tab.switcher.tracker.count.info.a11y" = "Jälgijate arvu valikud";
+"tab.switcher.tracker.count.info.hint.a11y" = "Banneri peitmise valikute kuvamiseks topeltpuuduta";

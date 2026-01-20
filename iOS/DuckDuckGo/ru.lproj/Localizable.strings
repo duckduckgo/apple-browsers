@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Что будем импортировать?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Вкладки";
+"settings.tab.switcher.show.tracker.count" = "Количество трекеров за 7 дней";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "за последние 7 дней";
+"tab.switcher.tracker.count.hide.title" = "Скрыть количество трекеров?";
+"tab.switcher.tracker.count.hide.message" = "Вы можете снова включить это в Настройки > Внешний вид.";
+"tab.switcher.tracker.count.hide.action" = "Скрыть";
+"tab.switcher.tracker.count.keep.action" = "Оставить";
+"tab.switcher.tracker.count.info.a11y" = "Параметры количества трекеров";
+"tab.switcher.tracker.count.info.hint.a11y" = "Дважды коснитесь, чтобы показать параметры скрытия этого баннера";

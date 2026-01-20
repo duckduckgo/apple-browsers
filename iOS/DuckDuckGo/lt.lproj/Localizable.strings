@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Skirtukai";
+"settings.tab.switcher.show.tracker.count" = "Sekimo priemonių skaičius per 7 dienas";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "per pastarąsias 7 dienas";
+"tab.switcher.tracker.count.hide.title" = "Slėpti sekimo priemonių skaičių?";
+"tab.switcher.tracker.count.hide.message" = "Tai galite vėl įjungti skiltyje Nustatymai > Išvaizda.";
+"tab.switcher.tracker.count.hide.action" = "Slėpti";
+"tab.switcher.tracker.count.keep.action" = "Palikti";
+"tab.switcher.tracker.count.info.a11y" = "Sekimo priemonių skaičiaus parinktys";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dukart bakstelėkite, kad būtų rodomos šio reklaminio skydelio slėpimo parinktys";

@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Čo chceš importovať?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Karty";
+"settings.tab.switcher.show.tracker.count" = "Počet sledovačov za 7 dní";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "za posledných 7 dní";
+"tab.switcher.tracker.count.hide.title" = "Skryť počet sledovačov?";
+"tab.switcher.tracker.count.hide.message" = "Znova to môžete zapnúť v Nastavenia > Vzhľad.";
+"tab.switcher.tracker.count.hide.action" = "Skryť";
+"tab.switcher.tracker.count.keep.action" = "Ponechať";
+"tab.switcher.tracker.count.info.a11y" = "Možnosti počtu sledovačov";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dvojitým klepnutím zobrazíte možnosti na skrytie tohto banera";

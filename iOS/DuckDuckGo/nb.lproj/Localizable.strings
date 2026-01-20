@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Faner";
+"settings.tab.switcher.show.tracker.count" = "Trackerantall de siste 7 dagene";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "de siste 7 dagene";
+"tab.switcher.tracker.count.hide.title" = "Skjul trackerantall?";
+"tab.switcher.tracker.count.hide.message" = "Du kan slå dette på igjen i Innstillinger > Utseende.";
+"tab.switcher.tracker.count.hide.action" = "Skjul";
+"tab.switcher.tracker.count.keep.action" = "Behold";
+"tab.switcher.tracker.count.info.a11y" = "Alternativer for trackerantall";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dobbelttrykk for å vise alternativer for å skjule dette banneret";

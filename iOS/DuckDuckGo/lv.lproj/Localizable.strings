@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Cilnes";
+"settings.tab.switcher.show.tracker.count" = "Pēdējo 7 dienu izsekotāju skaits";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "pēdējo 7 dienu laikā";
+"tab.switcher.tracker.count.hide.title" = "Paslēpt izsekotāju skaitu?";
+"tab.switcher.tracker.count.hide.message" = "To varat atkal ieslēgt sadaļā Iestatījumi > Izskats.";
+"tab.switcher.tracker.count.hide.action" = "Paslēpt";
+"tab.switcher.tracker.count.keep.action" = "Paturēt";
+"tab.switcher.tracker.count.info.a11y" = "Izsekotāju skaita opcijas";
+"tab.switcher.tracker.count.info.hint.a11y" = "Veiciet dubultskārienu, lai parādītu šī reklāmkaroga paslēpšanas opcijas";

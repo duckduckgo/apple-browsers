@@ -4240,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "¿Qué quieres importar?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Pestañas";
+"settings.tab.switcher.show.tracker.count" = "Recuento de rastreadores de 7 días";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "en los últimos 7 días";
+"tab.switcher.tracker.count.hide.title" = "¿Ocultar el recuento de rastreadores?";
+"tab.switcher.tracker.count.hide.message" = "Puedes volver a activarlo en Ajustes > Apariencia.";
+"tab.switcher.tracker.count.hide.action" = "Ocultar";
+"tab.switcher.tracker.count.keep.action" = "Mantener";
+"tab.switcher.tracker.count.info.a11y" = "Opciones del recuento de rastreadores";
+"tab.switcher.tracker.count.info.hint.a11y" = "Toca dos veces para mostrar opciones para ocultar este banner";

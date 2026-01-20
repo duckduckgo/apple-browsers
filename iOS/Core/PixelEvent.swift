@@ -1447,6 +1447,11 @@ extension Pixel {
         case aiChatHistoryDeleteSuccessful
         case aiChatHistoryDeleteFailed
 
+        // MARK: AI Chat Contextual Onboarding
+        case aiChatContextualOnboardingDisplayed
+        case aiChatContextualOnboardingConfirmPressed
+        case aiChatContextualOnboardingSettingsPressed
+
         // MARK: Customization
         case customizationAddressBarStarted
         case customizationAddressBarSelected
@@ -2873,6 +2878,11 @@ extension Pixel.Event {
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
         case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
+
+        // MARK: AI Chat Contextual Onboarding
+        case .aiChatContextualOnboardingDisplayed: return "m_aichat_contextual_onboarding_displayed"
+        case .aiChatContextualOnboardingConfirmPressed: return "m_aichat_contextual_onboarding_confirm_pressed"
+        case .aiChatContextualOnboardingSettingsPressed: return "m_aichat_contextual_onboarding_settings_pressed"
 
         // MARK: AI Chat Sync
 

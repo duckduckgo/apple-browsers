@@ -219,6 +219,15 @@ struct PermissionAuthorizationSwiftUIView: View {
         case denied
         /// Permission was already denied/restricted/disabled before showing the UI
         case alreadyDenied
+
+        /// Whether the system permission request has completed with a result.
+        /// Mirrors Apple's `UNAuthorizationStatus.notDetermined` terminology.
+        var isDetermined: Bool {
+            switch self {
+            case .authorized, .denied, .alreadyDenied: return true
+            case .initial, .waiting: return false
+            }
+        }
     }
 
     @State private var systemPermissionState: SystemPermissionState = .initial
@@ -383,7 +392,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     @ViewBuilder
     private var stepOneView: some View {
         HStack(spacing: 12) {
-            stepIndicator(step: 1, isActive: systemPermissionState != .authorized, isCompleted: systemPermissionState == .authorized)
+            stepIndicator(step: 1, isActive: !systemPermissionState.isDetermined, isCompleted: systemPermissionState == .authorized)
 
             switch systemPermissionState {
             case .initial:
@@ -439,7 +448,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     @ViewBuilder
     private var stepTwoView: some View {
-        let isEnabled = systemPermissionState == .authorized
+        let isEnabled = systemPermissionState.isDetermined
 
         HStack(spacing: 12) {
             stepIndicator(step: 2, isActive: isEnabled)

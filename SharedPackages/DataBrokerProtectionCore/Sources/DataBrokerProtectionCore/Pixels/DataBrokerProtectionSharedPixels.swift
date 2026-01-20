@@ -117,7 +117,7 @@ public enum DataBrokerProtectionSharedPixels {
     // Process Pixels
     case optOutSubmitSuccess(dataBroker: String, attemptId: UUID, duration: Double, tries: Int, parent: String, emailPattern: String?, vpnConnectionState: String, vpnBypassStatus: String)
     case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, parent: String, brokerType: DataBrokerHierarchy, vpnConnectionState: String, vpnBypassStatus: String, clickActionDelayReductionOptimization: Bool)
-    case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, parent: String, stage: String, tries: Int, emailPattern: String?, actionId: String, actionType: String, vpnConnectionState: String, vpnBypassStatus: String, clickActionDelayReductionOptimization: Bool)
+    case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, parent: String, errorCategory: String, errorDetails: String, stage: String, tries: Int, emailPattern: String?, actionId: String, actionType: String, vpnConnectionState: String, vpnBypassStatus: String, clickActionDelayReductionOptimization: Bool)
 
     // Scan/Search pixels
 #if os(iOS)
@@ -379,12 +379,14 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.vpnConnectionStateParamKey: vpnConnectionState,
                     Consts.vpnBypassStatusParamKey: vpnBypassStatus,
                     Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
-        case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let parent, let stage, let tries, let pattern, let actionId, let actionType, let vpnConnectionState, let vpnBypassStatus, let clickActionDelayReductionOptimization):
+        case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let parent, let errorCategory, let errorDetails, let stage, let tries, let pattern, let actionId, let actionType, let vpnConnectionState, let vpnBypassStatus, let clickActionDelayReductionOptimization):
             var params = [Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: dataBrokerVersion,
                           Consts.attemptIdParamKey: attemptId.uuidString,
                           Consts.durationParamKey: String(duration),
                           Consts.parentKey: parent,
+                          Consts.errorCategoryKey: errorCategory,
+                          Consts.errorDetailsKey: errorDetails,
                           Consts.actionIDKey: actionId,
                           Consts.actionTypeKey: actionType,
                           Consts.stageKey: stage,

@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Oldal tartalma";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "A Duck.ai mostantól segíthet az éppen megtekintett oldallal kapcsolatos kérdések megválaszolásában.\n\nAz oldal tartalma csak akkor kerül továbbításra, ha csatolod. Ezt bármikor megváltoztathatod a Beállításokban.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Megvan";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Kérdezz az oldallal kapcsolatban";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Megjelenítési beállítások";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "A DuckDuckGo AI-funkciói privátak és opcionálisak. Az adataidat nem használjuk fel az AI tanítására.";
 
@@ -4228,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Lapok";
+"settings.tab.switcher.show.tracker.count" = "Az elmúlt 7 nap követőszáma";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "az elmúlt 7 napban";
+"tab.switcher.tracker.count.hide.title" = "Elrejti a követők számát?";
+"tab.switcher.tracker.count.hide.message" = "Ezt újra bekapcsolhatod a Beállítások > Megjelenés menüben.";
+"tab.switcher.tracker.count.hide.action" = "Elrejtés";
+"tab.switcher.tracker.count.keep.action" = "Megtartás";
+"tab.switcher.tracker.count.info.a11y" = "Követőszám beállításai";
+"tab.switcher.tracker.count.info.hint.a11y" = "Koppints duplán a banner elrejtési lehetőségeinek megjelenítéséhez";

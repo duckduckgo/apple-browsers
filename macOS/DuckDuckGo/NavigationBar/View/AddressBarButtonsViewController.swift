@@ -490,6 +490,9 @@ final class AddressBarButtonsViewController: NSViewController {
         if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
             permissionAuthorizationPopover.close()
         }
+        if let systemDisabledInfoPopover, systemDisabledInfoPopover.isShown {
+            systemDisabledInfoPopover.close()
+        }
 
         for case let .some(animationView) in [shieldDotAnimationView, shieldAnimationView] {
             animationView.stop()

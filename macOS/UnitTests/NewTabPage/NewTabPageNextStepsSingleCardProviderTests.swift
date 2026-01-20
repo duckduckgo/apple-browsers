@@ -737,11 +737,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         _ = testProvider.cards
 
-#if !APPSTORE
         let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync, .emailProtection]
-#else
-        let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync, .emailProtection]
-#endif
 
         XCTAssertEqual(testPersistor.orderedCardIDs, expectedCards, "Order should be persisted after swap")
     }
@@ -756,11 +752,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         _ = testProvider.cards
 
-#if !APPSTORE
         let expectedCards = testProvider.defaultCards.map { $0.cardID }
-#else
-        let expectedCards = testProvider.defaultCards.map { $0.cardID }.filter { $0 != .addAppToDockMac }
-#endif
 
         XCTAssertEqual(testPersistor.orderedCardIDs, expectedCards, "Default order should be persisted on first use")
     }

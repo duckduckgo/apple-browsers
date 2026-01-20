@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Περιεχόμενο σελίδας";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Το Duck.ai μπορεί τώρα να σας βοηθήσει να απαντάτε σε ερωτήσεις σχετικά με τη σελίδα που βλέπετε.\n\nΤο περιεχόμενο της σελίδας περιλαμβάνεται μόνο όταν το επισυνάπτετε. Μπορείτε να το αλλάξετε αυτό οποιαδήποτε στιγμή από τις Ρυθμίσεις.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Το κατάλαβα";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Ρωτήστε γι' αυτήν τη σελίδα";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Προβολή ρυθμίσεων";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
 

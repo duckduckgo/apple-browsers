@@ -67,5 +67,11 @@ public protocol AIChatSettingsProvider {
 
     /// Updates the user settings state for the AI Chat automatic page context
     func enableAutomaticContextAttachment(enable: Bool)
+
+    /// Whether the user has seen the contextual onboarding
+    var hasSeenContextualOnboarding: Bool { get }
+
+    /// Marks the contextual onboarding as seen
+    func markContextualOnboardingSeen()
 }
 #endif

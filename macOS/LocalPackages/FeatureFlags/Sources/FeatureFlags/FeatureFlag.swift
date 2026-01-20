@@ -44,10 +44,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
-    /// Subfeature: display the Sites section inside History View
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866716610324
-    case historyViewSitesSection
-
     /// Enable WebKit page load timing performance reporting
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615625098
     case webKitPerformanceReporting
@@ -301,7 +297,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewSafariFilePicker,
                 .fireDialog,
                 .fireDialogIndividualSitesLink,
-                .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
                 .allowPopupsForCurrentPage,
                 .extendedUserInitiatedPopupTimeout,
@@ -337,7 +332,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
-                .historyViewSitesSection,
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
@@ -435,8 +429,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
-        case .historyViewSitesSection:
-            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:

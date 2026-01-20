@@ -1550,6 +1550,7 @@ class MainViewController: UIViewController {
 
         browsingMenuHeaderStateProvider.update(
             dataSource: browsingMenuHeaderDataSource,
+            isFeatureEnabled: browsingMenuSheetCapability.isWebsiteHeaderEnabled,
             isNewTabPage: newTabPageViewController != nil,
             isAITab: currentTab?.isAITab ?? false,
             isError: currentTab?.isError ?? false,

@@ -29,6 +29,7 @@ final class BrowsingMenuHeaderStateProvider {
 
     func update(
         dataSource: BrowsingMenuHeaderDataSource,
+        isFeatureEnabled: Bool,
         isNewTabPage: Bool,
         isAITab: Bool,
         isError: Bool,
@@ -36,7 +37,7 @@ final class BrowsingMenuHeaderStateProvider {
         url: URL?,
         title: String?
     ) {
-        let isHeaderVisible = !isNewTabPage && !isAITab && !isError && hasLink
+        let isHeaderVisible = isFeatureEnabled && !isNewTabPage && !isAITab && !isError && hasLink
 
         if isHeaderVisible {
             dataSource.update(isHeaderVisible: true, title: title, url: url)

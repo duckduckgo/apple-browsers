@@ -206,7 +206,7 @@ extension TabViewController {
 
 extension TabViewController {
 
-    func subscribeToPageContextUpdates() {
+    private func subscribeToPageContextUpdates() {
         guard pageContextUpdateCancellable == nil,
               let script = pageContextUserScript else { return }
 
@@ -215,7 +215,7 @@ extension TabViewController {
             .sink { [weak self] pageContext in
                 guard let self,
                       let pageContext,
-                      aiChatContextualSheetCoordinator.hasActiveSheet,
+                      aiChatContextualSheetCoordinator.isSheetPresented,
                       aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
                     return
                 }

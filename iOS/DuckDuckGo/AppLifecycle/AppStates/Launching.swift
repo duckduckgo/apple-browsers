@@ -102,8 +102,7 @@ struct Launching: LaunchingHandling {
                                                 userDefaults: UserDefaults.app,
                                                 pixelKit: PixelKit.shared,
                                                 appDependencies: AppDependencyProvider.shared,
-                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
-                                                productSurfaceTelemetry: productSurfaceTelemetry)
+                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
 
         reportingService.syncService = syncService
         autofillService.syncService = syncService

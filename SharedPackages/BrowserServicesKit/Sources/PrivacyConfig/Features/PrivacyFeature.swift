@@ -46,6 +46,7 @@ public enum PrivacyFeature: String {
     case dbp
     case sync
     case privacyDashboard
+    case updates
     case updatesWontAutomaticallyRestartApp
     case performanceMetrics
     case privacyPro
@@ -58,7 +59,6 @@ public enum PrivacyFeature: String {
     case syncPromotion
     case autofillSurveys
     case marketplaceAdPostback
-    case autocompleteTabs
     case networkProtection
     case aiChat
     case contextualOnboarding
@@ -447,7 +447,6 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
-    case sitesSection
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
@@ -578,4 +577,13 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
 
     /// Show popup permission button in inactive state when temporary allowance is active
     case popupPermissionButtonPersistence
+}
+
+public enum UpdatesSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .updates
+    }
+
+    /// Simplified update flow without expiration logic
+    case simplifiedFlow
 }

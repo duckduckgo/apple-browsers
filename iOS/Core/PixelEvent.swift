@@ -875,10 +875,6 @@ extension Pixel {
         case debugReturnUserAddATB
         case debugReturnUserUpdateATB
 
-        // Feature flag validation
-        case debugTelemetryDAUPreFF
-        case debugTelemetryDAUPostFF
-
         // Errors from Bookmarks Module
         case bookmarkFolderExpected
         case bookmarksListIndexNotMatchingBookmark
@@ -2231,13 +2227,6 @@ extension Pixel.Event {
         case .dbRemoteMessagingUpdateMessageShownError: return "m_d_db_rm_update_message_shown"
         case .dbRemoteMessagingUpdateMessageStatusError: return "m_d_db_rm_update_message_status"
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
-
-        /// These debug pixels are extremely short lived.  We want to validate that the feature flag is working correctly.
-        /// To do so there should be an almost exact equal number of daily pixels, but it's possible for the count to be fairly different (though not massively).
-        /// The reason it might not be exact is that it could be the feature flag does not get enabled until "the next day" so the 'daily' part doesn't kick in.
-        /// This will let us reason about why the DAU data in Grafana is different to our ATB data (by about 15%)
-        case .debugTelemetryDAUPreFF: return "m_debug_validate_telemetry_pre-feature-flag"
-        case .debugTelemetryDAUPostFF: return "m_debug_validate_telemetry_post-feature-flag"
 
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
 

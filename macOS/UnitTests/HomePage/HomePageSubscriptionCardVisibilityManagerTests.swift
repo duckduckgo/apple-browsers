@@ -59,7 +59,8 @@ final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         subscriptionManager.resultSubscription = .success(subscription)
 
@@ -88,7 +89,8 @@ final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         subscriptionManager.resultSubscription = .success(subscription)
 

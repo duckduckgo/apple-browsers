@@ -75,5 +75,17 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_start_new_conversation": {
+        "description": "Fired when user submits their first prompt in a new Duck.ai conversation",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_sent_prompt_ongoing_chat": {
+        "description": "Fired when user submits a prompt in an ongoing Duck.ai conversation",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

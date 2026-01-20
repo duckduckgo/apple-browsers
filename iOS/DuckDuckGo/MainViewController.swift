@@ -1548,6 +1548,11 @@ class MainViewController: UIViewController {
     private func updateBrowsingMenuHeaderDataSource() {
         guard browsingMenuSheetCapability.isEnabled else { return }
 
+        var easterEggLogoURL: String?
+        if let tab = currentTab {
+            easterEggLogoURL = logoURLForCurrentPage(tab: tab)
+        }
+
         browsingMenuHeaderStateProvider.update(
             dataSource: browsingMenuHeaderDataSource,
             isFeatureEnabled: browsingMenuSheetCapability.isWebsiteHeaderEnabled,
@@ -1556,7 +1561,8 @@ class MainViewController: UIViewController {
             isError: currentTab?.isError ?? false,
             hasLink: currentTab?.link != nil,
             url: currentTab?.url,
-            title: currentTab?.title
+            title: currentTab?.title,
+            easterEggLogoURL: easterEggLogoURL
         )
     }
 
@@ -3318,6 +3324,7 @@ extension MainViewController: TabDelegate {
             if self.currentTab == tab {
                 let finalLogoURL = self.logoURLForCurrentPage(tab: tab)
                 self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(finalLogoURL)
+                self.updateBrowsingMenuHeaderDataSource()
             }
         }
     }

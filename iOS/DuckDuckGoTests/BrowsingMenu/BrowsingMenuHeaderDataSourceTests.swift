@@ -41,12 +41,13 @@ final class BrowsingMenuHeaderDataSourceTests: XCTestCase {
         XCTAssertNil(sut.title)
         XCTAssertNil(sut.url)
         XCTAssertNil(sut.favicon)
+        XCTAssertNil(sut.easterEggLogoURL)
     }
 
     func testUpdateSetsHeaderProperties() {
         let url = URL(string: "https://example.com")!
 
-        sut.update(isHeaderVisible: true, title: "Test Title", url: url)
+        sut.update(isHeaderVisible: true, title: "Test Title", url: url, easterEggLogoURL: nil)
 
         XCTAssertTrue(sut.isHeaderVisible)
         XCTAssertEqual(sut.title, "Test Title")
@@ -63,7 +64,7 @@ final class BrowsingMenuHeaderDataSourceTests: XCTestCase {
 
     func testResetClearsAllProperties() {
         let url = URL(string: "https://example.com")!
-        sut.update(isHeaderVisible: true, title: "Test", url: url)
+        sut.update(isHeaderVisible: true, title: "Test", url: url, easterEggLogoURL: nil)
         sut.update(favicon: UIImage())
 
         sut.reset()
@@ -72,16 +73,17 @@ final class BrowsingMenuHeaderDataSourceTests: XCTestCase {
         XCTAssertNil(sut.title)
         XCTAssertNil(sut.url)
         XCTAssertNil(sut.favicon)
+        XCTAssertNil(sut.easterEggLogoURL)
     }
 
     func testWhenURLChangesThenFaviconIsCleared() {
         let url1 = URL(string: "https://example.com")!
         let url2 = URL(string: "https://different.com")!
-        sut.update(isHeaderVisible: true, title: "Page 1", url: url1)
+        sut.update(isHeaderVisible: true, title: "Page 1", url: url1, easterEggLogoURL: nil)
         sut.update(favicon: UIImage())
         XCTAssertNotNil(sut.favicon)
 
-        sut.update(isHeaderVisible: true, title: "Page 2", url: url2)
+        sut.update(isHeaderVisible: true, title: "Page 2", url: url2, easterEggLogoURL: nil)
 
         XCTAssertNil(sut.favicon)
         XCTAssertEqual(sut.url, url2)
@@ -89,11 +91,11 @@ final class BrowsingMenuHeaderDataSourceTests: XCTestCase {
 
     func testWhenURLUnchangedThenFaviconIsPreserved() {
         let url = URL(string: "https://example.com")!
-        sut.update(isHeaderVisible: true, title: "Page 1", url: url)
+        sut.update(isHeaderVisible: true, title: "Page 1", url: url, easterEggLogoURL: nil)
         sut.update(favicon: UIImage())
         XCTAssertNotNil(sut.favicon)
 
-        sut.update(isHeaderVisible: true, title: "Updated Title", url: url)
+        sut.update(isHeaderVisible: true, title: "Updated Title", url: url, easterEggLogoURL: nil)
 
         XCTAssertNotNil(sut.favicon)
     }

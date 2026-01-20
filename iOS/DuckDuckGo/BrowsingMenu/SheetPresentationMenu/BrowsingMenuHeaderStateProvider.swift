@@ -30,18 +30,22 @@ final class BrowsingMenuHeaderStateProvider {
     func update(
         dataSource: BrowsingMenuHeaderDataSource,
         isFeatureEnabled: Bool,
-        isNewTabPage: Bool,
-        isAITab: Bool,
-        isError: Bool,
+        isNewTabPage: Bool = false,
+        isAITab: Bool = false,
+        isError: Bool = false,
         hasLink: Bool,
-        url: URL?,
-        title: String?
+        url: URL? = nil,
+        title: String? = nil,
+        easterEggLogoURL: String? = nil
     ) {
         let isHeaderVisible = isFeatureEnabled && !isNewTabPage && !isAITab && !isError && hasLink
 
         if isHeaderVisible {
-            dataSource.update(isHeaderVisible: true, title: title, url: url)
-            loadFavicon(for: url, into: dataSource)
+            let logoURL = easterEggLogoURL.flatMap { URL(string: $0) }
+            dataSource.update(isHeaderVisible: true, title: title, url: url, easterEggLogoURL: logoURL)
+            if logoURL == nil {
+                loadFavicon(for: url, into: dataSource)
+            }
         } else {
             dataSource.reset()
         }

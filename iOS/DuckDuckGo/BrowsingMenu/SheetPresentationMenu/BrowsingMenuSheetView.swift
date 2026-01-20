@@ -21,6 +21,7 @@ import SwiftUI
 import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import Kingfisher
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -126,7 +127,8 @@ struct BrowsingMenuSheetView: View {
                     BrowsingMenuHeaderView(
                         title: headerDataSource.title,
                         url: headerDataSource.url,
-                        favicon: headerDataSource.favicon
+                        favicon: headerDataSource.favicon,
+                        easterEggLogoURL: headerDataSource.easterEggLogoURL
                     )
                 }
 
@@ -293,6 +295,7 @@ private struct BrowsingMenuHeaderView: View {
     let title: String?
     let url: URL?
     let favicon: UIImage?
+    let easterEggLogoURL: URL?
 
     private var displayURL: String? {
         url?.host
@@ -312,7 +315,11 @@ private struct BrowsingMenuHeaderView: View {
     @ViewBuilder
     private var faviconView: some View {
         Group {
-            if let favicon {
+            if let easterEggLogoURL {
+                KFImage(easterEggLogoURL)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else if let favicon {
                 Image(uiImage: favicon)
                     .resizable()
                     .aspectRatio(contentMode: .fit)

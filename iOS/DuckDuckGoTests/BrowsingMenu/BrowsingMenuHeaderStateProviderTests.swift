@@ -45,9 +45,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
-            isNewTabPage: false,
-            isAITab: false,
-            isError: false,
             hasLink: true,
             url: url,
             title: "Example"
@@ -62,9 +59,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: false,
-            isNewTabPage: false,
-            isAITab: false,
-            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -78,8 +72,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             dataSource: dataSource,
             isFeatureEnabled: true,
             isNewTabPage: true,
-            isAITab: false,
-            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -92,9 +84,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
-            isNewTabPage: false,
             isAITab: true,
-            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -107,8 +97,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
-            isNewTabPage: false,
-            isAITab: false,
             isError: true,
             hasLink: true,
             url: URL(string: "https://example.com"),
@@ -122,12 +110,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
-            isNewTabPage: false,
-            isAITab: false,
-            isError: false,
-            hasLink: false,
-            url: nil,
-            title: nil
+            hasLink: false
         )
 
         XCTAssertFalse(dataSource.isHeaderVisible)
@@ -138,9 +121,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
-            isNewTabPage: false,
-            isAITab: false,
-            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -152,8 +132,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             dataSource: dataSource,
             isFeatureEnabled: true,
             isNewTabPage: true,
-            isAITab: false,
-            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"

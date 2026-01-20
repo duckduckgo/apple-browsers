@@ -25,10 +25,12 @@ final class BrowsingMenuHeaderDataSource: ObservableObject {
     @Published private(set) var title: String?
     @Published private(set) var url: URL?
     @Published private(set) var favicon: UIImage?
+    @Published private(set) var easterEggLogoURL: URL?
 
-    func update(isHeaderVisible: Bool, title: String?, url: URL?) {
+    func update(isHeaderVisible: Bool, title: String?, url: URL?, easterEggLogoURL: URL?) {
         self.isHeaderVisible = isHeaderVisible
         self.title = title
+        self.easterEggLogoURL = easterEggLogoURL
 
         // Clear favicon when URL changes to avoid stale favicon during async load
         if self.url != url {
@@ -46,5 +48,6 @@ final class BrowsingMenuHeaderDataSource: ObservableObject {
         title = nil
         url = nil
         favicon = nil
+        easterEggLogoURL = nil
     }
 }

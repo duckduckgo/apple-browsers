@@ -49,6 +49,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
 
     /// Called when the user taps the "Attach Page" button and context needs to be collected
     func aiChatContextualSheetViewControllerDidRequestAttachPage(_ viewController: AIChatContextualSheetViewController)
+
+    /// Called when the contextual chat URL changes (e.g., user gets a chatID after prompt submission)
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?)
 }
 
 /// Contextual sheet view controller. Configures UX and actions.
@@ -87,6 +90,9 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Existing web view controller passed in for an active chat session
     private var existingWebViewController: AIChatContextualWebViewController?
+
+    /// URL to restore a previous chat session (cold restore after app restart)
+    private var restoreURL: URL?
 
     /// Preloaded web view controller, created when sheet opens to reduce loading time on submit
     private var preloadedWebViewController: AIChatContextualWebViewController?
@@ -200,14 +206,12 @@ final class AIChatContextualSheetViewController: UIViewController {
          voiceSearchHelper: VoiceSearchHelperProtocol,
          webViewControllerFactory: @escaping WebViewControllerFactory,
          existingWebViewController: AIChatContextualWebViewController? = nil,
-         settings: AIChatSettingsProvider = AIChatSettings(),
-         onOpenSettings: @escaping () -> Void = {}) {
+         restoreURL: URL? = nil) {
         self.viewModel = viewModel
         self.voiceSearchHelper = voiceSearchHelper
         self.webViewControllerFactory = webViewControllerFactory
         self.existingWebViewController = existingWebViewController
-        self.settings = settings
-        self.onOpenSettings = onOpenSettings
+        self.restoreURL = restoreURL
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -223,12 +227,11 @@ final class AIChatContextualSheetViewController: UIViewController {
         setupUI()
         bindViewModel()
 
-        if let existingWebVC = existingWebViewController {
-            existingWebVC.delegate = self
-            existingWebVC.aiChatContentHandlingDelegate = self
-            viewModel.setInitialContextualChatURL(existingWebVC.currentContextualChatURL)
-            transitionToWebView(existingWebVC)
-            expandToLargeDetent()
+        if let webVC = existingWebViewController {
+            configureWebViewController(webVC, restoreURL: restoreURL, isNew: false)
+        } else if let url = restoreURL {
+            let webVC = webViewControllerFactory()
+            configureWebViewController(webVC, restoreURL: url, isNew: true)
         } else {
             showContextualInput()
             preloadWebViewController()
@@ -278,6 +281,20 @@ final class AIChatContextualSheetViewController: UIViewController {
 // MARK: - Private Methods
 
 private extension AIChatContextualSheetViewController {
+
+    func configureWebViewController(_ webVC: AIChatContextualWebViewController, restoreURL: URL?, isNew: Bool) {
+        webVC.delegate = self
+        webVC.aiChatContentHandlingDelegate = self
+        if let url = restoreURL {
+            webVC.loadChatURL(url)
+        }
+        viewModel.setInitialContextualChatURL(webVC.currentContextualChatURL)
+        transitionToWebView(webVC)
+        expandToLargeDetent()
+        if isNew {
+            delegate?.aiChatContextualSheetViewController(self, didCreateWebViewController: webVC)
+        }
+    }
 
     func showContextualInput() {
         contextualInputViewController.delegate = self

@@ -46,18 +46,6 @@ final class AIChatContextChipViewTests: XCTestCase {
         XCTAssertEqual(sut.subtitle, expectedSubtitle)
     }
 
-    func testInfoTextSetsCorrectly() {
-        // Given
-        let sut = AIChatContextChipView()
-        let expectedInfoText = "Sent with your message to Duck.ai"
-
-        // When
-        sut.infoText = expectedInfoText
-
-        // Then
-        XCTAssertEqual(sut.infoText, expectedInfoText)
-    }
-
     func testOnRemoveCallbackIsSettable() {
         // Given
         let sut = AIChatContextChipView()

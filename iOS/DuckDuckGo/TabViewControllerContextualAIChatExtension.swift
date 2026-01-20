@@ -26,21 +26,30 @@ import UIKit
 extension TabViewController {
 
     /// Presents the contextual AI chat sheet over the current tab.
-    /// Re-presents an active chat if one exists for this tab.
+    /// Re-presents an active chat if one exists for this tab, or restores from persisted URL after app restart.
     ///
     /// - Parameter presentingViewController: The view controller to present the sheet from.
     func presentContextualAIChatSheet(from presentingViewController: UIViewController) {
         Task { @MainActor in
             var pageContext: AIChatPageContextData?
+            var restoreURL: URL?
 
-            let isFirstDisplay = aiChatContextualSheetCoordinator.sheetViewController == nil
+            let hasExistingWebVC = aiChatContextualSheetCoordinator.hasActiveChat
+            let needsColdRestore = !hasExistingWebVC && tabModel.contextualChatURL != nil
+
+            if needsColdRestore, let urlString = tabModel.contextualChatURL {
+                restoreURL = URL(string: urlString)
+            }
+
+            let isFirstDisplay = aiChatContextualSheetCoordinator.sheetViewController == nil && !hasExistingWebVC && !needsColdRestore
             if isFirstDisplay && aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled {
                 pageContext = await collectPageContext()
             }
 
             aiChatContextualSheetCoordinator.presentSheet(
                 from: presentingViewController,
-                pageContext: pageContext
+                pageContext: pageContext,
+                restoreURL: restoreURL
             )
         }
     }
@@ -154,5 +163,9 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
             guard let context = await collectPageContext() else { return }
             aiChatContextualSheetCoordinator.updatePageContext(context)
         }
+    }
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
+        tabModel.contextualChatURL = url?.absoluteString
     }
 }

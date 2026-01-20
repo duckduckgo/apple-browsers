@@ -148,6 +148,12 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.url.flatMap { $0.duckAIChatID != nil ? $0 : nil }
     }
 
+    /// Loads a specific chat URL (for cold restore after app restart).
+    func loadChatURL(_ url: URL) {
+        loadingView.startAnimating()
+        webView.load(URLRequest(url: url.withContextualPlacement))
+    }
+
     // MARK: - Private Methods
 
     private func setupUI() {
@@ -268,5 +274,11 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         loadingView.stopAnimating()
+    }
+}
+
+private extension URL {
+    var withContextualPlacement: URL {
+        appendingParameter(name: "placement", value: "sidebar")
     }
 }

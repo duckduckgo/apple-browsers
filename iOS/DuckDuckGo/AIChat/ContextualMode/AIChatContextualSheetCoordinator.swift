@@ -39,6 +39,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user taps "Attach Page" and context needs to be collected from the tab.
     func aiChatContextualSheetCoordinatorDidRequestAttachPage(_ coordinator: AIChatContextualSheetCoordinator)
+
+    /// Called when the contextual chat URL changes, used to persist for cold restore.
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -88,7 +91,10 @@ final class AIChatContextualSheetCoordinator {
     /// - Parameters:
     ///   - presentingViewController: The view controller to present the sheet from.
     ///   - pageContext: Optional page context data collected from the current tab.
-    func presentSheet(from presentingViewController: UIViewController, pageContext: AIChatPageContextData? = nil) {
+    ///   - restoreURL: Optional URL to restore a previous chat session (cold restore after app restart).
+    func presentSheet(from presentingViewController: UIViewController,
+                      pageContext: AIChatPageContextData? = nil,
+                      restoreURL: URL? = nil) {
         let sheetVC: AIChatContextualSheetViewController
 
         if let existingSheet = sheetViewController {
@@ -115,14 +121,7 @@ final class AIChatContextualSheetCoordinator {
                     self.makeWebViewController()
                 },
                 existingWebViewController: webViewController,
-                settings: aiChatSettings,
-                onOpenSettings: { [weak self] in
-                    guard let self else { return }
-                    self.sheetViewController?.dismiss(animated: true) { [weak self] in
-                        guard let self else { return }
-                        self.delegate?.aiChatContextualSheetCoordinatorDidRequestOpenSettings(self)
-                    }
-                }
+                restoreURL: restoreURL
             )
             sheetVC.delegate = self
             sheetViewController = sheetVC
@@ -159,6 +158,16 @@ final class AIChatContextualSheetCoordinator {
     /// Reloads the contextual chat web view if one exists.
     func reloadIfNeeded() {
         webViewController?.reload()
+    }
+
+    /// Returns true if there's an active chat session (web view retained).
+    var hasActiveChat: Bool {
+        webViewController != nil
+    }
+
+    /// Returns true if the contextual sheet has been shown (viewModel exists).
+    var hasActiveSheet: Bool {
+        viewModel != nil
     }
 }
 
@@ -204,7 +213,8 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL) {
         delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url)
         viewController.dismiss(animated: true)
-        clearActiveChat()
+        sheetViewController = nil
+        viewModel = nil
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didCreateWebViewController webVC: AIChatContextualWebViewController) {
@@ -223,5 +233,9 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidRequestAttachPage(_ viewController: AIChatContextualSheetViewController) {
         delegate?.aiChatContextualSheetCoordinatorDidRequestAttachPage(self)
+    }
+
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?) {
+        delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: url)
     }
 }

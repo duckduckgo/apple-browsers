@@ -96,7 +96,7 @@
         "suffixes": [
             {
                 "description": "Permission type for which System Preferences is opened",
-                "enum": ["camera", "microphone", "geolocation"]
+                "enum": ["camera", "microphone", "geolocation", "notification"]
             }
         ],
         "parameters": ["appVersion", "pixelSource"]

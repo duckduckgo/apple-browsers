@@ -2090,6 +2090,8 @@
 		7B6545EE2C0779D500115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6545EC2C0778BB00115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift */; };
 		7B6879232EF07ECA00F9964B /* SystemPermissionWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6879222EF07ECA00F9964B /* SystemPermissionWarningView.swift */; };
 		7B6879242EF07ECA00F9964B /* SystemPermissionWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6879222EF07ECA00F9964B /* SystemPermissionWarningView.swift */; };
+		7B6879262EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6879252EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift */; };
+		7B6879272EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6879252EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift */; };
 		7B7614372D79F85800BC6293 /* VPNAppState in Frameworks */ = {isa = PBXBuildFile; productRef = 7B7614362D79F85800BC6293 /* VPNAppState */; };
 		7B7614392D79F85D00BC6293 /* VPNAppState in Frameworks */ = {isa = PBXBuildFile; productRef = 7B7614382D79F85D00BC6293 /* VPNAppState */; };
 		7B76143B2D79F86600BC6293 /* VPNAppState in Frameworks */ = {isa = PBXBuildFile; productRef = 7B76143A2D79F86600BC6293 /* VPNAppState */; };
@@ -5263,6 +5265,7 @@
 		7B60B0002C514541008E32A3 /* VPNUIActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUIActionHandler.swift; sourceTree = "<group>"; };
 		7B6545EC2C0778BB00115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VPNControllerUDSClient+ConvenienceInitializers.swift"; sourceTree = "<group>"; };
 		7B6879222EF07ECA00F9964B /* SystemPermissionWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPermissionWarningView.swift; sourceTree = "<group>"; };
+		7B6879252EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemDisabledPermissionInfoView.swift; sourceTree = "<group>"; };
 		7B6EC5E42AE2D8AF004FE6DF /* DuckDuckGoDBPAgentAppStore.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = DuckDuckGoDBPAgentAppStore.xcconfig; sourceTree = "<group>"; };
 		7B6EC5E52AE2D8AF004FE6DF /* DuckDuckGoDBPAgent.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = DuckDuckGoDBPAgent.xcconfig; sourceTree = "<group>"; };
 		7B76E6852AD5D77600186A84 /* XPCHelper */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = XPCHelper; sourceTree = "<group>"; };
@@ -11233,6 +11236,7 @@
 				1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */,
 				1D532BE02EDC3E4D00D219FA /* PermissionCenterViewController.swift */,
 				7B6879222EF07ECA00F9964B /* SystemPermissionWarningView.swift */,
+				7B6879252EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -14694,6 +14698,7 @@
 				379E877729E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift in Sources */,
 				EE28685F2EAFC3E000AB597F /* LegacyDataImportSummaryViewModel.swift in Sources */,
 				7B6879232EF07ECA00F9964B /* SystemPermissionWarningView.swift in Sources */,
+				7B6879262EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift in Sources */,
 				EE2868602EAFC3E000AB597F /* LegacyDataImportViewModel.swift in Sources */,
 				EE1886502EB2685300A46272 /* NewImportMoreInfoView.swift in Sources */,
 				987799FA29999973005D8EB6 /* LocalBookmarkStore.swift in Sources */,
@@ -16305,6 +16310,7 @@
 				7BD504CE2E606996008A0646 /* WebExtensionIdentifier.swift in Sources */,
 				B6FA8941269C425400588ECD /* PrivacyDashboardPopover.swift in Sources */,
 				7B6879242EF07ECA00F9964B /* SystemPermissionWarningView.swift in Sources */,
+				7B6879272EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift in Sources */,
 				B626A76D29928B1600053070 /* TestsClosureNavigationResponder.swift in Sources */,
 				9FFBEE772DDEDE870058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift in Sources */,
 				F1DA51862BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */,

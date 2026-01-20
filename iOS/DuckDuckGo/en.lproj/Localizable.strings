@@ -2863,9 +2863,6 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen appearance section title */
 "settings.appearance" = "Appearance";
 
-/* Settings screen section title for tab-related appearance options */
-"settings.tabs" = "Tabs";
-
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Address Bar Position";
 
@@ -3201,6 +3198,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell title for toggling tracker count banner in tab switcher */
 "settings.tab.switcher.show.tracker.count" = "7-Day Tracker Count";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Tabs";
 
 /* Settings screen cell text for text size */
 "settings.text.size" = "Default Text Zoom";
@@ -4068,3 +4068,4 @@ https://duckduckgo.com/windows";
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "What do you want to import?";
+

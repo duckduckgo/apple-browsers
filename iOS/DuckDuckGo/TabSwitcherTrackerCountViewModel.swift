@@ -40,6 +40,7 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
     private let privacyStats: PrivacyStatsProviding
     private let featureFlagger: FeatureFlagger
     private var refreshTask: Task<Void, Never>?
+    private var countAnimationTask: Task<Void, Never>?
 
     init(settings: TabSwitcherSettings, privacyStats: PrivacyStatsProviding, featureFlagger: FeatureFlagger) {
         self.settings = settings
@@ -47,17 +48,17 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
     }
 
-    private func fetchAndUpdateState() async {
+    private func fetchAndUpdateState(shouldAnimate: Bool) async {
         let count = await privacyStats.fetchPrivacyStatsTotalCount()
         guard !Task.isCancelled else { return }
 
         guard count > 0 else {
+            cancelCountAnimation()
             state = .hidden
             return
         }
 
-        let title = UserText.tabSwitcherTrackerCountTitle(count)
-        state = State(isVisible: true, title: title, subtitle: UserText.tabSwitcherTrackerCountSubtitle)
+        updateState(for: count, shouldAnimate: shouldAnimate)
     }
 
     func refresh() {
@@ -65,13 +66,14 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
               settings.showTrackerCountInTabSwitcher else {
             refreshTask?.cancel()
             refreshTask = nil
+            cancelCountAnimation()
             state = .hidden
             return
         }
 
         refreshTask?.cancel()
         refreshTask = Task { [weak self] in
-            await self?.fetchAndUpdateState()
+            await self?.fetchAndUpdateState(shouldAnimate: true)
         }
     }
 
@@ -81,6 +83,7 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
               settings.showTrackerCountInTabSwitcher else {
             refreshTask?.cancel()
             refreshTask = nil
+            cancelCountAnimation()
             state = .hidden
             return state
         }
@@ -88,7 +91,7 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
         refreshTask?.cancel()
         let task: Task<Void, Never> = Task { [weak self] in
             guard let self else { return }
-            await self.fetchAndUpdateState()
+            await self.fetchAndUpdateState(shouldAnimate: false)
         }
         refreshTask = task
         _ = await task.value
@@ -98,7 +101,69 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
     func hide() {
         refreshTask?.cancel()
         refreshTask = nil
+        cancelCountAnimation()
         settings.showTrackerCountInTabSwitcher = false
         state = .hidden
     }
+
+    private func updateState(for count: Int64, shouldAnimate: Bool) {
+        cancelCountAnimation()
+
+        let subtitle = UserText.tabSwitcherTrackerCountSubtitle
+        let titleForCount: (Int64) -> String = { UserText.tabSwitcherTrackerCountTitle($0) }
+
+        guard shouldAnimate,
+              count >= CountAnimationParameters.minimumCountForAnimation else {
+            state = State(isVisible: true, title: titleForCount(count), subtitle: subtitle)
+            return
+        }
+
+        let startingCount = max(1, Int64(ceil(Double(count) * CountAnimationParameters.startPercent)))
+        state = State(isVisible: true, title: titleForCount(startingCount), subtitle: subtitle)
+
+        let totalDuration = CountAnimationParameters.totalDuration
+        let animationRange = Int(ceil(Double(count) * (1.0 - CountAnimationParameters.startPercent)))
+        let steps = max(
+            CountAnimationParameters.steps,
+            min(animationRange * CountAnimationParameters.rangeMultiplier, CountAnimationParameters.stepsPerNumber)
+        )
+        let stepDuration = totalDuration / Double(steps)
+
+        countAnimationTask = Task { [weak self] in
+            guard let self else { return }
+
+            for i in 1...steps {
+                try? await Task.sleep(nanoseconds: UInt64(stepDuration * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+
+                let progress = Double(i) / Double(steps)
+                let easedProgress = self.easeOut(progress)
+                let countProgress = CountAnimationParameters.startPercent
+                    + (easedProgress * (1.0 - CountAnimationParameters.startPercent))
+                let exactCount = Double(count) * countProgress
+                let currentCount = min(Int64(floor(exactCount)), count)
+
+                self.state = State(isVisible: true, title: titleForCount(currentCount), subtitle: subtitle)
+            }
+        }
+    }
+
+    private func cancelCountAnimation() {
+        countAnimationTask?.cancel()
+        countAnimationTask = nil
+    }
+
+    private func easeOut(_ t: Double) -> Double {
+        return 1 - pow(1 - t, CountAnimationParameters.easeOutCurve)
+    }
+}
+
+private enum CountAnimationParameters {
+    static let minimumCountForAnimation: Int64 = 5
+    static let startPercent: Double = 0.5
+    static let stepsPerNumber: Int = 30
+    static let steps: Int = 10
+    static let rangeMultiplier: Int = 3
+    static let easeOutCurve: Double = 4
+    static let totalDuration: TimeInterval = 1.75
 }

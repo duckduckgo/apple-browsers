@@ -655,7 +655,7 @@ Onları engelledim!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
-			<string>%2$@ zleyici Engellendi</string>
+			<string>%2$@ İzleyici Engellendi</string>
 			<key>other</key>
 			<string>%2$@ İzleyici Engellendi</string>
 		</dict>

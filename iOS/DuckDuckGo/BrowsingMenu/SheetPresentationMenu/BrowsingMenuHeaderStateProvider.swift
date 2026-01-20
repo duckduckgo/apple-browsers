@@ -59,6 +59,8 @@ final class BrowsingMenuHeaderStateProvider {
             let favicon = result.isFake ? nil : result.image
 
             await MainActor.run {
+                guard dataSource.url?.host == domain else { return }
+                
                 dataSource.update(favicon: favicon)
             }
         }

@@ -33,6 +33,9 @@ extension BrowsingMenuModel {
         let headerButtonsHeight = headerItems.isEmpty ? 0 : headerContentHeight + (Metrics.headerButtonVerticalPadding * 2)
         let websiteHeaderHeight = includesWebsiteHeader ? Metrics.pageHeaderHeight : 0
 
+        // Spacing between website header and header buttons when both are present
+        let headerSectionSpacing = (includesWebsiteHeader && !headerItems.isEmpty) ? Metrics.headerHorizontalSpacing : 0
+
         let minTotalVerticalPadding: CGFloat = 16
         let rowHeight = max(Metrics.defaultListRowHeight, rowFont.lineHeight + minTotalVerticalPadding)
 
@@ -51,6 +54,7 @@ extension BrowsingMenuModel {
         let sectionGapsCount = headerItems.isEmpty ? max(0, menuSectionCount - 1) : menuSectionCount
 
         return websiteHeaderHeight
+            + headerSectionSpacing
             + headerButtonsHeight
             + (CGFloat(itemCount) * rowHeight)
             + (CGFloat(sectionGapsCount) * Metrics.listSectionSpacing)

@@ -29,6 +29,11 @@ final class BrowsingMenuHeaderDataSource: ObservableObject {
     func update(isHeaderVisible: Bool, title: String?, url: URL?) {
         self.isHeaderVisible = isHeaderVisible
         self.title = title
+
+        // Clear favicon when URL changes to avoid stale favicon during async load
+        if self.url != url {
+            self.favicon = nil
+        }
         self.url = url
     }
 

@@ -73,4 +73,28 @@ final class BrowsingMenuHeaderDataSourceTests: XCTestCase {
         XCTAssertNil(sut.url)
         XCTAssertNil(sut.favicon)
     }
+
+    func testWhenURLChangesThenFaviconIsCleared() {
+        let url1 = URL(string: "https://example.com")!
+        let url2 = URL(string: "https://different.com")!
+        sut.update(isHeaderVisible: true, title: "Page 1", url: url1)
+        sut.update(favicon: UIImage())
+        XCTAssertNotNil(sut.favicon)
+
+        sut.update(isHeaderVisible: true, title: "Page 2", url: url2)
+
+        XCTAssertNil(sut.favicon)
+        XCTAssertEqual(sut.url, url2)
+    }
+
+    func testWhenURLUnchangedThenFaviconIsPreserved() {
+        let url = URL(string: "https://example.com")!
+        sut.update(isHeaderVisible: true, title: "Page 1", url: url)
+        sut.update(favicon: UIImage())
+        XCTAssertNotNil(sut.favicon)
+
+        sut.update(isHeaderVisible: true, title: "Updated Title", url: url)
+
+        XCTAssertNotNil(sut.favicon)
+    }
 }

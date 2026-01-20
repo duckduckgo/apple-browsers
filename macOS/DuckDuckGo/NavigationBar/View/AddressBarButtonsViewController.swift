@@ -625,11 +625,11 @@ final class AddressBarButtonsViewController: NSViewController {
                 self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
 
-        // Show informational popover when notification blocked due to system being disabled
-        tabViewModel?.tab.permissions.notificationBlockedBySystem
+        // Show informational popover when permission blocked due to system being disabled
+        tabViewModel?.tab.permissions.permissionBlockedBySystem
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] domain in
-                self?.showSystemDisabledInfoPopover(for: domain)
+            .sink { [weak self] (domain, permissionType) in
+                self?.showSystemDisabledInfoPopover(for: domain, permissionType: permissionType)
             }
             .store(in: &permissionsCancellables)
     }
@@ -1701,8 +1701,8 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterPopover?.close()
     }
 
-    private func showSystemDisabledInfoPopover(for domain: String) {
-        let view = SystemDisabledNotificationInfoView(domain: domain)
+    private func showSystemDisabledInfoPopover(for domain: String, permissionType: PermissionType) {
+        let view = SystemDisabledPermissionInfoView(domain: domain, permissionType: permissionType)
         let controller = NSHostingController(rootView: view)
         controller.preferredContentSize = controller.view.fittingSize
 

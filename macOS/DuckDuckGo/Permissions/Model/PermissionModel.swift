@@ -36,8 +36,8 @@ final class PermissionModel {
     /// Set to true when permissions are changed in the Permission Center and a reload is needed
     @PublishedAfter private(set) var permissionsNeedReload = false
 
-    /// Fires when notification permission blocked due to system being disabled - view layer shows info popover
-    let notificationBlockedBySystem = PassthroughSubject<String, Never>()
+    /// Fires when permission blocked due to system being disabled - view layer shows info popover
+    let permissionBlockedBySystem = PassthroughSubject<(domain: String, permissionType: PermissionType), Never>()
 
     private(set) var authorizationQueries = [PermissionAuthorizationQuery]() {
         didSet {
@@ -482,10 +482,10 @@ final class PermissionModel {
             }()
 
             if isSystemDisabled {
-                // Deny - system notifications are disabled, can't deliver anyway
+                // Deny - system permission is disabled, can't deliver anyway
                 wrappedDecisionHandler(false)
                 // Fire event for view layer to show informational popover
-                notificationBlockedBySystem.send(domain)
+                permissionBlockedBySystem.send((domain: domain, permissionType: permissions.first!))
             } else {
                 self.queryAuthorization(for: permissions, domain: domain, url: url,
                                         isSystemPermissionDisabled: false,

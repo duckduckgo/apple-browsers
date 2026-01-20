@@ -95,7 +95,6 @@ final class AIChatContextualSheetViewModel {
         let chipView = AIChatContextChipView()
         chipView.configure(title: context.title, favicon: context.favicon)
         chipView.subtitle = UserText.aiChatContextChipSubtitle
-        chipView.infoText = UserText.aiChatContextChipInfoFooter
         chipView.onRemove = onRemove
         return chipView
     }

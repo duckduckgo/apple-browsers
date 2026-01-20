@@ -566,5 +566,7 @@
 	<string>$(APP_CONFIGURATION_APP_GROUP)</string>
 	<key>IPC_APP_GROUP</key>
 	<string>$(IPC_APP_GROUP)</string>
+	<key>UIDesignRequiresCompatibility</key>
+	<true/>
 </dict>
 </plist>

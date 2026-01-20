@@ -276,7 +276,7 @@ struct DataBrokerRunCustomJSONView: View {
                                         eventKindColumnWidth: Constants.eventKindColumnWidth,
                                         eventSummaryColumnWidth: Constants.eventSummaryColumnWidth,
                                         eventDetailsMinWidth: Constants.eventDetailsMinWidth,
-                                        historyDateFormatter: historyDateFormatter
+                                        historyDateFormatter: Self.historyDateFormatter
                                     ) {
                                         selectedDebugEventId = event.id
                                     }
@@ -360,11 +360,11 @@ struct DataBrokerRunCustomJSONView: View {
         "Extracted Profiles (\(viewModel.results.count))"
     }
 
-    private var historyDateFormatter: DateFormatter {
+    private static let historyDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
         return formatter
-    }
+    }()
 }
 
 private enum Tab: Hashable {

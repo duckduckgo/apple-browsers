@@ -1775,6 +1775,7 @@
 		C1F341C72A6924100032057B /* EmailAddressPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F341C62A6924100032057B /* EmailAddressPromptViewModel.swift */; };
 		C1F341C92A6926920032057B /* EmailAddressPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F341C82A6926920032057B /* EmailAddressPromptViewController.swift */; };
 		C1F9D9122EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F9D9112EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift */; };
+		C1AICOBV2F1A000100E35AD5 /* AIChatContextualOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AICOBV2F1A000000E35AD5 /* AIChatContextualOnboardingView.swift */; };
 		C1F9D9172EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F9D9162EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift */; };
 		C1F9D91B2EF6400000E35AD5 /* AIChatNativeInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F9D91A2EF6400000E35AD5 /* AIChatNativeInputViewController.swift */; };
 		C1F9D91D2EF6400000E35AD5 /* AIChatContextualInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F9D91C2EF6400000E35AD5 /* AIChatContextualInputViewController.swift */; };
@@ -4158,6 +4159,7 @@
 		C1F883372D08627900DFF79A /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1F883382D08627900DFF79A /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C1F9D9112EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetViewController.swift; sourceTree = "<group>"; };
+		C1AICOBV2F1A000000E35AD5 /* AIChatContextualOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualOnboardingView.swift; sourceTree = "<group>"; };
 		C1F9D9162EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetCoordinator.swift; sourceTree = "<group>"; };
 		C1F9D91A2EF6400000E35AD5 /* AIChatNativeInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatNativeInputViewController.swift; sourceTree = "<group>"; };
 		C1F9D91C2EF6400000E35AD5 /* AIChatContextualInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualInputViewController.swift; sourceTree = "<group>"; };
@@ -8028,6 +8030,7 @@
 				C1AICSVM2F0E000000E35AD5 /* AIChatContextualSheetViewModel.swift */,
 				C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */,
 				C1F9D9112EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift */,
+				C1AICOBV2F1A000000E35AD5 /* AIChatContextualOnboardingView.swift */,
 			);
 			path = ContextualMode;
 			sourceTree = "<group>";
@@ -11602,6 +11605,7 @@
 				310C4B47281B60E300BA79A9 /* AutofillLoginDetailsViewModel.swift in Sources */,
 				85EE7F572246685B000FE757 /* WebContainerViewController.swift in Sources */,
 				C1F9D9122EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift in Sources */,
+				C1AICOBV2F1A000100E35AD5 /* AIChatContextualOnboardingView.swift in Sources */,
 				C1F9D91B2EF6400000E35AD5 /* AIChatNativeInputViewController.swift in Sources */,
 				C1F9D91D2EF6400000E35AD5 /* AIChatContextualInputViewController.swift in Sources */,
 				1EC458462948932500CB2B13 /* UIHostingControllerExtension.swift in Sources */,

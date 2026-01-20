@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Sideindhold";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai kan nu besvare spørgsmål om den side, du ser på.\n\nSideindhold medtages kun, når du vedhæfter det. Du kan til enhver tid ændre dette i Indstillinger.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Forstået";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Spørg om denne side";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Vis indstillinger";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI-funktioner er private og valgfrie. Dine data bruges ikke til at træne AI.";
 

@@ -114,7 +114,15 @@ final class AIChatContextualSheetCoordinator {
                 webViewControllerFactory: { [unowned self] in
                     self.makeWebViewController()
                 },
-                existingWebViewController: webViewController
+                existingWebViewController: webViewController,
+                settings: aiChatSettings,
+                onOpenSettings: { [weak self] in
+                    guard let self else { return }
+                    self.sheetViewController?.dismiss(animated: true) { [weak self] in
+                        guard let self else { return }
+                        self.delegate?.aiChatContextualSheetCoordinatorDidRequestOpenSettings(self)
+                    }
+                }
             )
             sheetVC.delegate = self
             sheetViewController = sheetVC

@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Содержание страницы";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai теперь отвечает на вопросы о просматриваемых страницах.\n\nСодержимое страницы добавляется только после ее прикрепления. Этот параметр всегда можно изменить в «Настройках».";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Понятно";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Задайте вопрос о странице";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Открыть настройки";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI — дополнительный конфиденциальный сервис. Ваши данные не применяются для обучения ИИ.";
 

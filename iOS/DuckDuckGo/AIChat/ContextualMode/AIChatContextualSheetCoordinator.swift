@@ -193,9 +193,7 @@ private extension AIChatContextualSheetCoordinator {
             featureFlagger: featureFlagger
         )
         webVC.pageContextProvider = { [weak self] in
-            let context = self?.viewModel?.fullPageContext
-            Logger.aiChat.debug("[PageContext] Provider called, viewModel: \(self?.viewModel != nil), context: \(context != nil), title: \(context?.title ?? "nil")")
-            return context
+            self?.viewModel?.fullPageContext
         }
         return webVC
     }

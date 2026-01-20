@@ -226,17 +226,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable? {
-        Logger.aiChat.debug("[PageContext] Handler called, provider nil: \(self.pageContextProvider == nil)")
-
-        let pageContext = pageContextProvider?()
-
-        if let context = pageContext {
-            Logger.aiChat.debug("[PageContext] Returning title: \(context.title ?? "nil"), contentLength: \(context.content.count)")
-        } else {
-            Logger.aiChat.debug("[PageContext] No context available")
-        }
-
-        return PageContextResponse(pageContext: pageContext)
+        PageContextResponse(pageContext: pageContextProvider?())
     }
 
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {

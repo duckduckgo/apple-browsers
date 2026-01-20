@@ -154,7 +154,6 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .getAIChatNativeHandoffData:
             return handler.getAIChatNativeHandoffData
         case .getAIChatPageContext:
-            Logger.aiChat.debug("[PageContext] Routing message, handler provider nil: \(self.handler.pageContextProvider == nil)")
             return handler.getAIChatPageContext
         case .openAIChat:
             return handler.openAIChat

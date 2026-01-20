@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import CryptoKit
 import BrowserServicesKit
 import DataBrokerProtectionCore
 import Common
@@ -147,7 +146,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let privacyConfigManager: PrivacyConfigurationManaging
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
-        print(event)
+        Logger.dataBrokerProtection.debug("Debug event: \(String(describing: event), privacy: .public)")
     }
     let contentScopeProperties: ContentScopeProperties
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
@@ -276,8 +275,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
                             let assignedProfiles = extractedProfiles.map {
                                 emailConfirmationStore.storeExtractedProfile($0,
-                                                                             brokerId: query.dataBroker.id ?? 1,
-                                                                             profileQueryId: query.profileQuery.id ?? 1)
+                                                                             brokerId: DebugHelper.stableId(for: query.dataBroker),
+                                                                             profileQueryId: DebugHelper.stableId(for: query.profileQuery))
                             }
                             addScanResultEvents(for: query, extractedProfiles: assignedProfiles)
 
@@ -326,8 +325,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             dataBroker: scanResult.dataBroker,
             profileQuery: scanResult.profileQuery,
             scanJobData: ScanJobData(
-                brokerId: scanResult.dataBroker.id ?? 1,
-                profileQueryId: scanResult.profileQuery.id ?? 1,
+                brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
+                profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
                 historyEvents: [HistoryEvent]()
             )
         )
@@ -409,8 +408,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
         let resolvedBroker = brokerWithId(broker)
         for profileQuery in profileQueries {
-            let profileQueryId = profileQuery.id ?? stableId(for: profileQueryText(for: profileQuery))
-            let fakeScanJobData = ScanJobData(brokerId: resolvedBroker.id ?? 0,
+            let profileQueryId = DebugHelper.stableId(for: profileQuery)
+            let fakeScanJobData = ScanJobData(brokerId: DebugHelper.stableId(for: resolvedBroker),
                                               profileQueryId: profileQueryId,
                                               historyEvents: [HistoryEvent]())
             brokerProfileQueryData.append(
@@ -436,10 +435,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         var brokerProfileQueryData = [BrokerProfileQueryData]()
 
         for profileQuery in profileQueries {
-            let profileQueryId = profileQuery.id ?? stableId(for: profileQueryText(for: profileQuery))
+            let profileQueryId = DebugHelper.stableId(for: profileQuery)
             for broker in brokers {
                 let resolvedBroker = brokerWithId(broker)
-                let fakeScanJobData = ScanJobData(brokerId: resolvedBroker.id ?? 0,
+                let fakeScanJobData = ScanJobData(brokerId: DebugHelper.stableId(for: resolvedBroker),
                                                   profileQueryId: profileQueryId,
                                                   historyEvents: [HistoryEvent]())
                 brokerProfileQueryData.append(
@@ -463,16 +462,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     private func brokerWithId(_ broker: DataBroker) -> DataBroker {
         guard broker.id == nil else { return broker }
-        let brokerId = stableId(for: broker.url.isEmpty ? broker.name : broker.url)
-        return broker.with(id: brokerId)
-    }
-
-    private func stableId(for text: String) -> Int64 {
-        let digest = Insecure.MD5.hash(data: Data(text.utf8))
-        let value = digest.withUnsafeBytes { pointer in
-            pointer.load(as: UInt64.self)
-        }
-        return Int64(bitPattern: value)
+        return broker.with(id: DebugHelper.stableId(for: broker))
     }
 
     func showAlert(for error: Error) {

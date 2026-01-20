@@ -36,7 +36,7 @@ public final class DebugEmailConfirmationStore: EmailConfirmationSupporting {
                                       brokerId: Int64,
                                       profileQueryId: Int64) -> ExtractedProfile {
         queue.sync {
-            let storedProfile = assignExtractedProfileIdIfNeeded(profile)
+            let storedProfile = profile.with(id: DebugHelper.stableId(for: profile))
             if let id = storedProfile.id {
                 extractedProfiles[id] = (brokerId: brokerId,
                                          profileQueryId: profileQueryId,
@@ -145,24 +145,5 @@ public final class DebugEmailConfirmationStore: EmailConfirmationSupporting {
         queue.sync {
             extractedProfiles[id]
         }
-    }
-
-    private func assignExtractedProfileIdIfNeeded(_ profile: ExtractedProfile) -> ExtractedProfile {
-        guard profile.id == nil else { return profile }
-        let id = nextExtractedProfileId
-        nextExtractedProfileId += 1
-        return ExtractedProfile(id: id,
-                                name: profile.name,
-                                alternativeNames: profile.alternativeNames,
-                                addressFull: profile.addressFull,
-                                addresses: profile.addresses,
-                                phoneNumbers: profile.phoneNumbers,
-                                relatives: profile.relatives,
-                                profileUrl: profile.profileUrl,
-                                reportId: profile.reportId,
-                                age: profile.age,
-                                email: profile.email,
-                                removedDate: profile.removedDate,
-                                identifier: profile.identifier)
     }
 }

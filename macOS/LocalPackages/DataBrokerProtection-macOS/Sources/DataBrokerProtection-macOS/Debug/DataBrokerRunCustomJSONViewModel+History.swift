@@ -22,48 +22,48 @@ import DataBrokerProtectionCore
 extension DataBrokerRunCustomJSONViewModel {
 
     func addScanStartedEvent(for query: BrokerProfileQueryData) {
-        addHistoryEvent(HistoryEvent(brokerId: query.dataBroker.id ?? 0,
-                                     profileQueryId: query.profileQuery.id ?? 0,
+        addHistoryEvent(HistoryEvent(brokerId: DebugHelper.stableId(for: query.dataBroker),
+                                     profileQueryId: DebugHelper.stableId(for: query.profileQuery),
                                      type: .scanStarted))
     }
 
     func addScanResultEvents(for query: BrokerProfileQueryData, extractedProfiles: [ExtractedProfile]) {
-        addHistoryEvent(HistoryEvent(brokerId: query.dataBroker.id ?? 0,
-                                     profileQueryId: query.profileQuery.id ?? 0,
+        addHistoryEvent(HistoryEvent(brokerId: DebugHelper.stableId(for: query.dataBroker),
+                                     profileQueryId: DebugHelper.stableId(for: query.profileQuery),
                                      type: extractedProfiles.isEmpty ? .noMatchFound : .matchesFound(count: extractedProfiles.count)))
     }
 
     func addScanErrorEvent(for query: BrokerProfileQueryData, error: Error) {
-        addHistoryEvent(HistoryEvent(brokerId: query.dataBroker.id ?? 0,
-                                     profileQueryId: query.profileQuery.id ?? 0,
+        addHistoryEvent(HistoryEvent(brokerId: DebugHelper.stableId(for: query.dataBroker),
+                                     profileQueryId: DebugHelper.stableId(for: query.profileQuery),
                                      type: .error(error: (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription))))
     }
 
     func addOptOutStartedEvent(for scanResult: ScanResult) {
         addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
-                                     brokerId: scanResult.dataBroker.id ?? 0,
-                                     profileQueryId: scanResult.profileQuery.id ?? 0,
+                                     brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
+                                     profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
                                      type: .optOutStarted))
     }
 
     func addOptOutConfirmedEvent(for scanResult: ScanResult) {
         addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
-                                     brokerId: scanResult.dataBroker.id ?? 0,
-                                     profileQueryId: scanResult.profileQuery.id ?? 0,
+                                     brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
+                                     profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
                                      type: .optOutConfirmed))
     }
 
     func addOptOutAwaitingEmailConfirmationEvent(for scanResult: ScanResult) {
         addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
-                                     brokerId: scanResult.dataBroker.id ?? 0,
-                                     profileQueryId: scanResult.profileQuery.id ?? 0,
+                                     brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
+                                     profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
                                      type: .optOutSubmittedAndAwaitingEmailConfirmation))
     }
 
     func addOptOutErrorEvent(for scanResult: ScanResult, error: Error) {
         addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
-                                     brokerId: scanResult.dataBroker.id ?? 0,
-                                     profileQueryId: scanResult.profileQuery.id ?? 0,
+                                     brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
+                                     profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
                                      type: .error(error: (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription))))
     }
 

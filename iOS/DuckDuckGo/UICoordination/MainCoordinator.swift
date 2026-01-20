@@ -311,6 +311,8 @@ extension MainCoordinator: URLHandling {
     }
 
     private func handleAppDeepLink(url: URL, application: UIApplication = UIApplication.shared) -> Bool {
+        controller.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+
         if url != AppDeepLinkSchemes.openVPN.url && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme {
             controller.clearNavigationStack()
         }

@@ -580,10 +580,11 @@ class MainViewController: UIViewController {
                                                     omnibarDependencies: omnibarDependencies) { [weak self] in
 
             guard $0 != self?.tabManager.model.currentIndex else { return }
-            
+
             DailyPixel.fire(pixel: .swipeTabsUsedDaily)
+            self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.select(tabAt: $0)
-            
+
         } newTab: { [weak self] in
             Pixel.fire(pixel: .swipeToOpenNewTab)
             self?.newTab()

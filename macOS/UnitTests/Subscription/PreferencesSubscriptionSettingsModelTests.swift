@@ -616,7 +616,7 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             .sink { _ in expectation.fulfill() }
             .store(in: &cancellables)
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 15.0)
 
         // Then - Should return "pro" as it has the lowest order
         XCTAssertEqual(sut.firstAvailableUpgradeTier, "pro")

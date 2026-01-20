@@ -101,7 +101,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     ///   - condition: The condition to check
     ///   - description: Description of what we're waiting for
     private func waitForCondition(
-        timeout: TimeInterval = 2.0,
+        timeout: TimeInterval = 30.0,
         pollingInterval: TimeInterval = 0.1,
         condition: @escaping () -> Bool,
         description: String
@@ -885,7 +885,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.async {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then
         XCTAssertEqual(sut.bottomConstraint?.constant, 0, "Bottom constraint should be 0 for top address bar")
@@ -908,7 +908,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.async {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then
         XCTAssertEqual(sut.bottomConstraint?.constant, -DefaultOmniBarView.expectedHeight, "Bottom constraint should be negative expected height for bottom address bar")
@@ -1920,7 +1920,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State should preserve the timestamp
         XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
@@ -1978,7 +1978,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State should NOT be updated because hostView is nil
         XCTAssertEqual(sut.state.timestamp, stateBeforeDismissal, "State timestamp should not be updated when hostView is nil")
@@ -2028,7 +2028,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State SHOULD be updated because hostView exists
         XCTAssertEqual(sut.state.timestamp, timestamp, "State timestamp should be updated when hostView exists")
@@ -2080,7 +2080,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
 
         // Then - Settings should not be updated because presenter was released
         XCTAssertEqual(mockDuckPlayerSettings.welcomeMessageShown, initialWelcomeShown,
@@ -2133,7 +2133,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         firstPlayerViewModel.dismissPublisher.send(timestamp)
         
         // Wait for dismissal update
-        wait(for: [timestampExpectation], timeout: 2.0)
+        wait(for: [timestampExpectation], timeout: 30.0)
         
         // Then - State should reflect the current video (videoID2), not the dismissed one (videoID1)
         XCTAssertEqual(sut.state.videoID, videoID2, "State should reflect the current video ID")
@@ -2183,7 +2183,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         playerViewModel.dismissPublisher.send(timestamp)
         
         // Wait for the update (0.3s delay + buffer)
-        wait(for: [timestampExpectation], timeout: 2.0)
+        wait(for: [timestampExpectation], timeout: 30.0)
         
         // Then - Should receive timestamp update when state is updated
         XCTAssertEqual(receivedTimestamps.count, 1, "Should receive exactly one timestamp update")

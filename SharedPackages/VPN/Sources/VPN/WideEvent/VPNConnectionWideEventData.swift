@@ -21,11 +21,8 @@ import PixelKit
 
 public class VPNConnectionWideEventData: WideEventData {
 
-    #if DEBUG
-    public static let pixelName = "vpn_connection_debug"
-    #else
     public static let pixelName = "vpn_connection"
-    #endif
+    public static let featureName = "vpn-connection"
 
     public static let connectionTimeout: TimeInterval = .minutes(15)
 
@@ -115,8 +112,6 @@ public class VPNConnectionWideEventData: WideEventData {
             return .keepPending
         }
     }
-
-    private static let featureName = "vpn-connection"
 }
 
 // MARK: - Public
@@ -180,21 +175,13 @@ extension VPNConnectionWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var params: [String: String] = [:]
-
-        params[WideEventParameter.Feature.name] = Self.featureName
-        params[WideEventParameter.VPNConnectionFeature.extensionType] = extensionType.rawValue
-        params[WideEventParameter.VPNConnectionFeature.startupMethod] = startupMethod.rawValue
-        params[WideEventParameter.VPNConnectionFeature.isSetup] = isSetup.rawValue
-
-        if let onboardingStatus {
-            params[WideEventParameter.VPNConnectionFeature.onboardingStatus] = onboardingStatus.rawValue
-        }
-
-        // Overall latency
-        if let overallDuration = overallDuration?.durationMilliseconds {
-            params[WideEventParameter.VPNConnectionFeature.latency] = String(Int(overallDuration))
-        }
+        var params = Dictionary(compacting: [
+            (WideEventParameter.VPNConnectionFeature.extensionType, extensionType.rawValue),
+            (WideEventParameter.VPNConnectionFeature.startupMethod, startupMethod.rawValue),
+            (WideEventParameter.VPNConnectionFeature.isSetup, isSetup.rawValue),
+            (WideEventParameter.VPNConnectionFeature.onboardingStatus, onboardingStatus?.rawValue),
+            (WideEventParameter.VPNConnectionFeature.latency, overallDuration?.stringValue(.noBucketing)),
+        ])
 
         for step in Step.allCases {
             addStepLatency(self[keyPath: step.durationPath], step: step, to: &params)

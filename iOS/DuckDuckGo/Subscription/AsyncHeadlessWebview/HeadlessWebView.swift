@@ -52,7 +52,7 @@ struct HeadlessWebView: UIViewRepresentable {
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.navigationDelegate = context.coordinator
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        webView.preventFlashOnLoad()
+        webView.preventFlashOnLoad(featureFlagger: settings.featureFlagger)
         navigationCoordinator.webView = webView
         
         

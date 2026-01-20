@@ -22,6 +22,7 @@ import Foundation
 import DesignResourcesKit
 import Core
 import DataBrokerProtection_iOS
+import PrivacyConfig
 
 struct SubscriptionFlowView: View {
         
@@ -50,7 +51,9 @@ struct SubscriptionFlowView: View {
         case backend
         case general
     }
-    
+
+    let featureFlagger: FeatureFlagger
+
     var body: some View {
         
         // Hidden Navigation Links for Onboarding sections
@@ -60,7 +63,7 @@ struct SubscriptionFlowView: View {
         
         NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                                                      userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)).navigationViewStyle(.stack)),
+                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser, featureFlagger: featureFlagger)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
         if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {

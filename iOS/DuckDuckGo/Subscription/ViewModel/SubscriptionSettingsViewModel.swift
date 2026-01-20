@@ -61,9 +61,12 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         var faqViewModel: SubscriptionExternalLinkViewModel
         var learnMoreViewModel: SubscriptionExternalLinkViewModel
 
-        init(faqURL: URL, learnMoreURL: URL, userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
-            self.faqViewModel = SubscriptionExternalLinkViewModel(url: faqURL, userScriptsDependencies: userScriptsDependencies)
-            self.learnMoreViewModel = SubscriptionExternalLinkViewModel(url: learnMoreURL, userScriptsDependencies: userScriptsDependencies)
+        let featureFlagger: FeatureFlagger
+
+        init(faqURL: URL, learnMoreURL: URL, userScriptsDependencies: DefaultScriptSourceProvider.Dependencies, featureFlagger: FeatureFlagger) {
+            self.featureFlagger = featureFlagger
+            self.faqViewModel = SubscriptionExternalLinkViewModel(url: faqURL, userScriptsDependencies: userScriptsDependencies, featureFlagger: featureFlagger)
+            self.learnMoreViewModel = SubscriptionExternalLinkViewModel(url: learnMoreURL, userScriptsDependencies: userScriptsDependencies, featureFlagger: featureFlagger)
         }
     }
 
@@ -158,7 +161,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
-        self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies)
+        self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies, featureFlagger: featureFlagger)
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
         setupNotificationObservers()
@@ -406,7 +409,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             } else {
                 let model = SubscriptionExternalLinkViewModel(url: url,
                                                               allowedDomains: externalAllowedDomains,
-                                                              userScriptsDependencies: userScriptsDependencies)
+                                                              userScriptsDependencies: userScriptsDependencies,
+                                                              featureFlagger: featureFlagger)
                 Task { @MainActor in
                     self.state.stripeViewModel = model
                 }

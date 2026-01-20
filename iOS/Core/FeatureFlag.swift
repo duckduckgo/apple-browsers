@@ -303,7 +303,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .browsingMenuSheetPresentation,
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
-             .showWhatsNewPromptOnDemand:
+             .showWhatsNewPromptOnDemand,
+             .webViewFlashPrevention:
             true
         default:
             false

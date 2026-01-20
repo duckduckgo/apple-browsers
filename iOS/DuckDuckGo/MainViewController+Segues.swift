@@ -390,7 +390,10 @@ extension MainViewController {
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
-                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore),
+                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(
+                                                      using: featureFlagger,
+                                                      keyValueStore: keyValueStore
+                                                  ),
                                                   whatsNewCoordinator: whatsNewCoordinator)
 
         settingsViewModel.autoClearActionDelegate = self

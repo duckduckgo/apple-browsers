@@ -38,7 +38,6 @@ extension HistoryViewActionsManager {
             historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider,
                                              fire: fire,
                                              recordAIChatHistoryClearForSync: { Application.appDelegate.syncAIChatsCleaner?.recordLocalClear(date: Date()) }),
-            featureFlagger: featureFlagger,
             tld: tld
         )
         let styleProvider = ScriptStyleProvider(themeManager: themeManager)

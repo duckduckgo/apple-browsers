@@ -20,8 +20,10 @@
 import AIChat
 import Combine
 import Core
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import OSLog
+import SwiftUI
 import UIKit
 
 /// Delegate protocol for contextual sheet related actions
@@ -77,6 +79,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let viewModel: AIChatContextualSheetViewModel
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let webViewControllerFactory: WebViewControllerFactory
+    private let settings: AIChatSettingsProvider
+    private let onOpenSettings: () -> Void
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
     private var cancellables = Set<AnyCancellable>()
@@ -89,6 +93,9 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// The current active web view controller showing the chat
     private weak var currentWebViewController: AIChatContextualWebViewController?
+
+    /// Hosting controller for the onboarding overlay
+    private var onboardingHostingController: UIHostingController<AIChatContextualOnboardingView>?
 
     // MARK: - UI Components
 
@@ -192,11 +199,15 @@ final class AIChatContextualSheetViewController: UIViewController {
     init(viewModel: AIChatContextualSheetViewModel,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          webViewControllerFactory: @escaping WebViewControllerFactory,
-         existingWebViewController: AIChatContextualWebViewController? = nil) {
+         existingWebViewController: AIChatContextualWebViewController? = nil,
+         settings: AIChatSettingsProvider = AIChatSettings(),
+         onOpenSettings: @escaping () -> Void = {}) {
         self.viewModel = viewModel
         self.voiceSearchHelper = voiceSearchHelper
         self.webViewControllerFactory = webViewControllerFactory
         self.existingWebViewController = existingWebViewController
+        self.settings = settings
+        self.onOpenSettings = onOpenSettings
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -221,6 +232,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         } else {
             showContextualInput()
             preloadWebViewController()
+            showOnboardingIfNeeded()
         }
     }
 
@@ -543,5 +555,69 @@ private extension AIChatContextualSheetViewController {
         sheet.prefersGrabberVisible = true
         sheet.prefersEdgeAttachedInCompactHeight = true
         sheet.preferredCornerRadius = Constants.sheetCornerRadius
+    }
+}
+
+// MARK: - Onboarding
+
+private extension AIChatContextualSheetViewController {
+
+    func showOnboardingIfNeeded() {
+        guard !settings.hasSeenContextualOnboarding else { return }
+
+        isModalInPresentation = true
+        Pixel.fire(pixel: .aiChatContextualOnboardingDisplayed)
+
+        let onboardingView = AIChatContextualOnboardingView(
+            onConfirm: { [weak self] in
+                Pixel.fire(pixel: .aiChatContextualOnboardingConfirmPressed)
+                self?.dismissOnboarding()
+            },
+            onViewSettings: { [weak self] in
+                Pixel.fire(pixel: .aiChatContextualOnboardingSettingsPressed)
+                self?.settings.markContextualOnboardingSeen()
+                self?.onOpenSettings()
+            }
+        )
+
+        let hostingController = UIHostingController(rootView: onboardingView)
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        hostingController.view.layer.cornerRadius = Constants.sheetCornerRadius
+        hostingController.view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        hostingController.view.clipsToBounds = true
+
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+
+        hostingController.didMove(toParent: self)
+        onboardingHostingController = hostingController
+    }
+
+    func dismissOnboarding(completion: (() -> Void)? = nil) {
+        settings.markContextualOnboardingSeen()
+
+        guard let hostingController = onboardingHostingController else {
+            completion?()
+            return
+        }
+
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseIn) {
+            hostingController.view.transform = CGAffineTransform(translationX: 0, y: hostingController.view.bounds.height)
+        } completion: { [weak self] _ in
+            hostingController.willMove(toParent: nil)
+            hostingController.view.removeFromSuperview()
+            hostingController.removeFromParent()
+            self?.onboardingHostingController = nil
+            self?.isModalInPresentation = false
+            completion?()
+        }
     }
 }

@@ -51,7 +51,6 @@ let package = Package(
         .library(name: "PrivacyStats", targets: ["PrivacyStats"]),
         .library(name: "AutoconsentStats", targets: ["AutoconsentStats"]),
         .library(name: "SharedObjCTestsUtils", targets: ["SharedObjCTestsUtils"]),
-        .library(name: "ContentScopeScripts", targets: ["ContentScopeScripts"]),
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
@@ -64,6 +63,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "12.27.0"),
         .package(path: "../URLPredictor"),
     ],
     targets: [
@@ -81,7 +81,7 @@ let package = Package(
             name: "BrowserServicesKit",
             dependencies: [
                 .product(name: "Autofill", package: "duckduckgo-autofill"),
-                "ContentScopeScripts",
+                .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
                 "Persistence",
                 "PrivacyConfig",
                 "TrackerRadarKit",
@@ -259,19 +259,6 @@ let package = Package(
             dependencies: [
                 .product(name: "Punycode", package: "PunycodeSwift"),
                 .product(name: "URLPredictor", package: "URLPredictor"),
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
-            name: "ContentScopeScripts",
-            dependencies: [],
-            resources: [
-                .process("Resources/contentScope.js"),
-                .process("Resources/contentScopeIsolated.js"),
-                .process("Resources/duckAiDataClearing.js"),
-                .copy("Resources/pages"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -462,6 +449,7 @@ let package = Package(
                 "UserScript",
                 "BrowserServicesKit",
                 "MaliciousSiteProtection",
+                .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -782,6 +770,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PrivacyDashboard",
                 "PersistenceTestingUtils",
+                .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
             ]
         ),
         .testTarget(
@@ -833,7 +822,8 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "PixelExperimentKit",
-                "Configuration"
+                "Configuration",
+                .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
             ]
         ),
         .testTarget(

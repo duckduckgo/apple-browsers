@@ -31,9 +31,6 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Atšaukti";
 
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Įjunkite sinchronizavimą ir atsarginės kopijos kūrimą";
-
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Taip „DuckDuckGo“ saugiame serveryje sukuriama užšifruota atsarginė žymių ir automatinio pildymo duomenų kopija, kurią galima sinchronizuoti su kitais jūsų įrenginiais.";
 

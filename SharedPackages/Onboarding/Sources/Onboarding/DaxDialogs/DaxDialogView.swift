@@ -254,6 +254,7 @@ struct OnboardingDismissButton: View {
     }
 
     private var backgroundColor: Color {
+#if os(iOS)
         switch colorScheme {
         case .light:
             Color(red: 0.98, green: 0.98, blue: 0.98)
@@ -262,9 +263,13 @@ struct OnboardingDismissButton: View {
         @unknown default:
             Color(red: 0.98, green: 0.98, blue: 0.98)
         }
+#else
+        Color(designSystemColor: .controlsFillPrimary)
+#endif
     }
 
     private var opacityColor: Color {
+#if os(iOS)
         switch (colorScheme, isPressed, isHovering) {
         case (.light, true, _): return Color.black.opacity(0.12)
         case (.light, false, true): return Color.black.opacity(0.06)
@@ -277,6 +282,9 @@ struct OnboardingDismissButton: View {
         @unknown default:
             return Color(red: 0.98, green: 0.98, blue: 0.98)
         }
+#else
+        Color(designSystemColor: .surfaceTertiary)
+#endif
     }
 }
 

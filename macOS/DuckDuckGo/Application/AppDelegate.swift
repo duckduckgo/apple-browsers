@@ -685,7 +685,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         subscriptionManager = defaultSubscriptionManager
 
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinedTabsManager: pinnedTabsManager)
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinnedTabsManager: pinnedTabsManager)
 
         let windowControllersManager = WindowControllersManager(
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
@@ -1055,11 +1055,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 #elseif SPARKLE
         if AppVersion.runType != .uiTests {
-            let updateController = SparkleUpdateController(
-                internalUserDecider: internalUserDecider
-            )
-            self.updateController = updateController
-            stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
+            let controller: any SparkleUpdateControllerProtocol
+            if featureFlagger.isFeatureOn(.updatesSimplifiedFlow) {
+                controller = SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider)
+            } else {
+                controller = SparkleUpdateController(internalUserDecider: internalUserDecider)
+            }
+            self.updateController = controller
+            stateRestorationManager.subscribeToAutomaticAppRelaunching(using: controller.willRelaunchAppPublisher)
         }
 #endif
 
@@ -1413,6 +1416,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               let currentEvent = NSApp.currentEvent,
               let manager = WarnBeforeQuitManager(
                 currentEvent: currentEvent,
+                action: .quit,
                 isWarningEnabled: { [tabsPreferences] in
                     tabsPreferences.warnBeforeQuitting
                 }
@@ -1421,6 +1425,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let presenter = WarnBeforeQuitOverlayPresenter(
             startupPreferences: startupPreferences,
             onDontAskAgain: { [tabsPreferences] in
+                PixelKit.fire(GeneralPixel.warnBeforeQuitDontShowAgain, frequency: .standard)
                 tabsPreferences.warnBeforeQuitting = false
             },
             onHoverChange: { [weak manager] isHovering in
@@ -1723,7 +1728,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         updateProgressCancellable = updateController.updateProgressPublisher
             .sink { [weak self] progress in
-                (self?.updateController as? SparkleUpdateController)?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+                (self?.updateController as? any SparkleUpdateControllerProtocol)?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
 #endif
     }

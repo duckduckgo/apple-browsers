@@ -603,8 +603,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
             return .disabled
-        case .tabSwitcherTrackerCount:
-        case .burnSingleTab:
+        case .tabSwitcherTrackerCount,
+             .burnSingleTab:
             return .disabled
         }
     }

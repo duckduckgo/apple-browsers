@@ -160,10 +160,10 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
 
 private enum CountAnimationParameters {
     static let minimumCountForAnimation: Int64 = 5
-    static let startPercent: Double = 0.5
+    static let startPercent: Double = 0.75
     static let stepsPerNumber: Int = 30
     static let steps: Int = 10
     static let rangeMultiplier: Int = 3
     static let easeOutCurve: Double = 4
-    static let totalDuration: TimeInterval = 1.75
+    static let totalDuration: TimeInterval = 1.0
 }

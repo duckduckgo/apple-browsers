@@ -162,8 +162,10 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: build-log.txt
-          path: SharedPackages/DataBrokerProtectionCore/build-log.txt
+          name: BuildLogs
+          path: |
+            SharedPackages/DataBrokerProtectionCore/build-log.txt
+            SharedPackages/DataBrokerProtectionCore/DerivedData/Logs/Test/*.xcresult
 
       - name: Wait for crash reports to be generated
         if: failure()

@@ -143,8 +143,9 @@ final class DaxEasterEggLogoCacheTests: XCTestCase {
     // MARK: - Thread Safety Test
     
     func testConcurrentSameQuery_handledCorrectly() {
+        let expectation = XCTestExpectation(description: "Concurrent same query operations complete")
         let sameQuery = "shared-query"
-        let operationCount = 3
+        let operationCount = 10 // Reduced to avoid overwhelming
         let dispatchGroup = DispatchGroup()
         let queue = DispatchQueue(label: "test-same-query", attributes: .concurrent)
         
@@ -158,8 +159,13 @@ final class DaxEasterEggLogoCacheTests: XCTestCase {
             }
         }
         
-        let waitResult = dispatchGroup.wait(timeout: .now() + 10.0)
-        XCTAssertEqual(waitResult, .success, "Concurrent same query operations did not complete in time")
+        // Wait for all operations to complete
+        dispatchGroup.notify(queue: .main) {
+            expectation.fulfill()
+        }
+        
+        // Then - Should complete without crashes and have consistent state
+        wait(for: [expectation], timeout: 3.0)
         
         // Verify the query exists and has some value
         let finalValue = cache.getLogo(for: sameQuery)

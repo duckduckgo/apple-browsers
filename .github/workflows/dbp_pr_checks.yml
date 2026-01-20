@@ -36,11 +36,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: macos-26
+      runs-on: macos-15
       timeout-minutes: 30
 
       env:
-        RUNS_ON: macos-26 # keep this in sync with runs-on above
+        RUNS_ON: macos-15 # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
@@ -162,10 +162,8 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: BuildLogs
-          path: |
-            SharedPackages/DataBrokerProtectionCore/build-log.txt
-            SharedPackages/DataBrokerProtectionCore/DerivedData/Logs/Test/*.xcresult
+          name: build-log.txt
+          path: SharedPackages/DataBrokerProtectionCore/build-log.txt
 
       - name: Wait for crash reports to be generated
         if: failure()
@@ -197,11 +195,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: macos-26
+      runs-on: macos-15
       timeout-minutes: 30
 
       env:
-        RUNS_ON: macos-26 # keep this in sync with runs-on above
+        RUNS_ON: macos-15 # keep this in sync with runs-on above
 
       steps:
 
@@ -241,7 +239,7 @@ jobs:
         id: select-simulator
         uses: ./.github/actions/select-ios-simulator
         with:
-          preferred-versions: "26.1"
+          preferred-versions: "18.6,18.2"
 
       - name: Resolve package dependencies
         run: |

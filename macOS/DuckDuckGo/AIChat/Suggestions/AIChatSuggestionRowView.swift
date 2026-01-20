@@ -32,6 +32,11 @@ final class AIChatSuggestionRowView: NSView {
         static let iconSize: CGFloat = 16
         static let iconTitleSpacing: CGFloat = 8
         static let cornerRadius: CGFloat = 6
+
+        // Colors matching SuggestionTableCellView
+        static let selectedTintColor: NSColor = .selectedSuggestionTint
+        static let iconColor: NSColor = .suggestionIcon
+        static let textColor: NSColor = NSColor(designSystemColor: .textPrimary)
     }
 
     // MARK: - UI Components
@@ -127,7 +132,7 @@ final class AIChatSuggestionRowView: NSView {
             : DesignSystemImages.Glyphs.Size16.history
 
         iconImageView.image = icon
-        iconImageView.contentTintColor = NSColor(designSystemColor: .iconsSecondary)
+        iconImageView.contentTintColor = Constants.iconColor
     }
 
     // MARK: - Layout
@@ -147,9 +152,14 @@ final class AIChatSuggestionRowView: NSView {
         NSAppearance.withAppAppearance {
             let palette = NSApp.delegateTyped.themeManager.theme.palette
             if isSelected || isHovered {
-                backgroundLayer.backgroundColor = palette.aiChatSuggestionRowHighlight.cgColor
+                backgroundLayer.backgroundColor = palette.accentPrimary.cgColor
+                // Use white text/icons for contrast on colored background
+                titleLabel.textColor = Constants.selectedTintColor
+                iconImageView.contentTintColor = Constants.selectedTintColor
             } else {
                 backgroundLayer.backgroundColor = NSColor.clear.cgColor
+                titleLabel.textColor = Constants.textColor
+                iconImageView.contentTintColor = Constants.iconColor
             }
         }
 

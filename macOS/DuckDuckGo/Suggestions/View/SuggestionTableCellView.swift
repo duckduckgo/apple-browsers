@@ -19,10 +19,8 @@
 import AIChat
 import Cocoa
 import Common
-import FeatureFlags
 import os.log
 import Suggestions
-import PrivacyConfig
 
 final class SuggestionTableCellView: NSTableCellView {
 
@@ -76,7 +74,6 @@ final class SuggestionTableCellView: NSTableCellView {
     var theme: ThemeStyleProviding?
     var suggestion: Suggestion?
     var isAIChatToggleBeingDisplayed: Bool = false
-    var featureFlagger: FeatureFlagger?
     private(set) var cellStyle: CellStyle = .default
 
     static let switchToTabAttributedString: NSAttributedString = {
@@ -250,9 +247,7 @@ final class SuggestionTableCellView: NSTableCellView {
             usesTransparentBox = true
         }
 
-        let useMilderHighlight = featureFlagger?.isFeatureOn(.aiChatSuggestions) == true
-
-        if isSelected && !useMilderHighlight {
+        if isSelected {
             textField?.attributedStringValue = attributedString
             textField?.textColor = Constants.selectedTintColor
             suffixTextField.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
@@ -276,10 +271,8 @@ final class SuggestionTableCellView: NSTableCellView {
     }
 
     private func updateImageViews() {
-        let useMilderHighlight = featureFlagger?.isFeatureOn(.aiChatSuggestions) == true
-        let useSelectedColor = isSelected && !useMilderHighlight
-        iconImageView.contentTintColor = useSelectedColor ? Constants.selectedTintColor : Constants.iconColor
-        removeButton.contentTintColor = useSelectedColor ? Constants.selectedTintColor : Constants.iconColor
+        iconImageView.contentTintColor = isSelected ? Constants.selectedTintColor : Constants.iconColor
+        removeButton.contentTintColor = isSelected ? Constants.selectedTintColor : Constants.iconColor
     }
 
     func updateDeleteImageViewVisibility() {

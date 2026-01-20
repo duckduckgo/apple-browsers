@@ -116,8 +116,6 @@ struct VioletColorPalette: SharedColorPaletteDefinition {
 
     static let lines = DynamicColor(lightHex: 0x1F1F1F, lightOpacity: 0.09, darkHex: 0xF9F9F9, darkOpacity: 0.12)
 
-    // MARK: - AI Chat
-    static let aiChatSuggestionRowHighlight = DynamicColor(lightHex: 0xdedaf0, darkHex: 0x4d3c78)
 }
 
 #endif

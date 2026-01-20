@@ -17,15 +17,12 @@
 //
 
 import Cocoa
-import FeatureFlags
-import PrivacyConfig
 
 final class SuggestionTableRowView: NSTableRowView {
 
     static let identifier = "SuggestionTableRowView"
 
     var theme: ThemeStyleProviding?
-    var featureFlagger: FeatureFlagger?
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -56,13 +53,7 @@ final class SuggestionTableRowView: NSTableRowView {
     }
 
     private func updateBackgroundColor() {
-        let useMilderHighlight = featureFlagger?.isFeatureOn(.aiChatSuggestions) == true
-        let highlightColor: NSColor
-        if useMilderHighlight {
-            highlightColor = theme?.palette.aiChatSuggestionRowHighlight ?? .controlAccentColor
-        } else {
-            highlightColor = theme?.palette.accentPrimary ?? .controlAccentColor
-        }
+        let highlightColor: NSColor = theme?.palette.accentPrimary ?? .controlAccentColor
         let selectedColor: NSColor = isBurner ? .burnerAccent : highlightColor
 
         backgroundColor = isSelected ? selectedColor : .clear

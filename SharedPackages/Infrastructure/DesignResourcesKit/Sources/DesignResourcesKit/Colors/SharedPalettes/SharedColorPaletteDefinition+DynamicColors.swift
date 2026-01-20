@@ -244,10 +244,6 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: Color(0x857A6E))
         case .permissionReloadButtonText:
             return DynamicColor(lightColor: Color(0x333333), darkColor: Color(0xE8E8E8))
-
-        /// AI Chat
-        case .aiChatSuggestionRowHighlight:
-            return aiChatSuggestionRowHighlight
         }
     }
 }

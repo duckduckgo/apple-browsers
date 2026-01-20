@@ -150,9 +150,6 @@ public enum SharedDesignSystemColor {
     case permissionWarningBackground
     case permissionReloadButtonBackground
     case permissionReloadButtonText
-
-    // AI Chat
-    case aiChatSuggestionRowHighlight
 }
 
 #endif

@@ -374,7 +374,6 @@ extension SuggestionViewController: NSTableViewDelegate {
 
         let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
         cell.theme = themeManager.theme
-        cell.featureFlagger = featureFlagger
         cell.isAIChatToggleBeingDisplayed = isAIChatToggleBeingDisplayed
 
         switch rowContent {
@@ -455,7 +454,6 @@ extension SuggestionViewController: NSTableViewDelegate {
         }
 
         suggestionTableRowView.theme = themeManager.theme
-        suggestionTableRowView.featureFlagger = featureFlagger
         return suggestionTableRowView
     }
 

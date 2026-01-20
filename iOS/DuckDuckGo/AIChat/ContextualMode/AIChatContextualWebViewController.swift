@@ -55,6 +55,12 @@ final class AIChatContextualWebViewController: UIViewController {
         set { aiChatContentHandler.delegate = newValue }
     }
 
+    /// Closure to provide page context for getAIChatPageContext requests from the frontend.
+    var pageContextProvider: (() -> AIChatPageContextData?)? {
+        get { aiChatContentHandler.pageContextProvider }
+        set { aiChatContentHandler.pageContextProvider = newValue }
+    }
+
     private var pendingPrompt: String?
     private var pendingPageContext: AIChatPageContextData?
     private var userContentController: UserContentController?

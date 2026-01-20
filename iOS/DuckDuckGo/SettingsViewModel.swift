@@ -114,7 +114,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
-    var onRequestPresentFireConfirmation: ((_ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
+    var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
     @Published private(set) var state: SettingsState
@@ -1470,8 +1470,8 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
         }
     }
 
-    func presentFireConfirmation() {
-        onRequestPresentFireConfirmation?({ [weak self] fireRequest in
+    func presentFireConfirmation(from sourceRect: CGRect) {
+        onRequestPresentFireConfirmation?(sourceRect, { [weak self] fireRequest in
             self?.forgetAll(fireRequest: fireRequest)
         }, {
             // Cancelled - no action needed

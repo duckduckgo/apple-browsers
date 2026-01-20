@@ -20,11 +20,8 @@ import Foundation
 import PixelKit
 
 public class SubscriptionPurchaseWideEventData: WideEventData {
-    #if DEBUG
-    public static let pixelName = "subscription_purchase_debug"
-    #else
     public static let pixelName = "subscription_purchase"
-    #endif
+    public static let featureName = "subscription-purchase"
 
     public static let activationTimeout: TimeInterval = .hours(4)
 
@@ -125,7 +122,6 @@ extension SubscriptionPurchaseWideEventData {
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
-        parameters[WideEventParameter.Feature.name] = "subscription-purchase"
         parameters[WideEventParameter.SubscriptionFeature.purchasePlatform] = purchasePlatform.rawValue
 
         if let failingStep = failingStep {

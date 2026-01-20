@@ -51,7 +51,6 @@ final class DataImportWideEventDataTests: XCTestCase {
         eventData.creditCardImportStatus = .success
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "data-import")
         XCTAssertEqual(parameters["feature.data.ext.source"], "safari")
 
         // Have all per type status
@@ -106,7 +105,6 @@ final class DataImportWideEventDataTests: XCTestCase {
         eventData.passwordImportError = WideEventErrorData(error: passwordImportError, description: "no data")
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "data-import")
         XCTAssertEqual(parameters["feature.data.ext.source"], "chrome")
 
         // Have all per type status
@@ -155,7 +153,6 @@ final class DataImportWideEventDataTests: XCTestCase {
         eventData.bookmarkImportError = WideEventErrorData(error: bookmarkImportError, description: "no data")
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "data-import")
         XCTAssertEqual(parameters["feature.data.ext.source"], "safari")
 
         // Have all per type status

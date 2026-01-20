@@ -21,11 +21,8 @@ import PixelKit
 
 public class SubscriptionRestoreWideEventData: WideEventData {
 
-    #if DEBUG
-    public static let pixelName = "subscription_restore_debug"
-    #else
     public static let pixelName = "subscription_restore"
-    #endif
+    public static let featureName = "subscription-restore"
 
     public static let restoreTimeout: TimeInterval = .minutes(15)
 
@@ -78,8 +75,6 @@ public class SubscriptionRestoreWideEventData: WideEventData {
             return .keepPending
         }
     }
-
-    private static let featureName = "subscription-restore"
 }
 
 // MARK: - Public
@@ -128,7 +123,6 @@ extension SubscriptionRestoreWideEventData {
     public func pixelParameters() -> [String: String] {
         var params: [String: String] = [:]
 
-        params[WideEventParameter.Feature.name] = Self.featureName
         params[WideEventParameter.SubscriptionRestoreFeature.restorePlatform] = restorePlatform.rawValue
 
         if let lastURL = emailAddressRestoreLastURL {

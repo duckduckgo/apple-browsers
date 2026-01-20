@@ -26,11 +26,8 @@ import UIKit
 #endif
 
 public class AuthV2TokenRefreshWideEventData: WideEventData {
-    #if DEBUG
-    public static let pixelName = "auth_v2_token_refresh_debug"
-    #else
     public static let pixelName = "auth_v2_token_refresh"
-    #endif
+    public static let featureName = "authv2-token-refresh"
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
@@ -72,8 +69,6 @@ extension AuthV2TokenRefreshWideEventData {
 
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
-
-        parameters[WideEventParameter.Feature.name] = "authv2-token-refresh"
 
         if let failingStep {
             parameters[WideEventParameter.AuthV2RefreshFeature.failingStep] = failingStep.rawValue

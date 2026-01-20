@@ -59,7 +59,6 @@ public enum PrivacyFeature: String {
     case syncPromotion
     case autofillSurveys
     case marketplaceAdPostback
-    case autocompleteTabs
     case networkProtection
     case aiChat
     case contextualOnboarding

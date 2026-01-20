@@ -25,6 +25,8 @@ import Core
 /// Reads already-computed values from OmniBar and Tab, then updates the data source.
 final class BrowsingMenuHeaderStateProvider {
 
+    private var currentFaviconRequestID: UUID?
+
     func update(
         dataSource: BrowsingMenuHeaderDataSource,
         isNewTabPage: Bool,
@@ -45,12 +47,15 @@ final class BrowsingMenuHeaderStateProvider {
     }
 
     private func loadFavicon(for url: URL?, into dataSource: BrowsingMenuHeaderDataSource) {
+        let requestID = UUID()
+        currentFaviconRequestID = requestID
+
         guard let domain = url?.host else {
             dataSource.update(favicon: nil)
             return
         }
 
-        Task.detached(priority: .userInitiated) {
+        Task.detached(priority: .userInitiated) { [weak self] in
             let result = FaviconsHelper.loadFaviconSync(
                 forDomain: domain,
                 usingCache: .tabs,
@@ -59,8 +64,7 @@ final class BrowsingMenuHeaderStateProvider {
             let favicon = result.isFake ? nil : result.image
 
             await MainActor.run {
-                guard dataSource.url?.host == domain else { return }
-                
+                guard self?.currentFaviconRequestID == requestID else { return }
                 dataSource.update(favicon: favicon)
             }
         }

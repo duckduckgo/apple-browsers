@@ -450,7 +450,6 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         get { nil }
         set { webViewSet = true }
     }
-    var pageContextProvider: (() -> AIChatPageContextData?)?
 
     var delegateSet = false
     var webViewSet = false

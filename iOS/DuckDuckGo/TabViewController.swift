@@ -184,6 +184,7 @@ class TabViewController: UIViewController {
 
     private let netPConnectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver
     private var netPConnectionObserverCancellable: AnyCancellable?
+    var pageContextUpdateCancellable: AnyCancellable?
     private var netPConnectionStatus: ConnectionStatus = .default
     private var netPConnected: Bool {
         switch netPConnectionStatus {

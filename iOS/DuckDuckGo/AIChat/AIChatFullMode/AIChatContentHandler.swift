@@ -34,6 +34,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
     func submitStartChatAction()
     func submitOpenSettingsAction()
+    func submitPageContext(_ context: AIChatPageContextData?)
     func submitToggleSidebarAction()
 }
 
@@ -79,6 +80,9 @@ protocol AIChatContentHandling {
     
     /// Submits a prompt to the AI Chat with optional page context.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
+
+    /// Submits page context to the frontend (push update).
+    func submitPageContext(_ context: AIChatPageContextData?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction()
@@ -185,6 +189,11 @@ final class AIChatContentHandler: AIChatContentHandling {
     
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         userScript?.submitPrompt(prompt, pageContext: pageContext)
+    }
+
+    /// Submits page context to the frontend (push update).
+    func submitPageContext(_ context: AIChatPageContextData?) {
+        userScript?.submitPageContext(context)
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.

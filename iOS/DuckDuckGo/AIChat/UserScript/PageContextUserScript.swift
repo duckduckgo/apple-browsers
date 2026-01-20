@@ -76,10 +76,12 @@ final class PageContextUserScript: NSObject, Subfeature {
         guard let payload: PageContextCollectionPayload = DecodableHelper.decode(from: params),
               let jsonString = payload.serializedPageData,
               let jsonData = jsonString.data(using: .utf8) else {
+            Logger.aiChat.debug("[PageContextUserScript] Failed to decode collection result")
             return nil
         }
 
         let pageContextData: AIChatPageContextData? = DecodableHelper.decode(jsonData: jsonData)
+        Logger.aiChat.debug("[PageContextUserScript] Received page context: \(pageContextData?.title ?? "nil")")
         collectionResultSubject.send(pageContextData)
 
         return nil

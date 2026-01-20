@@ -160,6 +160,11 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.load(URLRequest(url: url.withContextualPlacement))
     }
 
+    /// Submits page context to the frontend (push update).
+    func submitPageContext(_ context: AIChatPageContextData?) {
+        aiChatContentHandler.submitPageContext(context)
+    }
+
     // MARK: - Private Methods
 
     private func setupUI() {

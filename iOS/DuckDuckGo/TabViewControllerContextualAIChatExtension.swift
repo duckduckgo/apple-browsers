@@ -51,6 +51,8 @@ extension TabViewController {
                 pageContext: pageContext,
                 restoreURL: restoreURL
             )
+
+            subscribeToPageContextUpdates()
         }
     }
 
@@ -94,13 +96,13 @@ extension TabViewController {
 
 // MARK: - Private Methods
 
-private extension TabViewController {
+extension TabViewController {
 
-    enum Constants {
+    private enum Constants {
         static let pageContextCollectionTimeout: TimeInterval = 2
     }
 
-    var pageContextUserScript: PageContextUserScript? {
+    private var pageContextUserScript: PageContextUserScript? {
         userScripts?.pageContextUserScript
     }
 
@@ -167,5 +169,29 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
         tabModel.contextualChatURL = url?.absoluteString
+    }
+}
+
+// MARK: - Page Context Auto-Update
+
+extension TabViewController {
+
+    func subscribeToPageContextUpdates() {
+        guard pageContextUpdateCancellable == nil,
+              let script = pageContextUserScript else { return }
+
+        pageContextUpdateCancellable = script.collectionResultPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] pageContext in
+                guard let self,
+                      let pageContext,
+                      aiChatContextualSheetCoordinator.hasActiveSheet,
+                      aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
+                    return
+                }
+                if let enriched = enrichWithFavicon(pageContext) {
+                    aiChatContextualSheetCoordinator.updatePageContext(enriched)
+                }
+            }
     }
 }

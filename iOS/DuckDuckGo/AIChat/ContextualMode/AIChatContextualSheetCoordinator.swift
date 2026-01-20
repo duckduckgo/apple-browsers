@@ -142,6 +142,7 @@ final class AIChatContextualSheetCoordinator {
         )
         viewModel.fullPageContext = context
         sheetViewController?.didReceivePageContext()
+        webViewController?.submitPageContext(context)
     }
 
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.

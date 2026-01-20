@@ -403,7 +403,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         )
         
         self.fakePixelHandler = EventMapping { event, _, _, _ in
-            print("Debug Pixel: \(event)")
+            Logger.general.debug("Debug Pixel: \(String(describing: event), privacy: .public)")
         }
         if let pixelKit = PixelKit.shared {
             self.pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)

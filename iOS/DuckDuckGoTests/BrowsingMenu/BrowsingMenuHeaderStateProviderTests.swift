@@ -142,4 +142,3 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         XCTAssertNil(dataSource.url)
     }
 }
-

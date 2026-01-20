@@ -21,18 +21,21 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import PrivacyConfig
 
 struct SERPSettingsView: View {
-    @EnvironmentObject var settingsViewModel: SettingsViewModel
 
     /// Used to show the right settings screen on SERP
     let page: Page
     
-    var webViewModel: AsyncHeadlessWebViewViewModel {
-        return AsyncHeadlessWebViewViewModel(
+    let webViewModel: AsyncHeadlessWebViewViewModel
+
+    init(page: Page, featureFlagger: FeatureFlagger) {
+        self.page = page
+        self.webViewModel = AsyncHeadlessWebViewViewModel(
             settings: AsyncHeadlessWebViewSettings(bounces: false,
                                                    userScriptsDependencies: nil,
-                                                   featureFlagger: settingsViewModel.featureFlagger))
+                                                   featureFlagger: featureFlagger))
     }
 
     var body: some View {

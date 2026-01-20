@@ -96,6 +96,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionCenterPopover: PermissionCenterPopover?
 
     private var popupBlockedPopover: PopupBlockedPopover?
+    private var systemDisabledInfoPopover: NSPopover?
+
     private func popupBlockedPopoverCreatingIfNeeded() -> PopupBlockedPopover {
         return popupBlockedPopover ?? {
             let popover = PopupBlockedPopover(featureFlagger: featureFlagger)
@@ -1699,6 +1701,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionAuthorizationPopover?.close()
         popupBlockedPopover?.close()
         permissionCenterPopover?.close()
+        systemDisabledInfoPopover?.close()
     }
 
     private func showSystemDisabledInfoPopover(for domain: String, permissionType: PermissionType) {
@@ -1707,6 +1710,7 @@ final class AddressBarButtonsViewController: NSViewController {
         controller.preferredContentSize = controller.view.fittingSize
 
         let popover = NSPopover()
+        systemDisabledInfoPopover = popover
         popover.contentViewController = controller
         popover.behavior = .transient  // Click outside to dismiss
         popover.show(relativeTo: permissionCenterButton.bounds,

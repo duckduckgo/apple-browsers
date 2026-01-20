@@ -151,8 +151,8 @@ public enum DataBrokerProtectionSharedPixels {
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
     case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
     case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
-    case scanningEventNewMatch
-    case scanningEventReAppearance
+    case scanningEventNewMatch(dataBrokerURL: String)
+    case scanningEventReAppearance(dataBrokerURL: String)
 
     // Additional opt out metrics
     case optOutJobAt7DaysConfirmed(dataBroker: String)
@@ -176,8 +176,8 @@ public enum DataBrokerProtectionSharedPixels {
     case initialScanPreStartDuration(duration: Double)
 
     // Custom stats
-    case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double)
-    case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double)
+    case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double, clickActionDelayReductionOptimization: Bool)
+    case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double, clickActionDelayReductionOptimization: Bool)
     case weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int, isAuthenticated: Bool)
 
     // UserScript
@@ -478,9 +478,10 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .weeklyActiveUser(let isAuthenticated),
                 .monthlyActiveUser(let isAuthenticated):
             return [Consts.isAuthenticated: isAuthenticated.description]
-        case .scanningEventNewMatch,
-                .scanningEventReAppearance,
-                .secureVaultInitError,
+        case .scanningEventNewMatch(let dataBrokerURL),
+                .scanningEventReAppearance(let dataBrokerURL):
+            return [Consts.dataBrokerParamKey: dataBrokerURL]
+        case .secureVaultInitError,
                 .secureVaultKeyStoreUpdateError,
                 .secureVaultError,
                 .secureVaultDatabaseRecreated,
@@ -504,11 +505,13 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
         case .initialScanPreStartDuration(let duration):
             return [Consts.durationInMs: String(duration)]
-        case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate):
+        case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate, let clickActionDelayReductionOptimization):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
-                    Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
-        case .customGlobalStatsOptoutSubmit(let optOutSubmitSuccessRate):
-            return [Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
+                    Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate),
+                    Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
+        case .customGlobalStatsOptoutSubmit(let optOutSubmitSuccessRate, let clickActionDelayReductionOptimization):
+            return [Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate),
+                    Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
         case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerURL, let childParentRecordDifference, let calculatedOrphanedRecords, let isAuthenticated):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.childParentRecordDifference: String(childParentRecordDifference),

@@ -104,12 +104,12 @@ public final class DataBrokerProtectionEventPixels {
         }
     }
 
-    func fireNewMatchEventPixel() {
-        handler.fire(.scanningEventNewMatch)
+    func fireNewMatchEventPixel(dataBrokerURL: String) {
+        handler.fire(.scanningEventNewMatch(dataBrokerURL: dataBrokerURL))
     }
 
-    func fireReappeareanceEventPixel() {
-        handler.fire(.scanningEventReAppearance)
+    func fireReappeareanceEventPixel(dataBrokerURL: String) {
+        handler.fire(.scanningEventReAppearance(dataBrokerURL: dataBrokerURL))
     }
 
     public func hasInitialScansTotalDurationPixelBeenSent() -> Bool {

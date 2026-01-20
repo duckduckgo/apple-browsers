@@ -1,7 +1,7 @@
 {
   "name": "PrivateReports",
   "url": "privatereports.com",
-  "version": "0.99.0",
+  "version": "0.991.0",
   "optOutUrl": "https://www.privatereports.com/optOut/name/landingPage",
   "steps": [
     {
@@ -278,7 +278,7 @@
               "selector": ".container"
             }
           ],
-          "id": "25722ef7-0ad7-40f6-8bce-6b1eeb47939c"
+          "id": "26611ef7-0ad7-40f6-8bce-6b1aab47939c"
         },
 
         {
@@ -695,6 +695,17 @@
             }
           ],
           "id": "0dbeee73-d4fb-4b84-82f0-5d6eb0188ffa"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//body[not(.//*[contains(@class, 'btn-primary')])]",
+              "failSilently": true
+            }
+          ],
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
         },
         {
           "actionType": "expectation",

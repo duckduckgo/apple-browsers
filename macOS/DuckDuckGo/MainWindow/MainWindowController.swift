@@ -481,7 +481,7 @@ extension MainWindowController: NSWindowDelegate {
         }
 #if DEBUG
         // Check that the window controller deallocates after close
-        self.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        self.ensureObjectDeallocated(after: 4.0, do: .interrupt)
 #endif
     }
 

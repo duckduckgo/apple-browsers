@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "account";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Uždaryti visas korteles";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohorta: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfigūracija";
@@ -1291,6 +1300,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Vakar";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "Radote paslėptą logotipą!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Išsaugotas logotipas";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Iš naujo nustatyti ieškos logotipą";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Pereiti prie šio logotipo";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Būk atidus! Negaliu neleisti %1$@ matyti tavo veiklos %2$@.\n\nTačiau naršyk kartu su manimi ir aš sumažinsiu informacijos, kurią %1$@ žino apie tave, kiekį užblokuodamas stebėjimo priemones kitose svetainėse.";
 
@@ -1396,8 +1417,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Neseniai atlikti „YouTube“ pakeitimai turėjo įtakos „Duck Player“ funkcijoms. Stengiamės pašalinti šias triktis ir dėkojame už supratingumą.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Pridėkite puslapio turinį";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Išsiųstas su jūsų žinute Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Puslapio turinys";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "„DuckDuckGo“ DI funkcijos yra privačios ir neprivalomos. Tavo duomenys nenaudojami dirbtinio intelekto mokymui.";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "Apibendrinti šį puslapį";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Rodyti „Duck.ai“ mygtukus ir nuorodas „DuckDuckGo“ paieškos rezultatuose.";
@@ -1655,7 +1688,7 @@
 "empty.search" = "Atitikmenų nerasta";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Užregistruota: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1713,9 +1746,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Tik mobiliojo mėgstamiausi";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funkcija: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklamų ir iššokančiųjų langų blokavimas";
@@ -1966,6 +1996,24 @@
 /* No comment provided by engineer. */
 "findinpage.title" = "Rasti puslapyje";
 
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Ištrinti visus pokalbius";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "„Duck.ai“ pokalbiai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Gali jus atjungti nuo paskyrų";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Slapukai ir svetainės duomenys";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Kortelės";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Pasirinkite, ką ištrinti";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "„Airstream“";
 
@@ -2172,6 +2220,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Pranešimai";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Adreso juostos mygtukas";
@@ -2459,6 +2510,9 @@
 "No existing subscription found" = "Nerasta jokių esamų prenumeratų";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Nėra žurnalų";
 
 /* No comment provided by engineer. */
@@ -2469,6 +2523,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Prenumeratų nėra";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "GERAI";
@@ -2858,6 +2915,9 @@
 "Results" = "Rezultatai";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Ieškoti arba įvesti adresą";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2902,9 +2962,6 @@
 /* about tagline */
 "settings.about.tagline" = "Apsauga. Privatumas. Ramybės jausmas.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "„DuckDuckGo“ yra nepriklausoma interneto apsaugos bendrovė, skirta visiems, norintiems susigrąžinti savo asmeninės informacijos kontrolę.Manome, kad geriausias būdas apsaugoti asmeninę informaciją nuo įsilaužėlių, sukčių ir į privatumą pasikėsinančių įmonių – visiškai sustabdyti jos rinkimą. Štai kodėl milijonai žmonių [pasirenka „DuckDuckGo“, o ne „Chrome“ ir kitas naršykles](ddgQuickLink://duckduckgo.com/compare-privacy) ieškoti ir naršyti internete. Mūsų integruota paieškos sistema yra kaip „Google“, bet niekada nestebi jūsų paieškų. O mūsų naršymo apsaugos priemonės, tokios kaip skelbimų sekimo ir slapukų blokavimas, padeda neleisti kitoms įmonėms rinkti jūsų duomenų. Beje, mūsų naršyklė yra nemokama – mes uždirbame iš [privatumą gerbiančių paieškos skelbimų](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), ne išnaudodami jūsų duomenis. \n\n%@ \n\nSusigrąžinkite savo asmeninės informacijos kontrolę naudodami naršyklę, sukurtą duomenų apsaugai, o ne jų rinkimui.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Pritaikymas neįgaliems";
 
@@ -2922,6 +2979,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Rodyti visą svetainės adresą";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Rodyti blokuojamų sekiklių animaciją";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Paieška ir „Duck.ai“";
@@ -2947,11 +3007,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "„Assist“ paieškos nustatymai";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Rodyti naujus „Duck.ai“ pokalbius kaip skirtukus naršyklėje";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Automatiškai siųsti puslapio kontekstą į „Duck.ai“";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "„Duck.ai“ skirtukų režimas";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Automatiškai siųsti kontekstą";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Slėpti DI generuotus vaizdus";
@@ -2991,6 +3051,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Valyti";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Valyti skirtukus ir duomenis";
 
@@ -3003,17 +3064,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Kortelės";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Išeinant iš programos, po 15 min. neveikimo";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Išeinant iš programos, po 1 val. neveikimo";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Išeinant iš programos, po 30 min. neveikimo";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Išeinant iš programos, po 5 min. neveikimo";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Išeinant iš programos, po 15 min. neveikimo";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Išeinant iš programos, po 30 min. neveikimo";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Tik išeinant iš programos";
@@ -3026,6 +3087,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Duomenys bus ištrinti iš naujo paleidus programą.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Paieškos pasiūlymai";
 
@@ -3046,6 +3108,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatinis duomenų išvalymas";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Naršyklės atsiliepimai";
 
@@ -3057,6 +3120,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Išvalyti naršymo duomenis";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automatiškai valyti duomenis";
 
@@ -3086,6 +3150,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Ištrindamas duomenis gali padėti apsaugoti savo privatumą internete. Jei nori išvalyti duomenis rankiniu būdu, naudok „Fire Button“ arba nustatyk automatinį valymą.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Numatytoji naršyklė";
 
@@ -3133,6 +3198,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Apsaugoti svetaines";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Bendrai";
 
@@ -3150,9 +3216,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Naujas";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Peržiūrėti";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatūra";
@@ -3428,6 +3491,9 @@
 "siteFeedback.urlPlaceholder" = "Kuri svetainė neveikia?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Būsena";
 
 /* No comment provided by engineer. */
@@ -3435,9 +3501,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Išsaugotas pagrindinis vardas: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Papildoma funkcija: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pridėti prie įrenginio";
@@ -3574,6 +3637,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "„Windows“";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Prenumeratos planai";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Užbaigiama pirkimą...";
 
@@ -3582,9 +3648,6 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Atkuriama prenumerata...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "„Privacy Pro“ dabar tiesiog vadinama „DuckDuckGo“ prenumerata.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Pašalinti iš šio įrenginio";
@@ -3663,6 +3726,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Nemokama bandomoji versija aktyvi";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "Peržiūrėti visus planus";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI įspėjimas";

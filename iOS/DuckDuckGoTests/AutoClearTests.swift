@@ -55,8 +55,8 @@ class AutoClearTests: XCTestCase {
         mockFireExecutor = MockFireExecutor()
         appSettings = AppSettingsMock()
         mockFeatureFlagger = MockFeatureFlagger()
-        // Enable granular fire button options by default to prevent auto-injection of AI chats
-        mockFeatureFlagger.enabledFeatureFlags = [.granularFireButtonOptions]
+        // Enable enhanced UI by default to prevent auto-injection of AI chats
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
     }
 
     override func tearDown() {

@@ -23,8 +23,8 @@ import PrivacyConfig
 final public class AppPrivacyConfigurationDataProvider: EmbeddedDataProvider {
 
     public struct Constants {
-        public static let embeddedDataETag = "\"d7835cfccd8955c3f98d62110c44707d\""
-        public static let embeddedDataSHA = "f039fe93322f0ce7bc5fcbb621fa31f67a884188fc8f7ff3ef40491ecc66636e"
+        public static let embeddedDataETag = "\"699f3aa5845e614dadde84d8f117f511\""
+        public static let embeddedDataSHA = "cbf0d63d6b37445884ee97dce35b47a72c096ce079588b2027b9c8af0a10292d"
     }
 
     public var embeddedDataEtag: String {
@@ -44,7 +44,12 @@ final public class AppPrivacyConfigurationDataProvider: EmbeddedDataProvider {
     }
 
     static func loadEmbeddedAsData() -> Data {
-        let json = try? Data(contentsOf: embeddedUrl)
-        return json!
+        do {
+            return try Data(contentsOf: embeddedUrl)
+        } catch {
+            fatalError("Failed to load embedded privacy config: \(error.localizedDescription)")
+        }
     }
+
+    public init() {}
 }

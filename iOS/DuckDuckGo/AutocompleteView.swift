@@ -191,29 +191,34 @@ private struct SuggestionsSection: View {
 
 private struct SwipeDeleteHistoryModifier: ViewModifier {
 
+    @EnvironmentObject var autocompleteViewModel: AutocompleteViewModel
+
     let suggestion: AutocompleteViewModel.SuggestionModel
     var onSuggestionDeleted: (AutocompleteViewModel.SuggestionModel) -> Void
 
     func body(content: Content) -> some View {
-
-        switch suggestion.suggestion {
-        case .historyEntry:
-            content.swipeActions {
-                Button(role: .destructive) {
-                    onSuggestionDeleted(suggestion)
-                } label: {
-                    Label {
-                        Text("Delete")
-                    } icon: {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.trash)
+        /// Swipe-to-delete is disabled when Duck.ai toggle is enabled to avoid gesture conflict
+        if autocompleteViewModel.isSwipeToDeleteEnabled {
+            switch suggestion.suggestion {
+            case .historyEntry:
+                content.swipeActions {
+                    Button(role: .destructive) {
+                        onSuggestionDeleted(suggestion)
+                    } label: {
+                        Label {
+                            Text("Delete")
+                        } icon: {
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.trash)
+                        }
                     }
                 }
-            }
 
-        default:
+            default:
+                content
+            }
+        } else {
             content
         }
-
     }
 
 }

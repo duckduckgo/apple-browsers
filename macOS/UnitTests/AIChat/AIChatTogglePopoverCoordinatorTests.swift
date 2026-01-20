@@ -108,7 +108,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
 
         // Then
@@ -123,7 +124,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
 
         // Then
@@ -135,7 +137,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: true,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
 
         // Then
@@ -147,7 +150,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: true
+            userDidInteractWithToggle: true,
+            userDidSeeToggleOnboarding: false
         )
 
         // Then
@@ -159,7 +163,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
 
         // Then
@@ -176,7 +181,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: true,
-            userDidInteractWithToggle: true
+            userDidInteractWithToggle: true,
+            userDidSeeToggleOnboarding: false
         )
 
         // Then
@@ -261,7 +267,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
         XCTAssertTrue(mockPresenter.showPopoverCalled)
 
@@ -277,7 +284,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
         XCTAssertTrue(mockPresenter.showPopoverCalled)
 
@@ -295,7 +303,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
 
         // Then
@@ -324,7 +333,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
 
         // Then
@@ -340,7 +350,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
         XCTAssertTrue(mockPresenter.showPopoverCalled)
 
@@ -355,7 +366,8 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
         XCTAssertFalse(mockPresenter.showPopoverCalled)
 
@@ -366,8 +378,22 @@ final class AIChatTogglePopoverCoordinatorTests: XCTestCase {
         coordinator.showPopoverIfNeeded(
             relativeTo: mockToggleControl,
             isNewUser: false,
-            userDidInteractWithToggle: false
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: false
         )
         XCTAssertTrue(mockPresenter.showPopoverCalled)
+    }
+
+    func testWhenUserDidSeeToggleOnboardingThenDoesNotShowPopover() {
+        // When
+        coordinator.showPopoverIfNeeded(
+            relativeTo: mockToggleControl,
+            isNewUser: false,
+            userDidInteractWithToggle: false,
+            userDidSeeToggleOnboarding: true
+        )
+
+        // Then
+        XCTAssertFalse(mockPresenter.showPopoverCalled)
     }
 }

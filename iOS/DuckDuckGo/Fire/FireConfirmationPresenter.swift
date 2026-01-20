@@ -40,11 +40,33 @@ struct FireConfirmationPresenter {
                                  attachPopoverTo source: AnyObject,
                                  onConfirm: @escaping (FireOptions) -> Void,
                                  onCancel: @escaping () -> Void) {
-        guard featureFlagger.isFeatureOn(.granularFireButtonOptions) else {
-            presentLegacyConfirmationAlert(on: viewController, from: source, onConfirm: onConfirm, onCancel: onCancel)
+        let sourceRect = (source as? UIView)?.bounds ?? .zero
+        presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
+    }
+    
+    @MainActor
+    func presentFireConfirmation(on viewController: UIViewController,
+                                 sourceRect: CGRect,
+                                 onConfirm: @escaping (FireOptions) -> Void,
+                                 onCancel: @escaping () -> Void) {
+        guard let window = UIApplication.shared.firstKeyWindow else {
+            assertionFailure("No key window available")
             return
         }
-        
+        presentLegacyConfirmationAlert(on: viewController, from: window, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
+    }
+    
+    /// Presents a SwiftUI-based confirmation sheet as an alternative UI for the "Fire" action.
+    /// 
+    /// This function builds a FireConfirmationView hosted in a UIHostingController and presents it
+    /// as either a sheet or popover, depending on the device. Currently, this function is unused but
+    /// demonstrates an alternate UI flow for fire confirmation.
+    @MainActor
+    private func presentConfirmationSheet(on viewController: UIViewController,
+                                          from source: AnyObject,
+                                          sourceRect: CGRect,
+                                          onConfirm: @escaping (FireOptions) -> Void,
+                                          onCancel: @escaping () -> Void) {
         let viewModel = makeViewModel(dismissing: viewController,
                                       onConfirm: onConfirm,
                                       onCancel: onCancel)
@@ -52,8 +74,9 @@ struct FireConfirmationPresenter {
         let presentingWidth = viewController.view.frame.width
         
         configurePresentation(for: hostingController,
-                             source: source,
-                             presentingWidth: presentingWidth)
+                              source: source,
+                              sourceRect: sourceRect,
+                              presentingWidth: presentingWidth)
         
         viewController.present(hostingController, animated: true)
     }
@@ -92,9 +115,10 @@ struct FireConfirmationPresenter {
     
     private func configurePresentation(for hostingController: UIHostingController<FireConfirmationView>,
                                        source: AnyObject,
+                                       sourceRect: CGRect,
                                        presentingWidth: CGFloat) {
         if let popoverController = hostingController.popoverPresentationController {
-            configurePopoverSource(popoverController, source: source)
+            configurePopoverSource(popoverController, source: source, sourceRect: sourceRect)
             
             let sheetHeight = calculateSheetHeight(for: hostingController.rootView,
                                                    width: Constants.iPadSheetWidth)
@@ -111,10 +135,10 @@ struct FireConfirmationPresenter {
         }
     }
     
-    private func configurePopoverSource(_ popover: UIPopoverPresentationController, source: AnyObject) {
+    private func configurePopoverSource(_ popover: UIPopoverPresentationController, source: AnyObject, sourceRect: CGRect) {
         if let source = source as? UIView {
             popover.sourceView = source
-            popover.sourceRect = source.bounds
+            popover.sourceRect = sourceRect
         } else if let source = source as? UIBarButtonItem {
             popover.barButtonItem = source
         }
@@ -161,6 +185,7 @@ struct FireConfirmationPresenter {
     
     private func presentLegacyConfirmationAlert(on viewController: UIViewController,
                                                 from source: AnyObject,
+                                                sourceRect: CGRect,
                                                 onConfirm: @escaping (FireOptions) -> Void,
                                                 onCancel: @escaping () -> Void) {
         
@@ -170,7 +195,11 @@ struct FireConfirmationPresenter {
             onConfirm(.all)
         })
         if let view = source as? UIView {
-            viewController.present(controller: alert, fromView: view)
+            if let popover = alert.popoverPresentationController {
+                popover.sourceView = view
+                popover.sourceRect = sourceRect
+            }
+            viewController.present(alert, animated: true)
         } else if let button = source as? UIBarButtonItem {
             viewController.present(controller: alert, fromButtonItem: button)
         } else {

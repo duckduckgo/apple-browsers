@@ -45,7 +45,6 @@ final class DBPEndToEndTests: XCTestCase {
 
         // Store the integration test run type so that the agent can reliably access it:
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-        dbpSettings.isAuthV2Enabled = true
         dbpSettings.updateStoredRunType()
 
         pirProtectionManager = DataBrokerProtectionManager.shared

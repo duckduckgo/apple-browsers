@@ -26,104 +26,6 @@ import Networking
 import os.log
 
 extension DefaultSubscriptionManager {
-
-    // Init the SubscriptionManager using the standard dependencies and configuration, to be used only in the dependencies tree root
-    public convenience init(featureFlagger: FeatureFlagger? = nil,
-                            pixelHandlingSource: SubscriptionPixelHandler.Source) {
-        // Configure Subscription
-        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-        let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
-        let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
-                                                                 key: UserDefaultsCacheKey.subscriptionEntitlements,
-                                                                 settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
-        let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
-        let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: keychainType)
-        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
-                                                                             userAgent: UserAgent.duckDuckGoUserAgent())
-        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
-                                                             userAgent: UserAgent.duckDuckGoUserAgent())
-        let subscriptionFeatureMappingCache = DefaultSubscriptionFeatureMappingCache(subscriptionEndpointService: subscriptionEndpointService,
-                                                                                     userDefaults: subscriptionUserDefaults)
-
-        let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
-                                                   entitlementsCache: entitlementsCache,
-                                                   subscriptionEndpointService: subscriptionEndpointService,
-                                                   authEndpointService: authEndpointService)
-
-        let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags> = FeatureFlaggerMapping { feature in
-            guard let featureFlagger else {
-                // With no featureFlagger provided there is no gating of features
-                return feature.defaultState
-            }
-
-            switch feature {
-            case .useSubscriptionUSARegionOverride:
-                return (featureFlagger.internalUserDecider.isInternalUser &&
-                        subscriptionEnvironment.serviceEnvironment == .staging &&
-                        subscriptionUserDefaults.storefrontRegionOverride == .usa)
-            case .useSubscriptionROWRegionOverride:
-                return (featureFlagger.internalUserDecider.isInternalUser &&
-                        subscriptionEnvironment.serviceEnvironment == .staging &&
-                        subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
-            }
-        }
-
-        let isInternalUserEnabled = { featureFlagger?.internalUserDecider.isInternalUser ?? false }
-
-        if #available(macOS 12.0, *) {
-            let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                                   subscriptionFeatureFlagger: subscriptionFeatureFlagger)
-            self.init(storePurchaseManager: storePurchaseManager,
-                      accountManager: accountManager,
-                      subscriptionEndpointService: subscriptionEndpointService,
-                      authEndpointService: authEndpointService,
-                      subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                      subscriptionEnvironment: subscriptionEnvironment,
-                      isInternalUserEnabled: isInternalUserEnabled)
-        } else {
-            self.init(accountManager: accountManager,
-                      subscriptionEndpointService: subscriptionEndpointService,
-                      authEndpointService: authEndpointService,
-                      subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                      subscriptionEnvironment: subscriptionEnvironment,
-                      isInternalUserEnabled: isInternalUserEnabled)
-        }
-
-        accountManager.delegate = self
-
-        // Auth V2 cleanup in case of rollback
-        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource)
-        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
-                                                              userDefaults: subscriptionUserDefaults) { _, error in
-            Logger.subscription.error("Failed to remove AuthV2 token container : \(error.localizedDescription, privacy: .public)")
-        }
-        try? tokenStorage.saveTokenContainer(nil)
-    }
-}
-
-extension DefaultSubscriptionManager: @retroactive AccountManagerKeychainAccessDelegate {
-
-    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
-
-        guard let expectedError = error as? AccountKeychainAccessError else {
-            assertionFailure("Unexpected error type: \(error)")
-            Logger.networkProtection.fault("Unexpected error type: \(error)")
-            return
-        }
-
-        PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
-                                                                         accessError: expectedError,
-                                                                         source: KeychainErrorSource.shared,
-                                                                         authVersion: KeychainErrorAuthVersion.v1),
-                      frequency: .legacyDailyAndCount)
-    }
-}
-
-// MARK: V2
-
-extension DefaultSubscriptionManagerV2 {
     // Init the SubscriptionManager using the standard dependencies and configuration, to be used only in the dependencies tree root
     public convenience init(keychainType: KeychainType,
                             environment: SubscriptionEnvironment,
@@ -132,10 +34,10 @@ extension DefaultSubscriptionManagerV2 {
                             pixelHandlingSource: SubscriptionPixelHandler.Source) {
 
         let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource)
-        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+        let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
                                                               userDefaults: userDefaults) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
@@ -153,11 +55,10 @@ extension DefaultSubscriptionManagerV2 {
 #endif
         })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                            legacyTokenStorage: nil, // Can't migrate
                                             authService: authService,
                                             refreshEventMapping: authRefreshEventMapping)
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
-        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
                                                                                baseURL: environment.serviceEnvironment.url)
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
@@ -192,16 +93,17 @@ extension DefaultSubscriptionManagerV2 {
             }
         }
         let isInternalUserEnabled = { featureFlagger?.internalUserDecider.isInternalUser ?? false }
-        let legacyAccountStorage = AccountKeychainStorage()
         if #available(macOS 12.0, *) {
-            self.init(storePurchaseManager: DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                                          subscriptionFeatureFlagger: subscriptionFeatureFlagger),
+            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: userDefaults,
+                                                                             pixelHandler: pixelHandler)
+            self.init(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                                        subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                                        pendingTransactionHandler: pendingTransactionHandler),
                       oAuthClient: authClient,
                       userDefaults: userDefaults,
                       subscriptionEndpointService: subscriptionEndpointService,
                       subscriptionEnvironment: environment,
                       pixelHandler: pixelHandler,
-                      legacyAccountStorage: legacyAccountStorage,
                       isInternalUserEnabled: isInternalUserEnabled)
         } else {
             self.init(oAuthClient: authClient,
@@ -209,7 +111,6 @@ extension DefaultSubscriptionManagerV2 {
                       subscriptionEndpointService: subscriptionEndpointService,
                       subscriptionEnvironment: environment,
                       pixelHandler: pixelHandler,
-                      legacyAccountStorage: legacyAccountStorage,
                       isInternalUserEnabled: isInternalUserEnabled)
         }
     }

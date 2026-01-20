@@ -45,19 +45,10 @@ struct SettingsSubscriptionView: View {
     @State var isShowingGoogleView = false
     @State var isShowingStripeView = false
     @State var isShowingSubscription = false
-
-    var subscriptionRestoreView: some View {
-        SubscriptionContainerViewFactory.makeRestoreFlow(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
-                                                         subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                                                         userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                         dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
-    }
-
+    
     var subscriptionRestoreViewV2: some View {
         SubscriptionContainerViewFactory.makeRestoreFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                           subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                           subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                                                            userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
@@ -73,11 +64,7 @@ struct SettingsSubscriptionView: View {
     }
 
     var currentStorefrontRegion: SubscriptionRegion {
-        if !settingsViewModel.isAuthV2Enabled {
-            return AppDependencyProvider.shared.subscriptionManager!.storePurchaseManager().currentStorefrontRegion
-        } else {
-            return AppDependencyProvider.shared.subscriptionManagerV2!.storePurchaseManager().currentStorefrontRegion
-        }
+        return AppDependencyProvider.shared.subscriptionManager.currentStorefrontRegion
     }
     
     private var winBackURLComponents: URLComponents? {
@@ -111,26 +98,14 @@ struct SettingsSubscriptionView: View {
             }, isButton: true, shouldShowWinBackOffer: true)
 
             // Restore subscription
-            if !settingsViewModel.isAuthV2Enabled {
-                let restoreView = subscriptionRestoreView
-                    .navigationViewStyle(.stack)
-                    .onFirstAppear {
-                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
-                    }
-                NavigationLink(destination: restoreView,
-                               isActive: $isShowingRestoreFlow) {
-                    SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
+            let restoreView = subscriptionRestoreViewV2
+                .navigationViewStyle(.stack)
+                .onFirstAppear {
+                    Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
                 }
-            } else {
-                let restoreView = subscriptionRestoreViewV2
-                    .navigationViewStyle(.stack)
-                    .onFirstAppear {
-                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
-                    }
-                NavigationLink(destination: restoreView,
-                               isActive: $isShowingRestoreFlow) {
-                    SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
-                }
+            NavigationLink(destination: restoreView,
+                           isActive: $isShowingRestoreFlow) {
+                SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
             }
         }
         .onFirstAppear {
@@ -168,26 +143,14 @@ struct SettingsSubscriptionView: View {
             }, isButton: true)
 
             // Restore subscription
-            if !settingsViewModel.isAuthV2Enabled {
-                let restoreView = subscriptionRestoreView
-                    .navigationViewStyle(.stack)
-                    .onFirstAppear {
-                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
-                    }
-                NavigationLink(destination: restoreView,
-                               isActive: $isShowingRestoreFlow) {
-                    SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
+            let restoreView = subscriptionRestoreViewV2
+                .navigationViewStyle(.stack)
+                .onFirstAppear {
+                    Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
                 }
-            } else {
-                let restoreView = subscriptionRestoreViewV2
-                    .navigationViewStyle(.stack)
-                    .onFirstAppear {
-                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
-                    }
-                NavigationLink(destination: restoreView,
-                               isActive: $isShowingRestoreFlow) {
-                    SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
-                }
+            NavigationLink(destination: restoreView,
+                           isActive: $isShowingRestoreFlow) {
+                SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
             }
         }
     }
@@ -207,19 +170,18 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             SettingsCellView(
                 label: UserText.settingsPProDBPTitle,
-                image: Image(uiImage: DesignSystemImages.Color.Size24.databroker),
+                image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                 statusIndicator: StatusIndicatorView(status: .off),
                 isGreyedOut: true
             )
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled && settingsViewModel.isAuthV2Enabled {
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
             SettingsCellView(
                 label: UserText.settingsSubscriptionAiChatTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                 statusIndicator: StatusIndicatorView(status: .off),
-                isGreyedOut: true,
-                optionalBadgeText: UserText.settingsItemNewBadge
+                isGreyedOut: true
             )
         }
 
@@ -238,38 +200,20 @@ struct SettingsSubscriptionView: View {
         disabledFeaturesView
 
         // Renew Subscription (Expired)
-        if !settingsViewModel.isAuthV2Enabled {
-            let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.expired,
-                                                        viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
-                                                        settingsViewModel: settingsViewModel,
-                                                        viewPlans: {
-                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
-            })
-                .environmentObject(subscriptionNavigationCoordinator)
-            NavigationLink(destination: settingsView) {
-                SettingsCellView(
-                    label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
-                    accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
-                )
-            }
-        } else {
-            let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
-                                                          viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
-                                                          settingsViewModel: settingsViewModel,
-                                                          viewPlans: {
-                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
-            })
-                .environmentObject(subscriptionNavigationCoordinator)
-            NavigationLink(destination: settingsView) {
-                SettingsCellView(
-                    label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
-                    accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
-                )
-            }
+        let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
+                                                      viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                      settingsViewModel: settingsViewModel,
+                                                      viewPlans: {
+            subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
+        })
+            .environmentObject(subscriptionNavigationCoordinator)
+        NavigationLink(destination: settingsView) {
+            SettingsCellView(
+                label: UserText.settingsPProManageSubscription,
+                subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
+                accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
+            )
         }
     }
 
@@ -277,31 +221,9 @@ struct SettingsSubscriptionView: View {
     private var subscribeWithWinBackOfferView: some View {
         Group {
         disabledFeaturesView
-
-        // Subscribe with Win-back offer
-        if !settingsViewModel.isAuthV2Enabled {
-            let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.expired,
-                                                        viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
-                                                        settingsViewModel: settingsViewModel,
-                                                        takeWinBackOffer: {
-                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
-                subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
-                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
-            }).onFirstAppear {
-                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsShown)
-            }
-                .environmentObject(subscriptionNavigationCoordinator)
-            NavigationLink(destination: settingsView) {
-                SettingsCellView(
-                    label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.winBackCampaignSubscriptionSettingsMenuLoggedOutSubtitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
-                    shouldShowWinBackOffer: true
-                )
-            }
-        } else {
+            // Subscribe with Win-back offer
             let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
-                                                          viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                          viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                           settingsViewModel: settingsViewModel,
                                                           takeWinBackOffer: {
                 Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
@@ -320,7 +242,6 @@ struct SettingsSubscriptionView: View {
                 )
             }
         }
-        }
         .onFirstAppear {
             Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedInOfferShown)
         }
@@ -331,36 +252,19 @@ struct SettingsSubscriptionView: View {
         disabledFeaturesView
 
         // Renew Subscription (Expired)
-        if !settingsViewModel.isAuthV2Enabled {
-            let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.activating,
-                                                        viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
-                                                        settingsViewModel: settingsViewModel,
-                                                        viewPlans: {
-                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
-            })
-                .environmentObject(subscriptionNavigationCoordinator)
-            NavigationLink(destination: settingsView) {
-                SettingsCellView(
-                    label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProActivating,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
-                )
-            }
-        } else {
-            let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.activating,
-                                                          viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
-                                                          settingsViewModel: settingsViewModel,
-                                                          viewPlans: {
-                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
-            })
-                .environmentObject(subscriptionNavigationCoordinator)
-            NavigationLink(destination: settingsView) {
-                SettingsCellView(
-                    label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProActivating,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
-                )
-            }
+        let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.activating,
+                                                      viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                      settingsViewModel: settingsViewModel,
+                                                      viewPlans: {
+            subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
+        })
+            .environmentObject(subscriptionNavigationCoordinator)
+        NavigationLink(destination: settingsView) {
+            SettingsCellView(
+                label: UserText.settingsPProManageSubscription,
+                subtitle: UserText.settingsPProActivating,
+                image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
+            )
         }
     }
 
@@ -402,7 +306,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: destination, isActive: $isShowingDBP) {
                 SettingsCellView(
                     label: UserText.settingsPProDBPTitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                     statusIndicator: StatusIndicatorView(status: statusIndicator),
                     isGreyedOut: !hasDBPEntitlement
                 )
@@ -410,7 +314,7 @@ struct SettingsSubscriptionView: View {
             .disabled(!hasDBPEntitlement)
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled && settingsViewModel.isAuthV2Enabled {
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
             let hasAIChatEntitlement = userEntitlements.contains(.paidAIChat)
 
             NavigationLink(destination: LazyView(SubscriptionAIChatView(viewModel: settingsViewModel)), isActive: $isShowingPaidAIChat) {
@@ -428,10 +332,9 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal) {
             let hasITREntitlement = userEntitlements.contains(.identityTheftRestoration) || userEntitlements.contains(.identityTheftRestorationGlobal)
 
-            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                  userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
-                                                 isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)
+                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)
             NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: model)), isActive: $isShowingITP) {
                 SettingsCellView(
                     label: UserText.settingsPProITRTitle,
@@ -445,23 +348,12 @@ struct SettingsSubscriptionView: View {
 
         let isActiveTrialOffer = settingsViewModel.state.subscription.isActiveTrialOffer
         let configuration: SubscriptionSettingsViewConfiguration = isActiveTrialOffer ? .trial : .subscribed
-
-        if !settingsViewModel.isAuthV2Enabled {
-            NavigationLink(destination: LazyView(SubscriptionSettingsView(configuration: configuration,
-                                                                          viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
-                                                                          settingsViewModel: settingsViewModel))
-                .environmentObject(subscriptionNavigationCoordinator)
-            ) {
-                SettingsCustomCell(content: { manageSubscriptionView })
-            }
-        } else {
-            NavigationLink(destination: LazyView(SubscriptionSettingsViewV2(configuration: configuration,
-                                                                            viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
-                                                                            settingsViewModel: settingsViewModel))
-                .environmentObject(subscriptionNavigationCoordinator)
-            ) {
-                SettingsCustomCell(content: { manageSubscriptionView })
-            }
+        NavigationLink(destination: LazyView(SubscriptionSettingsViewV2(configuration: configuration,
+                                                                        viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                                        settingsViewModel: settingsViewModel))
+            .environmentObject(subscriptionNavigationCoordinator)
+        ) {
+            SettingsCustomCell(content: { manageSubscriptionView })
         }
     }
         

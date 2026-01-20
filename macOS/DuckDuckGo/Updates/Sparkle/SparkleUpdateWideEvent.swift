@@ -93,7 +93,7 @@ final class SparkleUpdateWideEvent {
             updateConfiguration: areAutomaticUpdatesEnabled ? .automatic : .manual,
             isInternalUser: internalUserDecider.isInternalUser,
             contextData: WideEventContextData(name: "sparkle_update"),
-            appData: WideEventAppData(internalUser: internalUserDecider.isInternalUser),
+            appData: WideEventAppData(),
             globalData: WideEventGlobalData(id: globalID)
         )
         eventData.totalDuration = .startingNow()
@@ -101,6 +101,14 @@ final class SparkleUpdateWideEvent {
         eventData.lastKnownStep = .updateCheckStarted
 
         wideEventManager.startFlow(eventData)
+    }
+
+    /// Ensures a flow exists, starting one if needed.
+    ///
+    /// Unlike `startFlow`, this preserves any existing flow rather than replacing it.
+    func ensureFlowExists(initiationType: UpdateWideEventData.InitiationType) {
+        guard currentFlowID == nil else { return }
+        startFlow(initiationType: initiationType)
     }
 
     func getCurrentFlowData() -> UpdateWideEventData? {

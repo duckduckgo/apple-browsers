@@ -1,4 +1,4 @@
-# bookmarks.yaml
+# ai-chat.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
@@ -6,44 +6,49 @@ tags:
 
 ---
 
-# Set up 
-- runFlow: 
+# Set up
+- runFlow:
     file: ../shared/setup.yaml
 
-# New tab screen
+# New tab screen - tap Duck.ai button
 - assertVisible: "Duck.ai"
 - tapOn: "Duck.ai"
 - assertVisible:
-    id: "AIChatViewController"
-- tapOn: "Close 24"
+    id: "AIChatFullModeBranding"
 
-# Browsing
+# Navigate away via Tab Switcher to test browsing menu access
+- tapOn: "Tab Switcher"
+- tapOn: "New Tab"
+- tapOn: "Cancel"
 - assertVisible:
     id: "searchEntry"
 - tapOn:
     id: "searchEntry"
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
-- assertVisible: "Duck.ai"
-- tapOn: "Duck.ai"
-- assertVisible:
-    id: "AIChatViewController"
-- tapOn: "Close 24"
+- assertVisible: ".*Privacy Test Pages.*"
 
-# Tab Switcher
+# Browsing - test Duck.ai access from browsing menu (shows as "New Chat" in full mode)
+- tapOn: "Browsing Menu"
+- assertVisible: "New Chat"
+- tapOn: "New Chat"
+- assertVisible:
+    id: "AIChatFullModeBranding"
+
+# Tab Switcher - test Duck.ai access
 - tapOn: "Tab Switcher"
 - assertVisible: "Duck.ai"
 - tapOn: "Duck.ai"
 - assertVisible:
-    id: "AIChatViewController"
-- tapOn: "Close 24"
+    id: "AIChatFullModeBranding"
+- tapOn: "Tab Switcher"
 - tapOn: "New Tab"
 
 # Turn it off
 - tapOn: "Cancel"
 - tapOn: "Browsing Menu"
 - tapOn: "Settings"
-- scrollUntilVisible: 
+- scrollUntilVisible:
     element: "AI Features"
     direction: DOWN
 - tapOn: "AI Features"
@@ -53,20 +58,24 @@ tags:
 - tapOn: "Settings"
 - tapOn: "Done"
 
-# New tab screen
+# New tab screen - Duck.ai should not be visible
 - assertNotVisible: "Duck.ai"
 
-# Browsing
+# Browsing - New Chat should not be visible in menu
 - assertVisible:
     id: "searchEntry"
 - tapOn:
     id: "searchEntry"
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
-- assertNotVisible: "Duck.ai"
+- assertVisible: ".*Privacy Test Pages.*"
+- tapOn: "Browsing Menu"
+- assertNotVisible: "New Chat"
+# Dismiss menu by tapping Settings then backing out
+- tapOn: "Settings"
+- tapOn: "Done"
 
-# Tab Switcher
+# Tab Switcher - Duck.ai should not be visible
 - tapOn: "Tab Switcher"
 - assertNotVisible: "Duck.ai"
-
 

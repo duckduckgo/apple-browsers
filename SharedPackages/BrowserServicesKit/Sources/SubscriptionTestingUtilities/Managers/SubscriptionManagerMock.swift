@@ -17,151 +17,212 @@
 //
 
 import Foundation
-import Common
-@testable import Subscription
 import Combine
+import Common
+@testable import Networking
+@testable import Subscription
+import NetworkingTestingUtils
 
 public final class SubscriptionManagerMock: SubscriptionManager {
-    public var email: String?
 
     public var isEligibleForFreeTrialResult: Bool = false
 
-    public var accountManager: AccountManager
-    public var subscriptionEndpointService: SubscriptionEndpointService
-    public var authEndpointService: AuthEndpointService
-    public var subscriptionFeatureMappingCache: SubscriptionFeatureMappingCache
+    public init() {}
 
-    public static var storedEnvironment: SubscriptionEnvironment?
+    public static var environment: SubscriptionEnvironment?
     public static func loadEnvironmentFrom(userDefaults: UserDefaults) -> SubscriptionEnvironment? {
-        return storedEnvironment
+        return environment
     }
 
     public static func save(subscriptionEnvironment: SubscriptionEnvironment, userDefaults: UserDefaults) {
-        storedEnvironment = subscriptionEnvironment
+        environment = subscriptionEnvironment
     }
 
-    public var currentEnvironment: SubscriptionEnvironment
-    public var hasAppStoreProductsAvailable: Bool
+    public var currentEnvironment: SubscriptionEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
 
-    public func storePurchaseManager() -> StorePurchaseManager {
-        internalStorePurchaseManager
+    public func loadInitialData() async {}
+
+    public var resultSubscription: Result<DuckDuckGoSubscription, Error>?
+    public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription? {
+        switch resultSubscription {
+        case .success(let success):
+            return success
+        case .failure(let failure):
+            throw failure
+        case nil:
+            throw SubscriptionEndpointServiceError.noData
+        }
     }
 
-    public func loadInitialData() async {
-
+    private let hasAppStoreProductsAvailableSubject = PassthroughSubject<Bool, Never>()
+    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> {
+        hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
     }
 
-    public func refreshCachedSubscriptionAndEntitlements(completion: @escaping (Bool) -> Void) {
-        completion(true)
+    public var hasAppStoreProductsAvailable: Bool = true {
+        didSet {
+            self.hasAppStoreProductsAvailableSubject.send(hasAppStoreProductsAvailable)
+        }
     }
 
+    public var resultStorePurchaseManager: (any StorePurchaseManager)?
+    public func storePurchaseManager() -> any StorePurchaseManager {
+        return resultStorePurchaseManager!
+    }
+
+    public var resultURL: URL!
+    public var subscriptionURL: SubscriptionURL?
     public func url(for type: SubscriptionURL) -> URL {
-        type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
+        subscriptionURL = type
+        return resultURL
     }
 
     public var urlForPurchaseFromRedirect: URL!
-    public func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: Common.TLD) -> URL {
-        urlForPurchaseFromRedirect
+    public func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL {
+        return urlForPurchaseFromRedirect
     }
 
-    public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
-        return subscriptionFeatures
-    }
-
-    public var subscriptionFeatures: [Entitlement.ProductName] = []
-
-    public init(accountManager: AccountManager,
-                subscriptionEndpointService: SubscriptionEndpointService,
-                authEndpointService: AuthEndpointService,
-                storePurchaseManager: StorePurchaseManager,
-                currentEnvironment: SubscriptionEnvironment,
-                hasAppStoreProductsAvailable: Bool,
-                subscriptionFeatureMappingCache: SubscriptionFeatureMappingCache) {
-        self.accountManager = accountManager
-        self.subscriptionEndpointService = subscriptionEndpointService
-        self.authEndpointService = authEndpointService
-        self.internalStorePurchaseManager = storePurchaseManager
-        self.currentEnvironment = currentEnvironment
-        self.hasAppStoreProductsAvailable = hasAppStoreProductsAvailable
-        self.subscriptionFeatureMappingCache = subscriptionFeatureMappingCache
-    }
-
-    // MARK: -
-
-    let internalStorePurchaseManager: StorePurchaseManager
-
-    public func getToken() async throws -> String {
-        guard let accessToken = accountManager.accessToken else {
-            throw SubscriptionManagerError.noTokenAvailable
+    public var customerPortalURL: URL?
+    public func getCustomerPortalURL() async throws -> URL {
+        guard let customerPortalURL else {
+            throw SubscriptionEndpointServiceError.noData
         }
-        return accessToken
-    }
-
-    public func removeToken() async throws {
-        assertionFailure("Unsupported")
-    }
-
-    public func getAccessToken() async throws -> String {
-        try await getToken()
-    }
-
-    public func removeAccessToken() {
-        try? accountManager.removeAccessToken()
-    }
-
-    public func refreshToken() async throws {
-        assertionFailure("Unsupported")
-    }
-
-    public func adoptToken(_ someKindOfToken: Any) async throws {
-        assertionFailure("Unsupported")
+        return customerPortalURL
     }
 
     public var isUserAuthenticated: Bool {
-        accountManager.isUserAuthenticated
+        resultTokenContainer != nil
     }
 
-    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool {
-        let result = await accountManager.hasEntitlement(forProductName: feature)
-        switch result {
-        case .success(let hasEntitlements):
-            return hasEntitlements
+    public var userEmail: String? {
+        resultTokenContainer?.decodedAccessToken.email
+    }
+
+    public var resultTokenContainer: Networking.TokenContainer?
+    public var resultCreateAccountTokenContainer: Networking.TokenContainer?
+    public func getTokenContainer(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
+        switch policy {
+        case .local, .localValid, .localForceRefresh:
+            guard let resultTokenContainer else {
+                throw SubscriptionManagerError.noTokenAvailable
+            }
+            return resultTokenContainer
+        case .createIfNeeded:
+            guard let resultCreateAccountTokenContainer else {
+                throw SubscriptionManagerError.noTokenAvailable
+            }
+            resultTokenContainer = resultCreateAccountTokenContainer
+            return resultCreateAccountTokenContainer
+        }
+    }
+
+    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
+        resultTokenContainer = nil
+    }
+
+    public func removeLocalAccount() throws {
+        resultTokenContainer = nil
+    }
+
+    public func clearSubscriptionCache() {
+
+    }
+
+    public var confirmPurchaseResponse: Result<DuckDuckGoSubscription, Error>?
+    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
+        switch confirmPurchaseResponse! {
+        case .success(let result):
+            return result
         case .failure(let error):
             throw error
         }
     }
 
-    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
-        await currentSubscriptionFeatures().contains(feature)
-    }
-
-    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
-        accountManager.signOut(skipNotification: !notifyUI, userInitiated: userInitiated)
-    }
-
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
-        if let accessToken = accountManager.accessToken {
-            let subscriptionResult = await subscriptionEndpointService.getSubscription(accessToken: accessToken, cachePolicy: cachePolicy.apiCachePolicy)
-            if case let .success(subscription) = subscriptionResult {
-                return subscription
-            } else {
-                throw SubscriptionEndpointServiceError.noData
-            }
-        } else {
+        switch resultSubscription {
+        case .success(let success):
+            return success
+        case .failure(let failure):
+            throw failure
+        case nil:
             throw SubscriptionEndpointServiceError.noData
         }
     }
 
+    public var productsResponse: Result<[GetProductsItem], Error>?
+    public func getProducts() async throws -> [GetProductsItem] {
+        switch productsResponse! {
+        case .success(let result):
+            return result
+        case .failure(let error):
+            throw error
+        }
+    }
+
+    public var tierProductsResponse: Result<GetTierProductsResponse, Error>?
+    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
+        switch tierProductsResponse! {
+        case .success(let result):
+            return result
+        case .failure(let error):
+            throw error
+        }
+    }
+
+    public func adopt(tokenContainer: Networking.TokenContainer) async throws {
+        self.resultTokenContainer = tokenContainer
+    }
+
+    public var resultFeatures: [SubscriptionEntitlement] = []
+    public func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement] {
+        resultFeatures
+    }
+
+    public func isFeatureIncludedInSubscription(_ feature: Networking.SubscriptionEntitlement) async throws -> Bool {
+        resultFeatures.contains(feature)
+    }
+
+    public func isFeatureEnabled(_ feature: Networking.SubscriptionEntitlement) async throws -> Bool {
+        resultFeatures.contains(feature)
+    }
+
+    public func getAllEntitlementStatus() async -> EntitlementStatus {
+        EntitlementStatus(enabledEntitlements: resultFeatures)
+    }
+
+    // MARK: - Subscription Token Provider
+
+    public func getAccessToken() async throws -> String {
+        guard let accessToken = resultTokenContainer?.accessToken else {
+            throw SubscriptionManagerError.noTokenAvailable
+        }
+        return accessToken
+    }
+
+    public var adoptResult: Result<Networking.TokenContainer, Error>?
+    public func adopt(accessToken: String, refreshToken: String) async throws {
+        switch adoptResult! {
+        case .success(let result):
+            self.resultTokenContainer = result
+        case .failure(let error):
+            throw error
+        }
+    }
+
     public func isSubscriptionPresent() -> Bool {
-        isUserAuthenticated
+        switch resultSubscription {
+        case .success(let success):
+            return true
+        case .failure(let failure):
+            return false
+        case nil:
+            return false
+        }
     }
 
     public func isUserEligibleForFreeTrial() -> Bool {
         isEligibleForFreeTrialResult
     }
 
-    public let hasAppStoreProductsAvailableSubject = PassthroughSubject<Bool, Never>()
-    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> {
-        hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
-    }
+    public var currentStorefrontRegion: SubscriptionRegion = .usa
 }

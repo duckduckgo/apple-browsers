@@ -2,6 +2,46 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Odstrániť z %1$d webu. Môže ťa to odhlásiť z účtov.</string>
+			<key>few</key>
+			<string>Odstrániť z %1$d webov. Môže ťa to odhlásiť z účtov.</string>
+			<key>many</key>
+			<string>Odstrániť z %1$d webu. Môže ťa to odhlásiť z účtov.</string>
+			<key>other</key>
+			<string>Odstrániť z %1$d webov. Môže ťa to odhlásiť z účtov.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriť kartu</string>
+			<key>few</key>
+			<string>Zatvoriť všetky %1$d karty</string>
+			<key>many</key>
+			<string>Zatvoriť všetkých %1$d kariet</string>
+			<key>other</key>
+			<string>Zatvoriť všetkých %1$d kariet</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

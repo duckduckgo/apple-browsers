@@ -96,7 +96,7 @@ final class ReleaseNotesTabExtension: NavigationResponder {
         guard AppVersion.runType != .uiTests else {
             return
         }
-        guard let updateController = Application.appDelegate.updateController as? SparkleUpdateController else { return }
+        guard let updateController = Application.appDelegate.updateController as? any SparkleUpdateControllerProtocol else { return }
         Publishers.CombineLatest(updateController.updateProgressPublisher, updateController.latestUpdatePublisher)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -148,7 +148,7 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: SparkleUpdateController, pixelKit: PixelKit? = PixelKit.shared) {
+    init(from updateController: any SparkleUpdateControllerProtocol, pixelKit: PixelKit? = PixelKit.shared) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 

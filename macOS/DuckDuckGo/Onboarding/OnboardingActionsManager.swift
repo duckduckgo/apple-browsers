@@ -21,6 +21,8 @@ import Combine
 import PixelKit
 import Common
 import os.log
+import AIChat
+import PrivacyConfig
 
 enum OnboardingSteps: String, CaseIterable {
     case welcome
@@ -29,6 +31,12 @@ enum OnboardingSteps: String, CaseIterable {
     case systemSettings
     case duckPlayerSingle
     case customize
+    case addressBarMode
+}
+
+/// Defines which onboarding steps should be excluded from the flow
+enum OnboardingExcludedStep: String {
+    case addressBarMode
 }
 
 protocol OnboardingActionsManaging {
@@ -62,6 +70,9 @@ protocol OnboardingActionsManaging {
     /// At user imput set the session restoration on startup
     func setHomeButtonPosition(enabled: Bool)
 
+    /// At user input set the Duck.ai toggle visibility in the address bar
+    func setDuckAiInAddressBar(enabled: Bool)
+
     /// It is called every time the user ends an onboarding step
     func stepCompleted(step _: OnboardingSteps)
 
@@ -84,14 +95,16 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let appearancePreferences: AppearancePreferences
     private let startupPreferences: StartupPreferences
     private let dataImportProvider: DataImportStatusProviding
+    private var aiChatPreferencesStorage: AIChatPreferencesStorage
+    private let featureFlagger: FeatureFlagger
     private var cancellables = Set<AnyCancellable>()
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
     static var isOnboardingFinished: Bool
 
-    let configuration: OnboardingConfiguration = {
+    var configuration: OnboardingConfiguration {
         var systemSettings: SystemSettings
-        var order = "v3"
+        let order = "v3"
         let platform = OnboardingPlatform(name: "macos")
 #if APPSTORE
         systemSettings = SystemSettings(rows: ["import"])
@@ -107,8 +120,28 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         env = "production"
 #endif
 
-        return OnboardingConfiguration(stepDefinitions: stepDefinitions, exclude: [], order: order, env: env, locale: preferredLocale, platform: platform)
-    }()
+        let excludedSteps = buildExcludedSteps()
+
+        return OnboardingConfiguration(stepDefinitions: stepDefinitions,
+                                       exclude: excludedSteps,
+                                       order: order,
+                                       env: env,
+                                       locale: preferredLocale,
+                                       platform: platform)
+    }
+
+    private func buildExcludedSteps() -> [String] {
+        var excludedSteps: [String] = []
+
+        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
+
+        if !(isAIChatOmnibarToggleEnabled && isAIChatOmnibarOnboardingEnabled) {
+            excludedSteps.append(OnboardingExcludedStep.addressBarMode.rawValue)
+        }
+
+        return excludedSteps
+    }
 
     convenience init(
         navigationDelegate: OnboardingNavigating,
@@ -116,7 +149,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         defaultBrowserProvider: DefaultBrowserProvider,
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
-        bookmarkManager: BookmarkManager
+        bookmarkManager: BookmarkManager,
+        featureFlagger: FeatureFlagger
     ) {
         self.init(
             navigationDelegate: navigationDelegate,
@@ -124,7 +158,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
-            dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager)
+            dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager),
+            aiChatPreferencesStorage: DefaultAIChatPreferencesStorage(),
+            featureFlagger: featureFlagger
         )
     }
 
@@ -134,7 +170,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         defaultBrowserProvider: DefaultBrowserProvider,
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
-        dataImportProvider: DataImportStatusProviding
+        dataImportProvider: DataImportStatusProviding,
+        aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        featureFlagger: FeatureFlagger
     ) {
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
@@ -142,6 +180,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.appearancePreferences = appearancePreferences
         self.startupPreferences = startupPreferences
         self.dataImportProvider = dataImportProvider
+        self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.featureFlagger = featureFlagger
     }
 
     func onboardingStarted() {
@@ -205,6 +245,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
     }
 
+    func setDuckAiInAddressBar(enabled: Bool) {
+        aiChatPreferencesStorage.showSearchAndDuckAIToggle = enabled
+    }
+
     private func onMainThreadIfNeeded(_ function: @escaping () -> Void) {
         if Thread.isMainThread {
             function()
@@ -214,7 +258,32 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func stepCompleted(step: OnboardingSteps) {
-        Logger.general.error("Onboarding step: \("\(step)", privacy: .public)")
+        Logger.general.debug("Onboarding step completed: \("\(step)", privacy: .public)")
+        fireStepCompletedPixel(for: step)
+    }
+
+    private func fireStepCompletedPixel(for step: OnboardingSteps) {
+        let pixel: GeneralPixel?
+        switch step {
+        case .welcome:
+            pixel = .onboardingStepCompleteWelcome
+        case .getStarted:
+            pixel = .onboardingStepCompleteGetStarted
+        case .makeDefaultSingle:
+            pixel = .onboardingStepCompletePrivateByDefault
+        case .systemSettings:
+            pixel = .onboardingStepCompleteSystemSettings
+        case .duckPlayerSingle:
+            pixel = .onboardingStepCompleteCleanerBrowsing
+        case .customize:
+            pixel = .onboardingStepCompleteCustomize
+        case .addressBarMode:
+            // No pixel for addressBarMode as it's the last step before final
+            pixel = nil
+        }
+        if let pixel {
+            PixelKit.fire(pixel, frequency: .dailyAndCount)
+        }
     }
 
     func reportException(with param: [String: String]) {
@@ -227,6 +296,35 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private func onboardingHasFinished() {
         Self.isOnboardingFinished = true
         navigation.updatePreventUserInteraction(prevent: false)
+
+        let userSawToggleOnboarding = wasToggleOnboardingStepShown()
+
+        /// If user completed onboarding while the toggle onboarding step was shown,
+        /// mark the flag to skip the popover
+        if userSawToggleOnboarding {
+            aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
+        }
+
+        fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
+    }
+
+    /// Returns true if the toggle onboarding step was shown to the user.
+    /// The step is only shown when both aiChatOmnibarToggle AND aiChatOmnibarOnboarding flags are enabled.
+    private func wasToggleOnboardingStepShown() -> Bool {
+        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
+        return isAIChatOmnibarToggleEnabled && isAIChatOmnibarOnboardingEnabled
+    }
+
+    private func fireOnboardingFinishedPixels(userSawToggleOnboarding: Bool) {
+        PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
+
+        guard userSawToggleOnboarding else { return }
+
+        let togglePixel: AIChatPixel = aiChatPreferencesStorage.showSearchAndDuckAIToggle
+            ? .aiChatOnboardingFinishedToggleOn
+            : .aiChatOnboardingFinishedToggleOff
+        PixelKit.fire(togglePixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
 }

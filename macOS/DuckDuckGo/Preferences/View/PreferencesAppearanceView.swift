@@ -17,6 +17,7 @@
 //
 
 import Bookmarks
+import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -71,6 +72,9 @@ extension Preferences {
                     )
                 }
             }
+            .onChange(of: model.themeAppearance) { _ in
+                PixelKit.fire(SettingsPixel.themeAppearanceChanged(source: .settings), frequency: .standard)
+            }
         }
 
         private func isThemeSelected(_ theme: ThemeAppearance) -> Binding<Bool> {
@@ -94,7 +98,7 @@ extension Preferences {
 
         var body: some View {
             HStack(spacing: 6) {
-                Image(systemNamed: appearance.icon)
+                Image(named: appearance.icon)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.primary)
 
@@ -102,7 +106,8 @@ extension Preferences {
                     .font(.system(size: 13))
                     .foregroundColor(.primary)
             }
-            .frame(width: 139, height: 32)
+            .frame(height: 30)
+            .frame(minWidth: 100, maxWidth: 139)
         }
     }
 
@@ -119,6 +124,9 @@ extension Preferences {
                 )
             }
             .frame(height: 32)
+            .onChange(of: model.themeAppearance) { _ in
+                PixelKit.fire(SettingsPixel.themeAppearanceChanged(source: .settings), frequency: .standard)
+            }
         }
     }
 
@@ -126,13 +134,19 @@ extension Preferences {
     //
     struct ThemeView: View {
 
-        // MARK: - Constants
-        private let outerSize: CGFloat = 42
-        private let outerCornerRadius: CGFloat = 8
-        private let innerSize = CGSize(width: 40, height: 31)
-        private let innerCornerRadius: CGFloat = 7
-        private let knobSize = CGSize(width: 28, height: 8)
+        // MARK: - Constants / Radius
         private let knobRadius: CGFloat = 7
+        private let innerCornerRadius: CGFloat = 7
+        private let outerCornerRadius: CGFloat = 8
+
+        // MARK: - Constants / Size
+        private let outerMinWidth: CGFloat = 32
+        private let outerMaxWidth: CGFloat = 42
+        private let outerHeight: CGFloat = 42
+        private let innerHeight: CGFloat = 31
+        private let innerTopHeight: CGFloat = 10
+        private let innerBottomHeight: CGFloat = 21
+        private let knobHeight: CGFloat = 8
 
         // MARK: - Properties
         private let themeColors: ThemeColors
@@ -148,21 +162,20 @@ extension Preferences {
                 // Background
                 RoundedRectangle(cornerRadius: outerCornerRadius)
                     .fill(Color(themeColors.surfaceBackdrop))
-                    .frame(width: outerSize, height: outerSize)
                     .overlay(
                         RoundedRectangle(cornerRadius: outerCornerRadius)
                         .stroke(Color(themeColors.surfaceDecorationPrimary), lineWidth: 1)
-                        .frame(width: outerSize, height: outerSize)
                     )
 
                 // Inner Top
                 RoundedRectangle(cornerRadius: innerCornerRadius)
                     .fill(Color(themeColors.surfacePrimary))
-                    .frame(width: innerSize.width, height: innerSize.height)
+                    .frame(height: innerHeight)
+                    .padding([.leading, .trailing], 1)
                     .mask(
                         VStack {
                             Rectangle()
-                                .frame(height: 10)
+                                .frame(height: innerTopHeight)
                             Color.clear
                         }
                     )
@@ -171,12 +184,13 @@ extension Preferences {
                 // Inner Bottom
                 RoundedRectangle(cornerRadius: innerCornerRadius)
                     .fill(Color(themeColors.surfaceTertiary))
-                    .frame(width: innerSize.width, height: innerSize.height)
+                    .padding([.leading, .trailing], 1)
+                    .frame(height: innerHeight)
                     .mask(
                         VStack {
                             Color.clear
                             Rectangle()
-                                .frame(height: 21)
+                                .frame(height: innerBottomHeight)
                         }
                     )
                     .padding(.bottom, 1)
@@ -184,9 +198,12 @@ extension Preferences {
                 // Knob
                 RoundedRectangle(cornerRadius: knobRadius)
                     .fill(Color(themeColors.accentPrimary))
-                    .frame(width: knobSize.width, height: knobSize.height)
+                    .frame(height: knobHeight)
+                    .padding([.leading, .trailing], 7)
                     .padding(.bottom, 6)
             }
+            .frame(height: outerHeight)
+            .frame(minWidth: outerMinWidth, maxWidth: outerMaxWidth)
         }
     }
 
@@ -198,13 +215,16 @@ extension Preferences {
 
         var body: some View {
             SlidingPickerView(settings: .buildThemesPickerSettings(theme: theme),
-                              allValues: ThemeName.allCases,
+                              allValues: ThemeName.allCasesSorted,
                               selectedValue: $model.themeName) { themeName in
                 AnyView(
                     ThemeView(themeName: themeName)
                 )
             }
             .frame(height: 32)
+            .onChange(of: model.themeName) { newValue in
+                PixelKit.fire(SettingsPixel.themeNameChanged(name: newValue, source: .settings), frequency: .standard)
+            }
         }
     }
 
@@ -351,14 +371,14 @@ extension Preferences {
 //
 private extension ThemeAppearance {
 
-    var icon: Image.SystemImageName {
+    var icon: Image.ImageName {
         switch self {
         case .light:
-            .sunMax
+            .appearanceLight
         case .dark:
-            .moon
+            .appearanceDark
         case .systemDefault:
-            .circleLeftHalfFilled
+            .appearanceSystem
         }
     }
 }
@@ -381,8 +401,9 @@ private extension SlidingPickerSettings {
             backgroundColor: Color(theme.palette.surfacePrimary),
             borderColor: Color(theme.palette.surfaceDecorationPrimary),
             selectionBackgroundColor: Color(theme.palette.surfaceTertiary),
-            selectionBorderColor: Color(theme.palette.accentPrimary),
+            selectionBorderColor: Color(theme.palette.shadowSecondary),
             animationsEnabled: false,
-            dividerSize: CGSize(width: 1, height: 16))
+            dividerSize: CGSize(width: 1, height: 16),
+            elementsMargin: 1)
     }
 }

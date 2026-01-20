@@ -26,10 +26,14 @@ final class UpdateNotificationPresenter {
 
     static let presentationTimeInterval: TimeInterval = 10
 
+    private var currentPopover: PopoverMessageViewController?
+
     func showUpdateNotification(icon: NSImage, text: String, buttonText: String? = nil, presentMultiline: Bool = false) {
         Logger.updates.log("Notification presented: \(text, privacy: .public)")
 
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
             guard let windowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController ?? Application.appDelegate.windowControllersManager.mainWindowControllers.last,
                   let button = windowController.mainViewController.navigationBarViewController.optionsButton else {
                 return
@@ -54,9 +58,24 @@ final class UpdateNotificationPresenter {
                                                               buttonAction: buttonAction,
                                                               clickAction: { [weak self] in
                 self?.openUpdatesPage()
+            },
+                                                              onDismiss: { [weak self] in
+                self?.currentPopover = nil
             })
 
+            self.currentPopover = viewController
             viewController.show(onParent: parentViewController, relativeTo: button)
+        }
+    }
+
+    /// Dismisses the update popover if currently presented. Safe no-op otherwise.
+    func dismissIfPresented() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  let popover = self.currentPopover,
+                  let presenter = popover.presentingViewController else { return }
+            presenter.dismiss(popover)
+            self.currentPopover = nil
         }
     }
 

@@ -168,6 +168,59 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.passwords, count: 0))
     }
 
+    // MARK: - Data Import Tests
+
+    func testWhenAllConditionsMetThenShouldPresentPromoForDataImport() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.dataImportSummarySyncPromotion])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
+        syncPromoManager.resetPromos()
+
+        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.dataImport, count: 1))
+    }
+
+    func testWhenDataImportSummarySyncPromotionFeatureFlagDisabledThenShouldNotPresentPromoForDataImport() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.dataImport, count: 1))
+    }
+
+    func testWhenSyncServiceAuthStateActiveThenShouldNotPresentPromoForDataImport() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.dataImportSummarySyncPromotion])
+        syncService.authState = .active
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.dataImport, count: 1))
+    }
+
+    func testWhenSyncPromoDataImportDismissedThenShouldNotPresentPromoForDataImport() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.dataImportSummarySyncPromotion])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
+        syncPromoManager.resetPromos()
+        syncPromoManager.dismissPromoFor(.dataImport)
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.dataImport, count: 1))
+    }
+
+    func testWhenDataImportCountIsZeroThenShouldNotPresentPromoForDataImport() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.dataImportSummarySyncPromotion])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.dataImport, count: 0))
+    }
+
     // MARK: - Mock Creation
 
     private func createFeatureFlagger(withFeatureFlagsEnabled featureFlags: [FeatureFlag]) -> FeatureFlagger {

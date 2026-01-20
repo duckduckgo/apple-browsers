@@ -29,6 +29,7 @@ public enum AppStorePurchaseFlowError: DDGError {
     case authenticatingWithTransactionFailed
     case accountCreationFailed(Error)
     case purchaseFailed(Error)
+    case transactionPendingAuthentication
     case cancelledByUser
     case missingEntitlements
     case internalError(Error?)
@@ -41,6 +42,7 @@ public enum AppStorePurchaseFlowError: DDGError {
         case .accountCreationFailed(let subError): "Failed to create subscription account: \(String(describing: subError))"
         case .purchaseFailed(let subError): "Subscription purchase failed: \(String(describing: subError))"
         case .cancelledByUser: "Subscription purchase was cancelled by user"
+        case .transactionPendingAuthentication: "Transaction is pending authentication (e.g., Ask to Buy)"
         case .missingEntitlements: "Subscription completed but entitlements are missing"
         case .internalError(let error): "An internal error occurred during purchase: \(String(describing: error))"
         }
@@ -58,6 +60,7 @@ public enum AppStorePurchaseFlowError: DDGError {
         case .cancelledByUser: 12905
         case .missingEntitlements: 12906
         case .internalError: 12907
+        case .transactionPendingAuthentication: 12908
         }
     }
 
@@ -75,6 +78,7 @@ public enum AppStorePurchaseFlowError: DDGError {
         case (.noProductsFound, .noProductsFound),
             (.activeSubscriptionAlreadyPresent, .activeSubscriptionAlreadyPresent),
             (.authenticatingWithTransactionFailed, .authenticatingWithTransactionFailed),
+            (.transactionPendingAuthentication, .transactionPendingAuthentication),
             (.cancelledByUser, .cancelledByUser),
             (.missingEntitlements, .missingEntitlements),
             (.internalError, .internalError):
@@ -122,6 +126,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
     private let subscriptionManager: any SubscriptionManager
     private let storePurchaseManager: any StorePurchaseManager
     private let appStoreRestoreFlow: any AppStoreRestoreFlow
+    private let pendingTransactionHandler: PendingTransactionHandling?
 
     // Wide Event
     private let wideEvent: WideEventManaging
@@ -129,12 +134,14 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
     public init(subscriptionManager: any SubscriptionManager,
                 storePurchaseManager: any StorePurchaseManager,
                 appStoreRestoreFlow: any AppStoreRestoreFlow,
-                wideEvent: WideEventManaging
+                wideEvent: WideEventManaging,
+                pendingTransactionHandler: PendingTransactionHandling? = nil
     ) {
         self.subscriptionManager = subscriptionManager
         self.storePurchaseManager = storePurchaseManager
         self.appStoreRestoreFlow = appStoreRestoreFlow
         self.wideEvent = wideEvent
+        self.pendingTransactionHandler = pendingTransactionHandler
     }
 
     public func purchaseSubscription(with subscriptionIdentifier: String, includeProTier: Bool) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
@@ -200,6 +207,8 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
             switch error {
             case .purchaseCancelledByUser:
                 return .failure(.cancelledByUser)
+            case .transactionPendingAuthentication:
+                return .failure(.transactionPendingAuthentication)
             case .purchaseFailed(let underlyingError):
                 return .failure(.purchaseFailed(underlyingError))
             default:
@@ -234,6 +243,8 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
             switch error {
             case .purchaseCancelledByUser:
                 return .failure(.cancelledByUser)
+            case .transactionPendingAuthentication:
+                return .failure(.transactionPendingAuthentication)
             case .purchaseFailed(let underlyingError):
                 return .failure(.purchaseFailed(underlyingError))
             default:
@@ -255,6 +266,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
                     Logger.subscriptionAppStorePurchaseFlow.error("Missing entitlements")
                     return .failure(.missingEntitlements)
                 } else {
+                    pendingTransactionHandler?.handleSubscriptionActivated()
                     return .success(.completed)
                 }
             } else {

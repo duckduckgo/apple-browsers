@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import DDGSync
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
@@ -43,6 +44,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     private var emailManager: EmailManager!
     private var duckPlayerPreferences: DuckPlayerPreferencesPersistorMock!
     private var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
+    private var syncService: MockDDGSyncing!
 
     @MainActor
     override func setUp() async throws {
@@ -66,6 +68,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         emailManager = EmailManager(storage: MockEmailStorage())
         duckPlayerPreferences = DuckPlayerPreferencesPersistorMock()
         subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
+        syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
 
         keyValueStore = try MockKeyValueFileStore()
         legacyKeyValueStore = MockKeyValueStore()
@@ -82,7 +85,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             dataImportProvider: dataImportProvider,
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            syncService: syncService
         )
     }
 
@@ -102,6 +106,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         emailManager = nil
         duckPlayerPreferences = nil
         subscriptionCardVisibilityManager = nil
+        syncService = nil
         super.tearDown()
     }
 
@@ -116,16 +121,19 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     func testWhenInitializedWithNoVisibleCardsThenContinueSetUpCardsClosedIsSet() {
         // Set up all conditions to hide all cards
+        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: true)
         let testProvider = createProvider(
             defaultBrowserIsDefault: true,
             dataImportDidImport: true,
             dockStatus: true,
             duckPlayerModeBool: true,
             emailManagerSignedIn: true,
-            subscriptionCardShouldShow: false
+            subscriptionCardShouldShow: false,
+            syncConnected: true,
+            appearancePreferences: testAppearancePreferences
         )
 
-        XCTAssertTrue(appearancePreferences.continueSetUpCardsClosed)
+        XCTAssertTrue(testAppearancePreferences.continueSetUpCardsClosed)
         XCTAssertTrue(testProvider.cards.isEmpty)
     }
 
@@ -387,6 +395,34 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertFalse(cards.contains(.subscription))
     }
 
+    // Personalize Browser Card
+    func testWhenPersonalizeBrowserCardShouldShowThenPersonalizeBrowserCardIsVisible() {
+        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: false)
+        let testProvider = createProvider(appearancePreferences: testAppearancePreferences)
+
+        XCTAssertTrue(testProvider.cards.contains(.personalizeBrowser))
+    }
+
+    func testWhenPersonalizeBrowserCardShouldNotShowThenPersonalizeBrowserCardIsNotVisible() {
+        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: true)
+        let testProvider = createProvider(appearancePreferences: testAppearancePreferences)
+
+        XCTAssertFalse(testProvider.cards.contains(.personalizeBrowser))
+    }
+
+    // Sync Card
+    func testWhenSyncCardShouldShowThenSyncCardIsVisible() {
+        let testProvider = createProvider(syncConnected: false)
+
+        XCTAssertTrue(testProvider.cards.contains(.sync))
+    }
+
+    func testWhenSyncCardShouldNotShowThenSyncCardIsNotVisible() {
+        let testProvider = createProvider(syncConnected: true)
+
+        XCTAssertFalse(testProvider.cards.contains(.sync))
+    }
+
     // MARK: - Permanent Dismissal Tests
 
     func testWhenCardDismissedMaxTimesThenCardIsPermanentlyDismissed() {
@@ -594,18 +630,158 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     func testWhenAllCardsAreNotVisibleThenCardsListIsEmpty() {
-        appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: true)
+        testAppearancePreferences.isContinueSetUpCardsViewOutdated = false
         let testProvider = createProvider(
             defaultBrowserIsDefault: true,
             dataImportDidImport: true,
             dockStatus: true,
             duckPlayerModeBool: true,
             emailManagerSignedIn: true,
-            subscriptionCardShouldShow: false
+            subscriptionCardShouldShow: false,
+            syncConnected: true,
+            appearancePreferences: testAppearancePreferences
         )
 
         let cards = testProvider.cards
         XCTAssertTrue(cards.isEmpty)
+    }
+
+    // MARK: - Card Ordering Tests
+
+    func testWhenNoPersistedOrderThenDefaultOrderIsUsed() {
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        testPersistor.orderedCardIDs = nil
+        let testProvider = createProvider(persistor: testPersistor)
+
+#if !APPSTORE
+        let expectedCards = testProvider.defaultCards.map { $0.cardID }
+#else
+        let expectedCards = testProvider.defaultCards.map { $0.cardID }.filter { $0 != .addAppToDockMac }
+#endif
+
+        XCTAssertEqual(testProvider.cards, expectedCards)
+    }
+
+    func testWhenPersistedOrderExistsThenPersistedOrderIsUsed() {
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        let persistedOrder: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync]
+        testPersistor.orderedCardIDs = persistedOrder
+        let testProvider = createProvider(persistor: testPersistor)
+
+#if !APPSTORE
+        let expectedCards = persistedOrder
+#else
+        let expectedCards = persistedOrder.filter { $0 != .addAppToDockMac }
+#endif
+
+        XCTAssertEqual(testProvider.cards, expectedCards)
+    }
+
+    func testWhenFirstCardLevelIsLevel1AndDaysLessThanMaxDaysThenLevel1CardsFirst() throws {
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        testPersistor.firstCardLevel = .level1
+        testPersistor.orderedCardIDs = nil
+        let testAppearancePrefs = createAppearancePrefs(demonstrationDays: 1)
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: testAppearancePrefs,
+            persistor: testPersistor
+        )
+
+        let cards = testProvider.cards
+        // Level 1 cards should appear before level 2 cards
+        let level1Cards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection]
+        let level2Cards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription]
+
+        let firstLevel1Index = try XCTUnwrap(cards.firstIndex(where: { level1Cards.contains($0) }))
+        let firstLevel2Index = try XCTUnwrap(cards.firstIndex(where: { level2Cards.contains($0) }))
+        XCTAssertLessThan(firstLevel1Index, firstLevel2Index, "Level 1 cards should come before level 2 cards")
+    }
+
+    func testWhenFirstCardLevelIsLevel1AndDaysGreaterThanOrEqualToMaxDaysThenLevel2CardsFirst() throws {
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        testPersistor.firstCardLevel = .level1
+        testPersistor.orderedCardIDs = nil
+        let testAppearancePrefs = createAppearancePrefs(demonstrationDays: 2)
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: testAppearancePrefs,
+            persistor: testPersistor
+        )
+
+        let cards = testProvider.cards
+
+        // Level 2 cards should appear before level 1 cards after swap
+        let level1Cards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection]
+        let level2Cards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription]
+
+        let firstLevel1Index = try XCTUnwrap(cards.firstIndex(where: { level1Cards.contains($0) }))
+        let firstLevel2Index = try XCTUnwrap(cards.firstIndex(where: { level2Cards.contains($0) }))
+        XCTAssertLessThan(firstLevel2Index, firstLevel1Index, "Level 2 cards should come before level 1 cards after swap")
+
+        // Verify firstCardLevel was updated
+        XCTAssertEqual(testPersistor.firstCardLevel, .level2, "firstCardLevel should be updated when swap occurs")
+    }
+
+    func testWhenLevelOrderSwapsThenOrderIsPersisted() {
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        testPersistor.firstCardLevel = .level1
+        testPersistor.orderedCardIDs = nil
+        let testAppearancePrefs = createAppearancePrefs(demonstrationDays: 3)
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: testAppearancePrefs,
+            persistor: testPersistor
+        )
+
+        _ = testProvider.cards
+
+        let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync, .emailProtection]
+
+        XCTAssertEqual(testPersistor.orderedCardIDs, expectedCards, "Order should be persisted after swap")
+    }
+
+    func testWhenDefaultOrderIsUsedThenOrderIsPersisted() {
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        testPersistor.orderedCardIDs = nil
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            persistor: testPersistor
+        )
+
+        _ = testProvider.cards
+
+        let expectedCards = testProvider.defaultCards.map { $0.cardID }
+
+        XCTAssertEqual(testPersistor.orderedCardIDs, expectedCards, "Default order should be persisted on first use")
+    }
+
+    // MARK: - Max Times Shown Tests
+
+    @MainActor
+    func testWhenCardShownMaxTimesThenCardMovesToBack() throws {
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        testPersistor.setTimesShown(10, for: .personalizeBrowser)
+        testPersistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
+        let testProvider = createProvider(persistor: testPersistor)
+
+        let cards = testProvider.cards
+
+        XCTAssertEqual(cards.last, .personalizeBrowser, "Card should move to back of list")
+        XCTAssertEqual(cards.first, .sync, "Next card should be first")
+    }
+
+    @MainActor
+    func testWhenCardShownMaxTimesThenTimesShownResets() {
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        testPersistor.setTimesShown(10, for: .personalizeBrowser)
+        testPersistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
+        let testProvider = createProvider(persistor: testPersistor)
+
+        _ = testProvider.cards
+
+        XCTAssertEqual(testPersistor.timesShown(for: .personalizeBrowser), 0, "Times shown should reset to 0")
     }
 
     // MARK: - Helper Functions
@@ -618,6 +794,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         youtubeOverlayAnyButtonPressed: Bool? = nil,
         emailManagerSignedIn: Bool? = nil,
         subscriptionCardShouldShow: Bool? = nil,
+        syncConnected: Bool? = nil,
         appearancePreferences: AppearancePreferences? = nil,
         persistor: MockNewTabPageNextStepsCardsPersistor? = nil,
         legacyPersistor: MockHomePageContinueSetUpModelPersisting? = nil,
@@ -682,6 +859,14 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             return subscriptionCardVisibilityManager!
         }()
 
+        let testSyncService: MockDDGSyncing = {
+            if let syncConnected {
+                let authState: SyncAuthState = syncConnected ? .active : .inactive
+                return MockDDGSyncing(authState: authState, isSyncInProgress: false)
+            }
+            return syncService!
+        }()
+
         let testAppearancePreferences = appearancePreferences ?? self.appearancePreferences!
         let testPersistor = persistor ?? self.persistor!
         let testLegacyPersistor = legacyPersistor ?? self.legacyPersistor!
@@ -699,7 +884,21 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             dataImportProvider: testDataImportProvider,
             emailManager: testEmailManager,
             duckPlayerPreferences: testDuckPlayerPreferences,
-            subscriptionCardVisibilityManager: testSubscriptionCardVisibilityManager
+            subscriptionCardVisibilityManager: testSubscriptionCardVisibilityManager,
+            syncService: testSyncService
+        )
+    }
+
+    private func createAppearancePrefs(didOpenCustomizationSettings: Bool = false,
+                                       demonstrationDays: Int = 0) -> AppearancePreferences {
+        let persistor = MockAppearancePreferencesPersistor(
+            continueSetUpCardsNumberOfDaysDemonstrated: demonstrationDays,
+            didOpenCustomizationSettings: didOpenCustomizationSettings
+        )
+        return AppearancePreferences(
+            persistor: persistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
     }
 }

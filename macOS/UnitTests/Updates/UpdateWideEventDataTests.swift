@@ -52,7 +52,6 @@ final class UpdateWideEventDataTests: XCTestCase {
         let params = data.pixelParameters()
 
         // Then - verify all required fields
-        XCTAssertEqual(params["feature.name"], "sparkle-update")
         XCTAssertEqual(params["feature.data.ext.from_version"], "1.0.0")
         XCTAssertEqual(params["feature.data.ext.from_build"], "100")
         XCTAssertEqual(params["feature.data.ext.to_version"], "1.1.0")
@@ -90,7 +89,6 @@ final class UpdateWideEventDataTests: XCTestCase {
         let params = data.pixelParameters()
 
         // Then - verify required fields present
-        XCTAssertEqual(params["feature.name"], "sparkle-update")
         XCTAssertEqual(params["feature.data.ext.from_version"], "1.0.0")
         XCTAssertEqual(params["feature.data.ext.from_build"], "100")
         XCTAssertEqual(params["feature.data.ext.initiation_type"], "automatic")

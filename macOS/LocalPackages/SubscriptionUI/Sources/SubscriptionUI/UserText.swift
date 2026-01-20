@@ -185,8 +185,17 @@ enum UserText {
         return String(format: localized, formattedDate)
     }
 
+    static func preferencesSubscriptionPendingDowngradeCaption(tierName: String, billingPeriod: String, formattedDate: String) -> String {
+        let localized = NSLocalizedString("subscription.preferences.subscription.pending.downgrade.caption",
+                                          bundle: Bundle.module,
+                                          value: "Your plan will downgrade to %@ %@ on %@.",
+                                          comment: "Pending downgrade info. Parameters are tier name, billing period, and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'")
+        return String(format: localized, tierName, billingPeriod, formattedDate)
+    }
+
     static let manageSubscriptionButton = NSLocalizedString("subscription.preferences.manage.subscription.button", bundle: Bundle.module, value: "Manage Subscription", comment: "Button to manage subscription")
     static let updatePlanOrCancelButton = NSLocalizedString("subscription.preferences.update.plan.or.cancel.button", bundle: Bundle.module, value: "Update Plan or Cancel", comment: "Button to update subscription plan or cancel")
+    static let managePaymentOrCancelButton = NSLocalizedString("subscription.preferences.manage.payment.or.cancel.button", bundle: Bundle.module, value: "Manage Payment or Cancel", comment: "Button to manage payment or cancel subscription")
     static let removeFromThisDeviceButton = NSLocalizedString("subscription.preferences.remove.from.this.device.button", bundle: Bundle.module, value: "Remove From This Device", comment: "Button to remove subscription from this device")
 
     // MARK: Preferences when subscription is inactive

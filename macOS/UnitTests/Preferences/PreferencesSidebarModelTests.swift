@@ -68,7 +68,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         mockSubscriptionManager.resultSubscription = .success(subscription)
         mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat] // All enabled

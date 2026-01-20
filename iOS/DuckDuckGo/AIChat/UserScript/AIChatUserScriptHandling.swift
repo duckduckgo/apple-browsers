@@ -91,7 +91,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let migrationStore = AIChatMigrationStore()
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
-
+    
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
 
@@ -172,9 +172,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativeChatInput: defaults.supportsNativeChatInput,
             supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
-            supportsPageContext: defaults.supportsPageContext,
-            supportsAIChatFullMode: supportsFullMode,
-            supportsAIChatContextualMode: supportsContextualMode,
+            supportsPageContext: aichatContextualModeFeature.isAvailable ? true : defaults.supportsPageContext,
+            supportsAIChatFullMode: aichatFullModeFeature.isAvailable ? true : defaults.supportsAIChatFullMode,
+            supportsAIChatContextualMode: aichatContextualModeFeature.isAvailable ? true : defaults.supportsAIChatContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
@@ -291,6 +291,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         return migrationStore.clear()
     }
+
+    // MARK: - Sync
 
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable? {
         do {

@@ -20,6 +20,7 @@ import AIChat
 import BrowserServicesKit
 import Combine
 import Common
+import DDGSync
 import Foundation
 import History
 import NewTabPage
@@ -69,6 +70,7 @@ final class NewTabPageCoordinator {
         nextStepsCardsPersistor: NewTabPageNextStepsCardsPersisting,
         subscriptionCardPersistor: HomePageSubscriptionCardPersisting,
         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
+        syncService: DDGSyncing?,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
@@ -99,7 +101,8 @@ final class NewTabPageCoordinator {
             homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor,
             nextStepsCardsPersistor: nextStepsCardsPersistor,
             subscriptionCardPersistor: subscriptionCardPersistor,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            syncService: syncService
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

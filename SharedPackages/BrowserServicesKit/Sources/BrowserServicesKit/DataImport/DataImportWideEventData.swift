@@ -23,11 +23,9 @@ public class DataImportWideEventData: WideEventData {
 
     typealias DataType = DataImport.DataType
 
-    #if DEBUG
-    public static let pixelName = "data_import_debug"
-    #else
     public static let pixelName = "data_import"
-    #endif
+    public static let featureName = "data-import"
+    public static let importTimeout: TimeInterval = .minutes(15)
 
     // Protocol Properties
     public var globalData: WideEventGlobalData
@@ -92,7 +90,24 @@ public class DataImportWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    private static let featureName = "data-import"
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        switch trigger {
+        case .appLaunch:
+            guard let start = overallDuration?.start else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            guard overallDuration?.end == nil else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            if Date() >= start.addingTimeInterval(Self.importTimeout) {
+                return .complete(.unknown(reason: StatusReason.timeout.rawValue))
+            }
+
+            return .keepPending
+        }
+    }
 }
 
 // MARK: - Public
@@ -106,14 +121,10 @@ extension DataImportWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var params: [String: String] = [:]
-
-        params[WideEventParameter.Feature.name] = Self.featureName
-        params[WideEventParameter.DataImportFeature.source] = source.id
-
-        if let overallDuration = overallDuration?.durationMilliseconds {
-            params[WideEventParameter.DataImportFeature.latency] = String(Int(overallDuration))
-        }
+        var params = Dictionary(compacting: [
+            (WideEventParameter.DataImportFeature.source, source.id),
+            (WideEventParameter.DataImportFeature.latency, overallDuration?.stringValue(.noBucketing)),
+        ])
 
         for type in DataImport.DataType.allCases {
             addTypeStatusAndReason(self[keyPath: type.statusPath], type: type, to: &params)

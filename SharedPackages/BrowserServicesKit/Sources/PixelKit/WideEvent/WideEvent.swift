@@ -216,6 +216,7 @@ public final class WideEvent: WideEventManaging {
             parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
         }
 
+        parameters[WideEventParameter.Feature.name] = T.featureName
         parameters[WideEventParameter.Feature.status] = status.description
 
         switch status {

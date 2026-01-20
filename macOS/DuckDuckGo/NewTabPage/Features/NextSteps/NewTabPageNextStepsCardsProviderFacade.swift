@@ -17,6 +17,7 @@
 //
 
 import Combine
+import DDGSync
 import FeatureFlags
 import Foundation
 import NewTabPage
@@ -35,7 +36,8 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
          appearancePreferences: AppearancePreferences,
          legacySubscriptionCardPersistor: HomePageSubscriptionCardPersisting,
          persistor: NewTabPageNextStepsCardsPersisting,
-         duckPlayerPreferences: DuckPlayerPreferencesPersistor) {
+         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
+         syncService: DDGSyncing?) {
 
         func getActiveProvider() -> NewTabPageNextStepsCardsProviding {
             if featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) {
@@ -50,7 +52,8 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
                     dockCustomizer: DockCustomizer(),
                     dataImportProvider: dataImportProvider,
                     duckPlayerPreferences: duckPlayerPreferences,
-                    subscriptionCardVisibilityManager: subscriptionCardVisibilityManager
+                    subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+                    syncService: syncService
                 )
             } else {
                 return NewTabPageNextStepsCardsProvider(

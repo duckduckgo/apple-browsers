@@ -46,6 +46,7 @@ public enum PrivacyFeature: String {
     case dbp
     case sync
     case privacyDashboard
+    case updates
     case updatesWontAutomaticallyRestartApp
     case performanceMetrics
     case privacyPro
@@ -58,7 +59,6 @@ public enum PrivacyFeature: String {
     case syncPromotion
     case autofillSurveys
     case marketplaceAdPostback
-    case autocompleteTabs
     case networkProtection
     case aiChat
     case contextualOnboarding
@@ -165,6 +165,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
+
+    /// Memory Pressure Reporter
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
+    case memoryPressureReporting
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -444,7 +448,6 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
-    case sitesSection
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
@@ -545,6 +548,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case dataImportWideEventMeasurement
     case newDataImportExperience
+    case dataImportSummarySyncPromotion
 }
 
 public enum SERPSubfeature: String, PrivacySubfeature {
@@ -574,4 +578,13 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
 
     /// Show popup permission button in inactive state when temporary allowance is active
     case popupPermissionButtonPersistence
+}
+
+public enum UpdatesSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .updates
+    }
+
+    /// Simplified update flow without expiration logic
+    case simplifiedFlow
 }

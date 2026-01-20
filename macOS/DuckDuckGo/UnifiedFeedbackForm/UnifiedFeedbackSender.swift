@@ -89,6 +89,7 @@ struct DefaultFeedbackSender: UnifiedFeedbackSender {
         case nothingOnSpecificSite, notMe, scanStuck, removalStuck
         case accessCode, cantContactAdvisor, advisorUnhelpful
         case accessSubscriptionModels, loginThirdPartyBrowser
+        case unableToAccessFeatures
         case somethingElse
         static var `default` = Subcategory.somethingElse
     }

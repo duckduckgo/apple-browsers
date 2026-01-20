@@ -31,9 +31,6 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Mégsem";
 
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Szinkronizálás és biztonsági mentés bekapcsolása";
-
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Ez titkosított biztonsági mentést hoz létre a könyvjelzőidről és az űrlapokon automatikusan megadásra kerülő adataidról a DuckDuckGo biztonságos szerverén, amit szinkronizálhatsz a többi eszközöddel.";
 

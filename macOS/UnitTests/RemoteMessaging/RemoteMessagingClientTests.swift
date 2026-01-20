@@ -134,7 +134,7 @@ final class RemoteMessagingClientTests: XCTestCase {
             configMatcherProvider: RemoteMessagingConfigMatcherProvider(
                 bookmarksDatabase: bookmarksDatabase,
                 appearancePreferences: appearancePreferences,
-                startupPreferences: StartupPreferences(persistor: StartupPreferencesPersistorMock(), windowControllersManager: WindowControllersManagerMock(), appearancePreferences: appearancePreferences),
+                startupPreferences: StartupPreferences(persistor: StartupPreferencesPersistorMock(), appearancePreferences: appearancePreferences),
                 pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
                 internalUserDecider: MockInternalUserDecider(),
                 statisticsStore: MockStatisticsStore(),
@@ -188,7 +188,8 @@ final class RemoteMessagingClientTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         subscriptionManager.resultSubscription = .success(subscription)
         availabilityProvider.isRemoteMessagingAvailable = true

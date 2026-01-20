@@ -103,6 +103,14 @@ final class SparkleUpdateWideEvent {
         wideEventManager.startFlow(eventData)
     }
 
+    /// Ensures a flow exists, starting one if needed.
+    ///
+    /// Unlike `startFlow`, this preserves any existing flow rather than replacing it.
+    func ensureFlowExists(initiationType: UpdateWideEventData.InitiationType) {
+        guard currentFlowID == nil else { return }
+        startFlow(initiationType: initiationType)
+    }
+
     func getCurrentFlowData() -> UpdateWideEventData? {
         guard let globalID = currentFlowID else { return nil }
         return wideEventManager.getFlowData(UpdateWideEventData.self, globalID: globalID)

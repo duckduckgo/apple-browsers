@@ -50,11 +50,17 @@ final class BrowsingMenuHeaderStateProvider {
             return
         }
 
-        let result = FaviconsHelper.loadFaviconSync(
-            forDomain: domain,
-            usingCache: .tabs,
-            useFakeFavicon: false
-        )
-        dataSource.update(favicon: result.isFake ? nil : result.image)
+        Task.detached(priority: .userInitiated) {
+            let result = FaviconsHelper.loadFaviconSync(
+                forDomain: domain,
+                usingCache: .tabs,
+                useFakeFavicon: false
+            )
+            let favicon = result.isFake ? nil : result.image
+
+            await MainActor.run {
+                dataSource.update(favicon: favicon)
+            }
+        }
     }
 }

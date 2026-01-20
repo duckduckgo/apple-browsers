@@ -22,7 +22,7 @@ import DesignResourcesKit
 
 extension BrowsingMenuModel {
 
-    var estimatedContentHeight: CGFloat {
+    func estimatedContentHeight(includesWebsiteHeader: Bool) -> CGFloat {
         typealias Metrics = BrowsingMenuSheetView.Metrics
 
         let headerFont = UIFont.daxFootnoteRegular()
@@ -30,7 +30,8 @@ extension BrowsingMenuModel {
         let iconHeight: CGFloat = 24
 
         let headerContentHeight = iconHeight + Metrics.headerButtonIconTextSpacing + headerFont.lineHeight
-        let headerHeight = headerItems.isEmpty ? 0 : headerContentHeight + (Metrics.headerButtonVerticalPadding * 2)
+        let headerButtonsHeight = headerItems.isEmpty ? 0 : headerContentHeight + (Metrics.headerButtonVerticalPadding * 2)
+        let websiteHeaderHeight = includesWebsiteHeader ? Metrics.pageHeaderHeight : 0
 
         let minTotalVerticalPadding: CGFloat = 16
         let rowHeight = max(Metrics.defaultListRowHeight, rowFont.lineHeight + minTotalVerticalPadding)
@@ -49,7 +50,8 @@ extension BrowsingMenuModel {
         // gap between the header section and the first menu section
         let sectionGapsCount = headerItems.isEmpty ? max(0, menuSectionCount - 1) : menuSectionCount
 
-        return headerHeight
+        return websiteHeaderHeight
+            + headerButtonsHeight
             + (CGFloat(itemCount) * rowHeight)
             + (CGFloat(sectionGapsCount) * Metrics.listSectionSpacing)
             + (footerItems.isEmpty ? 0 : footerHeight)

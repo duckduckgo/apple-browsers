@@ -49,9 +49,10 @@ extension BrowsingMenuModel {
         let itemCount = sections.reduce(0) { $0 + $1.items.count }
         let menuSectionCount = sections.count
 
-        // When header items are present, there's an additional
-        // gap between the header section and the first menu section
-        let sectionGapsCount = headerItems.isEmpty ? max(0, menuSectionCount - 1) : menuSectionCount
+        // When header section has content (website header or header buttons),
+        // there's an additional gap between it and the first menu section
+        let hasHeaderSectionContent = includesWebsiteHeader || !headerItems.isEmpty
+        let sectionGapsCount = hasHeaderSectionContent ? menuSectionCount : max(0, menuSectionCount - 1)
 
         return websiteHeaderHeight
             + headerSectionSpacing

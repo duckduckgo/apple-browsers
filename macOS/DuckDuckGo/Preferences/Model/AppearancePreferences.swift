@@ -326,6 +326,7 @@ final class AppearancePreferences: ObservableObject {
         featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
     }
 
+    /// Number of active usage days the New Tab Page "Next Steps" cards have been shown.
     var nextStepsCardsDemonstrationDays: Int {
         persistor.continueSetUpCardsNumberOfDaysDemonstrated
     }

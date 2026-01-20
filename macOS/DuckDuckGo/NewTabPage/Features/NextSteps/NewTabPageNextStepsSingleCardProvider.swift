@@ -218,16 +218,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
         // This refreshes the list to highlight level 2 cards after level 1 cards are done being prioritized.
         if firstCardLevel == .level1 && appearancePreferences.nextStepsCardsDemonstrationDays >= Constants.cardLevel1PriorityDays {
             firstCardLevel = .level2
-            let orderedLevels: [NewTabPageDataModel.CardLevel] = [.level2, .level1]
-            let leveledCards = orderedCards.compactMap { cardID in
-                defaultCards.first(where: { $0.cardID == cardID })
-            }
-            var orderedCardsByLevel: [LeveledCard] = []
-            for level in orderedLevels {
-                let cardsInLevel = leveledCards.filter { $0.level == level }
-                orderedCardsByLevel.append(contentsOf: cardsInLevel)
-            }
-            orderedCards = orderedCardsByLevel.map { $0.cardID }
+            orderedCards = orderedCards
+                .compactMap { cardID in defaultCards.first(where: { $0.cardID == cardID }) }
+                .sorted { $0.level.rawValue > $1.level.rawValue }
+                .map { $0.cardID }
         }
 
         // Persist the full ordered list if needed.
@@ -235,14 +229,16 @@ private extension NewTabPageNextStepsSingleCardProvider {
             persistor.orderedCardIDs = orderedCards
         }
 
+        let orderedVisibleCards = orderedCards.filter(shouldShowCard)
+
 #if DEBUG || REVIEW || ALPHA
         // Persist visible cards for debug menu actions
         // Otherwise, we don't need to persist this because we want to check card visibility each time cards are shown
-        debugPersistor.debugVisibleCards = orderedCards.filter(shouldShowCard)
+        debugPersistor.debugVisibleCards = orderedVisibleCards
 #endif
 
         // Return only the visible cards
-        return orderedCards.filter(shouldShowCard)
+        return orderedVisibleCards
     }
 
     /// Returns whether the card should be shown in the list of visible cards.

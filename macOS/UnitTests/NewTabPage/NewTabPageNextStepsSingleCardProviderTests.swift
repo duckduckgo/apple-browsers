@@ -737,7 +737,13 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         _ = testProvider.cards
 
-        XCTAssertNotNil(testPersistor.orderedCardIDs, "Order should be persisted after swap")
+#if !APPSTORE
+        let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync, .emailProtection]
+#else
+        let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync, .emailProtection]
+#endif
+
+        XCTAssertEqual(testPersistor.orderedCardIDs, expectedCards, "Order should be persisted after swap")
     }
 
     func testWhenDefaultOrderIsUsedThenOrderIsPersisted() {
@@ -750,7 +756,13 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         _ = testProvider.cards
 
-        XCTAssertNotNil(testPersistor.orderedCardIDs, "Default order should be persisted on first use")
+#if !APPSTORE
+        let expectedCards = testProvider.defaultCards.map { $0.cardID }
+#else
+        let expectedCards = testProvider.defaultCards.map { $0.cardID }.filter { $0 != .addAppToDockMac }
+#endif
+
+        XCTAssertEqual(testPersistor.orderedCardIDs, expectedCards, "Default order should be persisted on first use")
     }
 
     // MARK: - Max Times Shown Tests

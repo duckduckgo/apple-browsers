@@ -294,32 +294,23 @@ extension PrivacyDashboardViewController {
         case failedToFetchTheCurrentWebsiteInfo
     }
 
-    private func calculateWebVitals(breakageAdditionalInfo: BreakageAdditionalInfo, privacyConfig: PrivacyConfiguration) async -> [Double]? {
-        var webVitalsResult: [Double]?
-        if privacyConfig.isEnabled(featureKey: .performanceMetrics) {
-            webVitalsResult = await withCheckedContinuation({ continuation in
-                guard let performanceMetrics = breakageAdditionalInfo.performanceMetrics else { continuation.resume(returning: nil); return }
-                performanceMetrics.notifyHandler { result in
-                    continuation.resume(returning: result)
-                }
-            })
-        }
-
-        return webVitalsResult
+    private func calculateWebVitals(breakageAdditionalInfo: BreakageAdditionalInfo) async -> [Double]? {
+        await withCheckedContinuation({ continuation in
+            guard let performanceMetrics = breakageAdditionalInfo.performanceMetrics else { continuation.resume(returning: nil); return }
+            performanceMetrics.notifyHandler { result in
+                continuation.resume(returning: result)
+            }
+        })
     }
 
-    private func collectBreakageReportData(breakageAdditionalInfo: BreakageAdditionalInfo, privacyConfig: PrivacyConfiguration) async -> BreakageReportData? {
-        var breakageReportData: BreakageReportData?
-        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            breakageReportData = await withCheckedContinuation({ continuation in
-                guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-                breakageReportingSubfeature.notifyHandler { metrics, detectorData in
-                    let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
-                    continuation.resume(returning: result)
-                }
-            })
-        }
-        return breakageReportData
+    private func collectBreakageReportData(breakageAdditionalInfo: BreakageAdditionalInfo) async -> BreakageReportData? {
+        await withCheckedContinuation({ continuation in
+            guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else { continuation.resume(returning: nil); return }
+            breakageReportingSubfeature.notifyHandler { metrics, detectorData in
+                let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
+                continuation.resume(returning: result)
+            }
+        })
     }
 
     private func makeBrokenSiteReport(category: String = "",
@@ -331,11 +322,16 @@ extension PrivacyDashboardViewController {
             throw BrokenSiteReportError.failedToFetchTheCurrentWebsiteInfo
         }
 
-        let webVitalsResult = await calculateWebVitals(breakageAdditionalInfo: breakageAdditionalInfo,
-                                                       privacyConfig: privacyConfigurationManager.privacyConfig)
+        let privacyConfig = privacyConfigurationManager.privacyConfig
+        var webVitalsResult: [Double]?
+        var breakageReportData: BreakageReportData?
 
-        let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo,
-                                                                   privacyConfig: privacyConfigurationManager.privacyConfig)
+        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
+            breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
+        } else if privacyConfig.isEnabled(featureKey: .performanceMetrics) {
+            webVitalsResult = await calculateWebVitals(breakageAdditionalInfo: breakageAdditionalInfo)
+        }
+
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
 

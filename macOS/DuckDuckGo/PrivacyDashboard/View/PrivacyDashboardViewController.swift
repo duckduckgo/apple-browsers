@@ -360,32 +360,23 @@ extension PrivacyDashboardViewController {
         case failedToFetchTheCurrentURL
     }
 
-    private func calculateWebVitals(performanceMetrics: PerformanceMetricsSubfeature?, privacyConfig: PrivacyConfiguration) async -> [Double]? {
-        var webVitalsResult: [Double]?
-        if privacyConfig.isEnabled(featureKey: .performanceMetrics) {
-            webVitalsResult = await withCheckedContinuation({ continuation in
-                guard let performanceMetrics else { continuation.resume(returning: nil); return }
-                performanceMetrics.notifyHandler { result in
-                    continuation.resume(returning: result)
-                }
-            })
-        }
-
-        return webVitalsResult
+    private func calculateWebVitals(performanceMetrics: PerformanceMetricsSubfeature?) async -> [Double]? {
+        await withCheckedContinuation({ continuation in
+            guard let performanceMetrics else { continuation.resume(returning: nil); return }
+            performanceMetrics.notifyHandler { result in
+                continuation.resume(returning: result)
+            }
+        })
     }
 
-    private func collectBreakageReportData(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> BreakageReportData? {
-        var breakageReportData: BreakageReportData?
-        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            breakageReportData = await withCheckedContinuation({ continuation in
-                guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-                breakageReportingSubfeature.notifyHandler { metrics, detectorData in
-                    let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
-                    continuation.resume(returning: result)
-                }
-            })
-        }
-        return breakageReportData
+    private func collectBreakageReportData(breakageReportingSubfeature: BreakageReportingSubfeature?) async -> BreakageReportData? {
+        await withCheckedContinuation({ continuation in
+            guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
+            breakageReportingSubfeature.notifyHandler { metrics, detectorData in
+                let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
+                continuation.resume(returning: result)
+            }
+        })
     }
 
     private func isPirEnabledAndUserHasProfile() async -> Bool {
@@ -416,9 +407,15 @@ extension PrivacyDashboardViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         let protectionsState = configuration.isFeature(.contentBlocking, enabledForDomain: currentTab.content.urlForWebView?.host)
 
-        let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, privacyConfig: configuration)
+        var webVitalsResult: [Double]?
+        var breakageReportData: BreakageReportData?
 
-        let breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
+        if configuration.isEnabled(featureKey: .breakageReporting) {
+            breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature)
+        } else if configuration.isEnabled(featureKey: .performanceMetrics) {
+            webVitalsResult = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics)
+        }
+
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
 
@@ -452,7 +449,7 @@ extension PrivacyDashboardViewController {
                                                httpStatusCodes: statusCodes,
                                                openerContext: currentTab.brokenSiteInfo?.inferredOpenerContext,
                                                vpnOn: currentTab.networkProtection?.tunnelController.isConnected ?? false,
-                                               jsPerformance: webVitals,
+                                               jsPerformance: webVitalsResult,
                                                extendedPerformanceMetrics: privacyAwareWebVitals,
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
                                                cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,

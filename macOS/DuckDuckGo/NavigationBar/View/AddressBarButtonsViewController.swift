@@ -390,6 +390,7 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyDashboardButton.sendAction(on: .leftMouseUp)
 
         (imageButton.cell as? NSButtonCell)?.highlightsBy = NSCell.StyleMask(rawValue: 0)
+        imageButton.setAccessibilityIdentifier("AddressBarButtonsViewController.imageButton")
 
         cameraButton.sendAction(on: .leftMouseDown)
         cameraButton.setAccessibilityIdentifier("AddressBarButtonsViewController.cameraButton")
@@ -946,6 +947,15 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
+        // Hide shields when showing an error page (globe icon is shown instead)
+        if tabViewModel.isShowingErrorPage {
+            shieldAnimationView.isHidden = true
+            shieldDotAnimationView.isHidden = true
+            privacyDashboardButton.image = nil
+            privacyDashboardButton.setAccessibilityValue("hidden")
+            return
+        }
+
         // Don't change icon while shield animation is playing
         guard !isAnyShieldAnimationPlaying else { return }
 
@@ -974,6 +984,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 shieldDotAnimationView.isHidden = true
                 privacyDashboardButton.isAnimationEnabled = true
                 privacyDashboardButton.image = privacyShieldStyle.iconWithDot
+                privacyDashboardButton.setAccessibilityValue("shieldDot")
 
                 let animationNames = MouseOverAnimationButton.AnimationNames(
                     aqua: privacyShieldStyle.hoverAnimationWithDot(forLightMode: true),
@@ -986,6 +997,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 privacyDashboardButton.isAnimationEnabled = true
                 shieldAnimationView.isHidden = false
                 shieldDotAnimationView.isHidden = true
+                privacyDashboardButton.setAccessibilityValue("shield")
 
                 if !hasShieldAnimationCompleted {
                     shieldAnimationView.currentFrame = 1

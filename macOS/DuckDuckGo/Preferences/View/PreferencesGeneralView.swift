@@ -276,6 +276,28 @@ extension Preferences {
                             .accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
                     }
                 }
+
+                // SECTION: On Quit
+                if featureFlagger.isFeatureOn(.warnBeforeQuit) {
+                    PreferencePaneSection(UserText.settingsOnQuitSection) {
+                        PreferencePaneSubSection {
+                            ToggleMenuItem(UserText.settingsConfirmQuitCheckbox, isOn: Binding(
+                                get: { tabsModel.warnBeforeQuitting },
+                                set: { newValue in
+                                    let oldValue = tabsModel.warnBeforeQuitting
+                                    tabsModel.warnBeforeQuitting = newValue
+                                    // Only fire pixel when user explicitly disables via toggle (not programmatic changes)
+                                    if oldValue && !newValue {
+                                        PixelKit.fire(GeneralPixel.warnBeforeQuitSettingsDisabled, frequency: .dailyAndCount)
+                                    }
+                                }
+                            ))
+                                .accessibilityIdentifier("PreferencesGeneralView.warnBeforeQuitting")
+                            ToggleMenuItem(UserText.settingsConfirmCloseCheckbox, isOn: $tabsModel.warnBeforeClosingPinnedTabs)
+                                .accessibilityIdentifier("PreferencesGeneralView.warnBeforeClosingPinnedTabs")
+                        }
+                    }
+                }
             }
         }
     }

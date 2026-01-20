@@ -28,7 +28,7 @@ enum WinBackOfferFactory {
                             featureFlagger: FeatureFlagger,
                             daxDialogs: DaxDialogs) -> WinBackOfferService {
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
-#if DEBUG || ALPHA
+#if DEBUG || ALPHA || EXPERIMENTAL
         let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueFilesStore)
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,

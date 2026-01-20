@@ -130,30 +130,18 @@ extension SubscriptionPlanChangeWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
+        let bucket: DurationBucket = .bucketed(Self.bucket)
 
-        parameters[WideEventParameter.PlanChangeFeature.purchasePlatform] = purchasePlatform.rawValue
-        parameters[WideEventParameter.PlanChangeFeature.fromPlan] = fromPlan
-        parameters[WideEventParameter.PlanChangeFeature.toPlan] = toPlan
-        parameters[WideEventParameter.PlanChangeFeature.subscriptionIdentifier] = toPlan
-
-        if let changeType = changeType {
-            parameters[WideEventParameter.PlanChangeFeature.changeType] = changeType.rawValue
-        }
-
-        if let failingStep = failingStep {
-            parameters[WideEventParameter.PlanChangeFeature.failingStep] = failingStep.rawValue
-        }
-
-        if let duration = paymentDuration?.durationMilliseconds {
-            parameters[WideEventParameter.PlanChangeFeature.paymentLatency] = String(bucket(duration))
-        }
-
-        if let duration = confirmationDuration?.durationMilliseconds {
-            parameters[WideEventParameter.PlanChangeFeature.confirmationLatency] = String(bucket(duration))
-        }
-
-        return parameters
+        return Dictionary(compacting: [
+            (WideEventParameter.PlanChangeFeature.purchasePlatform, purchasePlatform.rawValue),
+            (WideEventParameter.PlanChangeFeature.fromPlan, fromPlan),
+            (WideEventParameter.PlanChangeFeature.toPlan, toPlan),
+            (WideEventParameter.PlanChangeFeature.subscriptionIdentifier, toPlan),
+            (WideEventParameter.PlanChangeFeature.changeType, changeType?.rawValue),
+            (WideEventParameter.PlanChangeFeature.failingStep, failingStep?.rawValue),
+            (WideEventParameter.PlanChangeFeature.paymentLatency, paymentDuration?.stringValue(bucket)),
+            (WideEventParameter.PlanChangeFeature.confirmationLatency, confirmationDuration?.stringValue(bucket)),
+        ])
     }
 
     public func markAsFailed(at step: FailingStep, error: Error) {
@@ -161,7 +149,7 @@ extension SubscriptionPlanChangeWideEventData {
         self.errorData = WideEventErrorData(error: error)
     }
 
-    private func bucket(_ ms: Double) -> Int {
+    private static func bucket(_ ms: Double) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000

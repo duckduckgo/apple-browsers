@@ -40,6 +40,7 @@ public final class NewTabPageNextStepsCardsClient: NewTabPageUserScriptClient {
         connectWillDisplayCardsPublisher()
 
         model.cardsPublisher
+            .removeDuplicates()
             .sink { [weak self] cardIDs in
                 Task { @MainActor in
                     self?.notifyDataUpdated(cardIDs)
@@ -48,6 +49,7 @@ public final class NewTabPageNextStepsCardsClient: NewTabPageUserScriptClient {
             .store(in: &cancellables)
 
         model.isViewExpandedPublisher
+            .removeDuplicates()
             .sink { [weak self] showAllCards in
                 Task { @MainActor in
                     self?.notifyConfigUpdated(showAllCards)
@@ -65,7 +67,7 @@ public final class NewTabPageNextStepsCardsClient: NewTabPageUserScriptClient {
     }
 
     private func connectWillDisplayCardsPublisher() {
-        let initialCards = Publishers.CombineLatest(getDataSubject, getConfigSubject)
+        let initialCards = Publishers.CombineLatest(getDataSubject, getConfigSubject.removeDuplicates())
             .map { cards, isViewExpanded in
                 isViewExpanded ? cards : Array(cards.prefix(2))
             }

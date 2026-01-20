@@ -42,6 +42,13 @@ struct AIChatDebugView: View {
                 }
                 .foregroundColor(.red)
             }
+
+            Section(header: Text("Contextual Onboarding")) {
+                Button("Reset Context Sheet Onboarding") {
+                    viewModel.resetContextualOnboarding()
+                }
+                .foregroundColor(.red)
+            }
         }
         .navigationTitle("AI Chat")
     }
@@ -49,6 +56,7 @@ struct AIChatDebugView: View {
 
 private final class AIChatDebugViewModel: ObservableObject {
     private var debugSettings = AIChatDebugSettings()
+    private var aiChatSettings = AIChatSettings()
 
     @Published var enteredHostname: String {
         didSet {
@@ -85,6 +93,10 @@ private final class AIChatDebugViewModel: ObservableObject {
         debugSettings.reset()
         enteredHostname = ""
         customURL = ""
+    }
+
+    func resetContextualOnboarding() {
+        aiChatSettings.resetContextualOnboarding()
     }
 }
 

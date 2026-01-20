@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Contenuto della pagina";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Da oggi, Duck.ai può aiutarti a rispondere alle domande sulla pagina che stai visualizzando.\n\nLe informazioni contenute nella pagina vengono incluse solo quando vengono allegate. Puoi modificare questa opzione in qualsiasi momento in Impostazioni.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Fatto";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Chiedi informazioni su questa pagina";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Visualizza le impostazioni";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Le funzionalità AI di DuckDuckGo sono private e opzionali. I tuoi dati non vengono usati per addestrare l'IA.";
 
@@ -4228,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Cosa vuoi importare?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Schede";
+"settings.tab.switcher.show.tracker.count" = "Conteggio dei tracker di 7 giorni";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "negli ultimi 7 giorni";
+"tab.switcher.tracker.count.hide.title" = "Nascondere il conteggio dei tracker?";
+"tab.switcher.tracker.count.hide.message" = "Puoi riattivarlo in Impostazioni > Aspetto.";
+"tab.switcher.tracker.count.hide.action" = "Nascondi";
+"tab.switcher.tracker.count.keep.action" = "Mantieni";
+"tab.switcher.tracker.count.info.a11y" = "Opzioni conteggio tracker";
+"tab.switcher.tracker.count.info.hint.a11y" = "Doppio tocco per mostrare le opzioni per nascondere questo banner";

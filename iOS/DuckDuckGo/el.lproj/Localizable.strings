@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Περιεχόμενο σελίδας";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Το Duck.ai μπορεί τώρα να σας βοηθήσει να απαντάτε σε ερωτήσεις σχετικά με τη σελίδα που βλέπετε.\n\nΤο περιεχόμενο της σελίδας περιλαμβάνεται μόνο όταν το επισυνάπτετε. Μπορείτε να το αλλάξετε αυτό οποιαδήποτε στιγμή από τις Ρυθμίσεις.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Το κατάλαβα";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Ρωτήστε γι' αυτήν τη σελίδα";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Προβολή ρυθμίσεων";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
 
@@ -4228,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Καρτέλες";
+"settings.tab.switcher.show.tracker.count" = "Αριθμός ιχνηλατών τελευταίων 7 ημερών";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "τις τελευταίες 7 ημέρες";
+"tab.switcher.tracker.count.hide.title" = "Απόκρυψη αριθμού ιχνηλατών;";
+"tab.switcher.tracker.count.hide.message" = "Μπορείτε να το ενεργοποιήσετε ξανά από Ρυθμίσεις > Εμφάνιση.";
+"tab.switcher.tracker.count.hide.action" = "Απόκρυψη";
+"tab.switcher.tracker.count.keep.action" = "Διατήρηση";
+"tab.switcher.tracker.count.info.a11y" = "Επιλογές αριθμού ιχνηλατών";
+"tab.switcher.tracker.count.info.hint.a11y" = "Διπλό πάτημα για εμφάνιση επιλογών απόκρυψης αυτού του πανό";

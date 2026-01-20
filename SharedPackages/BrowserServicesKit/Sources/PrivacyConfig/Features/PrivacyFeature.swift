@@ -59,7 +59,6 @@ public enum PrivacyFeature: String {
     case syncPromotion
     case autofillSurveys
     case marketplaceAdPostback
-    case autocompleteTabs
     case networkProtection
     case aiChat
     case contextualOnboarding
@@ -85,7 +84,6 @@ public enum PrivacyFeature: String {
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport
-    case duckAiDataClearing
     case duckAiChatHistory
     case serp
     case popupBlocking
@@ -453,7 +451,6 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
-    case sitesSection
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {

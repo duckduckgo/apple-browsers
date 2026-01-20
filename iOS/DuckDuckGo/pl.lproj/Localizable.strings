@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Zawartość strony";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai może teraz pomóc w uzyskaniu odpowiedzi na pytania dotyczące przeglądanej strony.\n\nTreść strony jest uwzględniana tylko w przypadku, gdy ją dołączysz. Możesz to zmienić w dowolnym momencie w Ustawieniach.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Rozumiem";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Zapytaj o tę stronę";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Wyświetl ustawienia";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcje sztucznej inteligencji DuckDuckGo są prywatne i opcjonalne. Twoje dane nie są używane do trenowania AI.";
 
@@ -4228,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chcesz importować?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Karty";
+"settings.tab.switcher.show.tracker.count" = "Liczba trackerów z ostatnich 7 dni";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "z ostatnich 7 dni";
+"tab.switcher.tracker.count.hide.title" = "Ukryć liczbę trackerów?";
+"tab.switcher.tracker.count.hide.message" = "Możesz to ponownie włączyć w Ustawienia > Wygląd.";
+"tab.switcher.tracker.count.hide.action" = "Ukryj";
+"tab.switcher.tracker.count.keep.action" = "Zachowaj";
+"tab.switcher.tracker.count.info.a11y" = "Opcje liczby trackerów";
+"tab.switcher.tracker.count.info.hint.a11y" = "Stuknij dwukrotnie, aby pokazać opcje ukrycia tego banera";

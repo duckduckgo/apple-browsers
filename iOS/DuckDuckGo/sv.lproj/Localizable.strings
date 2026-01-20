@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Sidans innehåll";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai kan nu hjälpa till att svara på frågor om sidan du tittar på.\n\nSidinnehåll inkluderas bara när du bifogar det. Du kan när som helst ändra detta i Inställningar.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Jag fattar";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Fråga om den här sidan";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Visa inställningar";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGos AI-funktioner är privata och valfria. Dina data används inte för att träna AI.";
 
@@ -4228,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Flikar";
+"settings.tab.switcher.show.tracker.count" = "Spårarantal de senaste 7 dagarna";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "de senaste 7 dagarna";
+"tab.switcher.tracker.count.hide.title" = "Dölj spårarantal?";
+"tab.switcher.tracker.count.hide.message" = "Du kan slå på detta igen i Inställningar > Utseende.";
+"tab.switcher.tracker.count.hide.action" = "Dölj";
+"tab.switcher.tracker.count.keep.action" = "Behåll";
+"tab.switcher.tracker.count.info.a11y" = "Alternativ för spårarantal";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dubbeltryck för att visa alternativ för att dölja den här bannern";

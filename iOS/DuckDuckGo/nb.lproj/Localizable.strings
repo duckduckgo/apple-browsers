@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Sideinnhold";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai kan nå hjelpe deg med å svare på spørsmål om siden du ser på.\n\nSideinnhold inkluderes bare når du legger det ved. Du kan endre dette når som helst i innstillingene.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Den er grei";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Spør om denne siden";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Vis innstillinger";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "AI-funksjonene i DuckDuckGo er private og valgfrie. Dataene dine brukes ikke til å trene AI.";
 
@@ -4228,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Faner";
+"settings.tab.switcher.show.tracker.count" = "Trackerantall de siste 7 dagene";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "de siste 7 dagene";
+"tab.switcher.tracker.count.hide.title" = "Skjul trackerantall?";
+"tab.switcher.tracker.count.hide.message" = "Du kan slå dette på igjen i Innstillinger > Utseende.";
+"tab.switcher.tracker.count.hide.action" = "Skjul";
+"tab.switcher.tracker.count.keep.action" = "Behold";
+"tab.switcher.tracker.count.info.a11y" = "Alternativer for trackerantall";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dobbelttrykk for å vise alternativer for å skjule dette banneret";

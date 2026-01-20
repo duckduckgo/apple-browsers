@@ -132,7 +132,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                     if let record = records[email: item.email, attemptId: item.attemptId] {
                         let broker = try? database?.fetchBroker(with: record.brokerId)
                         Logger.service.log("✉️ [EmailConfirmationDataService] Email confirmation link ready for profileQuery: \(record.profileQueryId, privacy: .public), broker: \(broker?.url ?? "unknown", privacy: .public) (\(record.brokerId, privacy: .public))")
-                        debugEventHandler?("Email confirmation link ready for \(item.email) (attemptId: \(item.attemptId))")
+                        debugEventHandler?("Email confirmation link ready for \(item.email)")
                         try emailConfirmationStore.updateOptOutEmailConfirmationLink(item.confirmationLink,
                                                                                      emailConfirmationLinkObtainedOnBEDate: item.linkObtainedOnBEDate,
                                                                                      profileQueryId: record.profileQueryId,
@@ -147,7 +147,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                     }
                 case .pending:
                     Logger.service.log("✉️ [EmailConfirmationDataService] Email still pending for: \(item.email, privacy: .public), attemptId: \(item.attemptId, privacy: .public)")
-                    debugEventHandler?("Email confirmation pending for \(item.email) (attemptId: \(item.attemptId))")
+                    debugEventHandler?("Email confirmation pending for \(item.email)")
                     continue
                 case .unknown, .error:
                     // These are unrecoverable errors and we'll need to set it up for future retry

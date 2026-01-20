@@ -29,13 +29,10 @@ struct DataBrokerRunCustomJSONView: View {
         static let eventProfileQueryColumnWidth: CGFloat = 180
         static let eventSummaryColumnWidth: CGFloat = 200
         static let eventDetailsMinWidth: CGFloat = 320
-        static let eventColumnSpacing: CGFloat = 12
-        static let eventColumnCount = 4
+        static let columnSpacing: CGFloat = 12
         static let resultNameColumnWidth: CGFloat = 180
         static let resultAddressColumnWidth: CGFloat = 340
         static let resultRelativesMinWidth: CGFloat = 240
-        static let resultColumnSpacing: CGFloat = 12
-        static let resultColumnCount = 2
     }
 
     @ObservedObject var viewModel: DataBrokerRunCustomJSONViewModel
@@ -246,46 +243,44 @@ struct DataBrokerRunCustomJSONView: View {
             let listHeight: CGFloat = 220
             let listWidth = max(resultsTableMinWidth, proxy.size.width)
 
-            ScrollView([.horizontal, .vertical], showsIndicators: true) {
-                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    Section(header: resultsTableHeader
-                        .frame(width: listWidth, alignment: .leading)
-                        .padding(.vertical, 4)
-                        .background(Color(NSColor.controlBackgroundColor))
-                    ) {
-                        if viewModel.results.isEmpty {
-                            Text("No results yet.")
-                                .foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 6)
-                        } else {
+            if viewModel.results.isEmpty {
+                Text("No results yet.")
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ScrollView([.horizontal, .vertical], showsIndicators: true) {
+                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        Section(header: resultsTableHeader
+                            .frame(width: listWidth, alignment: .leading)
+                            .padding(.vertical, 4)
+                            .background(Color(NSColor.controlBackgroundColor))
+                        ) {
                             ForEach(viewModel.results, id: \.id) { scanResult in
                                 resultsRow(for: scanResult, listWidth: listWidth)
                                 Divider()
                             }
                         }
                     }
+                    .frame(minHeight: listHeight, alignment: .topLeading)
                 }
-                .frame(minHeight: listHeight, alignment: .topLeading)
+                .background(Color(NSColor.textBackgroundColor))
+                .frame(height: listHeight)
             }
-            .background(Color(NSColor.textBackgroundColor))
-            .frame(height: listHeight)
         }
         .frame(height: 220)
     }
 
     private var eventsTable: some View {
         GeometryReader { proxy in
-            let detailsHeight = debugEventDetailsHeight
-            let listHeight = max(200, proxy.size.height - detailsHeight - 12)
-            let listWidth = max(debugEventTableMinWidth, proxy.size.width)
-
             VStack(alignment: .leading, spacing: 12) {
                 if viewModel.combinedDebugEvents.isEmpty {
                     Text("No events yet.")
                         .foregroundColor(.secondary)
                 } else {
+                    let detailsHeight = debugEventDetailsHeight
+                    let listHeight = max(200, proxy.size.height - detailsHeight - 12)
+                    let listWidth = max(debugEventTableMinWidth, proxy.size.width)
+
                     ScrollView([.horizontal, .vertical], showsIndicators: true) {
                         LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                             Section(header: eventTableHeader
@@ -316,11 +311,11 @@ struct DataBrokerRunCustomJSONView: View {
                     }
                     .background(Color(NSColor.textBackgroundColor))
                     .frame(height: listHeight)
-                }
 
-                TextEditor(text: .constant(selectedDebugEventDetails))
-                    .border(Color.gray, width: 1)
-                    .frame(height: detailsHeight)
+                    TextEditor(text: .constant(selectedDebugEventDetails))
+                        .border(Color.gray, width: 1)
+                        .frame(height: detailsHeight)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
@@ -361,10 +356,7 @@ struct DataBrokerRunCustomJSONView: View {
                     .disabled(!viewModel.canContinueOptOutAfterEmailConfirmation(for: selectedResult))
                 }
 
-                if let selectedResult {
-                    Text("Selected: \(selectedResult.extractedProfile.name ?? "No name")")
-                        .foregroundColor(.secondary)
-                } else {
+                if selectedResult == nil {
                     Text("Select a row to opt out")
                         .foregroundColor(.secondary)
                 }
@@ -377,7 +369,7 @@ struct DataBrokerRunCustomJSONView: View {
     }
 
     private var resultsTableHeader: some View {
-        HStack(spacing: Constants.resultColumnSpacing) {
+        HStack(spacing: Constants.columnSpacing) {
             Text("Name")
                 .frame(width: Constants.resultNameColumnWidth, alignment: .leading)
             Text("Address")
@@ -391,7 +383,7 @@ struct DataBrokerRunCustomJSONView: View {
     }
 
     private func resultsRow(for scanResult: ScanResult, listWidth: CGFloat) -> some View {
-        HStack(spacing: Constants.resultColumnSpacing) {
+        HStack(spacing: Constants.columnSpacing) {
             Text(scanResult.extractedProfile.name ?? "No name")
                 .frame(width: Constants.resultNameColumnWidth, alignment: .leading)
             Text(scanResult.extractedProfile.addresses?.map { $0.fullAddress }.joined(separator: ", ") ?? "No address")
@@ -435,13 +427,13 @@ struct DataBrokerRunCustomJSONView: View {
         + Constants.eventKindColumnWidth
         + Constants.eventSummaryColumnWidth
         + Constants.eventDetailsMinWidth
-        + Constants.eventColumnSpacing * CGFloat(Constants.eventColumnCount)
+        + Constants.columnSpacing * 4
     }
     private var resultsTableMinWidth: CGFloat {
         Constants.resultNameColumnWidth
         + Constants.resultAddressColumnWidth
         + Constants.resultRelativesMinWidth
-        + Constants.resultColumnSpacing * CGFloat(Constants.resultColumnCount)
+        + Constants.columnSpacing * 2
     }
     private var debugEventDetailsHeight: CGFloat { 160 }
     private var selectedResult: ScanResult? {

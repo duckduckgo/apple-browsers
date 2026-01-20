@@ -121,13 +121,10 @@ extension DataImportWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var params: [String: String] = [:]
-
-        params[WideEventParameter.DataImportFeature.source] = source.id
-
-        if let overallDuration = overallDuration?.durationMilliseconds {
-            params[WideEventParameter.DataImportFeature.latency] = String(Int(overallDuration))
-        }
+        var params = Dictionary(compacting: [
+            (WideEventParameter.DataImportFeature.source, source.id),
+            (WideEventParameter.DataImportFeature.latency, overallDuration?.stringValue(.noBucketing)),
+        ])
 
         for type in DataImport.DataType.allCases {
             addTypeStatusAndReason(self[keyPath: type.statusPath], type: type, to: &params)

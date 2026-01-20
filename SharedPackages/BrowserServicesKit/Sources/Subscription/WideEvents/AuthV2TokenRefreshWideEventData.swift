@@ -68,24 +68,16 @@ extension AuthV2TokenRefreshWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
+        let bucket: DurationBucket = .bucketed(Self.bucket)
 
-        if let failingStep {
-            parameters[WideEventParameter.AuthV2RefreshFeature.failingStep] = failingStep.rawValue
-        }
-
-        if let duration = refreshTokenDuration?.durationMilliseconds {
-            parameters[WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency] = String(bucket(duration))
-        }
-
-        if let duration = fetchJWKSDuration?.durationMilliseconds {
-            parameters[WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency] = String(bucket(duration))
-        }
-
-        return parameters
+        return Dictionary(compacting: [
+            (WideEventParameter.AuthV2RefreshFeature.failingStep, failingStep?.rawValue),
+            (WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, refreshTokenDuration?.stringValue(bucket)),
+            (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.stringValue(bucket)),
+        ])
     }
 
-    private func bucket(_ ms: Double) -> Int {
+    private static func bucket(_ ms: Double) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000

@@ -204,7 +204,8 @@ final class FireTests: XCTestCase {
                         faviconManagement: faviconManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
-                        isAppActiveProvider: { true }) // App is active - should manage windows
+                        isAppActiveProvider: { true }, // App is active - should manage windows
+                        aIChatHistoryCleaner: MockAIChatHistoryCleaner())
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
         Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")

@@ -31,7 +31,7 @@ extension BrowsingMenuModel {
 
         let headerContentHeight = iconHeight + Metrics.headerButtonIconTextSpacing + headerFont.lineHeight
         let headerButtonsHeight = headerItems.isEmpty ? 0 : headerContentHeight + (Metrics.headerButtonVerticalPadding * 2)
-        let websiteHeaderHeight = includesWebsiteHeader ? Metrics.pageHeaderHeight : 0
+        let websiteHeaderHeight = includesWebsiteHeader ? Metrics.websiteHeaderHeight : 0
 
         // Spacing between website header and header buttons when both are present
         let headerSectionSpacing = (includesWebsiteHeader && !headerItems.isEmpty) ? Metrics.headerHorizontalSpacing : 0

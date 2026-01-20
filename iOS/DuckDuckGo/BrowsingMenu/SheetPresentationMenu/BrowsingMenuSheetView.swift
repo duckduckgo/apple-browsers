@@ -54,9 +54,7 @@ struct BrowsingMenuSheetView: View {
 
         static let listTopPaddingAdjustment: CGFloat = 4
 
-        /// Height of the page header view (favicon + title + URL)
-        /// Calculated as: favicon container (32 + 8*2 padding) + bottom padding (8)
-        static let pageHeaderHeight: CGFloat = 56
+        static let websiteHeaderHeight: CGFloat = 56
     }
 
     @Environment(\.presentationMode) var presentationMode

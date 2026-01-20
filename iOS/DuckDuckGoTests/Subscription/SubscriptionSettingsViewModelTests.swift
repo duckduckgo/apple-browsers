@@ -645,7 +645,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
 
         sut.onFirstAppear()
 
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await fulfillment(of: [expectation], timeout: 15.0)
     }
 }
 

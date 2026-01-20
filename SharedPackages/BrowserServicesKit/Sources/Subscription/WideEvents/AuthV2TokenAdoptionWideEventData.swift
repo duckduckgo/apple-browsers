@@ -55,13 +55,9 @@ extension AuthV2TokenAdoptionWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        if let failingStep {
-            parameters[WideEventParameter.AuthV2AdoptionFeature.failingStep] = failingStep.rawValue
-        }
-
-        return parameters
+        Dictionary(compacting: [
+            (WideEventParameter.AuthV2AdoptionFeature.failingStep, failingStep?.rawValue),
+        ])
     }
 
 }

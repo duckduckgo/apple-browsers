@@ -1408,27 +1408,6 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "A YouTube legutóbbi módosításai érintik a Duck Player működését. Dolgozunk a problémák megoldásán, és köszönjük a megértésedet.";
 
-/* Menu option to attach current page content to Duck.ai chat */
-"duckai.attach.page.content" = "Oldal tartalmának csatolása";
-
-/* Info text shown below the context chip explaining that content will be sent with the message */
-"duckai.context.chip.info" = "Üzeneteddel együtt elküldve a Duck.ai-nak";
-
-/* Subtitle shown on the context chip indicating page content is attached */
-"duckai.context.chip.subtitle" = "Oldal tartalma";
-
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-"duckai.contextual.onboarding.body" = "A Duck.ai mostantól segíthet az éppen megtekintett oldallal kapcsolatos kérdések megválaszolásában.\n\nAz oldal tartalma csak akkor kerül továbbításra, ha csatolod. Ezt bármikor megváltoztathatod a Beállításokban.";
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.gotIt" = "Megvan";
-
-/* Title for the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.title" = "Kérdezz az oldallal kapcsolatban";
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.viewSettings" = "Megjelenítési beállítások";
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "A DuckDuckGo AI-funkciói privátak és opcionálisak. Az adataidat nem használjuk fel az AI tanítására.";
 

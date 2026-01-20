@@ -68,6 +68,9 @@ final class AIChatContextualWebViewController: UIViewController {
     private var urlObservation: NSKeyValueObservation?
     private var lastContextualChatURL: URL?
 
+    /// URL to load on viewDidLoad instead of the default AI chat URL (for cold restore).
+    var initialRestoreURL: URL?
+
     // MARK: - UI Components
 
     private lazy var webView: WKWebView = {
@@ -120,7 +123,11 @@ final class AIChatContextualWebViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupURLObservation()
-        loadAIChat()
+        if let restoreURL = initialRestoreURL {
+            loadChatURL(restoreURL)
+        } else {
+            loadAIChat()
+        }
     }
 
     deinit {
@@ -157,7 +164,7 @@ final class AIChatContextualWebViewController: UIViewController {
     /// Loads a specific chat URL (for cold restore after app restart).
     func loadChatURL(_ url: URL) {
         loadingView.startAnimating()
-        webView.load(URLRequest(url: url.withContextualPlacement))
+        webView.load(URLRequest(url: url))
     }
 
     /// Submits page context to the frontend (push update).
@@ -285,11 +292,5 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         loadingView.stopAnimating()
-    }
-}
-
-private extension URL {
-    var withContextualPlacement: URL {
-        appendingParameter(name: "placement", value: "sidebar")
     }
 }

@@ -106,7 +106,7 @@ extension TabViewController {
         userScripts?.pageContextUserScript
     }
 
-    func enrichWithFavicon(_ context: AIChatPageContextData?) -> AIChatPageContextData? {
+    private func enrichWithFavicon(_ context: AIChatPageContextData?) -> AIChatPageContextData? {
         guard let context = context,
               let url = URL(string: context.url) else {
             return context
@@ -127,14 +127,14 @@ extension TabViewController {
         )
     }
 
-    func getFaviconBase64(for url: URL) -> String? {
+    private func getFaviconBase64(for url: URL) -> String? {
         guard let domain = url.host else { return nil }
         let faviconResult = FaviconsHelper.loadFaviconSync(forDomain: domain, usingCache: .tabs, useFakeFavicon: false)
         guard let favicon = faviconResult.image, !faviconResult.isFake else { return nil }
         return makeBase64EncodedFavicon(from: favicon)
     }
 
-    func makeBase64EncodedFavicon(from image: UIImage) -> String? {
+    private func makeBase64EncodedFavicon(from image: UIImage) -> String? {
         guard let pngData = image.pngData() else { return nil }
         return "data:image/png;base64,\(pngData.base64EncodedString())"
     }
@@ -176,7 +176,7 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
 
 extension TabViewController {
 
-    func subscribeToPageContextUpdates() {
+    private func subscribeToPageContextUpdates() {
         guard pageContextUpdateCancellable == nil,
               let script = pageContextUserScript else { return }
 
@@ -185,7 +185,7 @@ extension TabViewController {
             .sink { [weak self] pageContext in
                 guard let self,
                       let pageContext,
-                      aiChatContextualSheetCoordinator.hasActiveSheet,
+                      aiChatContextualSheetCoordinator.isSheetPresented,
                       aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
                     return
                 }

@@ -68,6 +68,11 @@ final class AIChatContextualSheetCoordinator {
     /// The view model for the current sheet session (retained alongside the sheet)
     private var viewModel: AIChatContextualSheetViewModel?
 
+    /// Returns true if the sheet is currently presented.
+    var isSheetPresented: Bool {
+        sheetViewController?.presentingViewController != nil
+    }
+
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -118,8 +123,9 @@ final class AIChatContextualSheetCoordinator {
             sheetVC = AIChatContextualSheetViewController(
                 viewModel: sheetViewModel,
                 voiceSearchHelper: voiceSearchHelper,
-                webViewControllerFactory: { [unowned self] in
-                    self.makeWebViewController()
+                webViewControllerFactory: { [weak self] in
+                    guard let self else { return nil }
+                    return self.makeWebViewController()
                 },
                 existingWebViewController: webViewController,
                 restoreURL: restoreURL

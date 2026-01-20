@@ -57,7 +57,6 @@ public final class AIChatContextChipView: UIView {
         didSet { subtitleLabel.text = subtitle }
     }
 
-
     // MARK: - UI Components
 
     private lazy var mainStackView: UIStackView = {
@@ -124,7 +123,6 @@ public final class AIChatContextChipView: UIView {
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
-
 
     // MARK: - Initialization
 

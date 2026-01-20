@@ -412,4 +412,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     func submitToggleSidebarAction() {
         submitToggleSidebarActionCallCount += 1
     }
+
+    func submitPageContext(_ context: AIChatPageContextData?) {
+    }
 }

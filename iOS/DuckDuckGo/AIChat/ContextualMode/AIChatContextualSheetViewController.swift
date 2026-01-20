@@ -73,7 +73,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     // MARK: - Types
 
     /// Factory closure for creating web view controllers, eliminating prop drilling
-    typealias WebViewControllerFactory = () -> AIChatContextualWebViewController
+    typealias WebViewControllerFactory = () -> AIChatContextualWebViewController?
 
     // MARK: - Properties
 
@@ -228,9 +228,8 @@ final class AIChatContextualSheetViewController: UIViewController {
         bindViewModel()
 
         if let webVC = existingWebViewController {
-            configureWebViewController(webVC, restoreURL: restoreURL, isNew: false)
-        } else if let url = restoreURL {
-            let webVC = webViewControllerFactory()
+            configureWebViewController(webVC, restoreURL: nil, isNew: false)
+        } else if let url = restoreURL, let webVC = webViewControllerFactory() {
             configureWebViewController(webVC, restoreURL: url, isNew: true)
         } else {
             showContextualInput()
@@ -290,11 +289,9 @@ private extension AIChatContextualSheetViewController {
     func configureWebViewController(_ webVC: AIChatContextualWebViewController, restoreURL: URL?, isNew: Bool) {
         webVC.delegate = self
         webVC.aiChatContentHandlingDelegate = self
-        if let url = restoreURL {
-            webVC.loadChatURL(url)
-        }
-        viewModel.setInitialContextualChatURL(webVC.currentContextualChatURL)
+        webVC.initialRestoreURL = restoreURL
         transitionToWebView(webVC)
+        viewModel.setInitialContextualChatURL(webVC.currentContextualChatURL)
         expandToLargeDetent()
         if isNew {
             delegate?.aiChatContextualSheetViewController(self, didCreateWebViewController: webVC)
@@ -353,7 +350,7 @@ private extension AIChatContextualSheetViewController {
     }
 
     func preloadWebViewController() {
-        let webVC = webViewControllerFactory()
+        guard let webVC = webViewControllerFactory() else { return }
         webVC.delegate = self
         webVC.aiChatContentHandlingDelegate = self
         preloadedWebViewController = webVC

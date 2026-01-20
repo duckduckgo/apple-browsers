@@ -40,7 +40,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
             navigateToAutoClearDataCalled = true
         }
 
-        func presentFireConfirmation() {
+        func presentFireConfirmation(from sourceRect: CGRect) {
             presentFireConfirmationCalled = true
         }
     }
@@ -113,7 +113,6 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenAIChatDisabledThenShowAIChatsToggleIsFalse() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAiDataClearing]
         mockAIChatSettings.isAIChatEnabled = false
 
         // When
@@ -123,9 +122,8 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.showAIChatsToggle)
     }
 
-    func testWhenAIChatEnabledAndDuckAiDataClearingFlagOnAndNewUIOffThenShowAIChatsToggleIsTrue() {
+    func testWhenAIChatEnabledThenShowAIChatsToggleIsTrue() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAiDataClearing]
         mockAIChatSettings.isAIChatEnabled = true
 
         // When
@@ -226,7 +224,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
         let viewModel = makeViewModel()
 
         // When
-        viewModel.presentFireConfirmation()
+        viewModel.presentFireConfirmation(from: .zero)
 
         // Then
         XCTAssertTrue(mockDelegate.presentFireConfirmationCalled)

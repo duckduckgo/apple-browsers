@@ -412,6 +412,7 @@ class TabViewController: UIViewController {
                                    aiChatSettings: AIChatSettingsProvider,
                                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                                    sharedSecureVault: (any AutofillSecureVault)? = nil,
+                                   privacyStats: PrivacyStatsProviding,
                                    voiceSearchHelper: VoiceSearchHelperProtocol) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
@@ -442,6 +443,7 @@ class TabViewController: UIViewController {
                               aiChatSettings: aiChatSettings,
                               productSurfaceTelemetry: productSurfaceTelemetry,
                               sharedSecureVault: sharedSecureVault,
+                              privacyStats: privacyStats,
                               voiceSearchHelper: voiceSearchHelper
             )
         })
@@ -492,7 +494,8 @@ class TabViewController: UIViewController {
     let aiChatSettings: AIChatSettingsProvider
     let aiChatFullModeFeature: AIChatFullModeFeatureProviding
     let sharedSecureVault: (any AutofillSecureVault)?
-    
+    let privacyStats: PrivacyStatsProviding
+
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
@@ -539,6 +542,7 @@ class TabViewController: UIViewController {
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
+                   privacyStats: PrivacyStatsProviding,
                    voiceSearchHelper: VoiceSearchHelperProtocol) {
 
         self.tabModel = tabModel
@@ -567,6 +571,7 @@ class TabViewController: UIViewController {
         self.adClickExternalOpenDetector = adClickExternalOpenDetector
         self.daxDialogsManager = daxDialogsManager
         self.sharedSecureVault = sharedSecureVault
+        self.privacyStats = privacyStats
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
@@ -3048,13 +3053,23 @@ extension TabViewController: ContentBlockerRulesUserScriptDelegate {
         guard let url = url else { return }
         
         adClickAttributionLogic.onRequestDetected(request: tracker)
-        
+
         if tracker.isBlocked && fireWoFollowUp {
             fireWoFollowUp = false
             Pixel.fire(pixel: .daxDialogsWithoutTrackersFollowUp)
         }
 
         privacyInfo?.trackerInfo.addDetectedTracker(tracker, onPageWithURL: url)
+
+        guard tracker.isBlocked,
+              let host = tracker.url.url?.host,
+              let entityName = ContentBlocking.shared.trackerDataManager.trackerData.findParentEntityOrFallback(forHost: host)?.displayName else {
+            return
+        }
+
+        Task {
+            await privacyStats.recordBlockedTracker(entityName)
+        }
     }
 }
 

@@ -730,5 +730,23 @@ Es tos nobloķēju!
 			<string>%1$d vietas izslēgtas no tīrīšanas</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ Zsekotājs</string>
+			<key>one</key>
+			<string>%2$@ Zsekotājs</string>
+			<key>other</key>
+			<string>%2$@ Izsekotāji</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

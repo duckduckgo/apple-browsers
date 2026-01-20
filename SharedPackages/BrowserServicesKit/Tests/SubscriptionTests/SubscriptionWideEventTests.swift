@@ -342,4 +342,127 @@ final class SubscriptionWideEventTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "300000") // Max bucket
     }
 
+    func testCompletionDecision_noActivateIntervalStart_returnsPartialData() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: SubscriptionPurchaseWideEventData.StatusReason.partialData.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with partial data")
+        }
+    }
+
+    func testCompletionDecision_intervalAlreadyCompleted_returnsPartialData() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+
+        let start = Date()
+        subscriptionData.activateAccountDuration = WideEvent.MeasuredInterval(start: start, end: start.addingTimeInterval(10))
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: SubscriptionPurchaseWideEventData.StatusReason.partialData.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with partial data")
+        }
+    }
+
+    func testCompletionDecision_activationTimeoutExceeded_returnsTimeout() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .stripe,
+            subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+        let start = Date().addingTimeInterval(-SubscriptionPurchaseWideEventData.activationTimeout - 10)
+        subscriptionData.activateAccountDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: SubscriptionPurchaseWideEventData.StatusReason.missingEntitlements.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with timeout")
+        }
+    }
+
+    func testCompletionDecision_withinTimeout_returnsKeepPending() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .stripe,
+            subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+
+        let start = Date().addingTimeInterval(-SubscriptionPurchaseWideEventData.activationTimeout + 10)
+        subscriptionData.activateAccountDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .keepPending:
+            break
+        case .complete:
+            XCTFail("Expected keep pending")
+        }
+    }
+
+    func testCompletionDecision_entitlementsCheckerReturnsTrue_completesWithSuccess() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+
+        let start = Date()
+        subscriptionData.activateAccountDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+        subscriptionData.entitlementsChecker = { true }
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .success(reason: SubscriptionPurchaseWideEventData.StatusReason.missingEntitlementsDelayedActivation.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with success")
+        }
+    }
+
+    func testCompletionDecision_noEntitlementsChecker_neverCompletesWithSuccess() async {
+        let subscriptionData = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
+            freeTrialEligible: false,
+            contextData: WideEventContextData()
+        )
+
+        let start = Date().addingTimeInterval(-SubscriptionPurchaseWideEventData.activationTimeout + 10)
+        subscriptionData.activateAccountDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await subscriptionData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .keepPending:
+            break
+        case .complete:
+            XCTFail("Expected keep pending without entitlements checker")
+        }
+    }
+
 }

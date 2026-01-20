@@ -94,9 +94,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
     case autofillSurveys
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468784743
-    case autocompleteTabs
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711151217
     case adAttributionReporting
 
@@ -212,9 +209,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470156149
-    case duckAiDataClearing
-    
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
 
@@ -245,6 +239,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211992061067315?focus=true
     case browsingMenuSheetPresentation
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260?focus=true
+    case browsingMenuSheetEnabledByDefault
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
     case autofillExtensionSettings
@@ -285,6 +282,12 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
+
+    /// Shows tracker count banner in Tab Switcher and related settings item
+    case tabSwitcherTrackerCount
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
+    case burnSingleTab
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -354,7 +357,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .vpnMenuItem,
              .forgetAllInSettings,
              .onboardingSearchExperience,
-             .duckAiDataClearing,
              .fullDuckAIMode,
              .fadeOutOnToggle,
              .attributedMetrics,
@@ -365,6 +367,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .tierMessagingEnabled,
              .allowProTierPurchase,
              .browsingMenuSheetPresentation,
+             .browsingMenuSheetEnabledByDefault,
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
@@ -376,7 +379,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showWhatsNewPromptOnDemand,
              .dataImportSummarySyncPromotion,
              .aiChatAtb,
-             .enhancedDataClearingSettings:
+             .enhancedDataClearingSettings,
+             .tabSwitcherTrackerCount,
+             .burnSingleTab:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -405,7 +410,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .syncPromotionBookmarks,
                .syncPromotionPasswords,
                .autofillSurveys,
-               .autocompleteTabs,
                .adAttributionReporting,
                .crashReportOptInStatusResetting,
                .syncSeamlessAccountSwitching,
@@ -473,8 +477,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.passwords))
         case .autofillSurveys:
             return .remoteReleasable(.feature(.autofillSurveys))
-        case .autocompleteTabs:
-            return .remoteReleasable(.feature(.autocompleteTabs))
         case .adAttributionReporting:
             return .remoteReleasable(.feature(.adAttributionReporting))
         case .dbpRemoteBrokerDelivery:
@@ -545,8 +547,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
         case .forgetAllInSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
-        case .duckAiDataClearing:
-            return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
         case .fadeOutOnToggle:
@@ -567,6 +567,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .browsingMenuSheetPresentation:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.experimentalBrowsingMenu))
+        case .browsingMenuSheetEnabledByDefault:
+            return .internalOnly()
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -594,6 +596,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAtb:
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
+            return .disabled
+        case .tabSwitcherTrackerCount,
+             .burnSingleTab:
             return .disabled
         }
     }

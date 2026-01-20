@@ -92,9 +92,12 @@ public struct PreferencesSubscriptionSettingsView: View {
 
     @ViewBuilder
     private var subscriptionActiveHeader: some View {
-        HStack(alignment: .center, spacing: 8) {
+        HStack(alignment: .lastTextBaseline, spacing: 6) {
             StatusIndicatorView(status: .custom(UserText.subscribedStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
             if let variant = model.tierBadgeToDisplay {
+                Rectangle()
+                    .fill(Color(designSystemColor: .lines))
+                    .frame(width: 1, height: 8)
                 TierBadgeView(variant: variant)
             }
         }
@@ -102,9 +105,12 @@ public struct PreferencesSubscriptionSettingsView: View {
 
     @ViewBuilder
     private var subscriptionFreeTrialActiveHeader: some View {
-        HStack(alignment: .center, spacing: 8) {
+        HStack(alignment: .lastTextBaseline, spacing: 6) {
             StatusIndicatorView(status: .custom(UserText.freeTrialActiveStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
             if let variant = model.tierBadgeToDisplay {
+                Rectangle()
+                    .fill(Color(designSystemColor: .lines))
+                    .frame(width: 1, height: 8)
                 TierBadgeView(variant: variant)
             }
         }
@@ -222,7 +228,7 @@ public struct PreferencesSubscriptionSettingsView: View {
                         }
                     }
                 }
-                TextButton(UserText.updatePlanOrCancelButton, weight: .semibold) {
+                TextButton(model.subscriptionManageButtonText, weight: .semibold) {
                     Task {
                         switch await model.changePlanOrBillingAction() {
                         case .presentSheet(let sheet):

@@ -66,6 +66,7 @@ public extension OnboardingStyles {
         }
 
         private func foregroundColor(isPressed: Bool, isHovered: Bool) -> Color {
+#if os(iOS)
             switch (colorScheme, isPressed, isHovered) {
             case (.light, false, false):
                 return .lightRestBlue
@@ -82,9 +83,13 @@ public extension OnboardingStyles {
             case (_, _, _):
                 return .lightRestBlue
             }
+#else
+            return Color(designSystemColor: .accentTextPrimary)
+#endif
         }
 
         private func backgroundColor(isPressed: Bool, isHovered: Bool) -> Color {
+#if os(iOS)
             switch (colorScheme, isPressed, isHovered) {
             case (.light, false, false):
                 return .shade(0.01)
@@ -101,6 +106,17 @@ public extension OnboardingStyles {
             case (_, _, _):
                 return .clear
             }
+#else
+            if isPressed {
+                return Color(designSystemColor: .controlsFillSecondary)
+            }
+
+            if isHovered {
+                return Color(designSystemColor: .controlsFillPrimary)
+            }
+
+            return .clear
+#endif
         }
     }
 

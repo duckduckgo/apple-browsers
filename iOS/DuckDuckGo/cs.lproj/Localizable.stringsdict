@@ -816,5 +816,25 @@ Zablokovali jsme je.
 			<string>%1$d webů, kterých se vymazání netýká</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Tracker</string>
+			<key>few</key>
+			<string>%2$@ Trackery</string>
+			<key>many</key>
+			<string>%2$@ Trackery</string>
+			<key>other</key>
+			<string>%2$@ Trackery</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

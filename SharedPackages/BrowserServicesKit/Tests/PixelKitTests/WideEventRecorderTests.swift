@@ -151,6 +151,7 @@ final class WideEventRecorderTests: XCTestCase {
 
 private final class WideEventDataMeasuringMock: WideEventDataMeasuringInterval {
     static let pixelName = "test-wide-event"
+    static let featureName = "test-wide-event"
 
     var globalData: WideEventGlobalData
     var contextData: WideEventContextData

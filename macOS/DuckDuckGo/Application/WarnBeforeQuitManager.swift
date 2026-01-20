@@ -20,6 +20,7 @@ import AppKit
 import Combine
 import Common
 import OSLog
+import PixelKit
 import SwiftUI
 import QuartzCore
 
@@ -46,6 +47,12 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     /// The keyboard shortcut to monitor for confirmation (⌘Q, ⌘W…)
     private let shortcutKeyEquivalent: NSEvent.KeyEquivalent
+
+    /// The action being confirmed (quit app or close pinned tabs)
+    let action: ConfirmationAction
+
+    /// Pixel firing for analytics
+    private let pixelFiring: PixelFiring?
 
     /// Provides current time (injectable for testing)
     private let now: () -> Date
@@ -89,7 +96,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     // MARK: - Initialization
 
     init?(currentEvent: NSEvent,
+          action: ConfirmationAction,
           isWarningEnabled: @escaping () -> Bool,
+          pixelFiring: PixelFiring? = PixelKit.shared,
           now: @escaping () -> Date = Date.init,
           eventReceiver: ((NSEvent.EventTypeMask, Date, RunLoop.Mode, Bool) -> NSEvent?)? = nil,
           timerFactory: ((TimeInterval, @escaping () -> Void) -> Timer)? = nil) {
@@ -98,6 +107,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
               let keyEquivalent = currentEvent.keyEquivalent, !keyEquivalent.modifierMask.isEmpty else { return nil }
         Logger.general.debug("WarnBeforeQuitManager.init currentEvent: \(currentEvent)")
         self.shortcutKeyEquivalent = keyEquivalent
+        self.action = action
+        self.pixelFiring = pixelFiring
         self.isWarningEnabled = isWarningEnabled
         self.now = now
         self.eventReceiver = eventReceiver ?? MainActor.assumeMainThread { NSApp.nextEvent }
@@ -138,8 +149,19 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         // Show confirmation and wait synchronously for hold completion or release
         switch trackEventsForHoldingPhase() {
         case .completed(let shouldQuit):
+            // Fire pixel and wait for completion before terminating
+            /* WHEN THE PIXEL IS REMOVED, REPLACE WITH:
             currentState = .completed(shouldQuit: shouldQuit)
             return .sync(shouldQuit ? .next : .cancel)
+            */
+            return .async(Task {
+                if self.action == .quit {
+                    let pixel = shouldQuit ? GeneralPixel.warnBeforeQuitQuit : GeneralPixel.warnBeforeQuitCancelled
+                    await self.pixelFiring?.fireAndWait(pixel, frequency: .standard)
+                }
+                self.currentState = .completed(shouldQuit: shouldQuit)
+                return shouldQuit ? .next : .cancel
+            })
         case .waitingForSecondPress: break
         }
 
@@ -147,6 +169,12 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         Logger.general.debug("WarnBeforeQuitManager: Key released early, entering async wait")
         return .async(Task {
             let shouldQuit = await waitForSecondPress()
+
+            // Fire pixel based on result (only for quit, not close tab)
+            if self.action == .quit {
+                let pixel = shouldQuit ? GeneralPixel.warnBeforeQuitQuit : GeneralPixel.warnBeforeQuitCancelled
+                await self.pixelFiring?.fireAndWait(pixel, frequency: .standard)
+            }
 
             // Emit completed state - UI will hide overlay
             currentState = .completed(shouldQuit: shouldQuit)
@@ -169,6 +197,12 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         // Start hold timer - UI will show overlay with progress
         let startTime = now().timeIntervalSinceReferenceDate
         currentState = .holding(startTime: startTime, targetTime: startTime + Constants.requiredHoldDuration)
+
+        // Fire shown pixel (only for quit, not close tab)
+        if action == .quit {
+            pixelFiring?.fire(GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount)
+        }
+
         let keyEquivalent = shortcutKeyEquivalent
 
         // Include buffer time to allow the progress animation to complete smoothly
@@ -316,6 +350,26 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         } onCancel: {
             Logger.general.debug("WarnBeforeQuitManager: Task cancelled, triggering cleanup")
             cancellationState.onCancel?()
+        }
+    }
+}
+
+// MARK: - PixelFiring Async Extension
+
+private extension PixelFiring {
+    /// Fire a pixel and wait for completion asynchronously (with timeout)
+    func fireAndWait(_ event: PixelKitEvent, frequency: PixelKit.Frequency) async {
+        do {
+            try await withTimeout(1) {
+                await withCheckedContinuation { continuation in
+                    fire(event, frequency: frequency) { _, _ in
+                        continuation.resume()
+                    }
+                }
+            }
+        } catch {
+            // Timeout - continue with termination anyway
+            Logger.general.error("WarnBeforeQuitManager: Pixel firing timed out")
         }
     }
 }

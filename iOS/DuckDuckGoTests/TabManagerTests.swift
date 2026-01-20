@@ -111,6 +111,7 @@ final class TabManagerTests: XCTestCase {
                           daxDialogsManager: DummyDaxDialogsManager(),
                           aiChatSettings: MockAIChatSettingsProvider(),
                           productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+                          privacyStats: MockPrivacyStats(),
                           voiceSearchHelper: MockVoiceSearchHelper())
     }
 

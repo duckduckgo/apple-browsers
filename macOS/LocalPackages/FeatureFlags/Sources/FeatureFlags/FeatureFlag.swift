@@ -44,10 +44,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
-    /// Subfeature: display the Sites section inside History View
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866716610324
-    case historyViewSitesSection
-
     /// Enable WebKit page load timing performance reporting
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615625098
     case webKitPerformanceReporting
@@ -58,11 +54,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615802881
     case updatesWontAutomaticallyRestartApp
 
+    /// Simplified update flow without expiration logic
+    /// Requires: .updatesWontAutomaticallyRestartApp (via subfeature)
+    case updatesSimplifiedFlow
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714296474
-    case autocompleteTabs
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
@@ -175,9 +172,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620280912
     case syncIdentities
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866478543578
-    case aiChatDataClearing
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
@@ -300,7 +294,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewSafariFilePicker,
                 .fireDialog,
                 .fireDialogIndividualSitesLink,
-                .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
                 .allowPopupsForCurrentPage,
                 .extendedUserInitiatedPopupTimeout,
@@ -333,14 +326,13 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .autofillPartialFormSaves,
-                .autocompleteTabs,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
-                .historyViewSitesSection,
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
+                .updatesSimplifiedFlow,
                 .scamSiteProtection,
                 .tabCrashDebugging,
                 .maliciousSiteProtection,
@@ -376,7 +368,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
-                .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
                 .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
@@ -434,16 +425,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
-        case .historyViewSitesSection:
-            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
             return .remoteReleasable(.feature(.updatesWontAutomaticallyRestartApp))
+        case .updatesSimplifiedFlow:
+            return .remoteReleasable(.subfeature(UpdatesSubfeature.simplifiedFlow))
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
-        case .autocompleteTabs:
-            return .remoteReleasable(.feature(.autocompleteTabs))
         case .webExtensions:
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
@@ -522,8 +511,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
-        case .aiChatDataClearing:
-            return .remoteReleasable(.feature(.duckAiDataClearing))
         case .storeSerpSettings:
             return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:

@@ -17,21 +17,44 @@
 //  limitations under the License.
 //
 
-import Core
+import Foundation
+import Persistence
 
-protocol TabSwitcherSettings {
- 
+protocol TabSwitcherSettings: AnyObject {
+
     var isGridViewEnabled: Bool { get set }
     var hasSeenNewLayout: Bool { get set }
-    
+    var showTrackerCountInTabSwitcher: Bool { get set }
+
 }
 
-class DefaultTabSwitcherSettings: TabSwitcherSettings {
+final class DefaultTabSwitcherSettings: TabSwitcherSettings {
 
-    @UserDefaultsWrapper(key: .gridViewEnabled, defaultValue: true)
-    var isGridViewEnabled: Bool
+    enum Key: String {
+        case gridViewEnabled = "com.duckduckgo.ios.tabs.grid"
+        case gridViewSeen = "com.duckduckgo.ios.tabs.seen"
+        case showTrackerCount = "com.duckduckgo.ios.tabswitcher.showTrackerCount"
+    }
 
-    @UserDefaultsWrapper(key: .gridViewSeen, defaultValue: false)
-    var hasSeenNewLayout: Bool
+    private let keyValueStore: KeyValueStoring
+
+    init(keyValueStore: KeyValueStoring = UserDefaults.app) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var isGridViewEnabled: Bool {
+        get { keyValueStore.object(forKey: Key.gridViewEnabled.rawValue) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Key.gridViewEnabled.rawValue) }
+    }
+
+    var hasSeenNewLayout: Bool {
+        get { keyValueStore.object(forKey: Key.gridViewSeen.rawValue) as? Bool ?? false }
+        set { keyValueStore.set(newValue, forKey: Key.gridViewSeen.rawValue) }
+    }
+
+    var showTrackerCountInTabSwitcher: Bool {
+        get { keyValueStore.object(forKey: Key.showTrackerCount.rawValue) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Key.showTrackerCount.rawValue) }
+    }
 
 }

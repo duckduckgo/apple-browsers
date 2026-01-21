@@ -1,5 +1,5 @@
 //
-//  MockThrowingKeyValueStore.swift
+//  DictionaryExtension.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,22 +16,17 @@
 //  limitations under the License.
 //
 
-import Persistence
+import Foundation
 
-public class MockThrowingKeyValueStore: ThrowingKeyValueStoring {
-    private var storage: [String: Any] = [:]
+public extension Dictionary where Key == String, Value == String {
 
-    public init() { }
-
-    public func object(forKey defaultName: String) throws -> Any? {
-        return storage[defaultName]
+    init(compacting entries: [(String, String?)]) {
+        self = entries.reduce(into: [:]) { result, entry in
+            if let value = entry.1 {
+                assert(result[entry.0] == nil, "Duplicate key '\(entry.0)' encountered while compacting entries.")
+                result[entry.0] = value
+            }
+        }
     }
 
-    public func set(_ value: Any?, forKey defaultName: String) throws {
-        storage[defaultName] = value
-    }
-
-    public func removeObject(forKey defaultName: String) throws {
-        storage.removeValue(forKey: defaultName)
-    }
 }

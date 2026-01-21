@@ -1,0 +1,40 @@
+// Pixels for the warn before quit confirmation feature
+// See https://app.asana.com/0/137249556945/1211704762939543
+// See discussion: https://app.asana.com/0/137249556945/1212837417207452
+{
+    "m_mac_warn-before-quit_shown": {
+        "description": "Fired when the quit confirmation overlay is displayed to the user after pressing ⌘Q",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_warn-before-quit_quit": {
+        "description": "Fired when the user completes the quit action by holding ⌘Q or pressing again",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_warn-before-quit_cancelled": {
+        "description": "Fired when the user cancels the quit action by pressing Escape, clicking away, or pressing another key",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_warn-before-quit_dont-show-again": {
+        "description": "Fired when the user clicks 'Don't Show Again' button to disable quit confirmation",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_settings_warn-before-quit_disabled": {
+        "description": "Fired when the user disables 'Show confirmation before quitting with ⌘Q' setting in preferences",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

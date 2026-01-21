@@ -113,7 +113,6 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenAIChatDisabledThenShowAIChatsToggleIsFalse() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAiDataClearing]
         mockAIChatSettings.isAIChatEnabled = false
 
         // When
@@ -123,9 +122,8 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.showAIChatsToggle)
     }
 
-    func testWhenAIChatEnabledAndDuckAiDataClearingFlagOnAndNewUIOffThenShowAIChatsToggleIsTrue() {
+    func testWhenAIChatEnabledThenShowAIChatsToggleIsTrue() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAiDataClearing]
         mockAIChatSettings.isAIChatEnabled = true
 
         // When

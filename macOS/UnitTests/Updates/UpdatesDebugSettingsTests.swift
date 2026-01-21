@@ -19,6 +19,8 @@
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import Common
+import Persistence
+import PersistenceTestingUtils
 
 final class UpdatesDebugSettingsTests: XCTestCase {
 
@@ -92,23 +94,5 @@ final class UpdatesDebugSettingsTests: XCTestCase {
 
         // Cleanup
         newSettings.reset()
-    }
-}
-
-// MARK: - Mock KeyValueStore
-
-class MockKeyValueStore: KeyValueStoring {
-    private var storage: [String: Any] = [:]
-
-    func object(forKey key: String) throws -> Any? {
-        return storage[key]
-    }
-
-    func set(_ value: Any, forKey key: String) throws {
-        storage[key] = value
-    }
-
-    func removeObject(forKey key: String) throws {
-        storage.removeValue(forKey: key)
     }
 }

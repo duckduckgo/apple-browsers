@@ -45,7 +45,8 @@ enum ModalPromptCoordinationFactory {
             remoteMessageActionHandler: dependency.remoteMessagingActionHandler,
             isIPad: isIPad,
             pixelReporter: dependency.remoteMessagingPixelReporter,
-            userScriptsDependencies: dependency.userScriptsDependencies
+            userScriptsDependencies: dependency.userScriptsDependencies,
+            featureFlagger: dependency.featureFlagger
         )
 
         return ModalPromptCoordinationService(

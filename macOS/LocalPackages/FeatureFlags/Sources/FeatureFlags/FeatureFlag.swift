@@ -275,6 +275,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Next Steps cards iteration with single card displayed on New Tab page
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
     case nextStepsSingleCardIteration
+
+    /// Whether the wide event POST endpoint is enabled
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
+    case wideEventPostEndpoint
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -306,6 +310,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarOnboarding,
                 .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
+                .wideEventPostEndpoint,
                 .memoryPressureReporting,
                 .themes:
             true
@@ -395,7 +400,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryPressureReporting,
                 .aiChatSync,
                 .heuristicAction,
-                .nextStepsSingleCardIteration:
+                .nextStepsSingleCardIteration,
+                .wideEventPostEndpoint:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -569,6 +575,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         case .nextStepsSingleCardIteration:
             return .disabled
+        case .wideEventPostEndpoint:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
         }
     }
 }

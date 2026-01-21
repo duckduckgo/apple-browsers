@@ -197,6 +197,24 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
         XCTAssertEqual(storedValue, true)
     }
 
+    // MARK: - isWebsiteHeaderEnabled
+
+    func testIsWebsiteHeaderEnabledReturnsTrueWhenEnabledByDefault() {
+        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetEnabledByDefault]
+
+        let capability = createCapability()
+
+        XCTAssertTrue(capability.isWebsiteHeaderEnabled)
+    }
+
+    func testIsWebsiteHeaderEnabledReturnsFalseWhenNotEnabledByDefault() {
+        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetPresentation]
+
+        let capability = createCapability()
+
+        XCTAssertFalse(capability.isWebsiteHeaderEnabled)
+    }
+
     // MARK: - Helpers
 
     private func createCapability() -> BrowsingMenuSheetDefaultCapability {

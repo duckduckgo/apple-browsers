@@ -41,7 +41,7 @@ final class SettingsViewModel: ObservableObject {
     // Dependencies
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
-    private lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
+    lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
     private lazy var animator: FireButtonAnimator = FireButtonAnimator(appSettings: AppUserDefaults())
     private var legacyViewProvider: SettingsLegacyViewProvider
     private lazy var versionProvider: AppVersion = AppVersion.shared

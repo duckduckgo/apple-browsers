@@ -95,6 +95,7 @@ public final class ContentScopeProperties: Encodable {
     public let platform: ContentScopePlatform
     public let features: [String: ContentScopeFeature]
     public var currentCohorts: [ContentScopeExperimentData]
+    public let themeVariant: String?
 
     public init(gpcEnabled: Bool,
                 sessionKey: String,
@@ -102,7 +103,8 @@ public final class ContentScopeProperties: Encodable {
                 isInternalUser: Bool = false,
                 debug: Bool = false,
                 featureToggles: ContentScopeFeatureToggles,
-                currentCohorts: [ContentScopeExperimentData] = []) {
+                currentCohorts: [ContentScopeExperimentData] = [],
+                themeVariant: String? = nil) {
         self.globalPrivacyControlValue = gpcEnabled
         self.debug = debug
         self.sessionKey = sessionKey
@@ -113,6 +115,7 @@ public final class ContentScopeProperties: Encodable {
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
         ]
         self.currentCohorts = currentCohorts
+        self.themeVariant = themeVariant
     }
 
     enum CodingKeys: String, CodingKey {
@@ -126,7 +129,7 @@ public final class ContentScopeProperties: Encodable {
         case platform
         case features
         case currentCohorts
-
+        case themeVariant
     }
 
 }

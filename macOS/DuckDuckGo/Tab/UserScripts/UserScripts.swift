@@ -96,13 +96,15 @@ final class UserScripts: UserScriptsProvider {
         let sessionKey = sourceProvider.sessionKey ?? ""
         let messageSecret = sourceProvider.messageSecret ?? ""
         let currentCohorts = sourceProvider.currentCohorts ?? []
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
                                            isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
                                            debug: contentScopePreferences.isDebugStateEnabled,
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
-                                           currentCohorts: currentCohorts)
+                                           currentCohorts: currentCohorts,
+                                           themeVariant: themeVariant)
         do {
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
@@ -228,7 +230,7 @@ final class UserScripts: UserScriptsProvider {
                                                            stripePurchaseFlow: stripePurchaseFlow,
                                                            uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                            aiChatURL: AIChatRemoteSettings().aiChatURL,
-                                                           wideEvent: WideEvent(),
+                                                           wideEvent: Application.appDelegate.wideEvent,
                                                            pendingTransactionHandler: pendingTransactionHandler)
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)

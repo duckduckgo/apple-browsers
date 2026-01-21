@@ -283,6 +283,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
 
+    /// Whether the wide event POST endpoint is enabled
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
+    case wideEventPostEndpoint
+
     /// Shows tracker count banner in Tab Switcher and related settings item
     case tabSwitcherTrackerCount
 
@@ -310,6 +314,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
              .showWhatsNewPromptOnDemand,
+             .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion:
             true
         default:
@@ -377,6 +382,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .contextualDuckAIMode,
              .aiChatSync,
              .showWhatsNewPromptOnDemand,
+             .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
              .aiChatAtb,
              .enhancedDataClearingSettings,
@@ -597,6 +603,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
             return .disabled
+        case .wideEventPostEndpoint:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint))
         case .tabSwitcherTrackerCount,
              .burnSingleTab:
             return .disabled

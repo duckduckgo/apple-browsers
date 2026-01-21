@@ -99,10 +99,12 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
     private struct FetchChatsParams: Encodable {
         let query: String?
         let maxChats: Int
+        let since: Int64?
 
         enum CodingKeys: String, CodingKey {
             case query
             case maxChats = "max_chats"
+            case since
         }
     }
 
@@ -160,8 +162,9 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
     /// - Parameters:
     ///   - query: Optional search query to filter chats
     ///   - maxChats: Maximum number of recent (non-pinned) chats to return
+    ///   - since: Optional timestamp in milliseconds - only return chats with lastEdit >= this value
     @MainActor
-    public func fetchChats(query: String? = nil, maxChats: Int = defaultMaxChats) {
+    public func fetchChats(query: String? = nil, maxChats: Int = defaultMaxChats, since: Int64? = nil) {
         guard let webView, broker != nil else {
             onChatsReceived?(.failure(SuggestionsError.notReady))
             return
@@ -169,7 +172,8 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
 
         let params = FetchChatsParams(
             query: query?.isEmpty == false ? query : nil,
-            maxChats: maxChats
+            maxChats: maxChats,
+            since: since
         )
 
         broker?.push(

@@ -115,6 +115,9 @@ public final class SuggestionsReader: SuggestionsReading {
         return await fetchFromAllDomains(query: query, script: script)
     }
 
+    /// One week in seconds
+    private static let oneWeekInterval: TimeInterval = 7 * 24 * 60 * 60
+
     @MainActor
     private func fetchFromAllDomains(
         query: String?,
@@ -123,6 +126,15 @@ public final class SuggestionsReader: SuggestionsReading {
         var bestResult: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])?
         var bestMostRecentDate: Date?
         var lastError: Error?
+
+        // When query is empty, only show chats from the last week
+        let since: Int64?
+        if query == nil || query?.isEmpty == true {
+            let oneWeekAgo = Date().addingTimeInterval(-Self.oneWeekInterval)
+            since = Int64(oneWeekAgo.timeIntervalSince1970 * 1000) // Convert to milliseconds
+        } else {
+            since = nil
+        }
 
         for domain in URL.aiChatDomains {
             // Navigate to domain
@@ -136,7 +148,7 @@ public final class SuggestionsReader: SuggestionsReading {
             // Fetch suggestions from this domain
             let fetchResult = await withCheckedContinuation { continuation in
                 self.fetchContinuation = continuation
-                script.fetchChats(query: query, maxChats: AIChatSuggestionsUserScript.defaultMaxChats)
+                script.fetchChats(query: query, maxChats: AIChatSuggestionsUserScript.defaultMaxChats, since: since)
             }
 
             switch fetchResult {

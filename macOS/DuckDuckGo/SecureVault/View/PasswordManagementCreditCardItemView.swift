@@ -51,50 +51,14 @@ struct PasswordManagementCreditCardItemView: View {
                         .padding(.bottom, model.isInEditMode ? 20 : 30)
 
                     EditableCreditCardField(textFieldValue: $model.cardNumber, title: UserText.pmCardNumber, accessibilityIdentifier: "Card Number TextField")
-                    EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName, accessibilityIdentifier: "Cardholder Name TextField")
+                    ExpirationField()
+                    EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName, accessibilityIdentifier: "Cardholder Name TextField", placeholder: "Name on card")
                     SecureEditableCreditCardField(textFieldValue: $model.cardSecurityCode,
                                                   title: UserText.pmCardVerificationValue,
                                                   hiddenTextLength: 3,
                                                   toolTipHideText: UserText.autofillHideCardCvvTooltip,
-                                                  toolTipShowText: UserText.autofillShowCardCvvTooltip)
-
-                    // Expiration:
-
-                    if model.expirationMonth != nil || model.expirationYear != nil || model.isInEditMode {
-                        Text(UserText.pmCardExpiration)
-                            .bold()
-                            .padding(.bottom, 5)
-                    }
-
-                    if model.isInEditMode {
-                        HStack {
-
-                            Picker("", selection: $model.expirationMonth) {
-                                ForEach(Date.monthsWithIndex, id: \.self) { month in
-                                    Text(month.name)
-                                        .tag(month.index as Int?)
-                                }
-                            }
-                            .labelsHidden()
-
-                            Picker("", selection: $model.expirationYear) {
-                                ForEach(Date.nextTenYears, id: \.self) { year in
-                                    Text(String(year))
-                                        .tag(year as Int?)
-                                }
-                            }
-                            .labelsHidden()
-
-                        }
-                        .padding(.bottom, interItemSpacing)
-                    } else if let month = model.expirationMonth, let year = model.expirationYear {
-                        let components = DateComponents(calendar: Calendar.current, year: year, month: month)
-
-                        if let date = components.date {
-                            Text(PasswordManagementCreditCardModel.dateFormatter.string(from: date))
-                                .padding(.bottom, interItemSpacing)
-                        }
-                    }
+                                                  toolTipShowText: UserText.autofillShowCardCvvTooltip,
+                                                  placeholder: "Security code")
 
                     Spacer(minLength: 0)
 
@@ -206,6 +170,7 @@ private struct EditableCreditCardField: View {
 
     let title: String
     let accessibilityIdentifier: String
+    let placeholder: String
 
     var body: some View {
 
@@ -219,7 +184,7 @@ private struct EditableCreditCardField: View {
 
                 if model.isEditing || model.isNew {
 
-                    TextField("", text: $textFieldValue)
+                    TextField(placeholder, text: $textFieldValue)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .padding(.bottom, interItemSpacing)
                         .accessibility(identifier: accessibilityIdentifier)
@@ -264,6 +229,7 @@ private struct SecureEditableCreditCardField: View {
     let hiddenTextLength: Int
     let toolTipHideText: String
     let toolTipShowText: String
+    let placeholder: String
 
     var body: some View {
 
@@ -279,7 +245,7 @@ private struct SecureEditableCreditCardField: View {
 
                     HStack {
 
-                        TextField("", text: $textFieldValue)
+                        TextField(placeholder, text: $textFieldValue)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .padding(.bottom, interItemSpacing)
                             .accessibility(identifier: "Security Code TextField")
@@ -313,6 +279,87 @@ private struct SecureEditableCreditCardField: View {
                 isHovering = $0
             }
 
+        }
+    }
+}
+
+// MARK: - Expiration Field
+
+/// If the model is currently in edit mode, this will show a picker for the expiration month and year.
+/// If the model is not in edit mode, this will show the expiration date in the format of MM/yyyy.
+///
+private struct ExpirationField: View {
+
+    @EnvironmentObject var model: PasswordManagementCreditCardModel
+
+    @State private var isHovering = false
+
+    var body: some View {
+
+        if model.expirationMonth != nil || model.expirationYear != nil || model.isInEditMode {
+            VStack(alignment: .leading, spacing: 0) {
+
+                Text(UserText.pmCardExpiration)
+                    .bold()
+                    .padding(.bottom, 5)
+
+                if model.isInEditMode {
+                    HStack {
+                        Picker("", selection: $model.expirationMonth) {
+                            if model.expirationMonth == nil {
+                                Text(UserText.pmMonth)
+                                    .tag(nil as Int?)
+                            }
+                            ForEach(Date.monthsWithIndex, id: \.self) { month in
+                                Text(String(format: "%02d", month.index))
+                                    .tag(month.index as Int?)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 90)
+
+                        Picker("", selection: $model.expirationYear) {
+                            if model.expirationYear == nil {
+                                Text(UserText.pmYear)
+                                    .tag(nil as Int?)
+                            }
+                            ForEach(Date.nextTenYears, id: \.self) { year in
+                                Text(String(year))
+                                    .tag(year as Int?)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 90)
+
+                    }
+                    .padding(.bottom, interItemSpacing)
+                } else if let month = model.expirationMonth, let year = model.expirationYear {
+                    let components = DateComponents(calendar: Calendar.current, year: year, month: month)
+
+                    if let date = components.date {
+                        let expirationString = PasswordManagementCreditCardModel.expirationDateFormatter.string(from: date)
+
+                        HStack(spacing: 6) {
+                            Text(expirationString)
+
+                            if isHovering {
+                                Button {
+                                    model.copy(expirationString)
+                                } label: {
+                                    Image(.copy)
+                                }.buttonStyle(PlainButtonStyle())
+                            }
+
+                            Spacer()
+                        }
+                        .padding(.bottom, interItemSpacing)
+                    }
+                }
+
+            }
+            .onHover {
+                isHovering = $0
+            }
         }
     }
 }

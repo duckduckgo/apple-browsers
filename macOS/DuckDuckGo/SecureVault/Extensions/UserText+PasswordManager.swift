@@ -88,6 +88,7 @@ extension UserText {
     static let pmRemovedDuckAddressButton = NSLocalizedString("pm.removed.duck.address.button", value: "Got it", comment: "Button text for the alert dialog telling the user an updated username is no longer a private email address")
     static let pmSignInToManageEmail = NSLocalizedString("pm.signin.to.manage", value: "%@ to manage your Duck Addresses on this device.", comment: "Message displayed to the user when they are logged out of Email protection.")
     static let pmEnableEmailProtection = NSLocalizedString("pm.enable.email.protection", value: "Enable Email Protection", comment: "Text link to email protection website")
+    static let pmCardNickname = NSLocalizedString("pm.card.nickname", value: "Card Nickname", comment: "Label for a field showing the nickname given to a credit card by the user")
     static let pmCardNumber = NSLocalizedString("pm.card.number", value: "Card Number", comment: "Label for card number title")
     static let pmCardholderName = NSLocalizedString("pm.card.cardholder-name", value: "Cardholder Name", comment: "Label for cardholder name title")
     static let pmCardVerificationValue = NSLocalizedString("pm.card.cvv", value: "CVV", comment: "Label for CVV title")

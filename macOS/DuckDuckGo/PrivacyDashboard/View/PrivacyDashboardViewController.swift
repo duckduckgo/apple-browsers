@@ -360,15 +360,6 @@ extension PrivacyDashboardViewController {
         case failedToFetchTheCurrentURL
     }
 
-    private func calculateWebVitals(performanceMetrics: PerformanceMetricsSubfeature?) async -> [Double]? {
-        await withCheckedContinuation({ continuation in
-            guard let performanceMetrics else { continuation.resume(returning: nil); return }
-            performanceMetrics.notifyHandler { result in
-                continuation.resume(returning: result)
-            }
-        })
-    }
-
     private func collectBreakageReportData(breakageReportingSubfeature: BreakageReportingSubfeature?) async -> BreakageReportData? {
         await withCheckedContinuation({ continuation in
             guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
@@ -407,18 +398,15 @@ extension PrivacyDashboardViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         let protectionsState = configuration.isFeature(.contentBlocking, enabledForDomain: currentTab.content.urlForWebView?.host)
 
-        var webVitalsResult: [Double]?
         var breakageReportData: BreakageReportData?
 
         if configuration.isEnabled(featureKey: .breakageReporting) {
             breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature)
-        } else if configuration.isEnabled(featureKey: .performanceMetrics) {
-            webVitalsResult = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics)
         }
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
-        let jsPerformance = breakageReportData?.jsPerformance ?? webVitalsResult
+        let jsPerformance = breakageReportData?.jsPerformance
 
         var errors: [Error]?
         var statusCodes: [Int]?

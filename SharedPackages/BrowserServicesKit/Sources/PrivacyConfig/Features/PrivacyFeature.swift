@@ -48,7 +48,6 @@ public enum PrivacyFeature: String {
     case privacyDashboard
     case updates
     case updatesWontAutomaticallyRestartApp
-    case performanceMetrics
     case privacyPro
     case sslCertificates
     case toggleReports

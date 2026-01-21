@@ -294,15 +294,6 @@ extension PrivacyDashboardViewController {
         case failedToFetchTheCurrentWebsiteInfo
     }
 
-    private func calculateWebVitals(breakageAdditionalInfo: BreakageAdditionalInfo) async -> [Double]? {
-        await withCheckedContinuation({ continuation in
-            guard let performanceMetrics = breakageAdditionalInfo.performanceMetrics else { continuation.resume(returning: nil); return }
-            performanceMetrics.notifyHandler { result in
-                continuation.resume(returning: result)
-            }
-        })
-    }
-
     private func collectBreakageReportData(breakageAdditionalInfo: BreakageAdditionalInfo) async -> BreakageReportData? {
         await withCheckedContinuation({ continuation in
             guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else { continuation.resume(returning: nil); return }
@@ -323,18 +314,15 @@ extension PrivacyDashboardViewController {
         }
 
         let privacyConfig = privacyConfigurationManager.privacyConfig
-        var webVitalsResult: [Double]?
         var breakageReportData: BreakageReportData?
 
         if privacyConfig.isEnabled(featureKey: .breakageReporting) {
             breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
-        } else if privacyConfig.isEnabled(featureKey: .performanceMetrics) {
-            webVitalsResult = await calculateWebVitals(breakageAdditionalInfo: breakageAdditionalInfo)
         }
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
-        let jsPerformance = breakageReportData?.jsPerformance ?? webVitalsResult
+        let jsPerformance = breakageReportData?.jsPerformance
 
         let blockedTrackerDomains = privacyInfo.trackerInfo.trackersBlocked.compactMap { $0.domain }
         let protectionsState = privacyConfigurationManager.privacyConfig.isFeature(.contentBlocking,

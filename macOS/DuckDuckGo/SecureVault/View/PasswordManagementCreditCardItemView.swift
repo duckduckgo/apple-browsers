@@ -82,6 +82,15 @@ struct PasswordManagementCreditCardItemView: View {
 private struct HeaderView: View {
 
     @EnvironmentObject var model: PasswordManagementCreditCardModel
+    @Environment(\.colorScheme) var colorScheme
+
+    private var textFieldBackgroundColor: Color {
+        colorScheme == .dark ? Color(.textEditorBackground) : Color(.textBackgroundColor)
+    }
+
+    private var shadowBorderColor: Color {
+        colorScheme == .dark ? Color(white: 1.0, opacity: 0.15) : Color(white: 0.0, opacity: 0.15)
+    }
 
     var body: some View {
 
@@ -102,13 +111,13 @@ private struct HeaderView: View {
                     .textFieldStyle(.plain)
                     .padding(8)
                     .frame(height: 32)
-                    .background(Color(.controlBackgroundColor))
+                    .background(textFieldBackgroundColor)
                     .cornerRadius(6)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color.black.opacity(0.15), lineWidth: 1)
+                            .stroke(shadowBorderColor, lineWidth: 1)
                     )
-                    .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 1)
+                    .shadow(color: shadowBorderColor, radius: 0, x: 0, y: 1)
                     .accessibility(identifier: "Title TextField")
 
             } else {

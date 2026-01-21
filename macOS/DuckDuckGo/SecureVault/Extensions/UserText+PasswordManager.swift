@@ -97,7 +97,7 @@ extension UserText {
     static let pmCardNumberPlaceholder = NSLocalizedString("pm.card.placeholder.number", value: "Required", comment: "Placeholder for a field showing the card number")
     static let pmCardholderNamePlaceholder = NSLocalizedString("pm.card.placeholder.cardholder-name", value: "Name on card", comment: "Placeholder for a field showing the cardholder name")
     static let pmCardVerificationValuePlaceholder = NSLocalizedString("pm.card.placeholder.cvv", value: "Security code", comment: "Placeholder for a field showing the CVV")
-    
+
     static let pmIdentification = NSLocalizedString("pm.identification", value: "Identification", comment: "Label for identification title")
     static let pmFirstName = NSLocalizedString("pm.name.first", value: "First Name", comment: "Label for first name title")
     static let pmMiddleName = NSLocalizedString("pm.name.middle", value: "Middle Name", comment: "Label for middle name title")

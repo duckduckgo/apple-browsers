@@ -17,6 +17,39 @@
 //  limitations under the License.
 //
 
+import Core
+import History
+
+@MainActor
 struct TabViewModel {
-    // TODO: - This component will be responsible for fetching the visits and visited domains that occurred within the tab.
+    
+    // MARK: - Variables
+    
+    private(set) var tab: Tab
+    private let historyCapture: HistoryCapture
+    private let historyManager: HistoryManaging
+    
+    // MARK: - Init
+    
+    init(tab: Tab, historyManager: HistoryManaging) {
+        self.tab = tab
+        self.historyManager = historyManager
+        self.historyCapture = .init(historyManager: historyManager, tabID: tab.uid)
+    }
+    
+    // MARK: - History Capturing Methods
+    
+    func captureWebviewDidCommit(_ url: URL) {
+        historyCapture.webViewDidCommit(url: url)
+    }
+    
+    func captureTitleDidChange(_ title: String?, for url: URL) {
+        historyCapture.titleDidChange(title, forURL: url)
+    }
+    
+    // MARK: - Tab History
+    
+    func tabHistory() async -> [URL] {
+        return (try? await historyManager.historyCoordinator.tabHistory(tabID: tab.uid)) ?? []
+    }
 }

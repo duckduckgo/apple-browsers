@@ -28,21 +28,23 @@ public class HistoryCapture {
     }
 
     let historyManager: HistoryManaging
+    let tabID: String
     var coordinator: HistoryCoordinating {
         historyManager.historyCoordinator
     }
 
     var url: URL?
 
-    public init(historyManager: HistoryManaging) {
+    public init(historyManager: HistoryManaging, tabID: String) {
         self.historyManager = historyManager
+        self.tabID = tabID
     }
 
     @MainActor
     public func webViewDidCommit(url: URL) {
         let url = url.urlOrDuckDuckGoCleanQuery
         self.url = url
-        coordinator.addVisit(of: url)
+        coordinator.addVisit(of: url, tabID: tabID)
     }
 
     @MainActor

@@ -150,6 +150,7 @@ class TabViewController: UIViewController {
                                                                                    tld: TabViewController.tld)
     private(set) lazy var extensionPromotionManager: AutofillExtensionPromotionManaging = AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
     private(set) var tabModel: Tab
+    private(set) var viewModel: TabViewModel
     private(set) var privacyInfo: PrivacyInfo?
     private var previousPrivacyInfosByURL: [URL: PrivacyInfo] = [:]
     
@@ -289,7 +290,7 @@ class TabViewController: UIViewController {
             delegate?.tabLoadingStateDidChange(tab: self)
             if let url {
                 let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
-                historyCapture.titleDidChange(title, forURL: finalURL)
+                viewModel.captureTitleDidChange(title, for: finalURL)
             }
         }
     }
@@ -455,7 +456,6 @@ class TabViewController: UIViewController {
 
 
     let historyManager: HistoryManaging
-    let historyCapture: HistoryCapture
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
                                     featureFlagger: AppDependencyProvider.shared.featureFlagger,
@@ -545,11 +545,11 @@ class TabViewController: UIViewController {
                    voiceSearchHelper: VoiceSearchHelperProtocol) {
 
         self.tabModel = tabModel
+        self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
         self.privacyConfigurationManager = privacyConfigurationManager
         self.appSettings = appSettings
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
-        self.historyCapture = HistoryCapture(historyManager: historyManager)
         self.syncService = syncService
         self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -1533,7 +1533,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
-            historyCapture.webViewDidCommit(url: finalURL)
+            viewModel.captureWebviewDidCommit(finalURL)
             instrumentation.willLoad(url: url)
         }
 

@@ -101,6 +101,10 @@ class NullHistoryCoordinator: HistoryCoordinating {
     var historyDictionaryPublisher: Published<[URL: History.HistoryEntry]?>.Publisher {
         $historyDictionary
     }
+    
+    func tabHistory(tabID: String) -> [URL] {
+        return []
+    }
 
     func addVisit(of url: URL) -> History.Visit? {
         return nil

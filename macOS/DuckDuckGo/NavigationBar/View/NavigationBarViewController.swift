@@ -832,7 +832,7 @@ final class NavigationBarViewController: NSViewController {
                 Logger.autofill.debug("Invalid credit card number, not presenting save popover")
                 return
             }
-            
+
             Logger.passwordManager.debug("Presenting Save Credit Card popover")
             popovers.displaySavePaymentMethod(card,
                                               usingView: passwordManagementButton,

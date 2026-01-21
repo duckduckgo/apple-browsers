@@ -91,18 +91,18 @@ struct FormattedCreditCardTextField: NSViewRepresentable {
             }
 
             let cursorPosition = currentSelection.location
-            
+
             // Count spaces before cursor in old and new text
             let oldTextPrefix = String(oldText.prefix(cursorPosition))
             let oldSpacesBeforeCursor = oldTextPrefix.filter { $0 == " " }.count
-            
+
             let newTextPrefix = String(newText.prefix(min(cursorPosition, newText.count)))
             let newSpacesBeforeCursor = newTextPrefix.filter { $0 == " " }.count
-            
+
             // Adjust cursor position by the difference in space counts
             var newCursorPosition = cursorPosition + (newSpacesBeforeCursor - oldSpacesBeforeCursor)
             newCursorPosition = min(newCursorPosition, newText.count)
-            
+
             textView.setSelectedRange(NSRange(location: newCursorPosition, length: 0))
         }
     }

@@ -44,6 +44,9 @@ extension DataBrokerRunCustomJSONViewModel {
                 await MainActor.run { [weak self] in
                     self?.progressText = "Idle"
                     self?.isProgressActive = false
+                    self?.showAlert = true
+                    self?.alert = AlertUI(title: "Email confirmation check complete",
+                                          description: "Use \"Continue opt-out\" to resume the process.")
                 }
             } catch {
                 await MainActor.run { [weak self] in

@@ -52,13 +52,13 @@ struct PasswordManagementCreditCardItemView: View {
 
                     EditableCreditCardField(textFieldValue: $model.cardNumber, title: UserText.pmCardNumber, accessibilityIdentifier: "Card Number TextField")
                     ExpirationField()
-                    EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName, accessibilityIdentifier: "Cardholder Name TextField", placeholder: "Name on card")
+                    EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName, accessibilityIdentifier: "Cardholder Name TextField", placeholder: UserText.pmCardholderNamePlaceholder)
                     SecureEditableCreditCardField(textFieldValue: $model.cardSecurityCode,
                                                   title: UserText.pmCardVerificationValue,
                                                   hiddenTextLength: 3,
                                                   toolTipHideText: UserText.autofillHideCardCvvTooltip,
                                                   toolTipShowText: UserText.autofillShowCardCvvTooltip,
-                                                  placeholder: "Security code")
+                                                  placeholder: UserText.pmCardVerificationValuePlaceholder)
 
                     Spacer(minLength: 0)
 

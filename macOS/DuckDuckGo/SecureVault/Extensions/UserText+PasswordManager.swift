@@ -88,13 +88,16 @@ extension UserText {
     static let pmRemovedDuckAddressButton = NSLocalizedString("pm.removed.duck.address.button", value: "Got it", comment: "Button text for the alert dialog telling the user an updated username is no longer a private email address")
     static let pmSignInToManageEmail = NSLocalizedString("pm.signin.to.manage", value: "%@ to manage your Duck Addresses on this device.", comment: "Message displayed to the user when they are logged out of Email protection.")
     static let pmEnableEmailProtection = NSLocalizedString("pm.enable.email.protection", value: "Enable Email Protection", comment: "Text link to email protection website")
-    static let pmCardNickname = NSLocalizedString("pm.card.nickname", value: "Card Nickname", comment: "Label for a field showing the nickname given to a credit card by the user")
     static let pmCardNumber = NSLocalizedString("pm.card.number", value: "Card Number", comment: "Label for card number title")
     static let pmCardholderName = NSLocalizedString("pm.card.cardholder-name", value: "Cardholder Name", comment: "Label for cardholder name title")
     static let pmCardVerificationValue = NSLocalizedString("pm.card.cvv", value: "CVV", comment: "Label for CVV title")
     static let pmCardExpiration = NSLocalizedString("pm.card.expiration-date", value: "Expiration Date", comment: "Label for expiration date title")
     static let pmCardExpiresFormat = NSLocalizedString("pm.card.expires.format", value: "Expires: %@", comment: "Label for credit card expiration date. %@ will be replaced with the formatted date (e.g., '02/2025')")
-
+    static let pmCardNicknamePlaceholder = NSLocalizedString("pm.card.placeholder.nickname", value: "Card Nickname", comment: "Placeholder for a field showing the nickname given to a credit card by the user")
+    static let pmCardNumberPlaceholder = NSLocalizedString("pm.card.placeholder.number", value: "Required", comment: "Placeholder for a field showing the card number")
+    static let pmCardholderNamePlaceholder = NSLocalizedString("pm.card.placeholder.cardholder-name", value: "Name on card", comment: "Placeholder for a field showing the cardholder name")
+    static let pmCardVerificationValuePlaceholder = NSLocalizedString("pm.card.placeholder.cvv", value: "Security code", comment: "Placeholder for a field showing the CVV")
+    
     static let pmIdentification = NSLocalizedString("pm.identification", value: "Identification", comment: "Label for identification title")
     static let pmFirstName = NSLocalizedString("pm.name.first", value: "First Name", comment: "Label for first name title")
     static let pmMiddleName = NSLocalizedString("pm.name.middle", value: "Middle Name", comment: "Label for middle name title")

@@ -16552,7 +16552,6 @@
 				BD88A83E2C4F3E4300460A26 /* FeedbackCategoryProviding.swift in Sources */,
 				BBFD526E2E12FB930043B00C /* VisualizeFireSettingsDecider.swift in Sources */,
 				9F56CFB12B843F6C00BB7F11 /* BookmarksDialogViewFactory.swift in Sources */,
-				B5EDA5622F1FB92A00A5D9CD /* MemoryStatsExporter.swift in Sources */,
 				372042D42DF9B0AD00CE099A /* InternalFeedbackFormTabExtension.swift in Sources */,
 				B645D8F629FA95440024461F /* WKProcessPoolExtension.swift in Sources */,
 				9D9AE86B2AA76CF90026E7DC /* LoginItemsManager.swift in Sources */,

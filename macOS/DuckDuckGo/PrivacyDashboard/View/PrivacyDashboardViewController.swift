@@ -398,11 +398,7 @@ extension PrivacyDashboardViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         let protectionsState = configuration.isFeature(.contentBlocking, enabledForDomain: currentTab.content.urlForWebView?.host)
 
-        var breakageReportData: BreakageReportData?
-
-        if configuration.isEnabled(featureKey: .breakageReporting) {
-            breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature)
-        }
+        let breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()

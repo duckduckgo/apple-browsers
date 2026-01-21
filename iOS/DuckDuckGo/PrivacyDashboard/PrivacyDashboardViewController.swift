@@ -313,11 +313,7 @@ extension PrivacyDashboardViewController {
         }
 
         let privacyConfig = privacyConfigurationManager.privacyConfig
-        var breakageReportData: BreakageReportData?
-
-        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
-        }
+        let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()

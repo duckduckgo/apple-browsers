@@ -56,19 +56,11 @@ extension OptOutSubmissionWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        parameters[DBPWideEventParameter.OptOutSubmissionFeature.dataBrokerURL] = dataBrokerURL
-
-        if let dataBrokerVersion {
-            parameters[DBPWideEventParameter.OptOutSubmissionFeature.dataBrokerVersion] = dataBrokerVersion
-        }
-
-        if let duration = submissionInterval?.durationMilliseconds {
-            parameters[DBPWideEventParameter.OptOutSubmissionFeature.submissionLatency] = String(duration)
-        }
-
-        return parameters
+        Dictionary(compacting: [
+            (DBPWideEventParameter.OptOutSubmissionFeature.dataBrokerURL, dataBrokerURL),
+            (DBPWideEventParameter.OptOutSubmissionFeature.dataBrokerVersion, dataBrokerVersion),
+            (DBPWideEventParameter.OptOutSubmissionFeature.submissionLatency, submissionInterval?.stringValue(.noBucketing)),
+        ])
     }
 }
 

@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
 import CoreData
+import Foundation
 import Persistence
+import Testing
 
 @objc(TestEntity)
 class TestEntity: NSManagedObject {
@@ -34,15 +35,15 @@ class TestEntity: NSManagedObject {
     @NSManaged public var relationFrom: TestEntity?
 }
 
-class CoreDataErrorsParserTests: XCTestCase {
+final class CoreDataErrorsParserTests {
 
-    func tempDBDir() -> URL {
+    static func tempDBDir() -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     }
 
-    var db: CoreDataDatabase!
+    var db: CoreDataDatabase
 
-    func testModel() -> NSManagedObjectModel {
+    static func testModel() -> NSManagedObjectModel {
         let model = NSManagedObjectModel()
 
         let entity = NSEntityDescription()
@@ -84,23 +85,19 @@ class CoreDataErrorsParserTests: XCTestCase {
         return model
     }
 
-    override func setUp() {
-        super.setUp()
-
+    init() {
         db = CoreDataDatabase(name: "Test",
-                              containerLocation: tempDBDir(),
-                              model: testModel())
+                              containerLocation: Self.tempDBDir(),
+                              model: Self.testModel())
         db.loadStore()
     }
 
-    override func tearDown() async throws {
-
-        try db.tearDown(deleteStores: true)
-        try await super.tearDown()
+    deinit {
+        try? db.tearDown(deleteStores: true)
     }
 
-    func testWhenObjectsAreValidThenTheyAreSaved() throws {
-
+    @Test("Valid objects are saved successfully")
+    func validObjectsAreSaved() throws {
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
 
         let e1 = TestEntity(entity: TestEntity.entity(in: context), insertInto: context)
@@ -114,8 +111,8 @@ class CoreDataErrorsParserTests: XCTestCase {
         try context.save()
     }
 
-    func testWhenOneAttributesAreMissingThenErrorIsIdentified() {
-
+    @Test("Missing attribute error is identified")
+    func missingAttributeErrorIdentified() throws {
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
 
         let e1 = TestEntity(entity: TestEntity.entity(in: context), insertInto: context)
@@ -127,18 +124,18 @@ class CoreDataErrorsParserTests: XCTestCase {
 
         do {
             try context.save()
-            XCTFail("This must fail")
+            Issue.record("Expected save to fail")
         } catch {
             let error = error as NSError
 
             let info = CoreDataErrorsParser.parse(error: error)
-            XCTAssertEqual(info.first?.entity, TestEntity.name)
-            XCTAssertEqual(info.first?.property, "attribute")
+            #expect(info.first?.entity == TestEntity.name)
+            #expect(info.first?.property == "attribute")
         }
     }
 
-    func testWhenMoreAttributesAreMissingThenErrorIsIdentified() {
-
+    @Test("Multiple missing attributes are identified")
+    func multipleAttributesMissing() throws {
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
 
         _ = TestEntity(entity: TestEntity.entity(in: context), insertInto: context)
@@ -146,32 +143,32 @@ class CoreDataErrorsParserTests: XCTestCase {
 
         do {
             try context.save()
-            XCTFail("This must fail")
+            Issue.record("Expected save to fail")
         } catch {
             let error = error as NSError
 
             let info = CoreDataErrorsParser.parse(error: error)
-            XCTAssertEqual(info.count, 4)
+            #expect(info.count == 4)
 
             let uniqueSet = Set(info.map { $0.property })
-            XCTAssertEqual(uniqueSet, ["attribute", "relationFrom"])
+            #expect(uniqueSet == ["attribute", "relationFrom"])
         }
     }
 
-    func testWhenStoreIsReadOnlyThenErrorIsIdentified() {
-
+    @Test("Read-only store error is identified")
+    func readOnlyStoreError() throws {
         guard let url = db.coordinator.persistentStores.first?.url else {
-            XCTFail("Failed to get persistent store URL")
+            Issue.record("Failed to get persistent store URL")
             return
         }
         let ro = CoreDataDatabase(name: "Test",
                                   containerLocation: url.deletingLastPathComponent(),
-                                  model: testModel(),
+                                  model: Self.testModel(),
                                   readOnly: true)
         ro.loadStore { _, error in
-            XCTAssertNil(error)
+            #expect(error == nil)
         }
-        let context = ro.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        let context = ro.makeContext(concurrencyType: NSManagedObjectContextConcurrencyType.mainQueueConcurrencyType)
 
         let e1 = TestEntity(entity: TestEntity.entity(in: context), insertInto: context)
         let e2 = TestEntity(entity: TestEntity.entity(in: context), insertInto: context)
@@ -183,18 +180,18 @@ class CoreDataErrorsParserTests: XCTestCase {
 
         do {
             try context.save()
-            XCTFail("This must fail")
+            Issue.record("Expected save to fail")
         } catch {
             let error = error as NSError
 
             let info = CoreDataErrorsParser.parse(error: error)
-            XCTAssertEqual(info.first?.domain, NSCocoaErrorDomain)
-            XCTAssertEqual(info.first?.code, 513)
+            #expect(info.first?.domain == NSCocoaErrorDomain)
+            #expect(info.first?.code == 513)
         }
     }
 
-    func testWhenThereIsMergeConflictThenErrorIsIdentified() throws {
-
+    @Test("Merge conflict error is identified")
+    func mergeConflictError() throws {
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
 
         let e1 = TestEntity(entity: TestEntity.entity(in: context), insertInto: context)
@@ -209,7 +206,7 @@ class CoreDataErrorsParserTests: XCTestCase {
 
         let anotherContext = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
         guard let anotherE1 = try anotherContext.existingObject(with: e1.objectID) as? TestEntity else {
-            XCTFail("Expected object")
+            Issue.record("Expected object to exist")
             return
         }
 
@@ -220,13 +217,13 @@ class CoreDataErrorsParserTests: XCTestCase {
 
         do {
             try anotherContext.save()
-            XCTFail("This must fail")
+            Issue.record("Expected save to fail")
         } catch {
             let error = error as NSError
 
             let info = CoreDataErrorsParser.parse(error: error)
-            XCTAssertEqual(info.first?.domain, NSCocoaErrorDomain)
-            XCTAssertEqual(info.first?.entity, TestEntity.name)
+            #expect(info.first?.domain == NSCocoaErrorDomain)
+            #expect(info.first?.entity == TestEntity.name)
         }
     }
 }

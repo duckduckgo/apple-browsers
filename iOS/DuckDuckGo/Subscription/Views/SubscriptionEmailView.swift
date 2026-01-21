@@ -22,10 +22,14 @@ import Foundation
 import Core
 import Combine
 import DataBrokerProtection_iOS
+import PrivacyConfig
 
 struct SubscriptionEmailView: View {
         
     @StateObject var viewModel: SubscriptionEmailViewModel
+
+    let featureFlagger: FeatureFlagger
+
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     @Environment(\.dismiss) var dismiss
         
@@ -49,7 +53,7 @@ struct SubscriptionEmailView: View {
         NavigationLink(destination: LazyView(SubscriptionITPView(viewModel:
                                                                     SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                                              userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                                                             isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)).navigationViewStyle(.stack)),
+                                                                                             isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser, featureFlagger: featureFlagger)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
         if viewModel.isPIREnabled,

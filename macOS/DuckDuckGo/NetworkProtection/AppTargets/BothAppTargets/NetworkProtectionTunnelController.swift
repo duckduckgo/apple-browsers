@@ -766,6 +766,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         try await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
         self.connectionWideEventData?.oauthDuration?.complete()
 
+        settings.wideEventPostEndpointEnabled = featureFlagger.isFeatureOn(.wideEventPostEndpoint)
+
         // Encode entire VPN settings as one unit
         let settingsSnapshot = VPNSettingsSnapshot(from: settings)
         if let data = try? JSONEncoder().encode(settingsSnapshot) {

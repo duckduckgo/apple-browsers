@@ -61,7 +61,7 @@ final class HistoryMenu: NSMenu {
     convenience init(location: Location = .mainMenu, historyGroupingDataSource: HistoryGroupingDataSource, recentlyClosedCoordinator: RecentlyClosedCoordinating, featureFlagger: FeatureFlagger) {
         self.init(
             location: location,
-            historyGroupingProvider: .init(dataSource: historyGroupingDataSource, featureFlagger: featureFlagger),
+            historyGroupingProvider: .init(dataSource: historyGroupingDataSource),
             recentlyClosedCoordinator: recentlyClosedCoordinator,
             featureFlagger: featureFlagger
         )

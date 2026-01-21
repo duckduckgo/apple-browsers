@@ -88,7 +88,8 @@ class FireExecutor: FireExecuting {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let dataStore: (any DDGWebsiteDataStore)?
     private let appSettings: AppSettings
-    
+    private let privacyStats: PrivacyStatsProviding?
+
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
     private var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
@@ -110,7 +111,8 @@ class FireExecutor: FireExecuting {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          dataStore: (any DDGWebsiteDataStore)? = nil,
          aiChatHistoryCleaner: HistoryCleaning? = nil,
-         appSettings: AppSettings) {
+         appSettings: AppSettings,
+         privacyStats: PrivacyStatsProviding? = nil) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.websiteDataManager = websiteDataManager
@@ -126,6 +128,7 @@ class FireExecutor: FireExecuting {
         self.aiChatHistoryCleaner = aiChatHistoryCleaner ?? HistoryCleaner(featureFlagger: featureFlagger,
                                                                           privacyConfig: privacyConfigurationManager)
         self.appSettings = appSettings
+        self.privacyStats = privacyStats
     }
 
     
@@ -261,6 +264,7 @@ class FireExecutor: FireExecuting {
 
         self.forgetTextZoom()
         await historyManager.removeAllHistory()
+        await privacyStats?.clearPrivacyStats()
 
         self.burnInProgress = false
     }

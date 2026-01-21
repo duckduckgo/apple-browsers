@@ -58,7 +58,7 @@ public protocol StageDurationCalculator {
     func fireOptOutEmailConfirm()
     func fireOptOutValidate()
     func fireOptOutSubmitSuccess(tries: Int)
-    func fireOptOutFailure(tries: Int)
+    func fireOptOutFailure(tries: Int, error: Error)
     func fireOptOutConditionFound()
     func fireOptOutConditionNotFound()
 #if os(iOS)
@@ -258,12 +258,16 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           vpnBypassStatus: vpnBypassStatus))
     }
 
-    func fireOptOutFailure(tries: Int) {
+    func fireOptOutFailure(tries: Int, error: Error) {
+        let errorCategory = errorCategory(for: error)
+
         handler.fire(.optOutFailure(dataBroker: dataBrokerURL,
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
                                     duration: durationSinceStartTime(),
                                     parent: parentURL ?? "",
+                                    errorCategory: errorCategory.toString,
+                                    errorDetails: error.localizedDescription,
                                     stage: stage.rawValue,
                                     tries: tries,
                                     emailPattern: emailPattern,
@@ -327,32 +331,10 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     }
 
     func fireScanError(error: Error) {
-        var errorCategory: ErrorCategory = .unclassified
-
-        if let dataBrokerProtectionError = error as? DataBrokerProtectionError {
-            switch dataBrokerProtectionError {
-            case .httpError(let httpCode):
-                if httpCode < 500 {
-                    if httpCode == 404 {
-                        fireScanNoResults()
-                        return
-                    } else {
-                        errorCategory = .clientError(httpCode: httpCode)
-                    }
-                } else {
-                    errorCategory = .serverError(httpCode: httpCode)
-                }
-            default:
-                errorCategory = .validationError
-            }
-        } else if let databaseError = error as? SecureStorageError {
-            errorCategory = .databaseError(domain: SecureStorageError.errorDomain, code: databaseError.errorCode)
-        } else {
-            if let nsError = error as NSError? {
-                if nsError.domain == NSURLErrorDomain {
-                    errorCategory = .networkError
-                }
-            }
+        let errorCategory = errorCategory(for: error)
+        if errorCategory == .clientError(httpCode: 404) {
+            fireScanNoResults()
+            return
         }
 
         handler.fire(
@@ -395,5 +377,33 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func incrementTries() {
         self.tries += 1
+    }
+}
+
+private extension DataBrokerProtectionStageDurationCalculator {
+
+    func errorCategory(for error: Error) -> ErrorCategory {
+        if let dataBrokerProtectionError = error as? DataBrokerProtectionError {
+            switch dataBrokerProtectionError {
+            case .httpError(let httpCode):
+                if httpCode < 500 {
+                    return .clientError(httpCode: httpCode)
+                } else {
+                    return .serverError(httpCode: httpCode)
+                }
+            default:
+                return .validationError
+            }
+        } else if let databaseError = error as? SecureStorageError {
+            return .databaseError(domain: SecureStorageError.errorDomain, code: databaseError.errorCode)
+        } else {
+            if let nsError = error as NSError? {
+                if nsError.domain == NSURLErrorDomain {
+                    return .networkError
+                }
+            }
+        }
+
+        return .unclassified
     }
 }

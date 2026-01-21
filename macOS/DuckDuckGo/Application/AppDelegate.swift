@@ -421,7 +421,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
-        wideEvent = WideEvent()
 
         if AppVersion.runType.requiresEnvironment {
             let commonDatabase = Database()
@@ -532,6 +531,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
+        wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
@@ -685,7 +685,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         subscriptionManager = defaultSubscriptionManager
 
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinedTabsManager: pinnedTabsManager)
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinnedTabsManager: pinnedTabsManager)
 
         let windowControllersManager = WindowControllersManager(
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
@@ -1416,6 +1416,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               let currentEvent = NSApp.currentEvent,
               let manager = WarnBeforeQuitManager(
                 currentEvent: currentEvent,
+                action: .quit,
                 isWarningEnabled: { [tabsPreferences] in
                     tabsPreferences.warnBeforeQuitting
                 }
@@ -1424,6 +1425,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let presenter = WarnBeforeQuitOverlayPresenter(
             startupPreferences: startupPreferences,
             onDontAskAgain: { [tabsPreferences] in
+                PixelKit.fire(GeneralPixel.warnBeforeQuitDontShowAgain, frequency: .standard)
                 tabsPreferences.warnBeforeQuitting = false
             },
             onHoverChange: { [weak manager] isHovering in

@@ -26,6 +26,10 @@ public protocol PixelFiring {
     func fire(_ event: PixelKitEvent,
               frequency: PixelKit.Frequency,
               withAdditionalParameters: [String: String])
+
+    func fire(_ event: PixelKitEvent,
+              frequency: PixelKit.Frequency,
+              onComplete: @escaping PixelKit.CompletionBlock)
 }
 
 extension PixelKit: PixelFiring {
@@ -43,5 +47,11 @@ extension PixelKit: PixelFiring {
                      frequency: PixelKit.Frequency,
                      withAdditionalParameters parameters: [String: String]) {
         fire(event, frequency: frequency, withAdditionalParameters: parameters, onComplete: { _, _ in })
+    }
+
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency,
+                     onComplete: @escaping PixelKit.CompletionBlock) {
+        fire(event, frequency: frequency, withAdditionalParameters: nil, onComplete: onComplete)
     }
 }

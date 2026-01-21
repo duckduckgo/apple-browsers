@@ -207,75 +207,27 @@ final class UpdateWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    // swiftlint:disable cyclomatic_complexity
-    /// Converts the update flow data to pixel parameters.
-    ///
-    /// All numeric values (durations, bytes, timestamps) are encoded as strings due to pixel
-    /// system requirements. The backend expects string parameters and will parse them as needed.
-    ///
-    /// - Returns: Dictionary of parameter keys and string values for pixel transmission
-    ///
-    /// - Note: Using String prevents UInt64/Int overflow issues during transmission and ensures
-    ///   consistent encoding across all platforms.
     func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        parameters["feature.data.ext.from_version"] = fromVersion
-        parameters["feature.data.ext.from_build"] = fromBuild
-
-        if let toVersion = toVersion {
-            parameters["feature.data.ext.to_version"] = toVersion
-        }
-
-        if let toBuild = toBuild {
-            parameters["feature.data.ext.to_build"] = toBuild
-        }
-
-        if let updateType = updateType {
-            parameters["feature.data.ext.update_type"] = updateType.rawValue
-        }
-
-        parameters["feature.data.ext.initiation_type"] = initiationType.rawValue
-        parameters["feature.data.ext.update_configuration"] = updateConfiguration.rawValue
-
-        if let lastKnownStep = lastKnownStep {
-            parameters["feature.data.ext.last_known_step"] = lastKnownStep.rawValue
-        }
-
-        parameters["feature.data.ext.is_internal_user"] = isInternalUser ? "true" : "false"
-        parameters["feature.data.ext.os_version"] = osVersion
-
-        if let cancellationReason = cancellationReason {
-            parameters["feature.data.ext.cancellation_reason"] = cancellationReason.rawValue
-        }
-
-        if let diskSpace = diskSpaceRemainingBytes {
-            parameters["feature.data.ext.disk_space_remaining_bytes"] = String(diskSpace)
-        }
-
-        if let bucket = timeSinceLastUpdateBucket {
-            parameters["feature.data.ext.time_since_last_update"] = bucket.rawValue
-        }
-
-        if let duration = updateCheckDuration?.durationMilliseconds {
-            parameters["feature.data.ext.update_check_duration_ms"] = String(Int(duration))
-        }
-
-        if let duration = downloadDuration?.durationMilliseconds {
-            parameters["feature.data.ext.download_duration_ms"] = String(Int(duration))
-        }
-
-        if let duration = extractionDuration?.durationMilliseconds {
-            parameters["feature.data.ext.extraction_duration_ms"] = String(Int(duration))
-        }
-
-        if let duration = totalDuration?.durationMilliseconds {
-            parameters["feature.data.ext.total_duration_ms"] = String(Int(duration))
-        }
-
-        return parameters
+        Dictionary(compacting: [
+            ("feature.data.ext.from_version", fromVersion),
+            ("feature.data.ext.from_build", fromBuild),
+            ("feature.data.ext.to_version", toVersion),
+            ("feature.data.ext.to_build", toBuild),
+            ("feature.data.ext.update_type", updateType?.rawValue),
+            ("feature.data.ext.initiation_type", initiationType.rawValue),
+            ("feature.data.ext.update_configuration", updateConfiguration.rawValue),
+            ("feature.data.ext.last_known_step", lastKnownStep?.rawValue),
+            ("feature.data.ext.is_internal_user", isInternalUser ? "true" : "false"),
+            ("feature.data.ext.os_version", osVersion),
+            ("feature.data.ext.cancellation_reason", cancellationReason?.rawValue),
+            ("feature.data.ext.disk_space_remaining_bytes", diskSpaceRemainingBytes.map { String($0) }),
+            ("feature.data.ext.time_since_last_update", timeSinceLastUpdateBucket?.rawValue),
+            ("feature.data.ext.update_check_duration_ms", updateCheckDuration?.stringValue(.noBucketing)),
+            ("feature.data.ext.download_duration_ms", downloadDuration?.stringValue(.noBucketing)),
+            ("feature.data.ext.extraction_duration_ms", extractionDuration?.stringValue(.noBucketing)),
+            ("feature.data.ext.total_duration_ms", totalDuration?.stringValue(.noBucketing)),
+        ])
     }
-    // swiftlint:enable cyclomatic_complexity
 
     /// Returns available disk space in bytes.
     ///

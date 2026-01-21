@@ -52,7 +52,12 @@ public final class DefaultWideEventSender: WideEventSending {
         featureFlagProvider: WideEventFeatureFlagProviding,
         onComplete: @escaping PixelKit.CompletionBlock
     ) {
-        let pixelName = Self.generatePixelName(for: T.pixelName)
+        guard let pixelName = Self.generatePixelName(for: T.pixelName) else {
+            Self.logger.warning("Cannot fire wide event: empty pixel name")
+            onComplete(false, WideEventError.emptyPixelName)
+            return
+        }
+
         let parameters = generateFinalParameters(from: data, status: status)
 
         guard !parameters.isEmpty else {
@@ -93,8 +98,10 @@ public final class DefaultWideEventSender: WideEventSending {
         return parameters
     }
 
-    private static func generatePixelName(for name: String) -> String {
-        assert(!name.isEmpty, "Pixel name should not be empty")
+    private static func generatePixelName(for name: String) -> String? {
+        guard !name.isEmpty else {
+            return nil
+        }
 
         #if os(macOS)
         return "m_mac_wide_\(name)"

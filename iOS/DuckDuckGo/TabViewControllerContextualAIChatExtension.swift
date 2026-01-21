@@ -190,16 +190,14 @@ extension TabViewController {
                 guard let self else { return }
 
                 guard let pageContext,
-                      aiChatContextualSheetCoordinator.isSheetPresented else {
+                      aiChatContextualSheetCoordinator.isSheetPresented,
+                      aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
                     return
                 }
+
                 guard let enriched = enrichWithFavicon(pageContext) else { return }
 
                 aiChatContextualSheetCoordinator.pageContextStore.update(enriched)
-
-                guard aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
-                    return
-                }
 
                 if aiChatContextualSheetCoordinator.hasActiveChat {
                     aiChatContextualSheetCoordinator.sheetViewController?.pushPageContextToFrontend(enriched)

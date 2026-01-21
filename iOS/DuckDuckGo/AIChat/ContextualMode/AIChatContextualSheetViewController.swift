@@ -259,6 +259,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     @objc private func newChatButtonTapped() {
         viewModel.didStartNewChat()
+        delegate?.aiChatContextualSheetViewController(self, didUpdateContextualChatURL: nil)
         currentWebViewController?.startNewChat()
     }
 

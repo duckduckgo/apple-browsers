@@ -219,6 +219,15 @@ class HistoryStoreEventMapper: EventMapping<HistoryStore.HistoryStoreEvents> {
 
             case .removeVisitsFailed:
                 Pixel.fire(pixel: .historyRemoveVisitsFailed, error: error)
+
+            case .loadTabHistoryFailed:
+                Pixel.fire(pixel: .historyLoadTabHistoryFailed, error: error)
+
+            case .insertTabHistoryFailed:
+                Pixel.fire(pixel: .historyInsertTabHistoryFailed, error: error)
+                
+            case .removeTabHistoryFailed:
+                Pixel.fire(pixel: .historyRemoveTabHistoryFailed, error: error)
             }
 
         }

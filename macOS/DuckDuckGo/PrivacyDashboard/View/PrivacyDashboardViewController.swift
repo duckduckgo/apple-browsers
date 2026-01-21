@@ -372,8 +372,8 @@ extension PrivacyDashboardViewController {
     private func collectBreakageReportData(breakageReportingSubfeature: BreakageReportingSubfeature?) async -> BreakageReportData? {
         await withCheckedContinuation({ continuation in
             guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-            breakageReportingSubfeature.notifyHandler { metrics, detectorData in
-                let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
+            breakageReportingSubfeature.notifyHandler { metrics, detectorData, jsPerformanceMetrics in
+                let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData, jsPerformance: jsPerformanceMetrics)
                 continuation.resume(returning: result)
             }
         })
@@ -418,6 +418,7 @@ extension PrivacyDashboardViewController {
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
+        let jsPerformance = breakageReportData?.jsPerformance ?? webVitalsResult
 
         var errors: [Error]?
         var statusCodes: [Int]?
@@ -449,7 +450,7 @@ extension PrivacyDashboardViewController {
                                                httpStatusCodes: statusCodes,
                                                openerContext: currentTab.brokenSiteInfo?.inferredOpenerContext,
                                                vpnOn: currentTab.networkProtection?.tunnelController.isConnected ?? false,
-                                               jsPerformance: webVitalsResult,
+                                               jsPerformance: jsPerformance,
                                                extendedPerformanceMetrics: privacyAwareWebVitals,
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
                                                cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,

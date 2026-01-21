@@ -306,8 +306,8 @@ extension PrivacyDashboardViewController {
     private func collectBreakageReportData(breakageAdditionalInfo: BreakageAdditionalInfo) async -> BreakageReportData? {
         await withCheckedContinuation({ continuation in
             guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-            breakageReportingSubfeature.notifyHandler { metrics, detectorData in
-                let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
+            breakageReportingSubfeature.notifyHandler { metrics, detectorData, jsPerformanceMetrics in
+                let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData, jsPerformance: jsPerformanceMetrics)
                 continuation.resume(returning: result)
             }
         })
@@ -334,6 +334,7 @@ extension PrivacyDashboardViewController {
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
+        let jsPerformance = breakageReportData?.jsPerformance ?? webVitalsResult
 
         let blockedTrackerDomains = privacyInfo.trackerInfo.trackersBlocked.compactMap { $0.domain }
         let protectionsState = privacyConfigurationManager.privacyConfig.isFeature(.contentBlocking,
@@ -370,7 +371,7 @@ extension PrivacyDashboardViewController {
                                 httpStatusCodes: statusCodes,
                                 openerContext: breakageAdditionalInfo.openerContext,
                                 vpnOn: breakageAdditionalInfo.vpnOn,
-                                jsPerformance: webVitalsResult,
+                                jsPerformance: jsPerformance,
                                 extendedPerformanceMetrics: privacyAwareWebVitals,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
                                 variant: PixelExperiment.cohort?.rawValue ?? "",

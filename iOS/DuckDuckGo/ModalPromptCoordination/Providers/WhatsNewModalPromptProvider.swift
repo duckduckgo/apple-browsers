@@ -129,7 +129,7 @@ extension WhatsNewCoordinator: RemoteMessagingPresenter {
             userScriptsDependencies: userScriptsDependencies,
             featureFlagger: featureFlagger)
         navigationController?.pushViewController(embeddedWebViewController, animated: true)
-    } 
+    }
 
 }
 

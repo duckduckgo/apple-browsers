@@ -80,6 +80,7 @@ public final class DefaultWideEventSender: WideEventSending {
             parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
         }
 
+        parameters[WideEventParameter.Feature.name] = T.featureName
         parameters[WideEventParameter.Feature.status] = status.description
 
         switch status {
@@ -186,6 +187,7 @@ public final class DefaultWideEventSender: WideEventSending {
             parameters.merge(errorData.jsonParameters(), uniquingKeysWith: { _, new in new })
         }
 
+        parameters[WideEventParameter.Feature.name] = T.featureName
         parameters[WideEventParameter.Feature.status] = status.description
 
         switch status {

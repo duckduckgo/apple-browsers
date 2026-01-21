@@ -282,6 +282,21 @@ final class WideEventSenderTests: XCTestCase {
         XCTAssertEqual(parameters["context.name"], "my-test-context")
     }
 
+    func testSendIncludesFeatureName() {
+        let sender = makeSender()
+        let data = makeTestData()
+
+        let expectation = XCTestExpectation(description: "Pixels fired")
+        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+
+        let parameters = capturedPixels[0].parameters
+        XCTAssertEqual(parameters["feature.name"], SenderTestWideEventData.featureName)
+    }
+
     func testSendIncludesFeatureSpecificParameters() {
         let sender = makeSender()
         let data = makeTestData(testIdentifier: "test-id-123", testEligible: true)
@@ -528,6 +543,7 @@ final class WideEventSenderTests: XCTestCase {
 
         let feature = json?["feature"] as? [String: Any]
         XCTAssertNotNil(feature)
+        XCTAssertEqual(feature?["name"] as? String, SenderTestWideEventData.featureName)
         XCTAssertEqual(feature?["status"] as? String, "SUCCESS")
 
         let featureData = feature?["data"] as? [String: Any]
@@ -626,6 +642,7 @@ final class WideEventSenderTests: XCTestCase {
 
 final class SenderTestWideEventData: WideEventData {
     static let pixelName = "sender_test_event"
+    static var featureName = "sender_test_event"
 
     var testIdentifier: String?
     var testEligible: Bool

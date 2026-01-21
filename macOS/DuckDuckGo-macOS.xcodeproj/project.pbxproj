@@ -3889,6 +3889,8 @@
 		ED1B618E2ED8B256008E0935 /* PasswordEntryRetryPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED1B618C2ED8B256008E0935 /* PasswordEntryRetryPromptView.swift */; };
 		ED4470152EB2676A003DC918 /* HangReportingFeatureMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4470142EB2676A003DC918 /* HangReportingFeatureMonitor.swift */; };
 		ED4470162EB2676A003DC918 /* HangReportingFeatureMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4470142EB2676A003DC918 /* HangReportingFeatureMonitor.swift */; };
+		ED4B3F442F1A9557006C5FE4 /* SecureVaultModels+CreditCardIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4B3F432F1A9557006C5FE4 /* SecureVaultModels+CreditCardIcon.swift */; };
+		ED4B3F452F1A9557006C5FE4 /* SecureVaultModels+CreditCardIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4B3F432F1A9557006C5FE4 /* SecureVaultModels+CreditCardIcon.swift */; };
 		ED4B8BD92E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4B8BD82E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift */; };
 		ED4B8BDA2E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED4B8BD82E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift */; };
 		ED7478182E845D35008628A1 /* HangPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7478172E845D35008628A1 /* HangPixel.swift */; };
@@ -6320,6 +6322,7 @@
 		ED190E102E8BD33F00CA3816 /* MacWatchdogDiagnosticProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacWatchdogDiagnosticProvider.swift; sourceTree = "<group>"; };
 		ED1B618C2ED8B256008E0935 /* PasswordEntryRetryPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordEntryRetryPromptView.swift; sourceTree = "<group>"; };
 		ED4470142EB2676A003DC918 /* HangReportingFeatureMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HangReportingFeatureMonitor.swift; sourceTree = "<group>"; };
+		ED4B3F432F1A9557006C5FE4 /* SecureVaultModels+CreditCardIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SecureVaultModels+CreditCardIcon.swift"; sourceTree = "<group>"; };
 		ED4B8BD82E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacWatchdogDiagnosticProviderTests.swift; sourceTree = "<group>"; };
 		ED7478172E845D35008628A1 /* HangPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HangPixel.swift; sourceTree = "<group>"; };
 		EDB8375D2EDEF27C00505C15 /* PasswordEntryExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordEntryExampleView.swift; sourceTree = "<group>"; };
@@ -9590,6 +9593,7 @@
 		85D885B126A5918E0077C374 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				ED4B3F432F1A9557006C5FE4 /* SecureVaultModels+CreditCardIcon.swift */,
 				85D885AF26A590A90077C374 /* NSNotificationName+PasswordManager.swift */,
 				85D885B226A5A9DE0077C374 /* NSAlert+PasswordManager.swift */,
 				858A797E26A79EAA00A75A42 /* UserText+PasswordManager.swift */,
@@ -14268,6 +14272,7 @@
 				3706FB3F293F65D500E42796 /* NSPopUpButtonView.swift in Sources */,
 				84E720682EAA1A44002618BD /* PermissionManagerMock.swift in Sources */,
 				F1FDC9392BF51F41006B1435 /* VPNSettings+Environment.swift in Sources */,
+				ED4B3F442F1A9557006C5FE4 /* SecureVaultModels+CreditCardIcon.swift in Sources */,
 				1ED910D62B63BFB300936947 /* IdentityTheftRestorationPagesUserScript.swift in Sources */,
 				3706FB40293F65D500E42796 /* BookmarksContextMenu.swift in Sources */,
 				3707C71C294B5D1900682A9F /* TabExtensionsBuilder.swift in Sources */,
@@ -16474,6 +16479,7 @@
 				7B22D86E2CCFD7B7006A76E1 /* TipKitController.swift in Sources */,
 				B68C2FB227706E6A00BF2C7D /* ProcessExtension.swift in Sources */,
 				CD2AB5CA2C8225E70019EB49 /* URLTokenValidator.swift in Sources */,
+				ED4B3F452F1A9557006C5FE4 /* SecureVaultModels+CreditCardIcon.swift in Sources */,
 				37E307B22D075B6500599500 /* NewTabPagePrivacyStatsEventHandler.swift in Sources */,
 				B6106BA726A7BECC0013B453 /* PermissionAuthorizationQuery.swift in Sources */,
 				CD2AB5C32C8222F70019EB49 /* MaliciousSiteProtectionState.swift in Sources */,

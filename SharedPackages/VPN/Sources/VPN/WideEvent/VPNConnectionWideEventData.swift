@@ -21,8 +21,12 @@ import PixelKit
 
 public class VPNConnectionWideEventData: WideEventData {
 
-    public static let pixelName = "vpn_connection"
-    public static let featureName = "vpn-connection"
+    public static let metadata = WideEventMetadata(
+        pixelName: "vpn_connection",
+        featureName: "vpn-connection",
+        mobileMetaType: "ios-vpn-connection",
+        desktopMetaType: "macos-vpn-connection"
+    )
 
     public static let connectionTimeout: TimeInterval = .minutes(15)
 

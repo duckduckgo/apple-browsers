@@ -74,6 +74,11 @@
         "description": "The type of software sending the wide pixel",
         "enum": ["app"]
     },
+    "wideEventMetaType": {
+        "key": "meta.type",
+        "type": "string",
+        "description": "Globally unique identifier for the wide event type"
+    },
     "wideEventFormFactor": {
         "key": "app.form_factor",
         "type": "string",

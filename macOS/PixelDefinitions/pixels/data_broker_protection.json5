@@ -633,6 +633,12 @@
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-pir-opt-out-submission"]
+            },
+            {
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
@@ -669,6 +675,12 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-pir-scan-attempt"]
+            },
             {
                 "key": "feature.name",
                 "type": "string",
@@ -717,6 +729,12 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-pir-opt-out-confirmation"]
+            },
             {
                 "key": "feature.name",
                 "type": "string",

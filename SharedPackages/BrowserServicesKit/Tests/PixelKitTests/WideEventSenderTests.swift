@@ -174,10 +174,10 @@ final class WideEventSenderTests: XCTestCase {
         XCTAssertEqual(capturedPixels.count, 2)
         #if os(macOS)
         XCTAssertTrue(capturedPixels[0].name.hasPrefix("m_mac_wide_"))
-        XCTAssertTrue(capturedPixels[0].name.contains(SenderTestWideEventData.pixelName))
+        XCTAssertTrue(capturedPixels[0].name.contains(SenderTestWideEventData.metadata.pixelName))
         #elseif os(iOS)
         XCTAssertTrue(capturedPixels[0].name.hasPrefix("m_ios_wide_"))
-        XCTAssertTrue(capturedPixels[0].name.contains(SenderTestWideEventData.pixelName))
+        XCTAssertTrue(capturedPixels[0].name.contains(SenderTestWideEventData.metadata.pixelName))
         #endif
     }
 
@@ -294,7 +294,7 @@ final class WideEventSenderTests: XCTestCase {
         wait(for: [expectation], timeout: 5.0)
 
         let parameters = capturedPixels[0].parameters
-        XCTAssertEqual(parameters["feature.name"], SenderTestWideEventData.featureName)
+        XCTAssertEqual(parameters["feature.name"], SenderTestWideEventData.metadata.featureName)
     }
 
     func testSendIncludesFeatureSpecificParameters() {
@@ -543,7 +543,7 @@ final class WideEventSenderTests: XCTestCase {
 
         let feature = json?["feature"] as? [String: Any]
         XCTAssertNotNil(feature)
-        XCTAssertEqual(feature?["name"] as? String, SenderTestWideEventData.featureName)
+        XCTAssertEqual(feature?["name"] as? String, SenderTestWideEventData.metadata.featureName)
         XCTAssertEqual(feature?["status"] as? String, "SUCCESS")
 
         let featureData = feature?["data"] as? [String: Any]
@@ -641,8 +641,12 @@ final class WideEventSenderTests: XCTestCase {
 // MARK: - Test Wide Event Data Types
 
 final class SenderTestWideEventData: WideEventData {
-    static let pixelName = "sender_test_event"
-    static var featureName = "sender_test_event"
+    static let metadata = WideEventMetadata(
+        pixelName: "sender_test_event",
+        featureName: "sender_test_event",
+        mobileMetaType: "ios-sender-test-event",
+        desktopMetaType: "macos-sender-test-event"
+    )
 
     var testIdentifier: String?
     var testEligible: Bool

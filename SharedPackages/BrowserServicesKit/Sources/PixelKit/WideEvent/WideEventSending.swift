@@ -52,7 +52,7 @@ public final class DefaultWideEventSender: WideEventSending {
         featureFlagProvider: WideEventFeatureFlagProviding,
         onComplete: @escaping PixelKit.CompletionBlock
     ) {
-        guard let pixelName = Self.generatePixelName(for: T.pixelName) else {
+        guard let pixelName = Self.generatePixelName(for: T.metadata.pixelName) else {
             Self.logger.warning("Cannot fire wide event: empty pixel name")
             onComplete(false, WideEventError.emptyPixelName)
             return
@@ -76,6 +76,7 @@ public final class DefaultWideEventSender: WideEventSending {
     private func generateFinalParameters<T: WideEventData>(from data: T, status: WideEventStatus) -> [String: String] {
         var parameters: [String: String] = [:]
 
+        parameters.merge(T.metadata.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.globalData.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.appData.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.contextData.pixelParameters(), uniquingKeysWith: { _, new in new })
@@ -85,7 +86,7 @@ public final class DefaultWideEventSender: WideEventSending {
             parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
         }
 
-        parameters[WideEventParameter.Feature.name] = T.featureName
+        parameters[WideEventParameter.Feature.name] = T.metadata.featureName
         parameters[WideEventParameter.Feature.status] = status.description
 
         switch status {
@@ -185,6 +186,7 @@ public final class DefaultWideEventSender: WideEventSending {
     private func generateJSONParameters<T: WideEventData>(from data: T, status: WideEventStatus) -> [String: Encodable] {
         var parameters: [String: Encodable] = [:]
 
+        parameters.merge(T.metadata.jsonParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.globalData.jsonParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.appData.jsonParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.contextData.jsonParameters(), uniquingKeysWith: { _, new in new })
@@ -194,7 +196,7 @@ public final class DefaultWideEventSender: WideEventSending {
             parameters.merge(errorData.jsonParameters(), uniquingKeysWith: { _, new in new })
         }
 
-        parameters[WideEventParameter.Feature.name] = T.featureName
+        parameters[WideEventParameter.Feature.name] = T.metadata.featureName
         parameters[WideEventParameter.Feature.status] = status.description
 
         switch status {
@@ -207,19 +209,68 @@ public final class DefaultWideEventSender: WideEventSending {
         return parameters
     }
 
-    private func nestedDictionary(from parameters: [String: Any]) -> [String: Any] {
+    private func nestedDictionary(from parameters: [String: Encodable]) -> [String: Any] {
         var root: [String: Any] = [:]
 
         for key in parameters.keys.sorted() {
-            guard let value = parameters[key] else {
+            guard let value = parameters[key],
+                  let normalizedValue = normalizedValue(from: value)
+            else {
                 continue
             }
 
             let parts = key.split(separator: ".").map(String.init)
-            assign(value: value, path: parts, dict: &root)
+            assign(value: normalizedValue, path: parts, dict: &root)
         }
 
         return root
+    }
+
+    private func normalizedValue(from value: Encodable) -> Any? {
+        switch value {
+        case let value as String:
+            return value
+        case let value as Bool:
+            return value
+        case let value as Int:
+            return value
+        case let value as Int8:
+            return Int(value)
+        case let value as Int16:
+            return Int(value)
+        case let value as Int32:
+            return Int(value)
+        case let value as Int64:
+            return Int(value)
+        case let value as UInt:
+            return value
+        case let value as UInt8:
+            return UInt(value)
+        case let value as UInt16:
+            return UInt(value)
+        case let value as UInt32:
+            return UInt(value)
+        case let value as UInt64:
+            return UInt(value)
+        case let value as Float:
+            return Double(value)
+        case let value as Double:
+            return value
+        case let value as NSNumber:
+            return value
+        default:
+            return encodedValue(from: value)
+        }
+    }
+
+    private func encodedValue(from value: Encodable) -> Any? {
+        do {
+            let data = try JSONEncoder().encode(AnyEncodable(value))
+            return try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)
+        } catch {
+            Self.logger.error("Failed to encode wide event value: \(String(describing: error), privacy: .public)")
+            return nil
+        }
     }
 
     private func assign(value: Any, path: [String], dict: inout [String: Any]) {
@@ -266,5 +317,17 @@ public final class DefaultWideEventSender: WideEventSending {
             onComplete(success, error)
         }.resume()
 #endif
+    }
+}
+
+private struct AnyEncodable: Encodable {
+    private let encodeClosure: (Encoder) throws -> Void
+
+    init(_ value: Encodable) {
+        self.encodeClosure = value.encode
+    }
+
+    func encode(to encoder: Encoder) throws {
+        try encodeClosure(encoder)
     }
 }

@@ -209,68 +209,19 @@ public final class DefaultWideEventSender: WideEventSending {
         return parameters
     }
 
-    private func nestedDictionary(from parameters: [String: Encodable]) -> [String: Any] {
+    private func nestedDictionary(from parameters: [String: Any]) -> [String: Any] {
         var root: [String: Any] = [:]
 
         for key in parameters.keys.sorted() {
-            guard let value = parameters[key],
-                  let normalizedValue = normalizedValue(from: value)
-            else {
+            guard let value = parameters[key] else {
                 continue
             }
 
             let parts = key.split(separator: ".").map(String.init)
-            assign(value: normalizedValue, path: parts, dict: &root)
+            assign(value: value, path: parts, dict: &root)
         }
 
         return root
-    }
-
-    private func normalizedValue(from value: Encodable) -> Any? {
-        switch value {
-        case let value as String:
-            return value
-        case let value as Bool:
-            return value
-        case let value as Int:
-            return value
-        case let value as Int8:
-            return Int(value)
-        case let value as Int16:
-            return Int(value)
-        case let value as Int32:
-            return Int(value)
-        case let value as Int64:
-            return Int(value)
-        case let value as UInt:
-            return value
-        case let value as UInt8:
-            return UInt(value)
-        case let value as UInt16:
-            return UInt(value)
-        case let value as UInt32:
-            return UInt(value)
-        case let value as UInt64:
-            return UInt(value)
-        case let value as Float:
-            return Double(value)
-        case let value as Double:
-            return value
-        case let value as NSNumber:
-            return value
-        default:
-            return encodedValue(from: value)
-        }
-    }
-
-    private func encodedValue(from value: Encodable) -> Any? {
-        do {
-            let data = try JSONEncoder().encode(AnyEncodable(value))
-            return try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)
-        } catch {
-            Self.logger.error("Failed to encode wide event value: \(String(describing: error), privacy: .public)")
-            return nil
-        }
     }
 
     private func assign(value: Any, path: [String], dict: inout [String: Any]) {
@@ -317,17 +268,5 @@ public final class DefaultWideEventSender: WideEventSending {
             onComplete(success, error)
         }.resume()
 #endif
-    }
-}
-
-private struct AnyEncodable: Encodable {
-    private let encodeClosure: (Encoder) throws -> Void
-
-    init(_ value: Encodable) {
-        self.encodeClosure = value.encode
-    }
-
-    func encode(to encoder: Encoder) throws {
-        try encodeClosure(encoder)
     }
 }

@@ -243,7 +243,7 @@ public final class DefaultWideEventSender: WideEventSending {
         headers: [String: String],
         onComplete: @escaping (Bool, Error?) -> Void
     ) {
-#if DEBUG || REVIEW
+#if DEBUG || REVIEW || ALPHA
         // Avoid sending real POST events when running debug mode, since we can't talk to the staging environment from
         // the client environment directly:
         onComplete(true, nil)

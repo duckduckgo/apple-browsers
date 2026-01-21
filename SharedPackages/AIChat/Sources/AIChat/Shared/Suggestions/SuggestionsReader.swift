@@ -173,7 +173,7 @@ public final class SuggestionsReader: SuggestionsReading {
     /// Finds the result with the most recent chat timestamp from multiple domain results.
     /// - Parameter results: Array of suggestion results from different domains
     /// - Returns: The result containing the most recently edited chat, or nil if no results
-    static func findMostRecentResult(
+    nonisolated static func findMostRecentResult(
         from results: [(pinned: [AIChatSuggestion], recent: [AIChatSuggestion])]
     ) -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])? {
         guard !results.isEmpty else { return nil }
@@ -201,7 +201,7 @@ public final class SuggestionsReader: SuggestionsReading {
     /// Finds the most recent timestamp from a suggestions result.
     /// - Parameter suggestions: Tuple of pinned and recent suggestions
     /// - Returns: The most recent date from all suggestions, or nil if none have timestamps
-    static func mostRecentTimestamp(
+    nonisolated static func mostRecentTimestamp(
         from suggestions: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])
     ) -> Date? {
         let mostRecentFromPinned = suggestions.pinned.compactMap(\.timestamp).max()

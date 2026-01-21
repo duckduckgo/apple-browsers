@@ -221,6 +221,8 @@ private class MockAIChatOmnibarControllerDelegate: AIChatOmnibarControllerDelega
     var didSubmitCalled = false
     var didRequestNavigationToURLCalled = false
     var lastNavigationURL: URL?
+    var didSelectSuggestionCalled = false
+    var lastSelectedSuggestion: AIChatSuggestion?
 
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
         didSubmitCalled = true
@@ -229,5 +231,10 @@ private class MockAIChatOmnibarControllerDelegate: AIChatOmnibarControllerDelega
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL) {
         didRequestNavigationToURLCalled = true
         lastNavigationURL = url
+    }
+
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion) {
+        didSelectSuggestionCalled = true
+        lastSelectedSuggestion = suggestion
     }
 }

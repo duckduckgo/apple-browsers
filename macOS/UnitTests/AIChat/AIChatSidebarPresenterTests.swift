@@ -728,6 +728,8 @@ class MockAIChatTabOpener: AIChatTabOpening {
             lastPayload = payload
         case .restoration(let data):
             lastRestorationData = data
+        case .existingChat:
+            break
         }
 
         openMethodCalledExpectation?.fulfill()

@@ -244,9 +244,7 @@ final class AIChatSuggestionRowView: NSView {
             onClick?()
         }
         // Reset selection state after click (the view will likely be dismissed)
-        if !isSelected {
-            isSelected = false
-        }
+        isSelected = false
     }
 
 }

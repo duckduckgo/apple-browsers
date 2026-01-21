@@ -19,6 +19,7 @@
 
 import AIChat
 import BrowserServicesKitTestsUtils
+import UIKit
 import XCTest
 import WebKit
 @testable import DuckDuckGo
@@ -274,6 +275,69 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.submitStartChatActionCallCount, 1)
     }
 
+    func testSubmitStartChatActionPushesPageContextWhenAvailable() throws {
+        // Given
+        let mockPageContextStore = MockAIChatPageContextStore()
+        let pageContext = AIChatPageContextData(
+            title: "Test Page",
+            favicon: [],
+            url: "https://example.com",
+            content: "Test content",
+            truncated: false,
+            fullContentLength: 12
+        )
+        mockPageContextStore.update(pageContext)
+
+        let handlerWithStore = AIChatContentHandler(
+            aiChatSettings: mockSettings,
+            payloadHandler: mockPayloadHandler,
+            pixelMetricHandler: mockMetricHandler,
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger,
+            productSurfaceTelemetry: mockProductSurfaceTelemetry,
+            pageContextStore: mockPageContextStore
+        )
+
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handlerWithStore.setup(with: mockUserScript, webView: mockWebView, displayMode: .contextual)
+
+        // When
+        handlerWithStore.submitStartChatAction()
+
+        // Then
+        XCTAssertEqual(mockUserScript.submitPageContextCallCount, 1)
+        XCTAssertEqual(mockUserScript.lastSubmittedPageContextViaSubmit?.title, "Test Page")
+        XCTAssertEqual(mockUserScript.lastSubmittedPageContextViaSubmit?.url, "https://example.com")
+        XCTAssertEqual(mockUserScript.submitStartChatActionCallCount, 1)
+    }
+
+    func testSubmitStartChatActionDoesNotPushContextWhenStoreIsEmpty() throws {
+        // Given
+        let mockPageContextStore = MockAIChatPageContextStore()
+
+        let handlerWithStore = AIChatContentHandler(
+            aiChatSettings: mockSettings,
+            payloadHandler: mockPayloadHandler,
+            pixelMetricHandler: mockMetricHandler,
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger,
+            productSurfaceTelemetry: mockProductSurfaceTelemetry,
+            pageContextStore: mockPageContextStore
+        )
+
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handlerWithStore.setup(with: mockUserScript, webView: mockWebView, displayMode: .contextual)
+
+        // When
+        handlerWithStore.submitStartChatAction()
+
+        // Then
+        XCTAssertEqual(mockUserScript.submitPageContextCallCount, 0)
+        XCTAssertEqual(mockUserScript.submitStartChatActionCallCount, 1)
+    }
+
     func testSubmitOpenSettingsActionCallsUserScript() throws {
         // Given
         let mockUserScript = MockAIChatUserScript()
@@ -397,6 +461,8 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitStartChatActionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
+    var submitPageContextCallCount = 0
+    var lastSubmittedPageContextViaSubmit: AIChatPageContextData?
     var lastDisplayModeSet: AIChatDisplayMode?
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
@@ -430,5 +496,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {
+        submitPageContextCallCount += 1
+        lastSubmittedPageContextViaSubmit = context
     }
 }

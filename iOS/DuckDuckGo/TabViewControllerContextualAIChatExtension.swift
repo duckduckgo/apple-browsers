@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Common
 import UIKit
 
 // MARK: - Contextual AI Chat
@@ -58,7 +59,9 @@ extension TabViewController {
 
     /// Collects page context from the current tab via JS userscript
     func collectPageContext() async -> AIChatPageContextData? {
-        guard let script = pageContextUserScript else { return nil }
+        guard let script = pageContextUserScript else {
+            return nil
+        }
 
         script.webView = webView
 
@@ -184,14 +187,24 @@ extension TabViewController {
         pageContextUpdateCancellable = script.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
-                guard let self,
-                      let pageContext,
-                      aiChatContextualSheetCoordinator.isSheetPresented,
-                      aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
+                guard let self else { return }
+
+                guard let pageContext,
+                      aiChatContextualSheetCoordinator.isSheetPresented else {
                     return
                 }
-                if let enriched = enrichWithFavicon(pageContext) {
-                    aiChatContextualSheetCoordinator.updatePageContext(enriched)
+                guard let enriched = enrichWithFavicon(pageContext) else { return }
+
+                aiChatContextualSheetCoordinator.pageContextStore.update(enriched)
+
+                guard aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
+                    return
+                }
+
+                if aiChatContextualSheetCoordinator.hasActiveChat {
+                    aiChatContextualSheetCoordinator.sheetViewController?.pushPageContextToFrontend(enriched)
+                } else {
+                    aiChatContextualSheetCoordinator.sheetViewController?.didReceivePageContext()
                 }
             }
     }

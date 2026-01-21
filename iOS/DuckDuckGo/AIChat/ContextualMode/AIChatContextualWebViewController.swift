@@ -45,6 +45,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let pageContextStore: AIChatPageContextStoring
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -90,19 +91,22 @@ final class AIChatContextualWebViewController: UIViewController {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          featureDiscovery: FeatureDiscovery,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         pageContextStore: AIChatPageContextStoring) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        self.pageContextStore = pageContextStore
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
-            productSurfaceTelemetry: productSurfaceTelemetry
+            productSurfaceTelemetry: productSurfaceTelemetry,
+            pageContextStore: pageContextStore
         )
         super.init(nibName: nil, bundle: nil)
     }
@@ -144,6 +148,10 @@ final class AIChatContextualWebViewController: UIViewController {
         aiChatContentHandler.submitStartChatAction()
     }
 
+    func pushPageContext(_ context: AIChatPageContextData?) {
+        aiChatContentHandler.submitPageContext(context)
+    }
+
     func reload() {
         isPageReady = false
         isContentHandlerReady = false
@@ -159,11 +167,6 @@ final class AIChatContextualWebViewController: UIViewController {
     func loadChatURL(_ url: URL) {
         loadingView.startAnimating()
         webView.load(URLRequest(url: url))
-    }
-
-    /// Submits page context to the frontend (push update).
-    func submitPageContext(_ context: AIChatPageContextData?) {
-        aiChatContentHandler.submitPageContext(context)
     }
 
     // MARK: - Private Methods
@@ -231,6 +234,13 @@ final class AIChatContextualWebViewController: UIViewController {
         let contextualChatURL = url.flatMap { $0.duckAIChatID != nil ? $0 : nil }
 
         guard contextualChatURL != lastContextualChatURL else { return }
+
+        if contextualChatURL != nil,
+           aiChatSettings.isAutomaticContextAttachmentEnabled,
+           let context = pageContextStore.latestContext {
+            pushPageContext(context)
+        }
+
         lastContextualChatURL = contextualChatURL
         delegate?.contextualWebViewController(self, didUpdateContextualChatURL: contextualChatURL)
     }

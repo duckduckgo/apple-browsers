@@ -82,6 +82,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let viewModel: AIChatContextualSheetViewModel
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let webViewControllerFactory: WebViewControllerFactory
+    private let onOpenSettings: () -> Void
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
     private var cancellables = Set<AnyCancellable>()
@@ -204,12 +205,14 @@ final class AIChatContextualSheetViewController: UIViewController {
          voiceSearchHelper: VoiceSearchHelperProtocol,
          webViewControllerFactory: @escaping WebViewControllerFactory,
          existingWebViewController: AIChatContextualWebViewController? = nil,
-         restoreURL: URL? = nil) {
+         restoreURL: URL? = nil,
+         onOpenSettings: @escaping () -> Void) {
         self.viewModel = viewModel
         self.voiceSearchHelper = voiceSearchHelper
         self.webViewControllerFactory = webViewControllerFactory
         self.existingWebViewController = existingWebViewController
         self.restoreURL = restoreURL
+        self.onOpenSettings = onOpenSettings
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -267,16 +270,23 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Called when page context has been collected (after requesting attachment)
     func didReceivePageContext() {
-        guard let context = viewModel.pageContext else { return }
+        guard let context = viewModel.pageContextStore.latestContext else { return }
 
         if contextualInputViewController.isContextChipVisible {
-            contextualInputViewController.updateContextChip(title: context.title, favicon: context.favicon)
+            contextualInputViewController.updateContextChip(
+                title: context.title,
+                favicon: viewModel.pageContextStore.latestFavicon
+            )
         } else {
             guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
                 self?.contextualInputViewController.hideContextChip()
             }) else { return }
             contextualInputViewController.showContextChip(chipView)
         }
+    }
+
+    func pushPageContextToFrontend(_ context: AIChatPageContextData?) {
+        currentWebViewController?.pushPageContext(context)
     }
 }
 
@@ -367,7 +377,7 @@ private extension AIChatContextualSheetViewController {
 
         viewModel.didSubmitPrompt()
 
-        let pageContext = contextualInputViewController.isContextChipVisible ? viewModel.fullPageContext : nil
+        let pageContext = contextualInputViewController.isContextChipVisible ? viewModel.pageContextStore.latestContext : nil
 
         transitionToWebView(webVC)
         view.layoutIfNeeded()
@@ -592,10 +602,9 @@ private extension AIChatContextualSheetViewController {
                 self?.dismissOnboarding()
             },
             onViewSettings: { [weak self] in
-                guard let self else { return }
                 Pixel.fire(pixel: .aiChatContextualOnboardingSettingsPressed)
-                self.viewModel.markContextualOnboardingSeen()
-                self.delegate?.aiChatContextualSheetViewControllerDidRequestOpenSettings(self)
+                self?.viewModel.markContextualOnboardingSeen()
+                self?.onOpenSettings()
             }
         )
 

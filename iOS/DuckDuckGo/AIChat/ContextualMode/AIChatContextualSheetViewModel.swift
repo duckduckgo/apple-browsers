@@ -25,14 +25,6 @@ import UIKit
 /// ViewModel for the contextual AI chat sheet, managing state and business logic.
 final class AIChatContextualSheetViewModel {
 
-    // MARK: - Types
-
-    /// Page context data for the "Attach Page" feature
-    struct PageContext {
-        let title: String
-        let favicon: UIImage?
-    }
-
     // MARK: - Published State
 
     /// Whether the expand button should be enabled
@@ -45,23 +37,22 @@ final class AIChatContextualSheetViewModel {
 
     private let settings: AIChatSettingsProvider
 
+    /// Single source of truth for page context
+    let pageContextStore: AIChatPageContextStoring
+
     /// Tracks whether the user has submitted at least one prompt
     private(set) var hasSubmittedPrompt = false
 
     /// The URL containing chat ID for session restoration when expanding to full mode
     private(set) var contextualChatURL: URL?
 
-    /// The page context to attach (when available from the parent tab)
-    var pageContext: PageContext?
-
-    /// Full page context data for submission to duck.ai
-    /// Contains the complete content extracted from the page
-    var fullPageContext: AIChatPageContextData?
-
     // MARK: - Initialization
 
-    init(settings: AIChatSettingsProvider, hasExistingChat: Bool = false) {
+    init(settings: AIChatSettingsProvider,
+         pageContextStore: AIChatPageContextStoring,
+         hasExistingChat: Bool = false) {
         self.settings = settings
+        self.pageContextStore = pageContextStore
         if hasExistingChat {
             hasSubmittedPrompt = true
             isNewChatButtonVisible = true
@@ -90,10 +81,10 @@ final class AIChatContextualSheetViewModel {
 
     /// Creates and configures a context chip view with the current page context
     func createContextChipView(onRemove: @escaping () -> Void) -> AIChatContextChipView? {
-        guard let context = pageContext else { return nil }
+        guard let context = pageContextStore.latestContext else { return nil }
 
         let chipView = AIChatContextChipView()
-        chipView.configure(title: context.title, favicon: context.favicon)
+        chipView.configure(title: context.title, favicon: pageContextStore.latestFavicon)
         chipView.subtitle = UserText.aiChatContextChipSubtitle
         chipView.onRemove = onRemove
         return chipView
@@ -143,8 +134,7 @@ final class AIChatContextualSheetViewModel {
 
     /// Clears the page context (called when user removes the context chip)
     func clearPageContext() {
-        pageContext = nil
-        fullPageContext = nil
+        pageContextStore.clear()
     }
 
     // MARK: - Private Methods

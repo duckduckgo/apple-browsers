@@ -587,6 +587,7 @@ class MainViewController: UIViewController {
 
         } newTab: { [weak self] in
             Pixel.fire(pixel: .swipeToOpenNewTab)
+            self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
             self?.performCancel()
@@ -3234,6 +3235,7 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         showBars()
         currentTab?.dismiss()
+        tab.aiChatContextualSheetCoordinator.dismissSheet()
         themeColorManager.updateThemeColor()
 
         // Don't use a request or else the page gets stuck on "about:blank"
@@ -3296,6 +3298,7 @@ extension MainViewController: TabDelegate {
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
         _ = findInPageView.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
+        tab.aiChatContextualSheetCoordinator.dismissSheet()
         if openedByPage {
             showBars()
             newTabAnimation {

@@ -145,6 +145,12 @@ final class AIChatSuggestionsView: NSView {
                 self?.boundViewModel?.acknowledgeMouseMovement()
             }
 
+            rowView.onHoverChanged = { [weak self] isHovered in
+                if isHovered {
+                    self?.boundViewModel?.select(at: index)
+                }
+            }
+
             stackView.addArrangedSubview(rowView)
             rowViews.append(rowView)
 

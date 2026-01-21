@@ -172,11 +172,10 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
     }
 
     /// Called when mouse moves, to re-enable mouse hover selection.
-    /// Also clears the keyboard selection so mouse hover takes over.
+    /// Does not clear the selection - that's handled by hover callbacks.
     public func acknowledgeMouseMovement() {
-        guard isKeyboardNavigating || selectedIndex != nil else { return }
+        guard isKeyboardNavigating else { return }
         isKeyboardNavigating = false
-        selectedIndex = nil
     }
 
     /// Suppresses mouse hover selection until the mouse actually moves.

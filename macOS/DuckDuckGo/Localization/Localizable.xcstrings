@@ -71097,6 +71097,18 @@
         }
       }
     },
+    "pm.card.number.error" : {
+      "comment" : "Error message shown when card number is invalid",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Please enter a valid card number"
+          }
+        }
+      }
+    },
     "pm.card.placeholder.cardholder-name" : {
       "comment" : "Placeholder for a field showing the cardholder name",
       "extractionState" : "extracted_with_value",

@@ -46,6 +46,7 @@ final class AIChatOmnibarController {
     private var sharedTextStateCancellable: AnyCancellable?
     private var isUpdatingFromSharedState = false
     private var currentFetchTask: Task<Void, Never>?
+    private var hasBeenActivated = false
 
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
     let suggestionsViewModel = AIChatSuggestionsViewModel()
@@ -94,11 +95,12 @@ final class AIChatOmnibarController {
 
     /// Called when the duck.ai omnibar becomes visible. Triggers initial suggestions fetch.
     func onOmnibarActivated() {
+        hasBeenActivated = true
         fetchSuggestionsIfNeeded(query: currentText)
     }
 
     private func fetchSuggestionsIfNeeded(query: String) {
-        guard isSuggestionsEnabled, let reader = suggestionsReader else { return }
+        guard hasBeenActivated, isSuggestionsEnabled, let reader = suggestionsReader else { return }
 
         // Cancel any in-flight fetch
         currentFetchTask?.cancel()

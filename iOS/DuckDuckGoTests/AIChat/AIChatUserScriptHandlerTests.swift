@@ -18,6 +18,8 @@
 //
 
 
+import Combine
+import DDGSync
 import XCTest
 @testable import DuckDuckGo
 import UserScript
@@ -409,6 +411,9 @@ final class MockAIChatContextualModeFeatureProviding: AIChatContextualModeFeatur
 final class MockAIChatSyncHandling: AIChatSyncHandling {
 
     var syncTurnedOn = false
+    var authStatePublisher: AnyPublisher<SyncAuthState, Never> {
+        Empty().eraseToAnyPublisher()
+    }
 
     var syncStatus: AIChatSyncHandler.SyncStatus = AIChatSyncHandler.SyncStatus(syncAvailable: false)
     var scopedToken: AIChatSyncHandler.SyncToken = AIChatSyncHandler.SyncToken(token: "token")

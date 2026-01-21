@@ -77,8 +77,16 @@ final class NameUI: ObservableObject {
         .init(first: "", middle: "", last: "")
     }
 
-    func toModel() -> DataBrokerProtectionProfile.Name {
-        .init(firstName: first, lastName: last, middleName: middle.isEmpty ? nil : middle)
+    func toModel() -> DataBrokerProtectionProfile.Name? {
+        let trimmedFirst = first.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedMiddle = middle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLast = last.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedFirst.isEmpty, trimmedMiddle.isEmpty, trimmedLast.isEmpty {
+            return nil
+        }
+        return .init(firstName: trimmedFirst,
+                     lastName: trimmedLast,
+                     middleName: trimmedMiddle.isEmpty ? nil : trimmedMiddle)
     }
 }
 
@@ -96,8 +104,13 @@ final class AddressUI: ObservableObject {
         .init(city: "", state: "")
     }
 
-    func toModel() -> DataBrokerProtectionProfile.Address {
-        .init(city: city, state: state)
+    func toModel() -> DataBrokerProtectionProfile.Address? {
+        let trimmedCity = city.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedState = state.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedCity.isEmpty, trimmedState.isEmpty {
+            return nil
+        }
+        return .init(city: trimmedCity, state: trimmedState)
     }
 }
 
@@ -217,8 +230,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         let vault = try! vaultFactory.makeVault(reporter: reporter)
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(), pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: MockLocalBrokerJSONService())
-
         self.brokers = try! vault.fetchAllBrokers()
 
         self.emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
@@ -277,7 +288,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
                             let brokerId = DebugHelper.stableId(for: query.dataBroker)
                             let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
-                            let assignedProfiles = extractedProfiles.compactMap { profile in
+                            let assignedProfiles: [ExtractedProfile] = extractedProfiles.compactMap { profile in
                                 guard let stableId = DebugHelper.stableId(for: profile) else {
                                     let profileName = profile.name ?? "unknown"
                                     addHistoryDebugEvent(summary: "Email confirmation",
@@ -412,8 +423,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private func createBrokerProfileQueryData(for broker: DataBroker) -> [BrokerProfileQueryData] {
         let profile: DataBrokerProtectionProfile =
             .init(
-                names: names.map { $0.toModel() },
-                addresses: addresses.map { $0.toModel() },
+                names: names.compactMap { $0.toModel() },
+                addresses: addresses.compactMap { $0.toModel() },
                 phones: [String](),
                 birthYear: Int(birthYear) ?? 1990
             )

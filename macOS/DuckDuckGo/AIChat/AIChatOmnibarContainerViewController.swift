@@ -249,6 +249,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         windowFrameObserver = nil
         viewBoundsObserver?.cancel()
         viewBoundsObserver = nil
+        omnibarController.cleanup()
     }
 
     private func addShadowToWindow() {

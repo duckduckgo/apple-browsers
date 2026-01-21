@@ -102,7 +102,7 @@ private struct HeaderView: View {
                     .textFieldStyle(.plain)
                     .padding(8)
                     .frame(height: 32)
-                    .background(Color.white)
+                    .background(Color(.controlBackgroundColor))
                     .cornerRadius(6)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)

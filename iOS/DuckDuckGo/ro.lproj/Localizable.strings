@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Conținutul paginii";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai poate acum să răspundă la întrebări despre pagina pe care o vizualizezi.\n\nConținutul paginii este inclus doar atunci când îl atașezi. Poți schimba oricând acest lucru din Setări.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Am înțeles";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Întreabă despre această pagină";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Vezi setările";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funcțiile AI ale DuckDuckGo sunt private și opționale. Datele tale nu sunt folosite pentru a antrena AI.";
 
@@ -4228,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "File";
+"settings.tab.switcher.show.tracker.count" = "Numărul de trackere din ultimele 7 zile";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "în ultimele 7 zile";
+"tab.switcher.tracker.count.hide.title" = "Ascundeți numărul de trackere?";
+"tab.switcher.tracker.count.hide.message" = "Îl puteți activa din nou în Setări > Aspect.";
+"tab.switcher.tracker.count.hide.action" = "Ascunde";
+"tab.switcher.tracker.count.keep.action" = "Păstrează";
+"tab.switcher.tracker.count.info.a11y" = "Opțiuni pentru numărul de trackere";
+"tab.switcher.tracker.count.info.hint.a11y" = "Atingeți de două ori pentru a afișa opțiunile de ascundere a acestui banner";

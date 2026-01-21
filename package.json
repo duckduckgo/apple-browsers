@@ -7,10 +7,6 @@
     "macOS",
     "SharedPackages/BrowserServicesKit"
   ],
-  "scripts": {
-    "build-content-scope-scripts": "npm run build-content-scope-scripts --workspace=SharedPackages/BrowserServicesKit",
-    "postinstall": "npm run build-content-scope-scripts"
-  },
   "devDependencies": {
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.0.6",
@@ -18,7 +14,6 @@
     "rollup-plugin-terser": "^7.0.2"
   },
   "dependencies": {
-    "@duckduckgo/autoconsent": "^14.39.0",
-    "@duckduckgo/content-scope-scripts": "github:duckduckgo/content-scope-scripts#12.21.0"
+    "@duckduckgo/autoconsent": "^14.39.0"
   }
 }

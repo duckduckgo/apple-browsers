@@ -357,6 +357,92 @@ struct AIChatUserScriptHandlerTests {
         }
     }
 
+    @Test("didReportMetric fires start new conversation pixel for first prompt")
+    @MainActor
+    func testThatUserDidSubmitFirstPromptFiresStartNewConversationPixel() async throws {
+        let testPixelFiring = PixelKitMock()
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)]
+
+        let testHandler = AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: testPixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncHandler: mockAIChatSyncHandler,
+            featureFlagger: MockFeatureFlagger(),
+            notificationCenter: notificationCenter
+        )
+
+        await withCheckedContinuation { continuation in
+            testHandler.didReportMetric(.init(metricName: .userDidSubmitFirstPrompt)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(testPixelFiring.expectedFireCalls == testPixelFiring.actualFireCalls)
+    }
+
+    @Test("didReportMetric fires sent prompt ongoing chat pixel for subsequent prompts")
+    @MainActor
+    func testThatUserDidSubmitPromptFiresSentPromptOngoingChatPixel() async throws {
+        let testPixelFiring = PixelKitMock()
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)]
+
+        let testHandler = AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: testPixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncHandler: mockAIChatSyncHandler,
+            featureFlagger: MockFeatureFlagger(),
+            notificationCenter: notificationCenter
+        )
+
+        await withCheckedContinuation { continuation in
+            testHandler.didReportMetric(.init(metricName: .userDidSubmitPrompt)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(testPixelFiring.expectedFireCalls == testPixelFiring.actualFireCalls)
+    }
+
+    @Test("didReportMetric does not fire pixels for non-prompt metrics")
+    @MainActor
+    func testThatNonPromptMetricsDoNotFirePixels() async throws {
+        let testPixelFiring = PixelKitMock()
+
+        let testHandler = AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: testPixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncHandler: mockAIChatSyncHandler,
+            featureFlagger: MockFeatureFlagger(),
+            notificationCenter: notificationCenter
+        )
+
+        let otherMetrics: [AIChatMetricName] = [
+            .userDidOpenHistory,
+            .userDidSelectFirstHistoryItem,
+            .userDidCreateNewChat,
+            .userDidTapKeyboardReturnKey
+        ]
+
+        for metric in otherMetrics {
+            await withCheckedContinuation { continuation in
+                testHandler.didReportMetric(.init(metricName: metric)) {
+                    continuation.resume()
+                }
+            }
+        }
+
+        #expect(testPixelFiring.actualFireCalls.isEmpty)
+    }
+
 }
 
 /// Mock implementation of AIChatSyncHandling for testing

@@ -175,7 +175,7 @@ I blocked them!
 	<key>omnibar.notification.trackers-blocked</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@trackers@</string>
+		<string>%1$#@trackers@</string>
 		<key>trackers</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -658,6 +658,22 @@ I blocked them!
 			<string>%d site excluded from clearing</string>
 			<key>other</key>
 			<string>%d sites excluded from clearing</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ tracker blocked</string>
+			<key>other</key>
+			<string>%2$@ trackers blocked</string>
 		</dict>
 	</dict>
 </dict>

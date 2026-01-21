@@ -75,6 +75,7 @@ final class MockWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
 
 final class MockWideEventData: WideEventData {
     static let pixelName = "mock-wide-event"
+    static let featureName = "mock-wide-event"
 
     enum FailingStep: String, Codable {
         case step1 = "step_1"
@@ -292,6 +293,7 @@ final class WideEventTests: XCTestCase {
     func testSerializationFailure() throws {
         struct NonSerializableData: WideEventData {
             static let pixelName = "non_serializable"
+            static let featureName = "non_serializable"
             let closure: () -> Void = { }
             var contextData: WideEventContextData = WideEventContextData()
             var appData: WideEventAppData = WideEventAppData()
@@ -409,7 +411,6 @@ final class WideEventTests: XCTestCase {
         parameters["app.name"] = typed.appData.name
         parameters["app.version"] = typed.appData.version
         if let formFactor = typed.appData.formFactor { parameters["app.form_factor"] = formFactor }
-        parameters["feature.name"] = MockWideEventData.pixelName
         if let name = typed.contextData.name { parameters["context.name"] = name }
 
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
@@ -433,8 +434,6 @@ final class WideEventTests: XCTestCase {
         XCTAssertEqual(parameters["global.type"], "app")
         XCTAssertEqual(parameters["global.sample_rate"], "1.0")
 
-        // Feature metadata
-        XCTAssertEqual(parameters["feature.name"], "mock-wide-event")
         XCTAssertNil(parameters["feature.status"])
     }
 

@@ -54,6 +54,7 @@ final class SettingsViewModel: ObservableObject {
     let aiChatSettings: AIChatSettingsProvider
     let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
+    private let tabSwitcherSettings: TabSwitcherSettings
     let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
     private let duckPlayerSettings: DuckPlayerSettings
@@ -114,7 +115,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
-    var onRequestPresentFireConfirmation: ((_ onConfirm: @escaping (FireOptions) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
+    var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireOptions) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
     @Published private(set) var state: SettingsState
@@ -151,6 +152,10 @@ final class SettingsViewModel: ObservableObject {
 
     var shouldShowHideAIGeneratedImagesSection: Bool {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
+    }
+
+    var isTabSwitcherTrackerCountEnabled: Bool {
+        featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }
 
     var isBlackFridayCampaignEnabled: Bool {
@@ -583,11 +588,7 @@ final class SettingsViewModel: ObservableObject {
     var autoClearAIChatHistoryBinding: Binding<Bool> {
         Binding<Bool>(
             get: {
-                if self.featureFlagger.isFeatureOn(.duckAiDataClearing) {
-                    return self.state.autoClearAIChatHistory
-                } else {
-                    return false
-                }
+                self.state.autoClearAIChatHistory
             },
             set: {
                 self.appSettings.autoClearAIChatHistory = $0
@@ -652,10 +653,12 @@ final class SettingsViewModel: ObservableObject {
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          browsingMenuSheetCapability: BrowsingMenuSheetCapable,
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
-         whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
+         whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
     ) {
 
         self.state = SettingsState.defaults
+        self.tabSwitcherSettings = tabSwitcherSettings
         self.legacyViewProvider = legacyViewProvider
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -1442,6 +1445,15 @@ extension SettingsViewModel {
         )
     }
 
+    var showTrackerCountInTabSwitcherBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.tabSwitcherSettings.showTrackerCountInTabSwitcher },
+            set: { newValue in
+                self.tabSwitcherSettings.showTrackerCountInTabSwitcher = newValue
+            }
+        )
+    }
+
     func launchAIFeaturesLearnMore() {
         urlOpener.open(URL.aiFeaturesLearnMore)
     }
@@ -1470,8 +1482,8 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
         }
     }
 
-    func presentFireConfirmation() {
-        onRequestPresentFireConfirmation?({ [weak self] options in
+    func presentFireConfirmation(from sourceRect: CGRect) {
+        onRequestPresentFireConfirmation?(sourceRect, { [weak self] options in
             self?.forgetAll(with: options)
         }, {
             // Cancelled - no action needed

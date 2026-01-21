@@ -165,7 +165,7 @@ struct SubscriptionSettingsViewV2: View {
                 SettingsCustomCell(content: {
                     if !viewModel.state.isLoadingSubscriptionInfo {
                         if active {
-                            Text(UserText.subscriptionChangePlan)
+                            Text(viewModel.subscriptionManageButtonText)
                                 .daxBodyRegular()
                                 .foregroundColor(Color.init(designSystemColor: .accent))
                         } else if isEligibleForWinBackCampaign {

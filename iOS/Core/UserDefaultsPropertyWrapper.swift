@@ -107,6 +107,7 @@ public struct UserDefaultsWrapper<T> {
 
         case syncPromoBookmarksDismissed = "com.duckduckgo.app.sync.PromoBookmarksDismissed"
         case syncPromoPasswordsDismissed = "com.duckduckgo.app.sync.PromoPasswordsDismissed"
+        case syncPromoDataImportDismissed = "com.duckduckgo.app.sync.PromoDataImportDismissed"
 
         // .v2 suffix added to fix https://app.asana.com/0/547792610048271/1206524375402369/f
         case featureFlaggingDidVerifyInternalUser = "com.duckduckgo.app.featureFlaggingDidVerifyInternalUser.v2"
@@ -189,6 +190,7 @@ public struct UserDefaultsWrapper<T> {
 
         // AI Chat
         case autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
+        case aiChatContextualOnboardingSeen = "com.duckduckgo.ios.aiChatContextualOnboardingSeen"
         
         // Dax Easter Egg Logo
         case daxEasterEggLogoURL = "com.duckduckgo.ios.daxEasterEggLogoURL"
@@ -212,6 +214,9 @@ public struct UserDefaultsWrapper<T> {
 
         // Debug screen
         case debugPinnedScreens = "debugPinnedScreens"
+
+        // Trackers Blocked Animation
+        case showTrackersBlockedAnimation = "com.duckduckgo.ios.showTrackersBlockedAnimation"
     }
 
     private let key: Key

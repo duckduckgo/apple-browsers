@@ -23,79 +23,6 @@ import os.log
 import Networking
 import PixelKit
 
-public enum SubscriptionManagerError: DDGError {
-    /// The app has no `TokenContainer`
-    case noTokenAvailable
-    /// There was a failure wile retrieving, updating or creating the `TokenContainer`
-    case errorRetrievingTokenContainer(error: Error?)
-
-    case confirmationHasInvalidSubscription
-    case noProductsFound
-
-    public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
-        switch (lhs, rhs) {
-        case (.errorRetrievingTokenContainer(let lhsError), .errorRetrievingTokenContainer(let rhsError)):
-            return String(describing: lhsError) == String(describing: rhsError)
-        case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
-            (.noProductsFound, .noProductsFound),
-            (.noTokenAvailable, .noTokenAvailable):
-            return true
-        default:
-            return false
-        }
-    }
-
-    public var description: String {
-        switch self {
-        case .noTokenAvailable: "No token available"
-        case .errorRetrievingTokenContainer(error: let error): "Error retrieving token container: \(String(describing: error))"
-        case .confirmationHasInvalidSubscription: "Confirmation has an invalid subscription"
-        case .noProductsFound: "No products found"
-        }
-    }
-
-    public static var errorDomain: String { "com.duckduckgo.subscription.SubscriptionManagerError" }
-
-    public var errorCode: Int {
-        switch self {
-        case .noTokenAvailable: 12000
-        case .errorRetrievingTokenContainer: 12001
-        case .confirmationHasInvalidSubscription: 12002
-        case .noProductsFound: 12003
-        }
-    }
-
-    public var underlyingError: (any Error)? {
-        switch self {
-        case .errorRetrievingTokenContainer(error: let error):
-            return error
-        default:
-            return nil
-        }
-    }
-}
-
-public enum SubscriptionPixelType: Equatable {
-    case invalidRefreshToken
-    case subscriptionIsActive
-    case getTokensError(AuthTokensCachePolicy, Error)
-    case invalidRefreshTokenSignedOut
-    case invalidRefreshTokenRecovered
-
-    public static func == (lhs: SubscriptionPixelType, rhs: SubscriptionPixelType) -> Bool {
-        switch (lhs, rhs) {
-        case (.invalidRefreshToken, .invalidRefreshToken),
-            (.subscriptionIsActive, .subscriptionIsActive),
-            (.invalidRefreshTokenSignedOut, .invalidRefreshTokenSignedOut),
-            (.invalidRefreshTokenRecovered, .invalidRefreshTokenRecovered),
-            (.getTokensError, .getTokensError):
-            return true
-        default:
-            return false
-        }
-    }
-}
-
 public enum AuthVersion: String {
     // case v1 // removed
     case v2
@@ -175,7 +102,6 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// - Parameter forceRefresh: ignore subscription and token cache and re-download everything
     /// - Returns: An Array of SubscriptionFeature where each feature is enabled or disabled based on the user entitlements
     func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement]
-    func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName]
 
     /// Whether a feature is included in the Subscription.
     /// This allows us to know if a feature is included in the current subscription.
@@ -183,7 +109,11 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
 
     /// Whether the feature is enabled for use.
     /// This is mostly useful post-purchases.
-    func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool
+    func isFeatureEnabled(_ feature: SubscriptionEntitlement) async throws -> Bool
+
+    /// Returns the enabled status of all entitlements in a single token fetch.
+    /// This is more efficient than calling `isFeatureEnabled` multiple times.
+    func getAllEntitlementStatus() async -> EntitlementStatus
 
     // MARK: - Token Management
 
@@ -227,10 +157,8 @@ extension SubscriptionManager {
         }
     }
 
-    public func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName] {
-        try await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
-            subscriptionFeatureV2.entitlement.product
-        }
+    public func currentSubscriptionFeatures() async throws -> [SubscriptionEntitlement] {
+        try await currentSubscriptionFeatures(forceRefresh: false)
     }
 }
 
@@ -537,7 +465,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             self.updateCachedUserEntitlements([])
             throw SubscriptionManagerError.noTokenAvailable
         } catch {
-            pixelHandler.handle(pixel: .getTokensError(policy, error))
+            pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, error))
 
             switch error {
 
@@ -701,15 +629,28 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         try await currentSubscriptionFeatures(forceRefresh: false).contains(feature)
     }
 
-    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool {
+    public func isFeatureEnabled(_ feature: SubscriptionEntitlement) async throws -> Bool {
         do {
             guard isUserAuthenticated else { return false }
             let tokenContainer = try await getTokenContainer(policy: .localValid)
-            return tokenContainer.decodedAccessToken.subscriptionEntitlements.contains(feature.subscriptionEntitlement)
+            return tokenContainer.decodedAccessToken.subscriptionEntitlements.contains(feature)
         } catch {
             // Fallback to the cached user entitlements in case of keychain reading error
             Logger.subscription.debug("Failed to read user entitlements from keychain: \(error, privacy: .public)")
-            return self.cachedUserEntitlements.contains(feature.subscriptionEntitlement)
+            return self.cachedUserEntitlements.contains(feature)
+        }
+    }
+
+    public func getAllEntitlementStatus() async -> EntitlementStatus {
+        do {
+            guard isUserAuthenticated else { return .empty }
+            let tokenContainer = try await getTokenContainer(policy: .localValid)
+            let entitlements = tokenContainer.decodedAccessToken.subscriptionEntitlements
+            return EntitlementStatus(enabledEntitlements: entitlements)
+        } catch {
+            // Fallback to the cached user entitlements in case of keychain reading error
+            Logger.subscription.debug("Failed to read user entitlements from keychain: \(error, privacy: .public)")
+            return EntitlementStatus(enabledEntitlements: self.cachedUserEntitlements)
         }
     }
 
@@ -735,26 +676,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 extension DefaultSubscriptionManager: SubscriptionTokenProvider {
     public func getAccessToken() async throws -> String {
         try await getTokenContainer(policy: .localValid).accessToken
-    }
-}
-
-extension SubscriptionEntitlement {
-
-    var entitlement: Entitlement {
-        switch self {
-        case .networkProtection:
-            return Entitlement(product: .networkProtection)
-        case .dataBrokerProtection:
-            return Entitlement(product: .dataBrokerProtection)
-        case .identityTheftRestoration:
-            return Entitlement(product: .identityTheftRestoration)
-        case .identityTheftRestorationGlobal:
-            return Entitlement(product: .identityTheftRestorationGlobal)
-        case .paidAIChat:
-            return Entitlement(product: .paidAIChat)
-        case .unknown:
-            return Entitlement(product: .unknown)
-        }
     }
 }
 

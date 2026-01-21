@@ -228,8 +228,21 @@ class AppUserDefaultsTests: XCTestCase {
 
     func testWhenReadingRefreshButtonPositionDefaultThenAddressBarIsReturned() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        
+
         XCTAssertEqual(appUserDefaults.currentRefreshButtonPosition, .addressBar)
+    }
+
+    func testWhenShowTrackersBlockedAnimationIsSetThenItIsPersisted() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+
+        appUserDefaults.showTrackersBlockedAnimation = false
+        XCTAssertFalse(appUserDefaults.showTrackersBlockedAnimation)
+    }
+
+    func testWhenReadingShowTrackersBlockedAnimationDefaultThenTrueIsReturned() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+
+        XCTAssertTrue(appUserDefaults.showTrackersBlockedAnimation)
     }
 
     // MARK: - Mock Creation

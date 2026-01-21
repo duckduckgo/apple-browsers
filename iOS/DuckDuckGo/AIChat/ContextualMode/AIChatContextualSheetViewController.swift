@@ -20,8 +20,10 @@
 import AIChat
 import Combine
 import Core
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import OSLog
+import SwiftUI
 import UIKit
 
 /// Delegate protocol for contextual sheet related actions
@@ -44,6 +46,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
 
     /// Called when the user requests to open sync settings
     func aiChatContextualSheetViewControllerDidRequestOpenSyncSettings(_ viewController: AIChatContextualSheetViewController)
+
+    /// Called when the user taps the "Attach Page" button and context needs to be collected
+    func aiChatContextualSheetViewControllerDidRequestAttachPage(_ viewController: AIChatContextualSheetViewController)
 }
 
 /// Contextual sheet view controller. Configures UX and actions.
@@ -74,6 +79,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let viewModel: AIChatContextualSheetViewModel
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let webViewControllerFactory: WebViewControllerFactory
+    private let settings: AIChatSettingsProvider
+    private let onOpenSettings: () -> Void
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
     private var cancellables = Set<AnyCancellable>()
@@ -86,6 +93,9 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// The current active web view controller showing the chat
     private weak var currentWebViewController: AIChatContextualWebViewController?
+
+    /// Hosting controller for the onboarding overlay
+    private var onboardingHostingController: UIHostingController<AIChatContextualOnboardingView>?
 
     // MARK: - UI Components
 
@@ -189,11 +199,15 @@ final class AIChatContextualSheetViewController: UIViewController {
     init(viewModel: AIChatContextualSheetViewModel,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          webViewControllerFactory: @escaping WebViewControllerFactory,
-         existingWebViewController: AIChatContextualWebViewController? = nil) {
+         existingWebViewController: AIChatContextualWebViewController? = nil,
+         settings: AIChatSettingsProvider = AIChatSettings(),
+         onOpenSettings: @escaping () -> Void = {}) {
         self.viewModel = viewModel
         self.voiceSearchHelper = voiceSearchHelper
         self.webViewControllerFactory = webViewControllerFactory
         self.existingWebViewController = existingWebViewController
+        self.settings = settings
+        self.onOpenSettings = onOpenSettings
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -212,13 +226,13 @@ final class AIChatContextualSheetViewController: UIViewController {
         if let existingWebVC = existingWebViewController {
             existingWebVC.delegate = self
             existingWebVC.aiChatContentHandlingDelegate = self
-            // Set contextualChatURL from existing webVC if available
             viewModel.setInitialContextualChatURL(existingWebVC.currentContextualChatURL)
             transitionToWebView(existingWebVC)
             expandToLargeDetent()
         } else {
             showContextualInput()
             preloadWebViewController()
+            showOnboardingIfNeeded()
         }
     }
 
@@ -249,9 +263,23 @@ final class AIChatContextualSheetViewController: UIViewController {
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
     }
 
-    // MARK: - Child View Controller Management
+    // MARK: - Public Methods
 
-    private func showContextualInput() {
+    /// Called when page context has been collected (after requesting attachment)
+    func didReceivePageContext() {
+        guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
+            self?.contextualInputViewController.hideContextChip()
+        }) else { return }
+
+        contextualInputViewController.showContextChip(chipView)
+    }
+}
+
+// MARK: - Private Methods
+
+private extension AIChatContextualSheetViewController {
+
+    func showContextualInput() {
         contextualInputViewController.delegate = self
         configureAttachActions()
         embedChildViewController(contextualInputViewController)
@@ -261,22 +289,25 @@ final class AIChatContextualSheetViewController: UIViewController {
         }
     }
 
-    private func configureAttachActions() {
+    func configureAttachActions() {
         let attachActions = viewModel.createAttachActions { [weak self] in
             self?.attachPageContext()
         }
         contextualInputViewController.attachActions = attachActions
     }
 
-    private func attachPageContext() {
-        guard let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
+    func attachPageContext() {
+        if let chipView = viewModel.createContextChipView(onRemove: { [weak self] in
             self?.contextualInputViewController.hideContextChip()
-        }) else { return }
+        }) {
+            contextualInputViewController.showContextChip(chipView)
+            return
+        }
 
-        contextualInputViewController.showContextChip(chipView)
+        delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
     }
 
-    private func embedChildViewController(_ childVC: UIViewController) {
+    func embedChildViewController(_ childVC: UIViewController) {
         addChild(childVC)
         childVC.view.translatesAutoresizingMaskIntoConstraints = false
         contentContainerView.addSubview(childVC.view)
@@ -291,7 +322,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         childVC.didMove(toParent: self)
     }
 
-    private func removeCurrentChildViewController() {
+    func removeCurrentChildViewController() {
         children.forEach { child in
             child.willMove(toParent: nil)
             child.view.removeFromSuperview()
@@ -299,9 +330,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         }
     }
 
-    // MARK: - Web View Preloading
-
-    private func preloadWebViewController() {
+    func preloadWebViewController() {
         let webVC = webViewControllerFactory()
         webVC.delegate = self
         webVC.aiChatContentHandlingDelegate = self
@@ -309,31 +338,31 @@ final class AIChatContextualSheetViewController: UIViewController {
         webVC.loadViewIfNeeded()
     }
 
-    // MARK: - Web View Transition
-
-    private func transitionToWebView(_ webVC: AIChatContextualWebViewController) {
+    func transitionToWebView(_ webVC: AIChatContextualWebViewController) {
         removeCurrentChildViewController()
         embedChildViewController(webVC)
         currentWebViewController = webVC
         existingWebViewController = nil
     }
 
-    private func showWebViewWithPrompt(_ prompt: String) {
+    func showWebViewWithPrompt(_ prompt: String) {
         guard let webVC = preloadedWebViewController else { return }
 
         viewModel.didSubmitPrompt()
+
+        let pageContext = contextualInputViewController.isContextChipVisible ? viewModel.fullPageContext : nil
 
         transitionToWebView(webVC)
         view.layoutIfNeeded()
         expandToLargeDetent()
 
-        webVC.submitPrompt(prompt)
+        webVC.submitPrompt(prompt, pageContext: pageContext)
         delegate?.aiChatContextualSheetViewController(self, didCreateWebViewController: webVC)
 
         preloadedWebViewController = nil
     }
 
-    private func expandToLargeDetent() {
+    func expandToLargeDetent() {
         guard let sheet = sheetPresentationController else { return }
         sheet.animateChanges {
             sheet.selectedDetentIdentifier = .large
@@ -362,7 +391,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
-        // TODO: Handle any cleanup when context chip is removed
+        viewModel.clearPageContext()
     }
 }
 
@@ -520,10 +549,75 @@ private extension AIChatContextualSheetViewController {
         guard let sheet = sheetPresentationController else { return }
 
         sheet.detents = [.medium(), .large()]
+        sheet.selectedDetentIdentifier = .medium
         sheet.largestUndimmedDetentIdentifier = .medium
         sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         sheet.prefersGrabberVisible = true
         sheet.prefersEdgeAttachedInCompactHeight = true
         sheet.preferredCornerRadius = Constants.sheetCornerRadius
+    }
+}
+
+// MARK: - Onboarding
+
+private extension AIChatContextualSheetViewController {
+
+    func showOnboardingIfNeeded() {
+        guard !settings.hasSeenContextualOnboarding else { return }
+
+        isModalInPresentation = true
+        Pixel.fire(pixel: .aiChatContextualOnboardingDisplayed)
+
+        let onboardingView = AIChatContextualOnboardingView(
+            onConfirm: { [weak self] in
+                Pixel.fire(pixel: .aiChatContextualOnboardingConfirmPressed)
+                self?.dismissOnboarding()
+            },
+            onViewSettings: { [weak self] in
+                Pixel.fire(pixel: .aiChatContextualOnboardingSettingsPressed)
+                self?.settings.markContextualOnboardingSeen()
+                self?.onOpenSettings()
+            }
+        )
+
+        let hostingController = UIHostingController(rootView: onboardingView)
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        hostingController.view.layer.cornerRadius = Constants.sheetCornerRadius
+        hostingController.view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        hostingController.view.clipsToBounds = true
+
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+
+        hostingController.didMove(toParent: self)
+        onboardingHostingController = hostingController
+    }
+
+    func dismissOnboarding(completion: (() -> Void)? = nil) {
+        settings.markContextualOnboardingSeen()
+
+        guard let hostingController = onboardingHostingController else {
+            completion?()
+            return
+        }
+
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseIn) {
+            hostingController.view.transform = CGAffineTransform(translationX: 0, y: hostingController.view.bounds.height)
+        } completion: { [weak self] _ in
+            hostingController.willMove(toParent: nil)
+            hostingController.view.removeFromSuperview()
+            hostingController.removeFromParent()
+            self?.onboardingHostingController = nil
+            self?.isModalInPresentation = false
+            completion?()
+        }
     }
 }

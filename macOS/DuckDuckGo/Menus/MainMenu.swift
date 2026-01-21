@@ -732,6 +732,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
+                NSMenuItem(title: "Shift top card by 10 impressions", action: #selector(MainViewController.debugShiftCardImpression))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
             }
@@ -847,6 +848,11 @@ final class MainMenu: NSMenu {
                 }
             }
 
+            NSMenuItem(title: "Simulate memory pressure event") {
+                NSMenuItem(title: "Warning", action: #selector(AppDelegate.simulateMemoryPressureWarning))
+                NSMenuItem(title: "Critical", action: #selector(AppDelegate.simulateMemoryPressureCritical))
+            }
+
             NSMenuItem(title: "Hang Debugging") {
                 toggleWatchdogMenuItem
                 toggleWatchdogCrashMenuItem
@@ -884,12 +890,17 @@ final class MainMenu: NSMenu {
                     return { @MainActor (productId: String, changeType: String?) async in
                         let subscriptionManager = Application.appDelegate.subscriptionManager
                         let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
+                        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+                        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+                        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
                         let feature = SubscriptionPagesUseSubscriptionFeature(
                             subscriptionManager: subscriptionManager,
                             stripePurchaseFlow: stripePurchaseFlow,
                             uiHandler: Application.appDelegate.subscriptionUIHandler,
                             aiChatURL: AIChatRemoteSettings().aiChatURL,
-                            wideEvent: Application.appDelegate.wideEvent
+                            wideEvent: Application.appDelegate.wideEvent,
+                            pendingTransactionHandler: pendingTransactionHandler
                         )
 
                         // Create params matching what the web would send

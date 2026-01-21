@@ -163,7 +163,7 @@ struct SubscriptionFlowView: View {
                     case .hasActiveSubscription:
                         errorMessage = .activeSubscription
                         return true
-                    case .failedToRestorePastPurchase, .purchaseFailed:
+                    case .failedToRestorePastPurchase, .purchaseFailed, .purchasePendingTransaction:
                         errorMessage = .appStore
                         return true
                     case .failedToGetSubscriptionOptions, .generalError:

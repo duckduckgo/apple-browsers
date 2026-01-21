@@ -59,18 +59,21 @@ public final class WideEvent: WideEventManaging {
     private static let storageQueue = DispatchQueue(label: "com.duckduckgo.wide-pixel.storage-queue", qos: .utility)
 
     private let storage: WideEventStoring
-    private let pixelKitProvider: () -> PixelKit?
+    private let sender: WideEventSending
     private let sampler: WideEventSampling
     private let failureEventMapping: EventMapping<WideEventFailureEvent>?
+    private let featureFlagProvider: WideEventFeatureFlagProviding
 
     public init(storage: WideEventStoring = WideEventUserDefaultsStorage(),
-                pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
+                sender: WideEventSending = DefaultWideEventSender(),
                 sampler: WideEventSampling? = nil,
-                failureEventMapping: EventMapping<WideEventFailureEvent>? = WideEventFailureEvent.eventMapping) {
-        self.pixelKitProvider = pixelKitProvider
+                failureEventMapping: EventMapping<WideEventFailureEvent>? = WideEventFailureEvent.eventMapping,
+                featureFlagProvider: WideEventFeatureFlagProviding) {
         self.storage = storage
+        self.sender = sender
         self.sampler = sampler ?? DefaultWideEventSampler()
         self.failureEventMapping = failureEventMapping
+        self.featureFlagProvider = featureFlagProvider
     }
 
     // MARK: - Public API
@@ -145,10 +148,9 @@ public final class WideEvent: WideEventManaging {
         do {
             try storage.update(data)
             let current: T = try storage.load(globalID: data.globalData.id)
-            let parameters = try generateFinalParameters(from: current, status: status)
             storage.delete(current)
 
-            try firePixel(named: T.pixelName, parameters: parameters, onComplete: onComplete)
+            sender.send(current, status: status, featureFlagProvider: featureFlagProvider, onComplete: onComplete)
 
             Self.logger.info("Completed wide event flow: \(T.pixelName, privacy: .public) with global ID: \(data.globalData.id, privacy: .public)")
         } catch {
@@ -204,92 +206,6 @@ public final class WideEvent: WideEventManaging {
         return sampler.shouldSendPixel(sampleRate: Float(data.globalData.sampleRate))
     }
 
-    private func generateFinalParameters<T: WideEventData>(from typed: T, status: WideEventStatus) throws -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        parameters.merge(typed.globalData.pixelParameters(), uniquingKeysWith: { _, new in new })
-        parameters.merge(typed.appData.pixelParameters(), uniquingKeysWith: { _, new in new })
-        parameters.merge(typed.contextData.pixelParameters(), uniquingKeysWith: { _, new in new })
-        parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
-
-        if let errorData = typed.errorData {
-            parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
-        }
-
-        parameters[WideEventParameter.Feature.status] = status.description
-
-        switch status {
-        case .success(let reason?), .unknown(let reason):
-            parameters[WideEventParameter.Feature.statusReason] = reason
-        case .failure, .cancelled, .success(nil):
-            break
-        }
-
-        return parameters
-    }
-
-    private func firePixel(named pixelName: String, parameters: [String: String], onComplete: @escaping PixelKit.CompletionBlock) throws {
-        guard !pixelName.isEmpty else {
-            Self.logger.error("Cannot fire wide event: empty pixel name")
-            onComplete(false, WideEventError.invalidParameters("Pixel name cannot be empty"))
-            return
-        }
-
-        guard !parameters.isEmpty else {
-            Self.logger.warning("Cannot fire wide event: empty parameters \(pixelName, privacy: .public)")
-            onComplete(false, WideEventError.invalidParameters("Parameters should not be empty"))
-            return
-        }
-
-        guard let pixelKit = pixelKitProvider() else {
-            Self.logger.error("Cannot fire wide event: PixelKit not initialized")
-            onComplete(false, WideEventError.invalidFlowState)
-            return
-        }
-
-        let finalPixelName = Self.generatePixelName(for: pixelName)
-
-        // Omit pixel source as it is included in the wide event body when necessary
-        let event = WideEventPixelKitEvent(name: finalPixelName, parameters: parameters, standardParameters: [])
-
-        pixelKit.fire(
-            event,
-            frequency: .daily,
-            withHeaders: nil,
-            withAdditionalParameters: nil,
-            allowedQueryReservedCharacters: nil,
-            includeAppVersionParameter: true,
-            onComplete: { success, error in
-                if success {
-                    Self.logger.info("Daily wide event pixel fired successfully: \(finalPixelName, privacy: .public)")
-                } else {
-                    Self.logger.error("Daily wide event failed to fire: \(finalPixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
-                }
-
-                // Avoid calling the completion handler, instead call it for the standard event only - otherwise
-                // we can't wrap this in a continuation easily
-            }
-        )
-
-        pixelKit.fire(
-            event,
-            frequency: .standard,
-            withHeaders: nil,
-            withAdditionalParameters: nil,
-            allowedQueryReservedCharacters: nil,
-            includeAppVersionParameter: true,
-            onComplete: { success, error in
-                if success {
-                    Self.logger.info("Wide event fired successfully: \(finalPixelName, privacy: .public)")
-                } else {
-                    Self.logger.error("Wide event failed to fire: \(finalPixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
-                }
-
-                onComplete(success, error)
-            }
-        )
-    }
-
     public func completeFlow<T: WideEventData>(_ type: T.Type, globalID: String, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         guard let currentData = getFlowData(T.self, globalID: globalID) else {
             Self.logger.info("Wide event completion ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
@@ -300,27 +216,17 @@ public final class WideEvent: WideEventManaging {
         completeFlow(currentData, status: status, onComplete: onComplete)
     }
 
-    private static func generatePixelName(for name: String) -> String {
-        #if os(macOS)
-        return "m_mac_wide_\(name)"
-        #elseif os(iOS)
-        return "m_ios_wide_\(name)"
-        #else
-        fatalError("Unsupported platform, please define a new pixel name if you're adding a new platform")
-        #endif
-    }
-
     private func report(_ event: WideEventFailureEvent, error: Error?, params: [String: String]?) {
         failureEventMapping?.fire(event, error: error, parameters: params)
     }
 }
 
-struct WideEventPixelKitEvent: PixelKitEvent {
-    let name: String
-    let parameters: [String: String]?
-    let standardParameters: [PixelKitStandardParameter]?
+public struct WideEventPixelKitEvent: PixelKitEvent {
+    public let name: String
+    public let parameters: [String: String]?
+    public let standardParameters: [PixelKitStandardParameter]?
 
-    init(name: String, parameters: [String: String], standardParameters: [PixelKitStandardParameter]?) {
+    public init(name: String, parameters: [String: String], standardParameters: [PixelKitStandardParameter]?) {
         self.name = name
         self.parameters = parameters
         self.standardParameters = standardParameters

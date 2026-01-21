@@ -39,6 +39,7 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
     private var isSubscriptionActive: Bool = false
     private var availableChanges: DuckDuckGoSubscription.AvailableChanges?
+    private var pendingPlans: [DuckDuckGoSubscription.PendingPlan]?
 
     /// Returns the tier badge variant to display, or nil if badge should not be shown
     /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
@@ -63,10 +64,13 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     /// Returns true if "Upgrade" option should be shown
     /// Requirements:
     /// - Subscription is active
+    /// - No pending plan (don't show upgrade if downgrade is scheduled)
     /// - Pro tier purchase feature flag is enabled
     /// - There are available upgrades
     var shouldShowUpgrade: Bool {
         guard isSubscriptionActive else { return false }
+        // Don't show upgrade if there's a pending plan (downgrade scheduled)
+        guard pendingPlans?.isEmpty ?? true else { return false }
         guard isProTierPurchaseEnabled() else { return false }
         return firstAvailableUpgradeTier != nil
     }
@@ -76,6 +80,12 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
         availableChanges?.upgrade
             .sorted { $0.order < $1.order }
             .first?.tier
+    }
+
+    var subscriptionManageButtonText: String {
+        isProTierPurchaseEnabled()
+            ? UserText.managePaymentOrCancelButton
+            : UserText.updatePlanOrCancelButton
     }
 
     @Published var email: String?
@@ -421,6 +431,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
                 subscriptionTier = subscription.tier
                 isSubscriptionActive = subscription.isActive
                 availableChanges = subscription.availableChanges
+                pendingPlans = subscription.pendingPlans
             }
         } catch {
             Logger.subscription.error("Error getting subscription: \(error, privacy: .public)")
@@ -429,6 +440,15 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
 
     @MainActor
     func updateDescription(for subscription: DuckDuckGoSubscription) {
+        // Check for pending plan first (downgrade scheduled)
+        if let pendingPlan = subscription.firstPendingPlan {
+            let effectiveDate = dateFormatter.string(from: pendingPlan.effectiveAt)
+            let tierName = pendingPlan.tier.rawValue.capitalized
+            let billingPeriodName = pendingPlan.billingPeriod.rawValue
+            self.subscriptionDetails = UserText.preferencesSubscriptionPendingDowngradeCaption(tierName: tierName, billingPeriod: billingPeriodName, formattedDate: effectiveDate)
+            return
+        }
+
         let hasActiveTrialOffer = subscription.hasActiveTrialOffer
         let status = subscription.status
         let period = subscription.billingPeriod

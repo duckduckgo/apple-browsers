@@ -102,8 +102,8 @@ final class UpdatesDebugMenu: NSMenu {
     @UserDefaultsWrapper(key: .debugSparkleCustomFeedURL)
     private var customFeedURL: String?
 
-    private var sparkleUpdateController: SparkleUpdateController? {
-        Application.appDelegate.updateController as? SparkleUpdateController
+    private var sparkleUpdateController: SparkleCustomFeedURLProviding? {
+        Application.appDelegate.updateController as? SparkleCustomFeedURLProviding
     }
 
     @objc func setCustomFeedURL() {
@@ -212,12 +212,12 @@ final class UpdatesDebugMenu: NSMenu {
 
     private func promptForPrivateKey() -> String? {
         let alert = NSAlert()
-        alert.messageText = "Enter Debug Signing Private Key"
+        alert.messageText = "Private key for testing Sparkle updates"
         alert.informativeText = "Paste the base64-encoded EdDSA private key (64 bytes).\nThis key is stored in the company secure location."
         alert.addButton(withTitle: "OK")
         alert.addButton(withTitle: "Cancel")
 
-        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 400, height: 24))
+        let textField = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 400, height: 24))
         textField.placeholderString = "Base64 private key..."
         alert.accessoryView = textField
 
@@ -336,6 +336,7 @@ private enum SparkleTestingResources {
               <sparkle:version>9999</sparkle:version>
               <sparkle:shortVersionString>99.0.0</sparkle:shortVersionString>
               <description><![CDATA[
+                <h3>What's new</h3>
                 <ul>
                   <li>Test update for local Sparkle testing</li>
                 </ul>

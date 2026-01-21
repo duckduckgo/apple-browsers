@@ -310,9 +310,25 @@ private extension HTTPURLResponse {
 
     static func diff(_ lhs: HTTPURLResponse, and rhs: HTTPURLResponse) -> String? {
         compare("statusCode", lhs.statusCode, rhs.statusCode)
-        ?? compare("allHeaderFields", lhs.allHeaderFields as NSDictionary, rhs.allHeaderFields as NSDictionary)
+        ?? {
+            let lhsHeaders = normalizedHeaders(lhs.allHeaderFields)
+            let rhsHeaders = normalizedHeaders(rhs.allHeaderFields)
+            guard lhsHeaders.isEqual(rhsHeaders) else {
+                return "allHeaderFields: expected `\(rhsHeaders)` got `\(lhsHeaders)`"
+            }
+            return nil
+        }()
     }
 
+}
+
+private func normalizedHeaders(_ headers: [AnyHashable: Any]) -> NSDictionary {
+    let normalized = headers.reduce(into: [String: String]()) { result, pair in
+        let key = String(describing: pair.key).lowercased()
+        let value = String(describing: pair.value)
+        result[key] = value
+    }
+    return normalized as NSDictionary
 }
 
 class MockHTTPURLResponse: HTTPURLResponse, @unchecked Sendable {

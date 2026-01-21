@@ -217,6 +217,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
             DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureStoreError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .purchaseFailed
+        case .purchasePendingTransaction:
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureStoreError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            state.transactionError = .purchasePendingTransaction
         case .missingEntitlements:
             DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureBackendError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)

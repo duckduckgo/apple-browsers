@@ -7,7 +7,7 @@ appId: com.duckduckgo.mobile.ios
 - inputText: "0000"
 - pressKey: Enter
 - assertVisible: You can sync with your other devices later.
-- tapOn: Turn On Sync & Back Up
+- tapOn: Turn On Sync & Backup
 - assertVisible: Save Recovery Code
 - tapOn: Copy Code
 - tapOn: Next

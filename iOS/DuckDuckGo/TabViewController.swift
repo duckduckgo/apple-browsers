@@ -412,6 +412,7 @@ class TabViewController: UIViewController {
                                    aiChatSettings: AIChatSettingsProvider,
                                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                                    sharedSecureVault: (any AutofillSecureVault)? = nil,
+                                   privacyStats: PrivacyStatsProviding,
                                    voiceSearchHelper: VoiceSearchHelperProtocol) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
@@ -442,6 +443,7 @@ class TabViewController: UIViewController {
                               aiChatSettings: aiChatSettings,
                               productSurfaceTelemetry: productSurfaceTelemetry,
                               sharedSecureVault: sharedSecureVault,
+                              privacyStats: privacyStats,
                               voiceSearchHelper: voiceSearchHelper
             )
         })
@@ -492,13 +494,14 @@ class TabViewController: UIViewController {
     let aiChatSettings: AIChatSettingsProvider
     let aiChatFullModeFeature: AIChatFullModeFeatureProviding
     let sharedSecureVault: (any AutofillSecureVault)?
-    
+    let privacyStats: PrivacyStatsProviding
+
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
-            settings: aiChatSettings,
+            aiChatSettings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
@@ -539,6 +542,7 @@ class TabViewController: UIViewController {
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
+                   privacyStats: PrivacyStatsProviding,
                    voiceSearchHelper: VoiceSearchHelperProtocol) {
 
         self.tabModel = tabModel
@@ -567,6 +571,7 @@ class TabViewController: UIViewController {
         self.adClickExternalOpenDetector = adClickExternalOpenDetector
         self.daxDialogsManager = daxDialogsManager
         self.sharedSecureVault = sharedSecureVault
+        self.privacyStats = privacyStats
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
@@ -575,7 +580,8 @@ class TabViewController: UIViewController {
         self.aiChatFullModeFeature = aiChatFullModeFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
-                                                         featureFlagger: featureFlagger)
+                                                         featureFlagger: featureFlagger,
+                                                         productSurfaceTelemetry: productSurfaceTelemetry)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
 
@@ -1689,8 +1695,9 @@ extension TabViewController: WKNavigationDelegate {
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
-        productSurfaceTelemetry.navigationCompleted(url: webView.url)
 
+        fireProductTelemetry(for: webView)
+        
         // definitely finished with any potential login cycle by this point, so don't try and handle it any more
         detectedLoginURL = nil
         updatePreview()
@@ -1706,6 +1713,17 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
         specialErrorPageNavigationHandler.handleWebView(webView, didFinish: navigation)
+    }
+    
+    /// Fires product telemetry related to the current URL
+    private func fireProductTelemetry(for webView: WKWebView) {
+        guard let url = webView.url else { return }
+
+        if url.isDuckAIURL {
+            aiChatContentHandler.fireAIChatTelemetry()
+        } else {
+            productSurfaceTelemetry.navigationCompleted(url: webView.url)
+        }
     }
 
     var specialErrorPageUserScript: SpecialErrorPageUserScript? {
@@ -3037,13 +3055,23 @@ extension TabViewController: ContentBlockerRulesUserScriptDelegate {
         guard let url = url else { return }
         
         adClickAttributionLogic.onRequestDetected(request: tracker)
-        
+
         if tracker.isBlocked && fireWoFollowUp {
             fireWoFollowUp = false
             Pixel.fire(pixel: .daxDialogsWithoutTrackersFollowUp)
         }
 
         privacyInfo?.trackerInfo.addDetectedTracker(tracker, onPageWithURL: url)
+
+        guard tracker.isBlocked,
+              let host = tracker.url.url?.host,
+              let entityName = ContentBlocking.shared.trackerDataManager.trackerData.findParentEntityOrFallback(forHost: host)?.displayName else {
+            return
+        }
+
+        Task {
+            await privacyStats.recordBlockedTracker(entityName)
+        }
     }
 }
 

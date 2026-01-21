@@ -26,9 +26,11 @@ import Bookmarks
 import Persistence
 import os.log
 import SwiftUI
+import Combine
+import DesignResourcesKit
+import BrowserServicesKit
 import PrivacyConfig
 import AIChat
-import Combine
 
 class TabSwitcherViewController: UIViewController {
 
@@ -37,6 +39,10 @@ class TabSwitcherViewController: UIViewController {
 
         static let cellMinHeight: CGFloat = 140.0
         static let cellMaxHeight: CGFloat = 209.0
+
+        static let trackerInfoTopSpacing: CGFloat = 8
+        static let trackerInfoHorizontalPadding: CGFloat = 16
+        static let trackerInfoBottomSpacing: CGFloat = 0
     }
 
     struct BookmarkAllResult {
@@ -105,7 +111,7 @@ class TabSwitcherViewController: UIViewController {
 
     var currentSelection: Int?
 
-    var tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
+    let tabSwitcherSettings: TabSwitcherSettings
     var isProcessingUpdates = false
     private var canUpdateCollection = true
 
@@ -120,6 +126,7 @@ class TabSwitcherViewController: UIViewController {
     let historyManager: HistoryManaging
     let fireproofing: Fireproofing
     let aiChatSettings: AIChatSettingsProvider
+    let privacyStats: PrivacyStatsProviding
     let keyValueStore: ThrowingKeyValueStoring
     var tabsModel: TabsModel {
         tabManager.model
@@ -129,6 +136,10 @@ class TabSwitcherViewController: UIViewController {
 
     private var tabObserverCancellable: AnyCancellable?
     private let appSettings: AppSettings
+    private var trackerCountCancellable: AnyCancellable?
+    private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
+    private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
+    private var trackerInfoModel: InfoPanelView.Model?
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
 
@@ -143,10 +154,12 @@ class TabSwitcherViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
                    aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   privacyStats: PrivacyStatsProviding,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    historyManager: HistoryManaging,
                    fireproofing: Fireproofing,
-                   keyValueStore: ThrowingKeyValueStoring) {
+                   keyValueStore: ThrowingKeyValueStoring,
+                   tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -156,9 +169,11 @@ class TabSwitcherViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.privacyStats = privacyStats
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.historyManager = historyManager
         self.fireproofing = fireproofing
+        self.tabSwitcherSettings = tabSwitcherSettings
         super.init(coder: coder)
     }
 
@@ -188,7 +203,7 @@ class TabSwitcherViewController: UIViewController {
             isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: topOffset) : nil,
             !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: bottomOffset) : nil,
 
-            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
+            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor, constant: Constants.trackerInfoTopSpacing),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 
@@ -222,7 +237,7 @@ class TabSwitcherViewController: UIViewController {
         viewsToRemoveConstraintsFor.forEach { targetView in
             targetView.removeFromSuperview()
         }
-        
+
         // Re-add the views to the hierarchy
         view.addSubview(titleBarView)
         view.addSubview(toolbar)
@@ -246,6 +261,11 @@ class TabSwitcherViewController: UIViewController {
         // These should only be done once
         createTitleBar()
         setupBackgroundView()
+        collectionView.register(
+            TabSwitcherTrackerInfoHeaderView.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+            withReuseIdentifier: TabSwitcherTrackerInfoHeaderView.reuseIdentifier
+        )
         tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.collectionView.reloadData()
         }
@@ -258,6 +278,8 @@ class TabSwitcherViewController: UIViewController {
         collectionView.allowsSelection = true
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
+        bindTrackerCount()
+        trackerCountViewModel?.refresh()
 
     }
 
@@ -276,12 +298,71 @@ class TabSwitcherViewController: UIViewController {
         tabsStyle = tabSwitcherSettings.isGridViewEnabled ? .grid : .list
     }
 
+    private func bindTrackerCount() {
+        let viewModel = TabSwitcherTrackerCountViewModel(
+            settings: tabSwitcherSettings,
+            privacyStats: privacyStats,
+            featureFlagger: featureFlagger
+        )
+        trackerCountViewModel = viewModel
+        trackerCountCancellable = viewModel.$state
+            .sink { [weak self] state in
+                self?.applyTrackerCountState(state)
+            }
+    }
+
+    private func applyTrackerCountState(_ state: TabSwitcherTrackerCountViewModel.State) {
+        guard state != lastAppliedTrackerCountState else { return }
+        lastAppliedTrackerCountState = state
+
+        guard state.isVisible else {
+            trackerInfoModel = nil
+            updateTrackerInfoHeaderIfVisible()
+            collectionView.collectionViewLayout.invalidateLayout()
+            return
+        }
+
+        trackerInfoModel = .trackerInfoPanel(
+            state: state,
+            onTap: { },
+            onInfo: { [weak self] in
+                self?.presentHideTrackerCountAlert()
+            }
+        )
+        updateTrackerInfoHeaderIfVisible()
+        collectionView.collectionViewLayout.invalidateLayout()
+    }
+
+    private func updateTrackerInfoHeaderIfVisible() {
+        let indexPath = IndexPath(item: 0, section: 0)
+        guard let header = collectionView.supplementaryView(
+            forElementKind: UICollectionView.elementKindSectionHeader,
+            at: indexPath
+        ) as? TabSwitcherTrackerInfoHeaderView else {
+            return
+        }
+
+        header.configure(in: self, model: trackerInfoModel)
+    }
+
+    private func presentHideTrackerCountAlert() {
+        let alert = UIAlertController(title: UserText.tabSwitcherTrackerCountHideTitle,
+                                      message: UserText.tabSwitcherTrackerCountHideMessage,
+                                      preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountKeepAction, style: .cancel))
+        alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountHideAction, style: .default) { [weak self] _ in
+            self?.trackerCountViewModel?.hide()
+        })
+        present(alert, animated: true)
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         refreshTitle()
         currentSelection = tabsModel.currentIndex
         updateUIForSelectionMode()
         setupBarsLayout()
+        trackerCountViewModel?.refresh()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
@@ -511,6 +592,25 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
         return cell
     }
 
+    public func collectionView(_ collectionView: UICollectionView,
+                               viewForSupplementaryElementOfKind kind: String,
+                               at indexPath: IndexPath) -> UICollectionReusableView {
+        guard kind == UICollectionView.elementKindSectionHeader else {
+            return UICollectionReusableView()
+        }
+
+        guard let header = collectionView.dequeueReusableSupplementaryView(
+            ofKind: kind,
+            withReuseIdentifier: TabSwitcherTrackerInfoHeaderView.reuseIdentifier,
+            for: indexPath
+        ) as? TabSwitcherTrackerInfoHeaderView else {
+            return UICollectionReusableView()
+        }
+
+        header.configure(in: self, model: trackerInfoModel)
+        return header
+    }
+
 }
 
 extension TabSwitcherViewController: UICollectionViewDelegate {
@@ -608,7 +708,14 @@ extension TabSwitcherViewController: UICollectionViewDelegateFlowLayout {
         }
         return size
     }
-    
+
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                        referenceSizeForHeaderInSection section: Int) -> CGSize {
+        guard trackerInfoModel != nil else { return .zero }
+        return CGSize(width: collectionView.bounds.width, height: TabSwitcherTrackerInfoHeaderView.estimatedHeight)
+    }
+
 }
 
 extension TabSwitcherViewController: TabObserver {

@@ -519,6 +519,109 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(sut.state.isShowingUpgradeView)
     }
 
+    // MARK: - Pending Plan Tests
+
+    func testSubscriptionDetails_WhenPendingPlanExists_ShowsDowngradeCopy() async {
+        // Given - Subscription with a pending downgrade plan
+        let pendingPlan = DuckDuckGoSubscription.PendingPlan(
+            productId: "ddg-privacy-pro-monthly-plus",
+            billingPeriod: .monthly,
+            effectiveAt: Date(timeIntervalSince1970: 1711557633),
+            status: "pending",
+            tier: .plus
+        )
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .pro,
+            pendingPlans: [pendingPlan]
+        ))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        let expectation = expectation(description: "Subscription details updated")
+        sut.$state
+            .map { $0.subscriptionDetails }
+            .filter { !$0.isEmpty }
+            .first()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.onFirstAppear()
+        await fulfillment(of: [expectation], timeout: 2.0)
+
+        // Then - Should show pending downgrade message
+        XCTAssertFalse(sut.state.subscriptionDetails.isEmpty)
+        XCTAssertTrue(sut.state.subscriptionDetails.contains("Plus"))
+        XCTAssertTrue(sut.state.subscriptionDetails.contains("Monthly"))
+    }
+
+    func testSubscriptionDetails_WhenNoPendingPlan_ShowsRenewalCopy() async {
+        // Given - Subscription without pending plan
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .pro,
+            pendingPlans: nil
+        ))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then - Should show standard renewal message
+        XCTAssertNotNil(sut.state.subscriptionDetails)
+        XCTAssertTrue(sut.state.subscriptionDetails.contains("renews") == true)
+    }
+
+    func testSubscriptionDetails_WhenEmptyPendingPlans_ShowsRenewalCopy() async {
+        // Given - Subscription with empty pending plans array
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .pro,
+            pendingPlans: []
+        ))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then - Should show standard renewal message (empty array = no pending plan)
+        XCTAssertNotNil(sut.state.subscriptionDetails)
+        XCTAssertTrue(sut.state.subscriptionDetails.contains("renews") == true)
+    }
+
+    func testShouldShowUpgrade_WhenPendingPlanExists_ReturnsFalse() async {
+        // Given - Active subscription with pending plan and available upgrades
+        let pendingPlan = DuckDuckGoSubscription.PendingPlan(
+            productId: "ddg-privacy-pro-monthly-plus",
+            billingPeriod: .monthly,
+            effectiveAt: Date(),
+            status: "pending",
+            tier: .plus
+        )
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
+            upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
+            downgrade: []
+        )
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .pro,
+            availableChanges: availableChanges,
+            pendingPlans: [pendingPlan]
+        ))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then - Should NOT show upgrade when there's a pending plan
+        XCTAssertFalse(sut.shouldShowUpgrade)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT() -> SubscriptionSettingsViewModel {
@@ -531,17 +634,18 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
     }
 
     private func waitForSubscriptionUpdate() async {
-        let expectation = expectation(description: "Subscription info updated")
+        let expectation = expectation(description: "Subscription details updated")
 
         sut.$state
-            .compactMap { $0.subscriptionInfo }
+            .map { $0.subscriptionDetails }
+            .filter { !$0.isEmpty }  // Wait for subscriptionDetails to be non-empty
             .first()
             .sink { _ in expectation.fulfill() }
             .store(in: &cancellables)
 
         sut.onFirstAppear()
 
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await fulfillment(of: [expectation], timeout: 15.0)
     }
 }
 

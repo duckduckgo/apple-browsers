@@ -35,6 +35,11 @@ final class MockPixelFiring: PixelFiring {
     func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, withAdditionalParameters: [String: String]) {
         firedPixels.append((event: event, frequency: frequency, additionalParameters: withAdditionalParameters))
     }
+
+    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, onComplete: @escaping PixelKit.CompletionBlock) {
+        firedPixels.append((event: event, frequency: frequency, additionalParameters: nil))
+        onComplete(true, nil)
+    }
 }
 
 final class UserChurnServiceTests: XCTestCase {

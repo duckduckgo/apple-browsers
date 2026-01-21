@@ -28,7 +28,6 @@ public final class DebugEmailConfirmationStore: EmailConfirmationSupporting {
     private let queue = DispatchQueue(label: "com.duckduckgo.dbp.debug.email-confirmation-store")
     private var confirmations: [Key: OptOutEmailConfirmationJobData] = [:]
     private var extractedProfiles: [Int64: (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)] = [:]
-    private var nextExtractedProfileId: Int64 = 1
 
     public init() {}
 
@@ -38,9 +37,7 @@ public final class DebugEmailConfirmationStore: EmailConfirmationSupporting {
         queue.sync {
             let storedProfile = profile.with(id: DebugHelper.stableId(for: profile))
             if let id = storedProfile.id {
-                extractedProfiles[id] = (brokerId: brokerId,
-                                         profileQueryId: profileQueryId,
-                                         profile: storedProfile)
+                extractedProfiles[id] = (brokerId: brokerId, profileQueryId: profileQueryId, profile: storedProfile)
             }
             return storedProfile
         }
@@ -52,9 +49,7 @@ public final class DebugEmailConfirmationStore: EmailConfirmationSupporting {
                                             generatedEmail: String,
                                             attemptID: String) throws {
         queue.sync {
-            let key = Key(brokerId: brokerId,
-                          profileQueryId: profileQueryId,
-                          extractedProfileId: extractedProfileId)
+            let key = Key(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             confirmations[key] = OptOutEmailConfirmationJobData(brokerId: brokerId,
                                                                 profileQueryId: profileQueryId,
                                                                 extractedProfileId: extractedProfileId,
@@ -94,9 +89,7 @@ public final class DebugEmailConfirmationStore: EmailConfirmationSupporting {
     public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
         queue.sync {
             Set(confirmations.values.map {
-                OptOutIdentifier(brokerId: $0.brokerId,
-                                 profileQueryId: $0.profileQueryId,
-                                 extractedProfileId: $0.extractedProfileId)
+                OptOutIdentifier(brokerId: $0.brokerId, profileQueryId: $0.profileQueryId, extractedProfileId: $0.extractedProfileId)
             })
         }
     }
@@ -107,9 +100,7 @@ public final class DebugEmailConfirmationStore: EmailConfirmationSupporting {
                                                   brokerId: Int64,
                                                   extractedProfileId: Int64) throws {
         queue.sync {
-            let key = Key(brokerId: brokerId,
-                          profileQueryId: profileQueryId,
-                          extractedProfileId: extractedProfileId)
+            let key = Key(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             guard let existing = confirmations[key] else { return }
             confirmations[key] = OptOutEmailConfirmationJobData(brokerId: existing.brokerId,
                                                                 profileQueryId: existing.profileQueryId,
@@ -126,9 +117,7 @@ public final class DebugEmailConfirmationStore: EmailConfirmationSupporting {
                                                              brokerId: Int64,
                                                              extractedProfileId: Int64) throws {
         queue.sync {
-            let key = Key(brokerId: brokerId,
-                          profileQueryId: profileQueryId,
-                          extractedProfileId: extractedProfileId)
+            let key = Key(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             guard let existing = confirmations[key] else { return }
             confirmations[key] = OptOutEmailConfirmationJobData(brokerId: existing.brokerId,
                                                                 profileQueryId: existing.profileQueryId,

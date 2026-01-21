@@ -423,36 +423,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         return brokerProfileQueryData
     }
 
-    private func createBrokerProfileQueryData() -> [BrokerProfileQueryData] {
-        let profile: DataBrokerProtectionProfile =
-            .init(
-                names: names.map { $0.toModel() },
-                addresses: addresses.map { $0.toModel() },
-                phones: [String](),
-                birthYear: Int(birthYear) ?? 1990
-            )
-        let profileQueries = profile.profileQueries
-        var brokerProfileQueryData = [BrokerProfileQueryData]()
-
-        for profileQuery in profileQueries {
-            let profileQueryId = DebugHelper.stableId(for: profileQuery)
-            for broker in brokers {
-                let resolvedBroker = brokerWithId(broker)
-                let fakeScanJobData = ScanJobData(brokerId: DebugHelper.stableId(for: resolvedBroker),
-                                                  profileQueryId: profileQueryId,
-                                                  historyEvents: [HistoryEvent]())
-                brokerProfileQueryData.append(
-                    .init(dataBroker: resolvedBroker,
-                          profileQuery: profileQuery.with(id: profileQueryId),
-                          scanJobData: fakeScanJobData)
-                )
-            }
-            profileQueryLabels[profileQueryId] = profileQueryText(for: profileQuery)
-        }
-
-        return brokerProfileQueryData
-    }
-
     private func showNoResultsAlert() {
         DispatchQueue.main.async {
             self.showAlert = true

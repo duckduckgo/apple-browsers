@@ -46,6 +46,14 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let debugEventHandler: ((String) -> Void)?
 
+    /// - Parameters:
+    ///   - emailConfirmationStore: Persists confirmation state for email decoupling (DB in prod, in-memory in debug).
+    ///   - database: Optional repository for DB side effects (pixels/history/scheduling). Not used in debug.
+    ///   - emailServiceV0: Legacy API used for email generation and legacy confirmation lookups.
+    ///   - emailServiceV1: V1 API used for decoupled email confirmation polling and extraction.
+    ///   - featureFlagger: Controls decoupling and related flow switches.
+    ///   - pixelHandler: Optional pixel handler.
+    ///   - debugEventHandler: Debug-only hook to surface email confirmation events in the UI.
     public init(emailConfirmationStore: EmailConfirmationSupporting,
                 database: DataBrokerProtectionRepository?,
                 emailServiceV0: EmailServiceProtocol,

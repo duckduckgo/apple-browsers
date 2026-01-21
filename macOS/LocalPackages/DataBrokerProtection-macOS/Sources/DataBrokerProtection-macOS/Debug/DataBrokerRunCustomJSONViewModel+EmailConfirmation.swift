@@ -23,8 +23,10 @@ import UserScript
 extension DataBrokerRunCustomJSONViewModel {
 
     func canCheckEmailConfirmation(for scanResult: ScanResult) -> Bool {
-        guard let extractedProfileId = scanResult.extractedProfile.id else { return false }
-        guard scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() else { return false }
+        guard let extractedProfileId = scanResult.extractedProfile.id,
+              scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() else {
+            return false
+        }
         return awaitingEmailConfirmationProfileIds.contains(extractedProfileId)
     }
 
@@ -35,15 +37,18 @@ extension DataBrokerRunCustomJSONViewModel {
 
     func checkForEmailConfirmation() {
         updateProgress("Checking email confirmations...")
+        let emailConfirmationDataService = emailConfirmationDataService
         Task {
             do {
                 try await emailConfirmationDataService.checkForEmailConfirmationData()
-                DispatchQueue.main.async {
-                    self.progressText = "Idle"
-                    self.isProgressActive = false
+                await MainActor.run { [weak self] in
+                    self?.progressText = "Idle"
+                    self?.isProgressActive = false
                 }
             } catch {
-                showAlert(for: error)
+                await MainActor.run { [weak self] in
+                    self?.showAlert(for: error)
+                }
             }
         }
     }

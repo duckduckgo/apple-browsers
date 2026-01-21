@@ -69,12 +69,11 @@ extension DataBrokerRunCustomJSONViewModel {
 
     private func addHistoryEvent(_ event: HistoryEvent) {
         DispatchQueue.main.async {
-            self.debugEvents.insert(DebugLogEvent(timestamp: event.date,
+            self.debugEvents.append(DebugLogEvent(timestamp: event.date,
                                                   kind: .history,
                                                   profileQueryLabel: self.historyEventDetails(event),
                                                   summary: self.historyEventDescription(event),
-                                                  details: ""),
-                                    at: 0)
+                                                  details: ""))
         }
         updateEmailConfirmationState(for: event)
     }

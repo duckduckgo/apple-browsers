@@ -34,3 +34,5 @@ extension TabHistoryManagedObject {
     @NSManaged public var url: URL
     @NSManaged public var visit: PageVisitManagedObject?
 }
+
+extension TabHistoryManagedObject: Identifiable { }

@@ -106,7 +106,7 @@ class NullHistoryCoordinator: HistoryCoordinating {
         return nil
     }
 
-    func addVisit(of url: URL, at date: Date) -> History.Visit? {
+    func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
         return nil
     }
 

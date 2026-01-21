@@ -33,6 +33,7 @@ final public class HistoryStore: HistoryStoring {
         case saveFailed
         case insertVisitFailed
         case removeVisitsFailed
+        case insertTabHistoryFailed
 
     }
 
@@ -259,8 +260,29 @@ final public class HistoryStore: HistoryStoring {
             context.reset()
             return .failure(HistoryStoreError.savingFailed)
         }
-        visitMO.update(with: visit, historyEntryManagedObject: historyEntryManagedObject)
+        let tabHistoryMO = insertTabHistory(for: visit,
+                                            visitManagedObject: visitMO,
+                                            historyEntryManagedObject: historyEntryManagedObject)
+        visitMO.update(with: visit,
+                       historyEntryManagedObject: historyEntryManagedObject,
+                       tabHistoryManagedObject: tabHistoryMO)
         return .success(visitMO)
+    }
+
+    private func insertTabHistory(for visit: Visit,
+                                  visitManagedObject: PageVisitManagedObject,
+                                  historyEntryManagedObject: BrowsingHistoryEntryManagedObject) -> TabHistoryManagedObject? {
+        guard let tabID = visit.tabID,
+              let url = historyEntryManagedObject.url else {
+            return nil
+        }
+        if let tabHistory = NSEntityDescription.insertNewObject(forEntityName: TabHistoryManagedObject.entityName, into: context) as? TabHistoryManagedObject {
+            tabHistory.update(with: tabID, url: url, visitManagedObject: visitManagedObject)
+            return tabHistory
+        } else {
+            eventMapper.fire(.insertTabHistoryFailed)
+            return nil
+        }
     }
 
     public func removeVisits(_ visits: some Sequence<Visit>) async throws {
@@ -395,11 +417,21 @@ fileprivate extension BrowsingHistoryEntryManagedObject {
 
 private extension PageVisitManagedObject {
 
-    func update(with visit: Visit, historyEntryManagedObject: BrowsingHistoryEntryManagedObject) {
+    func update(with visit: Visit,
+                historyEntryManagedObject: BrowsingHistoryEntryManagedObject,
+                tabHistoryManagedObject: TabHistoryManagedObject?) {
         date = visit.date
         historyEntry = historyEntryManagedObject
+        tabHistory = tabHistoryManagedObject
     }
+}
 
+private extension TabHistoryManagedObject {
+    func update(with tabID: String, url: URL, visitManagedObject: PageVisitManagedObject) {
+        self.tabID = tabID
+        self.url = url
+        self.visit = visitManagedObject
+    }
 }
 
 private extension Visit {

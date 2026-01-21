@@ -36,7 +36,7 @@ class FireConfirmationViewModel: ObservableObject {
     
     // MARK: - Public Variables
     
-    let onConfirm: (FireOptions) -> Void
+    let onConfirm: (FireRequest) -> Void
     let onCancel: () -> Void
     
     // MARK: - Private Variables
@@ -74,8 +74,8 @@ class FireConfirmationViewModel: ObservableObject {
         aiChatSettings.isAIChatEnabled
     }
     
-    private var fireOptions: FireOptions {
-        var options: FireOptions = []
+    private var fireOptions: FireRequest.Options {
+        var options: FireRequest.Options = []
         if clearTabs {
             options.insert(.tabs)
         }
@@ -95,7 +95,7 @@ class FireConfirmationViewModel: ObservableObject {
          fireproofing: Fireproofing,
          aiChatSettings: AIChatSettingsProvider,
          keyValueFilesStore: ThrowingKeyValueStoring,
-         onConfirm: @escaping (FireOptions) -> Void,
+         onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
         self.onConfirm = onConfirm
         self.onCancel = onCancel
@@ -121,7 +121,8 @@ class FireConfirmationViewModel: ObservableObject {
             settingsStore.clearAIChats = clearAIChats
         }
         
-        onConfirm(fireOptions)
+        let request = FireRequest(options: fireOptions, trigger: .manualFire, scope: .all)
+        onConfirm(request)
     }
     
     func cancel() {

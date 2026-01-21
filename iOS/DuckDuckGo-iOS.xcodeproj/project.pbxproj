@@ -578,6 +578,7 @@
 		809F9D152EE12CF600943E8A /* FireConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D122EE12CF600943E8A /* FireConfirmationView.swift */; };
 		809F9D162EE12CF600943E8A /* FireConfirmationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */; };
 		809F9D172EE12CF600943E8A /* FireConfirmationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D132EE12CF600943E8A /* FireConfirmationViewModel.swift */; };
+		80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A198C62F1AB3A10015521B /* TabViewModel.swift */; };
 		80BADA432EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */; };
 		80CDFA1D2EF0AEB600375E73 /* MockTabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E8D5D42EEA659300820EB0 /* MockTabManager.swift */; };
 		80CDFA1E2EF0AEB600375E73 /* MockTabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E8D5D42EEA659300820EB0 /* MockTabManager.swift */; };
@@ -2758,6 +2759,7 @@
 		809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationPresenter.swift; sourceTree = "<group>"; };
 		809F9D122EE12CF600943E8A /* FireConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationView.swift; sourceTree = "<group>"; };
 		809F9D132EE12CF600943E8A /* FireConfirmationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationViewModel.swift; sourceTree = "<group>"; };
+		80A198C62F1AB3A10015521B /* TabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModel.swift; sourceTree = "<group>"; };
 		80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationSettingsStore.swift; sourceTree = "<group>"; };
 		80DD839E2EF0FEF400DAB108 /* DataClearingSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingSettingsViewModelTests.swift; sourceTree = "<group>"; };
 		80E8D5D22EEA655900820EB0 /* FireExecutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireExecutorTests.swift; sourceTree = "<group>"; };
@@ -9335,6 +9337,7 @@
 				F13B4BD21F1822C700814661 /* Tab.swift */,
 				F13B4BBF1F180D8A00814661 /* TabsModel.swift */,
 				98150FED2DDB33910003EE54 /* TabsModelPersistence.swift */,
+				80A198C62F1AB3A10015521B /* TabViewModel.swift */,
 				988AC354257E47C100793C64 /* RequeryLogic.swift */,
 				B652DEFC287BE67400C12A9C /* UserScripts.swift */,
 				CB4FA44D2C78AACE00A16F5A /* SpecialErrorPageUserScript.swift */,
@@ -11659,6 +11662,7 @@
 				6F55BCF92ECE29B3009E50C1 /* BrowsingMenuSheetView.swift in Sources */,
 				560E84852EE0FA53008F6B74 /* TierBadgeView.swift in Sources */,
 				9FA09DA72EA71F2900E26F3F /* PromptCooldownStore.swift in Sources */,
+				80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */,
 				9FA09DA82EA71F2900E26F3F /* PromptCooldownManager.swift in Sources */,
 				1E4DCF4E27B6A69600961E25 /* DownloadsListHostingController.swift in Sources */,
 				850F93DB2B594AB800823EEA /* ZippedPassKitPreviewHelper.swift in Sources */,

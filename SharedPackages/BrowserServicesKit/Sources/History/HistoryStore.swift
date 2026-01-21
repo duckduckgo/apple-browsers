@@ -33,7 +33,9 @@ final public class HistoryStore: HistoryStoring {
         case saveFailed
         case insertVisitFailed
         case removeVisitsFailed
+        case loadTabHistoryFailed
         case insertTabHistoryFailed
+        case removeTabHistoryFailed
 
     }
 
@@ -74,6 +76,26 @@ final public class HistoryStore: HistoryStoring {
                 case .success:
                     let reloadResult = self.reload(self.context)
                     continuation.resume(with: reloadResult)
+                }
+            }
+        }
+    }
+
+    public func tabHistory(tabID: String) async throws -> [URL] {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform { [context, eventMapper] in
+                let fetchRequest = TabHistoryManagedObject.fetchRequest()
+                fetchRequest.predicate = NSPredicate(format: "%K == %@",
+                                                     #keyPath(TabHistoryManagedObject.tabID),
+                                                     tabID)
+                fetchRequest.returnsObjectsAsFaults = false
+                do {
+                    let fetchedObjects = try context.fetch(fetchRequest)
+                    let urls = fetchedObjects.map { $0.url }
+                    continuation.resume(returning: urls)
+                } catch {
+                    eventMapper.fire(.loadTabHistoryFailed, error: error)
+                    continuation.resume(throwing: error)
                 }
             }
         }

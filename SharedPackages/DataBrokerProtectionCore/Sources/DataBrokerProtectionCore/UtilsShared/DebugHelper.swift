@@ -36,8 +36,24 @@ public enum DebugHelper {
         return djb2Hash(profileQueryText)
     }
 
-    public static func stableId(for profile: ExtractedProfile) -> Int64? {
-        guard let identifier = profile.identifier else { return nil }
-        return djb2Hash(identifier)
+    public static func stableId(for profile: ExtractedProfile) -> Int64 {
+        if let identifier = profile.identifier, !identifier.isEmpty {
+            return djb2Hash(identifier)
+        }
+
+        let name = profile.name ?? profile.fullName
+        let addresses = profile.addresses?.map { $0.fullAddress }.sorted().joined(separator: ",")
+        let relatives = profile.relatives?.sorted().joined(separator: ",")
+        let alternativeNames = profile.alternativeNames?.sorted().joined(separator: ",")
+
+        let fallbackComponents = [
+            name,
+            profile.age,
+            addresses,
+            relatives,
+            alternativeNames
+        ].compactMap { $0 }.filter { !$0.isEmpty }
+
+        return djb2Hash(fallbackComponents.joined(separator: "|"))
     }
 }

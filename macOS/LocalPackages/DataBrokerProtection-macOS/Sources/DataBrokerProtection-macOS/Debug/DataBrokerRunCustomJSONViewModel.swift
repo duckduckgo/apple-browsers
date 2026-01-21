@@ -288,17 +288,11 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
                             let brokerId = DebugHelper.stableId(for: query.dataBroker)
                             let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
-                            let assignedProfiles: [ExtractedProfile] = extractedProfiles.compactMap { profile in
-                                guard let stableId = DebugHelper.stableId(for: profile) else {
-                                    let profileName = profile.name ?? "unknown"
-                                    addHistoryDebugEvent(summary: "Email confirmation",
-                                                         details: "Skipping profile without identifier: \(profileName)")
-                                    return nil
-                                }
-                                return emailConfirmationStore.storeExtractedProfile(profile,
-                                                                                    brokerId: brokerId,
-                                                                                    profileQueryId: profileQueryId,
-                                                                                    stableId: stableId)
+                            let assignedProfiles: [ExtractedProfile] = extractedProfiles.map { profile in
+                                emailConfirmationStore.storeExtractedProfile(profile,
+                                                                             brokerId: brokerId,
+                                                                             profileQueryId: profileQueryId,
+                                                                             stableId: DebugHelper.stableId(for: profile))
                             }
                             addScanResultEvents(for: query, extractedProfiles: assignedProfiles)
 

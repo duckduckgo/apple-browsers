@@ -194,4 +194,15 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
         isKeyboardNavigating = false
         applyFilter()
     }
+
+    /// Clears all chats and resets the view model completely.
+    /// Use this when the feature is disabled.
+    public func clearAllChats() {
+        pinnedChats = []
+        recentChats = []
+        currentQuery = ""
+        selectedIndex = nil
+        isKeyboardNavigating = false
+        filteredSuggestions = []
+    }
 }

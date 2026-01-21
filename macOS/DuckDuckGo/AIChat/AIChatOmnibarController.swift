@@ -96,6 +96,13 @@ final class AIChatOmnibarController {
     /// Called when the duck.ai omnibar becomes visible. Triggers initial suggestions fetch.
     func onOmnibarActivated() {
         hasBeenActivated = true
+
+        // If feature is disabled, clear any existing suggestions and don't fetch
+        if !isSuggestionsEnabled {
+            suggestionsViewModel.clearAllChats()
+            return
+        }
+
         fetchSuggestionsIfNeeded(query: currentText)
     }
 
@@ -131,7 +138,7 @@ final class AIChatOmnibarController {
     func cleanup() {
         currentText = ""
         hasBeenActivated = false
-        suggestionsViewModel.reset()
+        suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
         currentFetchTask = nil
         suggestionsReader?.tearDown()

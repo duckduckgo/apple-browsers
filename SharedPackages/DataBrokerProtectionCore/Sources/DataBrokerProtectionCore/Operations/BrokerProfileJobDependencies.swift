@@ -38,7 +38,7 @@ public protocol BrokerProfileJobDependencyProviding {
     var jobSortPredicate: BrokerJobDataComparators.Predicate { get }
     var featureFlagger: DBPFeatureFlagging { get }
     var wideEvent: WideEventManaging? { get }
-    
+
     func isAuthenticatedUser() async -> Bool
 
     func createScanRunner(profileQuery: BrokerProfileQueryData,

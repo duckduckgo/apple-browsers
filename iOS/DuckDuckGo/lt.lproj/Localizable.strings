@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Puslapio turinys";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "„Duck.ai“ dabar gali padėti atsakyti į klausimus apie peržiūrimą puslapį.\n\nPuslapio turinys įtraukiamas tik jį pridėjus. Tai gali bet kada pakeisti nustatymuose.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Supratau";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Paklausti apie šį puslapį";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Peržiūrėti nustatymus";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "„DuckDuckGo“ DI funkcijos yra privačios ir neprivalomos. Tavo duomenys nenaudojami dirbtinio intelekto mokymui.";
 
@@ -4228,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Skirtukai";
+"settings.tab.switcher.show.tracker.count" = "Sekimo priemonių skaičius per 7 dienas";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "per pastarąsias 7 dienas";
+"tab.switcher.tracker.count.hide.title" = "Slėpti sekimo priemonių skaičių?";
+"tab.switcher.tracker.count.hide.message" = "Tai galite vėl įjungti skiltyje Nustatymai > Išvaizda.";
+"tab.switcher.tracker.count.hide.action" = "Slėpti";
+"tab.switcher.tracker.count.keep.action" = "Palikti";
+"tab.switcher.tracker.count.info.a11y" = "Sekimo priemonių skaičiaus parinktys";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dukart bakstelėkite, kad būtų rodomos šio reklaminio skydelio slėpimo parinktys";

@@ -16,11 +16,18 @@
 //  limitations under the License.
 //
 
-import Foundation
 import DDGSync
+import Foundation
+import Persistence
 import PixelKit
 
 struct SyncDiagnosisHelper {
+
+    struct Settings: StoringKeys {
+        let syncManuallyDisabled = StorageKey<Bool>(.syncManuallyDisabled, assertionHandler: { _ in })
+        let syncWasDisabledUnexpectedlyPixelFired = StorageKey<Bool>(.syncWasDisabledUnexpectedlyPixelFired, assertionHandler: { _ in })
+    }
+
     private enum Const {
         static let authStatePixelParamKey = "authState"
     }
@@ -28,44 +35,35 @@ struct SyncDiagnosisHelper {
     private let userDefaults = UserDefaults.standard
     private let syncService: DDGSyncing
 
-    @UserDefaultsWrapper(key: .syncManuallyDisabledKey)
-    private var syncManuallyDisabled: Bool?
+    private let settings: any KeyedStoring<SyncDiagnosisHelper.Settings>
 
-    @UserDefaultsWrapper(key: .syncWasDisabledUnexpectedlyPixelFiredKey, defaultValue: false)
-    private var syncWasDisabledUnexpectedlyPixelFired: Bool
-
-    init(syncService: DDGSyncing) {
+    init(syncService: DDGSyncing, settings: (any KeyedStoring<SyncDiagnosisHelper.Settings>)? = nil) {
         self.syncService = syncService
+        self.settings = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
     }
 
-// Non-user-initiated deactivation
-// For events to help understand the impact of https://app.asana.com/0/1201493110486074/1208538487332133/f
-
+    // Non-user-initiated deactivation
+    // For events to help understand the impact of https://app.asana.com/0/1201493110486074/1208538487332133/f
     func didManuallyDisableSync() {
-        syncManuallyDisabled = true
+        settings.syncManuallyDisabled = true
     }
 
     func diagnoseAccountStatus() {
         if syncService.account == nil {
             // Nil value means sync was never on in the first place. So don't fire in this case.
-            if syncManuallyDisabled == false,
-               !syncWasDisabledUnexpectedlyPixelFired {
+            if settings.syncManuallyDisabled == false,
+               !(settings.syncWasDisabledUnexpectedlyPixelFired ?? false) {
                 PixelKit.fire(
                     DebugEvent(GeneralPixel.syncDebugWasDisabledUnexpectedly),
                     frequency: .dailyAndCount,
                     withAdditionalParameters: [Const.authStatePixelParamKey: syncService.authState.rawValue]
                 )
-                syncWasDisabledUnexpectedlyPixelFired = true
+                settings.syncWasDisabledUnexpectedlyPixelFired = true
             }
         } else {
-            syncManuallyDisabled = false
-            syncWasDisabledUnexpectedlyPixelFired = false
+            settings.syncManuallyDisabled = false
+            settings.syncWasDisabledUnexpectedlyPixelFired = false
         }
     }
 
-}
-
-extension UserDefaultsWrapper.DefaultsKey {
-    static let syncManuallyDisabledKey = Self(rawValue: "com.duckduckgo.app.key.debug.SyncManuallyDisabled")
-    static let syncWasDisabledUnexpectedlyPixelFiredKey = Self(rawValue: "com.duckduckgo.app.key.debug.SyncWasDisabledUnexpectedlyPixelFired")
 }

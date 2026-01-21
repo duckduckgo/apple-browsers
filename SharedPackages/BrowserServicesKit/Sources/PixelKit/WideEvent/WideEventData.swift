@@ -147,6 +147,16 @@ extension WideEventGlobalData: WideEventParameterProviding {
 
         return parameters
     }
+
+    public func jsonParameters() -> [String: Encodable] {
+        var parameters: [String: Encodable] = [:]
+
+        parameters[WideEventParameter.Global.platform] = platform
+        parameters[WideEventParameter.Global.type] = type
+        parameters[WideEventParameter.Global.sampleRate] = sampleRate
+
+        return parameters
+    }
 }
 
 // MARK: - WideEventAppData

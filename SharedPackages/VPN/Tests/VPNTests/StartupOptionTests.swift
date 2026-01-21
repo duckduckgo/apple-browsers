@@ -100,7 +100,8 @@ final class StartupOptionsTests: XCTestCase {
             selectedServer: .automatic,
             selectedLocation: .nearest,
             dnsSettings: .ddg(blockRiskyDomains: true),
-            excludeLocalNetworks: false
+            excludeLocalNetworks: false,
+            wideEventPostEndpointEnabled: true
         )
 
         // Encode it
@@ -127,6 +128,7 @@ final class StartupOptionsTests: XCTestCase {
         XCTAssertEqual(parsedSnapshot.selectedServer, .automatic)
         XCTAssertEqual(parsedSnapshot.selectedLocation, .nearest)
         XCTAssertEqual(parsedSnapshot.excludeLocalNetworks, false)
+        XCTAssertEqual(parsedSnapshot.wideEventPostEndpointEnabled, true)
     }
 
     func testVPNSettingsSnapshotCanBeCapturedFromVPNSettings() {
@@ -136,6 +138,7 @@ final class StartupOptionsTests: XCTestCase {
         vpnSettings.selectedLocation = .nearest
         vpnSettings.registrationKeyValidity = .custom(3600)
         vpnSettings.excludeLocalNetworks = true
+        vpnSettings.wideEventPostEndpointEnabled = true
 
         let snapshot = VPNSettingsSnapshot(from: vpnSettings)
 
@@ -144,6 +147,7 @@ final class StartupOptionsTests: XCTestCase {
         XCTAssertEqual(snapshot.selectedLocation, .nearest)
         XCTAssertEqual(snapshot.registrationKeyValidity, .custom(3600))
         XCTAssertEqual(snapshot.excludeLocalNetworks, true)
+        XCTAssertEqual(snapshot.wideEventPostEndpointEnabled, true)
     }
 
     func testVPNSettingsSnapshotCanApplyToVPNSettings() {
@@ -155,7 +159,8 @@ final class StartupOptionsTests: XCTestCase {
             selectedServer: .endpoint("apply-server"),
             selectedLocation: .nearest,
             dnsSettings: .ddg(blockRiskyDomains: false),
-            excludeLocalNetworks: true
+            excludeLocalNetworks: true,
+            wideEventPostEndpointEnabled: true
         )
 
         snapshot.applyTo(vpnSettings)
@@ -165,6 +170,7 @@ final class StartupOptionsTests: XCTestCase {
         XCTAssertEqual(vpnSettings.selectedServer, .endpoint("apply-server"))
         XCTAssertEqual(vpnSettings.selectedLocation, .nearest)
         XCTAssertEqual(vpnSettings.excludeLocalNetworks, true)
+        XCTAssertEqual(vpnSettings.wideEventPostEndpointEnabled, true)
     }
 
     func testCorruptedVPNSettingsResultInResetOption() {

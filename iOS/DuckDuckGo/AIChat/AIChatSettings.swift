@@ -136,6 +136,18 @@ final class AIChatSettings: AIChatSettingsProvider {
         keyValueStore.bool(.isAIChatAutomaticContextAttachmentEnabledKey, defaultValue: .isAIChatAutomaticContextAttachmentDefaultValue)
     }
 
+    var hasSeenContextualOnboarding: Bool {
+        keyValueStore.bool(.hasSeenContextualOnboardingKey, defaultValue: .hasSeenContextualOnboardingDefaultValue)
+    }
+
+    func markContextualOnboardingSeen() {
+        keyValueStore.set(true, forKey: .hasSeenContextualOnboardingKey)
+    }
+
+    func resetContextualOnboarding() {
+        keyValueStore.set(false, forKey: .hasSeenContextualOnboardingKey)
+    }
+
     func enableAIChat(enable: Bool) {
         keyValueStore.set(enable, forKey: .isAIChatEnabledKey)
         triggerSettingsChangedNotification()
@@ -251,6 +263,7 @@ private extension String {
     static let showAIChatTabSwitcherKey = "aichat.settings.showAIChatTabSwitcher"
     static let showAIChatExperimentalSearchInputKey = "aichat.settings.showAIChatExperimentalSearchInput"
     static let isAIChatAutomaticContextAttachmentEnabledKey = "aichat.settings.isAIChatAutomaticContextAttachmentEnabled"
+    static let hasSeenContextualOnboardingKey = "aichat.settings.hasSeenContextualOnboarding"
 }
 
 enum LegacyAiChatUserDefaultsKeys {
@@ -275,6 +288,7 @@ private extension Bool {
     static let showAIChatTabSwitcherDefaultValue = true
     static let showAIChatExperimentalSearchInputDefaultValue = false
     static let isAIChatAutomaticContextAttachmentDefaultValue = true
+    static let hasSeenContextualOnboardingDefaultValue = false
 
 }
 

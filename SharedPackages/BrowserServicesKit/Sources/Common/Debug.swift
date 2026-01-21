@@ -34,7 +34,9 @@ public func breakByRaisingSigInt(_ description: String, file: StaticString = #fi
     ------------------------------------------------------------------------------------------------------
 
     """)
+#if DEBUG
     raise(SIGINT)
+#endif
 }
 
 #if DEBUG

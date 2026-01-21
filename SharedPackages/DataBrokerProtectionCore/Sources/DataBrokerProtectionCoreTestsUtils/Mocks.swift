@@ -1481,7 +1481,7 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         fireOptOutFillFormCalled = true
     }
 
-    public func fireOptOutFailure(tries: Int) {
+    public func fireOptOutFailure(tries: Int, error: Error) {
         fireOptOutFailureCalled = true
     }
 

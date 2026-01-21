@@ -816,5 +816,25 @@ Zablokowałem ich!
 			<string>%1$d witryny wyłączonej z czyszczenia</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ śledzący</string>
+			<key>few</key>
+			<string>%2$@ śledzące</string>
+			<key>many</key>
+			<string>%2$@ śledzące</string>
+			<key>other</key>
+			<string>%2$@ śledzące</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

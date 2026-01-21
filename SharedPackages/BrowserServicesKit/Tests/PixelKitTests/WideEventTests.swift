@@ -20,6 +20,57 @@ import XCTest
 @testable import PixelKit
 import Foundation
 
+// MARK: - Mock Wide Event Sending
+
+final class MockWideEventSending: WideEventSending {
+    struct CapturedCall {
+        let pixelName: String
+        let status: WideEventStatus
+        let postEndpointEnabled: Bool
+        let contextName: String?
+        let testIdentifier: String?
+    }
+
+    var capturedCalls: [CapturedCall] = []
+    var completionResult: (Bool, Error?) = (true, nil)
+
+    func send<T: WideEventData>(
+        _ data: T,
+        status: WideEventStatus,
+        featureFlagProvider: WideEventFeatureFlagProviding,
+        onComplete: @escaping PixelKit.CompletionBlock
+    ) {
+        let mockData = data as? MockWideEventData
+        let postEndpointEnabled = featureFlagProvider.isEnabled(.postEndpoint)
+        let call = CapturedCall(
+            pixelName: T.pixelName,
+            status: status,
+            postEndpointEnabled: postEndpointEnabled,
+            contextName: data.contextData.name,
+            testIdentifier: mockData?.testIdentifier
+        )
+        capturedCalls.append(call)
+        DispatchQueue.main.async {
+            onComplete(self.completionResult.0, self.completionResult.1)
+        }
+    }
+}
+
+final class MockWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    var isPostEndpointEnabled: Bool
+
+    init(isPostEndpointEnabled: Bool) {
+        self.isPostEndpointEnabled = isPostEndpointEnabled
+    }
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return isPostEndpointEnabled
+        }
+    }
+}
+
 // MARK: - Mock Wide Event Data
 
 final class MockWideEventData: WideEventData {
@@ -90,7 +141,8 @@ final class WideEventTests: XCTestCase {
 
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
-        wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults))
+        wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
+                              featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true))
         capturedPixels.removeAll()
         setupMockPixelKit()
     }
@@ -385,27 +437,6 @@ final class WideEventTests: XCTestCase {
         XCTAssertNil(parameters["feature.status"])
     }
 
-    func testJsonParameterNesting() throws {
-        struct TestProvider: WideEventParameterProviding {
-            func pixelParameters() -> [String: String] {
-                return [
-                    "app.name": "DuckDuckGo",
-                    "feature.status": "SUCCESS"
-                ]
-            }
-        }
-
-        let jsonString = try TestProvider().jsonParameters()
-        let data = try XCTUnwrap(jsonString.data(using: .utf8))
-        let object = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-
-        let app = object?["app"] as? [String: Any]
-        let feature = object?["feature"] as? [String: Any]
-
-        XCTAssertEqual(app?["name"] as? String, "DuckDuckGo")
-        XCTAssertEqual(feature?["status"] as? String, "SUCCESS")
-    }
-
     func testErrorDataCapturesUnderlyingErrors() {
         let deepError = NSError(domain: "DeepDomain", code: 3)
 
@@ -558,5 +589,396 @@ final class WideEventTests: XCTestCase {
 
     enum TestError: Error {
         case flowNotFound
+    }
+}
+
+// MARK: - WideEventSending Tests
+
+final class WideEventSendingTests: XCTestCase {
+
+    var mockSender: MockWideEventSending!
+    var wideEvent: WideEvent!
+    var testDefaults: UserDefaults!
+    private var featureFlagProvider: MockWideEventFeatureFlagProvider!
+    private var testSuiteName: String!
+
+    override func setUp() {
+        super.setUp()
+
+        testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
+        testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
+        mockSender = MockWideEventSending()
+        featureFlagProvider = MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
+        wideEvent = WideEvent(
+            storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
+            sender: mockSender,
+            featureFlagProvider: featureFlagProvider
+        )
+    }
+
+    override func tearDown() {
+        testDefaults?.removePersistentDomain(forName: testSuiteName)
+        super.tearDown()
+    }
+
+    func testWideEventPassesSendPOSTEnabledToSender() throws {
+        let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
+        wideEvent.startFlow(data)
+
+        let expectation = XCTestExpectation(description: "Flow completed")
+        wideEvent.completeFlow(data, status: .success) { _, _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(mockSender.capturedCalls.count, 1)
+        XCTAssertTrue(mockSender.capturedCalls[0].postEndpointEnabled)
+    }
+
+    func testWideEventPassesSendPOSTDisabledToSender() throws {
+        let disabledWideEvent = WideEvent(
+            storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
+            sender: mockSender,
+            featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: false)
+        )
+
+        let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
+        disabledWideEvent.startFlow(data)
+
+        let expectation = XCTestExpectation(description: "Flow completed")
+        disabledWideEvent.completeFlow(data, status: .success) { _, _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(mockSender.capturedCalls.count, 1)
+        XCTAssertFalse(mockSender.capturedCalls[0].postEndpointEnabled)
+    }
+
+    func testSendPOSTEnabledClosureIsEvaluatedAtSendTime() throws {
+        let dynamicFeatureFlagProvider = MockWideEventFeatureFlagProvider(isPostEndpointEnabled: false)
+
+        let dynamicWideEvent = WideEvent(
+            storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
+            sender: mockSender,
+            featureFlagProvider: dynamicFeatureFlagProvider
+        )
+
+        let data1 = MockWideEventData(contextData: WideEventContextData(name: "test1"))
+        dynamicWideEvent.startFlow(data1)
+
+        let expectation1 = XCTestExpectation(description: "First flow completed")
+        dynamicWideEvent.completeFlow(data1, status: .success) { _, _ in
+            expectation1.fulfill()
+        }
+        wait(for: [expectation1], timeout: 1.0)
+
+        XCTAssertEqual(mockSender.capturedCalls.count, 1)
+        XCTAssertFalse(mockSender.capturedCalls[0].postEndpointEnabled)
+
+        dynamicFeatureFlagProvider.isPostEndpointEnabled = true
+
+        let data2 = MockWideEventData(contextData: WideEventContextData(name: "test2"))
+        dynamicWideEvent.startFlow(data2)
+
+        let expectation2 = XCTestExpectation(description: "Second flow completed")
+        dynamicWideEvent.completeFlow(data2, status: .success) { _, _ in
+            expectation2.fulfill()
+        }
+        wait(for: [expectation2], timeout: 1.0)
+
+        XCTAssertEqual(mockSender.capturedCalls.count, 2)
+        XCTAssertTrue(mockSender.capturedCalls[1].postEndpointEnabled)
+    }
+
+    func testWideEventPassesCorrectPixelNameToSender() throws {
+        let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
+        wideEvent.startFlow(data)
+
+        let expectation = XCTestExpectation(description: "Flow completed")
+        wideEvent.completeFlow(data, status: .success) { _, _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(mockSender.capturedCalls.count, 1)
+        XCTAssertEqual(mockSender.capturedCalls[0].pixelName, MockWideEventData.pixelName)
+    }
+
+    func testWideEventPassesDataToSender() throws {
+        let data = MockWideEventData(
+            testIdentifier: "test-id",
+            testEligible: true,
+            contextData: WideEventContextData(name: "test-context")
+        )
+        wideEvent.startFlow(data)
+
+        let expectation = XCTestExpectation(description: "Flow completed")
+        wideEvent.completeFlow(data, status: .success) { _, _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(mockSender.capturedCalls.count, 1)
+        let capturedCall = mockSender.capturedCalls[0]
+        XCTAssertEqual(capturedCall.contextName, "test-context")
+        XCTAssertEqual(capturedCall.testIdentifier, "test-id")
+        XCTAssertEqual(capturedCall.status, .success)
+    }
+
+    func testSenderCompletionHandlerIsCalled() throws {
+        mockSender.completionResult = (true, nil)
+
+        let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
+        wideEvent.startFlow(data)
+
+        let expectation = XCTestExpectation(description: "Completion called")
+        var receivedSuccess = false
+        var receivedError: Error?
+
+        wideEvent.completeFlow(data, status: .success) { success, error in
+            receivedSuccess = success
+            receivedError = error
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertTrue(receivedSuccess)
+        XCTAssertNil(receivedError)
+    }
+
+    func testSenderFailureIsPropagated() throws {
+        let testError = NSError(domain: "TestDomain", code: 123)
+        mockSender.completionResult = (false, testError)
+
+        let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
+        wideEvent.startFlow(data)
+
+        let expectation = XCTestExpectation(description: "Completion called")
+        var receivedSuccess = true
+        var receivedError: Error?
+
+        wideEvent.completeFlow(data, status: .success) { success, error in
+            receivedSuccess = success
+            receivedError = error
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertFalse(receivedSuccess)
+        XCTAssertNotNil(receivedError)
+    }
+}
+
+// MARK: - DefaultWideEventSending Tests
+
+final class DefaultWideEventSendingTests: XCTestCase {
+
+    var capturedPixels: [(name: String, parameters: [String: String])] = []
+    var capturedPOSTRequests: [(url: URL, body: Data, headers: [String: String])] = []
+    var testDefaults: UserDefaults!
+    private var testSuiteName: String!
+
+    override func setUp() {
+        super.setUp()
+
+        testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
+        testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
+        capturedPixels.removeAll()
+        capturedPOSTRequests.removeAll()
+        setupMockPixelKit()
+    }
+
+    override func tearDown() {
+        testDefaults?.removePersistentDomain(forName: testSuiteName)
+        PixelKit.tearDown()
+        super.tearDown()
+    }
+
+    private func setupMockPixelKit() {
+        let mockFireRequest: PixelKit.FireRequest = { pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete in
+            self.capturedPixels.append((name: pixelName, parameters: parameters))
+            DispatchQueue.main.async {
+                onComplete(true, nil)
+            }
+        }
+
+        PixelKit.setUp(
+            dryRun: false,
+            appVersion: "1.0.0-test",
+            source: "test",
+            defaultHeaders: [:],
+            dateGenerator: Date.init,
+            defaults: testDefaults,
+            fireRequest: mockFireRequest
+        )
+    }
+
+    func testSendFiresDailyAndStandardPixels() {
+        let sender = DefaultWideEventSender(
+            pixelKitProvider: { PixelKit.shared },
+            postRequestHandler: { _, _, _, onComplete in onComplete(true, nil) }
+        )
+
+        let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
+
+        let expectation = XCTestExpectation(description: "Pixels fired")
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(capturedPixels.count, 2)
+        #if os(macOS)
+        XCTAssertTrue(capturedPixels[0].name.hasPrefix("m_mac_wide_"))
+        XCTAssertTrue(capturedPixels[1].name.hasPrefix("m_mac_wide_"))
+        #elseif os(iOS)
+        XCTAssertTrue(capturedPixels[0].name.hasPrefix("m_ios_wide_"))
+        XCTAssertTrue(capturedPixels[1].name.hasPrefix("m_ios_wide_"))
+        #endif
+    }
+
+    func testSendFiresPOSTWhenEnabled() {
+        var postRequestFired = false
+
+        let sender = DefaultWideEventSender(
+            pixelKitProvider: { PixelKit.shared },
+            postRequestHandler: { url, body, headers, onComplete in
+                postRequestFired = true
+                self.capturedPOSTRequests.append((url: url, body: body, headers: headers))
+                onComplete(true, nil)
+            }
+        )
+
+        let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
+
+        let expectation = XCTestExpectation(description: "Request sent")
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertTrue(postRequestFired)
+        XCTAssertEqual(capturedPOSTRequests.count, 1)
+        XCTAssertEqual(capturedPOSTRequests[0].url.absoluteString, "https://improving.duckduckgo.com/e")
+        XCTAssertEqual(capturedPOSTRequests[0].headers["Content-Type"], "application/json")
+    }
+
+    func testSendSkipsPOSTWhenDisabled() {
+        var postRequestFired = false
+
+        let sender = DefaultWideEventSender(
+            pixelKitProvider: { PixelKit.shared },
+            postRequestHandler: { _, _, _, onComplete in
+                postRequestFired = true
+                onComplete(true, nil)
+            }
+        )
+
+        let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
+
+        let expectation = XCTestExpectation(description: "Request sent")
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertFalse(postRequestFired)
+    }
+
+    func testPOSTBodyContainsNestedJSON() {
+        let sender = DefaultWideEventSender(
+            pixelKitProvider: { PixelKit.shared },
+            postRequestHandler: { url, body, headers, onComplete in
+                self.capturedPOSTRequests.append((url: url, body: body, headers: headers))
+                onComplete(true, nil)
+            }
+        )
+
+        let data = MockWideEventData(
+            testIdentifier: "test_value",
+            contextData: WideEventContextData(name: "test"),
+            globalData: WideEventGlobalData(platform: "iOS", sampleRate: 1.0)
+        )
+
+        let expectation = XCTestExpectation(description: "Request sent")
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(capturedPOSTRequests.count, 1)
+
+        let body = capturedPOSTRequests[0].body
+        let json = try? JSONSerialization.jsonObject(with: body, options: []) as? [String: Any]
+
+        XCTAssertNotNil(json)
+
+        let global = json?["global"] as? [String: Any]
+        XCTAssertEqual(global?["platform"] as? String, "iOS")
+        XCTAssertEqual(global?["type"] as? String, "app")
+
+        let feature = json?["feature"] as? [String: Any]
+        XCTAssertEqual(feature?["status"] as? String, "SUCCESS")
+
+        let featureData = feature?["data"] as? [String: Any]
+        let ext = featureData?["ext"] as? [String: Any]
+        XCTAssertEqual(ext?["test_identifier"] as? String, "test_value")
+    }
+
+    func testSendReturnsErrorWhenPixelKitNotInitialized() {
+        PixelKit.tearDown()
+
+        let sender = DefaultWideEventSender(
+            pixelKitProvider: { nil },
+            postRequestHandler: { _, _, _, onComplete in onComplete(true, nil) }
+        )
+
+        let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
+
+        let expectation = XCTestExpectation(description: "Completion called")
+        var receivedSuccess = true
+        var receivedError: Error?
+
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)) { success, error in
+            receivedSuccess = success
+            receivedError = error
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertFalse(receivedSuccess)
+        XCTAssertNotNil(receivedError)
+    }
+
+    func testSendGeneratesCorrectParameters() {
+        let sender = DefaultWideEventSender(
+            pixelKitProvider: { PixelKit.shared },
+            postRequestHandler: { _, _, _, onComplete in onComplete(true, nil) }
+        )
+
+        let data = MockWideEventData(
+            testIdentifier: "test-id",
+            testEligible: true,
+            contextData: WideEventContextData(name: "test-context"),
+            globalData: WideEventGlobalData(platform: "macOS", sampleRate: 1.0)
+        )
+
+        let expectation = XCTestExpectation(description: "Pixels fired")
+        sender.send(data, status: .success(reason: "test_reason"), featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(capturedPixels.count, 2)
+        let parameters = capturedPixels[0].parameters
+
+        XCTAssertEqual(parameters["global.platform"], "macOS")
+        XCTAssertEqual(parameters["global.type"], "app")
+        XCTAssertEqual(parameters["context.name"], "test-context")
+        XCTAssertEqual(parameters["feature.data.ext.test_identifier"], "test-id")
+        XCTAssertEqual(parameters["feature.data.ext.test_eligible"], "true")
+        XCTAssertEqual(parameters["feature.status"], "SUCCESS")
+        XCTAssertEqual(parameters["feature.status_reason"], "test_reason")
     }
 }

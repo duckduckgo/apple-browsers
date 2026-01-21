@@ -494,7 +494,7 @@ private struct PasswordManagementAddButton: View {
                     Text("")
                 }
                 .modifier(HideMenuIndicatorModifier())
-                .modifier(FlexibleButtonSizingModifier())
+//                .modifier(FlexibleButtonSizingModifier()) // Xcode 26: When we transition to Xcode 26, we will need this modifier to fix the layout in macOS 26.
             }
             .padding(.vertical, -4)
         case .logins:
@@ -547,19 +547,16 @@ private struct HideMenuIndicatorModifier: ViewModifier {
 
 }
 
-private struct FlexibleButtonSizingModifier: ViewModifier {
-
-    func body(content: Content) -> some View {
-#if compiler(>=6.2) // Only compile in Xcode 26+ so that `buttonSizing` doesn't break compilation on older versions
-        if #available(macOS 26, *) {
-            content
-                .buttonSizing(.flexible)
-        } else {
-            content
-        }
-#else
-        content
-#endif
-    }
-
-}
+// Xcode 26: When we transition to Xcode 26, we will need this modifier to fix the layout in macOS 26.
+// private struct FlexibleButtonSizingModifier: ViewModifier {
+//
+//    func body(content: Content) -> some View {
+//        if #available(macOS 26, *) {
+//            content
+//                .buttonSizing(.flexible)
+//        } else {
+//            content
+//        }
+//    }
+//
+// }

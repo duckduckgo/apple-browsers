@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Съдържание на страницата";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai вече може да отговори на въпросите ти относно страницата, която разглеждаш.\n\nСъдържанието на страницата се включва само когато го прикачиш. Можеш да промениш това по всяко време в настройките.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Разбрах";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Попитай за тази страница";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Прегледай настройките";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Функциите на DuckDuckGo AI са поверителни и незадължителни. Вашите данни не се използват за обучение на изкуствен интелект.";
 
@@ -4228,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Какво искате да импортирате?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Раздели";
+"settings.tab.switcher.show.tracker.count" = "Брой тракери за 7 дни";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "през последните 7 дни";
+"tab.switcher.tracker.count.hide.title" = "Да се скрие броят на тракерите?";
+"tab.switcher.tracker.count.hide.message" = "Можете да включите това отново в Настройки > Външен вид.";
+"tab.switcher.tracker.count.hide.action" = "Скрий";
+"tab.switcher.tracker.count.keep.action" = "Запази";
+"tab.switcher.tracker.count.info.a11y" = "Опции за броя на тракерите";
+"tab.switcher.tracker.count.info.hint.a11y" = "Докоснете два пъти, за да покажете опциите за скриване на този банер";

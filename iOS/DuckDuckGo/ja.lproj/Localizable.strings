@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "ページコンテンツ";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.aiは、現在表示しているページに関する質問に回答できるようになりました。\n\nページの内容は、添付した場合にのみ含まれます。この設定は、「設定」でいつでも変更できます。";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "了解";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "このページについて質問する";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "設定を表示";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGoのAI機能はプライベートでオプションです。データはAIのトレーニングに使用されません。";
 
@@ -4228,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "タブ";
+"settings.tab.switcher.show.tracker.count" = "過去7日間のトラッカー数";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "過去7日間";
+"tab.switcher.tracker.count.hide.title" = "トラッカー数を非表示にしますか？";
+"tab.switcher.tracker.count.hide.message" = "設定 > 外観 で再び有効にできます。";
+"tab.switcher.tracker.count.hide.action" = "非表示";
+"tab.switcher.tracker.count.keep.action" = "保持";
+"tab.switcher.tracker.count.info.a11y" = "トラッカー数のオプション";
+"tab.switcher.tracker.count.info.hint.a11y" = "ダブルタップしてこのバナーを非表示にするオプションを表示します";

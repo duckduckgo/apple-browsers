@@ -174,6 +174,7 @@ extension TabViewController {
             daxDialogsManager: DummyDaxDialogsManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+            privacyStats: MockPrivacyStats(),
             voiceSearchHelper: MockVoiceSearchHelper()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
@@ -219,6 +220,29 @@ class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     
     func advancedInfoPresented() {}
 
+}
+
+final class MockPrivacyStats: PrivacyStatsProviding {
+    var total: Int64 = 0
+    var recordCalls: [String] = []
+    var clearCallCount = 0
+    var handleAppTerminationCallCount = 0
+
+    func recordBlockedTracker(_ name: String) async {
+        recordCalls.append(name)
+    }
+
+    func fetchPrivacyStatsTotalCount() async -> Int64 {
+        return total
+    }
+
+    func clearPrivacyStats() async {
+        clearCallCount += 1
+    }
+
+    func handleAppTermination() async {
+        handleAppTerminationCallCount += 1
+    }
 }
 
 // swiftlint:enable force_try

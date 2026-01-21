@@ -70,6 +70,7 @@ class TabManager: TabManaging {
     private let aiChatSettings: AIChatSettingsProvider
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let sharedSecureVault: (any AutofillSecureVault)?
+    private let privacyStats: PrivacyStatsProviding
     private let voiceSearchHelper: VoiceSearchHelperProtocol
 
     weak var delegate: TabDelegate?
@@ -107,6 +108,7 @@ class TabManager: TabManaging {
          aiChatSettings: AIChatSettingsProvider,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
+         privacyStats: PrivacyStatsProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol
     ) {
         self.model = model
@@ -137,6 +139,7 @@ class TabManager: TabManaging {
         self.aiChatSettings = aiChatSettings
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.sharedSecureVault = sharedSecureVault
+        self.privacyStats = privacyStats
         self.voiceSearchHelper = voiceSearchHelper
         registerForNotifications()
     }
@@ -184,6 +187,7 @@ class TabManager: TabManaging {
                                                               aiChatSettings: aiChatSettings,
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
+                                                              privacyStats: privacyStats,
                                                               voiceSearchHelper: voiceSearchHelper)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
@@ -285,6 +289,7 @@ class TabManager: TabManaging {
                                                               aiChatSettings: aiChatSettings,
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
+                                                              privacyStats: privacyStats,
                                                               voiceSearchHelper: voiceSearchHelper)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,

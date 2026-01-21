@@ -88,6 +88,14 @@ struct SettingsAppearanceView: View {
                 Text(UserText.addressBar)
             }
 
+            if viewModel.isTabSwitcherTrackerCountEnabled {
+                Section {
+                    showTrackerCountSetting()
+                } header: {
+                    Text(UserText.settingsTabsSection)
+                }
+            }
+
             // Customizable buttons specific settings.
             if viewModel.mobileCustomization.isEnabled {
                 Section {
@@ -177,6 +185,12 @@ struct SettingsAppearanceView: View {
     func showFullSiteAddressSetting() -> some View {
         SettingsCellView(label: UserText.settingsFullURL,
                          accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
+    }
+
+    @ViewBuilder
+    func showTrackerCountSetting() -> some View {
+        SettingsCellView(label: UserText.tabSwitcherShowTrackerCount,
+                         accessory: .toggle(isOn: viewModel.showTrackerCountInTabSwitcherBinding))
     }
 
     @ViewBuilder

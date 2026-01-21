@@ -240,10 +240,13 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
             supportedFeatures.passwordGeneration = false
         }
 
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
+
         return ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
                                       sessionKey: autofillScript?.sessionKey ?? "",
                                       messageSecret: autofillScript?.messageSecret ?? "",
-                                      featureToggles: supportedFeatures)
+                                      featureToggles: supportedFeatures,
+                                      themeVariant: themeVariant)
     }
 }
 

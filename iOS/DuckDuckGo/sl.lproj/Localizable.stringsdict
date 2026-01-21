@@ -816,5 +816,25 @@ Blokiral sem jih!
 			<string>%1$d lokacij, izključenih iz čiščenja</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Sledilnik</string>
+			<key>two</key>
+			<string>%2$@ Sledilnika</string>
+			<key>few</key>
+			<string>%2$@ Sledilniki</string>
+			<key>other</key>
+			<string>%2$@ Sledilnikov</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

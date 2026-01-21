@@ -22,8 +22,7 @@ import SwiftUI
 import BrowserServicesKit
 
 /// A text field that formats the input as a credit card number.
-/// The input is formatted with spaces every 4 digits.
-/// The text field also manages the
+/// The input is formatted with spaces every 4 digits (or 4-6-5 for Amex).
 struct FormattedCreditCardTextField: NSViewRepresentable {
 
     @Binding var text: String
@@ -47,26 +46,65 @@ struct FormattedCreditCardTextField: NSViewRepresentable {
 
         guard nsView.stringValue != text else { return }
 
-        let currentEditor = nsView.textView
-        let currentSelectedRange = currentEditor?.selectedRange() ?? NSRange(location: text.count, length: 0)
+        context.coordinator.isUpdatingText = true
         nsView.stringValue = text
-
-        // Restore cursor position if possible
-        if let currentEditor {
-            let newPosition = min(currentSelectedRange.location, text.count)
-            currentEditor.setSelectedRange(NSRange(location: newPosition, length: 0))
-        }
+        context.coordinator.isUpdatingText = false
     }
 
     final class Coordinator: NSObject, NSTextFieldDelegate {
 
         var parent: FormattedCreditCardTextField
-        private var isUpdatingText = false
+        var isUpdatingText = false
 
         init(_ parent: FormattedCreditCardTextField) {
             self.parent = parent
         }
 
+        func controlTextDidChange(_ obj: Notification) {
+            guard let textField = obj.object as? NSTextField, !isUpdatingText else {
+                return
+            }
+
+            let currentText = textField.stringValue
+            let currentSelectedRange = textField.textView?.selectedRange() ?? NSRange(location: currentText.count, length: 0)
+
+            // Extract digits only and limit to maximum length
+            var digitsOnly = CreditCardValidation.extractDigits(from: currentText)
+            if digitsOnly.count > CreditCardValidation.maximumCardNumberLength {
+                digitsOnly = String(digitsOnly.prefix(CreditCardValidation.maximumCardNumberLength))
+            }
+
+            // Format the card number
+            let formatted = CreditCardValidation.formattedCardNumber(digitsOnly)
+
+            isUpdatingText = true
+            parent.text = formatted
+            textField.stringValue = formatted
+            isUpdatingText = false
+
+            updateCursorPosition(textField, oldText: currentText, newText: formatted, currentSelection: currentSelectedRange)
+        }
+
+        private func updateCursorPosition(_ textField: NSTextField, oldText: String, newText: String, currentSelection: NSRange) {
+            guard let textView = textField.textView else {
+                return
+            }
+
+            let cursorPosition = currentSelection.location
+            
+            // Count spaces before cursor in old and new text
+            let oldTextPrefix = String(oldText.prefix(cursorPosition))
+            let oldSpacesBeforeCursor = oldTextPrefix.filter { $0 == " " }.count
+            
+            let newTextPrefix = String(newText.prefix(min(cursorPosition, newText.count)))
+            let newSpacesBeforeCursor = newTextPrefix.filter { $0 == " " }.count
+            
+            // Adjust cursor position by the difference in space counts
+            var newCursorPosition = cursorPosition + (newSpacesBeforeCursor - oldSpacesBeforeCursor)
+            newCursorPosition = min(newCursorPosition, newText.count)
+            
+            textView.setSelectedRange(NSRange(location: newCursorPosition, length: 0))
+        }
     }
 }
 

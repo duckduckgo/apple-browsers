@@ -21,9 +21,10 @@ import Foundation
 import BrowserServicesKit
 import DDGSync
 import Core
+import PrivacyConfig
 
 protocol DataImportSummaryViewModelDelegate: AnyObject {
-    func dataImportSummaryViewModelDidRequestLaunchSync(_ viewModel: DataImportSummaryViewModel)
+    func dataImportSummaryViewModelDidRequestLaunchSync(_ viewModel: DataImportSummaryViewModel, source: String?)
     func dataImportSummaryViewModelComplete(_ viewModel: DataImportSummaryViewModel)
 }
 
@@ -31,6 +32,7 @@ final class DataImportSummaryViewModel: ObservableObject {
 
     enum Footer: Equatable {
         case syncButton(title: String)
+        case syncPromo(title: String)
         case message(body: String)
     }
 
@@ -42,21 +44,35 @@ final class DataImportSummaryViewModel: ObservableObject {
 
     let importScreen: DataImportViewModel.ImportScreen
     private let syncService: DDGSyncing
-
+    private let featureFlagger: FeatureFlagger
+    private let syncPromoManager: SyncPromoManaging
 
     var footer: Footer? {
         if importScreen == .whatsNew {
             return .message(body: UserText.dataImportSummaryVisitSyncSettings)
         } else if !syncIsActive {
-            return .syncButton(title: syncButtonTitle)
+            if featureFlagger.isFeatureOn(.dataImportSummarySyncPromotion) {
+                guard syncPromoManager.shouldPresentPromoFor(.dataImport, count: successfulImportsCount) else {
+                    return nil
+                }
+                return .syncPromo(title: newSyncPromoTitle)
+            } else {
+                return .syncButton(title: syncButtonTitle)
+            }
         } else {
             return nil
         }
     }
 
-
     private var syncIsActive: Bool {
         syncService.authState != .inactive
+    }
+
+    private var successfulImportsCount: Int {
+        let passwordsSuccess = passwordsSummary?.successful ?? 0
+        let bookmarksSuccess = bookmarksSummary?.successful ?? 0
+        let creditCardsSuccess = creditCardsSummary?.successful ?? 0
+        return passwordsSuccess + bookmarksSuccess + creditCardsSuccess
     }
 
     private var syncButtonTitle: String {
@@ -71,13 +87,34 @@ final class DataImportSummaryViewModel: ObservableObject {
                           UserText.dataImportSummarySyncBookmarks)
         }
     }
+    
+    private var newSyncPromoTitle: String {
+        let nonNilCount = [passwordsSummary, bookmarksSummary, creditCardsSummary].compactMap { $0 }.count
+        if nonNilCount > 1 {
+            return UserText.syncPromoDataImportTitle
+        } else if passwordsSummary != nil {
+            return UserText.syncPromoPasswordsTitle
+        } else if bookmarksSummary != nil {
+            return UserText.syncPromoBookmarksTitle
+        } else if creditCardsSummary != nil {
+            return UserText.syncPromoCreditCardsTitle
+        }
+        
+        return ""
+    }
 
-    init(summary: DataImportSummary, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing) {
+    init(summary: DataImportSummary,
+         importScreen: DataImportViewModel.ImportScreen,
+         syncService: DDGSyncing,
+         syncPromoManager: SyncPromoManaging? = nil,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.passwordsSummary = try? summary[.passwords]?.get()
         self.bookmarksSummary = try? summary[.bookmarks]?.get()
         self.creditCardsSummary = try? summary[.creditCards]?.get()
         self.importScreen = importScreen
         self.syncService = syncService
+        self.syncPromoManager = syncPromoManager ?? SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
+        self.featureFlagger = featureFlagger
 
         fireSummaryPixels()
     }
@@ -97,7 +134,7 @@ final class DataImportSummaryViewModel: ObservableObject {
             return false
         }
 
-        if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.autofillCreditCards) {
+        if featureFlagger.isFeatureOn(.autofillCreditCards) {
             guard let creditCards = creditCardsSummary,
                   creditCards.failed == 0,
                   creditCards.duplicate == 0 else {
@@ -110,6 +147,10 @@ final class DataImportSummaryViewModel: ObservableObject {
 
     func fireSyncButtonShownPixel() {
         Pixel.fire(pixel: .importResultSyncButtonShown, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+    }
+
+    func fireSyncPromoDisplayedPixel() {
+        Pixel.fire(.syncPromoDisplayed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.dataImport.rawValue])
     }
     
     func fireSummaryPixels() {
@@ -137,9 +178,18 @@ final class DataImportSummaryViewModel: ObservableObject {
         delegate?.dataImportSummaryViewModelComplete(self)
     }
 
-    func launchSync() {
-        delegate?.dataImportSummaryViewModelDidRequestLaunchSync(self)
+    func dismissSyncPromo() {
+        syncPromoManager.dismissPromoFor(.dataImport)
+        dismiss()
+    }
+
+    func launchSync(source: String? = nil) {
+        delegate?.dataImportSummaryViewModelDidRequestLaunchSync(self, source: source)
         Pixel.fire(pixel: .importResultSyncButtonTapped, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+        
+        if featureFlagger.isFeatureOn(.dataImportSummarySyncPromotion) {
+            Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.dataImport.rawValue])
+        }
     }
 
 }

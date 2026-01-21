@@ -38,7 +38,7 @@ extension JWTError: DDGError {
             return 2
         case .malformedToken:
             return 3
-        case .signatureVerifictionFailed:
+        case .signatureVerifictionFailed: // note: Typo fixed in JWT-Kit v5
             return 4
         case .missingKIDHeader:
             return 5

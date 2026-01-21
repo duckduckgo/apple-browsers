@@ -22,6 +22,7 @@ import Foundation
 import DesignResourcesKit
 import Core
 import DataBrokerProtection_iOS
+import PrivacyConfig
 
 struct SubscriptionFlowView: View {
         
@@ -50,7 +51,9 @@ struct SubscriptionFlowView: View {
         case backend
         case general
     }
-    
+
+    let featureFlagger: FeatureFlagger
+
     var body: some View {
         
         // Hidden Navigation Links for Onboarding sections
@@ -58,9 +61,9 @@ struct SubscriptionFlowView: View {
                        isActive: $isShowingNetP,
                        label: { EmptyView() })
         
-        NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+        NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                                                      userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)).navigationViewStyle(.stack)),
+                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser, featureFlagger: featureFlagger)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
         if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
@@ -160,7 +163,7 @@ struct SubscriptionFlowView: View {
                     case .hasActiveSubscription:
                         errorMessage = .activeSubscription
                         return true
-                    case .failedToRestorePastPurchase, .purchaseFailed:
+                    case .failedToRestorePastPurchase, .purchaseFailed, .purchasePendingTransaction:
                         errorMessage = .appStore
                         return true
                     case .failedToGetSubscriptionOptions, .generalError:

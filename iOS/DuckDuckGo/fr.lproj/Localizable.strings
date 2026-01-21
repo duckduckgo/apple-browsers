@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "compte";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Fermer tous les onglets";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Cohorte : %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Configuration";
@@ -1408,6 +1417,27 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Les récents changements apportés à YouTube ont affecté la fonctionnalité de Duck Player. Nous nous efforçons de résoudre ces problèmes et vous remercions de votre compréhension.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Joindre le contenu de la page";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Envoyé avec votre message à Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Contenu de la page";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai peut désormais vous aider à répondre aux questions concernant la page que vous consultez.\n\nLe contenu de la page n'est inclus que lorsque vous le joignez. Vous pouvez modifier cela à tout moment dans Réglages.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "J'ai compris";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Posez des questions sur cette page";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Afficher les paramètres";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Les fonctionnalités de DuckDuckGo AI sont privées et facultatives. Vos données ne servent pas à entraîner l'IA.";
 
@@ -1670,7 +1700,7 @@
 "empty.search" = "Aucune correspondance trouvée";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Inscriptions : %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1728,9 +1758,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Favoris sur mobile uniquement";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Fonctionnalité : %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Bloquer les publicités et les fenêtres contextuelles";
@@ -2206,6 +2233,9 @@
 /* No comment provided by engineer. */
 "Messages" = "Messages";
 
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Bouton de la barre d'adresse";
 
@@ -2492,6 +2522,9 @@
 "No existing subscription found" = "Pas d'abonnement trouvé";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Pas de journaux";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2535,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Pas d'abonnement disponible";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2891,6 +2927,9 @@
 "Results" = "Résultats";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Rechercher ou saisir une adresse";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2935,9 +2974,6 @@
 /* about tagline */
 "settings.about.tagline" = "Protection. Confidentialité. Tranquillité d'esprit.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGo est l'entreprise indépendante de protection en ligne pour tous ceux qui veulent reprendre le contrôle de leurs informations personnelles.\n\nNous croyons que la meilleure façon de protéger vos informations personnelles contre les pirates, les escrocs et les entreprises qui portent atteinte à la vie privée est d'empêcher purement et simplement leur collecte. C'est pour cette raison que des millions de personnes [choisissent DuckDuckGo plutôt que Chrome ou d'autres navigateurs](ddgQuickLink://duckduckgo.com/compare-privacy) pour effectuer leurs recherches et naviguer en ligne. Notre moteur de recherche intégré est similaire à Google, sauf qu'il ne suit jamais vos recherches. Et nos protections de navigation, telles que le blocage des traqueurs publicitaires et le blocage des cookies, permettent d'empêcher que d'autres entreprises ne recueillent vos données. Et surtout, notre navigateur est gratuit : nous gagnons de l'argent grâce aux [publicités de recherche respectueuses de la confidentialité](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), et non grâce à l'exploitation de vos données. \n\n%@ \n\nReprenez le contrôle de vos informations personnelles avec le navigateur conçu pour la protection des données, pas pour leur collecte.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Accessibilité";
 
@@ -2955,6 +2991,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Afficher l'adresse complète du site";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Afficher l'animation des traqueurs bloqués";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Recherche et Duck.ai";
@@ -3024,6 +3063,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Effacer";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Effacer les onglets et données";
 
@@ -3036,17 +3076,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Onglets";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Quitter l'application, inactivité pendant 15 minutes";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Quitter l'application, inactivité pendant 1 heure";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Quitter l'application, inactivité pendant 30 minutes";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Quitter l'application, inactivité pendant 5 minutes";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Quitter l'application, inactivité pendant 15 minutes";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Quitter l'application, inactivité pendant 30 minutes";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Quitter l'application uniquement";
@@ -3059,6 +3099,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Les données seront supprimées au redémarrage de l'application.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Suggestions de recherche";
 
@@ -3079,6 +3120,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Effacement automatique des données";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Commentaires sur le navigateur";
 
@@ -3090,6 +3132,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Effacer les données de navigation";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Effacer automatiquement les données";
 
@@ -3119,6 +3162,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Supprimer vos données peut contribuer à protéger la confidentialité en ligne. Utilisez le Fire Button pour effacer manuellement les données, ou configurez un nettoyage automatique.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Navigateur par défaut";
 
@@ -3166,6 +3210,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Sites protégés par la fonction Fireproof";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Général";
 
@@ -3183,9 +3228,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nouveau";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Prévisualisation";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Clavier";
@@ -3461,6 +3503,9 @@
 "siteFeedback.urlPlaceholder" = "Quel site Web pose problème ?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Statut";
 
 /* No comment provided by engineer. */
@@ -3468,9 +3513,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nom d'hôte enregistré : %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Sous-fonctionnalité : %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Ajouter à un appareil";
@@ -3618,9 +3660,6 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Rétablissement de l'abonnement…";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro s'appelle désormais simplement l'abonnement DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Supprimer de cet appareil";
@@ -4201,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Que voulez-vous importer ?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Onglets";
+"settings.tab.switcher.show.tracker.count" = "Nombre de traqueurs sur 7 jours";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "au cours des 7 derniers jours";
+"tab.switcher.tracker.count.hide.title" = "Masquer le nombre de traqueurs ?";
+"tab.switcher.tracker.count.hide.message" = "Vous pouvez le réactiver dans Réglages > Apparence.";
+"tab.switcher.tracker.count.hide.action" = "Masquer";
+"tab.switcher.tracker.count.keep.action" = "Conserver";
+"tab.switcher.tracker.count.info.a11y" = "Options du nombre de traqueurs";
+"tab.switcher.tracker.count.info.hint.a11y" = "Touchez deux fois pour afficher les options de masquage de cette bannière";

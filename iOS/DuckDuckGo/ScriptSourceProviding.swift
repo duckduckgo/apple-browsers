@@ -50,6 +50,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let contentBlockingManager: ContentBlockerRulesManagerProtocol
         let fireproofing: Fireproofing
         let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+        let internalUserDecider: InternalUserDecider
     }
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
@@ -91,6 +92,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         contentScopeProperties = ContentScopeProperties(gpcEnabled: dependencies.appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
+                                                        isInternalUser: dependencies.internalUserDecider.isInternalUser,
                                                         debug: AppUserDefaults().contentScopeDebugStateEnabled,
                                                         featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS,
                                                         currentCohorts: currentCohorts)

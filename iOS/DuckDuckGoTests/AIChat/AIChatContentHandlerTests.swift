@@ -29,17 +29,23 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockSettings: MockAIChatSettingsProvider!
     var mockPayloadHandler: AIChatPayloadHandler!
     var mockMetricHandler: MockAIChatPixelMetricHandler!
+    var mockFeatureFlagger: MockFeatureFlagger!
+    var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
 
     override func setUpWithError() throws {
         mockSettings = MockAIChatSettingsProvider()
         mockPayloadHandler = AIChatPayloadHandler()
         mockMetricHandler = MockAIChatPixelMetricHandler()
+        mockFeatureFlagger = MockFeatureFlagger()
+        mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
-            featureDiscovery: MockFeatureDiscovery()
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger,
+            productSurfaceTelemetry: mockProductSurfaceTelemetry
         )
     }
 
@@ -51,7 +57,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         let mockWebView = WKWebView()
 
         // When
-        handler.setup(with: mockUserScript, webView: mockWebView)
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
 
         // Then
         XCTAssertTrue(mockUserScript.delegateSet)
@@ -63,7 +69,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         let mockWebView = WKWebView()
 
         // When
-        handler.setup(with: mockUserScript, webView: mockWebView)
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
 
         // Then
         XCTAssertTrue(mockUserScript.payloadHandlerSet)
@@ -75,10 +81,22 @@ final class AIChatContentHandlerTests: XCTestCase {
         let mockWebView = WKWebView()
 
         // When
-        handler.setup(with: mockUserScript, webView: mockWebView)
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
 
         // Then
         XCTAssertTrue(mockUserScript.webViewSet)
+    }
+
+    func testSetupSetsDisplayMode() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+
+        // When
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .contextual)
+
+        // Then
+        XCTAssertEqual(mockUserScript.lastDisplayModeSet, .contextual)
     }
 
     // MARK: - setPayload(payload:)
@@ -235,7 +253,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         // Given
         let mockUserScript = MockAIChatUserScript()
         let mockWebView = WKWebView()
-        handler.setup(with: mockUserScript, webView: mockWebView)
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
 
         // When
         handler.submitStartChatAction()
@@ -248,7 +266,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         // Given
         let mockUserScript = MockAIChatUserScript()
         let mockWebView = WKWebView()
-        handler.setup(with: mockUserScript, webView: mockWebView)
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
 
         // When
         handler.submitOpenSettingsAction()
@@ -256,18 +274,86 @@ final class AIChatContentHandlerTests: XCTestCase {
         // Then
         XCTAssertEqual(mockUserScript.submitOpenSettingsActionCallCount, 1)
     }
-    
+
     func testSubmitToggleSidebarActionCallsUserScript() throws {
         // Given
         let mockUserScript = MockAIChatUserScript()
         let mockWebView = WKWebView()
-        handler.setup(with: mockUserScript, webView: mockWebView)
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
 
         // When
         handler.submitToggleSidebarAction()
 
         // Then
         XCTAssertEqual(mockUserScript.submitToggleSidebarActionCallCount, 1)
+    }
+
+    // MARK: - submitPrompt with pageContext
+
+    func testSubmitPromptPassesPageContextToUserScript() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .contextual)
+
+        let pageContext = AIChatPageContextData(
+            title: "Test Page",
+            favicon: [],
+            url: "https://example.com",
+            content: "Test content",
+            truncated: false,
+            fullContentLength: 12
+        )
+
+        // When
+        handler.submitPrompt("Summarize this", pageContext: pageContext)
+
+        // Then
+        XCTAssertEqual(mockUserScript.submitPromptCallCount, 1)
+        XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Summarize this")
+        XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.title, "Test Page")
+        XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.url, "https://example.com")
+        XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.content, "Test content")
+    }
+
+    func testSubmitPromptWithoutPageContextPassesNil() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .contextual)
+
+        // When
+        handler.submitPrompt("Hello")
+
+        // Then
+        XCTAssertEqual(mockUserScript.submitPromptCallCount, 1)
+        XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Hello")
+        XCTAssertNil(mockUserScript.lastSubmittedPageContext)
+    }
+
+    func testSubmitPromptWithExplicitNilPageContext() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .contextual)
+
+        // When
+        handler.submitPrompt("Hello", pageContext: nil)
+
+        // Then
+        XCTAssertEqual(mockUserScript.submitPromptCallCount, 1)
+        XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Hello")
+        XCTAssertNil(mockUserScript.lastSubmittedPageContext)
+    }
+    
+    // MARK: - fireAIChatTelemetry
+
+    func testFireAIChatTelemetryCallsProductSurfaceTelemetry() throws {
+        // When
+        handler.fireAIChatTelemetry()
+
+        // Then
+        XCTAssertEqual(mockProductSurfaceTelemetry.duckAIUsedCallCount, 1)
     }
 }
 
@@ -288,22 +374,30 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         get { nil }
         set { webViewSet = true }
     }
+
     var delegateSet = false
     var webViewSet = false
     var payloadHandlerSet = false
     var submitPromptCallCount = 0
     var lastSubmittedPrompt: String?
+    var lastSubmittedPageContext: AIChatPageContextData?
     var submitStartChatActionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
+    var lastDisplayModeSet: AIChatDisplayMode?
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true
     }
 
-    func submitPrompt(_ prompt: String) {
+    func setDisplayMode(_ displayMode: AIChatDisplayMode) {
+        lastDisplayModeSet = displayMode
+    }
+
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
+        lastSubmittedPageContext = pageContext
     }
 
     func submitStartChatAction() {

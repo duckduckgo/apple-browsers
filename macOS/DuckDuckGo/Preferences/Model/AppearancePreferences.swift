@@ -47,6 +47,7 @@ protocol AppearancePreferencesPersistor {
     var homePageCustomBackground: String? { get set }
     var centerAlignedBookmarksBar: Bool { get set }
     var showTabsAndBookmarksBarOnFullScreen: Bool { get set }
+    var didOpenCustomizationSettings: Bool { get set }
 }
 
 struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersistor {
@@ -54,6 +55,12 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
     enum Key: String {
         case newTabPageIsOmnibarVisible = "new-tab-page.omnibar.is-visible"
         case newTabPageIsProtectionsReportVisible = "new-tab-page.protections-report.is-visible"
+        case newTabPageDidOpenCustomizationSettings = "new-tab-page.did-open-customization-settings"
+    }
+
+    var didOpenCustomizationSettings: Bool {
+        get { (try? keyValueStore.object(forKey: Key.newTabPageDidOpenCustomizationSettings.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.newTabPageDidOpenCustomizationSettings.rawValue) }
     }
 
     var isOmnibarVisible: Bool {
@@ -165,10 +172,12 @@ final class DefaultNewTabPageNavigator: NewTabPageNavigator {
                 if Application.appDelegate.featureFlagger.isFeatureOn(.newTabPagePerTab) {
                     if let webView = window.mainViewController.browserTabViewController.webView {
                         Application.appDelegate.newTabPageCustomizationModel.customizerOpener.openSettings(for: webView)
+                        NSApp.delegateTyped.appearancePreferences.markCustomizationSettingsOpened()
                     }
                 } else {
                     let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
                     NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
+                    NSApp.delegateTyped.appearancePreferences.markCustomizationSettingsOpened()
                 }
             }
         }
@@ -286,11 +295,11 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var isOmnibarAvailable: Bool {
-        return featureFlagger.isFeatureOn(.newTabPageOmnibar)
+        return featureFlagger?.isFeatureOn(.newTabPageOmnibar) ?? true
     }
 
     var areThemesAvailable: Bool {
-        return featureFlagger.isFeatureOn(.themes)
+        return featureFlagger?.isFeatureOn(.themes) ?? true
     }
 
     @Published var isOmnibarVisible: Bool {
@@ -314,7 +323,12 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var maxNextStepsCardsDemonstrationDays: Int {
-        featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
+        (featureFlagger?.isFeatureOn(.nextStepsSingleCardIteration) ?? true) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
+    }
+
+    /// Number of active usage days the New Tab Page "Next Steps" cards have been shown.
+    var nextStepsCardsDemonstrationDays: Int {
+        persistor.continueSetUpCardsNumberOfDaysDemonstrated
     }
 
     private var shouldHideNextStepsCards: Bool {
@@ -417,11 +431,19 @@ final class AppearancePreferences: ObservableObject {
 
     var isContinueSetUpAvailable: Bool {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        return privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) && osVersion.majorVersion >= 12
+        return (privacyConfigurationManager?.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) ?? true) && osVersion.majorVersion >= 12
     }
 
     func updateUserInterfaceStyle() {
         NSApp.appearance = themeAppearance.appearance
+    }
+
+    var didOpenCustomizationSettings: Bool {
+        persistor.didOpenCustomizationSettings
+    }
+
+    func markCustomizationSettingsOpened() {
+        persistor.didOpenCustomizationSettings = true
     }
 
     func openNewTabPageBackgroundCustomizationSettings() {
@@ -430,11 +452,11 @@ final class AppearancePreferences: ObservableObject {
 
     convenience init(
         keyValueStore: ThrowingKeyValueStoring,
-        privacyConfigurationManager: PrivacyConfigurationManaging,
+        privacyConfigurationManager: PrivacyConfigurationManaging?,
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
         dateTimeProvider: @escaping () -> Date = Date.init,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger?
     ) {
         self.init(
             persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
@@ -448,11 +470,11 @@ final class AppearancePreferences: ObservableObject {
 
     init(
         persistor: AppearancePreferencesPersistor,
-        privacyConfigurationManager: PrivacyConfigurationManaging,
+        privacyConfigurationManager: PrivacyConfigurationManaging?,
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
         dateTimeProvider: @escaping () -> Date = Date.init,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger?
     ) {
         self.persistor = persistor
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -505,11 +527,11 @@ final class AppearancePreferences: ObservableObject {
     }
 
     private var persistor: AppearancePreferencesPersistor
-    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let privacyConfigurationManager: PrivacyConfigurationManaging?
     private var pixelFiring: PixelFiring?
     private var newTabPageNavigator: NewTabPageNavigator
     private let dateTimeProvider: () -> Date
-    private let featureFlagger: FeatureFlagger
+    private let featureFlagger: FeatureFlagger?
     private var cancellables = Set<AnyCancellable>()
 
     private func requestSync() {
@@ -521,7 +543,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     private func subscribeToOmnibarFeatureFlagChanges() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+        guard let overridesHandler = featureFlagger?.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
             return
         }
 

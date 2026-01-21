@@ -21,6 +21,7 @@ import Testing
 
 @testable import Common
 
+@MainActor
 final class URLExtensionTests {
 
     @Test("External URLs are valid")

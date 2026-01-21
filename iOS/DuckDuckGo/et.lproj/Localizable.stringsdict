@@ -644,5 +644,21 @@ Blokeerisin nad!
 			<string>%1$d saiti välistati kustutamisest</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Jälgija</string>
+			<key>other</key>
+			<string>%2$@ Jälgijat</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -19,10 +19,12 @@
 import Foundation
 import Common
 import PixelKit
+import Subscription
 import os.log
 
 enum SubscriptionError: LocalizedError {
     case purchaseFailed(Error),
+         purchasePendingTransaction,
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
@@ -38,6 +40,8 @@ enum SubscriptionError: LocalizedError {
         switch self {
         case .purchaseFailed:
             return "Purchase process failed. Please try again."
+        case .purchasePendingTransaction:
+            return "Purchase is pending approval."
         case .missingEntitlements:
             return "Required entitlements are missing."
         case .failedToGetSubscriptionOptions:
@@ -76,6 +80,8 @@ struct DefaultSubscriptionEventReporter: SubscriptionEventReporter {
         switch subscriptionActivationError {
         case .purchaseFailed(let error):
             PixelKit.fire(SubscriptionPixel.subscriptionPurchaseFailureStoreError(error), frequency: .legacyDailyAndCount)
+        case .purchasePendingTransaction:
+            PixelKit.fire(SubscriptionPixel.subscriptionPurchaseFailureStoreError(AppStorePurchaseFlowError.transactionPendingAuthentication), frequency: .legacyDailyAndCount)
         case .missingEntitlements:
             PixelKit.fire(SubscriptionPixel.subscriptionPurchaseFailureBackendError, frequency: .legacyDailyAndCount)
         case .failedToGetSubscriptionOptions:

@@ -23,6 +23,7 @@ import UserScript
 import SwiftUI
 import DesignResourcesKit
 import Core
+import PrivacyConfig
 
 ///
 /// Setting for AsyncHeadlessWebView
@@ -34,15 +35,18 @@ struct AsyncHeadlessWebViewSettings {
     let javascriptEnabled: Bool
     let allowedDomains: [String]?
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies?
+    let featureFlagger: FeatureFlagger
 
     init(bounces: Bool = true,
          javascriptEnabled: Bool = true,
          allowedDomains: [String]? = nil,
-         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies?) {
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies?,
+         featureFlagger: FeatureFlagger) {
         self.bounces = bounces
         self.javascriptEnabled = javascriptEnabled
         self.allowedDomains = allowedDomains
         self.userScriptsDependencies = userScriptsDependencies
+        self.featureFlagger = featureFlagger
     }
 
     internal static func makeAllowedDomains(baseURL: URL, isInternalUser: Bool) -> [String] {

@@ -1,8 +1,17 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"Account" = "account";
 
 /* Buton label for Edit action */
 "action.generic.edit" = "Redigera";
@@ -904,6 +913,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Uppdatera användarnamn?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Tillgängliga produkter";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Spara %d %% första året";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Lägg till bokmärke";
 
@@ -1027,11 +1042,17 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Det är inte tillåtet att avbryta mer än en gång";
 
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Söker efter befintligt konto ...";
+
 /* Close All Tabs */
 "close.all.tabs" = "Stäng alla flikar";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohort: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfiguration";
@@ -1152,6 +1173,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Nuvarande abonnemang";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "ANPASSAT CELLINNEHÅLL";
@@ -1392,6 +1416,27 @@
 
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "De senaste ändringarna på YouTube har påverkat funktionaliteten hos Duck Player. Vi arbetar för att åtgärda problemen och tackar för din förståelse.";
+
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Bifoga sidans innehåll";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Skickat med ditt meddelande till Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Sidans innehåll";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai kan nu hjälpa till att svara på frågor om sidan du tittar på.\n\nSidinnehåll inkluderas bara när du bifogar det. Du kan när som helst ändra detta i Inställningar.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Jag fattar";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Fråga om den här sidan";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Visa inställningar";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGos AI-funktioner är privata och valfria. Dina data används inte för att träna AI.";
@@ -1655,7 +1700,7 @@
 "empty.search" = "Inga träffar hittades";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Inskriven: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1691,6 +1736,9 @@
 "error.unknown.try.again" = "Ett okänt fel har inträffat";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Extern ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Favorit";
 
 /* No comment provided by engineer. */
@@ -1710,9 +1758,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Endast mobila favoriter";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funktion: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blockering av annonser och poppuppfönster";
@@ -1927,6 +1972,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "VÄLJ EN KATEGORI";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Kan inte komma åt funktioner på Plus- eller Pro-nivå";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Din anonyma återkoppling är viktig för oss.";
 
@@ -2117,6 +2165,9 @@
 "Last Processed: %@" = "Senast bearbetad: %@";
 
 /* No comment provided by engineer. */
+"Loading available products..." = "Läser in tillgängliga produkter ...";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Läser in mäklare ...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2181,6 +2232,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Meddelande";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Adressfältsknapp";
@@ -2462,6 +2516,15 @@
 "new.address.bar.picker.title" = "Alternativ för adressfält";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Inga aktiva abonnemang";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Inget befintligt abonnemang hittades";
+
+/* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Inga loggar";
 
 /* No comment provided by engineer. */
@@ -2469,6 +2532,12 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Inga resultat hittades";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Inga abonnemang tillgängliga";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2481,6 +2550,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Popup-fönster dolt";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Jag fattar";
@@ -2552,7 +2624,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Inställningar > AI-funktioner.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vill du ha enklare tillgång till privat AI-chatt?";
+"onboarding.highlights.searchExperience.title" = "Vill du ha enkel tillgång till privat AI-chatt?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Vi kör!";
@@ -2855,6 +2927,9 @@
 "Results" = "Sökresultat";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Sök eller ange adress";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2899,9 +2974,6 @@
 /* about tagline */
 "settings.about.tagline" = "Skydd. Integritet. Sinnesro.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGo är ett oberoende företag för onlineskydd för alla som vill återta kontrollen över sin personliga information.\n\nVi vill skydda din personliga information från hackare, bedragare och integritetskränkande företag – och den bästa metoden är att förhindra att den samlas in överhuvudtaget. Det är därför som miljontals människor [väljer DuckDuckGo framför Chrome och andra webbläsare](ddgQuickLink://duckduckgo.com/compare-privacy) för att söka och surfa online. Vår inbyggda sökmotor är som Google men spårar aldrig dina sökningar. Och våra surfskydd, som spårningsblockering och blockering av cookies, hjälper till att stoppa andra företag från att samla in dina data. Vår webbläsare är dessutom gratis – vi tjänar pengar på [sökannonser som respekterar din integritet](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), inte genom att utnyttja dina data. \n\n%@ \n\nTa tillbaka kontrollen över din personliga information med webbläsaren som är utformad för dataskydd, inte datainsamling.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Tillgänglighet";
 
@@ -2919,6 +2991,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Visa hela webbplatsadressen";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Visa animation för blockerad spårare";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Sök & Duck.ai";
@@ -2988,6 +3063,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Klart";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Rensa flikar och data";
 
@@ -3000,17 +3076,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Flikar";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Avsluta app, inaktiv i 15 minuter";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Avsluta app, inaktiv i 1 timme";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Avsluta app, inaktiv i 30 minuter";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Avsluta app, inaktiv i 5 minuter";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Avsluta app, inaktiv i 15 minuter";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Avsluta app, inaktiv i 30 minuter";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Lämna endast appen";
@@ -3023,6 +3099,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Data kommer att raderas när appen startas om.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sökförslag";
 
@@ -3043,6 +3120,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatisk datarensning";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Webbläsarfeedback";
 
@@ -3054,6 +3132,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Rensa webbläsardata";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Rensa data automatiskt";
 
@@ -3083,6 +3162,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Att radera dina data kan bidra till att skydda din integritet online. Använd Fire Button för att rensa data manuellt eller ställa in automatisk rensning.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardwebbläsare";
 
@@ -3130,6 +3210,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof-webbplatser";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Allmänt";
 
@@ -3147,9 +3228,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Ny";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Förhandsvisning";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tangentbord";
@@ -3425,13 +3503,16 @@
 "siteFeedback.urlPlaceholder" = "Vilken webbplats är skadad?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
+"Status" = "Status";
+
+/* No comment provided by engineer. */
 "Status: Invalidated" = "Status: Ogiltig";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagrade värdnamn: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Underfunktion: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lägg till på enheten";
@@ -3579,9 +3660,6 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Återställer abonnemang ...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro kallas nu bara DuckDuckGo-abonnemanget";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Ta bort från den här enheten";
@@ -4084,6 +4162,12 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Ett meddelande från %@:";
 
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Bifogas till BEFINTLIGT konto";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Will create NEW account";
+
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SPARA 25 %";
 
@@ -4156,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Flikar";
+"settings.tab.switcher.show.tracker.count" = "Spårarantal de senaste 7 dagarna";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "de senaste 7 dagarna";
+"tab.switcher.tracker.count.hide.title" = "Dölj spårarantal?";
+"tab.switcher.tracker.count.hide.message" = "Du kan slå på detta igen i Inställningar > Utseende.";
+"tab.switcher.tracker.count.hide.action" = "Dölj";
+"tab.switcher.tracker.count.keep.action" = "Behåll";
+"tab.switcher.tracker.count.info.a11y" = "Alternativ för spårarantal";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dubbeltryck för att visa alternativ för att dölja den här bannern";

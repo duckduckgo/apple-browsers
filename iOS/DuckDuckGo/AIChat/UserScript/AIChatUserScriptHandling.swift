@@ -27,6 +27,13 @@ import WebKit
 import Common
 import DDGSync
 import Core
+
+/// The current display mode of the AI Chat interface.
+enum AIChatDisplayMode {
+    case fullTab
+    case contextual
+}
+
 // MARK: - Response Types
 
 /// Response structure for openKeyboard request
@@ -45,7 +52,8 @@ protocol AIChatMetricReportingHandling: AnyObject {
 }
 
 // swiftlint:disable inclusive_language
-protocol AIChatUserScriptHandling {
+protocol AIChatUserScriptHandling: AnyObject {
+    var displayMode: AIChatDisplayMode? { get set }
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -73,7 +81,7 @@ protocol AIChatUserScriptHandling {
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
-    
+
     private var payloadHandler: (any AIChatConsumableDataHandling)?
     private var inputBoxHandler: (any AIChatInputBoxHandling)?
     private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
@@ -83,6 +91,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let migrationStore = AIChatMigrationStore()
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
+    
+    /// Set externally via `AIChatContentHandler.setup()`.
+    var displayMode: AIChatDisplayMode?
 
     init(experimentalAIChatManager: ExperimentalAIChatManager,
          syncHandler: AIChatSyncHandling,
@@ -136,6 +147,22 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
         let defaults = AIChatNativeConfigValues.defaultValues
+
+        let supportsFullMode: Bool
+        let supportsContextualMode: Bool
+
+        switch displayMode {
+        case .fullTab:
+            supportsFullMode = aichatFullModeFeature.isAvailable
+            supportsContextualMode = false
+        case .contextual:
+            supportsFullMode = false
+            supportsContextualMode = aichatContextualModeFeature.isAvailable
+        case .none:
+            supportsFullMode = aichatFullModeFeature.isAvailable || defaults.supportsAIChatFullMode
+            supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
+        }
+
         return AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
@@ -145,7 +172,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativeChatInput: defaults.supportsNativeChatInput,
             supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
-            supportsPageContext: defaults.supportsPageContext,
+            supportsPageContext: aichatContextualModeFeature.isAvailable ? true : defaults.supportsPageContext,
             supportsAIChatFullMode: aichatFullModeFeature.isAvailable ? true : defaults.supportsAIChatFullMode,
             supportsAIChatContextualMode: aichatContextualModeFeature.isAvailable ? true : defaults.supportsAIChatContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
@@ -264,6 +291,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         return migrationStore.clear()
     }
+
+    // MARK: - Sync
 
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable? {
         do {

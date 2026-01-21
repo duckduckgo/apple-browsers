@@ -1,0 +1,23 @@
+{
+    "m_aichat_contextual_onboarding_displayed": {
+        "description": "Fired when the AI Chat contextual onboarding sheet is displayed to the user",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_onboarding_confirm_pressed": {
+        "description": "Fired when the user presses the Got It button on the AI Chat contextual onboarding sheet",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_onboarding_settings_pressed": {
+        "description": "Fired when the user presses the View Settings button on the AI Chat contextual onboarding sheet",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

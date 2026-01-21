@@ -38,7 +38,6 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
         )
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "subscription-restore")
         XCTAssertEqual(parameters["feature.data.ext.restore_platform"], "apple_account")
         XCTAssertEqual(parameters["feature.data.ext.apple_account_restore_latency_ms_bucketed"], "5000")
 
@@ -61,7 +60,6 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
         eventData.emailAddressRestoreLastURL = .activationFlowActivateEmailOTP
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "subscription-restore")
         XCTAssertEqual(parameters["feature.data.ext.restore_platform"], "email_address")
         XCTAssertEqual(parameters["feature.data.ext.email_address_restore_latency_ms_bucketed"], "10000")
         XCTAssertEqual(parameters["feature.data.ext.email_address_restore_last_url"], "activation_flow_activate_email_otp")
@@ -171,5 +169,63 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
         eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: nil, end: base)
         parameters = eventData.pixelParameters()
         XCTAssertNil(parameters["feature.data.ext.apple_account_restore_latency_ms_bucketed"])
+    }
+
+    func testCompletionDecision_noIntervalStart_returnsPartialData() async {
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount, contextData: WideEventContextData())
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: SubscriptionRestoreWideEventData.StatusReason.partialData.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with partial data")
+        }
+    }
+
+    func testCompletionDecision_intervalAlreadyCompleted_returnsPartialData() async {
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount, contextData: WideEventContextData())
+        let start = Date()
+        eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: start, end: start.addingTimeInterval(1))
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: SubscriptionRestoreWideEventData.StatusReason.partialData.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with partial data")
+        }
+    }
+
+    func testCompletionDecision_restoreTimeoutExceeded_returnsTimeout() async {
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount, contextData: WideEventContextData())
+        let start = Date().addingTimeInterval(-SubscriptionRestoreWideEventData.restoreTimeout - 1)
+        eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: SubscriptionRestoreWideEventData.StatusReason.timeout.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with timeout")
+        }
+    }
+
+    func testCompletionDecision_withinTimeout_returnsKeepPending() async {
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount, contextData: WideEventContextData())
+        let start = Date().addingTimeInterval(-SubscriptionRestoreWideEventData.restoreTimeout + 1)
+        eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .keepPending:
+            break
+        case .complete:
+            XCTFail("Expected keep pending")
+        }
     }
 }

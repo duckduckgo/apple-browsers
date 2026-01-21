@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "アカウント";
@@ -1043,6 +1049,12 @@
 "close.all.tabs" = "すべてのタブを閉じる";
 
 /* No comment provided by engineer. */
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
+
+/* No comment provided by engineer. */
 "Configuration" = "構成";
 
 /* No comment provided by engineer. */
@@ -1288,6 +1300,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "昨日";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "隠れているロゴを見つけました！";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "ロゴが保存されました";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "検索ロゴをリセット";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "このロゴに切り替える";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "注意：%1$@が%2$@でのアクティビティを見るのを止めることはできません。\n\nしかし、このブラウザでブラウジングすれば、他の多くのサイトでトラッカーをブロックすることで、%1$@がお客様について全体的に知っていることを減らせます。";
 
@@ -1393,8 +1417,32 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Playerの機能は、YouTubeの最近の変更の影響を受けています。これらの問題の解決に取り組んでいますので、ご理解のほどよろしくお願い申し上げます。";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "ページの内容を添付";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Duck.aiに送信するメッセージと一緒に送信されます";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "ページコンテンツ";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.aiは、現在表示しているページに関する質問に回答できるようになりました。\n\nページの内容は、添付した場合にのみ含まれます。この設定は、「設定」でいつでも変更できます。";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "了解";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "このページについて質問する";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "設定を表示";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGoのAI機能はプライベートでオプションです。データはAIのトレーニングに使用されません。";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "このページを要約";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "DuckDuckGoの検索結果にDuck.aiのボタンとリンクを表示する";
@@ -1650,6 +1698,9 @@
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "一致するものが見つかりませんでした";
+
+/* No comment provided by engineer. */
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "エントリーピル";
@@ -1921,6 +1972,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "カテゴリーを選択";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Unable to access Plus or Pro tier features";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "お客様の匿名のフィードバックは私たちにとって重要です。";
 
@@ -2178,6 +2232,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "メッセージ";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "アドレスバーのボタン";
@@ -2465,6 +2522,9 @@
 "No existing subscription found" = "既存のサブスクリプションが見つかりません";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "ログなし";
 
 /* No comment provided by engineer. */
@@ -2475,6 +2535,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "利用可能なサブスクリプションはありません";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2864,6 +2927,9 @@
 "Results" = "検索結果";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "検索またはアドレスを入力";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2908,9 +2974,6 @@
 /* about tagline */
 "settings.about.tagline" = "プライバシー。保護。安心感を。";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGoは、個人情報の管理を取り戻したい人のための独立系オンライン保護企業です。\n\n私たちは、ハッカーや詐欺師、プライバシーを侵害する企業から個人情報を守る最良の方法は、そもそも情報が収集されないようにすることだと考えています。そのため、何百万人ものユーザーがオンラインでの検索や閲覧に[Chromeや他のブラウザではなくDuckDuckGoを選択](ddgQuickLink://duckduckgo.com/compare-privacy)しています。DuckDuckGoの組み込み検索エンジンはGoogleに似ていますが、検索を追跡することはありません。また、広告トラッカーのブロックやCookieのブロックなどのブラウジング保護により、他社によるデータの収集を阻止できます。また、当社のブラウザは無料です。私たちはお客様のデータを悪用することによってではなく、[プライバシーを尊重する検索広告](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/)から収益を得ています。\n\n%@ \n\nデータ収集ではなくデータ保護のために設計されたブラウザを使用してプライバシーを取り戻しましょう。";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "アクセシビリティ";
 
@@ -2928,6 +2991,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "完全なサイトアドレスを表示";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "トラッカーのブロックアニメーションを表示";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "検索とDuck.ai";
@@ -2953,11 +3019,11 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist設定";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "ブラウザのタブとして新しいDuck.aiチャットを表示する";
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "ページのコンテキストをDuck.aiに自動送信";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Duck.aiタブズモード";
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "コンテキストを自動的に送信";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI生成画像を非表示にする";
@@ -2983,8 +3049,56 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "無効にすると、リンクが他のインストール済みアプリで自動的に開かれなくなります。";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "すべてのサイトデータ（訪問済みサイトを含む）を削除します。アカウントからサインアウトされる場合があります。";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookieとサイトデータ";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "ピン留めされたチャットを含むすべてのチャットを削除します";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.aiチャット";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "クリア";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "タブとデータをクリア";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "タブ、データ、Duck.aiチャットを消去する";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "開いているすべてのタブを閉じます";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "タブ";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "アプリ終了、1時間非アクティブ";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "アプリ終了、5分間非アクティブ";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "アプリ終了、15分間非アクティブ";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "アプリ終了、30分間非アクティブ";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "アプリ終了のみ";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "アプリの終了は、アプリをスワイプして閉じることと定義されます。非アクティブとは、アプリがバックグラウンドにある状態のことです。";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "希望するタイミング";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "アプリを再起動するとデータが削除されます。";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "検索候補";
@@ -3004,6 +3118,9 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Touch ID、Face ID、またはシステムパスコードが有効になっている場合、アプリを開く際にロック解除を求められます。";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "自動データ消去";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "ブラウザのフィードバック";
 
@@ -3012,6 +3129,9 @@
 
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Duck.aiチャットを消去する";
+
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "閲覧データを消去";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "データを自動的にクリア";
@@ -3039,6 +3159,9 @@
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "データクリアリング";
+
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "データを削除することで、オンラインでのプライバシー保護に役立ちます。Fire Buttonでデータを手動削除、または自動削除を設定します。";
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "デフォルトのブラウザ";
@@ -3085,6 +3208,9 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Fireproofサイト";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproof化されたサイト";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "一般";
 
@@ -3102,9 +3228,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "新規";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "プレビュー";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "キーボード";
@@ -3340,6 +3463,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGoブラウザは追跡防止機能を提供し、常に有効です。[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "新着情報";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "直近1分間のログを表示し、リフレッシュ後の問題を即座に診断するために役立ちます。";
 
@@ -3375,6 +3501,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "問題のあるウェブサイトはどれですか？";
+
+/* No comment provided by engineer. */
+"State:" = "State:";
 
 /* No comment provided by engineer. */
 "Status" = "状態";
@@ -3520,6 +3649,9 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "サブスクリプションプラン";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "購入を完了しています...";
 
@@ -3528,9 +3660,6 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "サブスクリプションを復元しています...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Proは「DuckDuckGoサブスクリプション」に名称変更されました";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "このデバイスから削除";
@@ -3609,6 +3738,9 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "無料トライアルが有効です";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "全プランを表示";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUIアラート";
@@ -4108,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "タブ";
+"settings.tab.switcher.show.tracker.count" = "過去7日間のトラッカー数";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "過去7日間";
+"tab.switcher.tracker.count.hide.title" = "トラッカー数を非表示にしますか？";
+"tab.switcher.tracker.count.hide.message" = "設定 > 外観 で再び有効にできます。";
+"tab.switcher.tracker.count.hide.action" = "非表示";
+"tab.switcher.tracker.count.keep.action" = "保持";
+"tab.switcher.tracker.count.info.a11y" = "トラッカー数のオプション";
+"tab.switcher.tracker.count.info.hint.a11y" = "ダブルタップしてこのバナーを非表示にするオプションを表示します";

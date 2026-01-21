@@ -36,6 +36,7 @@ final class SyncPromoManager: SyncPromoManaging {
     enum Touchpoint: String {
         case bookmarks
         case passwords
+        case dataImport = "data_import"
     }
 
     private let featureFlagger: FeatureFlagger
@@ -46,6 +47,9 @@ final class SyncPromoManager: SyncPromoManaging {
 
     @UserDefaultsWrapper(key: .syncPromoPasswordsDismissed, defaultValue: nil)
     private var syncPromoPasswordsDismissed: Date?
+
+    @UserDefaultsWrapper(key: .syncPromoDataImportDismissed, defaultValue: nil)
+    private var syncPromoDataImportDismissed: Date?
 
     init(syncService: DDGSyncing,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
@@ -71,6 +75,13 @@ final class SyncPromoManager: SyncPromoManaging {
                count > 0 {
                 return true
             }
+        case .dataImport:
+            if featureFlagger.isFeatureOn(.dataImportSummarySyncPromotion),
+               syncService.authState == .inactive,
+               syncPromoDataImportDismissed == nil,
+               count > 0 {
+                return true
+            }
         }
 
         return false
@@ -82,6 +93,8 @@ final class SyncPromoManager: SyncPromoManaging {
             syncPromoBookmarksDismissed = Date()
         case .passwords:
             syncPromoPasswordsDismissed = Date()
+        case .dataImport:
+            syncPromoDataImportDismissed = Date()
         }
 
         Pixel.fire(.syncPromoDismissed, withAdditionalParameters: ["source": touchpoint.rawValue])
@@ -90,5 +103,6 @@ final class SyncPromoManager: SyncPromoManaging {
     func resetPromos() {
         syncPromoBookmarksDismissed = nil
         syncPromoPasswordsDismissed = nil
+        syncPromoDataImportDismissed = nil
     }
 }

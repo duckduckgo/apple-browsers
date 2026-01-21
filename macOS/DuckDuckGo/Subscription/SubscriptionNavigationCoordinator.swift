@@ -41,10 +41,10 @@ extension WindowControllersManager: SubscriptionTabsShowing {}
 final class SubscriptionNavigationCoordinator {
 
     private let tabShower: SubscriptionTabsShowing
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
 
     init(tabShower: SubscriptionTabsShowing,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+         subscriptionManager: any SubscriptionManager) {
         self.tabShower = tabShower
         self.subscriptionManager = subscriptionManager
     }

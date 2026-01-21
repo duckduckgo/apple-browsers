@@ -58,12 +58,8 @@ protocol DependencyProvider {
     var vpnSettings: VPNSettings { get }
     var persistentPixel: PersistentPixelFiring { get }
     var wideEvent: WideEventManaging { get }
-
-    // Subscription
-    var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge { get }
-    var subscriptionManagerV2: (any SubscriptionManagerV2)? { get }
-
-    // DBP
+    var subscriptionManager: any SubscriptionManager { get }
+    var tokenHandlerProvider: any SubscriptionTokenHandling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
 }
 
@@ -90,8 +86,8 @@ final class AppDependencyProvider: DependencyProvider {
     let pageRefreshMonitor = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern)
 
     // Subscription
-    let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
-    var subscriptionManagerV2: (any SubscriptionManagerV2)?
+    var subscriptionManager: any SubscriptionManager
+    var tokenHandlerProvider: any SubscriptionTokenHandling
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
@@ -104,7 +100,7 @@ final class AppDependencyProvider: DependencyProvider {
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
-    let wideEvent: WideEventManaging = WideEvent()
+    let wideEvent: WideEventManaging
 
     private init() {
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!,
@@ -129,20 +125,21 @@ final class AppDependencyProvider: DependencyProvider {
             featureFlagger = defaultFeatureFlagger
         }
 
+        self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
 
         // Configure Subscription
         let pixelHandler = SubscriptionPixelHandler(source: .mainApp)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-        let subscriptionEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var tokenHandler: any SubscriptionTokenHandling
         var accessTokenProvider: () async -> String?
         var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
-        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let tokenStorageV2 = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
                                                                 userDefaults: subscriptionUserDefaults) { accessType, error in
 
             let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
@@ -175,7 +172,7 @@ final class AppDependencyProvider: DependencyProvider {
         Logger.subscription.debug("Configuring Subscription")
 
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
-        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
@@ -198,9 +195,12 @@ final class AppDependencyProvider: DependencyProvider {
                                                                         subscriptionEnvironment: subscriptionEnvironment,
                                                                         subscriptionUserDefaults: subscriptionUserDefaults)
 
-        let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                                 subscriptionFeatureFlagger: subscriptionFeatureFlagger)
-        let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: pixelHandler)
+        let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                               subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                               pendingTransactionHandler: pendingTransactionHandler)
+        let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
                                                                subscriptionEndpointService: subscriptionEndpointService,
@@ -209,20 +209,21 @@ final class AppDependencyProvider: DependencyProvider {
                                                                isInternalUserEnabled: {
             ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
         })
-
-        let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: storePurchaseManager)
+        self.tokenHandlerProvider = subscriptionManager
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                     storePurchaseManager: storePurchaseManager,
+                                                     pendingTransactionHandler: pendingTransactionHandler)
         subscriptionManager.tokenRecoveryHandler = {
             try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
         }
 
-        self.subscriptionManagerV2 = subscriptionManager
+        self.subscriptionManager = subscriptionManager
 
         accessTokenProvider = {
             { return try? await subscriptionManager.getTokenContainer(policy: .localValid).accessToken }
         }()
         tokenHandler = subscriptionManager
         authenticationStateProvider = subscriptionManager
-        subscriptionAuthV1toV2Bridge = subscriptionManager
 
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,

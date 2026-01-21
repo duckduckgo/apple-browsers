@@ -35,7 +35,7 @@ struct SubscriptionTierOptionsTests {
             features: [TierFeature(product: .paidAIChat, name: .plus),
                        TierFeature(product: .networkProtection, name: .plus)],
             options: [
-                SubscriptionOptionV2(id: "1",
+                SubscriptionOption(id: "1",
                                    cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
                                    offer: monthlySubscriptionOffer)
             ]
@@ -46,10 +46,10 @@ struct SubscriptionTierOptionsTests {
             features: [TierFeature(product: .paidAIChat, name: .pro),
                        TierFeature(product: .networkProtection, name: .plus)],
             options: [
-                SubscriptionOptionV2(id: "2",
+                SubscriptionOption(id: "2",
                                    cost: SubscriptionOptionCost(displayPrice: "9 USD", recurrence: "monthly"),
                                    offer: monthlySubscriptionOffer),
-                SubscriptionOptionV2(id: "3",
+                SubscriptionOption(id: "3",
                                    cost: SubscriptionOptionCost(displayPrice: "99 USD", recurrence: "yearly"),
                                    offer: yearlySubscriptionOffer)
             ]
@@ -161,7 +161,7 @@ struct SubscriptionTierOptionsTests {
             tier: .plus,
             features: [TierFeature(product: .networkProtection, name: .plus)],
             options: [
-                SubscriptionOptionV2(id: "1",
+                SubscriptionOption(id: "1",
                                    cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
                                    offer: nil)
             ]
@@ -173,10 +173,10 @@ struct SubscriptionTierOptionsTests {
                        TierFeature(product: .dataBrokerProtection, name: .plus),
                        TierFeature(product: .networkProtection, name: .plus)],
             options: [
-                SubscriptionOptionV2(id: "2",
+                SubscriptionOption(id: "2",
                                    cost: SubscriptionOptionCost(displayPrice: "9 USD", recurrence: "monthly"),
                                    offer: nil),
-                SubscriptionOptionV2(id: "3",
+                SubscriptionOption(id: "3",
                                    cost: SubscriptionOptionCost(displayPrice: "99 USD", recurrence: "yearly"),
                                    offer: nil)
             ]

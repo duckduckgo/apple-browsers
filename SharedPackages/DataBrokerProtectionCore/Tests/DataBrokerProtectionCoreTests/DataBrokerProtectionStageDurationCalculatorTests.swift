@@ -283,7 +283,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               vpnBypassStatus: "no",
                                                               featureFlagger: featureFlagger)
 
-        sut.fireOptOutFailure(tries: 1)
+        sut.fireOptOutFailure(tries: 1, error: DataBrokerProtectionError.cancelled)
 
         guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
             XCTFail("A pixel should be fired")
@@ -291,7 +291,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         }
 
         switch pixel {
-        case .optOutFailure(_, _, _, _, _, _, _, _, _, _, _, _, let clickDelayOptimization):
+        case .optOutFailure(_, _, _, _, _, _, _, _, _, _, _, _, _, _, let clickDelayOptimization):
             XCTAssertTrue(clickDelayOptimization, "clickActionDelayReductionOptimization should be true when feature flag is ON")
         default:
             XCTFail("Expected optOutFailure pixel")
@@ -307,7 +307,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               vpnBypassStatus: "no",
                                                               featureFlagger: featureFlagger)
 
-        sut.fireOptOutFailure(tries: 1)
+        sut.fireOptOutFailure(tries: 1, error: DataBrokerProtectionError.cancelled)
 
         guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
             XCTFail("A pixel should be fired")
@@ -315,7 +315,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         }
 
         switch pixel {
-        case .optOutFailure(_, _, _, _, _, _, _, _, _, _, _, _, let clickDelayOptimization):
+        case .optOutFailure(_, _, _, _, _, _, _, _, _, _, _, _, _, _, let clickDelayOptimization):
             XCTAssertFalse(clickDelayOptimization, "clickActionDelayReductionOptimization should be false when feature flag is OFF")
         default:
             XCTFail("Expected optOutFailure pixel")

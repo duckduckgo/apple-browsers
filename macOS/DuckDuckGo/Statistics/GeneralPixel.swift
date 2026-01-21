@@ -95,6 +95,15 @@ enum GeneralPixel: PixelKitEvent {
     case autofillLoginsSettingsEnabled
     case autofillLoginsSettingsDisabled
 
+    // Warn Before Quit
+    // See macOS/PixelDefinitions/pixels/warn_before_quit_pixels.json5
+    // Discussion: https://app.asana.com/0/137249556945/1212837417207452
+    case warnBeforeQuitShown
+    case warnBeforeQuitQuit
+    case warnBeforeQuitCancelled
+    case warnBeforeQuitDontShowAgain
+    case warnBeforeQuitSettingsDisabled
+
     case bitwardenPasswordAutofilled
     case bitwardenPasswordSaved
 
@@ -304,6 +313,13 @@ enum GeneralPixel: PixelKitEvent {
 
     // Onboarding
     case onboardingExceptionReported(message: String, id: String)
+    case onboardingStepCompleteWelcome
+    case onboardingStepCompleteGetStarted
+    case onboardingStepCompletePrivateByDefault
+    case onboardingStepCompleteCleanerBrowsing
+    case onboardingStepCompleteSystemSettings
+    case onboardingStepCompleteCustomize
+    case onboardingFinalStepComplete
 
     // MARK: - Advanced Usage
 
@@ -713,6 +729,17 @@ enum GeneralPixel: PixelKitEvent {
         case .autofillLoginsSettingsDisabled:
             return "m_mac_autofill_logins_settings_disabled"
 
+        case .warnBeforeQuitShown:
+            return "m_mac_warn-before-quit_shown"
+        case .warnBeforeQuitQuit:
+            return "m_mac_warn-before-quit_quit"
+        case .warnBeforeQuitCancelled:
+            return "m_mac_warn-before-quit_cancelled"
+        case .warnBeforeQuitDontShowAgain:
+            return "m_mac_warn-before-quit_dont-show-again"
+        case .warnBeforeQuitSettingsDisabled:
+            return "m_mac_settings_warn-before-quit_disabled"
+
         case .bitwardenPasswordAutofilled:
             return "m_mac_bitwarden_autofill_password"
 
@@ -990,8 +1017,15 @@ enum GeneralPixel: PixelKitEvent {
 
             // Onboarding
         case .onboardingExceptionReported: return "m_mac_onboarding_exception-reported"
+        case .onboardingStepCompleteWelcome: return "m_mac_onboarding_step-complete-welcome"
+        case .onboardingStepCompleteGetStarted: return "m_mac_onboarding_step-complete-get-started"
+        case .onboardingStepCompletePrivateByDefault: return "m_mac_onboarding_step-complete-private-by-default"
+        case .onboardingStepCompleteCleanerBrowsing: return "m_mac_onboarding_step-complete-cleaner-browsing"
+        case .onboardingStepCompleteSystemSettings: return "m_mac_onboarding_step-complete-system-settings"
+        case .onboardingStepCompleteCustomize: return "m_mac_onboarding_step-complete-customize"
+        case .onboardingFinalStepComplete: return "m_mac_onboarding_final-step-complete"
 
-        // “Advanced” usage
+        // "Advanced" usage
         case .windowFullscreen: return "m_mac_window_fullscreen"
         case .windowSplitScreen: return "m_mac_window_split_screen"
 
@@ -1543,6 +1577,11 @@ enum GeneralPixel: PixelKitEvent {
                 .autofillManagementUpdateLogin,
                 .autofillLoginsSettingsEnabled,
                 .autofillLoginsSettingsDisabled,
+                .warnBeforeQuitShown,
+                .warnBeforeQuitQuit,
+                .warnBeforeQuitCancelled,
+                .warnBeforeQuitDontShowAgain,
+                .warnBeforeQuitSettingsDisabled,
                 .bitwardenPasswordAutofilled,
                 .bitwardenPasswordSaved,
                 .ampBlockingRulesCompilationFailed,
@@ -1694,6 +1733,13 @@ enum GeneralPixel: PixelKitEvent {
                 .suggestionSubmittedMouse,
                 .suggestionSubmittedKeyboard,
                 .onboardingExceptionReported,
+                .onboardingStepCompleteWelcome,
+                .onboardingStepCompleteGetStarted,
+                .onboardingStepCompletePrivateByDefault,
+                .onboardingStepCompleteCleanerBrowsing,
+                .onboardingStepCompleteSystemSettings,
+                .onboardingStepCompleteCustomize,
+                .onboardingFinalStepComplete,
                 .windowFullscreen,
                 .windowSplitScreen,
                 .pictureInPictureVideoPlayback,

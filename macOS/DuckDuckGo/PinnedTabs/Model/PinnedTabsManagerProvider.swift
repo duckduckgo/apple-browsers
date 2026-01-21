@@ -84,8 +84,8 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     private let settingChangedSubject = PassthroughSubject<Void, Never>()
     private var settingChangedCancellable: AnyCancellable?
 
-    init(sharedPinedTabsManager: PinnedTabsManager) {
-        self.sharedPinnedTabsManager = sharedPinedTabsManager
+    init(sharedPinnedTabsManager: PinnedTabsManager) {
+        self.sharedPinnedTabsManager = sharedPinnedTabsManager
         self.settingChangedPublisher = settingChangedSubject.eraseToAnyPublisher()
     }
 

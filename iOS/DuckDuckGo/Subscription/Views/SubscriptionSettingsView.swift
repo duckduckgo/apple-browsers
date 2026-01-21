@@ -40,7 +40,7 @@ struct SubscriptionSettingsViewV2: View {
     @State var configuration: SubscriptionSettingsViewConfiguration
     @Environment(\.dismiss) var dismiss
 
-    @StateObject var viewModel: SubscriptionSettingsViewModelV2
+    @StateObject var viewModel: SubscriptionSettingsViewModel
     @StateObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     var viewPlans: (() -> Void)?
@@ -165,7 +165,7 @@ struct SubscriptionSettingsViewV2: View {
                 SettingsCustomCell(content: {
                     if !viewModel.state.isLoadingSubscriptionInfo {
                         if active {
-                            Text(UserText.subscriptionChangePlan)
+                            Text(viewModel.subscriptionManageButtonText)
                                 .daxBodyRegular()
                                 .foregroundColor(Color.init(designSystemColor: .accent))
                         } else if isEligibleForWinBackCampaign {
@@ -346,13 +346,14 @@ struct SubscriptionSettingsViewV2: View {
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
                 navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .manageEmailFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
                 wideEvent: AppDependencyProvider.shared.wideEvent,
+                featureFlagger: settingsViewModel.featureFlagger,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
@@ -366,13 +367,14 @@ struct SubscriptionSettingsViewV2: View {
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
                 navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .activationFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
                 wideEvent: AppDependencyProvider.shared.wideEvent,
+                featureFlagger: settingsViewModel.featureFlagger,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
@@ -388,7 +390,7 @@ struct SubscriptionSettingsViewV2: View {
             EmptyView()
         }.hidden()
 
-        NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+        NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(), dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
                                                                                                     isProTierPurchaseEnabled: { settingsViewModel.subscriptionFeatureAvailability.isProTierPurchaseEnabled },
@@ -402,12 +404,13 @@ struct SubscriptionSettingsViewV2: View {
             destination: SubscriptionContainerViewFactory.makePlansFlowV2(
                 redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue),
                 navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                wideEvent: AppDependencyProvider.shared.wideEvent),
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                featureFlagger: settingsViewModel.featureFlagger),
             isActive: $isShowingPlansView
         ) { EmptyView() }
             .hidden()
@@ -417,12 +420,13 @@ struct SubscriptionSettingsViewV2: View {
             destination: SubscriptionContainerViewFactory.makePlansFlowV2(
                 redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue, goToUpgrade: true),
                 navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                wideEvent: AppDependencyProvider.shared.wideEvent),
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                featureFlagger: settingsViewModel.featureFlagger),
             isActive: $isShowingUpgradeView
         ) { EmptyView() }
             .hidden()

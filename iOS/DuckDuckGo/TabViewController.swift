@@ -412,6 +412,7 @@ class TabViewController: UIViewController {
                                    aiChatSettings: AIChatSettingsProvider,
                                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                                    sharedSecureVault: (any AutofillSecureVault)? = nil,
+                                   privacyStats: PrivacyStatsProviding,
                                    voiceSearchHelper: VoiceSearchHelperProtocol) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
@@ -442,6 +443,7 @@ class TabViewController: UIViewController {
                               aiChatSettings: aiChatSettings,
                               productSurfaceTelemetry: productSurfaceTelemetry,
                               sharedSecureVault: sharedSecureVault,
+                              privacyStats: privacyStats,
                               voiceSearchHelper: voiceSearchHelper
             )
         })
@@ -492,16 +494,18 @@ class TabViewController: UIViewController {
     let aiChatSettings: AIChatSettingsProvider
     let aiChatFullModeFeature: AIChatFullModeFeatureProviding
     let sharedSecureVault: (any AutofillSecureVault)?
-    
+    let privacyStats: PrivacyStatsProviding
+
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
-            settings: aiChatSettings,
+            aiChatSettings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            featureDiscovery: featureDiscovery
+            featureDiscovery: featureDiscovery,
+            featureFlagger: featureFlagger
         )
         coordinator.delegate = self
         return coordinator
@@ -538,6 +542,7 @@ class TabViewController: UIViewController {
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
+                   privacyStats: PrivacyStatsProviding,
                    voiceSearchHelper: VoiceSearchHelperProtocol) {
 
         self.tabModel = tabModel
@@ -566,13 +571,17 @@ class TabViewController: UIViewController {
         self.adClickExternalOpenDetector = adClickExternalOpenDetector
         self.daxDialogsManager = daxDialogsManager
         self.sharedSecureVault = sharedSecureVault
+        self.privacyStats = privacyStats
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
-            return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.isSubscriptionPurchaseEligible
+            return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
         
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
-        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
+        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
+                                                         featureDiscovery: featureDiscovery,
+                                                         featureFlagger: featureFlagger,
+                                                         productSurfaceTelemetry: productSurfaceTelemetry)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
 
@@ -779,6 +788,8 @@ class TabViewController: UIViewController {
 
         webView.allowsLinkPreview = true
         webView.allowsBackForwardNavigationGestures = true
+
+        webView.preventFlashOnLoad(featureFlagger: featureFlagger)
 
         addObservers()
 
@@ -1056,27 +1067,19 @@ class TabViewController: UIViewController {
         guard url.isDuckDuckGoSearch else { return false }
         
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
-
-        // Only check DuckAI params if the feature flag is enabled
-        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
-        }
+        let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+        shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
         return shouldReissue
     }
-    
+
     private func reissueSearchWithRequiredParams(for url: URL) {
         var mobileSearch = url.applyingStatsParams()
+        let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+        mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
 
-        // If it's enabled, don't evaluate shouldReissue
-        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
-        }
-        
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
     }
-    
+
     private func showProgressIndicator() {
         progressWorker.didStartLoading()
     }
@@ -1692,8 +1695,9 @@ extension TabViewController: WKNavigationDelegate {
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
-        productSurfaceTelemetry.navigationCompleted(url: webView.url)
 
+        fireProductTelemetry(for: webView)
+        
         // definitely finished with any potential login cycle by this point, so don't try and handle it any more
         detectedLoginURL = nil
         updatePreview()
@@ -1709,6 +1713,17 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
         specialErrorPageNavigationHandler.handleWebView(webView, didFinish: navigation)
+    }
+    
+    /// Fires product telemetry related to the current URL
+    private func fireProductTelemetry(for webView: WKWebView) {
+        guard let url = webView.url else { return }
+
+        if url.isDuckAIURL {
+            aiChatContentHandler.fireAIChatTelemetry()
+        } else {
+            productSurfaceTelemetry.navigationCompleted(url: webView.url)
+        }
     }
 
     var specialErrorPageUserScript: SpecialErrorPageUserScript? {
@@ -2153,11 +2168,15 @@ extension TabViewController: WKNavigationDelegate {
                     if !url.isDuckAIURL {
                         NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
                     }
-                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
-                                                                        application: UIApplication.shared)
-                    StatisticsLoader.shared.refreshSearchRetentionAtb {
-                        DispatchQueue.main.async {
-                            backgroundAssertion.release()
+
+                    let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL && featureFlagger.isFeatureOn(.aiChatAtb)
+                    if !shouldSkipSearchAtbForDuckAI {
+                        let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
+                                                                            application: UIApplication.shared)
+                        StatisticsLoader.shared.refreshSearchRetentionAtb {
+                            DispatchQueue.main.async {
+                                backgroundAssertion.release()
+                            }
                         }
                     }
                     subscriptionDataReporter.saveSearchCount()
@@ -2967,7 +2986,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
-        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
@@ -3036,13 +3055,23 @@ extension TabViewController: ContentBlockerRulesUserScriptDelegate {
         guard let url = url else { return }
         
         adClickAttributionLogic.onRequestDetected(request: tracker)
-        
+
         if tracker.isBlocked && fireWoFollowUp {
             fireWoFollowUp = false
             Pixel.fire(pixel: .daxDialogsWithoutTrackersFollowUp)
         }
 
         privacyInfo?.trackerInfo.addDetectedTracker(tracker, onPageWithURL: url)
+
+        guard tracker.isBlocked,
+              let host = tracker.url.url?.host,
+              let entityName = ContentBlocking.shared.trackerDataManager.trackerData.findParentEntityOrFallback(forHost: host)?.displayName else {
+            return
+        }
+
+        Task {
+            await privacyStats.recordBlockedTracker(entityName)
+        }
     }
 }
 

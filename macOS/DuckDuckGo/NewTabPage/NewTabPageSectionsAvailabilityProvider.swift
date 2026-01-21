@@ -36,16 +36,18 @@ final class NewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabili
     internal init(featureFlagger: any FeatureFlagger) {
         self.featureFlagger = featureFlagger
 
-        subscribeToOmnibarFeatureFlagChanges()
+        subscribeToFeatureFlagChanges()
     }
 
-    private func subscribeToOmnibarFeatureFlagChanges() {
+    private func subscribeToFeatureFlagChanges() {
         guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
             return
         }
 
         overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .newTabPageOmnibar }
+            .filter { flag, _ in
+                flag == .newTabPageOmnibar || flag == .nextStepsSingleCardIteration
+            }
             .sink { _ in
                 NotificationCenter.default.post(name: .newTabPageSectionsAvailabilityDidChange, object: nil)
             }
@@ -54,6 +56,10 @@ final class NewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabili
 
     var isOmnibarAvailable: Bool {
         return featureFlagger.isFeatureOn(.newTabPageOmnibar)
+    }
+
+    var isNextStepsSingleCardIterationAvailable: Bool {
+        return featureFlagger.isFeatureOn(.nextStepsSingleCardIteration)
     }
 
 }

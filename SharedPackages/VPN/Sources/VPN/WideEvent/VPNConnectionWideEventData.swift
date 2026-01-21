@@ -21,11 +21,10 @@ import PixelKit
 
 public class VPNConnectionWideEventData: WideEventData {
 
-    #if DEBUG
-    public static let pixelName = "vpn_connection_debug"
-    #else
     public static let pixelName = "vpn_connection"
-    #endif
+    public static let featureName = "vpn-connection"
+
+    public static let connectionTimeout: TimeInterval = .minutes(15)
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
@@ -95,7 +94,24 @@ public class VPNConnectionWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    private static let featureName = "vpn-connection"
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        switch trigger {
+        case .appLaunch:
+            guard let start = overallDuration?.start else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            guard overallDuration?.end == nil else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            if Date() >= start.addingTimeInterval(Self.connectionTimeout) {
+                return .complete(.unknown(reason: StatusReason.timeout.rawValue))
+            }
+
+            return .keepPending
+        }
+    }
 }
 
 // MARK: - Public
@@ -159,21 +175,13 @@ extension VPNConnectionWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var params: [String: String] = [:]
-
-        params[WideEventParameter.Feature.name] = Self.featureName
-        params[WideEventParameter.VPNConnectionFeature.extensionType] = extensionType.rawValue
-        params[WideEventParameter.VPNConnectionFeature.startupMethod] = startupMethod.rawValue
-        params[WideEventParameter.VPNConnectionFeature.isSetup] = isSetup.rawValue
-
-        if let onboardingStatus {
-            params[WideEventParameter.VPNConnectionFeature.onboardingStatus] = onboardingStatus.rawValue
-        }
-
-        // Overall latency
-        if let overallDuration = overallDuration?.durationMilliseconds {
-            params[WideEventParameter.VPNConnectionFeature.latency] = String(Int(overallDuration))
-        }
+        var params = Dictionary(compacting: [
+            (WideEventParameter.VPNConnectionFeature.extensionType, extensionType.rawValue),
+            (WideEventParameter.VPNConnectionFeature.startupMethod, startupMethod.rawValue),
+            (WideEventParameter.VPNConnectionFeature.isSetup, isSetup.rawValue),
+            (WideEventParameter.VPNConnectionFeature.onboardingStatus, onboardingStatus?.rawValue),
+            (WideEventParameter.VPNConnectionFeature.latency, overallDuration?.stringValue(.noBucketing)),
+        ])
 
         for step in Step.allCases {
             addStepLatency(self[keyPath: step.durationPath], step: step, to: &params)

@@ -1,7 +1,7 @@
 //
 //  SuggestionsReader.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -123,8 +123,7 @@ public final class SuggestionsReader: SuggestionsReading {
         query: String?,
         script: AIChatSuggestionsUserScript
     ) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
-        var bestResult: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])?
-        var bestMostRecentDate: Date?
+        var results: [(pinned: [AIChatSuggestion], recent: [AIChatSuggestion])] = []
         var lastError: Error?
 
         // When query is empty, only show chats from the last week
@@ -153,35 +152,61 @@ public final class SuggestionsReader: SuggestionsReading {
 
             switch fetchResult {
             case .success(let suggestions):
-                // Find the most recent timestamp from this result
-                let mostRecentFromPinned = suggestions.pinned.compactMap(\.timestamp).max()
-                let mostRecentFromRecent = suggestions.recent.compactMap(\.timestamp).max()
-                let mostRecentDate = [mostRecentFromPinned, mostRecentFromRecent].compactMap { $0 }.max()
-
-                // Update best result if this has more recent chats or is the first successful result
-                if let currentMostRecent = mostRecentDate {
-                    if bestMostRecentDate == nil || currentMostRecent > bestMostRecentDate! {
-                        bestResult = suggestions
-                        bestMostRecentDate = currentMostRecent
-                    }
-                } else if bestResult == nil {
-                    // No timestamps but no result yet, use this one
-                    bestResult = suggestions
-                }
-
+                results.append(suggestions)
             case .failure(let error):
                 Logger.aiChat.debug("SuggestionsReader: Fetch from \(domain) failed: \(error.localizedDescription)")
                 lastError = error
             }
         }
 
-        if let result = bestResult {
-            return .success(result)
+        if let bestResult = Self.findMostRecentResult(from: results) {
+            return .success(bestResult)
         } else if let error = lastError {
             return .failure(error)
         } else {
             return .failure(ReaderError.webViewNotInitialized)
         }
+    }
+
+    // MARK: - Result Comparison
+
+    /// Finds the result with the most recent chat timestamp from multiple domain results.
+    /// - Parameter results: Array of suggestion results from different domains
+    /// - Returns: The result containing the most recently edited chat, or nil if no results
+    static func findMostRecentResult(
+        from results: [(pinned: [AIChatSuggestion], recent: [AIChatSuggestion])]
+    ) -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])? {
+        guard !results.isEmpty else { return nil }
+
+        var bestResult: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])?
+        var bestMostRecentDate: Date?
+
+        for suggestions in results {
+            let mostRecentDate = mostRecentTimestamp(from: suggestions)
+
+            if let currentMostRecent = mostRecentDate {
+                if bestMostRecentDate == nil || currentMostRecent > bestMostRecentDate! {
+                    bestResult = suggestions
+                    bestMostRecentDate = currentMostRecent
+                }
+            } else if bestResult == nil {
+                // No timestamps but no result yet, use this one
+                bestResult = suggestions
+            }
+        }
+
+        return bestResult
+    }
+
+    /// Finds the most recent timestamp from a suggestions result.
+    /// - Parameter suggestions: Tuple of pinned and recent suggestions
+    /// - Returns: The most recent date from all suggestions, or nil if none have timestamps
+    static func mostRecentTimestamp(
+        from suggestions: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])
+    ) -> Date? {
+        let mostRecentFromPinned = suggestions.pinned.compactMap(\.timestamp).max()
+        let mostRecentFromRecent = suggestions.recent.compactMap(\.timestamp).max()
+        return [mostRecentFromPinned, mostRecentFromRecent].compactMap { $0 }.max()
     }
 
     @MainActor

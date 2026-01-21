@@ -1,7 +1,7 @@
 //
 //  AIChatSuggestionsUserScript.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -75,21 +75,12 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
         let lastEdit: String?  // ISO date string like "2026-01-19T11:48:10.903Z"
 
         func toAIChatSuggestion() -> AIChatSuggestion {
-            let date: Date?
-            if let lastEdit = lastEdit {
-                let formatter = ISO8601DateFormatter()
-                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                date = formatter.date(from: lastEdit)
-            } else {
-                date = nil
-            }
-
-            return AIChatSuggestion(
+            AIChatSuggestion(
                 id: chatId,
                 title: title ?? "Untitled Chat",
                 isPinned: pinned ?? false,
                 chatId: chatId,
-                timestamp: date
+                timestamp: AIChatSuggestion.parseISO8601Date(lastEdit)
             )
         }
     }

@@ -1,7 +1,7 @@
 //
 //  AIChatSuggestionsReader.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -39,28 +39,23 @@ protocol AIChatSuggestionsReading {
 
 // MARK: - AIChatSuggestionsReader
 
+/// Wrapper around SuggestionsReader that provides a simpler API for macOS.
+/// Feature flag checks should be done by the caller (e.g., AIChatOmnibarController).
 @MainActor
 final class AIChatSuggestionsReader: AIChatSuggestionsReading {
 
-    private let featureFlagger: FeatureFlagger
     private let suggestionsReader: SuggestionsReading
 
     init(featureFlagger: FeatureFlagger, privacyConfig: PrivacyConfigurationManaging) {
-        self.featureFlagger = featureFlagger
         self.suggestionsReader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
     }
 
     /// For testing - allows injecting a mock reader
-    init(featureFlagger: FeatureFlagger, suggestionsReader: SuggestionsReading) {
-        self.featureFlagger = featureFlagger
+    init(suggestionsReader: SuggestionsReading) {
         self.suggestionsReader = suggestionsReader
     }
 
     func fetchSuggestions(query: String?) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
-        guard featureFlagger.isFeatureOn(.aiChatSuggestions) else {
-            return (pinned: [], recent: [])
-        }
-
         let result = await suggestionsReader.fetchSuggestions(query: query)
 
         switch result {

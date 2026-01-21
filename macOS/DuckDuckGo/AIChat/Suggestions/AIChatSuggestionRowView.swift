@@ -21,6 +21,27 @@ import AIChat
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
+// MARK: - Theme Provider Protocol
+
+/// Protocol for providing theme colors to suggestion row views.
+/// Enables dependency injection for testability.
+protocol SuggestionRowThemeProviding {
+    var accentPrimaryColor: NSColor { get }
+}
+
+/// Default implementation that uses the app's theme manager.
+struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
+    var accentPrimaryColor: NSColor {
+        var color: NSColor = .controlAccentColor
+        NSAppearance.withAppAppearance {
+            color = NSApp.delegateTyped.themeManager.theme.palette.accentPrimary
+        }
+        return color
+    }
+}
+
+// MARK: - AIChatSuggestionRowView
+
 /// A view representing a single AI chat suggestion row.
 /// Displays an icon (pinned or recent) and the chat title.
 /// Supports hover and selection states for keyboard/mouse navigation.
@@ -64,6 +85,7 @@ final class AIChatSuggestionRowView: NSView {
     // MARK: - Properties
 
     private let suggestion: AIChatSuggestion
+    private let themeProvider: SuggestionRowThemeProviding
     private var trackingArea: NSTrackingArea?
 
     var isSelected: Bool = false {
@@ -85,8 +107,9 @@ final class AIChatSuggestionRowView: NSView {
 
     // MARK: - Initialization
 
-    init(suggestion: AIChatSuggestion) {
+    init(suggestion: AIChatSuggestion, themeProvider: SuggestionRowThemeProviding = DefaultSuggestionRowThemeProvider()) {
         self.suggestion = suggestion
+        self.themeProvider = themeProvider
         super.init(frame: .zero)
         setupView()
         configure(with: suggestion)
@@ -150,18 +173,15 @@ final class AIChatSuggestionRowView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 
-        NSAppearance.withAppAppearance {
-            let palette = NSApp.delegateTyped.themeManager.theme.palette
-            if isSelected || isHovered {
-                backgroundLayer.backgroundColor = palette.accentPrimary.cgColor
-                // Use white text/icons for contrast on colored background
-                titleLabel.textColor = Constants.selectedTintColor
-                iconImageView.contentTintColor = Constants.selectedTintColor
-            } else {
-                backgroundLayer.backgroundColor = NSColor.clear.cgColor
-                titleLabel.textColor = Constants.textColor
-                iconImageView.contentTintColor = Constants.iconColor
-            }
+        if isSelected || isHovered {
+            backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
+            // Use white text/icons for contrast on colored background
+            titleLabel.textColor = Constants.selectedTintColor
+            iconImageView.contentTintColor = Constants.selectedTintColor
+        } else {
+            backgroundLayer.backgroundColor = NSColor.clear.cgColor
+            titleLabel.textColor = Constants.textColor
+            iconImageView.contentTintColor = Constants.iconColor
         }
 
         CATransaction.commit()
@@ -231,7 +251,10 @@ final class AIChatSuggestionRowView: NSView {
 
 }
 
-/// NSTextField subclass that doesn't report intrinsic width, preventing it from affecting parent layout
+// MARK: - NoIntrinsicWidthTextField
+
+/// NSTextField subclass that doesn't report intrinsic width, preventing it from affecting parent layout.
+/// Useful when you want a text field to fill available space without expanding its container.
 private final class NoIntrinsicWidthTextField: NSTextField {
     override var intrinsicContentSize: NSSize {
         // Return no intrinsic width to prevent affecting parent's width calculation

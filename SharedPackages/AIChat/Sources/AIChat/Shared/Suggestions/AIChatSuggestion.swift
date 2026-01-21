@@ -1,7 +1,7 @@
 //
 //  AIChatSuggestion.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -52,6 +52,27 @@ public struct AIChatSuggestion: Identifiable, Equatable, Hashable {
     }
 }
 
+// MARK: - Date Parsing
+
+extension AIChatSuggestion {
+
+    /// Shared ISO8601 date formatter for parsing chat timestamps.
+    /// Configured to handle dates like "2026-01-19T11:48:10.903Z"
+    private static let iso8601Formatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    /// Parses an ISO8601 date string into a Date object.
+    /// - Parameter dateString: ISO8601 formatted date string (e.g., "2026-01-19T11:48:10.903Z")
+    /// - Returns: Parsed Date, or nil if parsing fails
+    public static func parseISO8601Date(_ dateString: String?) -> Date? {
+        guard let dateString else { return nil }
+        return iso8601Formatter.date(from: dateString)
+    }
+}
+
 // MARK: - Filtering
 
 extension AIChatSuggestion {
@@ -67,9 +88,6 @@ extension AIChatSuggestion {
 // MARK: - Mock Data
 
 extension AIChatSuggestion {
-
-    /// Mock pinned chats for development and testing.
-    public static let mockPinnedChats: [AIChatSuggestion] = []
 
     /// Mock recent chats for development and testing.
     public static let mockRecentChats: [AIChatSuggestion] = [

@@ -115,7 +115,6 @@ struct VioletColorPalette: SharedColorPaletteDefinition {
     static let buttonsSecondaryFillTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
     static let lines = DynamicColor(lightHex: 0x1F1F1F, lightOpacity: 0.09, darkHex: 0xF9F9F9, darkOpacity: 0.12)
-
 }
 
 #endif

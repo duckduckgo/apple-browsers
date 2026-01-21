@@ -1279,6 +1279,19 @@
 		37BE087A2D09C0F200C77B8E /* NewTabPageNextStepsCardsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */; };
 		37BE087B2D09C0F200C77B8E /* NewTabPageNextStepsCardsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */; };
 		37BF3F14286D8A6500BD9014 /* PinnedTabsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BF3F13286D8A6500BD9014 /* PinnedTabsManager.swift */; };
+		37C320FA2F1E80A1008F4604 /* AppKitExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320BB2F1E80A1008F4604 /* AppKitExtensions */; };
+		37C320FB2F1E80A1008F4604 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320B92F1E80A1008F4604 /* SnapshotTesting */; };
+		37C320FC2F1E80A1008F4604 /* SharedTestUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320BD2F1E80A1008F4604 /* SharedTestUtilities */; };
+		37C320FD2F1E80A1008F4604 /* Utilities in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320BE2F1E80A1008F4604 /* Utilities */; };
+		37C320FE2F1E80A1008F4604 /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320BC2F1E80A1008F4604 /* Common */; };
+		37C321552F1F8C82008F4604 /* XCUIElementExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBCE6812BA444FA00B9DF00 /* XCUIElementExtension.swift */; };
+		37C321562F1F8C82008F4604 /* XCUIElementQueryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845812382E5DA5EB00B89BB1 /* XCUIElementQueryExtension.swift */; };
+		37C321572F1F8C82008F4604 /* XCUIApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */; };
+		37C321582F1F8C82008F4604 /* NSPredicateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8458123A2E5DC7D400B89BB1 /* NSPredicateExtension.swift */; };
+		37C321592F1F8C82008F4604 /* XCUIElementTypeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E2FC472E0DB051000874F7 /* XCUIElementTypeExtension.swift */; };
+		37C3215A2F1F8C82008F4604 /* XCUIElementSnapshotExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E2FC452E0DB041000874F7 /* XCUIElementSnapshotExtension.swift */; };
+		37C3215B2F1F8C82008F4604 /* UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE02D4192BB4609900DBE6B3 /* UITests.swift */; };
+		37C3215C2F1F8C82008F4604 /* StringExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8449053E2E549B6D0054F4FD /* StringExtensions.swift */; };
 		37C7493A2D55FE710065B48B /* HistoryViewActionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C749392D55FE690065B48B /* HistoryViewActionsHandler.swift */; };
 		37C7493B2D55FE710065B48B /* HistoryViewActionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C749392D55FE690065B48B /* HistoryViewActionsHandler.swift */; };
 		37C9F78C2CF1C776004D73A1 /* PrivacyStatsTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C9F78B2CF1C770004D73A1 /* PrivacyStatsTabExtension.swift */; };
@@ -4205,6 +4218,13 @@
 			remoteGlobalIDString = 3706FA6A293F65D500E42796;
 			remoteInfo = "DuckDuckGo Privacy Browser App Store";
 		};
+		37C320B82F1E80A1008F4604 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA585D76248FD31100E9A3E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B6EC37E729B5DA2A001ACE79;
+			remoteInfo = "tests-server";
+		};
 		4BA7C4DE2B3F6F4900AFE511 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA585D76248FD31100E9A3E2 /* Project object */;
@@ -4802,6 +4822,9 @@
 		37B904732E2A531C00E5DAF7 /* NavigationPixelNavigationResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationPixelNavigationResponder.swift; sourceTree = "<group>"; };
 		37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageNextStepsCardsProvider.swift; sourceTree = "<group>"; };
 		37BF3F13286D8A6500BD9014 /* PinnedTabsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsManager.swift; sourceTree = "<group>"; };
+		37C3210B2F1E80A1008F4604 /* Memory Usage Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Memory Usage Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		37C321132F1E81CA008F4604 /* macOS Memory Usage Tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "macOS Memory Usage Tests.xctestplan"; sourceTree = "<group>"; };
+		37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = MemoryUsageTests.xcconfig; sourceTree = "<group>"; };
 		37C749392D55FE690065B48B /* HistoryViewActionsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewActionsHandler.swift; sourceTree = "<group>"; };
 		37C9F78B2CF1C770004D73A1 /* PrivacyStatsTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsTabExtension.swift; sourceTree = "<group>"; };
 		37CBCA992A8966E60050218F /* SyncSettingsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsAdapter.swift; sourceTree = "<group>"; };
@@ -6575,6 +6598,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		37C320F92F1E80A1008F4604 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				37C320FA2F1E80A1008F4604 /* AppKitExtensions in Frameworks */,
+				37C320FB2F1E80A1008F4604 /* SnapshotTesting in Frameworks */,
+				37C320FC2F1E80A1008F4604 /* SharedTestUtilities in Frameworks */,
+				37C320FD2F1E80A1008F4604 /* Utilities in Frameworks */,
+				37C320FE2F1E80A1008F4604 /* Common in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4B1AD89A25FC27E200261379 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -7570,6 +7605,7 @@
 				376113C52B29BCD600E794BB /* SyncE2EUITests.xcconfig */,
 				376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */,
 				378B588C295CF446002C0CC0 /* UITests.xcconfig */,
+				37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */,
 			);
 			path = UITests;
 			sourceTree = "<group>";
@@ -7706,6 +7742,14 @@
 				1DD6A7B62D804B56006AE043 /* PinnedTabsDiscoveryPopover.swift */,
 			);
 			path = View;
+			sourceTree = "<group>";
+		};
+		37C3210D2F1E80FC008F4604 /* MemoryUsageTests */ = {
+			isa = PBXGroup;
+			children = (
+				37C321132F1E81CA008F4604 /* macOS Memory Usage Tests.xctestplan */,
+			);
+			path = MemoryUsageTests;
 			sourceTree = "<group>";
 		};
 		37C9F78E2CF1C855004D73A1 /* PrivacyStats */ = {
@@ -9974,6 +10018,7 @@
 				565E46DE2B2725DD0013AC2A /* SyncE2EUITests */,
 				B6EC37E929B5DA2A001ACE79 /* tests-server */,
 				9D84E3F52CD4E6660046CD8B /* DBPE2ETests */,
+				37C3210D2F1E80FC008F4604 /* MemoryUsageTests */,
 				7B4CE8DB26F02108009134B1 /* UITests */,
 				AA585D93248FD31400E9A3E2 /* UnitTests */,
 				7BDA36E72B7E037200AD5388 /* VPNProxyExtension */,
@@ -10003,6 +10048,7 @@
 				B6E6B9F32BA1FD90008AA7E1 /* sandbox-test-tool.app */,
 				9D84E43C2CD4E66F0046CD8B /* DBPE2ETests.xctest */,
 				7B2E365F2D6DEFBB00A08CB7 /* com.duckduckgo.mobile.ios.vpn.agent.network-extension.debug.systemextension */,
+				37C3210B2F1E80A1008F4604 /* Memory Usage Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -12480,6 +12526,31 @@
 			productReference = 376113D42B29CD5B00E794BB /* SyncE2EUITests App Store.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		37C320B62F1E80A1008F4604 /* Memory Usage Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 37C321052F1E80A1008F4604 /* Build configuration list for PBXNativeTarget "Memory Usage Tests" */;
+			buildPhases = (
+				37C320BF2F1E80A1008F4604 /* Sources */,
+				37C320F92F1E80A1008F4604 /* Frameworks */,
+				37C320FF2F1E80A1008F4604 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				37C320B72F1E80A1008F4604 /* PBXTargetDependency */,
+			);
+			name = "Memory Usage Tests";
+			packageProductDependencies = (
+				37C320B92F1E80A1008F4604 /* SnapshotTesting */,
+				37C320BB2F1E80A1008F4604 /* AppKitExtensions */,
+				37C320BC2F1E80A1008F4604 /* Common */,
+				37C320BD2F1E80A1008F4604 /* SharedTestUtilities */,
+				37C320BE2F1E80A1008F4604 /* Utilities */,
+			);
+			productName = "UI Tests";
+			productReference = 37C3210B2F1E80A1008F4604 /* Memory Usage Tests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		4B1AD89C25FC27E200261379 /* Integration Tests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4B1AD8A625FC27E200261379 /* Build configuration list for PBXNativeTarget "Integration Tests" */;
@@ -13138,6 +13209,7 @@
 				AA585D7D248FD31100E9A3E2 /* DuckDuckGo Privacy Browser */,
 				3706FA6A293F65D500E42796 /* DuckDuckGo Privacy Browser App Store */,
 				7B4CE8D926F02108009134B1 /* UI Tests */,
+				37C320B62F1E80A1008F4604 /* Memory Usage Tests */,
 				565E46DC2B2725DC0013AC2A /* SyncE2EUITests */,
 				376113C82B29CD5B00E794BB /* SyncE2EUITests App Store */,
 				9D84E3FA2CD4E66F0046CD8B /* DBPE2ETests */,
@@ -13308,6 +13380,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		376113CE2B29CD5B00E794BB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		37C320FF2F1E80A1008F4604 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -15597,6 +15676,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		37C320BF2F1E80A1008F4604 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				37C321552F1F8C82008F4604 /* XCUIElementExtension.swift in Sources */,
+				37C321562F1F8C82008F4604 /* XCUIElementQueryExtension.swift in Sources */,
+				37C321572F1F8C82008F4604 /* XCUIApplicationExtension.swift in Sources */,
+				37C321582F1F8C82008F4604 /* NSPredicateExtension.swift in Sources */,
+				37C321592F1F8C82008F4604 /* XCUIElementTypeExtension.swift in Sources */,
+				37C3215A2F1F8C82008F4604 /* XCUIElementSnapshotExtension.swift in Sources */,
+				37C3215B2F1F8C82008F4604 /* UITests.swift in Sources */,
+				37C3215C2F1F8C82008F4604 /* StringExtensions.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4B1AD89925FC27E200261379 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -16434,6 +16528,7 @@
 				BD88A83E2C4F3E4300460A26 /* FeedbackCategoryProviding.swift in Sources */,
 				BBFD526E2E12FB930043B00C /* VisualizeFireSettingsDecider.swift in Sources */,
 				9F56CFB12B843F6C00BB7F11 /* BookmarksDialogViewFactory.swift in Sources */,
+				B5EDA5622F1FB92A00A5D9CD /* MemoryStatsExporter.swift in Sources */,
 				372042D42DF9B0AD00CE099A /* InternalFeedbackFormTabExtension.swift in Sources */,
 				B645D8F629FA95440024461F /* WKProcessPoolExtension.swift in Sources */,
 				9D9AE86B2AA76CF90026E7DC /* LoginItemsManager.swift in Sources */,
@@ -17684,6 +17779,11 @@
 			target = 3706FA6A293F65D500E42796 /* DuckDuckGo Privacy Browser App Store */;
 			targetProxy = 376113D52B29CD6800E794BB /* PBXContainerItemProxy */;
 		};
+		37C320B72F1E80A1008F4604 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B6EC37E729B5DA2A001ACE79 /* tests-server */;
+			targetProxy = 37C320B82F1E80A1008F4604 /* PBXContainerItemProxy */;
+		};
 		4B4D60532A0B29CB00BCD287 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 4B4D60522A0B29CB00BCD287 /* NetworkProtection */;
@@ -18051,6 +18151,46 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */;
 			buildSettings = {
+			};
+			name = Review;
+		};
+		37C321062F1E80A1008F4604 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		37C321072F1E80A1008F4604 /* CI */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = CI;
+		};
+		37C321082F1E80A1008F4604 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		37C321092F1E80A1008F4604 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Alpha;
+		};
+		37C3210A2F1E80A1008F4604 /* Review */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Review;
 		};
@@ -18613,6 +18753,18 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		37C321052F1E80A1008F4604 /* Build configuration list for PBXNativeTarget "Memory Usage Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				37C321062F1E80A1008F4604 /* Debug */,
+				37C321072F1E80A1008F4604 /* CI */,
+				37C321082F1E80A1008F4604 /* Release */,
+				37C321092F1E80A1008F4604 /* Alpha */,
+				37C3210A2F1E80A1008F4604 /* Review */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		4B1AD8A625FC27E200261379 /* Build configuration list for PBXNativeTarget "Integration Tests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -18855,6 +19007,14 @@
 				version = 9.1.0;
 			};
 		};
+		37C320BA2F1E80A1008F4604 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
+			requirement = {
+				kind = exactVersion;
+				version = 1.18.7;
+			};
+		};
 		3FFD51CF7C19ACBDB9687474 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/BrowserServicesKit";
@@ -19080,6 +19240,27 @@
 		379C3E4D2E7238E100058C52 /* URLPredictor */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = URLPredictor;
+		};
+		37C320B92F1E80A1008F4604 /* SnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 37C320BA2F1E80A1008F4604 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTesting;
+		};
+		37C320BB2F1E80A1008F4604 /* AppKitExtensions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppKitExtensions;
+		};
+		37C320BC2F1E80A1008F4604 /* Common */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Common;
+		};
+		37C320BD2F1E80A1008F4604 /* SharedTestUtilities */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SharedTestUtilities;
+		};
+		37C320BE2F1E80A1008F4604 /* Utilities */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Utilities;
 		};
 		37DF37042CF38B96005ED34B /* PrivacyStats */ = {
 			isa = XCSwiftPackageProductDependency;

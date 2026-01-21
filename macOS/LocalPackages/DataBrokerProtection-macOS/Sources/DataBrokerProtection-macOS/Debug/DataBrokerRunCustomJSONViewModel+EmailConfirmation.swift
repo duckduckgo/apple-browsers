@@ -121,6 +121,7 @@ extension DataBrokerRunCustomJSONViewModel {
         }
     }
 
+    @MainActor
     func updateEmailConfirmationState(for event: HistoryEvent) {
         guard let extractedProfileId = event.extractedProfileId else { return }
         switch event.type {
@@ -135,10 +136,12 @@ extension DataBrokerRunCustomJSONViewModel {
 
     private func confirmationURL(for scanResult: ScanResult) -> URL? {
         guard let extractedProfileId = scanResult.extractedProfile.id else { return nil }
+        let brokerId = DebugHelper.stableId(for: scanResult.dataBroker)
+        let profileQueryId = DebugHelper.stableId(for: scanResult.profileQuery)
         guard let confirmations = try? emailConfirmationStore.fetchOptOutEmailConfirmationsWithLink(),
               let match = confirmations.first(where: {
-                  $0.brokerId == DebugHelper.stableId(for: scanResult.dataBroker) &&
-                  $0.profileQueryId == DebugHelper.stableId(for: scanResult.profileQuery) &&
+                  $0.brokerId == brokerId &&
+                  $0.profileQueryId == profileQueryId &&
                   $0.extractedProfileId == extractedProfileId
               }),
               let link = match.emailConfirmationLink else { return nil }

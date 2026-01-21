@@ -28,14 +28,14 @@ public final class DebugEmailConfirmationStore: EmailConfirmationSupporting {
     private let queue = DispatchQueue(label: "com.duckduckgo.dbp.debug.email-confirmation-store")
     private var confirmations: [Key: OptOutEmailConfirmationJobData] = [:]
     private var extractedProfiles: [Int64: (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)] = [:]
-
     public init() {}
 
     public func storeExtractedProfile(_ profile: ExtractedProfile,
                                       brokerId: Int64,
-                                      profileQueryId: Int64) -> ExtractedProfile {
+                                      profileQueryId: Int64,
+                                      stableId: Int64) -> ExtractedProfile {
         queue.sync {
-            let storedProfile = profile.with(id: DebugHelper.stableId(for: profile))
+            let storedProfile = profile.with(id: stableId)
             if let id = storedProfile.id {
                 extractedProfiles[id] = (brokerId: brokerId, profileQueryId: profileQueryId, profile: storedProfile)
             }
@@ -133,6 +133,13 @@ public final class DebugEmailConfirmationStore: EmailConfirmationSupporting {
     public func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)? {
         queue.sync {
             extractedProfiles[id]
+        }
+    }
+
+    public func reset() {
+        queue.sync {
+            confirmations.removeAll()
+            extractedProfiles.removeAll()
         }
     }
 }

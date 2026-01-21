@@ -231,6 +231,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.error = nil
         self.results.removeAll()
         self.debugEvents.removeAll()
+        self.awaitingEmailConfirmationProfileIds.removeAll()
+        self.emailConfirmationStore.reset()
         self.isProgressActive = true
         self.progressText = "Starting scan..."
         if let data = jsonString.data(using: .utf8) {
@@ -273,10 +275,19 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 shouldRunNextStep: { true }
                             )
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
-                            let assignedProfiles = extractedProfiles.map {
-                                emailConfirmationStore.storeExtractedProfile($0,
-                                                                             brokerId: DebugHelper.stableId(for: query.dataBroker),
-                                                                             profileQueryId: DebugHelper.stableId(for: query.profileQuery))
+                            let brokerId = DebugHelper.stableId(for: query.dataBroker)
+                            let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
+                            let assignedProfiles = extractedProfiles.compactMap { profile in
+                                guard let stableId = DebugHelper.stableId(for: profile) else {
+                                    let profileName = profile.name ?? "unknown"
+                                    addHistoryDebugEvent(summary: "Email confirmation",
+                                                         details: "Skipping profile without identifier: \(profileName)")
+                                    return nil
+                                }
+                                return emailConfirmationStore.storeExtractedProfile(profile,
+                                                                                    brokerId: brokerId,
+                                                                                    profileQueryId: profileQueryId,
+                                                                                    stableId: stableId)
                             }
                             addScanResultEvents(for: query, extractedProfiles: assignedProfiles)
 
@@ -442,7 +453,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 self.alert = AlertUI.from(error: dbpError)
             }
 
-            print("Error when scanning: \(error)")
+            Logger.dataBrokerProtection.error("Error when scanning: \(error.localizedDescription, privacy: .public)")
         }
     }
 

@@ -36,8 +36,8 @@ public enum DebugHelper {
         return djb2Hash(profileQueryText)
     }
 
-    public static func stableId(for profile: ExtractedProfile) -> Int64 {
-        guard let identifier = profile.identifier else { return 0 }
+    public static func stableId(for profile: ExtractedProfile) -> Int64? {
+        guard let identifier = profile.identifier else { return nil }
         return djb2Hash(identifier)
     }
 }

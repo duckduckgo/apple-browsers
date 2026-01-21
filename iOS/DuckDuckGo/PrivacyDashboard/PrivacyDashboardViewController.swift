@@ -286,7 +286,6 @@ extension PrivacyDashboardViewController {
         let openerContext: BrokenSiteReport.OpenerContext?
         let vpnOn: Bool
         let userRefreshCount: Int
-        let performanceMetrics: PerformanceMetricsSubfeature?
         let breakageReportingSubfeature: BreakageReportingSubfeature?
     }
     

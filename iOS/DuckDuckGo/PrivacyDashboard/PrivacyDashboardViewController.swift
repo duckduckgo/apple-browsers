@@ -312,7 +312,6 @@ extension PrivacyDashboardViewController {
             throw BrokenSiteReportError.failedToFetchTheCurrentWebsiteInfo
         }
 
-        let privacyConfig = privacyConfigurationManager.privacyConfig
         let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics

@@ -100,7 +100,7 @@ final class AIChatOmnibarController {
     }
 
     private func fetchSuggestionsIfNeeded(query: String) {
-        guard hasBeenActivated, isSuggestionnabled, let reader = suggestionsReader else { return }
+        guard hasBeenActivated, isSuggestionsEnabled, let reader = suggestionsReader else { return }
 
         // Cancel any in-flight fetch
         currentFetchTask?.cancel()

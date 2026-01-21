@@ -76,8 +76,6 @@ public final class SuggestionsReader: SuggestionsReading {
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfigurationManaging
 
-    private static let duckAIURL = URL(string: "https://duckduckgo.com")!
-
     // MARK: - Initialization
 
     public init(featureFlagger: FeatureFlagger, privacyConfig: PrivacyConfigurationManaging) {
@@ -94,20 +92,13 @@ public final class SuggestionsReader: SuggestionsReading {
             return .failure(ReaderError.webViewNotInitialized)
         }
 
-        // Lazy initialization: set up WebView and navigate on first call
+        // Lazy initialization: set up WebView on first call
         if !isWebViewReady {
             isSettingUp = true
             defer { isSettingUp = false }
 
             do {
                 try setupWebView()
-
-                let navigationResult = await navigateToSite()
-                if case .failure(let error) = navigationResult {
-                    Logger.aiChat.error("SuggestionsReader: Navigation failed: \(error.localizedDescription)")
-                    return .failure(error)
-                }
-
                 isWebViewReady = true
             } catch {
                 Logger.aiChat.error("SuggestionsReader: Setup failed: \(error.localizedDescription)")
@@ -120,10 +111,64 @@ public final class SuggestionsReader: SuggestionsReading {
             return .failure(ReaderError.scriptNotInitialized)
         }
 
-        // Send fetch request and wait for callback
-        return await withCheckedContinuation { continuation in
-            self.fetchContinuation = continuation
-            script.fetchChats(query: query, maxChats: AIChatSuggestionsUserScript.defaultMaxChats)
+        // Fetch from all domains and return the result with the most recent chat
+        return await fetchFromAllDomains(query: query, script: script)
+    }
+
+    @MainActor
+    private func fetchFromAllDomains(
+        query: String?,
+        script: AIChatSuggestionsUserScript
+    ) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
+        var bestResult: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])?
+        var bestMostRecentDate: Date?
+        var lastError: Error?
+
+        for domain in URL.aiChatDomains {
+            // Navigate to domain
+            let navigationResult = await navigateToSite(domain)
+            if case .failure(let error) = navigationResult {
+                Logger.aiChat.debug("SuggestionsReader: Navigation to \(domain) failed: \(error.localizedDescription)")
+                lastError = error
+                continue
+            }
+
+            // Fetch suggestions from this domain
+            let fetchResult = await withCheckedContinuation { continuation in
+                self.fetchContinuation = continuation
+                script.fetchChats(query: query, maxChats: AIChatSuggestionsUserScript.defaultMaxChats)
+            }
+
+            switch fetchResult {
+            case .success(let suggestions):
+                // Find the most recent timestamp from this result
+                let mostRecentFromPinned = suggestions.pinned.compactMap(\.timestamp).max()
+                let mostRecentFromRecent = suggestions.recent.compactMap(\.timestamp).max()
+                let mostRecentDate = [mostRecentFromPinned, mostRecentFromRecent].compactMap { $0 }.max()
+
+                // Update best result if this has more recent chats or is the first successful result
+                if let currentMostRecent = mostRecentDate {
+                    if bestMostRecentDate == nil || currentMostRecent > bestMostRecentDate! {
+                        bestResult = suggestions
+                        bestMostRecentDate = currentMostRecent
+                    }
+                } else if bestResult == nil {
+                    // No timestamps but no result yet, use this one
+                    bestResult = suggestions
+                }
+
+            case .failure(let error):
+                Logger.aiChat.debug("SuggestionsReader: Fetch from \(domain) failed: \(error.localizedDescription)")
+                lastError = error
+            }
+        }
+
+        if let result = bestResult {
+            return .success(result)
+        } else if let error = lastError {
+            return .failure(error)
+        } else {
+            return .failure(ReaderError.webViewNotInitialized)
         }
     }
 
@@ -216,7 +261,7 @@ public final class SuggestionsReader: SuggestionsReading {
     // MARK: - Navigation
 
     @MainActor
-    private func navigateToSite() async -> Result<Void, Error> {
+    private func navigateToSite(_ url: URL) async -> Result<Void, Error> {
         guard let webView else {
             return .failure(ReaderError.webViewNotInitialized)
         }
@@ -225,9 +270,9 @@ public final class SuggestionsReader: SuggestionsReading {
             self.navigationContinuation = continuation
 
             if #available(iOS 15.0, macOS 12.0, *) {
-                webView.loadSimulatedRequest(URLRequest(url: Self.duckAIURL), responseHTML: "")
+                webView.loadSimulatedRequest(URLRequest(url: url), responseHTML: "")
             } else {
-                webView.loadHTMLString("", baseURL: Self.duckAIURL)
+                webView.loadHTMLString("", baseURL: url)
             }
         }
     }

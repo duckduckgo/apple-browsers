@@ -97,8 +97,18 @@ private struct HeaderView: View {
 
             if model.isNew || model.isEditing {
 
-                TextField("", text: $model.title)
-                    .font(.title)
+                TextField(UserText.pmCardNicknamePlaceholder, text: $model.title)
+                    .font(.system(size: 13))
+                    .textFieldStyle(.plain)
+                    .padding(8)
+                    .frame(height: 32)
+                    .background(Color.white)
+                    .cornerRadius(6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.black.opacity(0.15), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 1)
                     .accessibility(identifier: "Title TextField")
 
             } else {

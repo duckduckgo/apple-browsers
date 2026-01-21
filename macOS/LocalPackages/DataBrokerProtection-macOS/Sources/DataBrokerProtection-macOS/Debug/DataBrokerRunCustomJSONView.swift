@@ -116,6 +116,7 @@ struct DataBrokerRunCustomJSONView: View {
             Divider()
 
             TextEditor(text: $jsonText)
+                .font(monospacedTextFont)
                 .autocorrectionDisabled()
                 .border(Color.gray, width: 1)
                 .frame(minHeight: 220)
@@ -314,6 +315,7 @@ struct DataBrokerRunCustomJSONView: View {
                     .frame(height: listHeight)
 
                     TextEditor(text: .constant(selectedDebugEventDetails))
+                        .font(monospacedTextFont)
                         .border(Color.gray, width: 1)
                         .frame(height: detailsHeight)
                 }
@@ -456,6 +458,13 @@ struct DataBrokerRunCustomJSONView: View {
         formatter.dateFormat = "HH:mm:ss.SSS"
         return formatter
     }()
+
+    private var monospacedTextFont: Font {
+        if #available(macOS 12.0, *) {
+            return .system(.body, design: .monospaced)
+        }
+        return .system(.body)
+    }
 }
 
 private enum Tab: Hashable {

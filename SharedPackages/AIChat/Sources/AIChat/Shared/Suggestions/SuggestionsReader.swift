@@ -220,6 +220,11 @@ public final class SuggestionsReader: SuggestionsReading {
         contentScopeUserScript = nil
         isWebViewReady = false
         isSettingUp = false
+
+        // Resume any pending continuations to avoid hanging tasks
+        navigationContinuation?.resume(returning: .failure(ReaderError.webViewNotInitialized))
+        navigationContinuation = nil
+        fetchContinuation?.resume(returning: .failure(ReaderError.webViewNotInitialized))
         fetchContinuation = nil
     }
 

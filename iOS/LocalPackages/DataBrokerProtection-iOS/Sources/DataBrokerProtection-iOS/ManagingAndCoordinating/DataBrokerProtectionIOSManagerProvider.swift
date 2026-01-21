@@ -138,7 +138,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             featureFlagger: featureFlagger,
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
-            wideEvent: wideEvent
+            wideEvent: wideEvent,
+            isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated }
         )
 
         return DataBrokerProtectionIOSManager(

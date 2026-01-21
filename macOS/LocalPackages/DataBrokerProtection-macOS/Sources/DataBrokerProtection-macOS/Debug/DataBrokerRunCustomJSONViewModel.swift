@@ -291,7 +291,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             }
                             addScanResultEvents(for: query, extractedProfiles: assignedProfiles)
 
-                            DispatchQueue.main.async {
+                            Task { @MainActor in
                                 for extractedProfile in assignedProfiles {
                                     self.results.append(ScanResult(dataBroker: query.dataBroker,
                                                                    profileQuery: query.profileQuery,
@@ -376,15 +376,18 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 if self.featureFlagger.isEmailConfirmationDecouplingFeatureOn,
                    scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
                     addOptOutAwaitingEmailConfirmationEvent(for: scanResult)
-                    DispatchQueue.main.async {
+                    Task { @MainActor in
                         self.isProgressActive = false
                         self.progressText = "Awaiting email confirmation"
+                        self.showAlert = true
+                        self.alert = AlertUI(title: "Opt-out submitted awaiting email confirmation",
+                                             description: "Use \"Check for email confirmation\" to continue. You may need to run it multiple times.")
                     }
                     return
                 }
 
                 addOptOutConfirmedEvent(for: scanResult)
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     self.isProgressActive = false
                     self.progressText = "Idle"
                     self.showAlert = true
@@ -397,7 +400,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
                 addOptOutErrorEvent(for: scanResult, error: error)
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     self.isProgressActive = false
                     self.progressText = "Idle"
                 }
@@ -435,7 +438,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     private func showNoResultsAlert() {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.showAlert = true
             self.alert = AlertUI.noResults()
         }
@@ -447,7 +450,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     func showAlert(for error: Error) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.showAlert = true
             if let dbpError = error as? DataBrokerProtectionError {
                 self.alert = AlertUI.from(error: dbpError)
@@ -513,7 +516,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             summary: summary,
             details: details
         )
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.debugEvents.append(event)
         }
         updateProgress(progressText)
@@ -527,7 +530,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             summary: summary,
             details: details
         )
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.debugEvents.append(event)
         }
     }
@@ -549,7 +552,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     func updateProgress(_ text: String) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.progressText = text
             self.isProgressActive = true
         }

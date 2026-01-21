@@ -53,7 +53,6 @@ extension DataBrokerRunCustomJSONViewModel {
         }
     }
 
-    @MainActor
     func continueOptOutAfterEmailConfirmation(scanResult: ScanResult) {
         guard let confirmationURL = confirmationURL(for: scanResult) else { return }
         isProgressActive = true
@@ -100,7 +99,7 @@ extension DataBrokerRunCustomJSONViewModel {
                                         showWebView: true) { true }
 
                 addOptOutConfirmedEvent(for: scanResult)
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     self.isProgressActive = false
                     self.progressText = "Idle"
                     self.showAlert = true
@@ -112,7 +111,7 @@ extension DataBrokerRunCustomJSONViewModel {
                 fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
                 addOptOutErrorEvent(for: scanResult, error: error)
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     self.isProgressActive = false
                     self.progressText = "Idle"
                 }

@@ -20,7 +20,12 @@ import Foundation
 import Common
 
 public protocol WideEventData: Codable, WideEventParameterProviding {
+    /// The name used when sending the pixel.
+    /// This will be appended to `m_(ios|macos)_wide_`.
     static var pixelName: String { get }
+
+    /// The name used in the event payload. This is used to identify the feature that the event is related to, and can be the same across platforms.
+    static var featureName: String { get }
 
     /// Data about the context that the event was sent in, such as the parent feature that the event is operating in.
     /// For example, the context name for a data import event could be the flow that triggered the import, such as onboarding.
@@ -35,6 +40,10 @@ public protocol WideEventData: Codable, WideEventParameterProviding {
     /// Optional error data.
     /// All layers of underlying errors will be reported.
     var errorData: WideEventErrorData? { get set }
+
+    /// Returns the completion decision for this event based on the given trigger.
+    /// Override this method to provide custom completion logic for your event type.
+    func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision
 }
 
 public enum WideEventStatus: Codable, Equatable, CustomStringConvertible {
@@ -138,6 +147,16 @@ extension WideEventGlobalData: WideEventParameterProviding {
 
         return parameters
     }
+
+    public func jsonParameters() -> [String: Encodable] {
+        var parameters: [String: Encodable] = [:]
+
+        parameters[WideEventParameter.Global.platform] = platform
+        parameters[WideEventParameter.Global.type] = type
+        parameters[WideEventParameter.Global.sampleRate] = sampleRate
+
+        return parameters
+    }
 }
 
 // MARK: - WideEventAppData
@@ -194,20 +213,12 @@ public struct WideEventAppData: Codable {
 extension WideEventAppData: WideEventParameterProviding {
 
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        parameters[WideEventParameter.App.name] = name
-        parameters[WideEventParameter.App.version] = version
-
-        if let formFactor = formFactor {
-            parameters[WideEventParameter.App.formFactor] = formFactor
-        }
-
-        if let internalUser {
-            parameters[WideEventParameter.App.internalUser] = internalUser ? "true" : nil
-        }
-
-        return parameters
+        Dictionary(compacting: [
+            (WideEventParameter.App.name, name),
+            (WideEventParameter.App.version, version),
+            (WideEventParameter.App.formFactor, formFactor),
+            (WideEventParameter.App.internalUser, internalUser == true ? "true" : nil),
+        ])
     }
 
 }
@@ -227,12 +238,14 @@ public struct WideEventContextData: Codable {
 extension WideEventContextData: WideEventParameterProviding {
 
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-        if let name = name { parameters[WideEventParameter.Context.name] = name }
-        return parameters
+        Dictionary(compacting: [
+            (WideEventParameter.Context.name, name),
+        ])
     }
 
 }
+
+// MARK: - WideEventErrorData
 
 public struct WideEventErrorData: Codable {
 
@@ -292,8 +305,28 @@ extension WideEventErrorData: WideEventParameterProviding {
 }
 
 extension WideEvent.MeasuredInterval {
+
     public var durationMilliseconds: Double? {
         guard let start, let end else { return nil }
         return max(end.timeIntervalSince(start) * 1000, 0)
+    }
+
+    public func stringValue(_ bucket: DurationBucket) -> String? {
+        durationMilliseconds.map { String(bucket.apply($0)) }
+    }
+
+}
+
+public enum DurationBucket {
+    case noBucketing
+    case bucketed((Double) -> Int)
+
+    func apply(_ ms: Double) -> Int {
+        switch self {
+        case .noBucketing:
+            return Int(ms)
+        case .bucketed(let fn):
+            return fn(ms)
+        }
     }
 }

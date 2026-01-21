@@ -180,6 +180,44 @@ final class NewTabPageNextStepsCardsPersistorTests: XCTestCase {
         XCTAssertEqual(try keyValueStore.object(forKey: "new.tab.page.next.steps.subscription.card.times.dismissed") as? Int, 6)
     }
 
+    // MARK: - Ordered Card IDs Tests
+
+    func testWhenNoOrderIsStoredThenOrderedCardIDsReturnsNil() {
+        XCTAssertNil(persistor.orderedCardIDs)
+    }
+
+    func testWhenOrderedCardIDsIsSetThenRawValueIsStored() throws {
+        let cardOrder: [NewTabPageDataModel.CardID] = [.defaultApp, .emailProtection, .duckplayer]
+        persistor.orderedCardIDs = cardOrder
+        let stored = try keyValueStore.object(forKey: "new.tab.page.next.steps.card.order") as? [String]
+        XCTAssertEqual(stored, cardOrder.map { $0.rawValue })
+    }
+
+    func testWhenOrderedCardIDsIsRetrievedThenStoredValueIsReturned() throws {
+        let cardOrder: [NewTabPageDataModel.CardID] = [.sync, .bringStuff, .subscription]
+        try keyValueStore.set(cardOrder.map { $0.rawValue }, forKey: "new.tab.page.next.steps.card.order")
+        XCTAssertEqual(persistor.orderedCardIDs, cardOrder)
+    }
+
+    // MARK: - First Card Level Tests
+
+    func testWhenNoLevelIsStoredThenFirstCardLevelReturnsLevel1() {
+        XCTAssertEqual(persistor.firstCardLevel, .level1)
+    }
+
+    func testWhenFirstCardLevelIsSetThenRawValueIsStored() throws {
+        let level: NewTabPageDataModel.CardLevel = .level2
+        persistor.firstCardLevel = level
+        let stored = try keyValueStore.object(forKey: "new.tab.page.next.steps.first.card.level") as? Int
+        XCTAssertEqual(stored, level.rawValue)
+    }
+
+    func testWhenFirstCardLevelIsRetrievedThenStoredValueIsReturned() throws {
+        let level: NewTabPageDataModel.CardLevel = .level2
+        try keyValueStore.set(level.rawValue, forKey: "new.tab.page.next.steps.first.card.level")
+        XCTAssertEqual(persistor.firstCardLevel, level)
+    }
+
     // MARK: - Clear Method Tests
 
     func testWhenClearIsCalledThenAllCardDataIsRemoved() throws {
@@ -227,5 +265,28 @@ final class NewTabPageNextStepsCardsPersistorTests: XCTestCase {
         XCTAssertEqual(persistor.timesDismissed(for: .bringStuff), 0)
         XCTAssertEqual(persistor.timesDismissed(for: .subscription), 0)
         XCTAssertEqual(persistor.timesDismissed(for: .addAppToDockMac), 0)
+    }
+
+    func testWhenClearIsCalledThenOrderedCardIDsIsRemoved() throws {
+        let cardOrder: [NewTabPageDataModel.CardID] = [.defaultApp, .emailProtection, .duckplayer]
+        persistor.orderedCardIDs = cardOrder
+        XCTAssertNotNil(persistor.orderedCardIDs)
+
+        persistor.clear()
+
+        XCTAssertNil(persistor.orderedCardIDs)
+        let stored = try? keyValueStore.object(forKey: "new.tab.page.next.steps.card.order") as? [NewTabPageDataModel.CardID]
+        XCTAssertNil(stored)
+    }
+
+    func testWhenClearIsCalledThenFirstCardLevelIsRemoved() throws {
+        persistor.firstCardLevel = .level2
+        XCTAssertEqual(persistor.firstCardLevel, .level2)
+
+        persistor.clear()
+
+        XCTAssertEqual(persistor.firstCardLevel, .level1)
+        let stored = try? keyValueStore.object(forKey: "new.tab.page.next.steps.first.card.level") as? NewTabPageDataModel.CardLevel
+        XCTAssertNil(stored)
     }
 }

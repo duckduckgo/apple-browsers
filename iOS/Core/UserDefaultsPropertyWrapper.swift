@@ -190,6 +190,7 @@ public struct UserDefaultsWrapper<T> {
 
         // AI Chat
         case autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
+        case aiChatContextualOnboardingSeen = "com.duckduckgo.ios.aiChatContextualOnboardingSeen"
         
         // Dax Easter Egg Logo
         case daxEasterEggLogoURL = "com.duckduckgo.ios.daxEasterEggLogoURL"
@@ -213,6 +214,9 @@ public struct UserDefaultsWrapper<T> {
 
         // Debug screen
         case debugPinnedScreens = "debugPinnedScreens"
+
+        // Trackers Blocked Animation
+        case showTrackersBlockedAnimation = "com.duckduckgo.ios.showTrackersBlockedAnimation"
     }
 
     private let key: Key

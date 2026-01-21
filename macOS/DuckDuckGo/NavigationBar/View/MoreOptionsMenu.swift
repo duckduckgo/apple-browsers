@@ -480,7 +480,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         }
 
         #if SPARKLE
-        guard let updateController = updateController as? SparkleUpdateController else { return }
+        guard let updateController = updateController as? any SparkleUpdateControllerProtocol else { return }
 
         // Log edge cases where menu item appears but doesn't function
         // To be removed in a future version
@@ -489,13 +489,15 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         }
         #endif
 
-        guard updateController.hasPendingUpdate else {
+        guard updateController.hasPendingUpdate && updateController.mustShowUpdateIndicators else {
             return
         }
 
+        let isMenuItemCreatedFromUpdateController = featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) || featureFlagger.isFeatureOn(.updatesSimplifiedFlow)
+
         let menuItem: NSMenuItem = {
             #if SPARKLE
-            if featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) {
+            if isMenuItemCreatedFromUpdateController {
                 return SparkleUpdateMenuItemFactory.menuItem(for: updateController)
             } else {
                 return SparkleUpdateMenuItemFactory.menuItem(for: update)
@@ -753,7 +755,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         guard let updateController = Application.appDelegate.updateController else { return }
 
-        if updateController.hasPendingUpdate && updateController.needsNotificationDot {
+        if updateController.clearsNotificationDotOnMenuOpen,
+           updateController.hasPendingUpdate,
+           updateController.needsNotificationDot {
             updateController.needsNotificationDot = false
         }
 

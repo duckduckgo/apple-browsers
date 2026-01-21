@@ -80,10 +80,20 @@ struct SettingsAppearanceView: View {
 
                 showFullSiteAddressSetting()
 
+                showTrackersBlockedAnimationSetting()
+
                 showReloadButtonSetting()
 
             } header: {
                 Text(UserText.addressBar)
+            }
+
+            if viewModel.isTabSwitcherTrackerCountEnabled {
+                Section {
+                    showTrackerCountSetting()
+                } header: {
+                    Text(UserText.settingsTabsSection)
+                }
             }
 
             // Customizable buttons specific settings.
@@ -175,6 +185,18 @@ struct SettingsAppearanceView: View {
     func showFullSiteAddressSetting() -> some View {
         SettingsCellView(label: UserText.settingsFullURL,
                          accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
+    }
+
+    @ViewBuilder
+    func showTrackerCountSetting() -> some View {
+        SettingsCellView(label: UserText.tabSwitcherShowTrackerCount,
+                         accessory: .toggle(isOn: viewModel.showTrackerCountInTabSwitcherBinding))
+    }
+
+    @ViewBuilder
+    func showTrackersBlockedAnimationSetting() -> some View {
+        SettingsCellView(label: UserText.settingsTrackersBlockedAnimation,
+                         accessory: .toggle(isOn: viewModel.showTrackersBlockedAnimationBinding))
     }
 
     @ViewBuilder

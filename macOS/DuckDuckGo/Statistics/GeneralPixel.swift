@@ -95,6 +95,15 @@ enum GeneralPixel: PixelKitEvent {
     case autofillLoginsSettingsEnabled
     case autofillLoginsSettingsDisabled
 
+    // Warn Before Quit
+    // See macOS/PixelDefinitions/pixels/warn_before_quit_pixels.json5
+    // Discussion: https://app.asana.com/0/137249556945/1212837417207452
+    case warnBeforeQuitShown
+    case warnBeforeQuitQuit
+    case warnBeforeQuitCancelled
+    case warnBeforeQuitDontShowAgain
+    case warnBeforeQuitSettingsDisabled
+
     case bitwardenPasswordAutofilled
     case bitwardenPasswordSaved
 
@@ -719,6 +728,17 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_autofill_logins_settings_enabled"
         case .autofillLoginsSettingsDisabled:
             return "m_mac_autofill_logins_settings_disabled"
+
+        case .warnBeforeQuitShown:
+            return "m_mac_warn-before-quit_shown"
+        case .warnBeforeQuitQuit:
+            return "m_mac_warn-before-quit_quit"
+        case .warnBeforeQuitCancelled:
+            return "m_mac_warn-before-quit_cancelled"
+        case .warnBeforeQuitDontShowAgain:
+            return "m_mac_warn-before-quit_dont-show-again"
+        case .warnBeforeQuitSettingsDisabled:
+            return "m_mac_settings_warn-before-quit_disabled"
 
         case .bitwardenPasswordAutofilled:
             return "m_mac_bitwarden_autofill_password"
@@ -1557,6 +1577,11 @@ enum GeneralPixel: PixelKitEvent {
                 .autofillManagementUpdateLogin,
                 .autofillLoginsSettingsEnabled,
                 .autofillLoginsSettingsDisabled,
+                .warnBeforeQuitShown,
+                .warnBeforeQuitQuit,
+                .warnBeforeQuitCancelled,
+                .warnBeforeQuitDontShowAgain,
+                .warnBeforeQuitSettingsDisabled,
                 .bitwardenPasswordAutofilled,
                 .bitwardenPasswordSaved,
                 .ampBlockingRulesCompilationFailed,

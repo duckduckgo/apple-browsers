@@ -11,6 +11,8 @@ on:
            - ios-release-adhoc
            - ios-alpha-appstore
            - ios-alpha-adhoc
+           - ios-experimental-appstore
+           - ios-experimental-adhoc
            - macos-release-appstore
            - macos-release-dmg
            - macos-review-dmg
@@ -68,6 +70,14 @@ jobs:
             ios-alpha-adhoc)
               platform="iOS"
               lane="sync_signing_alpha_adhoc"
+              ;;
+            ios-experimental-appstore)
+              platform="iOS"
+              lane="sync_signing_experimental"
+              ;;
+            ios-experimental-adhoc)
+              platform="iOS"
+              lane="sync_signing_experimental_adhoc"
               ;;
             macos-release-appstore)
               platform="macOS"

@@ -27,7 +27,7 @@ import PrivacyConfig
 protocol DataClearingSettingsViewModelDelegate: AnyObject {
     func navigateToFireproofSites()
     func navigateToAutoClearData()
-    func presentFireConfirmation()
+    func presentFireConfirmation(from sourceRect: CGRect)
 }
 
 @MainActor
@@ -62,7 +62,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     }
     
     var showAIChatsToggle: Bool {
-        return aiChatSettings.isAIChatEnabled && featureFlagger.isFeatureOn(.duckAiDataClearing)
+        return aiChatSettings.isAIChatEnabled
     }
     
     // MARK: - Elements Content
@@ -159,10 +159,10 @@ final class DataClearingSettingsViewModel: ObservableObject {
         delegate?.navigateToAutoClearData()
     }
     
-    func presentFireConfirmation() {
+    func presentFireConfirmation(from sourceRect: CGRect) {
         DailyPixel.fireDailyAndCount(pixel: .forgetAllPressedSettings,
                                      pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
-        delegate?.presentFireConfirmation()
+        delegate?.presentFireConfirmation(from: sourceRect)
     }
     
     func refreshFireproofedSitesCount() {

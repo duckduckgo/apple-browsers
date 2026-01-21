@@ -29,6 +29,7 @@ import AppKitExtensions
 import AIChat
 import UIComponents
 import DesignResourcesKitIcons
+import SwiftUI
 
 // MARK: - Toggle Interaction Tracking
 
@@ -95,6 +96,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionCenterPopover: PermissionCenterPopover?
 
     private var popupBlockedPopover: PopupBlockedPopover?
+    private var systemDisabledInfoPopover: NSPopover?
+
     private func popupBlockedPopoverCreatingIfNeeded() -> PopupBlockedPopover {
         return popupBlockedPopover ?? {
             let popover = PopupBlockedPopover(featureFlagger: featureFlagger)
@@ -390,6 +393,7 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyDashboardButton.sendAction(on: .leftMouseUp)
 
         (imageButton.cell as? NSButtonCell)?.highlightsBy = NSCell.StyleMask(rawValue: 0)
+        imageButton.setAccessibilityIdentifier("AddressBarButtonsViewController.imageButton")
 
         cameraButton.sendAction(on: .leftMouseDown)
         cameraButton.setAccessibilityIdentifier("AddressBarButtonsViewController.cameraButton")
@@ -486,6 +490,9 @@ final class AddressBarButtonsViewController: NSViewController {
         // the leak is found.
         if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
             permissionAuthorizationPopover.close()
+        }
+        if let systemDisabledInfoPopover, systemDisabledInfoPopover.isShown {
+            systemDisabledInfoPopover.close()
         }
 
         for case let .some(animationView) in [shieldDotAnimationView, shieldAnimationView] {
@@ -623,6 +630,14 @@ final class AddressBarButtonsViewController: NSViewController {
             .dropFirst().sink { [weak self] _ in
                 self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
+
+        // Show informational popover when permission blocked due to system being disabled
+        tabViewModel?.tab.permissions.permissionBlockedBySystem
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] (domain, permissionType) in
+                self?.showSystemDisabledInfoPopover(for: domain, permissionType: permissionType)
+            }
+            .store(in: &permissionsCancellables)
     }
 
     private func subscribeToPrivacyEntryPointIconUpdateTrigger() {
@@ -946,6 +961,15 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
+        // Hide shields when showing an error page (globe icon is shown instead)
+        if tabViewModel.isShowingErrorPage {
+            shieldAnimationView.isHidden = true
+            shieldDotAnimationView.isHidden = true
+            privacyDashboardButton.image = nil
+            privacyDashboardButton.setAccessibilityValue("hidden")
+            return
+        }
+
         // Don't change icon while shield animation is playing
         guard !isAnyShieldAnimationPlaying else { return }
 
@@ -974,6 +998,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 shieldDotAnimationView.isHidden = true
                 privacyDashboardButton.isAnimationEnabled = true
                 privacyDashboardButton.image = privacyShieldStyle.iconWithDot
+                privacyDashboardButton.setAccessibilityValue("shieldDot")
 
                 let animationNames = MouseOverAnimationButton.AnimationNames(
                     aqua: privacyShieldStyle.hoverAnimationWithDot(forLightMode: true),
@@ -986,6 +1011,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 privacyDashboardButton.isAnimationEnabled = true
                 shieldAnimationView.isHidden = false
                 shieldDotAnimationView.isHidden = true
+                privacyDashboardButton.setAccessibilityValue("shield")
 
                 if !hasShieldAnimationCompleted {
                     shieldAnimationView.currentFrame = 1
@@ -1690,6 +1716,23 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionAuthorizationPopover?.close()
         popupBlockedPopover?.close()
         permissionCenterPopover?.close()
+        systemDisabledInfoPopover?.close()
+    }
+
+    private func showSystemDisabledInfoPopover(for domain: String, permissionType: PermissionType) {
+        guard permissionCenterButton.isVisible else { return }
+
+        let view = SystemDisabledPermissionInfoView(domain: domain, permissionType: permissionType)
+        let controller = NSHostingController(rootView: view)
+        controller.preferredContentSize = controller.view.fittingSize
+
+        let popover = NSPopover()
+        systemDisabledInfoPopover = popover
+        popover.contentViewController = controller
+        popover.behavior = .transient  // Click outside to dismiss
+        popover.show(relativeTo: permissionCenterButton.bounds,
+                     of: permissionCenterButton,
+                     preferredEdge: .maxY)
     }
 
     func openPrivacyDashboard() {

@@ -65,7 +65,8 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         return try encoder.encode(subscription)
     }
@@ -94,7 +95,8 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: .pro,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         endpointService.updateCache(with: cachedSubscription)
 
@@ -194,7 +196,8 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
                 status: .gracePeriod,
                 activeOffers: [],
                 tier: .plus,
-                availableChanges: nil
+                availableChanges: nil,
+                pendingPlans: nil
             )
         )
         let confirmData = try encoder.encode(confirmResponse)
@@ -222,7 +225,8 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         endpointService.updateCache(with: subscription)
 
@@ -252,7 +256,8 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
             status: .autoRenewable,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
         endpointService.updateCache(with: subscription)
 

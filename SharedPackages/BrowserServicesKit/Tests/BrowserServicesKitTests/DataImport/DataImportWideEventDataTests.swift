@@ -51,7 +51,6 @@ final class DataImportWideEventDataTests: XCTestCase {
         eventData.creditCardImportStatus = .success
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "data-import")
         XCTAssertEqual(parameters["feature.data.ext.source"], "safari")
 
         // Have all per type status
@@ -106,7 +105,6 @@ final class DataImportWideEventDataTests: XCTestCase {
         eventData.passwordImportError = WideEventErrorData(error: passwordImportError, description: "no data")
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "data-import")
         XCTAssertEqual(parameters["feature.data.ext.source"], "chrome")
 
         // Have all per type status
@@ -155,7 +153,6 @@ final class DataImportWideEventDataTests: XCTestCase {
         eventData.bookmarkImportError = WideEventErrorData(error: bookmarkImportError, description: "no data")
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.name"], "data-import")
         XCTAssertEqual(parameters["feature.data.ext.source"], "safari")
 
         // Have all per type status
@@ -456,6 +453,78 @@ final class DataImportWideEventDataTests: XCTestCase {
             } else {
                 XCTAssertEqual(parameters["feature.data.ext.passwords_error.underlying_domain\(i)"], "Domain\(i)")
             }
+        }
+    }
+
+    // MARK: - Completion Decision
+
+    func testCompletionDecision_noOverallDurationStart_returnsPartialData() async {
+        let eventData = DataImportWideEventData(
+            source: .safari,
+            contextData: WideEventContextData()
+        )
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: DataImportWideEventData.StatusReason.partialData.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with partial data")
+        }
+    }
+
+    func testCompletionDecision_intervalAlreadyCompleted_returnsPartialData() async {
+        let eventData = DataImportWideEventData(
+            source: .safari,
+            contextData: WideEventContextData()
+        )
+        let start = Date()
+        eventData.overallDuration = WideEvent.MeasuredInterval(start: start, end: start.addingTimeInterval(1))
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: DataImportWideEventData.StatusReason.partialData.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with partial data")
+        }
+    }
+
+    func testCompletionDecision_importTimeoutExceeded_returnsTimeout() async {
+        let eventData = DataImportWideEventData(
+            source: .safari,
+            contextData: WideEventContextData()
+        )
+        let start = Date().addingTimeInterval(-DataImportWideEventData.importTimeout - 1)
+        eventData.overallDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .complete(let status):
+            XCTAssertEqual(status, .unknown(reason: DataImportWideEventData.StatusReason.timeout.rawValue))
+        case .keepPending:
+            XCTFail("Expected completion with timeout")
+        }
+    }
+
+    func testCompletionDecision_withinTimeout_returnsKeepPending() async {
+        let eventData = DataImportWideEventData(
+            source: .safari,
+            contextData: WideEventContextData()
+        )
+        let start = Date().addingTimeInterval(-DataImportWideEventData.importTimeout + 1)
+        eventData.overallDuration = WideEvent.MeasuredInterval(start: start, end: nil)
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        switch decision {
+        case .keepPending:
+            break
+        case .complete:
+            XCTFail("Expected keep pending")
         }
     }
 }

@@ -32,7 +32,8 @@ public struct SubscriptionMockFactory {
                                                   status: .autoRenewable,
                                                   activeOffers: [],
                                                   tier: nil,
-                                                  availableChanges: nil)
+                                                  availableChanges: nil,
+                                                  pendingPlans: nil)
     public static let expiredSubscription = DuckDuckGoSubscription(productId: UUID().uuidString,
                                                          name: "Subscription test #2",
                                                          billingPeriod: .monthly,
@@ -42,7 +43,8 @@ public struct SubscriptionMockFactory {
                                                          status: .expired,
                                                          activeOffers: [],
                                                          tier: nil,
-                                                         availableChanges: nil)
+                                                         availableChanges: nil,
+                                                         pendingPlans: nil)
 
     public static let expiredStripeSubscription = DuckDuckGoSubscription(productId: UUID().uuidString,
                                                          name: "Subscription test #2",
@@ -53,7 +55,8 @@ public struct SubscriptionMockFactory {
                                                          status: .expired,
                                                          activeOffers: [],
                                                          tier: nil,
-                                                         availableChanges: nil)
+                                                         availableChanges: nil,
+                                                         pendingPlans: nil)
 
     public static let productsItems: [GetProductsItem] = [GetProductsItem(productId: appleSubscription.productId,
                                                                           productLabel: appleSubscription.name,
@@ -84,7 +87,8 @@ public struct SubscriptionMockFactory {
         platform: DuckDuckGoSubscription.Platform = .apple,
         activeOffers: [DuckDuckGoSubscription.Offer] = [],
         tier: TierName? = nil,
-        availableChanges: DuckDuckGoSubscription.AvailableChanges? = nil
+        availableChanges: DuckDuckGoSubscription.AvailableChanges? = nil,
+        pendingPlans: [DuckDuckGoSubscription.PendingPlan]? = nil
     ) -> DuckDuckGoSubscription {
         DuckDuckGoSubscription(
             productId: UUID().uuidString,
@@ -96,7 +100,8 @@ public struct SubscriptionMockFactory {
             status: status,
             activeOffers: activeOffers,
             tier: tier,
-            availableChanges: availableChanges
+            availableChanges: availableChanges,
+            pendingPlans: pendingPlans
         )
     }
 }

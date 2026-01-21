@@ -12,7 +12,7 @@ on:
 jobs:
   atb-ui-tests:
     name: ATB UI Tests
-    runs-on: macos-26-xlarge
+    runs-on: macos-15-xlarge
     timeout-minutes: 30
 
     steps:
@@ -46,14 +46,14 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.1"
+        preferred-versions: "18.6,18.4,18.2"
 
     - name: Boot iOS Simulator for log collection
       id: boot-simulator
       uses: ./.github/actions/ios-simulator-logs
       with:
         action: boot
-        device-name: iPhone 17
+        device-name: iPhone 16
         ios-version: ${{ steps.select-simulator.outputs.ios-version }}
 
     - name: Build and test

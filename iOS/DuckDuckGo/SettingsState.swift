@@ -65,6 +65,7 @@ struct SettingsState {
     var textZoom: TextZoom
     var addressBar: AddressBar
     var showsFullURL: Bool
+    var showTrackersBlockedAnimation: Bool
     var isExperimentalAIChatEnabled: Bool
     var refreshButtonPosition: RefreshButtonPosition
     var mobileCustomization: MobileCustomization.State
@@ -127,6 +128,7 @@ struct SettingsState {
             textZoom: TextZoom(level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
+            showTrackersBlockedAnimation: true,
             isExperimentalAIChatEnabled: false,
             refreshButtonPosition: .addressBar,
             mobileCustomization: .default,

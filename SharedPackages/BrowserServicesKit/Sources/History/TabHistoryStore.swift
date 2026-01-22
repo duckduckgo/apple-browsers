@@ -49,6 +49,7 @@ public struct TabHistoryStore: TabHistoryStoring {
                                                    linkedVisit: nil,
                                                    in: context) != nil else {
                     context.reset()
+                    eventMapper.fire(.insertTabHistoryFailed)
                     continuation.resume(throwing: HistoryDatabaseError.saveFailed)
                     return
                 }

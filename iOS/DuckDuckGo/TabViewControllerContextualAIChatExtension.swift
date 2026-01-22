@@ -190,10 +190,8 @@ extension TabViewController {
                       let pageContext,
                       let enriched = enrichWithFavicon(pageContext) else { return }
 
-// Always update the store so context is fresh for manual attachment
                 aiChatContextualSheetCoordinator.pageContextStore.update(enriched)
 
-                // Only push to UI when auto-attach is enabled and sheet is presented
                 let isSheetPresented = aiChatContextualSheetCoordinator.isSheetPresented
                 let autoAttachEnabled = aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled
 

@@ -28,7 +28,7 @@ import Common
 final class HistoryManagerTests: XCTestCase {
 
     @MainActor
-    func testWhenURLIsDeletedThenSiteIsRemovedFromHistory() async {
+    func testWhenURLIsDeletedThenSiteIsRemovedFromHistory() async throws {
 
         let model = CoreDataDatabase.loadModel(from: History.bundle, named: "BrowsingHistory")!
         let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: model)
@@ -50,68 +50,90 @@ final class HistoryManagerTests: XCTestCase {
         let netflixURL = URL(string: "https://netflix.com/")!
         let exampleURL = URL(string: "https://example.com/")!
 
-        [ exampleURL.appending("/1"),
-          exampleURL.appending("/1"),
-          exampleURL.appending("/1"),
-          netflixURL,
-          ddgURL,
-        ].forEach {
-            historyManager.historyCoordinator.addVisit(of: $0)
-            historyManager.historyCoordinator.updateTitleIfNeeded(title: $0.absoluteString, url: $0)
-            historyManager.historyCoordinator.commitChanges(url: $0)
+        let urls = [ exampleURL.appending("/1"),
+                     exampleURL.appending("/1"),
+                     exampleURL.appending("/1"),
+                     netflixURL,
+                     ddgURL]
+        for url in urls {
+            try await historyManager.addVisit(of: url, tabID: "1")
+            historyManager.updateTitleIfNeeded(title: url.absoluteString, url: url)
+            historyManager.commitChanges(url: url)
         }
 
         await historyManager.deleteHistoryForURL(exampleURL.appending("/1"))
 
-        XCTAssertEqual(2, historyManager.historyCoordinator.history?.count)
-        XCTAssertTrue(historyManager.historyCoordinator.history?.contains(where: { $0.url == ddgURL }) ?? false)
-        XCTAssertTrue(historyManager.historyCoordinator.history?.contains(where: { $0.url == netflixURL }) ?? false)
+        XCTAssertEqual(2, historyManager.history?.count)
+        XCTAssertTrue(historyManager.history?.contains(where: { $0.url == ddgURL }) ?? false)
+        XCTAssertTrue(historyManager.history?.contains(where: { $0.url == netflixURL }) ?? false)
     }
 
+    @MainActor
     func testWhenEnabledInPrivacyConfig_ThenFeatureIsEnabled() {
+        let historyManager = makeHistoryManagerWithHistory()
 
-        let model = CoreDataDatabase.loadModel(from: History.bundle, named: "BrowsingHistory")!
-        let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: model)
-        db.loadStore()
-
-        let historyManager = makeHistoryManager(db)
-
-        XCTAssertTrue(historyManager.historyCoordinator is HistoryCoordinator)
+        XCTAssertNotNil(historyManager.history)
     }
 
+    @MainActor
     func test_WhenUserHasDisabledAutocompleteSitesSetting_ThenDontStoreOrLoadHistory() {
         autocompleteEnabledByUser = false
 
-        let model = CoreDataDatabase.loadModel(from: History.bundle, named: "BrowsingHistory")!
-        let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: model)
-        db.loadStore()
+        let historyManager = makeHistoryManagerWithHistory()
 
-        let historyManager = makeHistoryManager(db)
-
-        XCTAssertTrue(historyManager.historyCoordinator is NullHistoryCoordinator)
+        XCTAssertNil(historyManager.history)
     }
 
+    @MainActor
     func test_WhenUserHasDisabledRecentlyVisitedSitesSetting_ThenDontStoreOrLoadHistory() {
         recentlyVisitedSitesEnabledByUser = false
 
-        let model = CoreDataDatabase.loadModel(from: History.bundle, named: "BrowsingHistory")!
-        let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: model)
-        db.loadStore()
+        let historyManager = makeHistoryManagerWithHistory()
 
-        let historyManager = makeHistoryManager(db)
-
-        XCTAssertTrue(historyManager.historyCoordinator is NullHistoryCoordinator)
+        XCTAssertNil(historyManager.history)
     }
 
     private func makeHistoryManager(_ db: CoreDataDatabase) -> HistoryManager {
         let eventMapper = HistoryStoreEventMapper()
-        let store = HistoryStore(context: db.makeContext(concurrencyType: .privateQueueConcurrencyType), eventMapper: eventMapper)
+        let context = db.makeContext(concurrencyType: .privateQueueConcurrencyType)
+        let store = HistoryStore(context: context, eventMapper: eventMapper)
+        let tabHistoryStore = TabHistoryStore(context: context, eventMapper: eventMapper)
         let dbCoordinator = HistoryCoordinator(historyStoring: store)
+        let tabHistoryCoordinator = TabHistoryCoordinator(tabHistoryStoring: tabHistoryStore)
 
-        return HistoryManager(  dbCoordinator: dbCoordinator,
+        return HistoryManager(dbCoordinator: dbCoordinator,
                               tld: TLD(),
+                              tabHistoryCoordinator: tabHistoryCoordinator,
                               isAutocompleteEnabledByUser: self.autocompleteEnabledByUser,
                               isRecentlyVisitedSitesEnabledByUser: self.recentlyVisitedSitesEnabledByUser)
+    }
+    
+    @MainActor
+    private func makeHistoryManagerWithHistory() -> HistoryManager {
+        let historyCoordinator = NullHistoryCoordinator()
+        historyCoordinator.history = [
+            makeHistoryEntry(url: URL(string: "https://example.com")!)
+        ]
+        return HistoryManager(dbCoordinator: historyCoordinator,
+                              tld: TLD(),
+                              tabHistoryCoordinator: MockTabHistoryCoordinating(),
+                              isAutocompleteEnabledByUser: self.autocompleteEnabledByUser,
+                              isRecentlyVisitedSitesEnabledByUser: self.recentlyVisitedSitesEnabledByUser)
+    }
+    
+    private func makeHistoryEntry(url: URL) -> HistoryEntry {
+        return HistoryEntry(
+            identifier: UUID(),
+            url: url,
+            title: nil,
+            failedToLoad: false,
+            numberOfTotalVisits: 1,
+            lastVisit: Date(),
+            visits: [],
+            numberOfTrackersBlocked: 0,
+            blockedTrackingEntities: [],
+            trackersFound: false
+        )
     }
 
     var autocompleteEnabledByUser = true

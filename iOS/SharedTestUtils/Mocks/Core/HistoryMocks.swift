@@ -24,23 +24,10 @@ import Persistence
 import History
 @testable import Core
 
-class MockHistoryCoordinator: NullHistoryCoordinator {
-
+class MockHistoryManager: HistoryManaging {
+    
     var addVisitCalls = [URL]()
     var updateTitleIfNeededCalls = [(title: String, url: URL)]()
-
-    override func addVisit(of url: URL) -> Visit? {
-        addVisitCalls.append(url)
-        return nil
-    }
-
-    override func updateTitleIfNeeded(title: String, url: URL) {
-        updateTitleIfNeededCalls.append((title: title, url: url))
-    }
-
-}
-
-class MockHistoryManager: HistoryManaging {
 
     let historyCoordinator: HistoryCoordinating
     var isEnabledByUser: Bool
@@ -48,7 +35,7 @@ class MockHistoryManager: HistoryManaging {
     private(set) var removeAllHistoryCallCount = 0
 
     convenience init() {
-        self.init(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: false, historyFeatureEnabled: false)
+        self.init(historyCoordinator: NullHistoryCoordinator(), isEnabledByUser: false, historyFeatureEnabled: false)
     }
 
     init(historyCoordinator: HistoryCoordinating, isEnabledByUser: Bool, historyFeatureEnabled: Bool) {
@@ -67,5 +54,40 @@ class MockHistoryManager: HistoryManaging {
 
     func deleteHistoryForURL(_ url: URL) async {
     }
+    
+    @MainActor
+    var history: History.BrowsingHistory? {
+        historyCoordinator.history
+    }
+    
+    func addVisit(of url: URL, tabID: String?) async throws {
+        addVisitCalls.append(url)
+    }
+    
+    func updateTitleIfNeeded(title: String, url: URL) {
+        updateTitleIfNeededCalls.append((title: title, url: url))
+    }
+    
+    func commitChanges(url: URL) {
+    }
+    
+    func tabHistory(tabID: String) async throws -> [URL] {
+        return []
+    }
+    
+    func removeTabHistory(for tabIDs: [String]) async {
+    }
 
  }
+
+struct MockTabHistoryCoordinating: TabHistoryCoordinating {
+    func tabHistory(tabID: String) async throws -> [URL] {
+        return []
+    }
+    
+    func addVisit(of url: URL, tabID: String?) async throws {
+    }
+    
+    func removeVisits(for tabIDs: [String]) async throws {
+    }
+}

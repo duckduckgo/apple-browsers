@@ -39,15 +39,13 @@ public class HistoryCapture {
     }
 
     @MainActor
-    public func webViewDidCommit(url: URL) {
+    public func webViewDidCommit(url: URL) async {
         let url = url.urlOrDuckDuckGoCleanQuery
         self.url = url
-        Task {
-            do {
-                try await historyManager.addVisit(of: url, tabID: tabID)
-            } catch {
-                Logger.history.error("Failed to record visit: \(error.localizedDescription)")
-            }
+        do {
+            try await historyManager.addVisit(of: url, tabID: tabID)
+        } catch {
+            Logger.history.error("Failed to record visit: \(error.localizedDescription)")
         }
     }
 

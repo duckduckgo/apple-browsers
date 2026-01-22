@@ -41,7 +41,9 @@ struct TabViewModel {
     // MARK: - History Capturing Methods
     
     func captureWebviewDidCommit(_ url: URL) {
-        historyCapture.webViewDidCommit(url: url)
+        Task {
+            await historyCapture.webViewDidCommit(url: url)
+        }
     }
     
     func captureTitleDidChange(_ title: String?, for url: URL) {

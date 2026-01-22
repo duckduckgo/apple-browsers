@@ -67,7 +67,7 @@ import PrivacyConfig
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-        let historyManager = MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true)
+        let historyManager = MockHistoryManager()
         let syncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
         let featureFlagger = MockFeatureFlagger()
         let fireproofing = MockFireproofing()

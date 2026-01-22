@@ -40,9 +40,9 @@ public protocol HistoryManaging {
 
 public class HistoryManager: HistoryManaging {
 
-    let dbCoordinator: HistoryCoordinator
+    let dbCoordinator: HistoryCoordinating
     let tld: TLD
-    let tabHistoryCoordinator: TabHistoryCoordinator
+    let tabHistoryCoordinator: TabHistoryCoordinating
 
     private var historyCoordinator: HistoryCoordinating {
         guard isEnabledByUser else {
@@ -59,9 +59,9 @@ public class HistoryManager: HistoryManaging {
     }
 
     /// Use `make()`
-    init(dbCoordinator: HistoryCoordinator,
+    init(dbCoordinator: HistoryCoordinating,
          tld: TLD,
-         tabHistoryCoordinator: TabHistoryCoordinator,
+         tabHistoryCoordinator: TabHistoryCoordinating,
          isAutocompleteEnabledByUser: @autoclosure @escaping () -> Bool,
          isRecentlyVisitedSitesEnabledByUser: @autoclosure @escaping () -> Bool) {
 

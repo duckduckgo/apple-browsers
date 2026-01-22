@@ -34,6 +34,7 @@ import Common
 import SystemSettingsPiPTutorialTestSupport
 import Combine
 import PrivacyConfig
+import AIChatTestingUtilities
 
 // swiftlint:disable force_try
 
@@ -171,7 +172,7 @@ import PrivacyConfig
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
             privacyStats: MockPrivacyStats(),
-            syncAiChatsCleaner: MockSyncAIChatsCleaning(),
+            aiChatSyncCleaner: MockAIChatSyncCleaning(),
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
         )
         let window = UIWindow(frame: UIScreen.main.bounds)

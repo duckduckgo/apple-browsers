@@ -3622,6 +3622,9 @@
 /* Manage Plan header */
 "subscription.manage.plan" = "プランを管理する";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "支払いを管理またはキャンセル";
+
 /* Header for the subscription section */
 "subscription.manage.title" = "定額制";
 
@@ -3718,6 +3721,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "年間サブスクリプションの有効期限は%@です。";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "プランは%2$@に毎月%1$@にダウングレードされます。";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "プランは%2$@に%1$@にダウングレードされます。";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "プランは%2$@に%1$@（年額）にダウングレードされます。";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "月間サブスクリプションは%@に更新されます。";
 
@@ -3738,6 +3750,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "無料トライアルが有効です";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "%@にアップグレード";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "よりスマートで、より強力なAIを利用可能に";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "アップグレード";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "全プランを表示";

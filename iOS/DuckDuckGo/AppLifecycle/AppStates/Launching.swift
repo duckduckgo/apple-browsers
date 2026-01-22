@@ -289,7 +289,8 @@ struct Launching: LaunchingHandling {
             aiChatSettings: aiChatSettings,
             featureFlagger: featureFlagger,
             voiceSearchHelper: voiceSearchHelper,
-            appSettings: appSettings
+            appSettings: appSettings,
+            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger)
         )
     }
 

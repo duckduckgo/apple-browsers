@@ -335,7 +335,6 @@ private struct ExpirationField: View {
                             }
                         }
                         .labelsHidden()
-                        .frame(width: 90)
 
                         Picker("", selection: $model.expirationYear) {
                             if model.expirationYear == nil {
@@ -348,7 +347,6 @@ private struct ExpirationField: View {
                             }
                         }
                         .labelsHidden()
-                        .frame(width: 90)
 
                     }
                     .padding(.bottom, interItemSpacing)

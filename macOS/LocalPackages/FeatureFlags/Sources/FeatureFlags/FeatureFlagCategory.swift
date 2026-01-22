@@ -67,6 +67,7 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .sync
         case .updatesWontAutomaticallyRestartApp,
                 .autoUpdateInDEBUG,
+                .autoUpdateInREVIEW,
                 .appStoreUpdateFlow,
                 .updatesSimplifiedFlow:
             return .updates

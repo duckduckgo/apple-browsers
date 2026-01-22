@@ -33,11 +33,13 @@ extension Preferences {
 
         var autoUpdatesEnabled: Bool {
 #if SPARKLE
-#if DEBUG
+    #if DEBUG
             return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-#else
+    #elseif REVIEW
+            return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
+    #else
             return true
-#endif
+    #endif
 #else
             return false
 #endif

@@ -51,6 +51,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
+    /// Controls automatic update downloads in REVIEW builds (off by default)
+    case autoUpdateInREVIEW
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615802881
     case updatesWontAutomaticallyRestartApp
 
@@ -336,6 +339,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncSeamlessAccountSwitching,
                 .webExtensions,
                 .autoUpdateInDEBUG,
+                .autoUpdateInREVIEW,
                 .updatesWontAutomaticallyRestartApp,
                 .updatesSimplifiedFlow,
                 .scamSiteProtection,
@@ -432,6 +436,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .networkProtectionAppStoreSysexMessage:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
         case .autoUpdateInDEBUG:
+            return .disabled
+        case .autoUpdateInREVIEW:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
             return .remoteReleasable(.feature(.updatesWontAutomaticallyRestartApp))

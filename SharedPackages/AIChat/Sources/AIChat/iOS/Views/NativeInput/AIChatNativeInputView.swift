@@ -333,6 +333,16 @@ public final class AIChatNativeInputView: UIView {
             cleanup()
         }
     }
+
+    /// Updates the current context chip with new content.
+    ///
+    /// - Parameters:
+    ///   - title: The new title to display.
+    ///   - favicon: The new favicon image.
+    public func updateContextChip(title: String, favicon: UIImage?) {
+        guard let chipView = currentChipView as? AIChatContextChipView else { return }
+        chipView.update(title: title, favicon: favicon)
+    }
 }
 
 // MARK: - Private Setup

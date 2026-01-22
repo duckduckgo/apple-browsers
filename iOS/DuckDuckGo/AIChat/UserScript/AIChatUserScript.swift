@@ -155,6 +155,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatNativeConfigValues
         case .getAIChatNativeHandoffData:
             return handler.getAIChatNativeHandoffData
+        case .getAIChatPageContext:
+            return handler.getAIChatPageContext
         case .openAIChat:
             return handler.openAIChat
         case .hideChatInput:
@@ -202,6 +204,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.displayMode = displayMode
     }
 
+    func setPageContextHandler(_ handler: AIChatPageContextHandling?) {
+        self.handler.setPageContextHandler(handler)
+    }
+
     // MARK: - Input Box Event Subscription
 
     private func subscribeToInputBoxEvents() {
@@ -241,7 +247,11 @@ final class AIChatUserScript: NSObject, Subfeature {
         push(.openSettingsAction)
     }
 
-    /// Submits a toggle sidebar action to the web content, opening/closing the sidebar.
+    /// Submits page context to the frontend (push update).
+    func submitPageContext(_ context: AIChatPageContextData?) {
+        pushPageContextToFrontend(context)
+    }
+
     func submitToggleSidebarAction() {
         push(.toggleSidebarAction)
     }
@@ -252,6 +262,12 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     // MARK: - Private Helper
+
+    private func pushPageContextToFrontend(_ context: AIChatPageContextData?) {
+        guard let webView = webView else { return }
+        let response = PageContextResponse(pageContext: context)
+        broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
+    }
 
     private func push(_ message: AIChatPushMessage) {
         guard let webView = webView else { return }

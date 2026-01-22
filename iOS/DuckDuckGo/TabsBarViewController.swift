@@ -52,6 +52,8 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBOutlet weak var buttonsStack: UIStackView!
     @IBOutlet weak var buttonsBackground: UIView!
 
+    var scrollToTop = true
+
     lazy var fireButton: UIButton = {
         createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
     }()
@@ -303,6 +305,7 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 extension TabsBarViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        scrollToTop = false
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
     }
 
@@ -371,6 +374,12 @@ extension MainViewController: TabsBarDelegate {
   
     func tabsBar(_ controller: TabsBarViewController, didSelectTabAtIndex index: Int) {
         dismissOmniBar()
+
+        // Tabs bar is iPad only and this is to work around on a problem iOS 26 which will be fixed later with Xcode 26.
+        if index != self.tabManager.model.currentIndex {
+            chromeManager.preventNextScrollToTop()
+        }
+        
         select(tabAt: index)
     }
     
@@ -400,5 +409,5 @@ extension MainViewController: TabsBarDelegate {
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController) {
         showTabSwitcher()
     }
-    
+
 }

@@ -2993,10 +2993,7 @@
 "settings.address.full.url" = "Pokaži cijelu adresu web-mjesta";
 
 /* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Prikaži u adresnoj traci";
-
-/* Do not translate - already localized */
-"settings.tracker.blocking.animation.section" = "Animacija blokiranja alata za praćenje";
+"settings.address.trackers.animation" = "Prikaži animaciju blokiranih alata za praćenje";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Pretraživanje i Duck.ai";
@@ -4267,7 +4264,7 @@
 
 /* Tab Switcher tracker count */
 "settings.tabs" = "Kartice";
-"settings.tab.switcher.show.tracker.count" = "Prikaži u upravitelju kartica";
+"settings.tab.switcher.show.tracker.count" = "Broj pratitelja u 7 dana";
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 "tab.switcher.tracker.count.subtitle" = "u posljednjih 7 dana";
 "tab.switcher.tracker.count.hide.title" = "Sakriti broj pratitelja?";

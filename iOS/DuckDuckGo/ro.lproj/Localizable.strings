@@ -2993,10 +2993,7 @@
 "settings.address.full.url" = "Afișați adresa completă a site-ului";
 
 /* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Afișează în bara de adrese";
-
-/* Do not translate - already localized */
-"settings.tracker.blocking.animation.section" = "Animația de blocare a tehnologiilor de urmărire";
+"settings.address.trackers.animation" = "Afișează animația de blocare a tehnologiilor de urmărire";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Caută pe Duck.ai";
@@ -4267,7 +4264,7 @@
 
 /* Tab Switcher tracker count */
 "settings.tabs" = "File";
-"settings.tab.switcher.show.tracker.count" = "Afișează în managerul de file";
+"settings.tab.switcher.show.tracker.count" = "Numărul de trackere din ultimele 7 zile";
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 "tab.switcher.tracker.count.subtitle" = "în ultimele 7 zile";
 "tab.switcher.tracker.count.hide.title" = "Ascundeți numărul de trackere?";

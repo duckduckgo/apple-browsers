@@ -370,7 +370,7 @@ struct AIChatUserScriptHandlerTests {
             windowControllersManager: windowControllersManager,
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
-            syncHandler: mockAIChatSyncHandler,
+            syncServiceProvider: { nil },
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -396,7 +396,7 @@ struct AIChatUserScriptHandlerTests {
             windowControllersManager: windowControllersManager,
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
-            syncHandler: mockAIChatSyncHandler,
+            syncServiceProvider: { nil },
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -421,7 +421,7 @@ struct AIChatUserScriptHandlerTests {
             windowControllersManager: windowControllersManager,
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
-            syncHandler: mockAIChatSyncHandler,
+            syncServiceProvider: { nil },
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )

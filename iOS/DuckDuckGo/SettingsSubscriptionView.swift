@@ -322,8 +322,7 @@ struct SettingsSubscriptionView: View {
                     label: UserText.settingsSubscriptionAiChatTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                     statusIndicator: StatusIndicatorView(status: (hasAIChatEntitlement && settingsViewModel.isAIChatEnabled) ? .on : .off),
-                    isGreyedOut: !hasAIChatEntitlement,
-                    optionalBadgeText: UserText.settingsItemNewBadge
+                    isGreyedOut: !hasAIChatEntitlement
                 )
             }
             .disabled(!hasAIChatEntitlement)

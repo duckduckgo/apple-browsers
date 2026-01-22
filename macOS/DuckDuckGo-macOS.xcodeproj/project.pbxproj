@@ -2966,6 +2966,9 @@
 		B5BD99652EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */; };
 		B5C2886B2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */; };
 		B5C2886C2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */; };
+		B5C980EB2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */; };
+		B5C980EC2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */; };
+		B5C980F72F228EE300655B21 /* ApplicationMemoryStatsIPCMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980F62F228EE300655B21 /* ApplicationMemoryStatsIPCMetric.swift */; };
 		B5CBB60B2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
 		B5CBB60C2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
 		B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
@@ -5817,6 +5820,8 @@
 		B5AE99522E84A5D900F45912 /* ThemeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeName.swift; sourceTree = "<group>"; };
 		B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemedTextFieldStyle.swift; sourceTree = "<group>"; };
 		B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CASpringAnimationExtension.swift; sourceTree = "<group>"; };
+		B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryAllocationStatsExporter.swift; sourceTree = "<group>"; };
+		B5C980F62F228EE300655B21 /* ApplicationMemoryStatsIPCMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationMemoryStatsIPCMetric.swift; sourceTree = "<group>"; };
 		B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTitleView.swift; sourceTree = "<group>"; };
 		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
@@ -7770,6 +7775,7 @@
 		37C3210D2F1E80FC008F4604 /* MemoryUsageTests */ = {
 			isa = PBXGroup;
 			children = (
+				B5C980F62F228EE300655B21 /* ApplicationMemoryStatsIPCMetric.swift */,
 				B59845C52F22774C00A25DA4 /* MemoryUsageTests.swift */,
 				37C321132F1E81CA008F4604 /* macOS Memory Usage Tests.xctestplan */,
 			);
@@ -12160,6 +12166,7 @@
 		ED7478162E845958008628A1 /* AppHealth */ = {
 			isa = PBXGroup;
 			children = (
+				B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */,
 				3727A5A62F17F57A002E10E1 /* MemoryPressureReporter.swift */,
 				37E4778F2EF006E1006369D6 /* MemoryUsageMonitor.swift */,
 				ED4470142EB2676A003DC918 /* HangReportingFeatureMonitor.swift */,
@@ -15047,6 +15054,7 @@
 				B5DE8DAA2EBE292F005C5EF4 /* SpinnerView.swift in Sources */,
 				56F0CB2F2E20FBD2000FF58B /* SubscriptionTabExtension.swift in Sources */,
 				3706FC65293F65D500E42796 /* BurnerHomePageViewController.swift in Sources */,
+				B5C980EB2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */,
 				371209262C232E76003ADF3D /* RemoteMessagingClient.swift in Sources */,
 				3706FC67293F65D500E42796 /* OperatingSystemVersionExtension.swift in Sources */,
 				7B6545EE2C0779D500115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift in Sources */,
@@ -15710,6 +15718,7 @@
 				37C321562F1F8C82008F4604 /* XCUIElementQueryExtension.swift in Sources */,
 				37C321572F1F8C82008F4604 /* XCUIApplicationExtension.swift in Sources */,
 				37C321582F1F8C82008F4604 /* NSPredicateExtension.swift in Sources */,
+				B5C980F72F228EE300655B21 /* ApplicationMemoryStatsIPCMetric.swift in Sources */,
 				37C321592F1F8C82008F4604 /* XCUIElementTypeExtension.swift in Sources */,
 				37C3215A2F1F8C82008F4604 /* XCUIElementSnapshotExtension.swift in Sources */,
 				37C3215B2F1F8C82008F4604 /* UITests.swift in Sources */,
@@ -17112,6 +17121,7 @@
 				9F33445E2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift in Sources */,
 				4B9292D92667124B00AD2C21 /* BookmarkListTreeControllerDataSource.swift in Sources */,
 				B65536A62685B82B00085A79 /* Permissions.swift in Sources */,
+				B5C980EC2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */,
 				EE3ED86F2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift in Sources */,
 				B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */,
 				AAC82C60258B6CB5009B6B42 /* TabPreviewWindowController.swift in Sources */,

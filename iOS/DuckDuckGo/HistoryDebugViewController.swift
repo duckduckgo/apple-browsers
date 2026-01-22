@@ -51,12 +51,20 @@ struct HistoryDebugRootView: View {
             .padding()
 
             if model.viewMode == .perTab && !model.tabNames.isEmpty {
-                Picker("Select Tab", selection: $model.selectedTabIndex) {
-                    ForEach(model.tabNames.indices, id: \.self) { index in
-                        Text(model.tabNames[index]).tag(index)
+                HStack {
+                    Picker("Select Tab", selection: $model.selectedTabIndex) {
+                        ForEach(model.tabNames.indices, id: \.self) { index in
+                            Text(model.tabNames[index]).tag(index)
+                        }
                     }
+                    .pickerStyle(.menu)
+
+                    Spacer()
+
+                    Text("Total: \(model.totalTabHistoryCount)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
                 }
-                .pickerStyle(.menu)
                 .padding(.horizontal)
                 .padding(.bottom, 8)
             }
@@ -130,6 +138,7 @@ class HistoryDebugViewModel: ObservableObject {
 
     @Published private(set) var displayItems: [HistoryDisplayItem] = []
     @Published private(set) var tabNames: [String] = []
+    @Published private(set) var totalTabHistoryCount: Int = 0
 
     private let database: CoreDataDatabase
     private let context: NSManagedObjectContext
@@ -158,6 +167,7 @@ class HistoryDebugViewModel: ObservableObject {
         case .allHistory:
             fetchAllHistory()
         case .perTab:
+            fetchTotalTabHistoryCount()
             Task { await fetchTabHistory() }
         }
     }
@@ -180,6 +190,11 @@ class HistoryDebugViewModel: ObservableObject {
         let tab = tabManager.model.tabs[selectedTabIndex]
         let urls = await tabManager.viewModel(for: tab).tabHistory()
         displayItems = urls.enumerated().map { HistoryDisplayItem(url: $1, index: $0) }
+    }
+
+    private func fetchTotalTabHistoryCount() {
+        let fetchRequest = TabHistoryManagedObject.fetchRequest()
+        totalTabHistoryCount = (try? context.count(for: fetchRequest)) ?? 0
     }
 
     private func loadTabNames() {

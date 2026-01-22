@@ -257,15 +257,21 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.selectedIndex)
     }
 
-    func testSelectPrevious_WithNoSelection_ReturnsFalse() {
+    func testSelectPrevious_WithNoSelection_SelectsLastItem() {
         // Given
-        viewModel.setRecentChats([makeSuggestion(id: "1", title: "First")])
+        viewModel.setRecentChats([
+            makeSuggestion(id: "1", title: "First"),
+            makeSuggestion(id: "2", title: "Second"),
+            makeSuggestion(id: "3", title: "Third")
+        ])
 
         // When
         let result = viewModel.selectPrevious()
 
         // Then
-        XCTAssertFalse(result)
+        XCTAssertTrue(result)
+        XCTAssertEqual(viewModel.selectedIndex, 2) // Last item selected
+        XCTAssertTrue(viewModel.isKeyboardNavigating)
     }
 
     func testSelectPrevious_WithNoSuggestions_ReturnsFalse() {

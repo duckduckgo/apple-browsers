@@ -150,8 +150,11 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
                 selectedIndex = nil
                 return true
             }
+        } else {
+            // No selection, select last item (bottom of list)
+            selectedIndex = filteredSuggestions.count - 1
+            return true
         }
-        return false
     }
 
     /// Clears the current selection.

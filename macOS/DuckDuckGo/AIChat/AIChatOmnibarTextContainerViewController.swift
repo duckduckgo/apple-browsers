@@ -361,12 +361,10 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
 
     func textViewDidRequestMoveFromSuggestions() -> Bool {
         let viewModel = omnibarController.suggestionsViewModel
-        // If there's a selection, try to move up in suggestions
-        if viewModel.selectedIndex != nil {
-            // selectPrevious returns true if it moved or cleared selection
-            return viewModel.selectPrevious()
-        }
-        return false
+        // selectPrevious handles both cases:
+        // - No selection: selects last item
+        // - Has selection: moves up or clears selection at top
+        return viewModel.selectPrevious()
     }
 
     func textViewDidRequestSelectCurrentSuggestion() -> Bool {

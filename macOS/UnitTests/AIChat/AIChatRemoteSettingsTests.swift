@@ -16,17 +16,20 @@
 //  limitations under the License.
 //
 
-import XCTest
+import BrowserServicesKit
 import Combine
+import Persistence
+import PersistenceTestingUtils
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
 class AIChatRemoteSettingsTests: XCTestCase {
     var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
     var aiChatRemoteSettings: AIChatRemoteSettings!
-    var debugURLProvider: AIChatDebugURLSettingsRepresentable!
+    var debugURLProvider: (any KeyedStoring<AIChatDebugURLSettings>)!
 
     private func setupAIChatRemoteSettings(with config: MockConfig) -> AIChatRemoteSettings {
         let embeddedDataProvider = MockEmbeddedDataProvider()

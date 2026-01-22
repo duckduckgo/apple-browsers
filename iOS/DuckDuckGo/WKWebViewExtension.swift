@@ -1,7 +1,8 @@
 //
-//  MockThrowingKeyValueStore.swift
+//  WKWebViewExtension.swift
+//  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,22 +17,20 @@
 //  limitations under the License.
 //
 
-import Persistence
+import WebKit
+import DesignResourcesKit
+import PrivacyConfig
 
-public class MockThrowingKeyValueStore: ThrowingKeyValueStoring {
-    private var storage: [String: Any] = [:]
+extension WKWebView {
 
-    public init() { }
+    func preventFlashOnLoad(featureFlagger: FeatureFlagger) {
+        guard featureFlagger.isFeatureOn(.webViewFlashPrevention) else { return }
+        isOpaque = false
 
-    public func object(forKey defaultName: String) throws -> Any? {
-        return storage[defaultName]
+        let color = UIColor(designSystemColor: .surfaceCanvas)
+        backgroundColor = color
+        scrollView.backgroundColor = color
+        underPageBackgroundColor = color
     }
 
-    public func set(_ value: Any?, forKey defaultName: String) throws {
-        storage[defaultName] = value
-    }
-
-    public func removeObject(forKey defaultName: String) throws {
-        storage.removeValue(forKey: defaultName)
-    }
 }

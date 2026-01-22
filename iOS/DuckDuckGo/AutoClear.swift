@@ -58,8 +58,9 @@ final class AutoClear: AutoClearing {
         if shouldInjectAIChatsFireOption(into: options) {
             options.insert(.aiChats)
         }
-        let fireContext: FireContext = launching ? .autoClearOnLaunch : .autoClearOnForeground
-        await worker.burn(options: options, applicationState: applicationState, fireContext: fireContext)
+        let trigger: FireRequest.Trigger = launching ? .autoClearOnLaunch : .autoClearOnForeground
+        let request = FireRequest(options: options, trigger: trigger, scope: .all)
+        await worker.burn(request: request, applicationState: applicationState)
     }
 
     /// Note: function is parametrised because of tests.
@@ -105,7 +106,7 @@ final class AutoClear: AutoClearing {
     // 2. FireOptions currently include `.data` but do NOT already include `.aiChats`.
     // 
     // This ensures .aiChats is only injected in the correct (legacy UI) scenarios.
-    private func shouldInjectAIChatsFireOption(into options: FireOptions) -> Bool {
+    private func shouldInjectAIChatsFireOption(into options: FireRequest.Options) -> Bool {
         options.contains(.data)
             && !options.contains(.aiChats)
             && !featureFlagger.isFeatureOn(.enhancedDataClearingSettings)

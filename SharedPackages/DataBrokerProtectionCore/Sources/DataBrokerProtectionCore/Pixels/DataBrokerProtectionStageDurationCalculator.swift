@@ -88,6 +88,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let dataBrokerVersion: String
     let startTime: Date
     let parentURL: String?
+    let isAuthenticated: Bool
     var lastStateTime: Date
     private(set) var actionID: String?
     private(set) var actionType: String?
@@ -105,6 +106,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          handler: EventMapping<DataBrokerProtectionSharedPixels>,
          isImmediateOperation: Bool = false,
          parentURL: String? = nil,
+         isAuthenticated: Bool = true,
          vpnConnectionState: String,
          vpnBypassStatus: String,
          featureFlagger: DBPFeatureFlagging) {
@@ -116,6 +118,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.handler = handler
         self.isImmediateOperation = isImmediateOperation
         self.parentURL = parentURL
+        self.isAuthenticated = isAuthenticated
         self.vpnConnectionState = vpnConnectionState
         self.vpnBypassStatus = vpnBypassStatus
         self.featureFlagger = featureFlagger
@@ -314,7 +317,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                   isImmediateOperation: isImmediateOperation,
                                   vpnConnectionState: vpnConnectionState,
                                   vpnBypassStatus: vpnBypassStatus,
-                                  parent: parentURL ?? ""))
+                                  parent: parentURL ?? "",
+                                  isAuthenticated: isAuthenticated))
     }
 
     func fireScanNoResults() {
@@ -327,7 +331,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     vpnBypassStatus: vpnBypassStatus,
                                     parent: parentURL ?? "",
                                     actionID: actionID ?? "unknown",
-                                    actionType: actionType ?? "unknown"))
+                                    actionType: actionType ?? "unknown",
+                                    isAuthenticated: isAuthenticated))
     }
 
     func fireScanError(error: Error) {
@@ -349,7 +354,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 vpnBypassStatus: vpnBypassStatus,
                 parent: parentURL ?? "",
                 actionId: actionID ?? "unknown",
-                actionType: actionType ?? "unknown"
+                actionType: actionType ?? "unknown",
+                isAuthenticated: isAuthenticated
             )
         )
     }

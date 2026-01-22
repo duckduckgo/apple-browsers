@@ -249,3 +249,58 @@ final class MockAIChatSyncHandling: AIChatSyncHandling {
         setAIChatHistoryEnabledCalls.append(enabled)
     }
 }
+
+// MARK: - getAIChatPageContext Tests
+
+extension AIChatUserScriptHandlerTests {
+
+    func testGetAIChatPageContextReturnsNilContextWhenNoHandler() {
+        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+
+        XCTAssertNotNil(response)
+        XCTAssertNil(response?.pageContext)
+    }
+
+    func testGetAIChatPageContextReturnsContextWhenHandlerSet() {
+        let expectedContext = AIChatPageContextData(
+            title: "Test Page",
+            favicon: [],
+            url: "https://example.com",
+            content: "Test content",
+            truncated: false,
+            fullContentLength: 12
+        )
+        let mockHandler = MockPageContextHandler(context: expectedContext)
+        aiChatUserScriptHandler.setPageContextHandler(mockHandler)
+
+        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+
+        XCTAssertNotNil(response)
+        XCTAssertNotNil(response?.pageContext)
+        XCTAssertEqual(response?.pageContext?.title, "Test Page")
+        XCTAssertEqual(response?.pageContext?.url, "https://example.com")
+        XCTAssertEqual(response?.pageContext?.content, "Test content")
+    }
+
+    func testGetAIChatPageContextReturnsNilContextWhenHandlerReturnsNil() {
+        let mockHandler = MockPageContextHandler(context: nil)
+        aiChatUserScriptHandler.setPageContextHandler(mockHandler)
+
+        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+
+        XCTAssertNotNil(response)
+        XCTAssertNil(response?.pageContext)
+    }
+}
+
+private final class MockPageContextHandler: AIChatPageContextHandling {
+    private let context: AIChatPageContextData?
+
+    init(context: AIChatPageContextData?) {
+        self.context = context
+    }
+
+    func getPageContext() -> AIChatPageContextData? {
+        context
+    }
+}

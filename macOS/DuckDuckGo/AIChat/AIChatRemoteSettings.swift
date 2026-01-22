@@ -18,6 +18,7 @@
 
 import AIChat
 import Foundation
+import Persistence
 import PixelKit
 import PrivacyConfig
 
@@ -50,17 +51,17 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let debugURLSettings: AIChatDebugURLSettingsRepresentable
+    private let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings>
     private var settings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        debugURLSettings: AIChatDebugURLSettingsRepresentable = AIChatDebugURLSettings()
+        debugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.debugURLSettings = debugURLSettings
+        self.debugURLSettings = if let debugURLSettings { debugURLSettings } else { UserDefaults.standard.keyedStoring() }
     }
 
     // MARK: - Public

@@ -21,12 +21,13 @@ import BrowserServicesKit
 import Foundation
 import HistoryView
 import NewTabPage
+import Persistence
 import PixelKit
+import SERPSettings
 import SpecialErrorPages
 import Subscription
 import UserScript
 import WebKit
-import SERPSettings
 
 @MainActor
 final class UserScripts: UserScriptsProvider {
@@ -65,12 +66,14 @@ final class UserScripts: UserScriptsProvider {
     private let contentScopePreferences: ContentScopePreferences
 
     // swiftlint:disable:next cyclomatic_complexity
-    init(with sourceProvider: ScriptSourceProviding, contentScopePreferences: ContentScopePreferences) {
+    init(with sourceProvider: ScriptSourceProviding,
+         contentScopePreferences: ContentScopePreferences,
+         aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
+
         self.contentScopePreferences = contentScopePreferences
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
-        let aiChatDebugURLSettings = AIChatDebugURLSettings()
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
             windowControllersManager: sourceProvider.windowControllersManager,
@@ -80,6 +83,7 @@ final class UserScripts: UserScriptsProvider {
             syncHandler: AIChatSyncHandler(sync: NSApp.delegateTyped.syncService!),
             featureFlagger: sourceProvider.featureFlagger
         )
+        let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(

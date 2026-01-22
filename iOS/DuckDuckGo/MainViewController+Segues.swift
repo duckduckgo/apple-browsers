@@ -367,7 +367,8 @@ extension MainViewController {
             remoteMessageActionHandler: remoteMessagingActionHandler,
             isIPad: UIDevice.current.userInterfaceIdiom == .pad,
             pixelReporter: nil,
-            userScriptsDependencies: userScriptsDependencies)
+            userScriptsDependencies: userScriptsDependencies,
+            featureFlagger: featureFlagger)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   subscriptionManager: AppDependencyProvider.shared.subscriptionManager,

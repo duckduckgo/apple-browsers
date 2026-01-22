@@ -74,6 +74,7 @@ extension UserText {
     static let pmNotes = NSLocalizedString("pm.notes", value: "Notes", comment: "Label for notes edit field")
     static let pmLoginAdded = NSLocalizedString("pm.added", value: "Added", comment: "Label for login added data")
     static let pmLoginLastUpdated = NSLocalizedString("pm.last.updated", value: "Last Updated", comment: "Label for last updated edit field")
+    static let pmLoginTitlePlaceholder = NSLocalizedString("pm.login.placeholder.title", value: "Title", comment: "Placeholder for a field showing the title of an saved login")
 
     static let pmDeactivateAddress = NSLocalizedString("pm.deactivate.private.email", value: "Deactivate Duck Address", comment: "Deactivate private email address button")
     static let pmActivateAddress = NSLocalizedString("pm.activate.private.email", value: "Reactivate Duck Address", comment: "Activate private email address button")
@@ -103,6 +104,7 @@ extension UserText {
     static let pmCardVerificationValuePlaceholder = NSLocalizedString("pm.card.placeholder.cvv", value: "Security code", comment: "Placeholder for a field showing the CVV")
 
     static let pmIdentification = NSLocalizedString("pm.identification", value: "Identification", comment: "Label for identification title")
+    static let pmIdentificationTitlePlaceholder = NSLocalizedString("pm.identification.placeholder.title", value: "Title", comment: "Placeholder for a field showing the title of an saved user identity")
     static let pmFirstName = NSLocalizedString("pm.name.first", value: "First Name", comment: "Label for first name title")
     static let pmMiddleName = NSLocalizedString("pm.name.middle", value: "Middle Name", comment: "Label for middle name title")
     static let pmLastName = NSLocalizedString("pm.name.last", value: "Last Name", comment: "Label for last name title")

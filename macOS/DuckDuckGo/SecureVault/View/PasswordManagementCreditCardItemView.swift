@@ -111,17 +111,9 @@ private struct HeaderView: View {
             if model.isNew || model.isEditing {
 
                 TextField(UserText.pmCardNicknamePlaceholder, text: $model.title)
-                    .font(.system(size: 13))
-                    .textFieldStyle(.plain)
-                    .padding(8)
+                    .textFieldStyle(.roundedBorder)
                     .frame(height: 32)
-                    .background(textFieldBackgroundColor)
-                    .cornerRadius(6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(shadowBorderColor, lineWidth: 1)
-                    )
-                    .shadow(color: shadowBorderColor, radius: 0, x: 0, y: 1)
+                    .controlSize(.large)
                     .accessibility(identifier: "Title TextField")
 
             } else {

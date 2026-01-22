@@ -72561,6 +72561,18 @@
         }
       }
     },
+    "pm.identification.placeholder.title" : {
+      "comment" : "Placeholder for a field showing the title of an saved user identity",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Title"
+          }
+        }
+      }
+    },
     "pm.identity.autofill.title.default" : {
       "comment" : "Default title for Addresses/Identities",
       "extractionState" : "extracted_with_value",
@@ -73457,6 +73469,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "30 мин."
+          }
+        }
+      }
+    },
+    "pm.login.placeholder.title" : {
+      "comment" : "Placeholder for a field showing the title of an saved login",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Title"
           }
         }
       }

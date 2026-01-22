@@ -302,8 +302,10 @@ private struct HeaderView: View {
 
             if model.isNew || model.isEditing {
 
-                TextField("", text: $model.title)
-                    .font(.title)
+                TextField(UserText.pmIdentificationTitlePlaceholder, text: $model.title)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(height: 32)
+                    .controlSize(.large)
                     .accessibility(identifier: "Title TextField")
 
             } else {

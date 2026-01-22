@@ -547,9 +547,11 @@ private struct HeaderView: View {
                .padding(.trailing, 10)
 
             if model.isNew || model.isEditing {
-
-                TextField(model.domain, text: $model.title)
-                    .font(.title)
+                let placeholder = model.domain.isEmpty ? UserText.pmLoginTitlePlaceholder : model.domain
+                TextField(placeholder, text: $model.title)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(height: 32)
+                    .controlSize(.large)
                     .accessibility(identifier: "Title TextField")
 
             } else {

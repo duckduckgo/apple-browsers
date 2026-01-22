@@ -28,6 +28,27 @@ public final class LaunchOptionsHandler {
     private static let appVariantName = "currentAppVariant"
     private static let automationPort = "automationPort"
 
+    // MARK: - UI Test Override Constants
+
+    /// Constants for UI test override launch parameters
+    /// These allow Maestro tests to override feature flags, config rollouts, and experiments
+    private enum UITestOverrides {
+        /// Launch param format: ff.<featureFlagRawValue>=true/false
+        /// Example: -ff.duckPlayer true
+        static let featureFlagPrefix = "ff."
+
+        /// Launch param format: config.rollout.<parentFeature>.<subfeature>=true/false
+        /// Example: -config.rollout.duckPlayer.enableDuckPlayer true
+        static let configRolloutPrefix = "config.rollout."
+
+        /// Launch param format: experiment.<featureFlagRawValue>=<cohortID>
+        /// Example: -experiment.onboardingSearchExperience control
+        static let experimentCohortPrefix = "experiment."
+
+        /// The UserDefaults key used by InternalUserStore to track internal user status
+        static let internalUserStoreKey = "com.duckduckgo.app.featureFlaggingDidVerifyInternalUser.v2"
+    }
+
     private let environment: [String: String]
     private let userDefaults: UserDefaults
 
@@ -123,4 +144,86 @@ extension LaunchOptionsHandler {
         }
     }
 
+}
+
+// MARK: - LaunchOptionsHandler + UI Test Overrides
+
+extension LaunchOptionsHandler {
+
+    /// Applies all parsed overrides to the appropriate storage.
+    ///
+    /// - Parameters:
+    ///   - featureFlagOverrideStore: UserDefaults store for feature flag overrides
+    ///   - configRolloutStore: UserDefaults store for config rollout state
+    public func applyUITestOverrides(
+        featureFlagOverrideStore: UserDefaults,
+        configRolloutStore: UserDefaults
+    ) {
+        guard ProcessInfo.isRunningUITests else { return }
+
+        // Always enable internal user for UI tests (required for feature flag overrides)
+        UserDefaults.standard.set(true, forKey: UITestOverrides.internalUserStoreKey)
+
+        // Find all launch argument keys by looking at ProcessInfo.arguments
+        // Arguments come as pairs: ["-key", "value", "-key2", "value2", ...]
+        let args = ProcessInfo.processInfo.arguments
+
+        for arg in args {
+            guard arg.hasPrefix("-") else { continue }
+            let key = String(arg.dropFirst()) // Remove leading "-"
+
+            // Feature flag: ff.<flagName> -> localOverride<FlagName>
+            if key.hasPrefix(UITestOverrides.featureFlagPrefix) {
+                let flagName = String(key.dropFirst(UITestOverrides.featureFlagPrefix.count))
+                if let value = userDefaults.string(forKey: key) {
+                    let enabled = value.lowercased() == "true"
+                    let targetKey = "localOverride\(flagName.capitalizedFirstLetter)"
+                    featureFlagOverrideStore.set(enabled, forKey: targetKey)
+                }
+            }
+            
+            // Config rollout: config.rollout.<path> -> config.<path>.enabled
+            if key.hasPrefix(UITestOverrides.configRolloutPrefix) {
+                let featurePath = String(key.dropFirst(UITestOverrides.configRolloutPrefix.count))
+                if let value = userDefaults.string(forKey: key) {
+                    let enabled = value.lowercased() == "true"
+                    let targetKey = "config.\(featurePath).enabled"
+                    configRolloutStore.set(enabled, forKey: targetKey)
+                }
+            }
+            
+            // Experiment: experiment.<flagName> -> localOverride<FlagName>_cohort
+            if key.hasPrefix(UITestOverrides.experimentCohortPrefix) {
+                let flagName = String(key.dropFirst(UITestOverrides.experimentCohortPrefix.count))
+                if let cohortID = userDefaults.string(forKey: key), !cohortID.isEmpty {
+                    let targetKey = "localOverride\(flagName.capitalizedFirstLetter)_cohort"
+                    featureFlagOverrideStore.set(cohortID, forKey: targetKey)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - String Extension
+
+private extension String {
+    var capitalizedFirstLetter: String {
+        return prefix(1).capitalized + dropFirst()
+    }
+}
+
+// MARK: - ProcessInfo Extension
+
+extension ProcessInfo {
+    static var isRunningUITests: Bool {
+        // Maestro can pass arguments as either type depending on YAML formatting
+        if let stringValue = UserDefaults.standard.string(forKey: "isRunningUITests") {
+            return stringValue.lowercased() == "true"
+        }
+        if UserDefaults.standard.object(forKey: "isRunningUITests") != nil {
+            return UserDefaults.standard.bool(forKey: "isRunningUITests")
+        }
+        // Fallback to checking process arguments (for XCUITest or direct argument passing)
+        return processInfo.arguments.contains("isRunningUITests")
+    }
 }

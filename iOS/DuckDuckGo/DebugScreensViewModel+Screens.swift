@@ -80,6 +80,9 @@ extension DebugScreensViewModel {
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
             }),
+            .view(title: "UI Test Overrides", { _ in
+                UITestOverridesDebugView()
+            }),
             .view(title: "ContentScope Experiments", { _ in
                 ContentScopeExperimentsDebugView()
             }),

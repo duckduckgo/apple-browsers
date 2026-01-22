@@ -1,0 +1,18 @@
+# setup_with_overrides.yaml
+# Shared setup for UI test override tests - extends standard setup with override arguments
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: "true"
+        ff.uiTestFeatureFlag: "true"
+        experiment.uiTestExperiment: "treatment"
+        config.rollout.duckPlayer.enableDuckPlayer: "true"
+

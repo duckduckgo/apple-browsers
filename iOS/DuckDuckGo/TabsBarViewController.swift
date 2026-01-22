@@ -52,8 +52,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBOutlet weak var buttonsStack: UIStackView!
     @IBOutlet weak var buttonsBackground: UIView!
 
-    var scrollToTop = true
-
     lazy var fireButton: UIButton = {
         createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
     }()
@@ -305,7 +303,6 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 extension TabsBarViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        scrollToTop = false
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
     }
 

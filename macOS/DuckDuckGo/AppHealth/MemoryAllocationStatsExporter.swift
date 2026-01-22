@@ -18,7 +18,6 @@
 
 import Foundation
 import Darwin
-import os.log
 
 struct MemoryAllocationStatsSnapshot: Codable {
     let processID: pid_t
@@ -126,6 +125,12 @@ private extension MemoryAllocationStatsExporter {
 
 private extension URL {
 
+    /// Our Temporary Stats URL is in `/tmp` as `FileManager.default.temporaryDirectory` will always point to a different location
+    /// due to the macOS Sandbox.
+    ///
+    /// Since this URL will be required by the `macOS Memory Usage Tests` as well, we're using a globally accessible and temporary location
+    /// within the filesystem.
+    ///
     static var temporaryStatsExportURL: URL {
         let filename = Bundle.main.bundleIdentifier ?? "com.duckduckgo.macos.browser"
         return URL(fileURLWithPath: "/tmp/\(filename)-allocations.json")

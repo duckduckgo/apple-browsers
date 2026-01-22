@@ -28,7 +28,7 @@ struct MemoryAllocationStatsSnapshot: Codable {
     let totalInUseMB: UInt64
 }
 
-/// `XCMetric` that rocessess the `MemoryAllocationStats` JSON file, as exported by `MemoryAllocationStatsExporter`.
+/// `XCMetric` that processes the `MemoryAllocationStats` JSON file, as exported by `MemoryAllocationStatsExporter`.
 ///
 final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
 

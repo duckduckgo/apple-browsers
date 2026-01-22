@@ -747,14 +747,14 @@ actor HistoryStoringMock: HistoryStoring {
 
 }
 
-class MockHistoryStoreEventMapper: EventMapping<HistoryStore.HistoryStoreEvents> {
+class MockHistoryStoreEventMapper: EventMapping<HistoryDatabaseError> {
     public init() {
         super.init { _, _, _, _ in
             // no-op
         }
     }
 
-    override init(mapping: @escaping EventMapping<HistoryStore.HistoryStoreEvents>.Mapping) {
+    override init(mapping: @escaping EventMapping<HistoryDatabaseError>.Mapping) {
         fatalError("Use init()")
     }
 }

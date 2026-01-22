@@ -17,6 +17,7 @@
 //
 
 import Persistence
+import PersistenceTestingUtils
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -358,16 +359,4 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(self.appearancePersistor.homeButtonPosition, .hidden)
     }
 
-}
-
-private final class MockKeyValueStore: ThrowingKeyValueStoring {
-    func object(forKey defaultName: String) throws -> Any? {
-        return nil
-    }
-
-    func set(_ value: Any?, forKey defaultName: String) throws {
-    }
-
-    func removeObject(forKey defaultName: String) throws {
-    }
 }

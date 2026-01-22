@@ -38,7 +38,7 @@ struct FireConfirmationPresenter {
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
-                                 onConfirm: @escaping (FireOptions) -> Void,
+                                 onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
         presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
@@ -47,7 +47,7 @@ struct FireConfirmationPresenter {
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  sourceRect: CGRect,
-                                 onConfirm: @escaping (FireOptions) -> Void,
+                                 onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         guard let window = UIApplication.shared.firstKeyWindow else {
             assertionFailure("No key window available")
@@ -65,7 +65,7 @@ struct FireConfirmationPresenter {
     private func presentConfirmationSheet(on viewController: UIViewController,
                                           from source: AnyObject,
                                           sourceRect: CGRect,
-                                          onConfirm: @escaping (FireOptions) -> Void,
+                                          onConfirm: @escaping (FireRequest) -> Void,
                                           onCancel: @escaping () -> Void) {
         let viewModel = makeViewModel(dismissing: viewController,
                                       onConfirm: onConfirm,
@@ -83,7 +83,7 @@ struct FireConfirmationPresenter {
     
     @MainActor
     private func makeViewModel(dismissing viewController: UIViewController,
-                               onConfirm: @escaping (FireOptions) -> Void,
+                               onConfirm: @escaping (FireRequest) -> Void,
                                onCancel: @escaping () -> Void) -> FireConfirmationViewModel {
         FireConfirmationViewModel(
             tabsModel: tabsModel,
@@ -186,13 +186,14 @@ struct FireConfirmationPresenter {
     private func presentLegacyConfirmationAlert(on viewController: UIViewController,
                                                 from source: AnyObject,
                                                 sourceRect: CGRect,
-                                                onConfirm: @escaping (FireOptions) -> Void,
+                                                onConfirm: @escaping (FireRequest) -> Void,
                                                 onCancel: @escaping () -> Void) {
         
         let alert = ForgetDataAlert.buildAlert(cancelHandler: {
             onCancel()
         }, forgetTabsAndDataHandler: {
-            onConfirm(.all)
+            let request = FireRequest(options: .all, trigger: .manualFire, scope: .all)
+            onConfirm(request)
         })
         if let view = source as? UIView {
             if let popover = alert.popoverPresentationController {

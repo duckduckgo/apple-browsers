@@ -171,8 +171,8 @@ public final class DefaultWideEventSender: WideEventSending {
 
         postRequestHandler(Self.postEndpoint, jsonData, headers) { success, error in
             if success {
-#if DEBUG
-                Self.logger.info("Wide event POST request skipped due to DEBUG mode")
+#if DEBUG || REVIEW || ALPHA
+                Self.logger.info("Wide event POST request skipped due to non-release build configuration")
 #else
                 Self.logger.info("Wide event POST request sent successfully")
 #endif
@@ -243,7 +243,7 @@ public final class DefaultWideEventSender: WideEventSending {
         headers: [String: String],
         onComplete: @escaping (Bool, Error?) -> Void
     ) {
-#if DEBUG
+#if DEBUG || REVIEW || ALPHA
         // Avoid sending real POST events when running debug mode, since we can't talk to the staging environment from
         // the client environment directly:
         onComplete(true, nil)

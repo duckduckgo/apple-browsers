@@ -2907,7 +2907,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "Suche"
           }
         },
         "en" : {
@@ -2919,43 +2919,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "Buscar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "Rechercher"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "Ricerca"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "Zoeken"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "Szukaj"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "Pesquisar"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search"
+            "value" : "Поиск"
           }
         }
       }
@@ -66822,7 +66822,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Always Allow"
+            "value" : "Immer erlauben"
           }
         },
         "en" : {
@@ -66834,43 +66834,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Always Allow"
+            "value" : "Permitir siempre"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Always Allow"
+            "value" : "Toujours autoriser"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Always Allow"
+            "value" : "Consenti sempre"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Always Allow"
+            "value" : "Altijd toestaan"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Always Allow"
+            "value" : "Zawsze zezwalaj"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Always Allow"
+            "value" : "Permitir sempre"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Always Allow"
+            "value" : "Разрешать всегда"
           }
         }
       }
@@ -66882,7 +66882,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Nie zulassen"
           }
         },
         "en" : {
@@ -66894,43 +66894,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "No permitir nunca"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Ne jamais autoriser"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Non permettere mai"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Nooit toestaan"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Nigdy nie pozwalaj"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Nunca permitir"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Не разрешать"
           }
         }
       }
@@ -67002,7 +67002,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deny"
+            "value" : "Ablehnen"
           }
         },
         "en" : {
@@ -67014,43 +67014,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deny"
+            "value" : "Rechazar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deny"
+            "value" : "Refuser"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deny"
+            "value" : "Rifiuta"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deny"
+            "value" : "Weigeren"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deny"
+            "value" : "Odmów"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deny"
+            "value" : "Recusar"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deny"
+            "value" : "Отказать"
           }
         }
       }
@@ -67122,7 +67122,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Nie zulassen"
           }
         },
         "en" : {
@@ -67134,43 +67134,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "No permitir nunca"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Ne jamais autoriser"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Non permettere mai"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Nooit toestaan"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Nigdy nie pozwalaj"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Nunca permitir"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never Allow"
+            "value" : "Не разрешать"
           }
         }
       }
@@ -67703,7 +67703,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Restart the DuckDuckGo application"
+            "value" : "Starte die DuckDuckGo-Anwendung neu"
           }
         },
         "en" : {
@@ -67715,43 +67715,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Restart the DuckDuckGo application"
+            "value" : "Reinicia la aplicación de DuckDuckGo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Restart the DuckDuckGo application"
+            "value" : "Redémarrez l'application DuckDuckGo"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Restart the DuckDuckGo application"
+            "value" : "Riavvia l'applicazione DuckDuckGo"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Restart the DuckDuckGo application"
+            "value" : "Start de DuckDuckGo-applicatie opnieuw"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Restart the DuckDuckGo application"
+            "value" : "Uruchom ponownie aplikację DuckDuckGo"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Restart the DuckDuckGo application"
+            "value" : "Reinicia a aplicação DuckDuckGo"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Restart the DuckDuckGo application"
+            "value" : "Перезапустите приложение DuckDuckGo"
           }
         }
       }
@@ -67763,7 +67763,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location disabled. Turn it on in "
+            "value" : "Systemstandort ist deaktiviert. Schalte ihn ein in "
           }
         },
         "en" : {
@@ -67775,43 +67775,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location disabled. Turn it on in "
+            "value" : "Ubicación del sistema desactivada. Actívala en "
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location disabled. Turn it on in "
+            "value" : "Localisation du système désactivée. Activez-la dans "
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location disabled. Turn it on in "
+            "value" : "Localizzazione di sistema disabilitata. Attivala in "
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location disabled. Turn it on in "
+            "value" : "Systeemlocatie uitgeschakeld. Zet deze functie aan in "
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location disabled. Turn it on in "
+            "value" : "Lokalizacja systemu wyłączona. Włącz ją w obszarze "
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location disabled. Turn it on in "
+            "value" : "Localização do sistema desativada. Liga-a em "
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location disabled. Turn it on in "
+            "value" : "Определение геопозиции системы отключено. Включите его в "
           }
         }
       }
@@ -67823,7 +67823,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable System Location"
+            "value" : "Systemstandort aktivieren"
           }
         },
         "en" : {
@@ -67835,43 +67835,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable System Location"
+            "value" : "Activar la ubicación del sistema"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable System Location"
+            "value" : "Activer la localisation du système"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable System Location"
+            "value" : "Abilita la posizione del sistema"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable System Location"
+            "value" : "Systeemlocatie inschakelen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable System Location"
+            "value" : "Włącz lokalizację systemu"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable System Location"
+            "value" : "Ativar localização do sistema"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable System Location"
+            "value" : "Включить определение геопозиции системы"
           }
         }
       }
@@ -67883,7 +67883,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location enabled!"
+            "value" : "Systemstandort aktiviert!"
           }
         },
         "en" : {
@@ -67895,43 +67895,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location enabled!"
+            "value" : "¡Ubicación del sistema activada!"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location enabled!"
+            "value" : "Localisation du système activée !"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location enabled!"
+            "value" : "Localizzazione di sistema attivata!"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location enabled!"
+            "value" : "Systeemlocatie ingeschakeld!"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location enabled!"
+            "value" : "Lokalizacja systemu włączona."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location enabled!"
+            "value" : "Localização do sistema ativada!"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System location enabled!"
+            "value" : "Определение местоположения включено в системных настройках!"
           }
         }
       }
@@ -67943,7 +67943,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waiting for system permission…"
+            "value" : "Warten auf Systemberechtigung …"
           }
         },
         "en" : {
@@ -67955,43 +67955,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waiting for system permission…"
+            "value" : "Esperando el permiso del sistema..."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waiting for system permission…"
+            "value" : "En attente d'autorisation système…"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waiting for system permission…"
+            "value" : "In attesa delle autorizzazioni del sistema..."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waiting for system permission…"
+            "value" : "Wachten op toestemming van het systeem..."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waiting for system permission…"
+            "value" : "Czekam na uprawnienia systemowe…"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waiting for system permission…"
+            "value" : "À espera da permissão do sistema…"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waiting for system permission…"
+            "value" : "Ожидается разрешение системы..."
           }
         }
       }
@@ -68183,7 +68183,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System Settings → Privacy"
+            "value" : "Systemeinstellungen → Privatsphäre"
           }
         },
         "en" : {
@@ -68195,43 +68195,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System Settings → Privacy"
+            "value" : "Ajustes del sistema → Privacidad"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System Settings → Privacy"
+            "value" : "Paramètres système → Confidentialité"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System Settings → Privacy"
+            "value" : "Impostazioni di sistema → Privacy"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System Settings → Privacy"
+            "value" : "Systeeminstellingen → Privacy"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System Settings → Privacy"
+            "value" : "Ustawienia systemowe → Prywatność"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System Settings → Privacy"
+            "value" : "Definições do sistema → Privacidade"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System Settings → Privacy"
+            "value" : "Настройки системы → Конфиденциальность"
           }
         }
       }
@@ -76155,7 +76155,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to access Plus or Pro tier features"
+            "value" : "Kein Zugriff auf Plus- oder Pro-Funktionen möglich"
           }
         },
         "en" : {
@@ -76167,43 +76167,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to access Plus or Pro tier features"
+            "value" : "No puedes acceder a las funciones de los niveles Plus o Pro"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to access Plus or Pro tier features"
+            "value" : "Impossible d'accéder aux fonctionnalités des niveaux Plus ou Pro"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to access Plus or Pro tier features"
+            "value" : "Impossibile accedere alle funzionalità del livello Plus o Pro"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to access Plus or Pro tier features"
+            "value" : "Toegang tot Plus- of Pro-functies niet mogelijk"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to access Plus or Pro tier features"
+            "value" : "Brak dostępu do funkcji poziomu Plus lub Pro"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to access Plus or Pro tier features"
+            "value" : "Não é possível aceder às funcionalidades dos níveis Plus ou Pro"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to access Plus or Pro tier features"
+            "value" : "Нет доступа к функциям уровня Plus или Pro"
           }
         }
       }
@@ -83655,7 +83655,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Der Browser wird in %d Sekunden automatisch geschlossen..."
+            "value" : "Der Browser wird in %d Sekunden automatisch geschlossen ..."
           }
         },
         "en" : {
@@ -83685,25 +83685,25 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De browser sluit automatisch over %d seconden..."
+            "value" : "De browser wordt over %d seconden automatisch afgesloten..."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przeglądarka zamknie się automatycznie za %d sekund..."
+            "value" : "Przeglądarka zostanie automatycznie zamknięta za %d s..."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O navegador será fechado automaticamente em %d segundos..."
+            "value" : "O navegador vai fechar automaticamente em %d segundos..."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Браузер закроется автоматически через %d сек..."
+            "value" : "Браузер автоматически закроется через %d сек..."
           }
         }
       }
@@ -83835,7 +83835,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wie war dein Erlebnis mit dem DuckDuckGo-Browser?"
+            "value" : "Wie war deine Erfahrung mit dem DuckDuckGo-Browser?"
           }
         },
         "en" : {
@@ -83847,13 +83847,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Cómo fue tu experiencia con el navegador DuckDuckGo?"
+            "value" : "¿Cómo ha sido tu experiencia con el navegador DuckDuckGo?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Comment s'est passée votre expérience avec le navigateur DuckDuckGo ?"
+            "value" : "Comment s'est passée votre expérience avec le navigateur DuckDuckGo ?"
           }
         },
         "it" : {
@@ -83871,19 +83871,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jak wyglądało Twoje doświadczenie z przeglądarką DuckDuckGo?"
+            "value" : "Jak oceniasz korzystanie z przeglądarki DuckDuckGo?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Como foi a sua experiência com o navegador DuckDuckGo?"
+            "value" : "Como foi a tua experiência com o navegador DuckDuckGo?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Как вам браузер DuckDuckGo?"
+            "value" : "Вам понравилось пользоваться браузером DuckDuckGo?"
           }
         }
       }
@@ -83895,7 +83895,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verbesserungsbedürftig"
+            "value" : "Muss verbessert werden"
           }
         },
         "en" : {
@@ -83913,19 +83913,19 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "À améliorer"
+            "value" : "Nécessite des améliorations"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deve migliorare"
+            "value" : "Necessita di miglioramento"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Moet verbeterd worden"
+            "value" : "Behoeft verbetering"
           }
         },
         "pl" : {
@@ -83937,13 +83937,13 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Precisa de melhorias"
+            "value" : "Necessita de melhorias"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Есть над чем поработать"
+            "value" : "Требует улучшения"
           }
         }
       }
@@ -83955,7 +83955,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welche Probleme hattest du?"
+            "value" : "Welche Probleme hast du erlebt?"
           }
         },
         "en" : {
@@ -83967,13 +83967,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Qué problemas tuviste?"
+            "value" : "¿Qué problemas has experimentado?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quels problèmes avez-vous rencontrés ?"
+            "value" : "Quels problèmes avez-vous rencontrés ?"
           }
         },
         "it" : {
@@ -83985,19 +83985,19 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welke problemen heb je ondervonden?"
+            "value" : "Welke problemen heb je ervaren?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jakie problemy napotkałeś(-aś)?"
+            "value" : "Jakie problemy wystąpiły?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Que problemas encontrou?"
+            "value" : "Que problemas encontraste?"
           }
         },
         "ru" : {
@@ -84039,19 +84039,19 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il blocco pubblicità non ha funzionato"
+            "value" : "Il blocco annunci non ha funzionato"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Advertentieblokkering werkte niet"
+            "value" : "Adblokker werkte niet"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blokowanie reklam nie działało"
+            "value" : "Nie działało blokowanie reklam"
           }
         },
         "pt" : {
@@ -84063,7 +84063,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Блокировщик рекламы не работал"
+            "value" : "Блокировщик рекламы не сработал"
           }
         }
       }
@@ -84075,7 +84075,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aufforderung, den Werbeblocker zu deaktivieren"
+            "value" : "Zur Deaktivierung des Werbeblockers aufgefordert"
           }
         },
         "en" : {
@@ -84087,43 +84087,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Me pidieron desactivar el bloqueador de anuncios"
+            "value" : "Me ha pedido desactivar el bloqueador de anuncios"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "On m'a demandé de désactiver le bloqueur de publicités"
+            "value" : "M'a demandé de désactiver le bloqueur de publicités"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mi è stato chiesto di disattivare il blocco pubblicità"
+            "value" : "Richiesta di disabilitare il blocco degli annunci"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gevraagd om advertentieblokkering uit te schakelen"
+            "value" : "Gevraagd om de adblocker uit te schakelen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prośba o wyłączenie blokowania reklam"
+            "value" : "Poproszono o wyłączenie blokady reklam"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pediram-me para desativar o bloqueador de anúncios"
+            "value" : "Solicitaram a desativação do bloqueador de anúncios"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Просят отключить блокировщик рекламы"
+            "value" : "Попросили отключить блокировщик рекламы"
           }
         }
       }
@@ -84159,7 +84159,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Risposte IA scadenti"
+            "value" : "Risposte errate dell'AI"
           }
         },
         "nl" : {
@@ -84177,13 +84177,13 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Más respostas da IA"
+            "value" : "Respostas incorretas da IA"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Плохие ответы ИИ"
+            "value" : "Некорректные ответы ИИ"
           }
         }
       }
@@ -84207,19 +84207,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Beneficios poco claros"
+            "value" : "Ventajas poco claras"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avantages pas clairs"
+            "value" : "Avantages peu clairs"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vantaggi poco chiari"
+            "value" : "Benefici non chiari"
           }
         },
         "nl" : {
@@ -84231,7 +84231,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Korzyści niejasne"
+            "value" : "Niejasne korzyści"
           }
         },
         "pt" : {
@@ -84243,7 +84243,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Преимущества неясны"
+            "value" : "Преимущества непонятны"
           }
         }
       }
@@ -84267,7 +84267,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El navegador se bloqueó"
+            "value" : "El navegador se ha cerrado inesperadamente"
           }
         },
         "fr" : {
@@ -84285,13 +84285,13 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browser crashte"
+            "value" : "Browser gecrasht"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przeglądarka się zawieszała"
+            "value" : "Przeglądarka się zawiesiła"
           }
         },
         "pt" : {
@@ -84303,7 +84303,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Браузер вылетал"
+            "value" : "Браузер завис"
           }
         }
       }
@@ -84327,7 +84327,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No pude cambiar el motor de búsqueda"
+            "value" : "No se ha podido cambiar el motor de búsqueda"
           }
         },
         "fr" : {
@@ -84339,31 +84339,31 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non sono riuscito a cambiare motore di ricerca"
+            "value" : "Non è possibile cambiare motore di ricerca"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kon zoekmachine niet wijzigen"
+            "value" : "Kon de zoekmachine niet wijzigen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie mogłem(-am) zmienić wyszukiwarki"
+            "value" : "Nie udało się zmienić wyszukiwarki"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não consegui mudar o motor de busca"
+            "value" : "Não foi possível alterar o motor de pesquisa"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось сменить поисковик"
+            "value" : "Не удалось сменить поисковую систему"
           }
         }
       }
@@ -84375,7 +84375,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bezahlen nicht möglich"
+            "value" : "Auschecken nicht möglich"
           }
         },
         "en" : {
@@ -84387,19 +84387,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No pude pagar"
+            "value" : "No se ha podido desconectar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de passer à la caisse"
+            "value" : "Impossible de finaliser un achat"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non sono riuscito a pagare"
+            "value" : "Non è stato possibile effettuare il check-out"
           }
         },
         "nl" : {
@@ -84411,13 +84411,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie mogłem(-am) sfinalizować zakupu"
+            "value" : "Nie udało się sfinalizować zakupu"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não consegui finalizar a compra"
+            "value" : "Não foi possível fazer o pagamento"
           }
         },
         "ru" : {
@@ -84447,7 +84447,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No pude desactivar la IA"
+            "value" : "No se ha podido desactivar la IA"
           }
         },
         "fr" : {
@@ -84459,7 +84459,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non sono riuscito a disattivare l'IA"
+            "value" : "Impossibile disabilitare AI"
           }
         },
         "nl" : {
@@ -84471,13 +84471,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie mogłem(-am) wyłączyć AI"
+            "value" : "Nie udało się wyłączyć AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não consegui desativar a IA"
+            "value" : "Não foi possível desativar a IA"
           }
         },
         "ru" : {
@@ -84495,7 +84495,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inkognito-Modus nicht gefunden"
+            "value" : "Es wurde kein Inkognito-Modus gefunden"
           }
         },
         "en" : {
@@ -84507,43 +84507,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No encontré el modo incógnito"
+            "value" : "No se ha podido encontrar el modo incógnito"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de trouver le mode incognito"
+            "value" : "Impossible de trouver le mode Incognito"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non ho trovato la modalità incognito"
+            "value" : "Impossibile trovare la modalità di navigazione in incognito"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kon incognito niet vinden"
+            "value" : "Kon de incognitomodus niet vinden"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie znalazłem(-am) trybu incognito"
+            "value" : "Nie udało się znaleźć trybu Incognito"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não encontrei o modo incógnito"
+            "value" : "Não foi possível encontrar o modo de navegação anónima"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не нашёл режим инкогнито"
+            "value" : "Не удалось найти режим инкогнито"
           }
         }
       }
@@ -84567,37 +84567,37 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No pude importar los marcadores"
+            "value" : "No se han podido importar los marcadores"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible d'importer les favoris"
+            "value" : "Impossible d'importer les signets"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non sono riuscito a importare i segnalibri"
+            "value" : "Impossibile importare i segnalibri"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kon bladwijzers niet importeren"
+            "value" : "Bladwijzers konden niet worden geïmporteerd"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie mogłem(-am) zaimportować zakładek"
+            "value" : "Nie udało się zaimportować zakładek"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não consegui importar marcadores"
+            "value" : "Não foi possível importar marcadores"
           }
         },
         "ru" : {
@@ -84627,7 +84627,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No pude importar las contraseñas"
+            "value" : "No se han podido importar las contraseñas"
           }
         },
         "fr" : {
@@ -84639,7 +84639,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non sono riuscito a importare le password"
+            "value" : "Impossibile importare le password"
           }
         },
         "nl" : {
@@ -84651,19 +84651,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie mogłem(-am) zaimportować haseł"
+            "value" : "Nie udało się zaimportować haseł"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não consegui importar palavras-passe"
+            "value" : "Não foi possível importar palavras-passe"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось импортировать пароли"
+            "value" : "Не удалось импортировать пароли."
           }
         }
       }
@@ -84675,7 +84675,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zahlungsdaten konnten nicht importiert werden"
+            "value" : "Zahlungsdetails konnten nicht importiert werden"
           }
         },
         "en" : {
@@ -84687,43 +84687,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No pude importar los datos de pago"
+            "value" : "No se ha podido importar los datos de pago"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible d'importer les données de paiement"
+            "value" : "Impossible d'importer mes informations de paiement"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non sono riuscito a importare i dati di pagamento"
+            "value" : "Impossibile importare i dati di pagamento"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kon betaalgegevens niet importeren"
+            "value" : "Kon betalingsgegevens niet importeren"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie mogłem(-am) zaimportować danych płatniczych"
+            "value" : "Nie udało się zaimportować danych o płatności"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não consegui importar dados de pagamento"
+            "value" : "Não foi possível importar detalhes de pagamento"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось импортировать платёжные данные"
+            "value" : "Не удалось импортировать платежные данные"
           }
         }
       }
@@ -84735,7 +84735,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Anmeldung bei der Bank nicht möglich"
+            "value" : "Ich konnte mich nicht bei der Bank anmelden"
           }
         },
         "en" : {
@@ -84747,19 +84747,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No pude iniciar sesión en el banco"
+            "value" : "No se ha podido iniciar sesión en el banco"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de me connecter à ma banque"
+            "value" : "Impossible de se connecter à la banque"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non sono riuscito ad accedere alla banca"
+            "value" : "Impossibile accedere alla banca"
           }
         },
         "nl" : {
@@ -84771,13 +84771,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie mogłem(-am) zalogować się do banku"
+            "value" : "Nie udało się zalogować do banku"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não consegui iniciar sessão no banco"
+            "value" : "Não foi possível iniciar sessão no banco"
           }
         },
         "ru" : {
@@ -84795,7 +84795,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Einführung konnte nicht übersprungen werden"
+            "value" : "Onboarding konnte nicht übersprungen werden"
           }
         },
         "en" : {
@@ -84807,43 +84807,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No pude omitir la introducción"
+            "value" : "No se ha podido omitir la incorporación"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de passer l'accueil"
+            "value" : "Impossible de passer le processus d'intégration"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non sono riuscito a saltare l'onboarding"
+            "value" : "Impossibile saltare l'onboarding"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kon introductie niet overslaan"
+            "value" : "Kon de onboarding niet overslaan"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie mogłem(-am) pominąć wprowadzenia"
+            "value" : "Nie udało się pominąć wprowadzenia"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não consegui ignorar a introdução"
+            "value" : "Não foi possível ignorar a integração"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось пропустить знакомство"
+            "value" : "Не удалось пропустить вводное обучение"
           }
         }
       }
@@ -84855,7 +84855,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fire-Button hat zu viel gelöscht"
+            "value" : "Fire Button hat zu viel gelöscht"
           }
         },
         "en" : {
@@ -84867,43 +84867,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El botón Fire eliminó demasiado"
+            "value" : "El Fire Button ha eliminado demasiado"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le bouton Fire a supprimé trop de choses"
+            "value" : "Le Fire Button a fait trop de suppressions"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il pulsante Fire ha rimosso troppo"
+            "value" : "Fire Button ha eliminato troppo"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fire-knop verwijderde te veel"
+            "value" : "Fire Button heeft te veel verwijderd"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przycisk Fire usunął za dużo"
+            "value" : "Fire Button usunął zbyt wiele"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O botão Fire eliminou demasiado"
+            "value" : "O Fire Button eliminou demasiada informação"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Кнопка Fire удалила слишком много"
+            "value" : "Кнопка Fire Button удалила слишком много"
           }
         }
       }
@@ -84927,7 +84927,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tuve que volver a iniciar sesión"
+            "value" : "He tenido que volver a iniciar sesión."
           }
         },
         "fr" : {
@@ -84939,31 +84939,31 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ho dovuto riaccedere"
+            "value" : "Ho dovuto accedere nuovamente"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Moest opnieuw inloggen"
+            "value" : "Ik moest me opnieuw aanmelden"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Musiałem(-am) się ponownie zalogować"
+            "value" : "Konieczne było ponowne zalogowanie"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tive de iniciar sessão novamente"
+            "value" : "Foi necessário voltar a iniciar sessão"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Пришлось входить заново"
+            "value" : "Пришлось повторно войти в систему"
           }
         }
       }
@@ -84975,7 +84975,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Einstellungen schwer zu finden"
+            "value" : "Schwer zu findende Einstellungen"
           }
         },
         "en" : {
@@ -84987,37 +84987,37 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Difícil encontrar Ajustes"
+            "value" : "Configuración difícil de encontrar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Difficile de trouver les Paramètres"
+            "value" : "Difficile de trouver les réglages"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Difficile trovare le Impostazioni"
+            "value" : "Impostazioni difficili da trovare"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Moeilijk om Instellingen te vinden"
+            "value" : "Instellingen zijn lastig te vinden"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trudno było znaleźć Ustawienia"
+            "value" : "Trudno znaleźć ustawienia"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Difícil encontrar as Definições"
+            "value" : "Difícil de encontrar as definições"
           }
         },
         "ru" : {
@@ -85035,7 +85035,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Downloads schwer zu verwalten"
+            "value" : "Schwer zu verwaltende Downloads"
           }
         },
         "en" : {
@@ -85047,7 +85047,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Difícil gestionar descargas"
+            "value" : "Descargas difíciles de gestionar"
           }
         },
         "fr" : {
@@ -85059,25 +85059,25 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Difficile gestire i download"
+            "value" : "Difficoltà a gestire i download"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Moeilijk om downloads te beheren"
+            "value" : "Downloads zijn lastig te beheren"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trudno było zarządzać pobieraniem"
+            "value" : "Trudno zarządzać pobieraniem plików"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Difícil gerir transferências"
+            "value" : "Difícil de gerir as transferências"
           }
         },
         "ru" : {
@@ -85095,7 +85095,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nur ausprobiert"
+            "value" : "Nur zum Ausprobieren"
           }
         },
         "en" : {
@@ -85107,43 +85107,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Solo lo estaba probando"
+            "value" : "Solo lo estoy probando"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Je voulais juste essayer"
+            "value" : "Je ne fais qu'essayer"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stavo solo provando"
+            "value" : "Lo sto solo provando"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ik probeerde het gewoon uit"
+            "value" : "Gewoon aan het uitproberen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tylko testowałem(-am)"
+            "value" : "Tylko była tylko próba"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estava só a experimentar"
+            "value" : "Só estou a experimentar"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Просто пробовал"
+            "value" : "Просто пробую"
           }
         }
       }
@@ -85167,19 +85167,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Más CAPTCHAs"
+            "value" : "Más CAPTCHA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Plus de CAPTCHAs"
+            "value" : "Plus de CAPTCHA"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Più CAPTCHA"
+            "value" : "Altri CAPTCHA"
           }
         },
         "nl" : {
@@ -85203,7 +85203,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Больше CAPTCHA"
+            "value" : "Больше каптчей"
           }
         }
       }
@@ -85215,7 +85215,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Navigation ungewohnt"
+            "value" : "Navigation unbekannt"
           }
         },
         "en" : {
@@ -85227,43 +85227,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Navegación poco familiar"
+            "value" : "Navegación complicada"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Navigation peu familière"
+            "value" : "Navigation inhabituelle"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Navigazione poco familiare"
+            "value" : "Navigazione non familiare"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Onbekende navigatie"
+            "value" : "Navigatie onbekend"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nieznana nawigacja"
+            "value" : "Nietypowa nawigacja"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Navegação pouco familiar"
+            "value" : "Navegação desconhecida"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Непривычная навигация"
+            "value" : "Непонятная навигация"
           }
         }
       }
@@ -85293,7 +85293,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pas prêt à changer de navigateur"
+            "value" : "Pas prêt(e) à changer de navigateur"
           }
         },
         "it" : {
@@ -85305,25 +85305,25 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nog niet klaar om van browser te wisselen"
+            "value" : "Nog niet klaar om van browser te wisselen."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie jestem gotowy(-a) na zmianę przeglądarki"
+            "value" : "Nie chcę zmieniać przeglądarki"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não estou pronto para mudar de navegador"
+            "value" : "Não estou preparado para mudar de navegador"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не готов менять браузер"
+            "value" : "Не готов к смене браузера"
           }
         }
       }
@@ -85335,7 +85335,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Einführung war nicht hilfreich"
+            "value" : "Onboarding war nicht hilfreich"
           }
         },
         "en" : {
@@ -85347,13 +85347,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La introducción no fue útil"
+            "value" : "La incorporación no ha sido útil"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "L'accueil n'était pas utile"
+            "value" : "Le processus d'intégration n'a pas été utile"
           }
         },
         "it" : {
@@ -85365,25 +85365,25 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Introductie was niet nuttig"
+            "value" : "Onboarding was niet informatief"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wprowadzenie nie było pomocne"
+            "value" : "Onboarding nie był pomocny"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A introdução não foi útil"
+            "value" : "O processo de integração não foi útil"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Знакомство не помогло"
+            "value" : "Процесс обучения оказался бесполезным"
           }
         }
       }
@@ -85407,7 +85407,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las páginas se congelaron"
+            "value" : "Las páginas se quedaron bloqueadas"
           }
         },
         "fr" : {
@@ -85431,19 +85431,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Strony się zawieszały"
+            "value" : "Strony zawieszały się"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "As páginas bloquearam"
+            "value" : "As páginas congelaram"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Страницы зависали"
+            "value" : "Страницы зависли"
           }
         }
       }
@@ -85455,7 +85455,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seiten haben langsam geladen"
+            "value" : "Seiten werden langsam geladen"
           }
         },
         "en" : {
@@ -85467,31 +85467,31 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las páginas cargaron lentamente"
+            "value" : "Las páginas se cargan lentamente"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les pages se sont chargées lentement"
+            "value" : "Chargement lent des pages"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le pagine si sono caricate lentamente"
+            "value" : "Le pagine si caricano lentamente"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pagina's laadden langzaam"
+            "value" : "Pagina's werden langzaam geladen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Strony ładowały się wolno"
+            "value" : "Strony ładowały się powoli"
           }
         },
         "pt" : {
@@ -85503,7 +85503,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Страницы загружались медленно"
+            "value" : "Страницы загружаются медленно"
           }
         }
       }
@@ -85515,7 +85515,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Passwort-Manager nicht verfügbar"
+            "value" : "Passwortmanager nicht verfügbar"
           }
         },
         "en" : {
@@ -85527,7 +85527,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestor de contraseñas no disponible"
+            "value" : "El gestor de contraseñas no está disponible"
           }
         },
         "fr" : {
@@ -85539,19 +85539,19 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestore password non disponibile"
+            "value" : "Il gestore di password non è disponibile"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wachtwoordbeheer niet beschikbaar"
+            "value" : "Wachtwoordbeheerder niet beschikbaar"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Menedżer haseł niedostępny"
+            "value" : "Niedostępny menedżer haseł"
           }
         },
         "pt" : {
@@ -85563,7 +85563,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Менеджер паролей недоступен"
+            "value" : "Недоступен диспетчер паролей"
           }
         }
       }
@@ -85575,7 +85575,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Datenschutzbedenken"
+            "value" : "Bedenken zur Privatsphäre"
           }
         },
         "en" : {
@@ -85587,25 +85587,25 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preocupaciones de privacidad"
+            "value" : "Inquietudes sobre la privacidad"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Préoccupations de confidentialité"
+            "value" : "Préoccupations concernant la confidentialité"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problemi di privacy"
+            "value" : "Preoccupazioni sulla privacy"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacyzorgen"
+            "value" : "Privacykwesties"
           }
         },
         "pl" : {
@@ -85617,13 +85617,13 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preocupações de privacidade"
+            "value" : "Preocupações com a privacidade"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Опасения о конфиденциальности"
+            "value" : "Проблемы конфиденциальности"
           }
         }
       }
@@ -85635,7 +85635,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tastenkombinationen funktionierten nicht"
+            "value" : "Shortcuts haben nicht funktioniert"
           }
         },
         "en" : {
@@ -85647,13 +85647,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los atajos no funcionaron"
+            "value" : "Los atajos no funcionan"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les raccourcis ne fonctionnaient pas"
+            "value" : "Les raccourcis n'ont pas fonctionné"
           }
         },
         "it" : {
@@ -85671,7 +85671,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Skróty nie działały"
+            "value" : "Nie działały skróty"
           }
         },
         "pt" : {
@@ -85683,7 +85683,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Горячие клавиши не работали"
+            "value" : "Ярлыки не работали"
           }
         }
       }
@@ -85713,7 +85713,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Difficultés de connexion"
+            "value" : "Problèmes de connexion"
           }
         },
         "it" : {
@@ -85725,7 +85725,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inlogproblemen"
+            "value" : "Aanmeldproblemen"
           }
         },
         "pl" : {
@@ -85737,13 +85737,13 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problemas ao iniciar sessão"
+            "value" : "Dificuldades no início de sessão"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Проблемы со входом"
+            "value" : "Проблемы при входе в систему"
           }
         }
       }
@@ -85755,7 +85755,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Langsam beim Öffnen"
+            "value" : "Öffnet sich langsam"
           }
         },
         "en" : {
@@ -85767,7 +85767,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lento al abrir"
+            "value" : "Tarda mucho en abrir"
           }
         },
         "fr" : {
@@ -85785,13 +85785,13 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Langzaam bij openen"
+            "value" : "Gaat langzaam open"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wolno się otwierał"
+            "value" : "Powolne otwieranie"
           }
         },
         "pt" : {
@@ -85803,7 +85803,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Долго открывался"
+            "value" : "Медленно открывается"
           }
         }
       }
@@ -85815,7 +85815,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hat meinen Computer verlangsamt"
+            "value" : "Mein Computer wurde dadurch verlangsamt"
           }
         },
         "en" : {
@@ -85827,13 +85827,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ralentizó mi ordenador"
+            "value" : "He ralentizado mi ordenador"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A ralenti mon ordinateur"
+            "value" : "Cela a ralenti mon ordinateur"
           }
         },
         "it" : {
@@ -85851,19 +85851,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spowalniał mój komputer"
+            "value" : "Spowolnił mój komputer"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deixou o meu computador lento"
+            "value" : "Tornou o meu computador mais lento"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Замедлял работу компьютера"
+            "value" : "Замедлило работу моего компьютера"
           }
         }
       }
@@ -85935,7 +85935,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tabs öffneten langsam"
+            "value" : "Tabs öffneten sich langsam"
           }
         },
         "en" : {
@@ -85947,43 +85947,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las pestañas se abrieron lentamente"
+            "value" : "Las pestañas se abren lentamente"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les onglets se sont ouverts lentement"
+            "value" : "Ouverture lente des onglets"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le schede si aprivano lentamente"
+            "value" : "Le schede si sono aperte lentamente"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tabbladen openden langzaam"
+            "value" : "Tabbladen gingen langzaam open"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Karty otwierały się wolno"
+            "value" : "Powolne otwieranie kart"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Os separadores abriram lentamente"
+            "value" : "Lentidão na abertura dos separadores"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Вкладки открывались медленно"
+            "value" : "Вкладки медленно открывались"
           }
         }
       }
@@ -86037,7 +86037,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Resultados de pesquisa inesperados"
+            "value" : "Resultados inesperados da pesquisa"
           }
         },
         "ru" : {
@@ -86055,7 +86055,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unsicher, wie der Verlauf behandelt wird"
+            "value" : "Unklar, wie mit der Historie umgegangen wird"
           }
         },
         "en" : {
@@ -86067,43 +86067,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No sé cómo se gestiona el historial"
+            "value" : "No estoy seguro de cómo se gestiona el historial"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pas sûr de comment l'historique est géré"
+            "value" : "Incertitude quant à la gestion de l'historique"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non so come viene gestita la cronologia"
+            "value" : "Non so come venga gestita la storia"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Onzeker hoe geschiedenis wordt behandeld"
+            "value" : "Het is onduidelijk hoe de geschiedenis wordt behandeld"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie wiem, jak obsługiwana jest historia"
+            "value" : "Nie wiem, jak jest obsługiwana historia"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não sei como o histórico é gerido"
+            "value" : "Incerteza no tratamento do histórico"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Непонятно, что происходит с историей"
+            "value" : "Непонятно, как обрабатывается история"
           }
         }
       }
@@ -86127,19 +86127,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los vídeos no se reprodujeron"
+            "value" : "No se han reproducido los vídeos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les vidéos ne se sont pas lues"
+            "value" : "Lecture impossible des vidéos"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I video non venivano riprodotti"
+            "value" : "I video non sono stati riprodotti"
           }
         },
         "nl" : {
@@ -86151,7 +86151,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filmy nie były odtwarzane"
+            "value" : "Filmy nie odtwarzały się"
           }
         },
         "pt" : {
@@ -86175,7 +86175,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toll"
+            "value" : "Großartig"
           }
         },
         "en" : {
@@ -86187,7 +86187,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Genial"
+            "value" : "Excelente"
           }
         },
         "fr" : {
@@ -86217,7 +86217,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ótimo"
+            "value" : "Excelente"
           }
         },
         "ru" : {
@@ -86235,7 +86235,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Danke, dass du deine Meinung geteilt hast!"
+            "value" : "Danke für dein Feedback!"
           }
         },
         "en" : {
@@ -86253,37 +86253,37 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Merci d'avoir partagé votre avis !"
+            "value" : "Merci d'avoir partagé votre opinion !"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Grazie per aver condiviso i tuoi pensieri!"
+            "value" : "Grazie per aver condiviso il tuo parere!"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bedankt voor het delen van je mening!"
+            "value" : "Bedankt voor het delen van je gedachten!"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dziękujemy za podzielenie się opinią!"
+            "value" : "Dzięki za podzielenie się swoimi przemyśleniami!"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obrigado por partilhar a sua opinião!"
+            "value" : "Obrigado por partilhares as tuas opiniões!"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Спасибо, что поделились мнением!"
+            "value" : "Спасибо, что поделились своими впечатлениями!"
           }
         }
       }
@@ -86475,7 +86475,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wird gesendet..."
+            "value" : "Wird gesendet ..."
           }
         },
         "en" : {
@@ -86499,7 +86499,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invio in corso..."
+            "value" : "Invio..."
           }
         },
         "nl" : {
@@ -86511,7 +86511,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wysyłanie..."
+            "value" : "Przesyłanie..."
           }
         },
         "pt" : {

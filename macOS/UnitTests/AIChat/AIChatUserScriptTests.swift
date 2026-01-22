@@ -20,6 +20,8 @@ import AIChat
 import Combine
 import UserScript
 import WebKit
+import Persistence
+import PersistenceTestingUtils
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -153,6 +155,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
+    var syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
 
     var didReportMetric = false
 
@@ -261,6 +264,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         chatRestorationDataSubject.eraseToAnyPublisher()
     }
 
+    var syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never> {
+        syncStatusSubject.eraseToAnyPublisher()
+    }
+
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         didSubmitAIChatPageContext = true
     }
@@ -331,10 +338,8 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 }
 // swiftlint:enable inclusive_language
 
-final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {
-    var customURLHostname: String?
-    var customURL: String?
-    func reset() { }
+func AIChatMockDebugSettings() -> any KeyedStoring<AIChatDebugURLSettings> {
+    return MockKeyValueStore().keyedStoring()
 }
 
 private final class MockAIChatMessageHandling: AIChatMessageHandling {

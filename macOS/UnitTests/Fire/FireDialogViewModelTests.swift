@@ -19,6 +19,8 @@
 import Common
 import History
 import HistoryView
+import Persistence
+import PersistenceTestingUtils
 import PrivacyConfig
 import SharedTestUtilities
 import WebKit
@@ -2020,20 +2022,22 @@ final class FireDialogViewModelTests: XCTestCase {
 
 }
 
-class MockFireDialogViewSettings: FireDialogViewSettings {
-    var lastSelectedClearingOption: FireDialogViewModel.ClearingOption?
-    var lastIncludeTabsAndWindowsState: Bool?
-    var lastIncludeHistoryState: Bool?
-    var lastIncludeCookiesAndSiteDataState: Bool?
-    var lastIncludeChatHistoryState: Bool?
+func MockFireDialogViewSettings(
+    lastSelectedClearingOption: FireDialogViewModel.ClearingOption? = nil,
+    lastIncludeTabsAndWindowsState: Bool? = nil,
+    lastIncludeHistoryState: Bool? = nil,
+    lastIncludeCookiesAndSiteDataState: Bool? = nil,
+    lastIncludeChatHistoryState: Bool? = nil
+) -> any KeyedStoring<FireDialogViewSettings> {
+    let storage: KeyedStoring<FireDialogViewSettings> = InMemoryKeyValueStore().keyedStoring()
 
-    init(lastSelectedClearingOption: FireDialogViewModel.ClearingOption? = nil, lastIncludeTabsAndWindowsState: Bool? = nil, lastIncludeHistoryState: Bool? = nil, lastIncludeCookiesAndSiteDataState: Bool? = nil, lastIncludeChatHistoryState: Bool? = nil) {
-        self.lastSelectedClearingOption = lastSelectedClearingOption
-        self.lastIncludeTabsAndWindowsState = lastIncludeTabsAndWindowsState
-        self.lastIncludeHistoryState = lastIncludeHistoryState
-        self.lastIncludeCookiesAndSiteDataState = lastIncludeCookiesAndSiteDataState
-        self.lastIncludeChatHistoryState = lastIncludeChatHistoryState
-    }
+    storage.lastSelectedClearingOption = lastSelectedClearingOption
+    storage.lastIncludeTabsAndWindowsState = lastIncludeTabsAndWindowsState
+    storage.lastIncludeHistoryState = lastIncludeHistoryState
+    storage.lastIncludeCookiesAndSiteDataState = lastIncludeCookiesAndSiteDataState
+    storage.lastIncludeChatHistoryState = lastIncludeChatHistoryState
+
+    return storage
 }
 
 class CapturingContextualOnboardingStateUpdater: ContextualOnboardingStateUpdater {

@@ -55,7 +55,7 @@ class AppSettingsMock: AppSettings {
 
     var currentThemeStyle: DuckDuckGo.ThemeStyle = .systemDefault
 
-    var autoClearAction: DuckDuckGo.FireOptions = .data
+    var autoClearAction: DuckDuckGo.FireRequest.Options = .data
 
     var autoClearTiming: DuckDuckGo.AutoClearSettingsModel.Timing = .delay15min
 

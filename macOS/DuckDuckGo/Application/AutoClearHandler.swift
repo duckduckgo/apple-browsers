@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Foundation
+import AIChat
 
 protocol AutoClearAlertPresenting {
     func confirmAutoClear(clearChats: Bool) -> NSApplication.ModalResponse
@@ -37,20 +38,20 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     private let startupPreferences: StartupPreferences
     private let fireViewModel: FireViewModel
     private let stateRestorationManager: AppStateRestorationManager
-    private let syncAIChatsCleaner: SyncAIChatsCleaning?
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let alertPresenter: AutoClearAlertPresenting
 
     init(dataClearingPreferences: DataClearingPreferences,
          startupPreferences: StartupPreferences,
          fireViewModel: FireViewModel,
          stateRestorationManager: AppStateRestorationManager,
-         syncAIChatsCleaner: SyncAIChatsCleaning?,
+         aiChatSyncCleaner: AIChatSyncCleaning?,
          alertPresenter: AutoClearAlertPresenting = DefaultAutoClearAlertPresenter()) {
         self.dataClearingPreferences = dataClearingPreferences
         self.startupPreferences = startupPreferences
         self.fireViewModel = fireViewModel
         self.stateRestorationManager = stateRestorationManager
-        self.syncAIChatsCleaner = syncAIChatsCleaner
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.alertPresenter = alertPresenter
     }
 
@@ -104,7 +105,9 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     @MainActor
     private func performAutoClear() async {
         if dataClearingPreferences.isAutoClearAIChatHistoryEnabled {
-            syncAIChatsCleaner?.recordLocalClear(date: Date())
+            Task {
+                await aiChatSyncCleaner?.recordLocalClear(date: Date())
+            }
         }
         await fireViewModel.fire.burnAll(isBurnOnExit: true, includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
         appTerminationHandledCorrectly = true
@@ -140,7 +143,9 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     @MainActor
     private func performAutoClearSyncFallback() {
         if dataClearingPreferences.isAutoClearAIChatHistoryEnabled {
-            syncAIChatsCleaner?.recordLocalClear(date: Date())
+            Task {
+                await aiChatSyncCleaner?.recordLocalClear(date: Date())
+            }
         }
         fireViewModel.fire.burnAll(isBurnOnExit: true, includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled) { [weak self] in
             self?.appTerminationHandledCorrectly = true

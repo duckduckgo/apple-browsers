@@ -32,6 +32,10 @@ let package = Package(
             name: "AIChat",
             targets: ["AIChat"]
         ),
+        .library(
+            name: "AIChatTestingUtilities",
+            targets: ["AIChatTestingUtilities"]
+        ),
     ],
     dependencies: [
         .package(path: "../Infrastructure/DesignResourcesKit"),
@@ -56,9 +60,18 @@ let package = Package(
                 .process("Resources")
             ]
         ),
+        .target(
+            name: "AIChatTestingUtilities",
+            dependencies: [
+                "AIChat"
+            ]
+        ),
         .testTarget(
             name: "AIChatTests",
-            dependencies: ["AIChat"]
+            dependencies: [
+                "AIChat",
+                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit")
+            ]
         )
     ]
 )

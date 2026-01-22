@@ -283,6 +283,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
 
+    // https://app.asana.com/1/137249556945/project/392891325557410/task/1211597475706631?focus=true
+    case webViewFlashPrevention
+
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
@@ -300,6 +303,9 @@ public enum FeatureFlag: String {
     /// Test-only experiment for verifying UI test experiment override mechanism.
     /// Used in Debug > UI Test Overrides screen.
     case uiTestExperiment
+    
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
+    case genericBackgroundTask
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -322,6 +328,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
              .showWhatsNewPromptOnDemand,
+             .webViewFlashPrevention,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion:
             true
@@ -402,6 +409,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dataImportSummarySyncPromotion,
              .aiChatAtb,
              .enhancedDataClearingSettings,
+             .genericBackgroundTask,
+             .webViewFlashPrevention,
              .tabSwitcherTrackerCount,
              .burnSingleTab,
              .uiTestFeatureFlag,
@@ -621,6 +630,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
             return .disabled
+        case .webViewFlashPrevention:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint))
         case .tabSwitcherTrackerCount,
@@ -630,6 +641,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .uiTestExperiment:
             return .disabled
+        case .genericBackgroundTask:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
         }
     }
 }

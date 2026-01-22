@@ -268,8 +268,8 @@ class SwitchBarTextEntryView: UIView {
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
             if handler.isUsingFadeOutAnimation {
-                textView.keyboardType = .default
-                textView.returnKeyType = .default
+                textView.keyboardType = .webSearch
+                textView.returnKeyType = .go
                 if textView.text.isEmpty {
                     disableAutoCorrectionAndSpellChecking()
                 } else {
@@ -497,8 +497,8 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = .default
-            textView.returnKeyType = .default
+            textView.keyboardType = .webSearch
+            textView.returnKeyType = .go
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -564,10 +564,6 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            if handler.isUsingFadeOutAnimation && currentMode == .aiChat {
-                return true
-            }
-
             fireKeyboardGoPressedPixel()
             /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
             let currentText = textView.text ?? ""

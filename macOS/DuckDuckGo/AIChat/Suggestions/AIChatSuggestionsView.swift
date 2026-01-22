@@ -141,17 +141,9 @@ final class AIChatSuggestionsView: NSView {
 
     // MARK: - Public Methods
 
-    /// Updates the suggestions displayed in the view.
-    /// - Parameters:
-    ///   - suggestions: The list of suggestions to display.
-    ///   - selectedIndex: The index of the currently selected suggestion (for keyboard navigation).
-    ///   - isKeyboardNavigating: Whether keyboard navigation is currently active.
-    /// - Returns: `true` if the suggestion count changed (requiring height update), `false` otherwise.
-    @discardableResult
-    func update(with suggestions: [AIChatSuggestion], selectedIndex: Int?, isKeyboardNavigating: Bool = false) -> Bool {
-        let countChanged = suggestions.count != previousSuggestionCount
-        previousSuggestionCount = suggestions.count
-
+    /// Rebuilds the suggestion row views. Only call when the suggestions list changes.
+    /// - Parameter suggestions: The list of suggestions to display.
+    private func rebuildRows(with suggestions: [AIChatSuggestion]) {
         // Remove existing row views
         rowViews.forEach { $0.removeFromSuperview() }
         rowViews.removeAll()
@@ -160,8 +152,6 @@ final class AIChatSuggestionsView: NSView {
         for (index, suggestion) in suggestions.enumerated() {
             let rowView = AIChatSuggestionRowView(suggestion: suggestion)
             rowView.translatesAutoresizingMaskIntoConstraints = false
-            rowView.isSelected = (index == selectedIndex)
-            rowView.isKeyboardNavigating = isKeyboardNavigating
 
             rowView.onClick = { [weak self] in
                 self?.onSuggestionClicked?(suggestion)
@@ -187,15 +177,13 @@ final class AIChatSuggestionsView: NSView {
         // Update visibility
         let hasSuggestions = !suggestions.isEmpty
         separatorView.isHidden = !hasSuggestions
-
-        return countChanged
     }
 
     /// Updates only the selection state without rebuilding the entire view.
     /// - Parameters:
     ///   - selectedIndex: The index of the currently selected suggestion.
     ///   - isKeyboardNavigating: Whether keyboard navigation is currently active.
-    func updateSelection(_ selectedIndex: Int?, isKeyboardNavigating: Bool = false) {
+    private func updateSelection(_ selectedIndex: Int?, isKeyboardNavigating: Bool) {
         for (index, rowView) in rowViews.enumerated() {
             rowView.isSelected = (index == selectedIndex)
             rowView.isKeyboardNavigating = isKeyboardNavigating
@@ -215,16 +203,34 @@ final class AIChatSuggestionsView: NSView {
 
         boundViewModel = viewModel
 
+        // Rebuild rows only when suggestions list changes
         viewModel.$filteredSuggestions
-            .combineLatest(viewModel.$selectedIndex, viewModel.$isKeyboardNavigating)
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] suggestions, selectedIndex, isKeyboardNavigating in
+            .sink { [weak self] suggestions in
                 guard let self else { return }
-                let countChanged = self.update(with: suggestions, selectedIndex: selectedIndex, isKeyboardNavigating: isKeyboardNavigating)
+
+                let countChanged = suggestions.count != self.previousSuggestionCount
+                self.previousSuggestionCount = suggestions.count
+
+                self.rebuildRows(with: suggestions)
+
+                // Apply current selection state to new rows
+                self.updateSelection(viewModel.selectedIndex, isKeyboardNavigating: viewModel.isKeyboardNavigating)
+
                 if countChanged {
                     let newHeight = AIChatSuggestionsView.calculateHeight(forSuggestionCount: suggestions.count)
                     onHeightChange(newHeight)
                 }
+            }
+            .store(in: &cancellables)
+
+        // Update selection without rebuilding when only selection changes
+        viewModel.$selectedIndex
+            .combineLatest(viewModel.$isKeyboardNavigating)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] selectedIndex, isKeyboardNavigating in
+                self?.updateSelection(selectedIndex, isKeyboardNavigating: isKeyboardNavigating)
             }
             .store(in: &cancellables)
     }

@@ -875,10 +875,6 @@ extension Pixel {
         case debugReturnUserAddATB
         case debugReturnUserUpdateATB
 
-        // Feature flag validation
-        case debugTelemetryDAUPreFF
-        case debugTelemetryDAUPostFF
-
         // Errors from Bookmarks Module
         case bookmarkFolderExpected
         case bookmarksListIndexNotMatchingBookmark
@@ -1159,6 +1155,8 @@ extension Pixel {
         case subscriptionInvalidRefreshTokenSignedOut
         case subscriptionInvalidRefreshTokenRecovered
         case subscriptionAuthV2GetTokensError2
+        case subscriptionPurchaseSuccessAfterPendingTransaction
+        case subscriptionPendingTransactionApproved
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
 
@@ -1448,6 +1446,11 @@ extension Pixel {
         // MARK: AI Chat History Deletion
         case aiChatHistoryDeleteSuccessful
         case aiChatHistoryDeleteFailed
+
+        // MARK: AI Chat Contextual Onboarding
+        case aiChatContextualOnboardingDisplayed
+        case aiChatContextualOnboardingConfirmPressed
+        case aiChatContextualOnboardingSettingsPressed
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -2230,13 +2233,6 @@ extension Pixel.Event {
         case .dbRemoteMessagingUpdateMessageStatusError: return "m_d_db_rm_update_message_status"
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
 
-        /// These debug pixels are extremely short lived.  We want to validate that the feature flag is working correctly.
-        /// To do so there should be an almost exact equal number of daily pixels, but it's possible for the count to be fairly different (though not massively).
-        /// The reason it might not be exact is that it could be the feature flag does not get enabled until "the next day" so the 'daily' part doesn't kick in.
-        /// This will let us reason about why the DAU data in Grafana is different to our ATB data (by about 15%)
-        case .debugTelemetryDAUPreFF: return "m_debug_validate_telemetry_pre-feature-flag"
-        case .debugTelemetryDAUPostFF: return "m_debug_validate_telemetry_post-feature-flag"
-
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
 
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
@@ -2613,6 +2609,8 @@ extension Pixel.Event {
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
         case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
+        case .subscriptionPurchaseSuccessAfterPendingTransaction: return "m_privacy-pro_purchase_success_after_pending_transaction"
+        case .subscriptionPendingTransactionApproved: return "m_privacy-pro_app_subscription-purchase_pending_transaction_approved"
 
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
@@ -2880,6 +2878,11 @@ extension Pixel.Event {
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
         case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
+
+        // MARK: AI Chat Contextual Onboarding
+        case .aiChatContextualOnboardingDisplayed: return "m_aichat_contextual_onboarding_displayed"
+        case .aiChatContextualOnboardingConfirmPressed: return "m_aichat_contextual_onboarding_confirm_pressed"
+        case .aiChatContextualOnboardingSettingsPressed: return "m_aichat_contextual_onboarding_settings_pressed"
 
         // MARK: AI Chat Sync
 

@@ -100,7 +100,7 @@ final class AppDependencyProvider: DependencyProvider {
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
-    let wideEvent: WideEventManaging = WideEvent()
+    let wideEvent: WideEventManaging
 
     private init() {
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!,
@@ -125,6 +125,7 @@ final class AppDependencyProvider: DependencyProvider {
             featureFlagger = defaultFeatureFlagger
         }
 
+        self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
 
@@ -194,8 +195,11 @@ final class AppDependencyProvider: DependencyProvider {
                                                                         subscriptionEnvironment: subscriptionEnvironment,
                                                                         subscriptionUserDefaults: subscriptionUserDefaults)
 
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: pixelHandler)
         let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                                 subscriptionFeatureFlagger: subscriptionFeatureFlagger)
+                                                               subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                               pendingTransactionHandler: pendingTransactionHandler)
         let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
@@ -206,7 +210,9 @@ final class AppDependencyProvider: DependencyProvider {
             ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
         })
         self.tokenHandlerProvider = subscriptionManager
-        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager, storePurchaseManager: storePurchaseManager)
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                     storePurchaseManager: storePurchaseManager,
+                                                     pendingTransactionHandler: pendingTransactionHandler)
         subscriptionManager.tokenRecoveryHandler = {
             try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
         }

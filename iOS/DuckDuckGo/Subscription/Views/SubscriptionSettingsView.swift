@@ -165,7 +165,7 @@ struct SubscriptionSettingsViewV2: View {
                 SettingsCustomCell(content: {
                     if !viewModel.state.isLoadingSubscriptionInfo {
                         if active {
-                            Text(UserText.subscriptionChangePlan)
+                            Text(viewModel.subscriptionManageButtonText)
                                 .daxBodyRegular()
                                 .foregroundColor(Color.init(designSystemColor: .accent))
                         } else if isEligibleForWinBackCampaign {
@@ -353,6 +353,7 @@ struct SubscriptionSettingsViewV2: View {
                 emailFlow: .manageEmailFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
                 wideEvent: AppDependencyProvider.shared.wideEvent,
+                featureFlagger: settingsViewModel.featureFlagger,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
@@ -373,6 +374,7 @@ struct SubscriptionSettingsViewV2: View {
                 emailFlow: .activationFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
                 wideEvent: AppDependencyProvider.shared.wideEvent,
+                featureFlagger: settingsViewModel.featureFlagger,
                 onDisappear: {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
@@ -407,7 +409,8 @@ struct SubscriptionSettingsViewV2: View {
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                wideEvent: AppDependencyProvider.shared.wideEvent),
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                featureFlagger: settingsViewModel.featureFlagger),
             isActive: $isShowingPlansView
         ) { EmptyView() }
             .hidden()
@@ -422,7 +425,8 @@ struct SubscriptionSettingsViewV2: View {
                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                wideEvent: AppDependencyProvider.shared.wideEvent),
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                featureFlagger: settingsViewModel.featureFlagger),
             isActive: $isShowingUpgradeView
         ) { EmptyView() }
             .hidden()

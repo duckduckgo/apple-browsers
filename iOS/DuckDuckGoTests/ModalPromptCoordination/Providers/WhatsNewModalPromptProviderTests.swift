@@ -40,7 +40,8 @@ final class WhatsNewCoordinatorTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN
@@ -67,7 +68,8 @@ final class WhatsNewCoordinatorTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN
@@ -95,7 +97,8 @@ final class WhatsNewCoordinatorTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: true,
             pixelReporter: MockRemoteMessagingPixelReporter(),
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN
@@ -119,7 +122,8 @@ final class WhatsNewCoordinatorTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN
@@ -153,7 +157,8 @@ final class WhatsNewCoordinatorTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN
@@ -175,7 +180,8 @@ final class WhatsNewCoordinatorTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -211,7 +217,8 @@ struct WhatsNewCoordinatorActionHandlingTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         let configuration = try #require(coordinator.provideModalPrompt())
@@ -254,7 +261,8 @@ struct WhatsNewCoordinatorActionHandlingTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: MockRemoteMessagingPixelReporter(),
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN
@@ -291,7 +299,8 @@ struct WhatsNewCoordinatorPixelTrackingTests {
             isIPad: false,
             pixelReporter: mockPixelReporter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            displayModelMapper: mockMapper
+            displayModelMapper: mockMapper,
+            featureFlagger: MockFeatureFlagger()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -320,7 +329,8 @@ struct WhatsNewCoordinatorPixelTrackingTests {
             isIPad: false,
             pixelReporter: mockPixelReporter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            displayModelMapper: mockMapper
+            displayModelMapper: mockMapper,
+            featureFlagger: MockFeatureFlagger()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -348,7 +358,8 @@ struct WhatsNewCoordinatorPixelTrackingTests {
             isIPad: false,
             pixelReporter: mockPixelReporter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            displayModelMapper: mockMapper
+            displayModelMapper: mockMapper,
+            featureFlagger: MockFeatureFlagger()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -378,7 +389,8 @@ struct WhatsNewCoordinatorPixelTrackingTests {
             isIPad: false,
             pixelReporter: mockPixelReporter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            displayModelMapper: mockMapper
+            displayModelMapper: mockMapper,
+            featureFlagger: MockFeatureFlagger()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -409,7 +421,8 @@ struct WhatsNewCoordinatorPixelTrackingTests {
             isIPad: false,
             pixelReporter: mockPixelReporter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            displayModelMapper: mockMapper
+            displayModelMapper: mockMapper,
+            featureFlagger: MockFeatureFlagger()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -439,7 +452,8 @@ struct WhatsNewCoordinatorPixelTrackingTests {
             isIPad: false,
             pixelReporter: mockPixelReporter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            displayModelMapper: mockMapper
+            displayModelMapper: mockMapper,
+            featureFlagger: MockFeatureFlagger()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -473,7 +487,8 @@ struct WhatsNewCoordinatorPixelTrackingTests {
             isIPad: false,
             pixelReporter: mockPixelReporter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            displayModelMapper: mockMapper
+            displayModelMapper: mockMapper,
+            featureFlagger: MockFeatureFlagger()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -500,7 +515,8 @@ struct WhatsNewCoordinatorPixelTrackingTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: mockPixelReporter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
         let configuration = try #require(coordinator.provideModalPrompt())
 
@@ -531,7 +547,8 @@ final class WhatsNewCoordinatorOnDemandTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: nil,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN
@@ -554,7 +571,8 @@ final class WhatsNewCoordinatorOnDemandTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: nil,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN
@@ -578,7 +596,8 @@ final class WhatsNewCoordinatorOnDemandTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: nil,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN
@@ -602,7 +621,8 @@ final class WhatsNewCoordinatorOnDemandTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: nil,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -632,7 +652,8 @@ final class WhatsNewCoordinatorOnDemandProtocolTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: nil,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN
@@ -654,7 +675,8 @@ final class WhatsNewCoordinatorOnDemandProtocolTests {
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
             pixelReporter: nil,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         // WHEN

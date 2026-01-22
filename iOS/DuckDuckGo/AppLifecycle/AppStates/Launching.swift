@@ -102,8 +102,7 @@ struct Launching: LaunchingHandling {
                                                 userDefaults: UserDefaults.app,
                                                 pixelKit: PixelKit.shared,
                                                 appDependencies: AppDependencyProvider.shared,
-                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
-                                                productSurfaceTelemetry: productSurfaceTelemetry)
+                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
 
         reportingService.syncService = syncService
         autofillService.syncService = syncService
@@ -290,7 +289,8 @@ struct Launching: LaunchingHandling {
             aiChatSettings: aiChatSettings,
             featureFlagger: featureFlagger,
             voiceSearchHelper: voiceSearchHelper,
-            appSettings: appSettings
+            appSettings: appSettings,
+            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger)
         )
     }
 

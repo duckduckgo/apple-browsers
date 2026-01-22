@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import Common
 import Foundation
+import Persistence
 import UserScript
 import WebKit
 
@@ -36,7 +37,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.broker = broker
     }
 
-    init(handler: AIChatUserScriptHandling, urlSettings: AIChatDebugURLSettingsRepresentable) {
+    init(handler: AIChatUserScriptHandling, urlSettings: KeyedStoring<AIChatDebugURLSettings>) {
         self.handler = handler
         var rules = [HostnameMatchingRule]()
 

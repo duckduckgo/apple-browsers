@@ -34,6 +34,9 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     @Published private(set) var hasPendingUpdate = false
     var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
 
+    var mustShowUpdateIndicators: Bool { hasPendingUpdate }
+    let clearsNotificationDotOnMenuOpen = true
+
     @Published var needsNotificationDot: Bool = false
     private let notificationDotSubject = CurrentValueSubject<Bool, Never>(false)
     lazy var notificationDotPublisher = notificationDotSubject.eraseToAnyPublisher()

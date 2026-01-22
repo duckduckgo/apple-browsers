@@ -22,6 +22,7 @@ import Subscription
 
 enum SubscriptionPurchaseError: Error {
     case purchaseFailed,
+         purchasePendingTransaction,
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,

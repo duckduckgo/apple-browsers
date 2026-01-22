@@ -114,6 +114,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     enum RegionOverrideRows: Int, CaseIterable {
         case currentRegionOverride
     }
+    
 
     private var storefrontID = "Loading"
     private var storefrontCountryCode = "Loading"
@@ -493,17 +494,8 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func checkEntitlements() {
         Task {
-            do {
-                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
-                let entitlementsDescription = tokenContainer.decodedAccessToken.subscriptionEntitlements.map { entitlement in
-                    return entitlement.rawValue
-                }.joined(separator: "\n")
-                showAlert(title: "Available Entitlements", message: entitlementsDescription)
-            } catch OAuthClientError.missingTokenContainer {
-                showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
-            } catch {
-                showAlert(title: "Error retrieving entitlements", message: "\(error)")
-            }
+            let entitlementsStatus = await subscriptionManager.getAllEntitlementStatus()
+            showAlert(title: "Available Entitlements", message: entitlementsStatus.debugDescription)
         }
     }
 
@@ -627,16 +619,22 @@ final class SubscriptionDebugViewController: UITableViewController {
         // Create the subscription selection handler that routes to the appropriate feature method
         let handler: SubscriptionSelectionHandler = { productId, changeType in
             let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp))
             // Create the flows and feature
             let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(
                 subscriptionManager: subscriptionManager,
-                storePurchaseManager: subscriptionManager.storePurchaseManager()
+                storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                pendingTransactionHandler: pendingTransactionHandler
             )
             let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(
                 subscriptionManager: subscriptionManager,
                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
                 appStoreRestoreFlow: appStoreRestoreFlow,
-                wideEvent: AppDependencyProvider.shared.wideEvent
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                pendingTransactionHandler: pendingTransactionHandler
             )
 
             let subscriptionFeatureAvailability = BrowserServicesKit.DefaultSubscriptionFeatureAvailability(
@@ -652,7 +650,8 @@ final class SubscriptionDebugViewController: UITableViewController {
                 appStorePurchaseFlow: appStorePurchaseFlow,
                 appStoreRestoreFlow: appStoreRestoreFlow,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                wideEvent: AppDependencyProvider.shared.wideEvent
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                pendingTransactionHandler: pendingTransactionHandler
             )
 
             // Create params matching what the web would send

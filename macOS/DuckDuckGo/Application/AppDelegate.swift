@@ -379,6 +379,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     let memoryUsageMonitor: MemoryUsageMonitor
+    let memoryPressureReporter: MemoryPressureReporter
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
@@ -420,7 +421,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
-        wideEvent = WideEvent()
 
         if AppVersion.runType.requiresEnvironment {
             let commonDatabase = Database()
@@ -531,6 +531,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
+        wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
@@ -650,28 +651,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let isInternalUserEnabled = { featureFlagger.internalUserDecider.isInternalUser }
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: pixelHandler)
         let defaultSubscriptionManager: DefaultSubscriptionManager
         if #available(macOS 12.0, *) {
             defaultSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                                                                                   subscriptionFeatureFlagger: subscriptionFeatureFlagger),
-                                                               oAuthClient: authClient,
-                                                               userDefaults: subscriptionUserDefaults,
-                                                               subscriptionEndpointService: subscriptionEndpointService,
-                                                               subscriptionEnvironment: subscriptionEnvironment,
-                                                               pixelHandler: pixelHandler,
-                                                               isInternalUserEnabled: isInternalUserEnabled)
+                                                                                                                      subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                                                                                      pendingTransactionHandler: pendingTransactionHandler),
+                                                                    oAuthClient: authClient,
+                                                                    userDefaults: subscriptionUserDefaults,
+                                                                    subscriptionEndpointService: subscriptionEndpointService,
+                                                                    subscriptionEnvironment: subscriptionEnvironment,
+                                                                    pixelHandler: pixelHandler,
+                                                                    isInternalUserEnabled: isInternalUserEnabled)
         } else {
             defaultSubscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
-                                                               userDefaults: subscriptionUserDefaults,
-                                                               subscriptionEndpointService: subscriptionEndpointService,
-                                                               subscriptionEnvironment: subscriptionEnvironment,
-                                                               pixelHandler: pixelHandler,
-                                                               isInternalUserEnabled: isInternalUserEnabled)
+                                                                    userDefaults: subscriptionUserDefaults,
+                                                                    subscriptionEndpointService: subscriptionEndpointService,
+                                                                    subscriptionEnvironment: subscriptionEnvironment,
+                                                                    pixelHandler: pixelHandler,
+                                                                    isInternalUserEnabled: isInternalUserEnabled)
         }
 
         // Expired refresh token recovery
         if #available(iOS 15.0, macOS 12.0, *) {
-            let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager, storePurchaseManager: defaultSubscriptionManager.storePurchaseManager())
+            let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
+                                                         storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
+                                                         pendingTransactionHandler: pendingTransactionHandler)
             defaultSubscriptionManager.tokenRecoveryHandler = {
                 try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
             }
@@ -679,7 +685,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         subscriptionManager = defaultSubscriptionManager
 
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinedTabsManager: pinnedTabsManager)
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinnedTabsManager: pinnedTabsManager)
 
         let windowControllersManager = WindowControllersManager(
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
@@ -753,7 +759,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(
             persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
-            windowControllersManager: windowControllersManager,
             appearancePreferences: appearancePreferences
         )
         defaultBrowserPreferences = DefaultBrowserPreferences()
@@ -1015,6 +1020,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.attributedMetricManager.addNotificationsObserver()
 
         memoryUsageMonitor = MemoryUsageMonitor(logger: .memory)
+        memoryPressureReporter = MemoryPressureReporter(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared, logger: .memory)
 
         super.init()
 
@@ -1049,11 +1055,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 #elseif SPARKLE
         if AppVersion.runType != .uiTests {
-            let updateController = SparkleUpdateController(
-                internalUserDecider: internalUserDecider
-            )
-            self.updateController = updateController
-            stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
+            let controller: any SparkleUpdateControllerProtocol
+            if featureFlagger.isFeatureOn(.updatesSimplifiedFlow) {
+                controller = SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider)
+            } else {
+                controller = SparkleUpdateController(internalUserDecider: internalUserDecider)
+            }
+            self.updateController = controller
+            stateRestorationManager.subscribeToAutomaticAppRelaunching(using: controller.willRelaunchAppPublisher)
         }
 #endif
 
@@ -1407,6 +1416,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               let currentEvent = NSApp.currentEvent,
               let manager = WarnBeforeQuitManager(
                 currentEvent: currentEvent,
+                action: .quit,
                 isWarningEnabled: { [tabsPreferences] in
                     tabsPreferences.warnBeforeQuitting
                 }
@@ -1415,6 +1425,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let presenter = WarnBeforeQuitOverlayPresenter(
             startupPreferences: startupPreferences,
             onDontAskAgain: { [tabsPreferences] in
+                PixelKit.fire(GeneralPixel.warnBeforeQuitDontShowAgain, frequency: .standard)
                 tabsPreferences.warnBeforeQuitting = false
             },
             onHoverChange: { [weak manager] isHovering in
@@ -1717,7 +1728,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         updateProgressCancellable = updateController.updateProgressPublisher
             .sink { [weak self] progress in
-                (self?.updateController as? SparkleUpdateController)?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+                (self?.updateController as? any SparkleUpdateControllerProtocol)?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
 #endif
     }

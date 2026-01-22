@@ -412,7 +412,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 providerEvents: EventMapping<Event>,
                 settings: VPNSettings,
                 defaults: UserDefaults,
-                wideEvent: WideEventManaging = WideEvent(),
+                wideEvent: WideEventManaging? = nil,
                 bandwidthAnalyzer: BandwidthAnalyzing? = nil,
                 latencyMonitor: LatencyMonitoring = NetworkProtectionLatencyMonitor(),
                 entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),
@@ -434,11 +434,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.wireGuardInterface = wireGuardInterface
         self.settings = settings
         self.defaults = defaults
-        self.wideEvent = wideEvent
         self.bandwidthAnalyzer = bandwidthAnalyzer ?? NetworkProtectionConnectionBandwidthAnalyzer()
         self.latencyMonitor = latencyMonitor
         self.entitlementMonitor = entitlementMonitor
         self.entitlementCheck = entitlementCheck
+
+        self.wideEvent = wideEvent ?? WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(settings: settings))
 
         let keyStore = keyStore ?? NetworkProtectionKeychainKeyStore(
             keychainType: keychainType,
@@ -1842,6 +1843,17 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 let newError = NSError(domain: (error as NSError).domain, code: (error as NSError).code)
                 return [NSUnderlyingErrorKey: newError]
             }
+        }
+    }
+}
+
+private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    let settings: VPNSettings
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return settings.wideEventPostEndpointEnabled
         }
     }
 }

@@ -42,42 +42,42 @@ final class FireExecutorTests: XCTestCase {
         private(set) var willStartBurningAIHistoryCalled = false
         private(set) var didFinishBurningAIHistoryCalled = false
         private(set) var willStartBurningCalled = false
-        private(set) var willStartBurningFireContext: FireContext?
+        private(set) var willStartBurningFireRequest: FireRequest?
         private(set) var didFinishBurningCalled = false
-        private(set) var didFinishBurningFireContext: FireContext?
+        private(set) var didFinishBurningFireRequest: FireRequest?
         
-        func willStartBurning(fireContext: FireContext) {
+        func willStartBurning(fireRequest: FireRequest) {
             willStartBurningCalled = true
-            willStartBurningFireContext = fireContext
+            willStartBurningFireRequest = fireRequest
         }
         
-        func willStartBurningTabs(fireContext: FireContext) {
+        func willStartBurningTabs(fireRequest: FireRequest) {
             willStartBurningTabsCalled = true
         }
         
-        func didFinishBurningTabs(fireContext: FireContext) {
+        func didFinishBurningTabs(fireRequest: FireRequest) {
             didFinishBurningTabsCalled = true
         }
         
-        func willStartBurningData(fireContext: FireContext) {
+        func willStartBurningData(fireRequest: FireRequest) {
             willStartBurningDataCalled = true
         }
         
-        func didFinishBurningData(fireContext: FireContext) {
+        func didFinishBurningData(fireRequest: FireRequest) {
             didFinishBurningDataCalled = true
         }
         
-        func willStartBurningAIHistory(fireContext: FireContext) {
+        func willStartBurningAIHistory(fireRequest: FireRequest) {
             willStartBurningAIHistoryCalled = true
         }
         
-        func didFinishBurningAIHistory(fireContext: FireContext) {
+        func didFinishBurningAIHistory(fireRequest: FireRequest) {
             didFinishBurningAIHistoryCalled = true
         }
         
-        func didFinishBurning(fireContext: FireContext) {
+        func didFinishBurning(fireRequest: FireRequest) {
             didFinishBurningCalled = true
-            didFinishBurningFireContext = fireContext
+            didFinishBurningFireRequest = fireRequest
         }
     }
     
@@ -181,6 +181,14 @@ final class FireExecutorTests: XCTestCase {
         return executor
     }
     
+    private func makeFireRequest(
+        options: FireRequest.Options,
+        trigger: FireRequest.Trigger = .manualFire,
+        scope: FireRequest.Scope = .all
+    ) -> FireRequest {
+        FireRequest(options: options, trigger: trigger, scope: scope)
+    }
+    
     // MARK: - prepare Tests
     
     func testPrepareWithTabsOptionCallsPrepareForBurningTabs() {
@@ -188,7 +196,7 @@ final class FireExecutorTests: XCTestCase {
         let executor = makeFireExecutor()
         
         // When
-        executor.prepare(for: .tabs)
+        executor.prepare(for: makeFireRequest(options: .tabs))
         
         // Then
         XCTAssertTrue(mockTabManager.prepareAllTabsExceptCurrentCalled)
@@ -199,7 +207,7 @@ final class FireExecutorTests: XCTestCase {
         let executor = makeFireExecutor()
         
         // When
-        executor.prepare(for: .data)
+        executor.prepare(for: makeFireRequest(options: .data))
         
         // Then
         XCTAssertFalse(mockTabManager.prepareAllTabsExceptCurrentCalled)
@@ -213,7 +221,7 @@ final class FireExecutorTests: XCTestCase {
         executor.delegate = mockDelegate
         
         // When
-        await executor.burn(options: .tabs, fireContext: .manualFire)
+        await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
         
         // Then
         XCTAssertTrue(mockDelegate.willStartBurningTabsCalled)
@@ -232,7 +240,7 @@ final class FireExecutorTests: XCTestCase {
         executor.delegate = mockDelegate
         
         // When
-        await executor.burn(options: .data, fireContext: .autoClearOnLaunch)
+        await executor.burn(request: makeFireRequest(options: .data, trigger: .autoClearOnLaunch), applicationState: .unknown)
         
         // Then
         XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
@@ -251,7 +259,7 @@ final class FireExecutorTests: XCTestCase {
         )
         
         // When
-        await executor.burn(options: .data, fireContext: .manualFire)
+        await executor.burn(request: makeFireRequest(options: .data), applicationState: .unknown)
         
         // Then
         XCTAssertFalse(bookmarkCleaner.cleanUpDatabaseNowCalled)
@@ -266,7 +274,7 @@ final class FireExecutorTests: XCTestCase {
         )
         
         // When
-        await executor.burn(options: .data, fireContext: .manualFire)
+        await executor.burn(request: makeFireRequest(options: .data), applicationState: .unknown)
         
         // Then
         XCTAssertTrue(bookmarkCleaner.cleanUpDatabaseNowCalled)
@@ -279,7 +287,7 @@ final class FireExecutorTests: XCTestCase {
         let executor = makeFireExecutor(fireproofing: fireproofing)
 
         // When
-        await executor.burn(options: .data, fireContext: .manualFire)
+        await executor.burn(request: makeFireRequest(options: .data), applicationState: .unknown)
 
         // Then - Verify delegate calls
         XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
@@ -307,7 +315,7 @@ final class FireExecutorTests: XCTestCase {
         executor.delegate = mockDelegate
         
         // When
-        await executor.burn(options: [.tabs, .data], fireContext: .manualFire)
+        await executor.burn(request: makeFireRequest(options: [.tabs, .data]), applicationState: .unknown)
         
         // Then
         XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 1)
@@ -321,7 +329,7 @@ final class FireExecutorTests: XCTestCase {
         mockHistoryCleaner.cleanAIChatHistoryResult = .success(())
         
         // When
-        await executor.burn(options: .aiChats, fireContext: .manualFire)
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
         
         // Then
         XCTAssertTrue(mockDelegate.willStartBurningAIHistoryCalled)
@@ -335,7 +343,7 @@ final class FireExecutorTests: XCTestCase {
         mockHistoryCleaner.cleanAIChatHistoryResult = .failure(NSError(domain: "test", code: 1))
         
         // When
-        await executor.burn(options: .aiChats, fireContext: .manualFire)
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
         
         // Then
         XCTAssertTrue(mockDelegate.willStartBurningAIHistoryCalled)
@@ -350,7 +358,7 @@ final class FireExecutorTests: XCTestCase {
         let executor = makeFireExecutor()
         
         // When
-        await executor.burn(options: .all, fireContext: .manualFire)
+        await executor.burn(request: makeFireRequest(options: .all), applicationState: .unknown)
         
         // Then
         XCTAssertTrue(mockDelegate.willStartBurningCalled)
@@ -372,7 +380,7 @@ final class FireExecutorTests: XCTestCase {
         let executor = makeFireExecutor()
         
         // When - Burn tabs and data separately
-        await executor.burn(options: [.tabs, .data], fireContext: .manualFire)
+        await executor.burn(request: makeFireRequest(options: [.tabs, .data]), applicationState: .unknown)
         
         // Then
         XCTAssertTrue(mockDelegate.willStartBurningTabsCalled)
@@ -392,7 +400,7 @@ final class FireExecutorTests: XCTestCase {
         let executor = makeFireExecutor()
         
         // When
-        await executor.burn(options: .aiChats, fireContext: .manualFire)
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
         
         // Then - AI history should NOT be cleared because legacy setting is disabled
         XCTAssertFalse(mockDelegate.willStartBurningAIHistoryCalled)

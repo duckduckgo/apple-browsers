@@ -66,7 +66,6 @@ class AutoClearHandlerTests: XCTestCase {
         )
         startupPreferences = StartupPreferences(
             persistor: persistor2,
-            windowControllersManager: WindowControllersManagerMock(),
             appearancePreferences: appearancePreferences
         )
 

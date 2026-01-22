@@ -17,6 +17,7 @@
 //
 
 import Persistence
+import PersistenceTestingUtils
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -55,7 +56,7 @@ class OnboardingManagerTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
-        startupPreferences = StartupPreferences(persistor: startupPersistor, windowControllersManager: WindowControllersManagerMock(), appearancePreferences: appearancePreferences)
+        startupPreferences = StartupPreferences(persistor: startupPersistor, appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()
         manager = OnboardingActionsManager(navigationDelegate: navigationDelegate, dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences, dataImportProvider: importProvider, featureFlagger: MockFeatureFlagger())
     }
@@ -358,16 +359,4 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(self.appearancePersistor.homeButtonPosition, .hidden)
     }
 
-}
-
-private final class MockKeyValueStore: ThrowingKeyValueStoring {
-    func object(forKey defaultName: String) throws -> Any? {
-        return nil
-    }
-
-    func set(_ value: Any?, forKey defaultName: String) throws {
-    }
-
-    func removeObject(forKey defaultName: String) throws {
-    }
 }

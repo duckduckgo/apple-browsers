@@ -31,9 +31,6 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Tühista";
 
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Lülita sünkroonimine ja varundamine sisse";
-
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "\"See loob krüptitud varukoopia sinu järjehoidjatest ja autofill andmetest DuckDuckGo turvalises serveris, mida saab sünkroonida sinu teiste seadmetega.\"";
 

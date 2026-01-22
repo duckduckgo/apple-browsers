@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "акаунт";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Затваряне на всички раздели";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Кохорта: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Конфигурация";
@@ -1408,6 +1417,27 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Функционалността на Duck Player е засегната от последните промени в YouTube. Работим за отстраняване на тези проблеми и оценяваме вашето разбиране.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Прикачи съдържанието на страницата";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Изпратено с твоето съобщение до Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Съдържание на страницата";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai вече може да отговори на въпросите ти относно страницата, която разглеждаш.\n\nСъдържанието на страницата се включва само когато го прикачиш. Можеш да промениш това по всяко време в настройките.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Разбрах";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Попитай за тази страница";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Прегледай настройките";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Функциите на DuckDuckGo AI са поверителни и незадължителни. Вашите данни не се използват за обучение на изкуствен интелект.";
 
@@ -1670,7 +1700,7 @@
 "empty.search" = "Няма намерени съвпадения";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Записани: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1728,9 +1758,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Само любими на мобилни устройства";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Функция: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Блокиране на реклами и изскачащи прозорци";
@@ -2206,6 +2233,9 @@
 /* No comment provided by engineer. */
 "Messages" = "Съобщения";
 
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Бутон за адресната лента";
 
@@ -2492,6 +2522,9 @@
 "No existing subscription found" = "Не е намерен съществуващ абонамент";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Без регистри";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2535,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Няма налични абонаменти";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "ОК";
@@ -2891,6 +2927,9 @@
 "Results" = "Резултати";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Търсене или въвеждане на адрес";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2935,9 +2974,6 @@
 /* about tagline */
 "settings.about.tagline" = "Защита. Поверителност. Спокойствие.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGo е независима компания за онлайн защита за всеки, който иска да си върне контрола върху личната информация.Ние вярваме, че най-добрият начин за защита на личната информация от хакери, измамници и компании, които не зачитат поверителността, е тя изобщо да не бъде събирана. Ето защо милиони хора [избират DuckDuckGo пред Chrome и други браузъри](ddgQuickLink://duckduckgo.com/compare-privacy) за търсене и сърфиране онлайн. Нашата вградена търсачка е като Google, но никога не следи какво търсите. А нашите защити при сърфиране, като блокиране на рекламни тракери и блокиране на бисквитки, помагат да спрем събирането на Вашите данни от други компании. Освен това нашият браузър е безплатен – ние печелим пари от [реклами при търсене, които зачитат поверителността](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), а не като използваме Вашите данни. \n\n%@ \n\nВърнете си контрола върху личната информация с браузъра, предназначен за защита на данните, а не за събиране на данните.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Достъпност";
 
@@ -2955,6 +2991,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Показване на пълния адрес на сайта";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Показване на анимация за блокирани тракери";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Търсене и Duck.ai";
@@ -3024,6 +3063,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Ясно";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Изчистване на раздели и данни";
 
@@ -3036,17 +3076,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Раздели";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Изход от приложението, 15 минути без активност";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Изход от приложението, 1 час без активност";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Изход от приложението, 30 минути без активност";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Изход от приложението, 5 минути без активност";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Изход от приложението, 15 минути без активност";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Изход от приложението, 30 минути без активност";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Само при изход от приложението";
@@ -3059,6 +3099,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Данните ще бъдат изтрити при рестартиране на приложението.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Предложения за търсене";
 
@@ -3079,6 +3120,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Автоматично изчистване на данни";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Отзив за браузъра";
 
@@ -3090,6 +3132,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Изчистване на данните за сърфиране";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Автоматично изчистване на данните";
 
@@ -3119,6 +3162,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Изтриването на данните може да помогне за защитата на поверителността ти онлайн. Използвай Fire Button, за да изчистиш данните ръчно, или задай автоматично изчистване.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузър по подразбиране";
 
@@ -3166,6 +3210,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Огнеустойчиви сайтове";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Общо";
 
@@ -3183,9 +3228,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Нов";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Преглед";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
@@ -3461,6 +3503,9 @@
 "siteFeedback.urlPlaceholder" = "Кой уебсайт е повреден?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Статус";
 
 /* No comment provided by engineer. */
@@ -3468,9 +3513,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Подфункция: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавяне към устройството";
@@ -3618,9 +3660,6 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Възстановяване на абонамента...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro вече се нарича просто абонамент за DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Премахване от това устройство";
@@ -4201,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Какво искате да импортирате?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Раздели";
+"settings.tab.switcher.show.tracker.count" = "Брой тракери за 7 дни";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "през последните 7 дни";
+"tab.switcher.tracker.count.hide.title" = "Да се скрие броят на тракерите?";
+"tab.switcher.tracker.count.hide.message" = "Можете да включите това отново в Настройки > Външен вид.";
+"tab.switcher.tracker.count.hide.action" = "Скрий";
+"tab.switcher.tracker.count.keep.action" = "Запази";
+"tab.switcher.tracker.count.info.a11y" = "Опции за броя на тракерите";
+"tab.switcher.tracker.count.info.hint.a11y" = "Докоснете два пъти, за да покажете опциите за скриване на този банер";

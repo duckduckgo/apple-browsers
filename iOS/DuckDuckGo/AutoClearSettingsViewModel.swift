@@ -32,7 +32,7 @@ final class AutoClearSettingsViewModel: ObservableObject {
     
     // MARK: - Initial State (for change detection)
     
-    private var initialOptions: FireOptions = []
+    private var initialOptions: FireRequest.Options = []
     
     // MARK: - Published State
     
@@ -159,14 +159,14 @@ final class AutoClearSettingsViewModel: ObservableObject {
     
     private func persistSettings() {
         if autoClearEnabled {
-            var options = FireOptions()
+            var options = FireRequest.Options()
             if clearTabs { options.insert(.tabs) }
             if clearCookies { options.insert(.data) }
             if clearDuckAIChats && showDuckAIChatsToggle { options.insert(.aiChats) }
             
             // If no options are selected, disable auto clear
             if options.isEmpty {
-                appSettings.autoClearAction = FireOptions()
+                appSettings.autoClearAction = FireRequest.Options()
                 autoClearEnabled = false
                 Pixel.fire(pixel: .settingsAutomaticallyClearDataOff)
             } else {
@@ -174,7 +174,7 @@ final class AutoClearSettingsViewModel: ObservableObject {
             }
             appSettings.autoClearTiming = selectedTiming
         } else {
-            appSettings.autoClearAction = FireOptions()
+            appSettings.autoClearAction = FireRequest.Options()
             appSettings.autoClearTiming = .termination
         }
     }

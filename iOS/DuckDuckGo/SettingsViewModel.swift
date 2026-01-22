@@ -34,13 +34,14 @@ import AIChat
 import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
+import Networking
 
 final class SettingsViewModel: ObservableObject {
 
     // Dependencies
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
-    private lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
+    lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
     private lazy var animator: FireButtonAnimator = FireButtonAnimator(appSettings: AppUserDefaults())
     private var legacyViewProvider: SettingsLegacyViewProvider
     private lazy var versionProvider: AppVersion = AppVersion.shared
@@ -53,6 +54,7 @@ final class SettingsViewModel: ObservableObject {
     let aiChatSettings: AIChatSettingsProvider
     let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
+    private let tabSwitcherSettings: TabSwitcherSettings
     let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
     private let duckPlayerSettings: DuckPlayerSettings
@@ -113,7 +115,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
-    var onRequestPresentFireConfirmation: ((_ onConfirm: @escaping (FireOptions) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
+    var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
     @Published private(set) var state: SettingsState
@@ -150,6 +152,10 @@ final class SettingsViewModel: ObservableObject {
 
     var shouldShowHideAIGeneratedImagesSection: Bool {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
+    }
+
+    var isTabSwitcherTrackerCountEnabled: Bool {
+        featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }
 
     var isBlackFridayCampaignEnabled: Bool {
@@ -291,6 +297,16 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 ? .settingsShowFullURLOn : .settingsShowFullURLOff)
                 self.state.showsFullURL = $0
                 self.appSettings.showFullSiteAddress = $0
+            }
+        )
+    }
+
+    var showTrackersBlockedAnimationBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.showTrackersBlockedAnimation },
+            set: {
+                self.state.showTrackersBlockedAnimation = $0
+                self.appSettings.showTrackersBlockedAnimation = $0
             }
         )
     }
@@ -572,11 +588,7 @@ final class SettingsViewModel: ObservableObject {
     var autoClearAIChatHistoryBinding: Binding<Bool> {
         Binding<Bool>(
             get: {
-                if self.featureFlagger.isFeatureOn(.duckAiDataClearing) {
-                    return self.state.autoClearAIChatHistory
-                } else {
-                    return false
-                }
+                self.state.autoClearAIChatHistory
             },
             set: {
                 self.appSettings.autoClearAIChatHistory = $0
@@ -603,7 +615,7 @@ final class SettingsViewModel: ObservableObject {
 
     // Indicates if the Paid AI Chat entitlement flag is available for the current user
     var isPaidAIChatAvailable: Bool {
-        state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
+        state.subscription.subscriptionFeatures.contains(.paidAIChat)
     }
 
     // Indicates if AI features are generally enabled
@@ -641,10 +653,12 @@ final class SettingsViewModel: ObservableObject {
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          browsingMenuSheetCapability: BrowsingMenuSheetCapable,
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
-         whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
+         whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
     ) {
 
         self.state = SettingsState.defaults
+        self.tabSwitcherSettings = tabSwitcherSettings
         self.legacyViewProvider = legacyViewProvider
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -706,6 +720,7 @@ extension SettingsViewModel {
             textZoom: SettingsState.TextZoom(level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
+            showTrackersBlockedAnimation: appSettings.showTrackersBlockedAnimation,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
@@ -1216,8 +1231,8 @@ extension SettingsViewModel {
             updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
             // Check entitlements and update state
-            var currentEntitlements: [Entitlement.ProductName] = []
-            let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
+            var currentEntitlements: [SubscriptionEntitlement] = []
+            let entitlementsToCheck: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
                 if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(entitlement),
@@ -1287,8 +1302,8 @@ extension SettingsViewModel {
         }
     }
 
-    func forgetAll(with options: FireOptions) {
-        autoClearActionDelegate?.performDataClearing(with: options)
+    func forgetAll(fireRequest: FireRequest) {
+        autoClearActionDelegate?.performDataClearing(for: fireRequest)
     }
 
     func restoreAccountPurchase() async {
@@ -1338,7 +1353,7 @@ extension SettingsViewModel {
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
     private func isUserEligibleForTrialOffer() async -> Bool {
-        return subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
+        return subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
     }
 
 }
@@ -1430,6 +1445,15 @@ extension SettingsViewModel {
         )
     }
 
+    var showTrackerCountInTabSwitcherBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.tabSwitcherSettings.showTrackerCountInTabSwitcher },
+            set: { newValue in
+                self.tabSwitcherSettings.showTrackerCountInTabSwitcher = newValue
+            }
+        )
+    }
+
     func launchAIFeaturesLearnMore() {
         urlOpener.open(URL.aiFeaturesLearnMore)
     }
@@ -1458,9 +1482,9 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
         }
     }
 
-    func presentFireConfirmation() {
-        onRequestPresentFireConfirmation?({ [weak self] options in
-            self?.forgetAll(with: options)
+    func presentFireConfirmation(from sourceRect: CGRect) {
+        onRequestPresentFireConfirmation?(sourceRect, { [weak self] fireRequest in
+            self?.forgetAll(fireRequest: fireRequest)
         }, {
             // Cancelled - no action needed
         })

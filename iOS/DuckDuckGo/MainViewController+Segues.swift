@@ -202,6 +202,7 @@ extension MainViewController {
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
                                       appSettings: self.appSettings,
+                                      privacyStats: self.privacyStats,
                                       productSurfaceTelemetry: self.productSurfaceTelemetry,
                                       historyManager: self.historyManager,
                                       fireproofing: self.fireproofing,
@@ -366,7 +367,8 @@ extension MainViewController {
             remoteMessageActionHandler: remoteMessagingActionHandler,
             isIPad: UIDevice.current.userInterfaceIdiom == .pad,
             pixelReporter: nil,
-            userScriptsDependencies: userScriptsDependencies)
+            userScriptsDependencies: userScriptsDependencies,
+            featureFlagger: featureFlagger)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
@@ -390,7 +392,10 @@ extension MainViewController {
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
-                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore),
+                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(
+                                                      using: featureFlagger,
+                                                      keyValueStore: keyValueStore
+                                                  ),
                                                   whatsNewCoordinator: whatsNewCoordinator)
 
         settingsViewModel.autoClearActionDelegate = self

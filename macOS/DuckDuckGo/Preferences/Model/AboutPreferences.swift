@@ -20,6 +20,7 @@ import SwiftUI
 import Common
 import Combine
 import FeatureFlags
+import os.log
 import PixelKit
 import PrivacyConfig
 
@@ -63,7 +64,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     var useLegacyAutoRestartLogic: Bool {
         #if SPARKLE
-        !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
+        (updateController as? any SparkleUpdateControllerProtocol)?.useLegacyAutoRestartLogic ?? false
         #else
         false
         #endif
@@ -179,13 +180,23 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     private func refreshUpdateState() {
         guard let updateController else { return }
-        updateState = UpdateState(from: updateController.latestUpdate, progress: updateController.updateProgress)
+        let latestUpdate = updateController.latestUpdate
+        let progress = updateController.updateProgress
+        Logger.updates.log("🔍 AboutPreferences.refreshUpdateState: latestUpdate=\(latestUpdate != nil, privacy: .public), progress=\(progress, privacy: .public), hasPendingUpdate=\(updateController.hasPendingUpdate, privacy: .public)")
+        updateState = UpdateState(from: latestUpdate, progress: progress)
+        Logger.updates.log("🔍 AboutPreferences.refreshUpdateState: updateState=\(String(describing: self.updateState), privacy: .public)")
     }
 
 #if SPARKLE
     private var isAtRestartCheckpoint: Bool {
-        guard let updateController = updateController as? SparkleUpdateController else { return false }
+        guard let updateController = updateController as? any SparkleUpdateControllerProtocol else { return false }
         return updateController.isAtRestartCheckpoint
+    }
+#endif
+
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+    var customFeedURL: String? {
+        UserDefaults.standard.string(forKey: UserDefaultsWrapper<String>.Key.debugSparkleCustomFeedURL.rawValue)
     }
 #endif
 
@@ -217,7 +228,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             updateController?.checkForUpdateSkippingRollout()
         } else {
             #if SPARKLE
-            guard let updateController = updateController as? SparkleUpdateController else { return }
+            guard let updateController = updateController as? any SparkleUpdateControllerProtocol else { return }
             updateController.checkForUpdateRespectingRollout()
             #endif
         }

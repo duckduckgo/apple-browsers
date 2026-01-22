@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "account";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Закрыть все вкладки";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Когорта: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Конфигурация";
@@ -1408,6 +1417,27 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Работа проигрывателя Duck Player пострадала в результате недавних изменений на YouTube. Мы уже ищем решение и благодарим вас за понимание.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Добавить содержимое страницы";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Отправляется вместе с сообщением для Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Содержание страницы";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai теперь отвечает на вопросы о просматриваемых страницах.\n\nСодержимое страницы добавляется только после ее прикрепления. Этот параметр всегда можно изменить в «Настройках».";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Понятно";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Задайте вопрос о странице";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Открыть настройки";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI — дополнительный конфиденциальный сервис. Ваши данные не применяются для обучения ИИ.";
 
@@ -1670,7 +1700,7 @@
 "empty.search" = "Ничего не найдено";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Внесено: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1728,9 +1758,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Только избранное с телефона";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Функция: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Блокировка рекламы и всплывающих окон";
@@ -2206,6 +2233,9 @@
 /* No comment provided by engineer. */
 "Messages" = "Сообщения";
 
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Кнопка адресной строки";
 
@@ -2492,6 +2522,9 @@
 "No existing subscription found" = "Подписка не найдена";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Нет журналов";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2535,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Нет доступных подписок";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "Хорошо";
@@ -2891,6 +2927,9 @@
 "Results" = "Результаты";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Введите поисковый запрос или адрес сайта";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2935,9 +2974,6 @@
 /* about tagline */
 "settings.about.tagline" = "Защита. Конфиденциальность. Спокойствие.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGo — независимая компания, которая обеспечивает защиту личной информации в интернете тем, кто хочет вернуть себе контроль над собственными данными.\n\nМы считаем, что лучший способ защитить личную информацию от хакеров, мошенников и навязчивых компаний — полностью пресечь ее сбор. Вот почему миллионы людей [выбирают DuckDuckGo вместо Chrome и других браузеров](ddgQuickLink://duckduckgo.com/compare-privacy) для поиска и просмотра сайтов. Наша встроенная поисковая система работает точно так же, как Google, только не отслеживает ваши запросы. А попытки других компаний собрать ваши данные пресекаются такими защитными функциями, как блокировка рекламных трекеров и куки-файлов. К тому же наш браузер работает бесплатно: мы получаем доход от [показа рекламных объявлений](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), а не от продажи ваших персональных данных. \n\n%@ \n\nЕсли вы хотите вернуть себе контроль над личной информацией, выбирайте браузер, созданный для защиты, а не сбора данных.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Универсальный доступ";
 
@@ -2955,6 +2991,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Показывать полный адрес сайта";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Показывать анимацию блокировки трекеров";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Поиск и Duck.ai";
@@ -3024,6 +3063,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Очистить";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Сбросить вкладки и данные";
 
@@ -3036,17 +3076,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Вкладки";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "После выхода из приложения, через 15 минут бездействия";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "После выхода из приложения, через 1 час бездействия";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "После выхода из приложения, через 30 минут бездействия";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "После выхода из приложения, через 5 минут бездействия";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "После выхода из приложения, через 15 минут бездействия";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "После выхода из приложения, через 30 минут бездействия";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Только после выхода из приложения";
@@ -3059,6 +3099,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Данные будут удалены при следующем запуске приложения.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Поисковые рекомендации";
 
@@ -3079,6 +3120,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Автоматическая очистка данных";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Отзыв о браузере";
 
@@ -3090,6 +3132,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Стереть данные браузера";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Автоудаление данных";
 
@@ -3119,6 +3162,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Удаление данных способствует конфиденциальности онлайн. Данные можно стирать автоматически или вручную с помощью кнопки Fire Button.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузер по умолчанию";
 
@@ -3166,6 +3210,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Огнеупорные сайты";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Основные";
 
@@ -3183,9 +3228,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "новый";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Предпросмотр";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
@@ -3461,6 +3503,9 @@
 "siteFeedback.urlPlaceholder" = "На каком сайте возникает проблема?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Статус";
 
 /* No comment provided by engineer. */
@@ -3468,9 +3513,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Сохраненное имя хоста: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Подфункция: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавление на устройство";
@@ -3618,9 +3660,6 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Восстановление подписки...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Пакет Privacy Pro теперь называется просто подпиской DuckDuckGo.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Удалить с этого устройства";
@@ -4201,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Что будем импортировать?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Вкладки";
+"settings.tab.switcher.show.tracker.count" = "Количество трекеров за 7 дней";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "за последние 7 дней";
+"tab.switcher.tracker.count.hide.title" = "Скрыть количество трекеров?";
+"tab.switcher.tracker.count.hide.message" = "Вы можете снова включить это в Настройки > Внешний вид.";
+"tab.switcher.tracker.count.hide.action" = "Скрыть";
+"tab.switcher.tracker.count.keep.action" = "Оставить";
+"tab.switcher.tracker.count.info.a11y" = "Параметры количества трекеров";
+"tab.switcher.tracker.count.info.hint.a11y" = "Дважды коснитесь, чтобы показать параметры скрытия этого баннера";

@@ -70,6 +70,7 @@ private struct Handlers {
 
 enum UseSubscriptionError: Error {
     case purchaseFailed,
+         purchasePendingTransaction,
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
@@ -107,7 +108,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
 
     var onSetSubscription: (() -> Void)? { get set }
     var onBackToSettings: (() -> Void)? { get set }
-    var onFeatureSelected: ((Entitlement.ProductName) -> Void)? { get set }
+    var onFeatureSelected: ((SubscriptionEntitlement) -> Void)? { get set }
     var onActivateSubscription: (() -> Void)? { get set }
 
     func with(broker: UserScriptMessageBroker)
@@ -150,6 +151,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let internalUserDecider: InternalUserDecider
     private let wideEvent: WideEventManaging
     private let tierEventReporter: SubscriptionTierEventReporting
+    private let pendingTransactionHandler: PendingTransactionHandling
     private var wideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
 
@@ -161,7 +163,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
          internalUserDecider: InternalUserDecider,
          wideEvent: WideEventManaging,
-         tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter()) {
+         tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter(),
+         pendingTransactionHandler: PendingTransactionHandling) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -171,6 +174,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.internalUserDecider = internalUserDecider
         self.wideEvent = wideEvent
         self.tierEventReporter = tierEventReporter
+        self.pendingTransactionHandler = pendingTransactionHandler
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -182,7 +186,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     // Subscription Activation Actions
     var onSetSubscription: (() -> Void)?
     var onBackToSettings: (() -> Void)?
-    var onFeatureSelected: ((Entitlement.ProductName) -> Void)?
+    var onFeatureSelected: ((SubscriptionEntitlement) -> Void)?
     var onActivateSubscription: (() -> Void)?
 
     struct FeatureSelection: Codable {
@@ -475,6 +479,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                     wideEventData.markAsFailed(at: .accountPayment, error: internalError ?? error)
                     wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
                 }
+            case .transactionPendingAuthentication:
+                pendingTransactionHandler.markPurchasePending()
+                setTransactionError(.purchasePendingTransaction)
+                
+                if let wideEventData {
+                    wideEventData.markAsFailed(at: .accountPayment, error: error)
+                    wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
+                }
             default:
                 setTransactionError(.purchaseFailed)
 
@@ -520,6 +532,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             UniquePixel.fire(pixel: .subscriptionActivated)
             Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, subscriptionDataReporter: subscriptionDataReporter)
             setTransactionStatus(.idle)
+            NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
 
             if let wideEventData {
@@ -585,6 +598,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             switch error {
             case .cancelledByUser:
                 setTransactionError(.cancelledByUser)
+            case .transactionPendingAuthentication:
+                pendingTransactionHandler.markPurchasePending()
+                setTransactionError(.purchasePendingTransaction)
             case .purchaseFailed:
                 setTransactionError(.purchaseFailed)
             case .internalError:
@@ -610,6 +626,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil) {
         case .success:
             Logger.subscription.log("[TierChange] Tier change completed successfully")
+            NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
             setTransactionStatus(.idle)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
 

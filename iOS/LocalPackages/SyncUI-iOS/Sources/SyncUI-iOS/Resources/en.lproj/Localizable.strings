@@ -26,7 +26,7 @@
 "cancel.button" = "Cancel";
 
 /* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Turn On Sync & Back Up";
+"connect.with.server.sheet.button" = "Turn On Sync & Backup";
 
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "This creates an encrypted backup of your bookmarks and autofill data on DuckDuckGo’s secure server, which can be synced with your other devices.";

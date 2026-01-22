@@ -22,6 +22,7 @@ import Combine
 import Common
 import History
 import HistoryView
+import Persistence
 import PixelKit
 import PrivacyConfig
 import AIChat
@@ -112,7 +113,7 @@ final class FireCoordinator {
         let historyBurner = FireHistoryBurner(fireproofDomains: self.fireproofDomains,
                                               fire: { fireCoordinatorGetter().fireViewModel.fire },
                                               recordAIChatHistoryClearForSync: { Task { await aiChatSyncCleaner?()?.recordLocalClear(date: Date()) } })
-        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, featureFlagger: featureFlagger, tld: tld)
+        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, tld: tld)
         if let fireViewModel {
             self.fireViewModel = fireViewModel
         }
@@ -166,7 +167,10 @@ extension FireCoordinator {
 
     /// Unified Fire dialog presenter for all entry points
     @MainActor
-    func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeVisits providedVisits: [Visit]? = nil, settings: FireDialogViewSettings? = nil) async -> FireDialogView.Response {
+    func presentFireDialog(mode: FireDialogViewModel.Mode,
+                           in window: NSWindow? = nil,
+                           scopeVisits providedVisits: [Visit]? = nil,
+                           settings: (any KeyedStoring<FireDialogViewSettings>)? = nil) async -> FireDialogView.Response {
         // Don't open dialog if burn is already in progress
         guard fireViewModel.fire.burningData == nil else {
             return .noAction

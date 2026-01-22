@@ -1,8 +1,14 @@
 /* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
 "Account" = "account";
@@ -1043,7 +1049,10 @@
 "close.all.tabs" = "Aizvērt visas cilnes";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohorta: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfigurācija";
@@ -1408,6 +1417,27 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Nesen ieviestās YouTube izmaiņas ir ietekmējušas Duck Player funkcionalitāti. Mēs strādājam, lai novērstu šīs problēmas, un novērtējam tavu sapratni.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Pievienot lapas saturu";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Nosūtīts kopā ar tavu ziņojumu uz Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Lapas saturs";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai tagad var palīdzēt atbildēt uz jautājumiem par to lapu, kuru pašlaik skaties.\n\nLapas saturs tiek iekļauts tikai tad, kad Tu to pievieno. To vari jebkurā laikā mainīt iestatījumos.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Sapratu";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Jautā par šo lapu";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Skatīt iestatījumus";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo MI funkcijas ir privātas un nav obligātas. Tavi dati netiek izmantoti mākslīgā intelekta apmācībai.";
 
@@ -1670,7 +1700,7 @@
 "empty.search" = "Sakritības nav atrastas";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Reģistrēts: %@";
+"Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1728,9 +1758,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Tikai mobilā izlase";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funkcija: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklāmu un uznirstošo logu bloķēšana";
@@ -2206,6 +2233,9 @@
 /* No comment provided by engineer. */
 "Messages" = "Ziņojumi";
 
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Adreses joslas poga";
 
@@ -2492,6 +2522,9 @@
 "No existing subscription found" = "Nav atrasts neviens esošs abonements";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
 "No Logs" = "Nav žurnālu";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2535,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Nav pieejamu abonementu";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "Labi";
@@ -2891,6 +2927,9 @@
 "Results" = "Rezultāti";
 
 /* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Meklē vai ievadi adresi";
 
 /* Search input toggle button title for asking AI Chat */
@@ -2935,9 +2974,6 @@
 /* about tagline */
 "settings.about.tagline" = "Aizsardzība. Privātums. Sirds miers.";
 
-/* About page template with placeholder for subscription sentence */
-"settings.about.text.template" = "DuckDuckGo ir neatkarīgs uzņēmums tiešsaistes aizsardzībai, kas pieejams ikvienam, kurš vēlas atgūt kontroli pār savu personisko informāciju.\n\nMēs uzskatām, ka labākais veids, kā aizsargāt savu personisko informāciju no hakeriem, krāpniekiem un privātumu apdraudošiem uzņēmumiem, ir to neievākt vispār. Tāpēc miljoniem cilvēku [izvēlas DuckDuckGo, nevis Chrome un citas pārlūkprogrammas](ddgQuickLink://duckduckgo.com/compare-privacy), lai meklētu un pārlūkotu tiešsaistē. Mūsu iebūvētā meklētājprogramma ir līdzīga Google, taču tā neizseko jūsu meklēšanas vaicājumus. Mūsu pārlūkošanas aizsardzība, piemēram, reklāmu izsekotāju bloķēšana un sīkfailu bloķēšana neļauj citiem uzņēmumiem ievākt tavus datus. Turklāt mūsu pārlūkprogramma ir bez maksas — mēs pelnām naudu no [privātumu respektējošām meklēšanas reklāmām](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), nevis izmantojot tavus datus. \n\n%@ \n\nAtgūsti kontroli pār savu personisko informāciju ar pārlūkprogrammu, kas paredzēta datu aizsardzībai, nevis datu apkopošanai.";
-
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Pieejamība";
 
@@ -2955,6 +2991,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Rādīt pilnu vietnes adresi";
+
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Rādīt izsekotāju bloķēšanas animāciju";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Meklēšana & Duck.ai";
@@ -3024,11 +3063,12 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Notīrīt";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Notīrīt cilnes un datus";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Notīrīt cilnes, datus un Duck.ai tērzēšanu";
+"settings.autoclear.tabs.and.data.with.aichat" = "Notīrīt cilnes, datus un Duck.ai tērzēšanas sarunas";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Aizvērt visas atvērtās cilnes";
@@ -3036,17 +3076,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Cilnes";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Iziešana no lietotnes, neaktīva 15 minūtes";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Iziešana no lietotnes, neaktīva 1 stundu";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Iziešana no lietotnes, neaktīva 30 minūtes";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Iziešana no lietotnes, neaktīva 5 minūtes";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Iziešana no lietotnes, neaktīva 15 minūtes";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Iziešana no lietotnes, neaktīva 30 minūtes";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Tikai iziešana no lietotnes";
@@ -3059,6 +3099,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Dati tiks dzēsti, restartējot lietotni.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Meklēšanas ieteikumi";
 
@@ -3079,6 +3120,7 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automātiskā datu dzēšana";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Atsauksmes par pārlūkprogrammu";
 
@@ -3090,6 +3132,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Izdzēst pārlūkošanas datus";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automātiski notīrīt datus";
 
@@ -3119,6 +3162,7 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Tavu datu dzēšana var palīdzēt aizsargāt tavu privātumu tiešsaistē. Izmanto Fire Button, lai manuāli notīrītu datus, vai arī iestatītu automātisku notīrīšanu.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Noklusējuma pārlūks";
 
@@ -3166,6 +3210,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Ugunsdrošas vietnes";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Vispārīgi";
 
@@ -3183,9 +3228,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Jauns";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Priekšskatījums";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatūra";
@@ -3461,6 +3503,9 @@
 "siteFeedback.urlPlaceholder" = "Kura vietne ir bojāta?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Statuss";
 
 /* No comment provided by engineer. */
@@ -3468,9 +3513,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Saglabātais resursdatora nosaukums: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Apakšfunkcija: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pievienot ierīcei";
@@ -3618,9 +3660,6 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Atjauno abonementu...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro tagad vienkārši sauc par DuckDuckGo abonementu";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Noņemt no šīs ierīces";
@@ -4201,3 +4240,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Cilnes";
+"settings.tab.switcher.show.tracker.count" = "Pēdējo 7 dienu izsekotāju skaits";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "pēdējo 7 dienu laikā";
+"tab.switcher.tracker.count.hide.title" = "Paslēpt izsekotāju skaitu?";
+"tab.switcher.tracker.count.hide.message" = "To varat atkal ieslēgt sadaļā Iestatījumi > Izskats.";
+"tab.switcher.tracker.count.hide.action" = "Paslēpt";
+"tab.switcher.tracker.count.keep.action" = "Paturēt";
+"tab.switcher.tracker.count.info.a11y" = "Izsekotāju skaita opcijas";
+"tab.switcher.tracker.count.info.hint.a11y" = "Veiciet dubultskārienu, lai parādītu šī reklāmkaroga paslēpšanas opcijas";

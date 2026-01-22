@@ -117,6 +117,7 @@ import AIChatTestingUtilities
                                     daxDialogsManager: DummyDaxDialogsManager(),
                                     aiChatSettings: MockAIChatSettingsProvider(),
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+                                    privacyStats: MockPrivacyStats(),
                                     voiceSearchHelper: MockVoiceSearchHelper()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
@@ -170,6 +171,7 @@ import AIChatTestingUtilities
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
+            privacyStats: MockPrivacyStats(),
             aiChatSyncCleaner: MockAIChatSyncCleaning(),
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
         )

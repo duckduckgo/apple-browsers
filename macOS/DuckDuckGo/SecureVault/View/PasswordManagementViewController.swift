@@ -1279,7 +1279,7 @@ struct PasswordManagementEmptyStateMessage: View {
     var body: some View {
         let text = Text(.init(message))
             .foregroundColor(.textSecondary)
-        
+
         if let image = image {
             (
                 Text(Image(image))

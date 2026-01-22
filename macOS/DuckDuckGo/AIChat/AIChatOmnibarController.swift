@@ -88,7 +88,7 @@ final class AIChatOmnibarController {
         $currentText
             .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
             .sink { [weak self] text in
-                guard let self else { return }
+                guard let self, self.isSuggestionsEnabled else { return }
                 self.suggestionsViewModel.updateQuery(text)
                 self.fetchSuggestionsIfNeeded(query: text)
             }

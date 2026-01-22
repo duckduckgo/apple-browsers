@@ -61,7 +61,7 @@ final class MainView: NSView {
     private var bannerHeightConstraint: NSLayoutConstraint!
     private var aiChatOmnibarContainerWidthConstraint: NSLayoutConstraint!
     private var aiChatOmnibarContainerHeightConstraint: NSLayoutConstraint!
-    private var aiChatOmnibarTextContainerHeightConstraint: NSLayoutConstraint!
+    private var aiChatOmnibarTextContainerBottomConstraint: NSLayoutConstraint!
 
     @Published var isMouseAboveWebView: Bool = false
 
@@ -164,9 +164,8 @@ final class MainView: NSView {
             aiChatOmnibarContainerWidthConstraint,
         ])
 
-        // Height constraint - updated dynamically based on text content
-        aiChatOmnibarTextContainerHeightConstraint = aiChatOmnibarTextContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerMinHeight)
-        aiChatOmnibarTextContainerHeightConstraint.isActive = true
+        aiChatOmnibarTextContainerBottomConstraint = aiChatOmnibarTextContainerView.bottomAnchor.constraint(equalTo: aiChatOmnibarContainerView.bottomAnchor)
+        aiChatOmnibarTextContainerBottomConstraint.isActive = true
 
         aiChatOmnibarContainerView.isHidden = true
         aiChatOmnibarTextContainerView.isHidden = true
@@ -310,6 +309,7 @@ final class MainView: NSView {
             aiChatOmnibarTextContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor, constant: -78),
         ])
 
+        aiChatOmnibarTextContainerBottomConstraint.constant = -5
     }
 
     /// Updates the text container view's passthrough region to allow clicks to reach suggestions.
@@ -318,8 +318,9 @@ final class MainView: NSView {
     }
 
     /// Updates the text container's height based on text content.
+    /// Note: Currently using bottom constraint approach instead
     func updateAIChatOmnibarTextContainerHeight(_ height: CGFloat) {
-        aiChatOmnibarTextContainerHeightConstraint.constant = height
+        // Using bottom constraint, so this is a no-op for now
     }
 
     func setupAIChatOmnibarContainerConstraints(addressBarStack: NSView) {

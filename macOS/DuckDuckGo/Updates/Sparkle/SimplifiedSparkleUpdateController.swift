@@ -170,17 +170,17 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             if oldValue != areAutomaticUpdatesEnabled {
                 updateWideEvent.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
 
-                // If switching to automatic while at download checkpoint, trigger download
-                if areAutomaticUpdatesEnabled && isAtDownloadCheckpoint {
-                    progressState.resumeCallback?()
-                }
-
                 // Update Sparkle settings when preference changes
                 // Always check for updates; only auto-download based on build-type feature flag AND preference
                 let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: areAutomaticUpdatesEnabled)
                 updater?.automaticallyChecksForUpdates = true
                 updater?.automaticallyDownloadsUpdates = shouldAutoDownload
                 userDriver.areAutomaticUpdatesEnabled = shouldAutoDownload
+
+                // If switching to automatic while at download checkpoint, trigger download
+                if shouldAutoDownload && isAtDownloadCheckpoint {
+                    progressState.resumeCallback?()
+                }
             }
         }
     }

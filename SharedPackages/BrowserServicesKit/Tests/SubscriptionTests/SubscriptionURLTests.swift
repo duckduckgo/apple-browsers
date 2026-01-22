@@ -139,7 +139,7 @@ final class SubscriptionURLTests: XCTestCase {
 
     func testUpgradeURLForProduction() throws {
         // Given
-        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?tier=pro")!
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?)!
 
         // When
         let url = SubscriptionURL.upgrade.subscriptionURL(environment: .production)
@@ -150,7 +150,7 @@ final class SubscriptionURLTests: XCTestCase {
 
     func testUpgradeURLForStaging() throws {
         // Given
-        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?tier=pro"&environment=staging")!
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?tier=pro&environment=staging")!
 
         // When
         let url = SubscriptionURL.upgrade.subscriptionURL(environment: .staging)
@@ -162,7 +162,7 @@ final class SubscriptionURLTests: XCTestCase {
     func testCustomBaseSubscriptionURLForUpgradeURL() throws {
         // Given
         let customBaseURL = URL(string: "https://dax.duck.co/subscriptions")!
-        let expectedURL = URL(string: "https://dax.duck.co/subscriptions/plans?tier=pro"")!
+        let expectedURL = URL(string: "https://dax.duck.co/subscriptions/plans?tier=pro")!
 
         // When
         let url = SubscriptionURL.upgrade.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)

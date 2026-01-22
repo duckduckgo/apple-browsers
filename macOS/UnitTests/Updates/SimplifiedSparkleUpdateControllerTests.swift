@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if SPARKLE
+
 import XCTest
 import PrivacyConfig
 import FeatureFlags
@@ -149,3 +151,5 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 }
+
+#endif

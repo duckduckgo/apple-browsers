@@ -84,6 +84,7 @@ public enum PrivacyFeature: String {
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport
+    case duckAiChatHistory
     case serp
     case popupBlocking
     case combinedPermissionView
@@ -206,6 +207,12 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1212238464901412?focus=true
     case showWhatsNewPromptOnDemand
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
+    case genericBackgroundTask
+
+    // https://app.asana.com/1/137249556945/project/392891325557410/task/1211597475706631?focus=true
+    case webViewFlashPrevention
+
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
@@ -326,6 +333,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the omnibar cluster for AI Chat
     case omnibarCluster
+
+    /// Enables showing chat suggestions in the AI Chat omnibar
+    case suggestions
 
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages

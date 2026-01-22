@@ -1,5 +1,5 @@
 //
-//  MockThrowingKeyValueStore.swift
+//  AIChatFeatureFlagProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,22 +16,19 @@
 //  limitations under the License.
 //
 
-import Persistence
+import AIChat
+import PrivacyConfig
+import FeatureFlags
 
-public class MockThrowingKeyValueStore: ThrowingKeyValueStoring {
-    private var storage: [String: Any] = [:]
+struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
 
-    public init() { }
+    private let featureFlagger: FeatureFlagger
 
-    public func object(forKey defaultName: String) throws -> Any? {
-        return storage[defaultName]
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
     }
 
-    public func set(_ value: Any?, forKey defaultName: String) throws {
-        storage[defaultName] = value
-    }
-
-    public func removeObject(forKey defaultName: String) throws {
-        storage.removeValue(forKey: defaultName)
+    func isAIChatSyncEnabled() -> Bool {
+        featureFlagger.isFeatureOn(.aiChatSync)
     }
 }

@@ -156,7 +156,8 @@ struct SettingsRootView: View {
                                                              tld: AppDependencyProvider.shared.storageCache.tld,
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                             wideEvent: AppDependencyProvider.shared.wideEvent)
+                                                             wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                             featureFlagger: viewModel.featureFlagger)
     }
 
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
@@ -167,7 +168,8 @@ struct SettingsRootView: View {
                                                          userScriptsDependencies: viewModel.userScriptsDependencies,
                                                          internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                          dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                         wideEvent: AppDependencyProvider.shared.wideEvent)
+                                                         wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                         featureFlagger: viewModel.featureFlagger)
     }
 
     @ViewBuilder func emailFlowNavigationDestination() -> some View {
@@ -179,6 +181,7 @@ struct SettingsRootView: View {
                                                          emailFlow: .restoreFlow,
                                                          dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                          wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                         featureFlagger: viewModel.featureFlagger,
                                                          onDisappear: {})
     }
 
@@ -225,7 +228,8 @@ struct SettingsRootView: View {
         case .itr:
             let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                  userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)
+                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
+                                                 featureFlagger: viewModel.featureFlagger)
             SubscriptionITPView(viewModel: model)
         case let .subscriptionFlow(redirectURLComponents):
             subscriptionFlowNavigationDestination(redirectURLComponents: redirectURLComponents)

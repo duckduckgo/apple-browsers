@@ -31,7 +31,7 @@ struct AutoClearSettingsModel: Equatable {
         case delay60min
     }
     
-    var action: FireOptions
+    var action: FireRequest.Options
     var timing: Timing
     
     /// Create settings model based on last user selection that is stored in settings.

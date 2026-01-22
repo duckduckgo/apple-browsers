@@ -435,6 +435,7 @@ final class MainViewController: NSViewController {
 
     func windowWillClose() {
         viewEventsCancellables.removeAll()
+        aiChatOmnibarContainerViewController.cleanup()
     }
 
     deinit {

@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Common
 import Foundation
 import AppKitExtensions
+import Persistence
 import URLPredictor
 import os.log
 #if !SANDBOX_TEST_TOOL
@@ -416,7 +417,7 @@ extension URL {
     // MARK: - Base URLs (Internal User Configurable)
 
     /// Shared debug settings instance for runtime URL overrides.
-    private static let debugSettings = BaseURLDebugSettings()
+    private static let debugSettings: any KeyedStoring<BaseURLDebugSettings> = UserDefaults.standard.keyedStoring()
 
     /// Determines if environment variable URL overrides are allowed.
     ///

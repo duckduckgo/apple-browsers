@@ -5476,16 +5476,17 @@
       }
     },
     "subscription.preferences.subscription.pending.downgrade.caption" : {
-      "comment" : "Pending downgrade info. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'",
+      "comment" : "Pending downgrade info. Parameters are tier name, billing period, and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Your plan will downgrade to %1$@ on %2$@."
+            "value" : "Your plan will downgrade to %1$@ %2$@ on %3$@."
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "subscription.preferences.subscription.settings.activating" : {
       "comment" : "Title for the status indicator informing that user's subscription is still activating",

@@ -100,7 +100,9 @@ final class AIChatSuggestionsView: NSView {
     }
 
     private func updateSeparatorColor() {
-        separatorView.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
+        NSAppearance.withAppAppearance {
+            separatorView.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
+        }
     }
 
     // MARK: - Mouse Tracking

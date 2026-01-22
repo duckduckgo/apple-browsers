@@ -21,8 +21,9 @@ import Foundation
 import CoreData
 
 public protocol TabHistoryStoring {
-    func tabHistory(tabID: String) async throws -> [URL]
-    func insertTabHistory(tabID: String, url: URL) async throws
+    func tabHistory(for tabID: String) async throws -> [URL]
+    func insertTabHistory(for tabID: String, url: URL) async throws
+    func removeTabHistory(for tabIDs: [String]) async throws
 }
 
 public struct TabHistoryStore: TabHistoryStoring {
@@ -39,7 +40,7 @@ public struct TabHistoryStore: TabHistoryStoring {
     /// Used when global history is disabled but tab navigation must work.
     ///
     /// Creates an "orphaned" TabHistory record (visit = nil).
-    public func insertTabHistory(tabID: String, url: URL) async throws {
+    public func insertTabHistory(for tabID: String, url: URL) async throws {
         return try await withCheckedThrowingContinuation { continuation in
             context.perform { [context] in
                 // Create orphaned record (visit = nil)
@@ -65,9 +66,9 @@ public struct TabHistoryStore: TabHistoryStoring {
     }
 
     internal func createTabHistoryRecord(tabID: String?,
-                                       url: URL?,
-                                       linkedVisit: PageVisitManagedObject?,
-                                       in context: NSManagedObjectContext) -> TabHistoryManagedObject? {
+                                         url: URL?,
+                                         linkedVisit: PageVisitManagedObject?,
+                                         in context: NSManagedObjectContext) -> TabHistoryManagedObject? {
         guard let tabID, let url else {
             return nil
         }
@@ -84,7 +85,7 @@ public struct TabHistoryStore: TabHistoryStoring {
         return tabHistoryMO
     }
 
-    public func tabHistory(tabID: String) async throws -> [URL] {
+    public func tabHistory(for tabID: String) async throws -> [URL] {
         try await withCheckedThrowingContinuation { continuation in
             context.perform { [context, eventMapper] in
                 let fetchRequest = TabHistoryManagedObject.fetchRequest()
@@ -98,6 +99,26 @@ public struct TabHistoryStore: TabHistoryStoring {
                     continuation.resume(returning: urls)
                 } catch {
                     eventMapper.fire(.loadTabHistoryFailed, error: error)
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    public func removeTabHistory(for tabIDs: [String]) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform { [context, eventMapper] in
+                let fetchRequest: NSFetchRequest<NSFetchRequestResult> = TabHistoryManagedObject.fetchRequest()
+                fetchRequest.predicate = NSPredicate(format: "%K IN %@",
+                                                     #keyPath(TabHistoryManagedObject.tabID),
+                                                     tabIDs)
+                let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+                do {
+                    try context.execute(batchDeleteRequest)
+                    context.reset()
+                    continuation.resume(returning: ())
+                } catch {
+                    eventMapper.fire(.removeTabHistoryFailed, error: error)
                     continuation.resume(throwing: error)
                 }
             }

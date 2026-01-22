@@ -21,6 +21,7 @@ import Foundation
 public protocol TabHistoryCoordinating {
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
     @MainActor func addVisit(of url: URL, tabID: String?) async throws
+    @MainActor func removeVisits(for tabIDs: [String]) async throws
 }
 
 final public class TabHistoryCoordinator: TabHistoryCoordinating {
@@ -33,7 +34,7 @@ final public class TabHistoryCoordinator: TabHistoryCoordinating {
 
     @MainActor
     public func tabHistory(tabID: String) async throws -> [URL] {
-        return try await tabHistoryStoring.tabHistory(tabID: tabID)
+        return try await tabHistoryStoring.tabHistory(for: tabID)
     }
 
     @MainActor
@@ -41,6 +42,11 @@ final public class TabHistoryCoordinator: TabHistoryCoordinating {
         guard let tabID else {
             return
         }
-        try await tabHistoryStoring.insertTabHistory(tabID: tabID, url: url)
+        try await tabHistoryStoring.insertTabHistory(for: tabID, url: url)
+    }
+
+    @MainActor
+    public func removeVisits(for tabIDs: [String]) async throws {
+        try await tabHistoryStoring.removeTabHistory(for: tabIDs)
     }
 }

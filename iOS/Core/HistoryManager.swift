@@ -35,6 +35,7 @@ public protocol HistoryManaging {
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
     @MainActor func commitChanges(url: URL)
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
+    @MainActor func removeTabHistory(for tabIDs: [String]) async
 }
 
 public class HistoryManager: HistoryManaging {
@@ -119,6 +120,11 @@ public class HistoryManager: HistoryManaging {
     @MainActor
     public func tabHistory(tabID: String) async throws -> [URL] {
         return try await tabHistoryCoordinator.tabHistory(tabID: tabID)
+    }
+
+    @MainActor
+    public func removeTabHistory(for tabIDs: [String]) async {
+        try? await tabHistoryCoordinator.removeVisits(for: tabIDs)
     }
 
 }

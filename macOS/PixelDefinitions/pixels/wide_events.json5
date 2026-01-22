@@ -1,0 +1,479 @@
+{
+    w_wide_import_summary: {
+        description: 'Fires at the conclusion of an import process to provide a summary of all imported data. For multi-stage imports (e.g., browser + CSV), this fires only once at the end with combined results.',
+        owners: [
+            'jhlouw-dev',
+        ],
+        triggers: [
+            'other',
+        ],
+        global: {
+            platform: {
+                type: 'string',
+                description: 'The platform the app is running on',
+                enum: [
+                    'Windows',
+                ],
+            },
+            type: {
+                type: 'string',
+                description: 'The type of application',
+                enum: [
+                    'app',
+                ],
+            },
+            sample_rate: {
+                type: 'number',
+                description: 'Sample rate for this pixel',
+            },
+        },
+        feature: {
+            name: {
+                type: 'string',
+                description: 'The feature name for this pixel',
+                enum: [
+                    'browser-import',
+                ],
+            },
+            status: {
+                type: 'string',
+                description: 'The overall status of the import operation',
+                enum: [
+                    'SUCCESS',
+                    'FAILURE',
+                    'PARTIAL',
+                    'CANCELLED',
+                ],
+            },
+            data: {
+                latency_ms_bucketed: {
+                    type: 'integer',
+                    description: 'How long the import operation took in milliseconds, bucketed to preserve privacy',
+                },
+                ext: {
+                    import_from: {
+                        type: 'string',
+                        description: 'The source of the import data. For multi-stage imports, this is the original browser source.',
+                        enum: [
+                            'Google Chrome',
+                            'Microsoft Edge',
+                            'Mozilla Firefox',
+                            'Brave',
+                            'Vivaldi',
+                            'Chromium',
+                            'Bitwarden',
+                            'CSV Logins File',
+                            'HTML Bookmarks File',
+                            'LastPass',
+                            '1Password',
+                            '1Password 7',
+                        ],
+                    },
+                    total_items_bucketed: {
+                        type: 'integer',
+                        description: 'Total number of items imported, bucketed to preserve privacy',
+                    },
+                    bookmark_count_bucketed: {
+                        type: 'integer',
+                        description: 'Number of bookmarks imported, bucketed to preserve privacy',
+                    },
+                    credential_count_bucketed: {
+                        type: 'integer',
+                        description: 'Number of credentials imported, bucketed to preserve privacy',
+                    },
+                    bookmark_failure_count_bucketed: {
+                        type: 'integer',
+                        description: 'Number of errors encountered during import, bucketed to preserve privacy',
+                    },
+                    credential_failure_count_bucketed: {
+                        type: 'integer',
+                        description: 'Number of errors encountered during import, bucketed to preserve privacy',
+                    },
+                },
+                failure_detail: {
+                    type: 'string',
+                    description: 'Details about the error if one occurred',
+                    enum: [
+                        'DecryptionFailed',
+                        'TimeoutFailure',
+                        'FileFormatFailure',
+                        'AccessDenied',
+                        'UnknownFailure',
+                    ],
+                },
+            },
+        },
+        context: {
+            name: {
+                type: 'string',
+                description: 'Context name for the pixel',
+                enum: [
+                    'onboarding',
+                    'settings',
+                ],
+            },
+        },
+    },
+    w_wide_import_bookmarks: {
+        description: 'Fires when bookmarks are imported, providing metrics about the bookmark import component of an import operation.',
+        owners: [
+            'jhlouw-dev',
+        ],
+        triggers: [
+            'other',
+        ],
+        global: {
+            platform: {
+                type: 'string',
+                description: 'The platform the app is running on',
+                enum: [
+                    'Windows',
+                ],
+            },
+            type: {
+                type: 'string',
+                description: 'The type of application',
+                enum: [
+                    'app',
+                ],
+            },
+            sample_rate: {
+                type: 'number',
+                description: 'Sample rate for this pixel',
+            },
+        },
+        feature: {
+            name: {
+                type: 'string',
+                description: 'The feature name for this pixel',
+                enum: [
+                    'browser-import-bookmarks',
+                ],
+            },
+            status: {
+                type: 'string',
+                description: 'The status of the bookmark import operation',
+                enum: [
+                    'SUCCESS',
+                    'FAILURE',
+                ],
+            },
+            data: {
+                latency_ms_bucketed: {
+                    type: 'integer',
+                    description: 'How long the bookmark import took in milliseconds, bucketed to preserve privacy',
+                },
+                ext: {
+                    import_from: {
+                        type: 'string',
+                        description: 'The source of the bookmark import',
+                        enum: [
+                            'Google Chrome',
+                            'Microsoft Edge',
+                            'Mozilla Firefox',
+                            'Brave',
+                            'Vivaldi',
+                            'Chromium',
+                            'HTML Bookmarks File',
+                        ],
+                    },
+                    item_count_bucketed: {
+                        type: 'integer',
+                        description: 'Number of bookmarks imported, bucketed to preserve privacy',
+                    },
+                    bookmark_failure_count_bucketed: {
+                        type: 'integer',
+                        description: 'If status is FAILURE, number of failed bookmark imports, bucketed to preserve privacy',
+                    },
+                },
+                failure_detail: {
+                    type: 'string',
+                    description: 'Details about the error if one occurred',
+                    enum: [
+                        'FileFormatFailure',
+                        'AccessDenied',
+                        'ParsingFailure',
+                        'UnknownFailure',
+                    ],
+                },
+            },
+        },
+        context: {
+            name: {
+                type: 'string',
+                description: 'Context name for the pixel',
+                enum: [
+                    'onboarding.import',
+                    'settings.import',
+                ],
+            },
+        },
+    },
+    w_wide_import_credentials: {
+        description: 'Fires when credentials are imported, providing metrics about the credential import component of an import operation.',
+        owners: [
+            'jhlouw-dev',
+        ],
+        triggers: [
+            'other',
+        ],
+        global: {
+            platform: {
+                type: 'string',
+                description: 'The platform the app is running on',
+                enum: [
+                    'Windows',
+                ],
+            },
+            type: {
+                type: 'string',
+                description: 'The type of application',
+                enum: [
+                    'app',
+                ],
+            },
+            sample_rate: {
+                type: 'number',
+                description: 'Sample rate for this pixel',
+            },
+        },
+        feature: {
+            name: {
+                type: 'string',
+                description: 'The feature name for this pixel',
+                enum: [
+                    'browser-import-credentials',
+                ],
+            },
+            status: {
+                type: 'string',
+                description: 'The status of the credential import operation',
+                enum: [
+                    'SUCCESS',
+                    'FAILURE',
+                ],
+            },
+            data: {
+                latency_ms_bucketed: {
+                    type: 'integer',
+                    description: 'How long the credential import took in milliseconds, bucketed to preserve privacy',
+                },
+                ext: {
+                    import_from: {
+                        type: 'string',
+                        description: 'The source of the credential import',
+                        enum: [
+                            'Google Chrome',
+                            'Microsoft Edge',
+                            'Brave',
+                            'Vivaldi',
+                            'Chromium',
+                            'Bitwarden',
+                            'CSV Logins File',
+                            'LastPass',
+                            '1Password',
+                            '1Password 7',
+                        ],
+                    },
+                    item_count_bucketed: {
+                        type: 'integer',
+                        description: 'Number of credentials imported, bucketed to preserve privacy',
+                    },
+                    credential_failure_count_bucketed: {
+                        type: 'integer',
+                        description: 'If status is FAILURE, number of failed credential imports, bucketed to preserve privacy',
+                    },
+                },
+                failure_detail: {
+                    type: 'string',
+                    description: 'Details about the error if one occurred',
+                    enum: [
+                        'DecryptionFailed',
+                        'FileFormatFailure',
+                        'AccessDenied',
+                        'UnknownFailure',
+                    ],
+                },
+            },
+        },
+        context: {
+            name: {
+                type: 'string',
+                description: 'Context name for the pixel',
+                enum: [
+                    'onboarding.import',
+                    'settings.import',
+                ],
+            },
+        },
+    },
+    w_wide_import_timeout: {
+        description: 'Fires when an import operation takes longer than expected and times out.',
+        owners: [
+            'jhlouw-dev',
+        ],
+        triggers: [
+            'other',
+        ],
+        global: {
+            platform: {
+                type: 'string',
+                description: 'The platform the app is running on',
+                enum: [
+                    'Windows',
+                ],
+            },
+            type: {
+                type: 'string',
+                description: 'The type of application',
+                enum: [
+                    'app',
+                ],
+            },
+            sample_rate: {
+                type: 'number',
+                description: 'Sample rate for this pixel',
+            },
+        },
+        feature: {
+            name: {
+                type: 'string',
+                description: 'The feature name for this pixel',
+                enum: [
+                    'browser-import',
+                ],
+            },
+            status: {
+                type: 'string',
+                description: 'The status of the import operation that timed out',
+                enum: [
+                    'FAILURE',
+                ],
+            },
+            data: {
+                failure_detail: {
+                    type: 'string',
+                    description: 'Failure detail for timeout',
+                    enum: [
+                        'TimeoutFailure',
+                    ],
+                },
+                ext: {
+                    import_from: {
+                        type: 'string',
+                        description: 'The source of the import that timed out',
+                        enum: [
+                            'Google Chrome',
+                            'Microsoft Edge',
+                            'Mozilla Firefox',
+                            'Brave',
+                            'Vivaldi',
+                            'Chromium',
+                            'Bitwarden',
+                            'CSV Logins File',
+                            'HTML Bookmarks File',
+                            'LastPass',
+                            '1Password',
+                            '1Password 7',
+                        ],
+                    },
+                    total_items_bucketed: {
+                        type: 'integer',
+                        description: 'Number of items that were being imported when the timeout occurred, bucketed to preserve privacy',
+                    },
+                },
+            },
+        },
+        context: {
+            name: {
+                type: 'string',
+                description: 'Context name for the pixel',
+                enum: [
+                    'onboarding',
+                    'settings',
+                ],
+            },
+        },
+    },
+    w_wide_import_cancelled: {
+        description: 'Fires when an import operation is cancelled by the user.',
+        owners: [
+            'jhlouw-dev',
+        ],
+        triggers: [
+            'other',
+        ],
+        global: {
+            platform: {
+                type: 'string',
+                description: 'The platform the app is running on',
+                enum: [
+                    'Windows',
+                ],
+            },
+            type: {
+                type: 'string',
+                description: 'The type of application',
+                enum: [
+                    'app',
+                ],
+            },
+            sample_rate: {
+                type: 'number',
+                description: 'Sample rate for this pixel',
+            },
+        },
+        feature: {
+            name: {
+                type: 'string',
+                description: 'The feature name for this pixel',
+                enum: [
+                    'browser-import',
+                ],
+            },
+            status: {
+                type: 'string',
+                description: 'The status of the import operation that was cancelled',
+                enum: [
+                    'CANCELLED',
+                ],
+            },
+            data: {
+                ext: {
+                    import_from: {
+                        type: 'string',
+                        description: 'The source of the import that was cancelled',
+                        enum: [
+                            'Google Chrome',
+                            'Microsoft Edge',
+                            'Mozilla Firefox',
+                            'Brave',
+                            'Vivaldi',
+                            'Chromium',
+                            'Bitwarden',
+                            'CSV Logins File',
+                            'HTML Bookmarks File',
+                            'LastPass',
+                            '1Password',
+                            '1Password 7',
+                        ],
+                    },
+                    total_items_bucketed: {
+                        type: 'integer',
+                        description: 'Number of items that were being imported when cancelled, bucketed to preserve privacy',
+                    },
+                },
+            },
+        },
+        context: {
+            name: {
+                type: 'string',
+                description: 'Context name for the pixel',
+                enum: [
+                    'onboarding',
+                    'settings',
+                ],
+            },
+        },
+    },
+}

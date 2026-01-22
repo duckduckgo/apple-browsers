@@ -1,0 +1,646 @@
+{
+    "m_mac_attributed_metric_retention_month": {
+        "owners": [
+            "federicocappelli"
+        ],
+        "/default_browser must be equal to one of the allowed values": [
+            "default_browser=REDACTED"
+        ]
+    },
+    "m_mac_attributed_metric_retention_week": {
+        "owners": [
+            "federicocappelli"
+        ],
+        "/default_browser must be equal to one of the allowed values": [
+            "default_browser=REDACTED"
+        ]
+    },
+    "m_mac_autocomplete_click_bookmark": {
+        "owners": [
+            "tomasstrba"
+        ],
+        "must NOT have additional properties. Found extra suffix 'daily'": [
+            "m_mac_autocomplete_click_bookmark_daily"
+        ]
+    },
+    "m_mac_autocomplete_click_favorite": {
+        "owners": [
+            "tomasstrba"
+        ],
+        "must NOT have additional properties. Found extra suffix 'daily'": [
+            "m_mac_autocomplete_click_favorite_daily"
+        ]
+    },
+    "m_mac_autocomplete_click_history": {
+        "owners": [
+            "tomasstrba"
+        ],
+        "must NOT have additional properties. Found extra suffix 'daily'": [
+            "m_mac_autocomplete_click_history_daily"
+        ]
+    },
+    "m_mac_autocomplete_click_opentab": {
+        "owners": [
+            "tomasstrba"
+        ],
+        "must NOT have additional properties. Found extra suffix 'daily'": [
+            "m_mac_autocomplete_click_opentab_daily"
+        ]
+    },
+    "m_mac_autocomplete_click_phrase": {
+        "owners": [
+            "tomasstrba"
+        ],
+        "must NOT have additional properties. Found extra suffix 'daily'": [
+            "m_mac_autocomplete_click_phrase_daily"
+        ]
+    },
+    "m_mac_autocomplete_click_website": {
+        "owners": [
+            "tomasstrba"
+        ],
+        "must NOT have additional properties. Found extra suffix 'daily'": [
+            "m_mac_autocomplete_click_website_daily"
+        ]
+    },
+    "m_mac_autoconsent_animation-shown_cosmetic_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_autoconsent_animation-shown_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_autoconsent_detected-by-both_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_autoconsent_detected-by-patterns_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0"
+        ]
+    },
+    "m_mac_autoconsent_detected-only-rules_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_autoconsent_disabled-for-site_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_autoconsent_done_cosmetic_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_autoconsent_done_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_autoconsent_error_multiple-popups_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0"
+        ]
+    },
+    "m_mac_autoconsent_error_optout_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0"
+        ]
+    },
+    "m_mac_autoconsent_error_reload-loop_daily": {
+        "owners": [
+            "muodov"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_autoconsent_init_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0"
+        ]
+    },
+    "m_mac_autoconsent_popup-found_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0"
+        ]
+    },
+    "m_mac_autoconsent_self-test-fail_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0"
+        ]
+    },
+    "m_mac_autoconsent_self-test-ok_daily": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_autoconsent_summary": {
+        "owners": [
+            "sammacbeth"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'done_heuristic'": [
+            "done_heuristic=0&appVersion=1.172.0",
+            "done_heuristic=0&appVersion=1.173.0",
+            "done_heuristic=1&appVersion=1.172.0",
+            "done_heuristic=4&appVersion=1.172.0",
+            "done_heuristic=2&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'popover-autodismissed'": [
+            "popover-autodismissed=0&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'popover-clicked'": [
+            "popover-clicked=0&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'popover-closed'": [
+            "popover-closed=0&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'popover-new-tab-opened'": [
+            "popover-new-tab-opened=0&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'popover-shown'": [
+            "popover-shown=0&appVersion=1.172.0"
+        ]
+    },
+    "m_mac_autoconsent_usage-stats_daily": {
+        "owners": [
+            "miasma13"
+        ],
+        "/appVersion must match pattern \"^[0-9]+\\.[0-9]+\\.[0-9]+$\"": [
+            "appVersion=REDACTED",
+            "averageClicksBlockingCookiePopUp=0&appVersion=REDACTED",
+            "averageClicksBlockingCookiePopUp=REDACTED&appVersion=REDACTED",
+            "petal=true&appVersion=REDACTED",
+            "pixelSource=REDACTED&appVersion=REDACTED"
+        ],
+        "/averageClicksBlockingCookiePopUp must be number": [
+            "averageClicksBlockingCookiePopUp=REDACTED&appVersion=1.172.0",
+            "averageClicksBlockingCookiePopUp=REDACTED&appVersion=REDACTED"
+        ],
+        "must NOT have additional properties. Found extra property 'petal'": [
+            "petal=true&appVersion=1.172.0",
+            "petal=true&appVersion=REDACTED"
+        ],
+        "/pixelSource must be equal to one of the allowed values": [
+            "pixelSource=REDACTED&appVersion=1.172.0",
+            "pixelSource=REDACTED&appVersion=REDACTED"
+        ],
+        "/totalCookiePopUpsBlockedBucket must be equal to one of the allowed values": [
+            "totalCookiePopUpsBlockedBucket=REDACTED&appVersion=1.172.0",
+            "totalCookiePopUpsBlockedBucket=REDACTED&appVersion=REDACTED"
+        ],
+        "/totalTimeBlockingCookiePopUpsBucket must be equal to one of the allowed values": [
+            "totalTimeBlockingCookiePopUpsBucket=REDACTED&appVersion=1.172.0",
+            "totalTimeBlockingCookiePopUpsBucket=REDACTED&appVersion=REDACTED"
+        ]
+    },
+    "m_mac_dbp_data_broker_action-failed_error": {
+        "owners": [
+            "quanganhdo"
+        ],
+        "Suffix 'count' must be equal to one of the allowed values": [
+            "m_mac_dbp_data_broker_action-failed_error_count"
+        ],
+        "Suffix 'daily' must be equal to one of the allowed values": [
+            "m_mac_dbp_data_broker_action-failed_error_daily"
+        ],
+        "must NOT have additional properties. Found extra property 'dataBroker'": [
+            "dataBroker=centeda.com&appVersion=9999.9.9",
+            "dataBroker=clubset.com&appVersion=9999.9.9",
+            "dataBroker=mylife.com&appVersion=9999.9.9",
+            "dataBroker=dataveria.com&appVersion=9999.9.9",
+            "dataBroker=newenglandfacts.com&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'version'": [
+            "version=0.4.0&appVersion=9999.9.9",
+            "version=0.7.0&appVersion=9999.9.9",
+            "version=0.9.0&appVersion=9999.9.9",
+            "version=0.5.0&appVersion=9999.9.9",
+            "version=0.6.0&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_wide_pir_opt_out_submission": {
+        "owners": [
+            "quanganhdo"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.stages.0.name'": [
+            "feature.data.ext.stages.0.name=start&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.stages.0.tries'": [
+            "feature.data.ext.stages.0.tries=1&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.stages.1.action_id'": [
+            "feature.data.ext.stages.1.action_id=374a01d9-630f-42e4-a8b8-4c87ddab91e3&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.stages.1.duration_ms'": [
+            "feature.data.ext.stages.1.duration_ms=3.0&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.stages.1.name'": [
+            "feature.data.ext.stages.1.name=fill-form&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.stages.1.tries'": [
+            "feature.data.ext.stages.1.tries=1&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.stages.2.action_id'": [
+            "feature.data.ext.stages.2.action_id=2b6892a3-bb39-4552-8e57-cb4493fd4d70&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.stages.2.duration_ms'": [
+            "feature.data.ext.stages.2.duration_ms=4.0&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.stages.2.name'": [
+            "feature.data.ext.stages.2.name=captcha-parse&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.stages.2.tries'": [
+            "feature.data.ext.stages.2.tries=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_dbp_optout_process_failure": {
+        "owners": [
+            "quanganhdo",
+            "edulpn",
+            "THISISDINOSAUR"
+        ],
+        "must NOT have additional properties. Found extra property 'click_action_delay_reduction_optimization'": [
+            "click_action_delay_reduction_optimization=true&appVersion=1.172.0",
+            "click_action_delay_reduction_optimization=true&appVersion=1.173.0",
+            "click_action_delay_reduction_optimization=true&appVersion=9999.9.9",
+            "click_action_delay_reduction_optimization=false&appVersion=1.172.0",
+            "click_action_delay_reduction_optimization=false&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_dbp_optout_process_success": {
+        "owners": [
+            "quanganhdo",
+            "edulpn",
+            "THISISDINOSAUR"
+        ],
+        "must NOT have additional properties. Found extra property 'click_action_delay_reduction_optimization'": [
+            "click_action_delay_reduction_optimization=true&appVersion=1.172.0",
+            "click_action_delay_reduction_optimization=true&appVersion=1.173.0",
+            "click_action_delay_reduction_optimization=false&appVersion=1.172.0"
+        ]
+    },
+    "m_mac_dbp_optout_stage_start": {
+        "owners": [
+            "quanganhdo",
+            "edulpn",
+            "THISISDINOSAUR"
+        ],
+        "must NOT have additional properties. Found extra property 'click_action_delay_reduction_optimization'": [
+            "click_action_delay_reduction_optimization=true&appVersion=1.172.0",
+            "click_action_delay_reduction_optimization=true&appVersion=1.173.0",
+            "click_action_delay_reduction_optimization=true&appVersion=9999.9.9",
+            "click_action_delay_reduction_optimization=false&appVersion=1.172.0",
+            "click_action_delay_reduction_optimization=false&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_new-tab-page_omnibar_mode_changed": {
+        "owners": [
+            "tomasstrba"
+        ],
+        "must NOT have additional properties. Found extra suffix 'daily'": [
+            "m_mac_new-tab-page_omnibar_mode_changed_daily"
+        ]
+    },
+    "m_mac_release_metadata_fetch_failed": {
+        "owners": [
+            "jotaemepereira"
+        ],
+        "must NOT have additional properties. Found extra property 'd'": [
+            "d=com.duckduckgo.LatestReleaseError&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'e'": [
+            "e=2&appVersion=1.172.0",
+            "e=3&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ud2'": [
+            "ud2=kCFErrorDomainCFNetwork&appVersion=1.172.0",
+            "ud2=NSCocoaErrorDomain&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ud'": [
+            "ud=NSURLErrorDomain&appVersion=1.172.0",
+            "ud=NSCocoaErrorDomain&appVersion=1.172.0",
+            "ud=NSPOSIXErrorDomain&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ue2'": [
+            "ue2=-1001&appVersion=1.172.0",
+            "ue2=-1009&appVersion=1.172.0",
+            "ue2=-1003&appVersion=1.172.0",
+            "ue2=-1004&appVersion=1.172.0",
+            "ue2=-1005&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ue'": [
+            "ue=-1001&appVersion=1.172.0",
+            "ue=-1009&appVersion=1.172.0",
+            "ue=-1003&appVersion=1.172.0",
+            "ue=-1004&appVersion=1.172.0",
+            "ue=-1005&appVersion=1.172.0"
+        ]
+    },
+    "m_mac_site_loading_timing": {
+        "owners": [
+            "diegoreymendez"
+        ],
+        "must NOT have additional properties. Found extra property 'consentHeuristicEnabled'": [
+            "consentHeuristicEnabled=0&appVersion=1.172.0",
+            "consentHeuristicEnabled=1&appVersion=1.172.0",
+            "consentHeuristicEnabled=0&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=1.173.0",
+            "consentHeuristicEnabled=1&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_wide_sparkle_update_cycle": {
+        "owners": [
+            "diegoreymendez"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.status_reason'": [
+            "feature.status_reason=abandoned&appVersion=1.172.0",
+            "feature.status_reason=no_update_available&appVersion=1.172.0",
+            "feature.status_reason=no_update_available&appVersion=1.173.0",
+            "feature.status_reason=incomplete&appVersion=1.172.0",
+            "feature.status_reason=no_update_available&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'app.internal_user'": [
+            "app.internal_user=true&appVersion=1.172.0",
+            "app.internal_user=true&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-save-current-activity": {
+        "owners": [
+            "rachelmcr"
+        ],
+        "must NOT have additional properties. Found extra property 'ud2'": [
+            "ud2=NSPOSIXErrorDomain&appVersion=1.172.0",
+            "ud2=NSPOSIXErrorDomain&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'ud'": [
+            "ud=NSCocoaErrorDomain&appVersion=1.172.0",
+            "ud=NSCocoaErrorDomain&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'ue2'": [
+            "ue2=13&appVersion=1.172.0",
+            "ue2=28&appVersion=1.172.0",
+            "ue2=2&appVersion=1.172.0",
+            "ue2=28&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'ue'": [
+            "ue=513&appVersion=1.172.0",
+            "ue=640&appVersion=1.172.0",
+            "ue=4&appVersion=1.172.0",
+            "ue=640&appVersion=9999.9.9"
+        ]
+    },
+    "m_mac_dbp_update_databrokers_failure": {
+        "owners": [
+            "edulpn"
+        ],
+        "must NOT have additional properties. Found extra suffix 'count'": [
+            "m_mac_dbp_update_databrokers_failure_count"
+        ],
+        "must NOT have additional properties. Found extra property 'd'": [
+            "d=NSCocoaErrorDomain&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'e'": [
+            "e=260&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ud'": [
+            "ud=NSPOSIXErrorDomain&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ue'": [
+            "ue=2&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra suffix 'daily'": [
+            "m_mac_dbp_update_databrokers_failure_daily"
+        ]
+    },
+    "m_mac_dbp_optout_stage_submit": {
+        "owners": [
+            "quanganhdo",
+            "edulpn",
+            "THISISDINOSAUR"
+        ],
+        "must NOT have additional properties. Found extra property 'click_action_delay_reduction_optimization'": [
+            "click_action_delay_reduction_optimization=true&appVersion=1.173.0",
+            "click_action_delay_reduction_optimization=true&appVersion=1.172.0"
+        ]
+    },
+    "m_mac_direct_subscription_tier-options_failure": {
+        "owners": [
+            "SabrinaTardio"
+        ],
+        "must NOT have additional properties. Found extra property 'ud2'": [
+            "ud2=NSURLErrorDomain&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ud3'": [
+            "ud3=kCFErrorDomainCFNetwork&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ue2'": [
+            "ue2=-1001&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ue3'": [
+            "ue3=-1001&appVersion=1.172.0"
+        ]
+    },
+    "m_mac_wide_subscription_purchase": {
+        "owners": [
+            "samsymons"
+        ],
+        "/context.name must be equal to one of the allowed values": [
+            "context.name=&appVersion=1.172.0",
+            "context.name=funnel_duckai_macos__aisidebar&appVersion=1.172.0",
+            "context.name=funnel_duckai_macos__promotioncard&appVersion=1.172.0",
+            "context.name=funnel_duckai_macos__settings&appVersion=1.172.0",
+            "context.name=funnel_duckai_macos__switchmodel&appVersion=1.172.0"
+        ]
+    },
+    "m_mac_ui_hang": {
+        "owners": [
+            "frosty"
+        ],
+        "Suffix 'not-recovered' must be equal to one of the allowed values": [
+            "m_mac_ui_hang_not-recovered_count",
+            "m_mac_ui_hang_not-recovered_daily"
+        ],
+        "must NOT have additional properties. Found extra property 'pixelSource'": [
+            "pixelSource=browser-appstore&appVersion=1.172.0",
+            "pixelSource=browser-dmg&appVersion=9999.9.9"
+        ],
+        "Suffix 'daily' must be equal to one of the allowed values": [
+            "m_mac_ui_hang_not-recovered_daily",
+            "m_mac_ui_hang_recovered_daily"
+        ],
+        "Suffix 'recovered' must be equal to one of the allowed values": [
+            "m_mac_ui_hang_recovered_count",
+            "m_mac_ui_hang_recovered_daily"
+        ]
+    },
+    "m_mac_vpn_subs_client_check_vpn_feature_disabled": {
+        "owners": [
+            "diegoreymendez"
+        ],
+        "must NOT have additional properties. Found extra property 'vpnAuthVersion'": [
+            "vpnAuthVersion=v2&appVersion=1.173.0"
+        ],
+        "must NOT have additional properties. Found extra property 'vpnSubscriptionActive'": [
+            "vpnSubscriptionActive=no_subscription&appVersion=1.173.0"
+        ]
+    },
+    "m_mac_wide_auth_v2_token_adoption": {
+        "owners": [
+            "samsymons"
+        ],
+        "must NOT have additional properties. Found extra property 'feature.data.ext.failing_step'": [
+            "feature.data.ext.failing_step=token_refresh&appVersion=1.172.0"
+        ]
+    },
+    "m_mac_wide_data_import": {
+        "owners": [
+            "hanyutang-sandra"
+        ],
+        "/feature.data.ext.bookmarks_status_reason must be equal to one of the allowed values": [
+            "feature.data.ext.bookmarks_status_reason=partial_data&appVersion=1.172.0"
+        ],
+        "/feature.data.ext.creditCards_status_reason must be equal to one of the allowed values": [
+            "feature.data.ext.creditCards_status_reason=partial_data&appVersion=1.172.0"
+        ],
+        "/feature.data.ext.passwords_status_reason must be equal to one of the allowed values": [
+            "feature.data.ext.passwords_status_reason=partial_data&appVersion=1.172.0"
+        ]
+    },
+    "m_mac_store_subscription_tier-options_failure": {
+        "owners": [
+            "SabrinaTardio"
+        ],
+        "must NOT have additional properties. Found extra property 'ud2'": [
+            "ud2=NSURLErrorDomain&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ud3'": [
+            "ud3=kCFErrorDomainCFNetwork&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ue2'": [
+            "ue2=-1200&appVersion=1.172.0"
+        ],
+        "must NOT have additional properties. Found extra property 'ue3'": [
+            "ue3=-1200&appVersion=1.172.0"
+        ]
+    },
+    "m_mac_vpn_subs_client_check_vpn_feature_enabled": {
+        "owners": [
+            "diegoreymendez"
+        ],
+        "must NOT have additional properties. Found extra property 'vpnAuthVersion'": [
+            "vpnAuthVersion=v2&appVersion=9999.9.9"
+        ],
+        "must NOT have additional properties. Found extra property 'vpnSubscriptionActive'": [
+            "vpnSubscriptionActive=true&appVersion=9999.9.9"
+        ]
+    }
+}

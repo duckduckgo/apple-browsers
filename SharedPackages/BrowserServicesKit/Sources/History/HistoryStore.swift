@@ -415,7 +415,8 @@ private extension Visit {
         }
 
         let id = visitMO.objectID.uriRepresentation()
-        self.init(date: date, identifier: id)
+        let tabID = visitMO.tabHistory?.tabID
+        self.init(date: date, identifier: id, tabID: tabID)
         savingState = .saved
     }
 

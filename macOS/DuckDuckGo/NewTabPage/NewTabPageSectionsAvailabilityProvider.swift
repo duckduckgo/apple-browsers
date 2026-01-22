@@ -58,7 +58,7 @@ final class NewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabili
         return featureFlagger.isFeatureOn(.newTabPageOmnibar)
     }
 
-    var isNextStepsSingleCardIterationAvailable: Bool {
+    var isNextStepsListWidgetAvailable: Bool {
         return featureFlagger.isFeatureOn(.nextStepsListWidget)
     }
 

@@ -126,7 +126,7 @@ private extension NewTabPageNextStepsCardsActionHandler {
 
     func performDockAction(completion: (() -> Void)?) {
         pixelHandler.fireAddedToDockPixel()
-        if dockCustomizer.addToDock(), featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) {
+        if dockCustomizer.addToDock(), featureFlagger.isFeatureOn(.nextStepsListWidget) {
             completion?()
         }
     }

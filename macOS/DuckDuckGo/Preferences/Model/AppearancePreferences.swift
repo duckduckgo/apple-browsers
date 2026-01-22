@@ -323,7 +323,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var maxNextStepsCardsDemonstrationDays: Int {
-        (featureFlagger?.isFeatureOn(.nextStepsSingleCardIteration) ?? true) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
+        (featureFlagger?.isFeatureOn(.nextStepsListWidget) ?? true) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
     }
 
     /// Number of active usage days the New Tab Page "Next Steps" cards have been shown.

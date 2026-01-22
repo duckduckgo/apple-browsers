@@ -91,7 +91,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
 
     @MainActor func testWhenAskedToPerformActionForDockAndFeatureFlagEnabledThenItAddsAppToDockAndCallsRefreshCardsAction() {
         var cardsRefreshed = false
-        featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
         actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
 
         XCTAssertTrue(dockCustomizer.isAddedToDock)

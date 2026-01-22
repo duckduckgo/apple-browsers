@@ -51,7 +51,7 @@ final class NewTabPageSectionsAvailabilityProviderTests: XCTestCase {
     }
 
     func testIsNextStepsSingleCardIterationAvailable_WhenFeatureFlagIsOn_ReturnsTrue() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
         provider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
 
         XCTAssertTrue(provider.isNextStepsSingleCardIterationAvailable)

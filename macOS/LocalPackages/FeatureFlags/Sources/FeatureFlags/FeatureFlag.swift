@@ -275,9 +275,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
     case heuristicAction
 
-    /// Next Steps cards iteration with single card displayed on New Tab page
+    /// Next Steps cards widget with a single card displayed at a time on New Tab page
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
-    case nextStepsSingleCardIteration
+    case nextStepsListWidget
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -311,7 +311,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillPasswordSearchPrioritizeDomain,
                 .memoryPressureReporting,
                 .themes,
-                .nextStepsSingleCardIteration:
+                .nextStepsListWidget:
             true
         default:
             false
@@ -400,7 +400,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryPressureReporting,
                 .aiChatSync,
                 .heuristicAction,
-                .nextStepsSingleCardIteration:
+                .nextStepsListWidget:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -574,7 +574,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .heuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
-        case .nextStepsSingleCardIteration:
+        case .nextStepsListWidget:
             return .internalOnly()
         }
     }

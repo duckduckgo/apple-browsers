@@ -61,7 +61,7 @@ struct BrowsingMenuSheetView: View {
         static let websiteHeaderHeight: CGFloat = 56
     }
 
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) var dismiss
     @Environment(\.verticalSizeClass) var verticalSizeClass
 
     private let model: BrowsingMenuModel
@@ -98,12 +98,6 @@ struct BrowsingMenuSheetView: View {
             actionToPerform?()
             onDismiss(actionToPerform != nil)
         })
-        .floatingToolbar(
-            footerItems: model.footerItems,
-            actionToPerform: $actionToPerform,
-            dismiss: dismiss,
-            showsLabels: model.footerItems.count < 2
-        )
         .safeAreaInset(edge: .top, content: {
             if verticalSizeClass == .compact {
                 HStack {
@@ -410,84 +404,6 @@ private extension View {
         } else {
             self
         }
-    }
-}
-
-private extension View {
-    func floatingToolbar(
-        footerItems: [BrowsingMenuModel.Entry],
-        actionToPerform: Binding<(() -> Void)?>,
-        dismiss: DismissAction,
-        showsLabels: Bool
-    ) -> some View {
-        modifier(FloatingToolbarModifier(
-            footerItems: footerItems,
-            actionToPerform: actionToPerform,
-            dismiss: dismiss,
-            showsLabels: showsLabels
-        ))
-    }
-}
-
-private struct FloatingToolbarModifier: ViewModifier {
-    let footerItems: [BrowsingMenuModel.Entry]
-    @Binding var actionToPerform: (() -> Void)?
-    let dismiss: DismissAction
-    let showsLabels: Bool
-
-    func body(content: Content) -> some View {
-        if footerItems.isEmpty {
-            content
-        } else {
-            content
-                .overlay(alignment: .bottom, content: {
-                    let colors = [
-                        .clear,
-                        Color(designSystemColor: .background).opacity(0.9),
-                        Color(designSystemColor: .background)
-                    ]
-                    LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
-                    // This makes the gradient extend to the full width and into the bottom safe area.
-                        .ignoresSafeArea(edges: [.horizontal, .bottom])
-                    // Together with previous modifier, this guarantees 8pt above the content of `safeAreaInset` below.
-                        .frame(height: 8, alignment: .bottom)
-                        .frame(maxWidth: .infinity)
-                })
-                .safeAreaInset(edge: .bottom, content: {
-                    createBottomToolbar(labels: showsLabels)
-                })
-        }
-    }
-
-    @ViewBuilder
-    private func createBottomToolbar(labels: Bool = false) -> some View {
-        HStack(spacing: 4) {
-            ForEach(footerItems) { footerItem in
-                Button(action: {
-                    actionToPerform = { footerItem.action() }
-                    dismiss()
-                }) {
-                    HStack(spacing: 4) {
-                        Image(uiImage: footerItem.image)
-                            .tint(Color(designSystemColor: .icons))
-                        if labels {
-                            Text(footerItem.name)
-                                .daxBodyRegular()
-                                .foregroundStyle(Color(designSystemColor: .textPrimary))
-                        }
-                    }
-                    .padding(.vertical, Metrics.footerButtonVerticalPadding)
-                    .padding(.horizontal, 16)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(footerItem.accessibilityLabel ?? footerItem.name)
-            }
-        }
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, x: 0, y: 4)
-        .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 2, x: 0, y: 1)
-        .fixedSize(horizontal: true, vertical: true)
     }
 }
 

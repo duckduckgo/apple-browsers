@@ -446,6 +446,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
             let tierName = pendingPlan.tier.rawValue.capitalized
             let billingPeriodName = pendingPlan.billingPeriod.rawValue
             self.subscriptionDetails = UserText.preferencesSubscriptionPendingDowngradeCaption(tierName: tierName, billingPeriod: billingPeriodName, formattedDate: effectiveDate)
+            return
         }
 
         let hasActiveTrialOffer = subscription.hasActiveTrialOffer

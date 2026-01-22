@@ -54,5 +54,7 @@ final class MemoryUsageTests: XCTestCase {
             application.cleanExportMemoryStats()
             stopMeasuring()
         }
+
+        addStatsAttachments(metric: memoryMetric)
     }
 }

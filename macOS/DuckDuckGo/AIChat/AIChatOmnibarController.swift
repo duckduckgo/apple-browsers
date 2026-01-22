@@ -41,6 +41,7 @@ final class AIChatOmnibarController {
     private let promptHandler: AIChatPromptHandler
     private let tabCollectionViewModel: TabCollectionViewModel
     private let featureFlagger: FeatureFlagger
+    private let searchPreferencesPersistor: SearchPreferencesPersistor
     private let suggestionsReader: AIChatSuggestionsReading?
     private var cancellables = Set<AnyCancellable>()
     private var sharedTextStateCancellable: AnyCancellable?
@@ -51,9 +52,10 @@ final class AIChatOmnibarController {
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
     let suggestionsViewModel = AIChatSuggestionsViewModel()
 
-    /// Whether the suggestions feature is enabled
+    /// Whether the suggestions feature is enabled.
+    /// Requires both the feature flag and the autocomplete setting to be on.
     var isSuggestionsEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatSuggestions)
+        featureFlagger.isFeatureOn(.aiChatSuggestions) && searchPreferencesPersistor.showAutocompleteSuggestions
     }
 
     /// Gets the shared text state from the current tab's view model
@@ -68,12 +70,14 @@ final class AIChatOmnibarController {
         tabCollectionViewModel: TabCollectionViewModel,
         promptHandler: AIChatPromptHandler = .shared,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        searchPreferencesPersistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor(),
         suggestionsReader: AIChatSuggestionsReading? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.tabCollectionViewModel = tabCollectionViewModel
         self.promptHandler = promptHandler
         self.featureFlagger = featureFlagger
+        self.searchPreferencesPersistor = searchPreferencesPersistor
         self.suggestionsReader = suggestionsReader
 
         subscribeToSelectedTabViewModel()

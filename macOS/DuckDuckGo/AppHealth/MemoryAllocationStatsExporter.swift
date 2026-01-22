@@ -19,6 +19,9 @@
 import Foundation
 import Darwin
 
+/// Represents the Memory Allocations Stats, at a given moment.
+/// - Important: For simplicity reasons, this Structure is duplicated in the target `MemoryUsageTests`. Please do make sure to keep both stuctures in sync!
+///
 struct MemoryAllocationStatsSnapshot: Codable {
     let processID: pid_t
     let timestamp: Date
@@ -27,6 +30,8 @@ struct MemoryAllocationStatsSnapshot: Codable {
     let totalInUseMB: UInt64
 }
 
+/// Represents an Error that prevented us from exporting the Allocation Stats.
+///
 enum MemoryAllocationStatsError: Error {
     case errorAccessingZones
     case errorAccessingAddresses
@@ -34,6 +39,8 @@ enum MemoryAllocationStatsError: Error {
     case errorSavingSnapshot
 }
 
+/// Exports the`MemoryAllocationStatsSnapshot` as calculated in a given time.
+///
 final class MemoryAllocationStatsExporter {
 
     /// Exports a fresh MemoryAllocationStats to the specified URL

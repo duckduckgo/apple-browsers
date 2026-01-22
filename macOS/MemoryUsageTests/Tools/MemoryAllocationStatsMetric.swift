@@ -20,6 +20,9 @@ import Foundation
 import os.log
 import XCTest
 
+/// Represents the Memory Allocations Stats, at a given moment.
+/// - Important: For simplicity reasons, this Structure is duplicated in the targer `macOS Browser`. Please do make sure to keep both stuctures in sync!
+///
 struct MemoryAllocationStatsSnapshot: Codable {
     let processID: pid_t
     let timestamp: Date

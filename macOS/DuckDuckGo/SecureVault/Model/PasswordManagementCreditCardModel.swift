@@ -30,6 +30,12 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         return dateFormatter
     }()
 
+    static let expirationDateFormatter: DateFormatter = {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM/yyyy"
+        return dateFormatter
+    }()
+
     var onDirtyChanged: (Bool) -> Void
     var onSaveRequested: (Model) -> Void
     var onDeleteRequested: (Model) -> Void

@@ -93,6 +93,10 @@ extension UserText {
     static let pmCardVerificationValue = NSLocalizedString("pm.card.cvv", value: "CVV", comment: "Label for CVV title")
     static let pmCardExpiration = NSLocalizedString("pm.card.expiration-date", value: "Expiration Date", comment: "Label for expiration date title")
     static let pmCardExpiresFormat = NSLocalizedString("pm.card.expires.format", value: "Expires: %@", comment: "Label for credit card expiration date. %@ will be replaced with the formatted date (e.g., '02/2025')")
+    static let pmCardNicknamePlaceholder = NSLocalizedString("pm.card.placeholder.nickname", value: "Card Nickname", comment: "Placeholder for a field showing the nickname given to a credit card by the user")
+    static let pmCardNumberPlaceholder = NSLocalizedString("pm.card.placeholder.number", value: "Required", comment: "Placeholder for a field showing the card number")
+    static let pmCardholderNamePlaceholder = NSLocalizedString("pm.card.placeholder.cardholder-name", value: "Name on card", comment: "Placeholder for a field showing the cardholder name")
+    static let pmCardVerificationValuePlaceholder = NSLocalizedString("pm.card.placeholder.cvv", value: "Security code", comment: "Placeholder for a field showing the CVV")
 
     static let pmIdentification = NSLocalizedString("pm.identification", value: "Identification", comment: "Label for identification title")
     static let pmFirstName = NSLocalizedString("pm.name.first", value: "First Name", comment: "Label for first name title")

@@ -71097,6 +71097,54 @@
         }
       }
     },
+    "pm.card.placeholder.cardholder-name" : {
+      "comment" : "Placeholder for a field showing the cardholder name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Name on card"
+          }
+        }
+      }
+    },
+    "pm.card.placeholder.cvv" : {
+      "comment" : "Placeholder for a field showing the CVV",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Security code"
+          }
+        }
+      }
+    },
+    "pm.card.placeholder.nickname" : {
+      "comment" : "Placeholder for a field showing the nickname given to a credit card by the user",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Card Nickname"
+          }
+        }
+      }
+    },
+    "pm.card.placeholder.number" : {
+      "comment" : "Placeholder for a field showing the card number",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Required"
+          }
+        }
+      }
+    },
     "pm.day" : {
       "comment" : "Label for Day title",
       "extractionState" : "extracted_with_value",

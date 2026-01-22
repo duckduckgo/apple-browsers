@@ -147,11 +147,16 @@ final class AIChatContextualSheetCoordinator {
     }
 
     /// Updates page context in the store and notifies UI to refresh.
+    /// If there's an active chat, pushes context to the frontend. Otherwise, updates the context chip.
     ///
     /// - Parameter context: The page context data to set.
     func updatePageContext(_ context: AIChatPageContextData) {
         pageContextStore.update(context)
-        sheetViewController?.didReceivePageContext()
+        if hasActiveChat {
+            sheetViewController?.pushPageContextToFrontend(context)
+        } else {
+            sheetViewController?.didReceivePageContext()
+        }
     }
 
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.

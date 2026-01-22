@@ -109,6 +109,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212227266479719
     case aiChatOmnibarCluster
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
+    case aiChatSuggestions
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
     case aiChatOmnibarOnboarding
 
@@ -358,6 +361,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
+                .aiChatSuggestions,
                 .aiChatOmnibarOnboarding,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
@@ -481,6 +485,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarToggle))
         case .aiChatOmnibarCluster:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
+        case .aiChatSuggestions:
+            return .remoteReleasable(.feature(.duckAiChatHistory))
         case .aiChatOmnibarOnboarding:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarOnboarding))
         case .osSupportForceUnsupportedMessage:

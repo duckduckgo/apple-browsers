@@ -19,6 +19,7 @@
 
 import UserScript
 import Foundation
+import Combine
 import PrivacyConfig
 import RemoteMessaging
 import AIChat
@@ -72,6 +73,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?)
+    func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?)
     func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable?
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -100,6 +102,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let syncHandler: AIChatSyncHandling
     private let featureFlagger: FeatureFlagger
+    private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
+    private var cancellables = Set<AnyCancellable>()
     private let migrationStore = AIChatMigrationStore()
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
@@ -120,6 +124,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
         self.aichatFullModeFeature = aichatFullModeFeature
         self.aichatContextualModeFeature = aichatContextualModeFeature
+        setUpSyncStatusObserver()
     }
 
     enum AIChatKeys {
@@ -245,6 +250,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.pageContextHandler = handler
     }
 
+    func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?) {
+        self.syncStatusChangedHandler = handler
+    }
+
     // Workaround for WKWebView: see https://app.asana.com/1/137249556945/task/1211361207345641/comment/1211365575147531?focus=true
     func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable? {
         guard let paramsDict = params as? [String: Any] else {
@@ -317,6 +326,26 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     // MARK: - Sync
 
+    private func setUpSyncStatusObserver() {
+        syncHandler.authStatePublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleSyncStatusChanged()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func handleSyncStatusChanged() {
+        guard let syncStatusChangedHandler else { return }
+        do {
+            let status = try syncHandler.getSyncStatus(featureAvailable: featureFlagger.isFeatureOn(.aiChatSync))
+            syncStatusChangedHandler(status)
+        } catch {
+            return
+        }
+    }
+
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable? {
         do {
             return AIChatPayloadResponse(payload: try syncHandler.getSyncStatus(featureAvailable: featureFlagger.isFeatureOn(.aiChatSync)))
@@ -327,7 +356,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor func getScopedSyncAuthToken(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard featureFlagger.isFeatureOn(.aiChatSync) else {
-            return AIChatErrorResponse(reason: "sync disabled")
+            return AIChatErrorResponse(reason: "sync unavailable")
         }
 
         do {
@@ -356,7 +385,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func encryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
         guard featureFlagger.isFeatureOn(.aiChatSync) else {
-            return AIChatErrorResponse(reason: "sync disabled")
+            return AIChatErrorResponse(reason: "sync unavailable")
         }
 
         guard syncHandler.isSyncTurnedOn() else {
@@ -385,7 +414,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func decryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
         guard featureFlagger.isFeatureOn(.aiChatSync) else {
-            return AIChatErrorResponse(reason: "sync disabled")
+            return AIChatErrorResponse(reason: "sync unavailable")
         }
 
         guard syncHandler.isSyncTurnedOn() else {

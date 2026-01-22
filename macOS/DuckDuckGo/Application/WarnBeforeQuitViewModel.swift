@@ -39,10 +39,32 @@ enum ConfirmationAction {
     }
 }
 
+enum ProgressState: Equatable {
+    case idle                           // 0%, no animation
+    case animating(duration: TimeInterval)  // animating to 100% with specified duration
+    case complete                       // 100%, no animation
+    case resetting                      // animating back to 0% with spring
+
+    var targetProgress: CGFloat {
+        switch self {
+        case .idle, .resetting: return 0
+        case .animating, .complete: return 1.0
+        }
+    }
+
+    var animationDuration: TimeInterval {
+        switch self {
+        case .animating(let duration): return duration
+        default: return 0.42 // Default, not actually used
+        }
+    }
+}
+
 @MainActor
 final class WarnBeforeQuitViewModel: ObservableObject {
 
-    @Published private(set) var progress: CGFloat = 0
+    @Published private(set) var progressState: ProgressState = .idle
+    @Published var balloonAnchorPosition: CGPoint = .zero
     let action: ConfirmationAction
     private let startupPreferences: StartupPreferences?
 
@@ -60,17 +82,39 @@ final class WarnBeforeQuitViewModel: ObservableObject {
         }
     }
 
-    init(action: ConfirmationAction = .quit, startupPreferences: StartupPreferences? = nil) {
+    init(action: ConfirmationAction = .quit,
+         startupPreferences: StartupPreferences? = nil,
+         onDontAskAgain: (() -> Void)? = nil,
+         onHoverChange: ((Bool) -> Void)? = nil) {
         self.action = action
         self.startupPreferences = startupPreferences
+        self.onDontAskAgain = onDontAskAgain
+        self.onHoverChange = onHoverChange
     }
 
     func updateProgress(_ newProgress: CGFloat) {
-        progress = min(1.0, max(0, newProgress))
+        // For backwards compatibility if needed
+        if newProgress == 0 {
+            progressState = .idle
+        } else if newProgress >= 1.0 {
+            progressState = .complete
+        }
+    }
+
+    func startProgress(duration: TimeInterval = 0.42) {
+        progressState = .animating(duration: duration)
+    }
+
+    func startProgressQuick() {
+        progressState = .animating(duration: 0.1)
     }
 
     func resetProgress() {
-        progress = 0
+        progressState = .resetting
+    }
+
+    func completeProgress() {
+        progressState = .complete
     }
 
     func dontAskAgainTapped() {
@@ -79,5 +123,9 @@ final class WarnBeforeQuitViewModel: ObservableObject {
 
     func hoverChanged(_ isHovering: Bool) {
         onHoverChange?(isHovering)
+    }
+
+    func transitionToIdle() {
+        progressState = .idle
     }
 }

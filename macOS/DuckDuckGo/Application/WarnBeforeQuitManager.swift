@@ -33,16 +33,19 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     enum Constants {
         /// Time required to hold the quit shortcut to quit the app (in seconds)
-        static let requiredHoldDuration: TimeInterval = 0.42
+        static let requiredHoldDuration: TimeInterval = 0.6
 
         /// Additional buffer time to allow progress animation to complete (in seconds)
         static let animationBufferDuration: TimeInterval = 0.1
 
         /// Time to wait after release for another quit shortcut press (in seconds)
-        static let hideawayDuration: TimeInterval = 1.5
+        static let hideawayDuration: TimeInterval = 4.0
 
         /// Extended time to wait when mouse is hovering over the overlay (in seconds)
         static let extendedHideawayDuration: TimeInterval = 4.0
+
+        /// Threshold before progress bar starts filling (prevents immediate visual feedback on quick press)
+        static let progressThreshold: TimeInterval = 0.08
     }
 
     /// The keyboard shortcut to monitor for confirmation (⌘Q, ⌘W…)
@@ -69,7 +72,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         case idle
         case holding(startTime: TimeInterval, targetTime: TimeInterval)
         case waitingForSecondPress(hideUntil: TimeInterval)
-        case completed(shouldQuit: Bool)
+        case completing(startTime: TimeInterval, targetTime: TimeInterval) // Quick animation to 100%
+        case completed(shouldProceed: Bool)
     }
 
     private var currentState: State = .idle {
@@ -92,6 +96,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     private var onHoverChange: ((Bool) -> Void)?
     // If mouse is hovering over the overlay on show
     private var isHovering = false
+    // Track whether the shortcut key is still being held (to wait for release in delegate callback)
+    private var isShortcutKeyHeld = false
 
     // MARK: - Initialization
 
@@ -123,6 +129,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     deinit {
         stateSubject.finish()
+        DispatchQueue.main.async {
+            (NSApp as? Application)?.eventInterceptor = nil
+        }
     }
 
     // MARK: - Public
@@ -148,38 +157,63 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
         // Show confirmation and wait synchronously for hold completion or release
         switch trackEventsForHoldingPhase() {
-        case .completed(let shouldQuit):
+        case .completed(let shouldProceed) where action == .quit:
             // Fire pixel and wait for completion before terminating
-            /* WHEN THE PIXEL IS REMOVED, REPLACE WITH:
-            currentState = .completed(shouldQuit: shouldQuit)
-            return .sync(shouldQuit ? .next : .cancel)
+            /* WHEN THE PIXEL IS REMOVED, REMOVE THIS CASE!
             */
-            return .async(Task {
-                if self.action == .quit {
-                    let pixel = shouldQuit ? GeneralPixel.warnBeforeQuitQuit : GeneralPixel.warnBeforeQuitCancelled
-                    await self.pixelFiring?.fireAndWait(pixel, frequency: .standard)
-                }
-                self.currentState = .completed(shouldQuit: shouldQuit)
-                return shouldQuit ? .next : .cancel
-            })
+            let task = Task<TerminationDecision, Never> {
+                let pixel = shouldProceed ? GeneralPixel.warnBeforeQuitQuit : GeneralPixel.warnBeforeQuitCancelled
+                await self.pixelFiring?.fireAndWait(pixel, frequency: .standard)
+
+                self.currentState = .completed(shouldProceed: true)
+                return .next
+            }
+            if shouldProceed {
+                // Install event interceptor to prevent beeps for repeated shortcut key events,
+                // reset in the `deciderSequenceCompleted` delegate callback
+                installEventInterceptor()
+                return .async(task) // wait for the pixel request then quit
+            } else {
+                return .sync(.cancel) // return .sync, Task runs async
+            }
+
+        case .completed(let shouldProceed):
+            if shouldProceed {
+                // Install event interceptor to prevent beeps for repeated shortcut key events
+                installEventInterceptor()
+            }
+            currentState = .completed(shouldProceed: shouldProceed)
+            return .sync(shouldProceed ? .next : .cancel)
+
         case .waitingForSecondPress: break
         }
 
         // Shortcut released early - wait for second press asynchronously
         Logger.general.debug("WarnBeforeQuitManager: Key released early, entering async wait")
         return .async(Task {
-            let shouldQuit = await waitForSecondPress()
+            let shouldProceed = await waitForSecondPress()
 
             // Fire pixel based on result (only for quit, not close tab)
             if self.action == .quit {
-                let pixel = shouldQuit ? GeneralPixel.warnBeforeQuitQuit : GeneralPixel.warnBeforeQuitCancelled
+                let pixel = shouldProceed ? GeneralPixel.warnBeforeQuitQuit : GeneralPixel.warnBeforeQuitCancelled
                 await self.pixelFiring?.fireAndWait(pixel, frequency: .standard)
             }
 
-            // Emit completed state - UI will hide overlay
-            currentState = .completed(shouldQuit: shouldQuit)
+            // Install event interceptor to prevent beeps for repeated shortcut key events,
+            // reset in the `deciderSequenceCompleted` delegate callback
+            if shouldProceed {
+                installEventInterceptor()
+            }
 
-            let decision: TerminationDecision = shouldQuit ? .next : .cancel
+            // Emit completed state - UI will hide overlay
+            currentState = .completed(shouldProceed: shouldProceed)
+
+            // Wait for a brief delay for animation to complete before quitting
+            if shouldProceed && action == .quit {
+                try? await Task.sleep(interval: 0.3)
+            }
+
+            let decision: TerminationDecision = shouldProceed ? .next : .cancel
             Logger.general.debug("WarnBeforeQuitManager: Returning \(String(describing: decision))")
             return decision
         })
@@ -188,15 +222,17 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     // MARK: - Private
 
     private enum HoldingPhaseResult {
-        case completed(shouldQuit: Bool)
+        case completed(shouldProceed: Bool)
         case waitingForSecondPress
     }
+
     /// Waits synchronously for user to either hold Cmd+[Q|W] long enough or release it early.
     /// - Returns: `true` if held long enough or "Don't Show Again" clicked, `false` if released early
     private func trackEventsForHoldingPhase() -> HoldingPhaseResult {
         // Start hold timer - UI will show overlay with progress
         let startTime = now().timeIntervalSinceReferenceDate
-        currentState = .holding(startTime: startTime, targetTime: startTime + Constants.requiredHoldDuration)
+        // Set targetTime to include animation buffer so progress reaches 100% when we actually complete
+        currentState = .holding(startTime: startTime, targetTime: startTime + Constants.requiredHoldDuration + Constants.animationBufferDuration)
 
         // Fire shown pixel (only for quit, not close tab)
         if action == .quit {
@@ -212,13 +248,17 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             // Check if warning was disabled during the loop
             guard isWarningEnabled() else {
                 Logger.general.debug("WarnBeforeQuitManager: Warning disabled during hold, exiting loop")
-                return .completed(shouldQuit: true)
+                return .completed(shouldProceed: true)
             }
 
             guard let event = eventReceiver([.keyUp, .keyDown, .flagsChanged], deadline, .eventTracking, true) else {
                 // If no event, we reached the deadline - hold completed
                 Logger.general.debug("WarnBeforeQuitManager: Hold completed by deadline")
-                return .completed(shouldQuit: true)
+
+                // Mark that shortcut key is still held - will wait for release in delegate callback
+                isShortcutKeyHeld = true
+
+                return .completed(shouldProceed: true)
             }
 
             switch event.type {
@@ -235,7 +275,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 // Other key pressed during hold - cancel and pass through
                 Logger.general.debug("WarnBeforeQuitManager: Other key pressed during hold, canceling")
                 NSApp.postEvent(event, atStart: true)
-                return .completed(shouldQuit: false)
+                return .completed(shouldProceed: false)
 
             case .keyUp where event.charactersIgnoringModifiers == keyEquivalent.charCode:
                 // Shortcut key was released - need to wait for second press
@@ -249,7 +289,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         }
 
         // Loop ended, deadline reached - hold completed
-        return .completed(shouldQuit: true)
+        return .completed(shouldProceed: true)
     }
 
     private func waitForSecondPress() async -> Bool {
@@ -268,20 +308,20 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 var resumed = false
 
                 @MainActor
-                func resume(with shouldQuitDecision: Bool) {
+                func resume(with shouldProceedDecision: Bool) {
                     guard !resumed else { return }
                     resumed = true
 
-                    // If warning was just disabled (e.g., by clicking "Don't Ask Again"), allow quitting
-                    let shouldQuit = shouldQuitDecision || !isWarningEnabled()
-                    Logger.general.debug("WarnBeforeQuitManager: Resuming with shouldQuit=\(shouldQuit)\(!shouldQuitDecision && shouldQuit ? " (warning disabled)" : "")")
+                    // If warning was just disabled (e.g., by clicking "Don't Ask Again"), allow action to proceed
+                    let shouldProceed = shouldProceedDecision || !isWarningEnabled()
+                    Logger.general.debug("WarnBeforeQuitManager: Resuming with shouldProceed=\(shouldProceed)\(!shouldProceedDecision && shouldProceed ? " (warning disabled)" : "")")
 
                     timer?.invalidate()
                     cancellationState.onCancel = nil
                     onHoverChange = nil
                     (NSApp as? Application)?.eventInterceptor = nil
 
-                    continuation.resume(returning: shouldQuit)
+                    continuation.resume(returning: shouldProceed)
                 }
 
                 // Set up cancellation handler
@@ -322,6 +362,15 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
                     case .keyDown where event.keyEquivalent == shortcutKeyEquivalent:
                         Logger.general.debug("WarnBeforeQuitManager: ⌘'\(shortcutKeyEquivalent.charCode)' pressed again")
+
+                        // Animate progress to 100% quickly
+                        let animationDuration: TimeInterval = 0.1
+                        let startTime = self.now().timeIntervalSinceReferenceDate
+                        self.currentState = .completing(startTime: startTime, targetTime: startTime + animationDuration)
+
+                        // Mark that shortcut key is still held - will wait for release in delegate callback
+                        self.isShortcutKeyHeld = true
+
                         resume(with: true)
                         return nil // Consume event
 
@@ -352,6 +401,71 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             cancellationState.onCancel?()
         }
     }
+
+    func deciderSequenceCompleted(shouldProceed: Bool) {
+        Logger.general.debug("WarnBeforeQuitManager: deciderSequenceCompleted(shouldProceed: \(shouldProceed))")
+
+        // Wait for shortcut key release if it was still held when decision was made
+        if shouldProceed && isShortcutKeyHeld {
+            waitForKeyRelease(keyEquivalent: shortcutKeyEquivalent)
+            isShortcutKeyHeld = false
+        }
+        // Reset event interceptor set to prevent beeps for repeated shortcut key events
+        // Done on the next pass to let the event loop process any queued repeated key events before resetting the interceptor
+        DispatchQueue.main.async {
+            (NSApp as? Application)?.eventInterceptor = nil
+        }
+    }
+
+    /// Wait for the shortcut key to be released (to prevent sending it to the next active app)
+    private func waitForKeyRelease(keyEquivalent: NSEvent.KeyEquivalent) {
+        // Safety check: If the key is already released, don't wait
+        let currentModifiers = NSEvent.modifierFlags.deviceIndependent
+        guard currentModifiers.intersection(keyEquivalent.modifierMask) == keyEquivalent.modifierMask else {
+            Logger.general.debug("WarnBeforeQuitManager: Key already released, no need to wait")
+            return
+        }
+
+        Logger.general.debug("WarnBeforeQuitManager: Waiting for key release...")
+
+        // Set a sanity timeout to prevent indefinite waiting (e.g., if user keeps holding key for a long time)
+        let timeout: TimeInterval = 3.0
+        let deadline = now().addingTimeInterval(timeout)
+
+        while true {
+            // Wait for key up or flags changed events with timeout
+            guard let event = eventReceiver([.keyUp, .flagsChanged], deadline, .eventTracking, true) else {
+                // Timeout reached - stop waiting
+                Logger.general.debug("WarnBeforeQuitManager: Key release wait timed out after \(timeout)s")
+                return
+            }
+
+            switch event.type {
+            case .keyUp where event.charactersIgnoringModifiers == keyEquivalent.charCode:
+                Logger.general.debug("WarnBeforeQuitManager: Key released")
+                return
+
+            case .flagsChanged where event.modifierFlags.deviceIndependent.intersection(keyEquivalent.modifierMask) != keyEquivalent.modifierMask:
+                Logger.general.debug("WarnBeforeQuitManager: Modifier released")
+                return
+
+            default:
+                // Consume all other events to prevent them from reaching other apps
+                continue
+            }
+        }
+    }
+
+    /// Install event interceptor to prevent beeps from repeated shortcut key presses
+    private func installEventInterceptor() {
+        (NSApp as? Application)?.eventInterceptor = { [shortcutKeyEquivalent] event in
+            if event.type == .keyDown && event.keyEquivalent == shortcutKeyEquivalent {
+                return nil // consume event to prevent beep
+            }
+            return event // pass through other events
+        }
+    }
+
 }
 
 // MARK: - PixelFiring Async Extension

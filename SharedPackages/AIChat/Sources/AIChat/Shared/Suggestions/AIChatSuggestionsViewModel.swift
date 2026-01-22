@@ -20,13 +20,12 @@ import Combine
 import Foundation
 
 /// View model that manages AI chat suggestions displayed in the omnibar.
-/// Handles filtering based on user input and keyboard-based selection.
+/// Displays suggestions as returned by the server (no local filtering).
 public final class AIChatSuggestionsViewModel: ObservableObject {
 
     // MARK: - Published Properties
 
-    /// The currently filtered suggestions to display.
-    /// Pinned chats appear first, followed by recent chats.
+    /// The suggestions to display (pinned first, then recent).
     @Published public private(set) var filteredSuggestions: [AIChatSuggestion] = []
 
     /// The index of the currently selected suggestion (for keyboard navigation).
@@ -36,12 +35,6 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
     /// Indicates whether keyboard navigation is currently active.
     /// Used to suppress mouse hover while navigating with keyboard.
     @Published public private(set) var isKeyboardNavigating: Bool = false
-
-    // MARK: - Private Properties
-
-    private var pinnedChats: [AIChatSuggestion] = []
-    private var recentChats: [AIChatSuggestion] = []
-    private var currentQuery: String = ""
 
     // MARK: - Computed Properties
 
@@ -64,44 +57,13 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
 
     // MARK: - Data Management
 
-    /// Updates the pinned chats list.
-    /// - Parameter chats: The new list of pinned chats (max 5 recommended).
-    public func setPinnedChats(_ chats: [AIChatSuggestion]) {
-        pinnedChats = chats
-        applyFilter()
-    }
-
-    /// Updates the recent chats list.
-    /// - Parameter chats: The new list of recent chats (max 5 recommended).
-    public func setRecentChats(_ chats: [AIChatSuggestion]) {
-        recentChats = chats
-        applyFilter()
-    }
-
-    /// Convenience method to set both pinned and recent chats at once.
+    /// Sets the suggestions to display.
+    /// Filtering is done server-side, so we just display what we receive.
     /// - Parameters:
     ///   - pinned: The list of pinned chats.
     ///   - recent: The list of recent chats.
     public func setChats(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
-        pinnedChats = pinned
-        recentChats = recent
-        applyFilter()
-    }
-
-    // MARK: - Filtering
-
-    /// Updates the filter query and refreshes the filtered suggestions.
-    /// - Parameter query: The search query to filter suggestions by.
-    public func updateQuery(_ query: String) {
-        currentQuery = query
-        applyFilter()
-    }
-
-    private func applyFilter() {
-        let filteredPinned = pinnedChats.filter { $0.matches(query: currentQuery) }
-        let filteredRecent = recentChats.filter { $0.matches(query: currentQuery) }
-
-        filteredSuggestions = filteredPinned + filteredRecent
+        filteredSuggestions = pinned + recent
 
         // Reset selection if it's now out of bounds
         if let index = selectedIndex, index >= filteredSuggestions.count {
@@ -189,20 +151,8 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
 
     // MARK: - Reset
 
-    /// Resets the view model state, clearing query and selection.
-    public func reset() {
-        currentQuery = ""
-        selectedIndex = nil
-        isKeyboardNavigating = false
-        applyFilter()
-    }
-
     /// Clears all chats and resets the view model completely.
-    /// Use this when the feature is disabled.
     public func clearAllChats() {
-        pinnedChats = []
-        recentChats = []
-        currentQuery = ""
         selectedIndex = nil
         isKeyboardNavigating = false
         filteredSuggestions = []

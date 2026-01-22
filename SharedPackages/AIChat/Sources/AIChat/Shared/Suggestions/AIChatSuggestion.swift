@@ -73,18 +73,6 @@ extension AIChatSuggestion {
     }
 }
 
-// MARK: - Filtering
-
-extension AIChatSuggestion {
-
-    /// Returns true if the suggestion matches the given query.
-    /// Matching is case-insensitive and checks if the title contains the query.
-    func matches(query: String) -> Bool {
-        guard !query.isEmpty else { return true }
-        return title.localizedCaseInsensitiveContains(query)
-    }
-}
-
 // MARK: - Mock Data
 
 extension AIChatSuggestion {

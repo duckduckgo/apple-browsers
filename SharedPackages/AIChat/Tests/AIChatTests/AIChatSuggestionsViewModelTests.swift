@@ -51,36 +51,6 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     // MARK: - Setting Chats Tests
 
-    func testSetPinnedChats_UpdatesFilteredSuggestions() {
-        // Given
-        let pinnedChats = [
-            makeSuggestion(id: "1", title: "Pinned 1", isPinned: true),
-            makeSuggestion(id: "2", title: "Pinned 2", isPinned: true)
-        ]
-
-        // When
-        viewModel.setPinnedChats(pinnedChats)
-
-        // Then
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
-        XCTAssertTrue(viewModel.hasSuggestions)
-    }
-
-    func testSetRecentChats_UpdatesFilteredSuggestions() {
-        // Given
-        let recentChats = [
-            makeSuggestion(id: "1", title: "Recent 1"),
-            makeSuggestion(id: "2", title: "Recent 2"),
-            makeSuggestion(id: "3", title: "Recent 3")
-        ]
-
-        // When
-        viewModel.setRecentChats(recentChats)
-
-        // Then
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 3)
-    }
-
     func testSetChats_CombinesPinnedAndRecent() {
         // Given
         let pinnedChats = [makeSuggestion(id: "p1", title: "Pinned", isPinned: true)]
@@ -91,82 +61,39 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
+        XCTAssertTrue(viewModel.hasSuggestions)
         // Pinned should come first
         XCTAssertEqual(viewModel.filteredSuggestions[0].id, "p1")
         XCTAssertEqual(viewModel.filteredSuggestions[1].id, "r1")
     }
 
-    // MARK: - Filtering Tests
-
-    func testUpdateQuery_FiltersResults() {
+    func testSetChats_ReplacesExistingChats() {
         // Given
         viewModel.setChats(
-            pinned: [makeSuggestion(id: "p1", title: "Swift programming", isPinned: true)],
+            pinned: [makeSuggestion(id: "old", title: "Old", isPinned: true)],
+            recent: []
+        )
+        XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
+
+        // When
+        viewModel.setChats(
+            pinned: [],
             recent: [
-                makeSuggestion(id: "r1", title: "Python basics"),
-                makeSuggestion(id: "r2", title: "Swift UI tutorial")
+                makeSuggestion(id: "new1", title: "New 1"),
+                makeSuggestion(id: "new2", title: "New 2")
             ]
         )
 
-        // When
-        viewModel.updateQuery("Swift")
-
         // Then
         XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
-        XCTAssertTrue(viewModel.filteredSuggestions.allSatisfy { $0.title.contains("Swift") })
-    }
-
-    func testUpdateQuery_WithEmptyQuery_ShowsAllResults() {
-        // Given
-        viewModel.setChats(
-            pinned: [makeSuggestion(id: "p1", title: "Pinned", isPinned: true)],
-            recent: [makeSuggestion(id: "r1", title: "Recent")]
-        )
-        viewModel.updateQuery("Pinned")
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
-
-        // When
-        viewModel.updateQuery("")
-
-        // Then
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
-    }
-
-    func testUpdateQuery_WithNoMatches_ReturnsEmpty() {
-        // Given
-        viewModel.setChats(
-            pinned: [makeSuggestion(id: "p1", title: "Pinned", isPinned: true)],
-            recent: [makeSuggestion(id: "r1", title: "Recent")]
-        )
-
-        // When
-        viewModel.updateQuery("xyz123nonexistent")
-
-        // Then
-        XCTAssertTrue(viewModel.filteredSuggestions.isEmpty)
-        XCTAssertFalse(viewModel.hasSuggestions)
-    }
-
-    func testUpdateQuery_IsCaseInsensitive() {
-        // Given
-        viewModel.setRecentChats([makeSuggestion(id: "1", title: "Swift Programming")])
-
-        // When/Then
-        viewModel.updateQuery("swift")
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
-
-        viewModel.updateQuery("SWIFT")
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
-
-        viewModel.updateQuery("SwIfT")
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
+        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "new1")
     }
 
     // MARK: - Selection Tests
 
     func testSelectNext_WithNoSelection_SelectsFirst() {
         // Given
-        viewModel.setRecentChats([
+        viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First"),
             makeSuggestion(id: "2", title: "Second")
         ])
@@ -182,7 +109,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectNext_WithSelection_MovesToNext() {
         // Given
-        viewModel.setRecentChats([
+        viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First"),
             makeSuggestion(id: "2", title: "Second"),
             makeSuggestion(id: "3", title: "Third")
@@ -199,7 +126,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectNext_AtLastItem_ReturnsFalse() {
         // Given
-        viewModel.setRecentChats([
+        viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First"),
             makeSuggestion(id: "2", title: "Second")
         ])
@@ -225,7 +152,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectPrevious_WithSelection_MovesToPrevious() {
         // Given
-        viewModel.setRecentChats([
+        viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First"),
             makeSuggestion(id: "2", title: "Second"),
             makeSuggestion(id: "3", title: "Third")
@@ -243,7 +170,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectPrevious_AtFirstItem_ClearsSelection() {
         // Given
-        viewModel.setRecentChats([
+        viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First"),
             makeSuggestion(id: "2", title: "Second")
         ])
@@ -259,7 +186,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectPrevious_WithNoSelection_SelectsLastItem() {
         // Given
-        viewModel.setRecentChats([
+        viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First"),
             makeSuggestion(id: "2", title: "Second"),
             makeSuggestion(id: "3", title: "Third")
@@ -284,7 +211,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectAtIndex_WithValidIndex_SelectsItem() {
         // Given
-        viewModel.setRecentChats([
+        viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First"),
             makeSuggestion(id: "2", title: "Second"),
             makeSuggestion(id: "3", title: "Third")
@@ -300,7 +227,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectAtIndex_WithInvalidIndex_DoesNothing() {
         // Given
-        viewModel.setRecentChats([makeSuggestion(id: "1", title: "First")])
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
 
         // When
         viewModel.select(at: 5)
@@ -315,7 +242,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
             makeSuggestion(id: "1", title: "First"),
             makeSuggestion(id: "2", title: "Second")
         ]
-        viewModel.setRecentChats(suggestions)
+        viewModel.setChats(pinned: [], recent: suggestions)
         viewModel.selectNext()
         viewModel.selectNext()
 
@@ -327,7 +254,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testClearSelection_RemovesSelection() {
         // Given
-        viewModel.setRecentChats([makeSuggestion(id: "1", title: "First")])
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
         viewModel.selectNext()
         XCTAssertNotNil(viewModel.selectedIndex)
 
@@ -341,7 +268,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testClearSelection_WithKeepMouseSuppressed_KeepsKeyboardNavigatingTrue() {
         // Given
-        viewModel.setRecentChats([makeSuggestion(id: "1", title: "First")])
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
         viewModel.selectNext()
         XCTAssertTrue(viewModel.isKeyboardNavigating)
 
@@ -357,7 +284,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testAcknowledgeMouseMovement_DisablesKeyboardNavigating() {
         // Given
-        viewModel.setRecentChats([makeSuggestion(id: "1", title: "First")])
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
         viewModel.selectNext()
         XCTAssertTrue(viewModel.isKeyboardNavigating)
 
@@ -371,7 +298,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testAcknowledgeMouseMovement_WhenNotKeyboardNavigating_DoesNothing() {
         // Given
-        viewModel.setRecentChats([makeSuggestion(id: "1", title: "First")])
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
         viewModel.select(at: 0) // Mouse selection
         XCTAssertFalse(viewModel.isKeyboardNavigating)
 
@@ -391,28 +318,6 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
         // Then
         XCTAssertTrue(viewModel.isKeyboardNavigating)
-    }
-
-    // MARK: - Reset Tests
-
-    func testReset_ClearsQueryAndSelection() {
-        // Given
-        viewModel.setRecentChats([
-            makeSuggestion(id: "1", title: "Swift"),
-            makeSuggestion(id: "2", title: "Python")
-        ])
-        viewModel.updateQuery("Swift")
-        viewModel.selectNext()
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
-        XCTAssertNotNil(viewModel.selectedIndex)
-
-        // When
-        viewModel.reset()
-
-        // Then
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 2) // All suggestions visible
-        XCTAssertNil(viewModel.selectedIndex)
-        XCTAssertFalse(viewModel.isKeyboardNavigating)
     }
 
     // MARK: - Clear All Chats Tests
@@ -436,36 +341,38 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isKeyboardNavigating)
     }
 
-    // MARK: - Selection Adjustment on Filter Tests
+    // MARK: - Selection Adjustment Tests
 
-    func testFilteringAdjustsSelectionWhenOutOfBounds() {
+    func testSetChats_AdjustsSelectionWhenOutOfBounds() {
         // Given
-        viewModel.setRecentChats([
-            makeSuggestion(id: "1", title: "Apple"),
-            makeSuggestion(id: "2", title: "Banana"),
-            makeSuggestion(id: "3", title: "Cherry")
+        viewModel.setChats(pinned: [], recent: [
+            makeSuggestion(id: "1", title: "First"),
+            makeSuggestion(id: "2", title: "Second"),
+            makeSuggestion(id: "3", title: "Third")
         ])
         viewModel.selectNext()
         viewModel.selectNext()
-        viewModel.selectNext() // Select Cherry (index 2)
+        viewModel.selectNext() // Select Third (index 2)
         XCTAssertEqual(viewModel.selectedIndex, 2)
 
-        // When: Filter to only show Apple
-        viewModel.updateQuery("Apple")
+        // When: Set fewer chats
+        viewModel.setChats(pinned: [], recent: [
+            makeSuggestion(id: "1", title: "First")
+        ])
 
         // Then: Selection should adjust to last valid index
         XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
         XCTAssertEqual(viewModel.selectedIndex, 0)
     }
 
-    func testFilteringClearsSelectionWhenNoResults() {
+    func testSetChats_ClearsSelectionWhenEmpty() {
         // Given
-        viewModel.setRecentChats([makeSuggestion(id: "1", title: "Apple")])
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
         viewModel.selectNext()
         XCTAssertEqual(viewModel.selectedIndex, 0)
 
-        // When: Filter to show no results
-        viewModel.updateQuery("xyz")
+        // When: Set empty chats
+        viewModel.setChats(pinned: [], recent: [])
 
         // Then
         XCTAssertTrue(viewModel.filteredSuggestions.isEmpty)

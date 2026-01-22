@@ -30,7 +30,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     private var mockDelegate: MockAIChatOmnibarControllerDelegate!
     private var mockTabOpener: MockAIChatTabOpener!
     private var featureFlagger: MockFeatureFlagger!
-    private var searchPreferencesPersistor: MockSearchPreferencesPersistor!
+    private var searchPreferencesPersistor: AIChatMockSearchPreferencesPersistor!
     private var tabCollectionViewModel: TabCollectionViewModel!
 
     override func setUp() {
@@ -38,7 +38,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         mockDelegate = MockAIChatOmnibarControllerDelegate()
         mockTabOpener = MockAIChatTabOpener()
         featureFlagger = MockFeatureFlagger()
-        searchPreferencesPersistor = MockSearchPreferencesPersistor()
+        searchPreferencesPersistor = AIChatMockSearchPreferencesPersistor()
         tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
 
         controller = AIChatOmnibarController(
@@ -289,6 +289,6 @@ private class MockAIChatOmnibarControllerDelegate: AIChatOmnibarControllerDelega
 
 // MARK: - Mock Search Preferences Persistor
 
-private class MockSearchPreferencesPersistor: SearchPreferencesPersistor {
+private class AIChatMockSearchPreferencesPersistor: SearchPreferencesPersistor {
     var showAutocompleteSuggestions: Bool = true
 }

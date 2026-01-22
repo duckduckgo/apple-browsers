@@ -151,7 +151,10 @@ final class AIChatSuggestionRowView: NSView {
     private func configure(with suggestion: AIChatSuggestion) {
         titleLabel.stringValue = suggestion.title
 
-        iconImageView.image = DesignSystemImages.Glyphs.Size24.chat
+        let icon = suggestion.isPinned
+            ? DesignSystemImages.Glyphs.Size16.pin
+            : DesignSystemImages.Glyphs.Size24.chat
+        iconImageView.image = icon
         iconImageView.contentTintColor = Constants.iconColor
     }
 

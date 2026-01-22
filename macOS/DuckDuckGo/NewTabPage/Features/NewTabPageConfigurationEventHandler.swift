@@ -1,5 +1,5 @@
 //
-//  NewTabPageConfigurationErrorHandler.swift
+//  NewTabPageConfigurationEventHandler.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,13 +20,19 @@ import Common
 import NewTabPage
 import PixelKit
 
-final class NewTabPageConfigurationErrorHandler: EventMapping<NewTabPageConfigurationEvent> {
+final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigurationEvent> {
 
     init() {
         super.init { event, _, _, _ in
             switch event {
             case .newTabPageError:
                 PixelKit.fire(DebugEvent(NewTabPagePixel.newTabPageExceptionReported), frequency: .dailyAndStandard)
+
+            case .newTabPageTelemetry(.customizerOpened(let themePopoverWasOpen)):
+                PixelKit.fire(NewTabPagePixel.customizerShown(themePopoverWasOpen: themePopoverWasOpen))
+
+            case .newTabPageTelemetry(.customizerClosed):
+                PixelKit.fire(NewTabPagePixel.customizerHidden)
             }
         }
     }

@@ -271,6 +271,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionsCancellables = Set<AnyCancellable>()
     private var trackerAnimationTriggerCancellable: AnyCancellable?
     private var privacyEntryPointIconUpdateCancellable: AnyCancellable?
+    private var tabRemovalCancellables = Set<AnyCancellable>()
 
     private struct TrackerAnimationDomainState {
         var lastVisitedDomain: String?
@@ -372,6 +373,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToAIChatPreferences()
         subscribeToAIChatSidebarPresenter()
         subscribeToThemeChanges()
+        subscribeToTabRemovals()
 
         applyThemeStyle()
 
@@ -589,6 +591,24 @@ final class AddressBarButtonsViewController: NSViewController {
             updatePrivacyEntryPointIcon()
             updateAIChatButtonState()
         }.store(in: &cancellables)
+    }
+
+    private func subscribeToTabRemovals() {
+        tabRemovalCancellables.removeAll()
+
+        tabCollectionViewModel.tabCollection.didRemoveTabPublisher
+            .sink { [weak self] tab, _ in
+                self?.trackerAnimationDomainStateByTabID[tab.uuid] = nil
+            }
+            .store(in: &tabRemovalCancellables)
+
+        if let pinnedTabsCollection = tabCollectionViewModel.pinnedTabsCollection {
+            pinnedTabsCollection.didRemoveTabPublisher
+                .sink { [weak self] tab, _ in
+                    self?.trackerAnimationDomainStateByTabID[tab.uuid] = nil
+                }
+                .store(in: &tabRemovalCancellables)
+        }
     }
 
     private func subscribeToUrl() {

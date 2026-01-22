@@ -107,6 +107,19 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
+    func testResolveAutoDownload_reviewBuild_flagOn_preferenceOff_returnsFalse() {
+        mockBuildType.isReviewBuild = true
+        mockFeatureFlagger.enabledFeatureFlags = [.autoUpdateInREVIEW]
+
+        let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
+            buildType: mockBuildType,
+            featureFlagger: mockFeatureFlagger,
+            userPreference: false
+        )
+
+        XCTAssertFalse(result)
+    }
+
     // MARK: - Release Build Tests
 
     func testResolveAutoDownload_releaseBuild_preferenceOn_returnsTrue() {

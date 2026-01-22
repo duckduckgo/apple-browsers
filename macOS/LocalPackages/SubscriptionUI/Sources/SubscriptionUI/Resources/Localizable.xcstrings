@@ -5847,6 +5847,19 @@
         }
       }
     },
+    "subscription.preferences.manage.payment.or.cancel.button" : {
+      "comment" : "Button to manage payment or cancel subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage Payment or Cancel"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "subscription.preferences.view.faqs.button" : {
       "comment" : "Button to open page for FAQs",
       "extractionState" : "extracted_with_value",

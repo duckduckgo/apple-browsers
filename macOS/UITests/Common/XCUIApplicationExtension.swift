@@ -17,7 +17,6 @@
 //
 
 import XCTest
-import SharedTestUtilities
 import Utilities
 
 // Enum to represent bookmark modes

@@ -18,16 +18,20 @@
 
 import Foundation
 import Darwin
-import os.log
 
+/// Represents the Memory Allocations Stats, at a given moment.
+/// - Important: For simplicity reasons, this Structure is duplicated in the target `MemoryUsageTests`. Please do make sure to keep both stuctures in sync!
+///
 struct MemoryAllocationStatsSnapshot: Codable {
     let processID: pid_t
     let timestamp: Date
     let mallocZoneCount: UInt
-    let totalAllocatedMB: UInt64
-    let totalInUseMB: UInt64
+    let totalAllocatedBytes: UInt64
+    let totalUsedBytes: UInt64
 }
 
+/// Represents an Error that prevented us from exporting the Allocation Stats.
+///
 enum MemoryAllocationStatsError: Error {
     case errorAccessingZones
     case errorAccessingAddresses
@@ -35,13 +39,17 @@ enum MemoryAllocationStatsError: Error {
     case errorSavingSnapshot
 }
 
+/// Exports the`MemoryAllocationStatsSnapshot` as calculated in a given time.
+///
 final class MemoryAllocationStatsExporter {
 
     /// Exports a fresh MemoryAllocationStats to the specified URL
     ///
     func exportSnapshot(targetURL: URL) throws {
         let snapshot = try buildStatsSnapshot()
-        try write(snapshot: snapshot, to: targetURL)
+        let encoded = try encodeToJSON(snapshot: snapshot)
+
+        try write(payload: encoded, to: targetURL)
     }
 
     /// Exports a fresh MemoryStatsSnapshot to a Temporary URL: `/tmp/[Bundle-ID]-allocations.json`
@@ -68,8 +76,8 @@ private extension MemoryAllocationStatsExporter {
             throw MemoryAllocationStatsError.errorAccessingAddresses
         }
 
-        var totalUsedInBytes: UInt64 = 0
-        var totalAllocatedInBytes: UInt64 = 0
+        var totalAllocatedBytes: UInt64 = 0
+        var totalUsedBytes: UInt64 = 0
 
         for i in 0 ..< Int(zoneCount) {
             let zoneAddress = zonesAddresses[i]
@@ -88,28 +96,23 @@ private extension MemoryAllocationStatsExporter {
             var stats = malloc_statistics_t()
             statsFn(zone, &stats)
 
-            totalAllocatedInBytes &+= UInt64(stats.size_allocated)
-            totalUsedInBytes &+= UInt64(stats.size_in_use)
+            totalAllocatedBytes &+= UInt64(stats.size_allocated)
+            totalUsedBytes &+= UInt64(stats.size_in_use)
         }
 
         return MemoryAllocationStatsSnapshot(processID: getpid(),
-                                     timestamp: Date(),
-                                     mallocZoneCount: UInt(zoneCount),
-                                     totalAllocatedMB: convertToMB(bytes: totalAllocatedInBytes),
-                                     totalInUseMB: convertToMB(bytes: totalUsedInBytes))
-    }
-
-    func convertToMB(bytes: UInt64) -> UInt64 {
-        bytes / 1024 / 1024
+                                             timestamp: Date().roundedToFullSeconds(),
+                                             mallocZoneCount: UInt(zoneCount),
+                                             totalAllocatedBytes: totalAllocatedBytes,
+                                             totalUsedBytes: totalUsedBytes)
     }
 }
 
 private extension MemoryAllocationStatsExporter {
 
-    func write(snapshot: MemoryAllocationStatsSnapshot, to targetURL: URL) throws {
+    func write(payload: Data, to targetURL: URL) throws {
         do {
-            let encoded = try encodeToJSON(snapshot: snapshot)
-            try encoded.write(to: targetURL, options: .atomic)
+            try payload.write(to: targetURL, options: .atomic)
         } catch {
             throw MemoryAllocationStatsError.errorSavingSnapshot
         }
@@ -124,8 +127,21 @@ private extension MemoryAllocationStatsExporter {
     }
 }
 
+private extension Date {
+
+    func roundedToFullSeconds() -> Date {
+        Date(timeIntervalSinceReferenceDate: timeIntervalSinceReferenceDate.rounded())
+    }
+}
+
 private extension URL {
 
+    /// Our Temporary Stats URL is in `/tmp` as `FileManager.default.temporaryDirectory` will always point to a different location
+    /// due to the macOS Sandbox.
+    ///
+    /// Since this URL will be required by the `macOS Memory Usage Tests` as well, we're using a globally accessible and temporary location
+    /// within the filesystem.
+    ///
     static var temporaryStatsExportURL: URL {
         let filename = Bundle.main.bundleIdentifier ?? "com.duckduckgo.macos.browser"
         return URL(fileURLWithPath: "/tmp/\(filename)-allocations.json")

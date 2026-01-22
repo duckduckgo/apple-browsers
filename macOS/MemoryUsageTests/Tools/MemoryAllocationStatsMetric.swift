@@ -58,8 +58,13 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
     }
 
     func reportMeasurements(from startTime: XCTPerformanceMeasurementTimestamp, to endTime: XCTPerformanceMeasurementTimestamp) throws -> [XCTPerformanceMeasurement] {
-        guard let initialState, let finalState else {
-            XCTFail()
+        guard let initialState else {
+            XCTFail("Missing Initial Memory Measurement")
+            return []
+        }
+
+        guard let finalState else {
+            XCTFail("Missing Final Memory Measurement")
             return []
         }
 

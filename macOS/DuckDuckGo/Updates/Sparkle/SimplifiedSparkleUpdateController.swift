@@ -218,18 +218,31 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
+    private let buildType: ApplicationBuildType
 
-    /// Computes whether automatic downloads should be enabled, combining:
-    /// - Build-type feature flag (DEBUG/REVIEW require flag, Release/Alpha always allowed)
-    /// - User preference (areAutomaticUpdatesEnabled)
+    /// Computes whether automatic downloads should be enabled.
+    /// Static for testability - no controller state needed.
+    static func resolveAutoDownloadEnabled(
+        buildType: ApplicationBuildType,
+        featureFlagger: FeatureFlagger,
+        userPreference: Bool
+    ) -> Bool {
+        if buildType.isDebugBuild {
+            return featureFlagger.isFeatureOn(.autoUpdateInDEBUG) && userPreference
+        } else if buildType.isReviewBuild {
+            return featureFlagger.isFeatureOn(.autoUpdateInREVIEW) && userPreference
+        } else {
+            return userPreference
+        }
+    }
+
+    /// Instance wrapper for the static method - convenience for non-static contexts.
     private func resolveAutoDownloadEnabled(userPreference: Bool) -> Bool {
-        #if DEBUG
-        return featureFlagger.isFeatureOn(.autoUpdateInDEBUG) && userPreference
-        #elseif REVIEW
-        return featureFlagger.isFeatureOn(.autoUpdateInREVIEW) && userPreference
-        #else
-        return userPreference
-        #endif
+        Self.resolveAutoDownloadEnabled(
+            buildType: buildType,
+            featureFlagger: featureFlagger,
+            userPreference: userPreference
+        )
     }
 
     // MARK: - Public
@@ -237,10 +250,12 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          keyValueStore: ThrowingKeyValueStoring = NSApp.delegateTyped.keyValueStore,
+         buildType: ApplicationBuildType = StandardApplicationBuildType(),
          updateWideEvent: SparkleUpdateWideEvent? = nil) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
+        self.buildType = buildType
         self.internalUserDecider = internalUserDecider
         self.keyValueStore = keyValueStore
 
@@ -252,17 +267,12 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             areAutomaticUpdatesEnabled: currentAutomaticUpdatesEnabled
         )
 
-        // Compute effective auto-download state before super.init() using inline logic
-        // (resolveAutoDownloadEnabled can't be called before super.init())
-        let shouldAutoDownload: Bool = {
-            #if DEBUG
-            return featureFlagger.isFeatureOn(.autoUpdateInDEBUG) && currentAutomaticUpdatesEnabled
-            #elseif REVIEW
-            return featureFlagger.isFeatureOn(.autoUpdateInREVIEW) && currentAutomaticUpdatesEnabled
-            #else
-            return currentAutomaticUpdatesEnabled
-            #endif
-        }()
+        // Compute effective auto-download state before super.init() using static method
+        let shouldAutoDownload = Self.resolveAutoDownloadEnabled(
+            buildType: buildType,
+            featureFlagger: featureFlagger,
+            userPreference: currentAutomaticUpdatesEnabled
+        )
 
         self.userDriver = SimplifiedUpdateUserDriver(
             internalUserDecider: internalUserDecider,

@@ -32,7 +32,7 @@ public protocol HistoryCoordinatingDebuggingSupport {
      *
      * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` should be used.
      */
-    @discardableResult @MainActor func addVisit(of url: URL, at date: Date) -> Visit?
+    @discardableResult @MainActor func addVisit(of url: URL, at date: Date, tabID: String?) -> Visit?
 }
 
 public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupport {
@@ -44,6 +44,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor var historyDictionary: [URL: HistoryEntry]? { get }
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { get }
 
+    @discardableResult @MainActor func addVisit(of url: URL, tabID: String?) -> Visit?
     @discardableResult @MainActor func addVisit(of url: URL) -> Visit?
     @MainActor func addBlockedTracker(entityName: String, on url: URL)
     @MainActor func trackerFound(on: URL)
@@ -66,7 +67,12 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
 extension HistoryCoordinating {
     @discardableResult
     @MainActor public func addVisit(of url: URL) -> Visit? {
-        addVisit(of: url, at: Date())
+        addVisit(of: url, at: Date(), tabID: nil)
+    }
+
+    @discardableResult
+    @MainActor public func addVisit(of url: URL, tabID: String?) -> Visit? {
+        addVisit(of: url, at: Date(), tabID: tabID)
     }
 }
 
@@ -109,14 +115,14 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     @MainActor
-    @discardableResult public func addVisit(of url: URL, at date: Date) -> Visit? {
+    @discardableResult public func addVisit(of url: URL, at date: Date, tabID: String? = nil) -> Visit? {
         guard let historyDictionary else {
             Logger.history.debug("Visit of \(url.absoluteString) ignored")
             return nil
         }
 
         let entry = historyDictionary[url] ?? HistoryEntry(url: url)
-        let visit = entry.addVisit(at: date)
+        let visit = entry.addVisit(at: date, tabID: tabID)
         entry.failedToLoad = false
 
         self.historyDictionary?[url] = entry

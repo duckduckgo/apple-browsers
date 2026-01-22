@@ -81,10 +81,13 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         if showWebView {
 #if os(macOS)
             window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024), styleMask: [.titled],
+                contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable],
                 backing: .buffered, defer: false
             )
             window?.title = "Data Broker Protection"
+            window?.delegate = self
+            window?.isReleasedWhenClosed = false
             window?.contentView = self.webView
             window?.makeKeyAndOrderFront(nil)
 #elseif os(iOS)
@@ -267,6 +270,15 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 #endif
 
 }
+
+#if os(macOS)
+extension DataBrokerProtectionWebViewHandler: NSWindowDelegate {
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        sender.orderOut(nil)
+        return false
+    }
+}
+#endif
 
 extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 

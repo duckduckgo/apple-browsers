@@ -133,7 +133,7 @@ extension Preferences {
                     VStack(alignment: .leading, spacing: 6) {
                         ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
                         ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
-                        ToggleMenuItem(UserText.autofillPaymentMethods, isOn: $model.askToSavePaymentMethods)
+                        ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
                     }
                     TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
                 }

@@ -30,10 +30,7 @@ extension XCUIApplication {
     }
 
     private func exportMemoryStats() {
-        debugMenu
-            .menuItems["Memory Debugging"]
-            .menuItems["Export Allocation Stats"]
-            .click()
+        typeKey("m", modifierFlags: [.control, .command, .shift, .option])
     }
 
     private func deleteMemoryStats() {

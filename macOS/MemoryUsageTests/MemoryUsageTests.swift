@@ -47,6 +47,9 @@ final class MemoryUsageTests: XCTestCase {
             application.cleanExportMemoryStats()
             startMeasuring()
 
+            /// We're explicitly **not** closing Tabs among Iterations to avoid interference from both, malloc re-using released blocks, or retain cycles themselves.
+            /// The purpose of this Test is to measure the memory impact of opening a single Tab.
+            ///
             application.openNewTab()
 
             application.cleanExportMemoryStats()

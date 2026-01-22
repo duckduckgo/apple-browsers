@@ -22,7 +22,35 @@ import os.log
 
 class MemoryUsageTests: XCTestCase {
 
-    func testSample() {
-        // NO-OP
+    private var application: XCUIApplication!
+    private var bundleID: String!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        continueAfterFailure = false
+
+        application = XCUIApplication.setUp(featureFlags: ["memoryUsageMonitor": true])
+        bundleID = try XCTUnwrap(application.bundleID)
+    }
+
+    override func tearDown() {
+        super.tearDown()
+        application.terminate()
+    }
+
+    func testMemoryAllocationsWhenOpeningSingleNewTab() throws {
+        let memoryMetric = MemoryAllocationStatsMetric(memoryStatsURL: application.memoryStatsURL)
+
+        application.openNewWindow()
+
+        measure(metrics: [memoryMetric], options: .buildOptions(iterations: 5, manualEvents: true)) {
+            application.cleanExportMemoryStats()
+            startMeasuring()
+
+            application.openNewTab()
+
+            application.cleanExportMemoryStats()
+            stopMeasuring()
+        }
     }
 }

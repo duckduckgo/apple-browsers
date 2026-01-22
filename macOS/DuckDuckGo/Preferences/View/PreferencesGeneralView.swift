@@ -135,7 +135,7 @@ extension Preferences {
                             VStack(alignment: .leading, spacing: 1) {
                                 TextMenuItemCaption(UserText.disableAutoClearToEnableSessionRestore)
                                 TextButton(UserText.showDataClearingSettings) {
-                                    startupModel.show(url: .settingsPane(.dataClearing))
+                                    NSApp.delegateTyped.windowControllersManager.show(url: .settingsPane(.dataClearing), source: .appOpenUrl)
                                 }
                             }
                             .padding(.leading, 19)
@@ -274,6 +274,28 @@ extension Preferences {
 
                         ToggleMenuItem(UserText.downloadsAlwaysAsk, isOn: $downloadsModel.alwaysRequestDownloadLocation)
                             .accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
+                    }
+                }
+
+                // SECTION: On Quit
+                if featureFlagger.isFeatureOn(.warnBeforeQuit) {
+                    PreferencePaneSection(UserText.settingsOnQuitSection) {
+                        PreferencePaneSubSection {
+                            ToggleMenuItem(UserText.settingsConfirmQuitCheckbox, isOn: Binding(
+                                get: { tabsModel.warnBeforeQuitting },
+                                set: { newValue in
+                                    let oldValue = tabsModel.warnBeforeQuitting
+                                    tabsModel.warnBeforeQuitting = newValue
+                                    // Only fire pixel when user explicitly disables via toggle (not programmatic changes)
+                                    if oldValue && !newValue {
+                                        PixelKit.fire(GeneralPixel.warnBeforeQuitSettingsDisabled, frequency: .dailyAndCount)
+                                    }
+                                }
+                            ))
+                                .accessibilityIdentifier("PreferencesGeneralView.warnBeforeQuitting")
+                            ToggleMenuItem(UserText.settingsConfirmCloseCheckbox, isOn: $tabsModel.warnBeforeClosingPinnedTabs)
+                                .accessibilityIdentifier("PreferencesGeneralView.warnBeforeClosingPinnedTabs")
+                        }
                     }
                 }
             }

@@ -47,6 +47,11 @@
         "enum": ["default", "coolGray", "desert", "green", "orange", "rose", "slateBlue", "violet"],
         "description": "The name of the active Theme"
     },
+    "themeChangeSource": {
+        "key": "themeChangeSource",
+        "enum": ["new-tab-page", "settings"],
+        "description": "Interface from which the Theme Name or Appearance were updated"
+    },
     "underlyingErrorCode": {
         "keyPattern": "^ue[0-9]?$",
         "type": "number",
@@ -175,6 +180,12 @@
         "type": "string",
         "description": "Version of the broker JSON file used for the flow"
     },
+    "dbpIsAuthenticated": {
+        "key": "isAuthenticated",
+        "type": "string",
+        "description": "Whether the user is authenticated",
+        "enum": ["true", "false"]
+    },
     "dbpStageDuration": {
         "key": "duration",
         "type": "integer",
@@ -188,7 +199,24 @@
     "dbpActionId": {
         "key": "action_id",
         "type": "string",
-        "description": "Identifier of the broker action executed during the opt-out flow"
+        "description": "Identifier of the broker action executed during the broker flow"
+    },
+    "dbpActionType": {
+        "key": "action_type",
+        "type": "string",
+        "description": "Type of action executed during the broker flow",
+        "enum": [
+            "extract",
+            "navigate",
+            "fillForm",
+            "click",
+            "expectation",
+            "emailConfirmation",
+            "getCaptchaInfo",
+            "solveCaptcha",
+            "condition",
+            "unknown"
+        ]
     },
     "dbpActionDuration": {
         "key": "duration",

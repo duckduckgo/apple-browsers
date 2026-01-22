@@ -29,14 +29,25 @@ import PrivacyConfig
 import SwiftUI
 import os.log
 
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+protocol SparkleCustomFeedURLProviding {
+    func setCustomFeedURL(_ urlString: String)
+    func resetFeedURLToDefault()
+}
+#endif
+
 protocol SparkleUpdateControllerProtocol: UpdateController {
     // Sparkle-specific state
     var isAtRestartCheckpoint: Bool { get }
     var shouldForceUpdateCheck: Bool { get }
+    var useLegacyAutoRestartLogic: Bool { get }
+    var willRelaunchAppPublisher: AnyPublisher<Void, Never> { get }
 
     // Sparkle-specific methods
     func checkForUpdateRespectingRollout()
     func runUpdateFromMenuItem()
+    func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress)
+    func log()
 }
 
 final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
@@ -106,6 +117,11 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
                 needsNotificationDot = hasPendingUpdate
             }
             showUpdateNotificationIfNeeded()
+
+            // Dismiss stale "update available" popover when download begins
+            if case .downloadDidStart = updateProgress {
+                notificationPresenter.dismissIfPresented()
+            }
         }
     }
 
@@ -118,8 +134,16 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     @Published private(set) var hasPendingUpdate = false
     var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
 
+    var mustShowUpdateIndicators: Bool { hasPendingUpdate }
+    let clearsNotificationDotOnMenuOpen = true
+
     @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
     var updateValidityStartDate: Date?
+
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+    @UserDefaultsWrapper(key: .debugSparkleCustomFeedURL)
+    private var customFeedURL: String?
+#endif
 
     private let keyValueStore: ThrowingKeyValueStoring
 
@@ -459,7 +483,8 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
             userDriver.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
         } else {
             userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
-                                          areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
+                                          areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled,
+                                          useLegacyAutoRestartLogic: useLegacyAutoRestartLogic)
         }
 
         guard let userDriver,
@@ -555,9 +580,33 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     func handleAppTermination() {
         updateWideEvent.handleAppTermination()
     }
+
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+    // MARK: - Debug: Custom Feed URL
+
+    func setCustomFeedURL(_ urlString: String) {
+        customFeedURL = urlString
+    }
+
+    func resetFeedURLToDefault() {
+        customFeedURL = nil
+    }
+#endif
 }
 
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+extension SparkleUpdateController: SparkleCustomFeedURLProviding {}
+#endif
+
 extension SparkleUpdateController: SPUUpdaterDelegate {
+
+    func feedURLString(for updater: SPUUpdater) -> String? {
+#if SPARKLE_ALLOWS_UNSIGNED_UPDATES
+        return customFeedURL
+#else
+        return nil
+#endif
+    }
 
     func allowedChannels(for updater: SPUUpdater) -> Set<String> {
         if internalUserDecider.isInternalUser {

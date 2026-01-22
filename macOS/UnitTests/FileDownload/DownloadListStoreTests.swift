@@ -63,9 +63,10 @@ final class DownloadListStoreTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
     }
 
-    func testWhenSyncIsCalledThenItemsAreSavedSynchronously() throws {
+    @MainActor
+    func testWhenSyncIsCalledThenItemsAreWaitedToGetSaved() async throws {
         store.save(.testItem)
-        store.sync()
+        await store.sync()
 
         let items = try container.viewContext.fetch(DownloadManagedObject.fetchRequest() as NSFetchRequest<DownloadManagedObject>)
         XCTAssertEqual(items.count, 1)

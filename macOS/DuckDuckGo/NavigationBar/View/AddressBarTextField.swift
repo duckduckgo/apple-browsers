@@ -418,26 +418,6 @@ final class AddressBarTextField: NSTextField {
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
-    /// Handles paste of multiline text by switching to AI chat mode if conditions are met
-    /// - Parameter text: The pasted text containing newlines
-    /// - Returns: `true` if the text was handled by switching to AI chat mode, `false` otherwise
-    func handleMultilinePaste(_ text: String) -> Bool {
-        guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
-              let aiChatPreferences = aiChatPreferences,
-              aiChatPreferences.isAIFeaturesEnabled,
-              aiChatPreferences.showSearchAndDuckAIToggle,
-              let toggleControl = customToggleControl as? CustomToggleControl,
-              !toggleControl.isHidden,
-              toggleControl.isEnabled,
-              toggleControl.selectedSegment == 0 else {
-            return false
-        }
-
-        sharedTextState?.updateText(text, markInteraction: true)
-        toggleControl.selectedSegment = 1
-        return true
-    }
-
     private func navigate(suggestion: Suggestion?) {
         switch suggestion {
         case .bookmark,
@@ -546,8 +526,8 @@ final class AddressBarTextField: NSTextField {
 #endif
 
         // Prevent typing in subscription URLs directly in the address bar
-        let baseURL = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .baseURL)
-        let identityTheftRestorationURL = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .identityTheftRestoration)
+        let baseURL = Application.appDelegate.subscriptionManager.url(for: .baseURL)
+        let identityTheftRestorationURL = Application.appDelegate.subscriptionManager.url(for: .identityTheftRestoration)
         if providedUrl.isChild(of: baseURL) || providedUrl.isChild(of: identityTheftRestorationURL) {
             self.updateValue(selectedTabViewModel: nil, addressBarString: nil) // reset
             self.window?.makeFirstResponder(nil)
@@ -672,7 +652,8 @@ final class AddressBarTextField: NSTextField {
             let suggestionViewController = SuggestionViewController(coder: coder,
                                                                     suggestionContainerViewModel: self.suggestionContainerViewModel!,
                                                                     isBurner: self.isBurner,
-                                                                    themeManager: self.themeManager)
+                                                                    themeManager: self.themeManager,
+                                                                    aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage())
             suggestionViewController?.delegate = self
             return suggestionViewController
         }

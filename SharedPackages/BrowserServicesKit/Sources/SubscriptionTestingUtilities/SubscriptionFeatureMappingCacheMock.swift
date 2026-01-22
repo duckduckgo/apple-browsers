@@ -18,19 +18,33 @@
 
 import Foundation
 import Subscription
+import Networking
 
 public final class SubscriptionFeatureMappingCacheMock: SubscriptionFeatureMappingCache {
 
     public var didCallSubscriptionFeatures = false
     public var lastCalledSubscriptionId: String?
 
-    public var mapping: [String: [Entitlement.ProductName]] = [:]
+    public var mapping: [String: [SubscriptionEntitlement]] = [:]
+    public var tierMapping: [String: [TierFeature]] = [:]
+    public var shouldThrowError: Error?
 
     public init() { }
 
-    public func subscriptionFeatures(for subscriptionIdentifier: String) async -> [Entitlement.ProductName] {
+    public func subscriptionFeatures(for subscriptionIdentifier: String) async -> [SubscriptionEntitlement] {
         didCallSubscriptionFeatures = true
         lastCalledSubscriptionId = subscriptionIdentifier
         return mapping[subscriptionIdentifier] ?? []
+    }
+
+    public func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async throws -> [String: [TierFeature]] {
+        if let error = shouldThrowError {
+            throw error
+        }
+        var result: [String: [TierFeature]] = [:]
+        for identifier in subscriptionIdentifiers {
+            result[identifier] = tierMapping[identifier] ?? []
+        }
+        return result
     }
 }

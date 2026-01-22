@@ -1668,6 +1668,14 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
     }
 
+    func cell(forPinnedTabAt index: Int) -> NSView? {
+        guard let pinnedTabsCollectionView,
+              let item = pinnedTabsCollectionView.item(at: IndexPath(item: index, section: 0)) as? TabBarViewItem else {
+            return nil
+        }
+        return item.view
+    }
+
     func presentPinnedTabsDiscoveryPopoverIfNecessary() {
         guard !PinnedTabsDiscoveryPopover.popoverPresented else { return }
         PinnedTabsDiscoveryPopover.popoverPresented = true

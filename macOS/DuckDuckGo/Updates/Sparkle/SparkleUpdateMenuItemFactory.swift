@@ -30,7 +30,7 @@ final class SparkleUpdateMenuItemFactory {
         return item
     }
 
-    static func menuItem(for controller: SparkleUpdateController) -> NSMenuItem {
+    static func menuItem(for controller: any SparkleUpdateControllerProtocol) -> NSMenuItem {
 
         let title: String
 

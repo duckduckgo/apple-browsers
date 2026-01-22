@@ -246,7 +246,7 @@ final class QuitSurveyViewModel: ObservableObject {
     private func startAutoQuitTimer() {
         autoQuitCountdown = 5
         let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
+            MainActor.assumeMainThread {
                 guard let self else { return }
                 self.autoQuitCountdown -= 1
                 if self.autoQuitCountdown <= 0 {

@@ -49,6 +49,8 @@ struct Background: BackgroundHandling {
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
+        appDependencies.backgroundTaskManager.startBackgroundTask()
+
         services.dbpService.onBackground()
         services.vpnService.suspend()
         services.aiChatService.suspend()
@@ -87,6 +89,7 @@ extension Background {
     /// This ensures that the app remains smooth as it enters the foreground.
     func willLeave() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
+        
         ThemeManager.shared.updateUserInterfaceStyle()
         sceneDependencies.autoClearService.resume()
         services.systemSettingsPiPTutorialService.resume()

@@ -1243,6 +1243,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Yesterday";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "You found a hidden logo!";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "Logo Saved";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Reset Search Logo";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "Switch to This Logo";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Heads up! I can’t stop %1$@ from seeing your activity on %2$@.\n\nBut browse with me, and I can reduce what %1$@ knows about you overall by blocking their trackers on lots of other sites.";
 
@@ -1338,6 +1350,27 @@
 
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Player's functionality has been affected by recent changes to YouTube. We’re working to fix these issues and appreciate your understanding.";
+
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Attach Page Content";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Sent with your message to Duck.ai";
+
+/* Subtitle shown on the context chip indicating page content is attached */
+"duckai.context.chip.subtitle" = "Page Content";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai can now help answer questions about the page you're viewing.\n\nPage content is only included when you attach it. You can change this anytime in Settings.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Got It";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Ask about this page";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "View Settings";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
@@ -2797,6 +2830,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Show Full Site Address";
 
+/* Settings screen cell title for toggling trackers blocked animation in address bar */
+"settings.address.trackers.animation" = "Show Trackers Blocked Animation";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";
 
@@ -2826,12 +2862,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell title for enabling automatic page context */
 "settings.aifeatures.automatic.context.title" = "Automatically Send Context";
-
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Show new Duck.ai Chats as tabs in the browser";
-
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Duck.ai Tabs Mode";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
@@ -3037,9 +3067,6 @@ Take back control of your personal information with the browser designed for dat
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "New";
 
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Preview";
-
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";
 
@@ -3180,6 +3207,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sync & Backup";
+
+/* Settings screen cell title for toggling tracker count banner in tab switcher */
+"settings.tab.switcher.show.tracker.count" = "7-Day Tracker Count";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Tabs";
 
 /* Settings screen cell text for text size */
 "settings.text.size" = "Default Text Zoom";
@@ -3457,9 +3490,6 @@ Take back control of your personal information with the browser designed for dat
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restoring subscription...";
 
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro is now just called the DuckDuckGo subscription";
-
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Remove From This Device";
 
@@ -3562,6 +3592,12 @@ Take back control of your personal information with the browser designed for dat
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Set Up Sync";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Sync & Back Up Your Credit Cards";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Sync & Back Up Your Data";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "No Thanks";
 
@@ -3651,6 +3687,30 @@ Take back control of your personal information with the browser designed for dat
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Bookmark All Tabs";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Hide";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "You can turn this back on in Settings > Appearance.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Hide tracker count?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Tracker count options";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Double tap to show options for hiding this banner";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Keep";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "in the last 7 days";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Increase or decrease text size across all sites.";

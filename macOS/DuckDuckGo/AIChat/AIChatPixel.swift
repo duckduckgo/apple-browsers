@@ -173,6 +173,28 @@ enum AIChatPixel: PixelKitEvent {
     case aiChatSyncDecryptionError(reason: String)
     case aiChatSyncHistoryEnabledError(reason: String)
 
+    // MARK: - Prompt Metrics
+
+    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation
+    case aiChatMetricStartNewConversation
+
+    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation
+    case aiChatMetricSentPromptOngoingChat
+
+    // MARK: - Onboarding
+
+    /// Event Trigger: User enables the Duck.ai toggle during onboarding
+    case aiChatOnboardingTogglePreferenceOn
+
+    /// Event Trigger: User disables the Duck.ai toggle during onboarding
+    case aiChatOnboardingTogglePreferenceOff
+
+    /// Event Trigger: User completes onboarding with the Duck.ai toggle enabled
+    case aiChatOnboardingFinishedToggleOn
+
+    /// Event Trigger: User completes onboarding with the Duck.ai toggle disabled
+    case aiChatOnboardingFinishedToggleOff
+
     // MARK: -
 
     var name: String {
@@ -271,6 +293,18 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_sync_internal_decryption-error"
         case .aiChatSyncHistoryEnabledError:
             return "aichat_sync_internal_history_enabled-error"
+        case .aiChatOnboardingTogglePreferenceOn:
+            return "aichat_onboarding_toggle_preference_on"
+        case .aiChatOnboardingTogglePreferenceOff:
+            return "aichat_onboarding_toggle_preference_off"
+        case .aiChatOnboardingFinishedToggleOn:
+            return "aichat_onboarding_finished_toggle_on"
+        case .aiChatOnboardingFinishedToggleOff:
+            return "aichat_onboarding_finished_toggle_off"
+        case .aiChatMetricStartNewConversation:
+            return "aichat_start_new_conversation"
+        case .aiChatMetricSentPromptOngoingChat:
+            return "aichat_sent_prompt_ongoing_chat"
         }
     }
 
@@ -310,7 +344,13 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSuggestionAIChatSubmittedKeyboard,
                 .aiChatTogglePopoverShown,
                 .aiChatTogglePopoverDismissButtonClicked,
-                .aiChatTogglePopoverCustomizeButtonClicked:
+                .aiChatTogglePopoverCustomizeButtonClicked,
+                .aiChatOnboardingTogglePreferenceOn,
+                .aiChatOnboardingTogglePreferenceOff,
+                .aiChatOnboardingFinishedToggleOn,
+                .aiChatOnboardingFinishedToggleOff,
+                .aiChatMetricStartNewConversation,
+                .aiChatMetricSentPromptOngoingChat:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -383,7 +423,13 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSyncScopedSyncTokenError,
                 .aiChatSyncEncryptionError,
                 .aiChatSyncDecryptionError,
-                .aiChatSyncHistoryEnabledError:
+                .aiChatSyncHistoryEnabledError,
+                .aiChatOnboardingTogglePreferenceOn,
+                .aiChatOnboardingTogglePreferenceOff,
+                .aiChatOnboardingFinishedToggleOn,
+                .aiChatOnboardingFinishedToggleOff,
+                .aiChatMetricStartNewConversation,
+                .aiChatMetricSentPromptOngoingChat:
             return [.pixelSource]
         }
     }

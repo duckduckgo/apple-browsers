@@ -129,11 +129,11 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
         // no-op on macOS
     }
 
-    func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }
 
-    func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }
 
@@ -240,10 +240,13 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
             supportedFeatures.passwordGeneration = false
         }
 
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
+
         return ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
                                       sessionKey: autofillScript?.sessionKey ?? "",
                                       messageSecret: autofillScript?.messageSecret ?? "",
-                                      featureToggles: supportedFeatures)
+                                      featureToggles: supportedFeatures,
+                                      themeVariant: themeVariant)
     }
 }
 

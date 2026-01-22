@@ -110,7 +110,7 @@ extension Tab: NavigationResponder {
     }
 
     var redirectNavigationResponder: RedirectNavigationResponder {
-        let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
+        let subscriptionManager = Application.appDelegate.subscriptionManager
         let redirectManager = SubscriptionRedirectManager(subscriptionManager: subscriptionManager,
                                                                     baseURL: subscriptionManager.url(for: .baseURL))
         return RedirectNavigationResponder(redirectManager: redirectManager)

@@ -169,11 +169,11 @@ public class AppUserDefaults: AppSettings {
         
     }
 
-    var autoClearAction: FireOptions {
+    var autoClearAction: FireRequest.Options {
         
         get {
             let value = userDefaults?.integer(forKey: Keys.autoClearActionKey) ?? 0
-            return FireOptions(rawValue: value)
+            return FireRequest.Options(rawValue: value)
         }
         
         set {
@@ -275,6 +275,9 @@ public class AppUserDefaults: AppSettings {
             NotificationCenter.default.post(name: Notifications.showsFullURLAddressSettingChanged, object: showFullSiteAddress)
         }
     }
+
+    @UserDefaultsWrapper(key: .showTrackersBlockedAnimation, defaultValue: true)
+    var showTrackersBlockedAnimation: Bool
 
     @UserDefaultsWrapper(key: .textZoom, defaultValue: 100)
     private var textZoom: Int {

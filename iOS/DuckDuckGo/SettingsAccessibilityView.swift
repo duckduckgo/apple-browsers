@@ -30,8 +30,7 @@ struct SettingsAccessibilityView: View {
         List {
             Section(footer: Text(UserText.textZoomDescription)) {
                 // Text Size
-                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                       label: UserText.settingsText,
+                SettingsPickerCellView(label: UserText.settingsText,
                                        options: TextZoomLevel.allCases,
                                        selectedOption: viewModel.textZoomLevelBinding)
             }

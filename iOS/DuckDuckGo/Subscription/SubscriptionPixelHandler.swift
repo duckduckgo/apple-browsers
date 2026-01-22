@@ -54,6 +54,12 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
         case .invalidRefreshTokenRecovered:
             DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenRecovered,
                                          withAdditionalParameters: sourceParam)
+        case .purchaseSuccessAfterPendingTransaction:
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseSuccessAfterPendingTransaction,
+                                         withAdditionalParameters: sourceParam)
+        case .pendingTransactionApproved:
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPendingTransactionApproved,
+                                         withAdditionalParameters: sourceParam)
         }
     }
 

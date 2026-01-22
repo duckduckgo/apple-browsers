@@ -76,6 +76,7 @@ jobs:
         | tee xcodebuild.log
 
     - name: Report job duration
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
@@ -159,6 +160,7 @@ jobs:
 
     - name: Report job duration
       if: success() || (always() && steps.upload.outcome == 'failure')
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop

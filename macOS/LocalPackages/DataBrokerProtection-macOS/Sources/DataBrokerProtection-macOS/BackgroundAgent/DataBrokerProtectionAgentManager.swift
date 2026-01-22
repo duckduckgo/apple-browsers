@@ -157,7 +157,8 @@ public class DataBrokerProtectionAgentManagerProvider {
             captchaService: captchaService,
             featureFlagger: featureFlagger,
             vpnBypassService: vpnBypassService,
-            wideEvent: wideEvent)
+            wideEvent: wideEvent,
+            isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated })
 
         return DataBrokerProtectionAgentManager(
             eventsHandler: eventsHandler,
@@ -300,7 +301,7 @@ extension DataBrokerProtectionAgentManager {
         let database = jobDependencies.database
         let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler, repository: engagementPixelRepository)
         let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
-        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler, repository: statsPixelRepository)
+        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler, featureFlagger: jobDependencies.featureFlagger, repository: statsPixelRepository)
 
         // This will fire the DAU/WAU/MAU pixels,
         engagementPixels.fireEngagementPixel(isAuthenticated: isAuthenticated)

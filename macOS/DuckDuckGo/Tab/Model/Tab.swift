@@ -1317,7 +1317,8 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func didReceive(_ challenge: URLAuthenticationChallenge, for navigation: Navigation?) async -> AuthChallengeDisposition? {
-        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic else { return nil }
+        let supportedMethods = [NSURLAuthenticationMethodHTTPBasic, NSURLAuthenticationMethodHTTPDigest]
+        guard supportedMethods.contains(challenge.protectionSpace.authenticationMethod) else { return nil }
 
         // send this event only when we're interrupting loading and showing extra UI to the user
         webViewDidReceiveUserInteractiveChallengePublisher.send()
@@ -1496,7 +1497,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     private func loadErrorHTML(_ error: WKError, header: String, forUnreachableURL url: URL, alternate: Bool) {
-        let html = ErrorPageHTMLFactory.html(for: error, header: header, featureFlagger: featureFlagger, themeName: themeManager.theme.name)
+        let html = ErrorPageHTMLFactory.html(for: error, header: header, themeName: themeManager.theme.name)
 
         // Fire error page shown pixel when error page is actually loaded
         if error.code == WKError.Code.webContentProcessTerminated {
@@ -1522,7 +1523,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
         let processDidCrash = error.userInfo[WKProcessTerminationReason.userInfoKey] != nil
         let header = processDidCrash ? UserText.webProcessCrashPageHeader : UserText.errorPageHeader
-        let html = ErrorPageHTMLFactory.html(for: error, header: header, featureFlagger: featureFlagger, themeName: themeName)
+        let html = ErrorPageHTMLFactory.html(for: error, header: header, themeName: themeName)
 
         webView.setDocumentHtml(html)
     }

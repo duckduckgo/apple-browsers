@@ -87,39 +87,76 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
         XCTAssertTrue(config.showBurnAnimation)
     }
 
+    func testWhenModelShouldShowProtectionsReportNewLabelIsTrueThenGetConfigReturnsShowProtectionsReportNewLabelTrue() async throws {
+        settingsPersistor.widgetNewLabelFirstShownDate = Date()
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: autoconsentStats,
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+        client = NewTabPageProtectionsReportClient(model: model)
+        client.registerMessageHandlers(for: userScript)
+
+        let config: NewTabPageDataModel.ProtectionsConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertTrue(config.showProtectionsReportNewLabel)
+    }
+
+    func testWhenModelShouldShowProtectionsReportNewLabelIsFalseThenGetConfigReturnsShowProtectionsReportNewLabelFalse() async throws {
+        let eightDaysAgo = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = eightDaysAgo
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: autoconsentStats,
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+        client = NewTabPageProtectionsReportClient(model: model)
+        client.registerMessageHandlers(for: userScript)
+
+        let config: NewTabPageDataModel.ProtectionsConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertFalse(config.showProtectionsReportNewLabel)
+    }
+
     // MARK: - setConfig
 
     func testWhenSetConfigContainsExpandedStateThenModelSettingIsSetToExpanded() async throws {
         model.isViewExpanded = false
-        let config = NewTabPageDataModel.ProtectionsConfig(expansion: .expanded, feed: .privacyStats, showBurnAnimation: false)
+        let config = NewTabPageDataModel.ProtectionsConfig(expansion: .expanded, feed: .privacyStats, showBurnAnimation: false, showProtectionsReportNewLabel: false)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: config)
         XCTAssertEqual(model.isViewExpanded, true)
     }
 
     func testWhenSetConfigContainsCollapsedStateThenModelSettingIsSetToCollapsed() async throws {
         model.isViewExpanded = true
-        let config = NewTabPageDataModel.ProtectionsConfig(expansion: .collapsed, feed: .privacyStats, showBurnAnimation: false)
+        let config = NewTabPageDataModel.ProtectionsConfig(expansion: .collapsed, feed: .privacyStats, showBurnAnimation: false, showProtectionsReportNewLabel: false)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: config)
         XCTAssertEqual(model.isViewExpanded, false)
     }
 
     func testWhenSetConfigContainsPrivacyStatsFeedThenModelSettingIsSetToPrivacyStats() async throws {
         model.activeFeed = .activity
-        let config = NewTabPageDataModel.ProtectionsConfig(expansion: .expanded, feed: .privacyStats, showBurnAnimation: false)
+        let config = NewTabPageDataModel.ProtectionsConfig(expansion: .expanded, feed: .privacyStats, showBurnAnimation: false, showProtectionsReportNewLabel: false)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: config)
         XCTAssertEqual(model.activeFeed, .privacyStats)
     }
 
     func testWhenSetConfigContainsRecentActivityFeedThenModelSettingIsSetToPrivacyStats() async throws {
         model.activeFeed = .privacyStats
-        let config = NewTabPageDataModel.ProtectionsConfig(expansion: .expanded, feed: .activity, showBurnAnimation: false)
+        let config = NewTabPageDataModel.ProtectionsConfig(expansion: .expanded, feed: .activity, showBurnAnimation: false, showProtectionsReportNewLabel: false)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: config)
         XCTAssertEqual(model.activeFeed, .activity)
     }
 
     func testWhenSetConfigContainsShowBurnAnimationFalseThenModelShowBurnAnimationIsNotAffected() async throws {
         model.shouldShowBurnAnimation = true
-        let config = NewTabPageDataModel.ProtectionsConfig(expansion: .expanded, feed: .privacyStats, showBurnAnimation: false)
+        let config = NewTabPageDataModel.ProtectionsConfig(expansion: .expanded, feed: .privacyStats, showBurnAnimation: false, showProtectionsReportNewLabel: false)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: config)
         XCTAssertTrue(model.shouldShowBurnAnimation) // Should remain unchanged
     }

@@ -25,7 +25,7 @@ import PixelKit
 
 @MainActor
 protocol AIChatTogglePopoverCoordinating: AnyObject {
-    func showPopoverIfNeeded(relativeTo toggleControl: NSView, isNewUser: Bool, userDidInteractWithToggle: Bool)
+    func showPopoverIfNeeded(relativeTo toggleControl: NSView, isNewUser: Bool, userDidInteractWithToggle: Bool, userDidSeeToggleOnboarding: Bool)
     func dismissPopover()
     func isPopoverBeingPresented() -> Bool
     func showPopoverForDebug(relativeTo toggleControl: NSView)
@@ -57,10 +57,11 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
         )
     }
 
-    func showPopoverIfNeeded(relativeTo toggleControl: NSView, isNewUser: Bool, userDidInteractWithToggle: Bool) {
+    func showPopoverIfNeeded(relativeTo toggleControl: NSView, isNewUser: Bool, userDidInteractWithToggle: Bool, userDidSeeToggleOnboarding: Bool) {
         guard canShowPopover(
             isNewUser: isNewUser,
-            userDidInteractWithToggle: userDidInteractWithToggle
+            userDidInteractWithToggle: userDidInteractWithToggle,
+            userDidSeeToggleOnboarding: userDidSeeToggleOnboarding
         ) else {
             return
         }
@@ -70,12 +71,13 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
 
     // MARK: - Private Methods
 
-    private func canShowPopover(isNewUser: Bool, userDidInteractWithToggle: Bool) -> Bool {
+    private func canShowPopover(isNewUser: Bool, userDidInteractWithToggle: Bool, userDidSeeToggleOnboarding: Bool) -> Bool {
         /// https://app.asana.com/1/137249556945/task/1212290374487805/comment/1212362023650996
         guard !presenter.isPopoverBeingPresented(),
               !hasBeenPresented(),
               !isNewUser,
-              !userDidInteractWithToggle else {
+              !userDidInteractWithToggle,
+              !userDidSeeToggleOnboarding else {
             return false
         }
         return true

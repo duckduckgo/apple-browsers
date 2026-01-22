@@ -28,6 +28,7 @@ import Configuration
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import PrivacyStats
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -52,11 +53,12 @@ final class MainCoordinator {
     private(set) var tabManager: TabManager
     private(set) var interactionStateSource: TabInteractionStateSource?
 
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
+    private let privacyStats: PrivacyStatsProviding
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -72,7 +74,7 @@ final class MainCoordinator {
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          aiChatSettings: AIChatSettings,
          fireproofing: Fireproofing,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
          didFinishLaunchingStartTime: CFAbsoluteTime?,
@@ -113,6 +115,7 @@ final class MainCoordinator {
             featureFlagger: featureFlagger,
             onboardingSearchExperienceProvider: OnboardingSearchExperience()
         )
+        self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,
@@ -141,6 +144,7 @@ final class MainCoordinator {
                                 aiChatSettings: aiChatSettings,
                                 productSurfaceTelemetry: productSurfaceTelemetry,
                                 sharedSecureVault: sharedSecureVault,
+                                privacyStats: privacyStats,
                                 voiceSearchHelper: voiceSearchHelper)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
@@ -152,7 +156,8 @@ final class MainCoordinator {
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: privacyConfigurationManager,
-                                        appSettings: AppDependencyProvider.shared.appSettings)
+                                        appSettings: AppDependencyProvider.shared.appSettings,
+                                        privacyStats: privacyStats)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -191,6 +196,7 @@ final class MainCoordinator {
                                         productSurfaceTelemetry: productSurfaceTelemetry,
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
+                                        privacyStats: privacyStats,
                                         syncAiChatsCleaner: syncService.aiChatsCleaner,
                                         whatsNewRepository: whatsNewRepository)
     }
@@ -270,6 +276,9 @@ final class MainCoordinator {
 
     func onBackground() {
         resetAppStartTime()
+        Task {
+            await privacyStats.handleAppTermination()
+        }
     }
 
     private func resetAppStartTime() {
@@ -317,7 +326,8 @@ extension MainCoordinator: URLHandling {
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:
-            controller.forgetAllWithAnimation(options: .all)
+            let request = FireRequest(options: .all, trigger: .manualFire, scope: .all)
+            controller.forgetAllWithAnimation(request: request)
         case .voiceSearch:
             controller.onVoiceSearchPressed()
         case .newEmail:

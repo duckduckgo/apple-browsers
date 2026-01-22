@@ -55,8 +55,8 @@ class SettingsHostingController: UIHostingController<AnyView> {
             self?.navigationController?.dismiss(animated: true)
         }
 
-        viewModel.onRequestPresentFireConfirmation = { [weak self] onConfirm, onCancel in
-            self?.presentFireConfirmation(onConfirm: onConfirm, onCancel: onCancel)
+        viewModel.onRequestPresentFireConfirmation = { [weak self] sourceRect, onConfirm, onCancel in
+            self?.presentFireConfirmation(sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
         }
 
         self.rootView = AnyView(SettingsRootView(viewModel: viewModel))
@@ -92,7 +92,7 @@ class SettingsHostingController: UIHostingController<AnyView> {
     }
 
     @MainActor
-    func presentFireConfirmation(onConfirm: @escaping (FireOptions) -> Void, onCancel: @escaping () -> Void) {
+    func presentFireConfirmation(sourceRect: CGRect, onConfirm: @escaping (FireRequest) -> Void, onCancel: @escaping () -> Void) {
         let presenter = FireConfirmationPresenter(
             tabsModel: viewProvider.tabManager.model,
             featureFlagger: AppDependencyProvider.shared.featureFlagger,
@@ -103,7 +103,7 @@ class SettingsHostingController: UIHostingController<AnyView> {
         )
         presenter.presentFireConfirmation(
             on: self,
-            attachPopoverTo: view,
+            sourceRect: sourceRect,
             onConfirm: onConfirm,
             onCancel: onCancel
         )

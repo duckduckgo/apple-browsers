@@ -169,12 +169,14 @@ struct ScriptSourceProvider: ScriptSourceProviding {
 
     public func buildAutofillSource() -> AutofillUserScriptSourceProvider {
         let privacyConfig = self.privacyConfigurationManager.privacyConfig
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
         do {
             return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
                                                              properties: ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
                                                                                                 sessionKey: self.sessionKey ?? "",
                                                                                                 messageSecret: self.messageSecret ?? "",
-                                                                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig)),
+                                                                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
+                                                                                                themeVariant: themeVariant),
                                                              isDebug: AutofillPreferences().debugScriptEnabled)
             .withJSLoading()
             .build()
@@ -244,7 +246,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
-            bookmarkManager: bookmarkManager
+            bookmarkManager: bookmarkManager,
+            featureFlagger: featureFlagger
         )
     }
 

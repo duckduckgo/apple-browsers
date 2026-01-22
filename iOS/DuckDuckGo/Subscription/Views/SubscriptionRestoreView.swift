@@ -22,6 +22,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
+import PrivacyConfig
 
 struct SubscriptionRestoreView: View {
 
@@ -35,7 +36,9 @@ struct SubscriptionRestoreView: View {
     @State private var isShowingWelcomePage = false
     @State private var isShowingActivationFlow = false
     @Binding var currentView: SubscriptionContainerView.CurrentViewType
-    
+
+    let featureFlagger: FeatureFlagger
+
     private enum Constants {
         static let heroImage = "Privacy-Pro-Add-Device-128"
 
@@ -68,7 +71,7 @@ struct SubscriptionRestoreView: View {
                     Spacer()
                     
                     // Hidden link to display Email Activation View
-                    NavigationLink(destination: SubscriptionEmailView(viewModel: emailViewModel).environmentObject(subscriptionNavigationCoordinator),
+                    NavigationLink(destination: SubscriptionEmailView(viewModel: emailViewModel, featureFlagger: featureFlagger).environmentObject(subscriptionNavigationCoordinator),
                                    isActive: $isShowingActivationFlow) {
                           EmptyView()
                     }.isDetailLink(false)

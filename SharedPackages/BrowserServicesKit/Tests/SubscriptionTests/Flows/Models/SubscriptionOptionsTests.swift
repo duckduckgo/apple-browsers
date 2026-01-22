@@ -19,6 +19,7 @@
 import XCTest
 @testable import Subscription
 import SubscriptionTestingUtilities
+import Networking
 
 final class SubscriptionOptionsTests: XCTestCase {
 
@@ -32,10 +33,10 @@ final class SubscriptionOptionsTests: XCTestCase {
                                                         SubscriptionOption(id: "2",
                                                                            cost: SubscriptionOptionCost(displayPrice: "99 USD", recurrence: "yearly"), offer: yearlySubscriptionOffer)
                                                       ],
-                                                      features: [
-                                                        SubscriptionFeature(name: .networkProtection),
-                                                        SubscriptionFeature(name: .dataBrokerProtection),
-                                                        SubscriptionFeature(name: .identityTheftRestoration)
+                                                      availableEntitlements: [
+                                                        .networkProtection,
+                                                        .dataBrokerProtection,
+                                                        .identityTheftRestoration
                                                       ])
 
         let jsonEncoder = JSONEncoder()
@@ -101,12 +102,12 @@ final class SubscriptionOptionsTests: XCTestCase {
     }
 
     func testSubscriptionFeatureEncoding() throws {
-        let subscriptionFeature = SubscriptionFeature(name: .identityTheftRestoration)
+        let subscriptionFeature: SubscriptionEntitlement = .identityTheftRestoration
 
         let data = try? JSONEncoder().encode(subscriptionFeature)
         let subscriptionFeatureString = String(data: data!, encoding: .utf8)!
 
-        XCTAssertEqual(subscriptionFeatureString, "{\"name\":\"Identity Theft Restoration\"}")
+        XCTAssertEqual(subscriptionFeatureString, "\"Identity Theft Restoration\"")
     }
 
     func testEmptySubscriptionOptions() throws {
@@ -121,6 +122,6 @@ final class SubscriptionOptionsTests: XCTestCase {
 
         XCTAssertEqual(empty.platform, platform)
         XCTAssertTrue(empty.options.isEmpty)
-        XCTAssertEqual(empty.features.count, 3)
+        XCTAssertEqual(empty.features.count, 4)
     }
 }

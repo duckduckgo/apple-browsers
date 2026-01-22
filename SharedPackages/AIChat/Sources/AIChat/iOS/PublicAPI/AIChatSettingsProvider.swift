@@ -44,9 +44,6 @@ public protocol AIChatSettingsProvider {
     /// The user settings state for the AI Chat in tab manager
     var isAIChatTabSwitcherUserSettingsEnabled: Bool { get }
 
-    /// The user settings state for AI Chats as Tabs experimental feature
-    var isAIChatFullModeEnabled: Bool { get }
-
     /// The user settings state for automatically attaching page context
     var isAutomaticContextAttachmentEnabled: Bool { get }
 
@@ -68,10 +65,13 @@ public protocol AIChatSettingsProvider {
     /// Updates the user settings state for the AI Chat Search Input
     func enableAIChatSearchInputUserSettings(enable: Bool)
 
-    /// Updates the user settings state for the AI Chats as Tabs experimental feature
-    func enableAIChatFullModeSetting(enable: Bool)
-
     /// Updates the user settings state for the AI Chat automatic page context
     func enableAutomaticContextAttachment(enable: Bool)
+
+    /// Whether the user has seen the contextual onboarding
+    var hasSeenContextualOnboarding: Bool { get }
+
+    /// Marks the contextual onboarding as seen
+    func markContextualOnboardingSeen()
 }
 #endif

@@ -31,9 +31,6 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Peruuta";
 
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Ota käyttöön synkronointi ja varmuuskopiointi";
-
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Tämä luo salatun varmuuskopion kirjanmerkeistäsi ja automaattisen täytön tiedoistasi DuckDuckGon suojatulle palvelimelle. Voit synkronoida varmuuskopion muiden laitteittesi kanssa.";
 

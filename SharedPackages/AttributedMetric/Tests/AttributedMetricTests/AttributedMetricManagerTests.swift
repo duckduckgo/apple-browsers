@@ -46,6 +46,9 @@ final class AttributedMetricManagerTests: XCTestCase {
 
     // MARK: - Helper Methods
 
+    /// Fixed reference date for all tests: January 15, 2025, 12:00 UTC
+    private static let referenceDate = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 15, hour: 12))!
+
     /// Creates a complete test fixture with all necessary dependencies
     /// - Parameters:
     ///   - pixelHandler: The closure to handle pixel events
@@ -57,8 +60,7 @@ final class AttributedMetricManagerTests: XCTestCase {
     ) -> TestFixture {
         let suiteName = "testing_\(UUID().uuidString)"
         let userDefaults = UserDefaults(suiteName: suiteName)!
-        let startDate = Date(timeIntervalSince1970: Date().timeIntervalSince1970)
-        let timeMachine = TimeMachine(date: startDate)
+        let timeMachine = TimeMachine(date: Self.referenceDate)
 
         let pixelKit = PixelKit(
             dryRun: false,

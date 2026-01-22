@@ -29,6 +29,7 @@ import AppKitExtensions
 import AIChat
 import UIComponents
 import DesignResourcesKitIcons
+import SwiftUI
 
 // MARK: - Toggle Interaction Tracking
 
@@ -63,6 +64,12 @@ final class AddressBarButtonsViewController: NSViewController {
         static let askAiChatButtonAnimationDuration: TimeInterval = 0.2
     }
 
+    /// Struct to keep track of some Toggle conditions to avoid expensive operations like checking user defaults
+    private struct AIChatOmnibarToggleConditions {
+        let isFeatureOn: Bool
+        let hasUserInteractedWithToggle: Bool
+    }
+
     weak var delegate: AddressBarButtonsViewControllerDelegate?
 
     private let accessibilityPreferences: AccessibilityPreferences
@@ -89,6 +96,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionCenterPopover: PermissionCenterPopover?
 
     private var popupBlockedPopover: PopupBlockedPopover?
+    private var systemDisabledInfoPopover: NSPopover?
+
     private func popupBlockedPopoverCreatingIfNeeded() -> PopupBlockedPopover {
         return popupBlockedPopover ?? {
             let popover = PopupBlockedPopover(featureFlagger: featureFlagger)
@@ -126,6 +135,10 @@ final class AddressBarButtonsViewController: NSViewController {
     private(set) var searchModeToggleControl: CustomToggleControl?
     private var searchModeToggleWidthConstraint: NSLayoutConstraint?
     private var wasToggleVisible: Bool = false
+
+    /// Callback to focus the AI Chat text view when Tab is pressed on the toggle in AI Chat mode.
+    /// Set by MainViewController to wire up the connection between toggle and AI Chat text container.
+    var onToggleTabPressedInAIChatMode: (() -> Void)?
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
     @IBOutlet weak var bookmarkButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var bookmarkButtonHeightConstraint: NSLayoutConstraint!
@@ -279,6 +292,10 @@ final class AddressBarButtonsViewController: NSViewController {
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
     private let aiChatSettings: AIChatPreferencesStorage
+    private lazy var aiChatToggleConditions: AIChatOmnibarToggleConditions = {
+        AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+                                      hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
+    }()
 
     private(set) lazy var aiChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating? = {
         AIChatTogglePopoverCoordinator(windowControllersManager: NSApp.delegateTyped.windowControllersManager)
@@ -336,7 +353,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         setupAnimationViews()
         setupNotificationAnimationView()
         setupSearchModeToggleControl()
@@ -377,6 +393,7 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyDashboardButton.sendAction(on: .leftMouseUp)
 
         (imageButton.cell as? NSButtonCell)?.highlightsBy = NSCell.StyleMask(rawValue: 0)
+        imageButton.setAccessibilityIdentifier("AddressBarButtonsViewController.imageButton")
 
         cameraButton.sendAction(on: .leftMouseDown)
         cameraButton.setAccessibilityIdentifier("AddressBarButtonsViewController.cameraButton")
@@ -473,6 +490,9 @@ final class AddressBarButtonsViewController: NSViewController {
         // the leak is found.
         if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
             permissionAuthorizationPopover.close()
+        }
+        if let systemDisabledInfoPopover, systemDisabledInfoPopover.isShown {
+            systemDisabledInfoPopover.close()
         }
 
         for case let .some(animationView) in [shieldDotAnimationView, shieldAnimationView] {
@@ -610,6 +630,14 @@ final class AddressBarButtonsViewController: NSViewController {
             .dropFirst().sink { [weak self] _ in
                 self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
+
+        // Show informational popover when permission blocked due to system being disabled
+        tabViewModel?.tab.permissions.permissionBlockedBySystem
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] (domain, permissionType) in
+                self?.showSystemDisabledInfoPopover(for: domain, permissionType: permissionType)
+            }
+            .store(in: &permissionsCancellables)
     }
 
     private func subscribeToPrivacyEntryPointIconUpdateTrigger() {
@@ -933,6 +961,15 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
+        // Hide shields when showing an error page (globe icon is shown instead)
+        if tabViewModel.isShowingErrorPage {
+            shieldAnimationView.isHidden = true
+            shieldDotAnimationView.isHidden = true
+            privacyDashboardButton.image = nil
+            privacyDashboardButton.setAccessibilityValue("hidden")
+            return
+        }
+
         // Don't change icon while shield animation is playing
         guard !isAnyShieldAnimationPlaying else { return }
 
@@ -961,6 +998,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 shieldDotAnimationView.isHidden = true
                 privacyDashboardButton.isAnimationEnabled = true
                 privacyDashboardButton.image = privacyShieldStyle.iconWithDot
+                privacyDashboardButton.setAccessibilityValue("shieldDot")
 
                 let animationNames = MouseOverAnimationButton.AnimationNames(
                     aqua: privacyShieldStyle.hoverAnimationWithDot(forLightMode: true),
@@ -973,6 +1011,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 privacyDashboardButton.isAnimationEnabled = true
                 shieldAnimationView.isHidden = false
                 shieldDotAnimationView.isHidden = true
+                privacyDashboardButton.setAccessibilityValue("shield")
 
                 if !hasShieldAnimationCompleted {
                     shieldAnimationView.currentFrame = 1
@@ -1677,6 +1716,23 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionAuthorizationPopover?.close()
         popupBlockedPopover?.close()
         permissionCenterPopover?.close()
+        systemDisabledInfoPopover?.close()
+    }
+
+    private func showSystemDisabledInfoPopover(for domain: String, permissionType: PermissionType) {
+        guard permissionCenterButton.isVisible else { return }
+
+        let view = SystemDisabledPermissionInfoView(domain: domain, permissionType: permissionType)
+        let controller = NSHostingController(rootView: view)
+        controller.preferredContentSize = controller.view.fittingSize
+
+        let popover = NSPopover()
+        systemDisabledInfoPopover = popover
+        popover.contentViewController = controller
+        popover.behavior = .transient  // Click outside to dismiss
+        popover.show(relativeTo: permissionCenterButton.bounds,
+                     of: permissionCenterButton,
+                     preferredEdge: .maxY)
     }
 
     func openPrivacyDashboard() {
@@ -1738,7 +1794,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let hasText = !(textFieldValue?.isEmpty ?? true)
         let hasUserTypedText = textFieldValue?.isUserTyped == true && hasText
-        let hasInteractedBefore = UserDefaults.standard.hasInteractedWithSearchDuckAIToggle
+        let hasInteractedBefore = aiChatToggleConditions.hasUserInteractedWithToggle
 
         if shouldShowToggle && !wasToggleVisible {
             if hasText || hasInteractedBefore {
@@ -1766,10 +1822,12 @@ final class AddressBarButtonsViewController: NSViewController {
 
         /// Delay slightly to ensure the toggle is visible and positioned correctly
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.aiChatTogglePopoverCoordinator?.showPopoverIfNeeded(
+            guard let self else { return }
+            self.aiChatTogglePopoverCoordinator?.showPopoverIfNeeded(
                 relativeTo: toggleControl,
                 isNewUser: AppDelegate.isNewUser,
-                userDidInteractWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle
+                userDidInteractWithToggle: self.aiChatToggleConditions.hasUserInteractedWithToggle,
+                userDidSeeToggleOnboarding: self.aiChatSettings.userDidSeeToggleOnboarding
             )
         }
     }
@@ -2041,6 +2099,10 @@ final class AddressBarButtonsViewController: NSViewController {
             self?.searchModeToggleWidthConstraint?.constant = newWidth
         }
 
+        toggleControl.onTabPressed = { [weak self] in
+            self?.handleToggleTabPressed() ?? false
+        }
+
         toggleControl.menu = createSearchModeToggleContextMenu()
 
         trailingButtonsContainer.addArrangedSubview(toggleControl)
@@ -2076,9 +2138,15 @@ final class AddressBarButtonsViewController: NSViewController {
         return menu
     }
 
+    private func updateAIChatToggleConditions() {
+        aiChatToggleConditions = AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+                                                                hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
+    }
+
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
         let isAIChatMode = sender.selectedSegment == 1
         UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = true
+        updateAIChatToggleConditions()
         fireToggleChangedPixel(isAIChatMode: isAIChatMode)
         delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
@@ -2110,14 +2178,35 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if shouldShowToggle {
             if addressBarTextField.nextKeyView != toggleControl {
-                toggleControl.nextKeyView = addressBarTextField.nextKeyView
                 addressBarTextField.nextKeyView = toggleControl
             }
+            // Tab cycling is handled by onTabPressed callback instead of nextKeyView
+            // This prevents the toggle from trying to tab to elements outside the address bar
         } else {
             if addressBarTextField.nextKeyView == toggleControl {
-                addressBarTextField.nextKeyView = toggleControl.nextKeyView
+                addressBarTextField.nextKeyView = nil
             }
         }
+    }
+
+    private func handleToggleTabPressed() -> Bool {
+        let isAIChatMode = searchModeToggleControl?.selectedSegment == 1
+
+        if isAIChatMode {
+            if let callback = onToggleTabPressedInAIChatMode {
+                callback()
+                return true
+            }
+            return false
+        }
+
+        guard let addressBarViewController = parent as? AddressBarViewController,
+              let addressBarTextField = addressBarViewController.addressBarTextField else {
+            return false
+        }
+        addressBarTextField.window?.makeFirstResponder(addressBarTextField)
+        addressBarTextField.moveCursorToEnd()
+        return true
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {

@@ -33,13 +33,9 @@ struct SettingsAIFeaturesView: View {
         List {
 
             VStack(alignment: .center) {
-                if viewModel.isUpdatedAIFeaturesSettingsEnabled {
-                    Image(.settingAIFeaturesHero)
-                        .padding(.top, -20)
-                } else {
-                    Image(.settingsAIChatHero)
-                        .padding(.top, -20)
-                }
+                Image(.settingAIFeaturesHero)
+                    .padding(.top, -20)
+
                 Text(UserText.settingsAiFeatures)
                     .daxTitle3()
 
@@ -73,36 +69,28 @@ struct SettingsAIFeaturesView: View {
             if viewModel.isAiChatEnabledBinding.wrappedValue {
                 if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
 
-                    if viewModel.isUpdatedAIFeaturesSettingsEnabled {
-                        Section {
-                            HStack {
-                                SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
-                                    .padding(.vertical, 8)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        } footer: {
-                            Text(footerAttributedString)
-                                .environment(\.openURL, OpenURLAction { url in
-                                    switch FooterAction.from(url) {
-                                    case .shareFeedback?:
-                                        viewModel.presentLegacyView(.feedback)
-                                        return .handled
-                                    case nil:
-                                        return .systemAction
-                                    }
-                                })
+                    Section {
+                        HStack {
+                            SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                                .padding(.vertical, 8)
                         }
-                        .listRowBackground(Color(designSystemColor: .surface))
-                    } else {
-                        Section {
-                            SettingsCellView(label: UserText.settingsAiChatSearchInput,
-                                             accessory: .toggle(isOn: viewModel.aiChatSearchInputEnabledBinding))
-                        } footer: {
-                            Text(UserText.settingsAiChatSearchInputFooter)
-                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    } footer: {
+                        Text(footerAttributedString)
+                            .environment(\.openURL, OpenURLAction { url in
+                                switch FooterAction.from(url) {
+                                case .shareFeedback?:
+                                    viewModel.presentLegacyView(.feedback)
+                                    return .handled
+                                case nil:
+                                    return .systemAction
+                                }
+                            })
                     }
+                    .listRowBackground(Color(designSystemColor: .surface))
+
                 }
-                
+
                 if viewModel.experimentalAIChatManager.isContextualDuckAIModeEnabled {
                     Section {
                         SettingsCellView(label: UserText.settingsAutomaticPageContextTitle,
@@ -111,35 +99,18 @@ struct SettingsAIFeaturesView: View {
                     }
                 }
 
-                if viewModel.isUpdatedAIFeaturesSettingsEnabled {
-                    Section {
-                        NavigationLink(destination: SettingsAIChatShortcutsView().environmentObject(viewModel)) {
-                            SettingsCellView(label: UserText.settingsManageAIChatShortcuts)
-                        }
-                    }
-                    .listRowBackground(Color(designSystemColor: .surface))
-                } else {
-                    Section(header: Text(UserText.aiChatSettingsBrowserShortcutsSectionTitle)) {
-                        SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
-                                         accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
-
-                        SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
-                                         accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
-
-                        if viewModel.state.voiceSearchEnabled {
-                            SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
-                                             accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
-                        }
-
-                        SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
-                                         accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                Section {
+                    NavigationLink(destination: SettingsAIChatShortcutsView().environmentObject(viewModel)) {
+                        SettingsCellView(label: UserText.settingsManageAIChatShortcuts)
                     }
                 }
+                .listRowBackground(Color(designSystemColor: .surface))
+
             }
 
             if !viewModel.openedFromSERPSettingsButton {
                 Section {
-                    NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
+                    NavigationLink(destination: SERPSettingsView(page: .searchAssist, featureFlagger: viewModel.featureFlagger)) {
                         SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
                                          subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
                                          image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
@@ -147,9 +118,7 @@ struct SettingsAIFeaturesView: View {
                     .listRowBackground(Color(designSystemColor: .surface))
 
                     if viewModel.shouldShowHideAIGeneratedImagesSection {
-                        NavigationLink(destination:
-                            SERPSettingsView(page: .hideAIGeneratedImages)
-                                .environmentObject(viewModel)
+                        NavigationLink(destination: SERPSettingsView(page: .hideAIGeneratedImages, featureFlagger: viewModel.featureFlagger)
                                 .onAppear {
                                     PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
                                 }
@@ -162,16 +131,6 @@ struct SettingsAIFeaturesView: View {
                     }
                 }
             }
-            
-            if viewModel.experimentalAIChatManager.fullDuckAIModeExperimentalSettingFlagEnabled {
-                Section {
-                    SettingsCellView(label: UserText.settingsEnableDuckAIFullModeTitle,
-                                     subtitle: UserText.settingsEnableDuckAIFullModeSubtitle,
-                                     accessory: .toggle(isOn: viewModel.isAIChatFullModeEnabled),
-                                     optionalBadgeText: UserText.settingsItemPreviewBadge)
-                }
-            }
-            
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)

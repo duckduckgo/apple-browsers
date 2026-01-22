@@ -31,14 +31,16 @@ extension SubscriptionManagerTests {
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
                                                               purchasePlatform: .appStore,
                                                               customBaseSubscriptionURL: customBaseSubscriptionURL)
-
-        let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                             accountManager: accountManager,
-                                                             subscriptionEndpointService: subscriptionService,
-                                                             authEndpointService: authService,
-                                                             subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                             subscriptionEnvironment: subscriptionEnvironment,
-                                                             isInternalUserEnabled: isInternalUserEnabled)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let subscriptionManager = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: subscriptionEnvironment,
+            pixelHandler: MockPixelHandler(),
+            isInternalUserEnabled: isInternalUserEnabled
+        )
 
         // WHEN
         let result = subscriptionManager.url(for: SubscriptionURL.baseURL)
@@ -55,14 +57,16 @@ extension SubscriptionManagerTests {
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
                                                               purchasePlatform: .appStore,
                                                               customBaseSubscriptionURL: customBaseSubscriptionURL)
-
-        let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                             accountManager: accountManager,
-                                                             subscriptionEndpointService: subscriptionService,
-                                                             authEndpointService: authService,
-                                                             subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                             subscriptionEnvironment: subscriptionEnvironment,
-                                                             isInternalUserEnabled: isInternalUserEnabled)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
+        let subscriptionManager = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: subscriptionEnvironment,
+            pixelHandler: MockPixelHandler(),
+            isInternalUserEnabled: isInternalUserEnabled
+        )
 
         // WHEN
         let result = subscriptionManager.url(for: SubscriptionURL.baseURL)
@@ -77,14 +81,16 @@ extension SubscriptionManagerTests {
 
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
                                                               purchasePlatform: .appStore)
-
-        let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                             accountManager: accountManager,
-                                                             subscriptionEndpointService: subscriptionService,
-                                                             authEndpointService: authService,
-                                                             subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                             subscriptionEnvironment: subscriptionEnvironment,
-                                                             isInternalUserEnabled: isInternalUserEnabled)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let subscriptionManager = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: subscriptionEnvironment,
+            pixelHandler: MockPixelHandler(),
+            isInternalUserEnabled: isInternalUserEnabled
+        )
 
         // WHEN
         let result = subscriptionManager.url(for: SubscriptionURL.baseURL)

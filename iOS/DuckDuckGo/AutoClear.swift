@@ -58,8 +58,9 @@ final class AutoClear: AutoClearing {
         if shouldInjectAIChatsFireOption(into: options) {
             options.insert(.aiChats)
         }
-        let fireContext: FireContext = launching ? .autoClearOnLaunch : .autoClearOnForeground
-        await worker.burn(options: options, applicationState: applicationState, fireContext: fireContext)
+        let trigger: FireRequest.Trigger = launching ? .autoClearOnLaunch : .autoClearOnForeground
+        let request = FireRequest(options: options, trigger: trigger, scope: .all)
+        await worker.burn(request: request, applicationState: applicationState)
     }
 
     /// Note: function is parametrised because of tests.
@@ -101,15 +102,14 @@ final class AutoClear: AutoClearing {
     // Determine whether to inject the `.aiChats` fire option.
     // 
     // Criteria:
-    // 1. Only inject on the legacy Fire button UI (i.e., granular fire options feature flag is OFF).
-    // 2. The user has enabled "auto-clear AI chat history" in settings.
-    // 3. FireOptions currently include `.data` but do NOT already include `.aiChats`.
+    // 1. The user has enabled "auto-clear AI chat history" in settings.
+    // 2. FireOptions currently include `.data` but do NOT already include `.aiChats`.
     // 
     // This ensures .aiChats is only injected in the correct (legacy UI) scenarios.
-    private func shouldInjectAIChatsFireOption(into options: FireOptions) -> Bool {
+    private func shouldInjectAIChatsFireOption(into options: FireRequest.Options) -> Bool {
         options.contains(.data)
             && !options.contains(.aiChats)
-            && !featureFlagger.isFeatureOn(.granularFireButtonOptions)
+            && !featureFlagger.isFeatureOn(.enhancedDataClearingSettings)
             && appSettings.autoClearAIChatHistory
     }
 

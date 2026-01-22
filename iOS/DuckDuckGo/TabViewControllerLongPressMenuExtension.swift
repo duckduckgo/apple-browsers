@@ -126,6 +126,7 @@ extension TabViewController {
             daxDialogsManager: daxDialogsManager,
             aiChatSettings: aiChatSettings,
             productSurfaceTelemetry: productSurfaceTelemetry,
+            privacyStats: privacyStats,
             voiceSearchHelper: voiceSearchHelper)
 
         tabController.isLinkPreview = true

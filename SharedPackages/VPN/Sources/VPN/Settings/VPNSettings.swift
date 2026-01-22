@@ -213,6 +213,7 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingSelectedServer()
         defaults.resetDNSSettings()
         defaults.resetNetworkProtectionSettingShowInMenuBar()
+        defaults.resetNetworkProtectionSettingWideEventPostEndpointEnabled()
     }
 
     // MARK: - Applying Changes
@@ -378,17 +379,6 @@ public final class VPNSettings {
         }
     }
 
-#if os(iOS)
-    public var isAuthV2Enabled: Bool {
-        get {
-            defaults.networkProtectionSettingIsAuthV2Enabled
-        }
-        set {
-            defaults.networkProtectionSettingIsAuthV2Enabled = newValue
-        }
-    }
-#endif
-
     // MARK: - DNS Settings
 
     public var dnsSettingsPublisher: AnyPublisher<NetworkProtectionDNSSettings, Never> {
@@ -473,6 +463,19 @@ public final class VPNSettings {
 
         set {
             defaults.networkProtectionSettingShowDebugVPNEventNotifications = newValue
+        }
+    }
+
+    public var wideEventPostEndpointEnabledPublisher: AnyPublisher<Bool, Never> {
+        defaults.networkProtectionSettingWideEventPostEndpointEnabledPublisher
+    }
+
+    public var wideEventPostEndpointEnabled: Bool {
+        get {
+            defaults.networkProtectionSettingWideEventPostEndpointEnabled
+        }
+        set {
+            defaults.networkProtectionSettingWideEventPostEndpointEnabled = newValue
         }
     }
 }

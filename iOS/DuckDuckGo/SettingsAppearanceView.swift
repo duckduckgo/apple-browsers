@@ -69,23 +69,47 @@ struct SettingsAppearanceView: View {
                                  isButton: true)
 
                 // Theme
-                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                       label: UserText.settingsTheme,
+                SettingsPickerCellView(label: UserText.settingsTheme,
                                        options: ThemeStyle.allCases,
                                        selectedOption: viewModel.themeStyleBinding)
             }
 
+            // AddressBar specific settings
+            Section {
+                addressBarPositionSetting()
 
-            if viewModel.state.mobileCustomization.isEnabled {
-                customizableSettings()
-                    .onFirstAppear {
-                        navigateToSubPageIfNeeded()
-                    }
-            } else {
-                legacySettings()
+                showFullSiteAddressSetting()
+
+                showTrackersBlockedAnimationSetting()
+
+                showReloadButtonSetting()
+
+            } header: {
+                Text(UserText.addressBar)
             }
 
-            if viewModel.browsingMenuSheetCapability.isAvailable {
+            if viewModel.isTabSwitcherTrackerCountEnabled {
+                Section {
+                    showTrackerCountSetting()
+                } header: {
+                    Text(UserText.settingsTabsSection)
+                }
+            }
+
+            // Customizable buttons specific settings.
+            if viewModel.mobileCustomization.isEnabled {
+                Section {
+                    addressBarButtonSetting()
+                    toolbarButtonSetting()
+                } header: {
+                    Text(UserText.mobileCustomizationSectionTitle)
+                }
+                .onFirstAppear {
+                    navigateToSubPageIfNeeded()
+                }
+            }
+
+            if viewModel.browsingMenuSheetCapability.isSettingsOptionVisible {
                 Section {
                     SettingsCellView(label: UserText.settingsExperimentalMenu,
                                      accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
@@ -98,27 +122,6 @@ struct SettingsAppearanceView: View {
                                     viewModel: viewModel)
         .onFirstAppear {
             Pixel.fire(pixel: .settingsAppearanceOpen)
-        }
-    }
-
-    @ViewBuilder
-    func customizableSettings() -> some View {
-        Section {
-            addressBarPositionSetting()
-
-            showFullSiteAddressSetting()
-
-            showReloadButtonSetting()
-
-        } header: {
-            Text(UserText.addressBar)
-        }
-
-        Section {
-            addressBarButtonSetting()
-            toolbarButtonSetting()
-        } header: {
-            Text(UserText.mobileCustomizationSectionTitle)
         }
     }
 
@@ -179,31 +182,27 @@ struct SettingsAppearanceView: View {
     }
 
     @ViewBuilder
-    func legacySettings() -> some View {
-        Section(header: Text(UserText.addressBar)) {
-            addressBarPositionSetting()
-
-            // Refresh Button Position
-            SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                   label: UserText.settingsRefreshButtonPositionTitle,
-                                   options: RefreshButtonPosition.allCases,
-                                   selectedOption: viewModel.refreshButtonPositionBinding)
-
-            showFullSiteAddressSetting()
-        }
-    }
-
-    @ViewBuilder
     func showFullSiteAddressSetting() -> some View {
         SettingsCellView(label: UserText.settingsFullURL,
                          accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
     }
 
     @ViewBuilder
+    func showTrackerCountSetting() -> some View {
+        SettingsCellView(label: UserText.tabSwitcherShowTrackerCount,
+                         accessory: .toggle(isOn: viewModel.showTrackerCountInTabSwitcherBinding))
+    }
+
+    @ViewBuilder
+    func showTrackersBlockedAnimationSetting() -> some View {
+        SettingsCellView(label: UserText.settingsTrackersBlockedAnimation,
+                         accessory: .toggle(isOn: viewModel.showTrackersBlockedAnimationBinding))
+    }
+
+    @ViewBuilder
     func addressBarPositionSetting() -> some View {
         if viewModel.state.addressBar.enabled {
-            SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                   label: UserText.settingsAddressBarPosition,
+            SettingsPickerCellView(label: UserText.settingsAddressBarPosition,
                                    options: AddressBarPosition.allCases,
                                    selectedOption: viewModel.addressBarPositionBinding)
         }

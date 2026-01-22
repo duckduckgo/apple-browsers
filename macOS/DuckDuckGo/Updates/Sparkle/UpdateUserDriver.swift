@@ -144,23 +144,17 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     private(set) var sparkleUpdateState: SPUUserUpdateState?
 
-    // MARK: - Feature Flags support
-
-    private let featureFlagger: FeatureFlagger
-
-    private var useLegacyAutoRestartLogic: Bool {
-        !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
-    }
+    private let useLegacyAutoRestartLogic: Bool
 
     // MARK: - Initializers
 
     init(internalUserDecider: InternalUserDecider,
          areAutomaticUpdatesEnabled: Bool,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         useLegacyAutoRestartLogic: Bool) {
 
-        self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
+        self.useLegacyAutoRestartLogic = useLegacyAutoRestartLogic
     }
 
     func resume() {
@@ -170,6 +164,12 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     func configureResumeBlock(_ block: @escaping () -> Void) {
         guard !isResumable else { return }
         onResuming = block
+    }
+
+    /// Sets updateProgress from delegate callbacks that have no corresponding SPUUserDriver method.
+    /// This ensures all progress changes flow through the user driver for clean Combine propagation.
+    func setProgressFromDelegate(_ progress: UpdateCycleProgress) {
+        self.updateProgress = progress
     }
 
     private func dismissCurrentUpdate() {
@@ -255,7 +255,6 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func showDownloadInitiated(cancellation: @escaping () -> Void) {
-        Logger.updates.log("Updater started downloading the update")
         updateProgress = .downloadDidStart
     }
 
@@ -273,7 +272,6 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func showDownloadDidStartExtractingUpdate() {
-        Logger.updates.log("Updater started extracting the update")
         updateProgress = .extractionDidStart
     }
 
@@ -287,24 +285,20 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
             // This doesn't actually skip the update in the future (‽)
             reply(.skip)
             self?.updateProgress = .updateCycleDone(.dismissingObsoleteUpdate)
-            Logger.updates.log("Updater dismissing obsolete update")
         }
 
         guard useLegacyAutoRestartLogic else {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
-            Logger.updates.log("Updater paused at restart checkpoint")
             return
         }
 
         if areAutomaticUpdatesEnabled {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
-            Logger.updates.log("Updater paused at restart checkpoint (automatic update pending user decision)")
         } else {
             reply(.install)
             updateProgress = .updateCycleDone(.proceededToInstallationAtRestartCheckpoint)
-            Logger.updates.log("Updater proceeded to installation at restart checkpoint")
         }
     }
 

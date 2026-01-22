@@ -133,7 +133,7 @@ public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
     }
 }
 
-public struct AIChatPageContextData: Codable {
+public struct AIChatPageContextData: Codable, Equatable {
     public let title: String
     public let favicon: [PageContextFavicon]
     public let url: String
@@ -150,7 +150,7 @@ public struct AIChatPageContextData: Codable {
         self.fullContentLength = fullContentLength
     }
 
-    public struct PageContextFavicon: Codable {
+    public struct PageContextFavicon: Codable, Equatable {
         public let href: String
         public let rel: String
 

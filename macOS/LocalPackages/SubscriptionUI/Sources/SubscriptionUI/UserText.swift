@@ -185,8 +185,17 @@ enum UserText {
         return String(format: localized, formattedDate)
     }
 
+    static func preferencesSubscriptionPendingDowngradeCaption(tierName: String, billingPeriod: String, formattedDate: String) -> String {
+        let localized = NSLocalizedString("subscription.preferences.subscription.pending.downgrade.caption",
+                                          bundle: Bundle.module,
+                                          value: "Your plan will downgrade to %@ %@ on %@.",
+                                          comment: "Pending downgrade info. Parameters are tier name, billing period, and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'")
+        return String(format: localized, tierName, billingPeriod, formattedDate)
+    }
+
     static let manageSubscriptionButton = NSLocalizedString("subscription.preferences.manage.subscription.button", bundle: Bundle.module, value: "Manage Subscription", comment: "Button to manage subscription")
     static let updatePlanOrCancelButton = NSLocalizedString("subscription.preferences.update.plan.or.cancel.button", bundle: Bundle.module, value: "Update Plan or Cancel", comment: "Button to update subscription plan or cancel")
+    static let managePaymentOrCancelButton = NSLocalizedString("subscription.preferences.manage.payment.or.cancel.button", bundle: Bundle.module, value: "Manage Payment or Cancel", comment: "Button to manage payment or cancel subscription")
     static let removeFromThisDeviceButton = NSLocalizedString("subscription.preferences.remove.from.this.device.button", bundle: Bundle.module, value: "Remove From This Device", comment: "Button to remove subscription from this device")
 
     // MARK: Preferences when subscription is inactive
@@ -222,6 +231,12 @@ enum UserText {
     // MARK: Preferences when subscription is expired
 
     static let viewPlansExpiredButtonTitle = NSLocalizedString("subscription.preferences.button.view.plans", bundle: Bundle.module, value: "View Plans", comment: "Button for viewing subscription plans on expired subscription")
+
+    // MARK: - Upgrade section
+    static let upgradeSectionCaption = "Unlock smarter, more powerful AI with higher limits"
+    static func upgradeButton(tierName: String) -> String {
+        return String(format: "Upgrade to %@", tierName.capitalized)
+    }
 
     // MARK: - Change plan or billing dialogs
     static let viewAllPlansButtonTitle = NSLocalizedString("subscription.preferences.button.view.all.plans", bundle: Bundle.module, value: "View All Plans", comment: "Button for viewing all available subscription plans")
@@ -272,9 +287,6 @@ enum UserText {
     static let subscriptionFoundAlertDescription = NSLocalizedString("subscription.alert.subscription.found.description", bundle: Bundle.module, value: "We found a subscription associated with this Apple Account.", comment: "Alert message when subscription was found")
 
     static let subscriptionAppleIDSyncFailedAlertTitle = NSLocalizedString("subscription.alert.subscription.apple-id.sync-failed.title", bundle: Bundle.module, value: "Something Went Wrong When Syncing Your Apple Account", comment: "Alert message when the subscription failed to restore")
-
-    // MARK: - Rebranding Message
-    static let preferencesSubscriptionRebrandingMessage = NSLocalizedString("subscription.preferences.subscription.rebranding.message", bundle: Bundle.module, value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message informing users that Subscription is now called the DuckDuckGo subscription")
 
     // MARK: - Win-back Offer
     static let winBackCampaignLoggedOutPreferencesTitle = NSLocalizedString("win-back.campaign.logged-out.preferences.title", value: "We want you back! Get 25% off.", comment: "Title of the message displayed for logged out users to resubscribe during the win-back campaign")

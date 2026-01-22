@@ -158,6 +158,9 @@ class MainViewController: UIViewController {
     private lazy var faviconLoader: FavoritesFaviconLoading = FavoritesFaviconLoader()
     private lazy var faviconsFetcherOnboarding = FaviconsFetcherOnboarding(syncService: syncService, syncBookmarksAdapter: syncDataProviders.bookmarksAdapter)
 
+    private lazy var browsingMenuHeaderDataSource = BrowsingMenuHeaderDataSource()
+    private lazy var browsingMenuHeaderStateProvider = BrowsingMenuHeaderStateProvider()
+
     lazy var menuBookmarksViewModel: MenuBookmarksInteracting = {
         let viewModel = MenuBookmarksViewModel(bookmarksDatabase: bookmarksDatabase, syncService: syncService)
         viewModel.favoritesDisplayMode = appSettings.favoritesDisplayMode
@@ -204,6 +207,7 @@ class MainViewController: UIViewController {
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
     let aiChatSettings: AIChatSettingsProvider
+    let privacyStats: PrivacyStatsProviding
 
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
@@ -232,9 +236,11 @@ class MainViewController: UIViewController {
         return manager
     }()
 
-    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore)
+    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(
+        using: featureFlagger,
+        keyValueStore: keyValueStore
+    )
 
-    let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
@@ -242,9 +248,10 @@ class MainViewController: UIViewController {
     private let syncAIChatsCleaner: SyncAIChatsCleaning
 
     private var duckPlayerEntryPointVisible = false
-    private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+    private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
+    private let daxEasterEggLogoStore: DaxEasterEggLogoStoring
 
     private let internalUserCommands: URLBasedDebugCommands = InternalUserCommands()
     private let launchSourceManager: LaunchSourceManaging
@@ -291,7 +298,8 @@ class MainViewController: UIViewController {
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
-        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
+        daxEasterEggPresenter: DaxEasterEggPresenting? = nil,
+        daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
@@ -301,6 +309,7 @@ class MainViewController: UIViewController {
         productSurfaceTelemetry: ProductSurfaceTelemetry,
         fireExecutor: FireExecuting,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
+        privacyStats: PrivacyStatsProviding,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
         syncAiChatsCleaner: SyncAIChatsCleaning,
         whatsNewRepository: WhatsNewMessageRepository
@@ -338,12 +347,12 @@ class MainViewController: UIViewController {
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
-        self.isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         self.keyValueStore = keyValueStore
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
-        self.daxEasterEggPresenter = daxEasterEggPresenter
+        self.daxEasterEggLogoStore = daxEasterEggLogoStore
+        self.daxEasterEggPresenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
         self.launchSourceManager = launchSourceManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
@@ -351,6 +360,7 @@ class MainViewController: UIViewController {
         self.aichatFullModeFeature = aichatFullModeFeature
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.privacyStats = privacyStats
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
         self.syncAIChatsCleaner = syncAiChatsCleaner
@@ -461,6 +471,7 @@ class MainViewController: UIViewController {
         subscribeToAIChatSettingsEvents()
         subscribeToRefreshButtonSettingsEvents()
         subscribeToCustomizationSettingsEvents()
+        subscribeToDaxEasterEggLogoChanges()
 
         checkSubscriptionEntitlements()
 
@@ -486,28 +497,14 @@ class MainViewController: UIViewController {
         // Needs to be called here to established correct view hierarchy
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         applyCustomizationState()
-        subscribeToCustomizationFeatureFlagChanges()
 
         mobileCustomization.delegate = self
-    }
-
-    @MainActor
-    func subscribeToCustomizationFeatureFlagChanges() {
-        featureFlagger.updatesPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                guard let self else { return }
-                let isFeatureEnabledNow = self.featureFlagger.isFeatureOn(.mobileCustomization)
-                if mobileCustomization.isFeatureEnabled != isFeatureEnabledNow {
-                    mobileCustomization.isFeatureEnabled = isFeatureEnabledNow
-                    self.applyCustomizationState()
-                }
-            }.store(in: &settingsCancellables)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        productSurfaceTelemetry.dailyActiveUser()
         productSurfaceTelemetry.iPadUsed(isPad: isPad)
 
         defer {
@@ -670,6 +667,7 @@ class MainViewController: UIViewController {
         controller.fireproofing = fireproofing
         controller.aiChatSettings = aiChatSettings
         controller.keyValueStore = keyValueStore
+        controller.tabManager = tabManager
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
@@ -1205,8 +1203,8 @@ class MainViewController: UIViewController {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: source,
-                onConfirm: { [weak self] fireOptions in
-                    self?.forgetAllWithAnimation(options: fireOptions) {}
+                onConfirm: { [weak self] fireRequest in
+                    self?.forgetAllWithAnimation(request: fireRequest) {}
                 },
                 onCancel: {
                     // TODO: - Maybe add pixel
@@ -1236,7 +1234,8 @@ class MainViewController: UIViewController {
 
     func onQuickFirePressed() {
         wakeLazyFireButtonAnimator()
-        forgetAllWithAnimation(options: .all) {}
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all)
+        forgetAllWithAnimation(request: request) {}
         dismiss(animated: true)
         if KeyboardSettings().onAppLaunch {
             enterSearch()
@@ -1525,6 +1524,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
+            updateBrowsingMenuHeaderDataSource()
             return
         }
 
@@ -1538,15 +1538,37 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.resetPrivacyIcon(for: tab.url)
         }
 
-        // Restore the Dax Easter Egg logo URL for the current tab
-        Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
-        viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
+        let logoURL = logoURLForCurrentPage(tab: tab)
+        viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
         if aichatFullModeFeature.isAvailable && tab.isAITab {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
         }
+
+        updateBrowsingMenuHeaderDataSource()
+    }
+
+    private func updateBrowsingMenuHeaderDataSource() {
+        guard browsingMenuSheetCapability.isEnabled else { return }
+
+        var easterEggLogoURL: String?
+        if let tab = currentTab {
+            easterEggLogoURL = logoURLForCurrentPage(tab: tab)
+        }
+
+        browsingMenuHeaderStateProvider.update(
+            dataSource: browsingMenuHeaderDataSource,
+            isFeatureEnabled: browsingMenuSheetCapability.isWebsiteHeaderEnabled,
+            isNewTabPage: newTabPageViewController != nil,
+            isAITab: currentTab?.isAITab ?? false,
+            isError: currentTab?.isError ?? false,
+            hasLink: currentTab?.link != nil,
+            url: currentTab?.url,
+            title: currentTab?.title,
+            easterEggLogoURL: easterEggLogoURL
+        )
     }
 
     private func updateOmniBarLoadingState() {
@@ -2046,6 +2068,8 @@ class MainViewController: UIViewController {
             launchSettings(deepLinkTarget: deepLinkTarget)
         case .subscriptionFlow(let components):
             launchSettings(deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
+        case .subscriptionPlanChangeFlow(let components):
+            launchSettings(deepLinkTarget: .subscriptionPlanChangeFlow(redirectURLComponents: components))
         case .subscriptionSettings:
             launchSettings(deepLinkTarget: .subscriptionSettings)
         case .restoreFlow:
@@ -2186,14 +2210,12 @@ class MainViewController: UIViewController {
     @objc
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),
                 frequency: .dailyAndCount)
             tunnelDefaults.resetEntitlementMessaging()
@@ -2208,7 +2230,6 @@ class MainViewController: UIViewController {
     private func performClientCheck(trigger: VPNSubscriptionClientCheckPixel.Trigger) {
         Task {
             do {
-                let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
                 let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
                 let hasEntitlement = try await subscriptionManager.isFeatureEnabled(.networkProtection)
 
@@ -2216,7 +2237,6 @@ class MainViewController: UIViewController {
                     PixelKit.fire(
                         VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
                             isSubscriptionActive: isSubscriptionActive,
-                            isAuthV2Enabled: isAuthV2Enabled,
                             trigger: trigger),
                         frequency: .dailyAndCount)
                     
@@ -2225,7 +2245,6 @@ class MainViewController: UIViewController {
                     PixelKit.fire(
                         VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
                             isSubscriptionActive: isSubscriptionActive,
-                            isAuthV2Enabled: isAuthV2Enabled,
                             trigger: trigger),
                         frequency: .dailyAndCount)
                     
@@ -2238,13 +2257,11 @@ class MainViewController: UIViewController {
     }
 
     private func handleClientCheckFailure(error: Error, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
-        let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
         
         PixelKit.fire(
             VPNSubscriptionClientCheckPixel.failed(
                 isSubscriptionActive: isSubscriptionActive,
-                isAuthV2Enabled: isAuthV2Enabled,
                 trigger: trigger,
                 error: error),
             frequency: .daily)
@@ -2266,21 +2283,18 @@ class MainViewController: UIViewController {
 
             let userInitiatedSignOut = (userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] as? Bool) ?? false
             let hasVPNEntitlements = payload.entitlements.contains(.networkProtection)
-            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             if hasVPNEntitlements {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
             } else {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                         isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
@@ -2304,14 +2318,12 @@ class MainViewController: UIViewController {
     @objc
     private func onNetworkProtectionAccountSignOut(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),
                 frequency: .dailyAndCount)
 
@@ -2815,22 +2827,27 @@ extension MainViewController: OmniBarDelegate {
             highlightTag = .favorite
         }
 
+
+        let view = BrowsingMenuSheetView(model: model,
+                                         headerDataSource: browsingMenuHeaderDataSource,
+                                         highlightRowWithTag: highlightTag,
+                                         onDismiss: { wasActionSelected in
+                                             self.viewCoordinator.menuToolbarButton.isEnabled = true
+                                             if !wasActionSelected {
+                                                 Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
+                                             }
+                                         })
+
         let controller = BrowsingMenuSheetViewController(
-            rootView: BrowsingMenuSheetView(model: model,
-                                            highlightRowWithTag: highlightTag,
-                                            onDismiss: { wasActionSelected in
-                                                self.viewCoordinator.menuToolbarButton.isEnabled = true
-                                                if !wasActionSelected {
-                                                    Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
-                                                }
-                                            })
+            rootView: view
         )
+
+        let contentHeight = model.estimatedContentHeight(includesWebsiteHeader: browsingMenuHeaderDataSource.isHeaderVisible)
 
         func configureSheetPresentationController(_ sheet: UISheetPresentationController) {
             if context == .newTabPage {
                 if #available(iOS 16.0, *) {
-                    let height = model.estimatedContentHeight
-                    sheet.detents = [.custom { _ in height }]
+                    sheet.detents = [.custom { _ in contentHeight }]
                 } else {
                     sheet.detents = [.medium()]
                 }
@@ -2848,7 +2865,7 @@ extension MainViewController: OmniBarDelegate {
         if let popoverController = controller.popoverPresentationController {
             popoverController.sourceView = omniBar.barView.menuButton
             controller.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
-            controller.preferredContentSize = CGSize(width: 320, height: model.estimatedContentHeight)
+            controller.preferredContentSize = CGSize(width: 320, height: contentHeight)
 
             configureSheetPresentationController(popoverController.adaptiveSheetPresentationController)
         }
@@ -3308,17 +3325,22 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            Logger.daxEasterEgg.debug("Tab received logo - Tab [\(tab.tabModel.uid)] Logo: \(logoURL ?? "nil"), IsCurrent: \(self.currentTab == tab)")
-            
             tab.tabModel.daxEasterEggLogoURL = logoURL
-            
-            // Only update omnibar if this is the currently active tab
             if self.currentTab == tab {
-                Logger.daxEasterEgg.debug("Setting omnibar logo: \(logoURL ?? "nil")")
-                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
+                let finalLogoURL = self.logoURLForCurrentPage(tab: tab)
+                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(finalLogoURL)
+                self.updateBrowsingMenuHeaderDataSource()
             }
-            // If this is NOT the current tab, the logo will be restored when the tab becomes active via refreshOmniBar()
         }
+    }
+
+    private func logoURLForCurrentPage(tab: TabViewController) -> String? {
+        guard let url = tab.url, url.isDuckDuckGoSearch else { return nil }
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return nil }
+        if featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo) {
+            return daxEasterEggLogoStore.logoURL ?? tab.tabModel.daxEasterEggLogoURL
+        }
+        return tab.tabModel.daxEasterEggLogoURL
     }
 
     func tabDidRequestReportBrokenSite(tab: TabViewController) {
@@ -3379,6 +3401,14 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestSettingsToVPN(_ tab: TabViewController) {
         segueToVPN()
+    }
+
+    func tabDidRequestSettingsToAIChat(_ tab: TabViewController) {
+        segueToSettingsAIChat()
+    }
+
+    func tabDidRequestSettingsToSync(_ tab: TabViewController) {
+        segueToSettingsSync()
     }
 
     func tabContentProcessDidTerminate(tab: TabViewController) {
@@ -3575,16 +3605,16 @@ extension MainViewController: TabSwitcherDelegate {
         tabsBarController?.refresh(tabsModel: tabManager.model)
     }
 
-    func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireOptions: FireOptions) {
-        self.forgetAllWithAnimation(options: fireOptions) {
+    func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {
+        self.forgetAllWithAnimation(request: fireRequest) {
             tabSwitcher.dismiss(animated: false, completion: nil)
         }
     }
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
         Task {
-            let options = FireOptions.tabs
-            await fireExecutor.burn(options: options, applicationState: .unknown, fireContext: .manualFire)
+            let request = FireRequest(options: .tabs, trigger: .manualFire, scope: .all)
+            await fireExecutor.burn(request: request, applicationState: .unknown)
             tabSwitcher.dismiss()
         }
     }
@@ -3596,6 +3626,12 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
+    }
+    
+    func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController) {
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
+        newTab(allowingKeyboard: false)
+        openAIChat()
     }
 }
 
@@ -3667,7 +3703,7 @@ extension MainViewController {
         }
     }
 
-    func forgetAllWithAnimation(options: FireOptions,
+    func forgetAllWithAnimation(request: FireRequest,
                                 transitionCompletion: (() -> Void)? = nil,
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
@@ -3675,10 +3711,10 @@ extension MainViewController {
         DailyPixel.fire(pixel: .forgetAllExecutedDaily)
         productSurfaceTelemetry.dataClearingUsed()
         
-        fireExecutor.prepare(for: options)
+        fireExecutor.prepare(for: request)
         
         fireButtonAnimator.animate {
-            await self.fireExecutor.burn(options: options, applicationState: .unknown, fireContext: .manualFire)
+            await self.fireExecutor.burn(request: request, applicationState: .unknown)
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: {
@@ -3691,7 +3727,7 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if options.contains(.tabs) && KeyboardSettings().onNewTab {
+            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab {
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
                         self.enterSearch()
@@ -3744,10 +3780,11 @@ extension MainViewController {
     }
 }
 
+// TODO: - Adjust based on scope
 extension MainViewController: FireExecutorDelegate {
     
-    func willStartBurning(fireContext: FireContext) {
-        switch fireContext {
+    func willStartBurning(fireRequest: FireRequest) {
+        switch fireRequest.trigger {
         case .manualFire:
             return
         case .autoClearOnLaunch:
@@ -3758,27 +3795,27 @@ extension MainViewController: FireExecutorDelegate {
         }
     }
     
-    func willStartBurningTabs(fireContext: FireContext) {
+    func willStartBurningTabs(fireRequest: FireRequest) {
         omniBar.endEditing()
         findInPageView?.done()
     }
     
-    func didFinishBurningTabs(fireContext: FireContext) {
-        guard fireContext == .manualFire else { return }
+    func didFinishBurningTabs(fireRequest: FireRequest) {
+        guard fireRequest.trigger == .manualFire else { return }
         refreshUIAfterClear()
     }
     
-    func willStartBurningData(fireContext: FireContext) {
+    func willStartBurningData(fireRequest: FireRequest) {
         self.clearInProgress = true
     }
     
-    func didFinishBurningData(fireContext: FireContext) {
+    func didFinishBurningData(fireRequest: FireRequest) {
         self.clearInProgress = false
         self.postClear?()
         self.postClear = nil
     }
 
-    func willStartBurningAIHistory(fireContext: FireContext) {
+    func willStartBurningAIHistory(fireRequest: FireRequest) {
         if autoClearInProgress {
             syncAIChatsCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
         } else {
@@ -3786,7 +3823,7 @@ extension MainViewController: FireExecutorDelegate {
         }
     }
     
-    func didFinishBurningAIHistory(fireContext: FireContext) {
+    func didFinishBurningAIHistory(fireRequest: FireRequest) {
         Task {
             await aiChatViewControllerManager.killSessionAndResetTimer()
         }
@@ -3796,8 +3833,8 @@ extension MainViewController: FireExecutorDelegate {
         }
     }
     
-    func didFinishBurning(fireContext: FireContext) {
-        switch fireContext {
+    func didFinishBurning(fireRequest: FireRequest) {
+        switch fireRequest.trigger {
         case .manualFire:
             return
         case .autoClearOnLaunch:
@@ -4054,6 +4091,10 @@ extension MainViewController: AIChatContentHandlingDelegate {
         guard let tab = self.currentTab?.tabModel else { return }
         self.closeTab(tab, andOpenEmptyOneAtSamePosition: false)
     }
+
+    func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
+        // No action needed for full mode - notification handles metrics
+    }
 }
 
 private extension UIBarButtonItem {
@@ -4172,8 +4213,8 @@ extension MainViewController: MainViewEditingStateTransitioning {
 
 // MARK: AutoClear Action Delegate
 extension MainViewController: SettingsAutoClearActionDelegate {
-    func performDataClearing(with options: FireOptions) {
-        forgetAllWithAnimation(options: options)
+    func performDataClearing(for request: FireRequest) {
+        forgetAllWithAnimation(request: request)
     }
 }
 
@@ -4199,6 +4240,15 @@ extension MainViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.applyCustomizationState()
+            }
+            .store(in: &settingsCancellables)
+    }
+
+    private func subscribeToDaxEasterEggLogoChanges() {
+        NotificationCenter.default.publisher(for: .logoDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
             }
             .store(in: &settingsCancellables)
     }

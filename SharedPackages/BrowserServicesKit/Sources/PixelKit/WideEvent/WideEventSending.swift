@@ -171,8 +171,8 @@ public final class DefaultWideEventSender: WideEventSending {
 
         postRequestHandler(Self.postEndpoint, jsonData, headers) { success, error in
             if success {
-#if DEBUG
-                Self.logger.info("Wide event POST request skipped due to DEBUG mode")
+#if DEBUG || REVIEW || ALPHA
+                Self.logger.info("Wide event POST request skipped due to non-release build configuration")
 #else
                 Self.logger.info("Wide event POST request sent successfully")
 #endif

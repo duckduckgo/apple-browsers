@@ -19,12 +19,15 @@
 import Cocoa
 import Combine
 import AIChat
-import URLPredictor
+import FeatureFlags
 import PixelKit
+import PrivacyConfig
+import URLPredictor
 
 protocol AIChatOmnibarControllerDelegate: AnyObject {
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController)
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL)
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion)
 }
 
 /// Controller that manages the state and actions for the AI Chat omnibar.
@@ -37,9 +40,23 @@ final class AIChatOmnibarController {
     private let aiChatTabOpener: AIChatTabOpening
     private let promptHandler: AIChatPromptHandler
     private let tabCollectionViewModel: TabCollectionViewModel
+    private let featureFlagger: FeatureFlagger
+    private let searchPreferencesPersistor: SearchPreferencesPersistor
+    private let suggestionsReader: AIChatSuggestionsReading?
     private var cancellables = Set<AnyCancellable>()
     private var sharedTextStateCancellable: AnyCancellable?
     private var isUpdatingFromSharedState = false
+    private var currentFetchTask: Task<Void, Never>?
+    private var hasBeenActivated = false
+
+    /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
+    let suggestionsViewModel = AIChatSuggestionsViewModel()
+
+    /// Whether the suggestions feature is enabled.
+    /// Requires both the feature flag and the autocomplete setting to be on.
+    var isSuggestionsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatSuggestions) && searchPreferencesPersistor.showAutocompleteSuggestions
+    }
 
     /// Gets the shared text state from the current tab's view model
     private var sharedTextState: AddressBarSharedTextState? {
@@ -51,13 +68,63 @@ final class AIChatOmnibarController {
     init(
         aiChatTabOpener: AIChatTabOpening,
         tabCollectionViewModel: TabCollectionViewModel,
-        promptHandler: AIChatPromptHandler = .shared
+        promptHandler: AIChatPromptHandler = .shared,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        searchPreferencesPersistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor(),
+        suggestionsReader: AIChatSuggestionsReading? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.tabCollectionViewModel = tabCollectionViewModel
         self.promptHandler = promptHandler
+        self.featureFlagger = featureFlagger
+        self.searchPreferencesPersistor = searchPreferencesPersistor
+        self.suggestionsReader = suggestionsReader
 
         subscribeToSelectedTabViewModel()
+        subscribeToTextChangesForSuggestions()
+    }
+
+    private func subscribeToTextChangesForSuggestions() {
+        $currentText
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
+            .sink { [weak self] text in
+                guard let self, self.isSuggestionsEnabled else { return }
+                self.fetchSuggestionsIfNeeded(query: text)
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Suggestions Fetching
+
+    /// Called when the duck.ai omnibar becomes visible. Triggers initial suggestions fetch.
+    func onOmnibarActivated() {
+        hasBeenActivated = true
+
+        // If feature is disabled, clear any existing suggestions and don't fetch
+        if !isSuggestionsEnabled {
+            suggestionsViewModel.clearAllChats()
+            return
+        }
+
+        fetchSuggestionsIfNeeded(query: currentText)
+    }
+
+    private func fetchSuggestionsIfNeeded(query: String) {
+        guard hasBeenActivated, isSuggestionsEnabled, let reader = suggestionsReader else { return }
+
+        // Cancel any in-flight fetch
+        currentFetchTask?.cancel()
+
+        currentFetchTask = Task { [weak self] in
+            guard let self else { return }
+
+            let suggestions = await reader.fetchSuggestions(query: query.isEmpty ? nil : query)
+
+            // Check if task was cancelled
+            guard !Task.isCancelled else { return }
+
+            self.suggestionsViewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
+        }
     }
 
     // MARK: - Public Methods
@@ -73,6 +140,50 @@ final class AIChatOmnibarController {
 
     func cleanup() {
         currentText = ""
+        hasBeenActivated = false
+        suggestionsViewModel.clearAllChats()
+        currentFetchTask?.cancel()
+        currentFetchTask = nil
+        suggestionsReader?.tearDown()
+    }
+
+    // MARK: - Suggestion Navigation
+
+    /// Moves selection to the next suggestion.
+    /// - Returns: `true` if a suggestion was selected, `false` if navigation should continue to other UI elements.
+    func selectNextSuggestion() -> Bool {
+        guard isSuggestionsEnabled else { return false }
+        return suggestionsViewModel.selectNext()
+    }
+
+    /// Moves selection to the previous suggestion.
+    /// - Returns: `true` if selection changed, `false` if at the beginning (should return focus to text field).
+    func selectPreviousSuggestion() -> Bool {
+        guard isSuggestionsEnabled else { return false }
+        return suggestionsViewModel.selectPrevious()
+    }
+
+    /// Submits the currently selected suggestion, if any.
+    /// - Returns: `true` if a suggestion was submitted, `false` if no suggestion was selected.
+    func submitSelectedSuggestion() -> Bool {
+        guard isSuggestionsEnabled,
+              let selectedSuggestion = suggestionsViewModel.selectedSuggestion else {
+            return false
+        }
+
+        delegate?.aiChatOmnibarController(self, didSelectSuggestion: selectedSuggestion)
+        currentText = ""
+        return true
+    }
+
+    /// Clears the current suggestion selection.
+    func clearSuggestionSelection() {
+        suggestionsViewModel.clearSelection()
+    }
+
+    /// Whether a suggestion is currently selected.
+    var hasSuggestionSelected: Bool {
+        suggestionsViewModel.selectedIndex != nil
     }
 
     // MARK: - Private Methods

@@ -155,6 +155,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
+    var syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
 
     var didReportMetric = false
 
@@ -261,6 +262,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> {
         chatRestorationDataSubject.eraseToAnyPublisher()
+    }
+
+    var syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never> {
+        syncStatusSubject.eraseToAnyPublisher()
     }
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {

@@ -295,6 +295,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
     case burnSingleTab
+    
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
+    case genericBackgroundTask
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -390,6 +393,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dataImportSummarySyncPromotion,
              .aiChatAtb,
              .enhancedDataClearingSettings,
+             .genericBackgroundTask,
              .webViewFlashPrevention,
              .tabSwitcherTrackerCount,
              .burnSingleTab:
@@ -615,6 +619,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabSwitcherTrackerCount,
              .burnSingleTab:
             return .disabled
+        case .genericBackgroundTask:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
         }
     }
 }

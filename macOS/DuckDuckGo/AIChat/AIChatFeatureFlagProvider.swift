@@ -1,5 +1,5 @@
 //
-//  NewTabPageConfigurationErrorHandler.swift
+//  AIChatFeatureFlagProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,22 +16,19 @@
 //  limitations under the License.
 //
 
-import Common
-import NewTabPage
-import PixelKit
+import AIChat
+import PrivacyConfig
+import FeatureFlags
 
-final class NewTabPageConfigurationErrorHandler: EventMapping<NewTabPageConfigurationEvent> {
+struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
 
-    init() {
-        super.init { event, _, _, _ in
-            switch event {
-            case .newTabPageError:
-                PixelKit.fire(DebugEvent(NewTabPagePixel.newTabPageExceptionReported), frequency: .dailyAndStandard)
-            }
-        }
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
     }
 
-    override init(mapping: @escaping EventMapping<NewTabPageConfigurationEvent>.Mapping) {
-        fatalError("Use init()")
+    func isAIChatSyncEnabled() -> Bool {
+        featureFlagger.isFeatureOn(.aiChatSync)
     }
 }

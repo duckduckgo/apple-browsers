@@ -45,6 +45,7 @@ public class Tab: NSObject, NSCoding {
         static let desktop = "desktop"
         static let lastViewedDate = "lastViewedDate"
         static let daxEasterEggLogoURL = "daxEasterEggLogoURL"
+        static let contextualChatURL = "contextualChatURL"
         static let type = "type"
     }
 
@@ -92,6 +93,9 @@ public class Tab: NSObject, NSCoding {
         }
     }
 
+    /// URL of the contextual AI chat session for this tab, used to restore chat state across app restarts.
+    var contextualChatURL: String?
+
     /// Type of tab: web or AI Chat, derived from the current URL
     private var type: TabType {
         if let link, link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
@@ -108,6 +112,7 @@ public class Tab: NSObject, NSCoding {
                 desktop: Bool = AppWidthObserver.shared.isLargeWidth,
                 lastViewedDate: Date? = nil,
                 daxEasterEggLogoURL: String? = nil,
+                contextualChatURL: String? = nil,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
@@ -115,6 +120,7 @@ public class Tab: NSObject, NSCoding {
         self.isDesktop = desktop
         self.lastViewedDate = lastViewedDate
         self.daxEasterEggLogoURL = daxEasterEggLogoURL
+        self.contextualChatURL = contextualChatURL
         self.aichatDebugSettings = aichatDebugSettings
     }
 
@@ -125,21 +131,23 @@ public class Tab: NSObject, NSCoding {
         let desktop = decoder.containsValue(forKey: NSCodingKeys.desktop) ? decoder.decodeBool(forKey: NSCodingKeys.desktop) : false
         let lastViewedDate = decoder.containsValue(forKey: NSCodingKeys.lastViewedDate) ? decoder.decodeObject(forKey: NSCodingKeys.lastViewedDate) as? Date : nil
         let daxEasterEggLogoURL = decoder.decodeObject(forKey: NSCodingKeys.daxEasterEggLogoURL) as? String
+        let contextualChatURL = decoder.decodeObject(forKey: NSCodingKeys.contextualChatURL) as? String
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
-        
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL)
+
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL)
     }
 
     public func encode(with coder: NSCoder) {
         Logger.daxEasterEgg.debug("Tab encode - Saving logo URL: \(self.daxEasterEggLogoURL ?? "nil") for tab [\(self.uid)]")
-        
+
         coder.encode(uid, forKey: NSCodingKeys.uid)
         coder.encode(link, forKey: NSCodingKeys.link)
         coder.encode(viewed, forKey: NSCodingKeys.viewed)
         coder.encode(isDesktop, forKey: NSCodingKeys.desktop)
         coder.encode(lastViewedDate, forKey: NSCodingKeys.lastViewedDate)
         coder.encode(daxEasterEggLogoURL, forKey: NSCodingKeys.daxEasterEggLogoURL)
+        coder.encode(contextualChatURL, forKey: NSCodingKeys.contextualChatURL)
         // Note: type is not encoded as it's now a computed property based on the link URL
     }
 

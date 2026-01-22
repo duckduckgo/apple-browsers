@@ -20,11 +20,11 @@ import Foundation
 
 public enum DebugHelper {
     public static func djb2Hash(_ text: String) -> Int64 {
-        var hash = 5381
+        var hash: Int64 = 5381
         for char in text.utf8 {
-            hash = ((hash << 5) &+ hash) &+ Int(char)
+            hash = ((hash << 5) &+ hash) &+ Int64(char)
         }
-        return Int64(hash)
+        return hash
     }
 
     public static func stableId(for broker: DataBroker) -> Int64 {

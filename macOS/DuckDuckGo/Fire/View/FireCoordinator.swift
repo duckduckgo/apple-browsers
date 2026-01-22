@@ -25,6 +25,7 @@ import HistoryView
 import Persistence
 import PixelKit
 import PrivacyConfig
+import AIChat
 
 // MARK: - Fire Dialog Presentation Abstractions (for testability)
 
@@ -67,7 +68,7 @@ final class FireCoordinator {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let tabViewModelGetter: (NSWindow) -> TabCollectionViewModel?
     private let pixelFiring: PixelFiring?
-    private let syncAIChatsCleaner: (() -> SyncAIChatsCleaning?)?
+    private let aiChatSyncCleaner: (() -> AIChatSyncCleaning?)?
     private let visualizeFireAnimationDecider: OverridableVisualizeFireSettingsDecider
 
     init(tld: TLD,
@@ -79,7 +80,7 @@ final class FireCoordinator {
          faviconManagement: FaviconManagement,
          windowControllersManager: WindowControllersManagerProtocol,
          pixelFiring: PixelFiring?,
-         syncAIChatsCleaner: (() -> SyncAIChatsCleaning?)? = nil,
+         aiChatSyncCleaner: (() -> AIChatSyncCleaning?)? = nil,
          historyProvider: HistoryViewDataProviding? = nil, // for testing: created if not provided
          fireViewModel: FireViewModel? = nil, // for testing: created if not provided
          tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil, // for testing: created if not provided
@@ -97,7 +98,7 @@ final class FireCoordinator {
             (window.contentViewController as? MainViewController)?.tabCollectionViewModel
         }
         self.pixelFiring = pixelFiring
-        self.syncAIChatsCleaner = syncAIChatsCleaner
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
 
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
@@ -111,7 +112,7 @@ final class FireCoordinator {
         var fireCoordinatorGetter: (() -> FireCoordinator)!
         let historyBurner = FireHistoryBurner(fireproofDomains: self.fireproofDomains,
                                               fire: { fireCoordinatorGetter().fireViewModel.fire },
-                                              recordAIChatHistoryClearForSync: { syncAIChatsCleaner?()?.recordLocalClear(date: Date()) })
+                                              recordAIChatHistoryClearForSync: { Task { await aiChatSyncCleaner?()?.recordLocalClear(date: Date()) } })
         self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, tld: tld)
         if let fireViewModel {
             self.fireViewModel = fireViewModel
@@ -261,7 +262,9 @@ extension FireCoordinator {
             && (scopeQuery == .rangeFilter(.all) || scopeQuery == .rangeFilter(.allSites))
 
             if options.includeChatHistory, !tabCollectionViewModel.burnerMode.isBurner {
-                syncAIChatsCleaner?()?.recordLocalClear(date: Date())
+                Task {
+                    await aiChatSyncCleaner?()?.recordLocalClear(date: Date())
+                }
             }
 
             await self.handleDialogResult(options, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)

@@ -22,4 +22,6 @@ import Foundation
 final class ApplicationBuildTypeMock: ApplicationBuildType {
     var isSparkleBuild: Bool = false
     var isAppStoreBuild: Bool = false
+    var isDebugBuild: Bool = false
+    var isReviewBuild: Bool = false
 }

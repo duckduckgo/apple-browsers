@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Common
 import UIKit
 
 // MARK: - Contextual AI Chat
@@ -26,28 +27,41 @@ import UIKit
 extension TabViewController {
 
     /// Presents the contextual AI chat sheet over the current tab.
-    /// Re-presents an active chat if one exists for this tab.
+    /// Re-presents an active chat if one exists for this tab, or restores from persisted URL after app restart.
     ///
     /// - Parameter presentingViewController: The view controller to present the sheet from.
     func presentContextualAIChatSheet(from presentingViewController: UIViewController) {
         Task { @MainActor in
             var pageContext: AIChatPageContextData?
+            var restoreURL: URL?
 
-            let isFirstDisplay = aiChatContextualSheetCoordinator.sheetViewController == nil
+            let hasExistingWebVC = aiChatContextualSheetCoordinator.hasActiveChat
+            let needsColdRestore = !hasExistingWebVC && tabModel.contextualChatURL != nil
+
+            if needsColdRestore, let urlString = tabModel.contextualChatURL {
+                restoreURL = URL(string: urlString)
+            }
+
+            let isFirstDisplay = aiChatContextualSheetCoordinator.sheetViewController == nil && !hasExistingWebVC && !needsColdRestore
             if isFirstDisplay && aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled {
                 pageContext = await collectPageContext()
             }
 
             aiChatContextualSheetCoordinator.presentSheet(
                 from: presentingViewController,
-                pageContext: pageContext
+                pageContext: pageContext,
+                restoreURL: restoreURL
             )
+
+            subscribeToPageContextUpdates()
         }
     }
 
     /// Collects page context from the current tab via JS userscript
     func collectPageContext() async -> AIChatPageContextData? {
-        guard let script = pageContextUserScript else { return nil }
+        guard let script = pageContextUserScript else {
+            return nil
+        }
 
         script.webView = webView
 
@@ -85,17 +99,17 @@ extension TabViewController {
 
 // MARK: - Private Methods
 
-private extension TabViewController {
+extension TabViewController {
 
-    enum Constants {
+    private enum Constants {
         static let pageContextCollectionTimeout: TimeInterval = 2
     }
 
-    var pageContextUserScript: PageContextUserScript? {
+    private var pageContextUserScript: PageContextUserScript? {
         userScripts?.pageContextUserScript
     }
 
-    func enrichWithFavicon(_ context: AIChatPageContextData?) -> AIChatPageContextData? {
+    private func enrichWithFavicon(_ context: AIChatPageContextData?) -> AIChatPageContextData? {
         guard let context = context,
               let url = URL(string: context.url) else {
             return context
@@ -116,14 +130,14 @@ private extension TabViewController {
         )
     }
 
-    func getFaviconBase64(for url: URL) -> String? {
+    private func getFaviconBase64(for url: URL) -> String? {
         guard let domain = url.host else { return nil }
         let faviconResult = FaviconsHelper.loadFaviconSync(forDomain: domain, usingCache: .tabs, useFakeFavicon: false)
         guard let favicon = faviconResult.image, !faviconResult.isFake else { return nil }
         return makeBase64EncodedFavicon(from: favicon)
     }
 
-    func makeBase64EncodedFavicon(from image: UIImage) -> String? {
+    private func makeBase64EncodedFavicon(from image: UIImage) -> String? {
         guard let pngData = image.pngData() else { return nil }
         return "data:image/png;base64,\(pngData.base64EncodedString())"
     }
@@ -154,5 +168,36 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
             guard let context = await collectPageContext() else { return }
             aiChatContextualSheetCoordinator.updatePageContext(context)
         }
+    }
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
+        tabModel.contextualChatURL = url?.absoluteString
+        delegate?.tabLoadingStateDidChange(tab: self)
+    }
+}
+
+// MARK: - Page Context Auto-Update
+
+extension TabViewController {
+
+    private func subscribeToPageContextUpdates() {
+        guard pageContextUpdateCancellable == nil,
+              let script = pageContextUserScript else { return }
+
+        pageContextUpdateCancellable = script.collectionResultPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] pageContext in
+                guard let self else { return }
+
+                guard let pageContext,
+                      aiChatContextualSheetCoordinator.isSheetPresented,
+                      aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
+                    return
+                }
+
+                guard let enriched = enrichWithFavicon(pageContext) else { return }
+
+                aiChatContextualSheetCoordinator.updatePageContext(enriched)
+            }
     }
 }

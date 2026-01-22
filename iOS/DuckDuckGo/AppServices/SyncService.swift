@@ -17,17 +17,18 @@
 //  limitations under the License.
 //
 
+import Combine
 import Core
 import DDGSync
 import Persistence
-import Combine
 import PrivacyConfig
+import AIChat
 
 final class SyncService {
 
     let syncDataProviders: SyncDataProviders
     let sync: DDGSync
-    let aiChatsCleaner: any SyncAIChatsCleaning
+    let aiChatSyncCleaner: any AIChatSyncCleaning
     let syncErrorHandler: SyncErrorHandler
     private let isSyncInProgressCancellable: AnyCancellable
     private var syncDidFinishCancellable: AnyCancellable?
@@ -79,10 +80,10 @@ final class SyncService {
             environment: environment
         )
 
-        aiChatsCleaner = SyncAIChatsCleaner(sync: sync,
-                                            keyValueStore: keyValueStore,
-                                            featureFlagger: AppDependencyProvider.shared.featureFlagger)
-        sync.setCustomOperations([AIChatDeleteOperation(cleaner: aiChatsCleaner)])
+        aiChatSyncCleaner = AIChatSyncCleaner(sync: sync,
+                                               keyValueStore: keyValueStore,
+                                               featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: AppDependencyProvider.shared.featureFlagger))
+        sync.setCustomOperations([AIChatDeleteOperation(cleaner: aiChatSyncCleaner)])
 
         isSyncInProgressCancellable = sync.isSyncInProgressPublisher
             .filter { $0 }

@@ -930,7 +930,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeReportBrokenSiteEntry() -> BrowsingMenuEntry? {
-        guard validLink != nil else { return nil }
+        guard link != nil else { return nil }
         return buildReportBrokenSiteEntry(useSmallIcon: false)
     }
     

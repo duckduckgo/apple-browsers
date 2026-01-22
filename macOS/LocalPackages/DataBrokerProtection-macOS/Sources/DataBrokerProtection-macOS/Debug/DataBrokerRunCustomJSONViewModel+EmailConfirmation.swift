@@ -50,6 +50,8 @@ extension DataBrokerRunCustomJSONViewModel {
                 }
             } catch {
                 await MainActor.run { [weak self] in
+                    self?.progressText = "Idle"
+                    self?.isProgressActive = false
                     self?.showAlert(for: error)
                 }
             }

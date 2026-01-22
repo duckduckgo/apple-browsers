@@ -132,14 +132,17 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
 
     func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        defer {
+            scrollToTop = true
+        }
+
         switch animator.barsState {
         case .hidden:
             animator.revealBars(animated: true)
             return false
+        case .transitioning:
+            return false
         default:
-            defer {
-                scrollToTop = true
-            }
             return scrollToTop
         }
     }

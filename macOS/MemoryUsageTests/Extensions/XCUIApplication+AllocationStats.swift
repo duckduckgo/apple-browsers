@@ -20,8 +20,8 @@ import XCTest
 
 extension XCUIApplication {
 
-    /// Our Temporary Stats URL is in `/tmp` as `FileManager.default.temporaryDirectory` will always point to a different location
-    /// due to the macOS Sandbox.
+    /// Our Temporary Stats URL is in `/tmp` for simplicity reasons, as `FileManager.default.temporaryDirectory` will always
+    /// point to a different location due to the macOS Sandbox restrictions.
     ///
     var memoryStatsURL: URL {
         URL(fileURLWithPath: "/tmp/" + bundleID! + "-allocations.json")

@@ -186,6 +186,9 @@
 		31B5E8C02E1D54BB00EECC1E /* NavigationActionBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BB2E1D54BB00EECC1E /* NavigationActionBarManager.swift */; };
 		31B5E8C12E1D54BB00EECC1E /* SuggestionTrayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */; };
 		31B5E8C22E1D54BB00EECC1E /* SwipeContainerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */; };
+		A1B2C3D42F012345000AABBC /* AIChatHistoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D12F012345000AABBC /* AIChatHistoryItem.swift */; };
+		A1B2C3D52F012345000AABBC /* AIChatHistoryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D22F012345000AABBC /* AIChatHistoryListView.swift */; };
+		A1B2C3D62F012345000AABBC /* AIChatHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D32F012345000AABBC /* AIChatHistoryManager.swift */; };
 		31B5E8C52E1E64D400EECC1E /* DaxLogoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8C42E1E64D400EECC1E /* DaxLogoManager.swift */; };
 		31BB23A42D3A661E00809ABF /* ControlWidgetConfigurable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */; };
 		31BB23A52D3A969400809ABF /* ControlWidgetConfigurable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */; };
@@ -2445,6 +2448,9 @@
 		31B5E8BB2E1D54BB00EECC1E /* NavigationActionBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationActionBarManager.swift; sourceTree = "<group>"; };
 		31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionTrayManager.swift; sourceTree = "<group>"; };
 		31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeContainerManager.swift; sourceTree = "<group>"; };
+		A1B2C3D12F012345000AABBC /* AIChatHistoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryItem.swift; sourceTree = "<group>"; };
+		A1B2C3D22F012345000AABBC /* AIChatHistoryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryListView.swift; sourceTree = "<group>"; };
+		A1B2C3D32F012345000AABBC /* AIChatHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryManager.swift; sourceTree = "<group>"; };
 		31B5E8C42E1E64D400EECC1E /* DaxLogoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxLogoManager.swift; sourceTree = "<group>"; };
 		31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlWidgetConfigurable.swift; sourceTree = "<group>"; };
 		31BC5F402C2B0B540004DF37 /* DuckPlayer.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = DuckPlayer.xcassets; sourceTree = "<group>"; };
@@ -6092,6 +6098,7 @@
 		6FB9D52F2DF70496005ED4A5 /* SwitchBar */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D02F012345000AABBC /* ChatHistory */,
 				6FFBA0D22E30FCB300873286 /* Transition */,
 				31B5E8C32E1D564000EECC1E /* FlowManagers */,
 				315E14AE2DF77C7B00419C8A /* TextEntry */,
@@ -6108,6 +6115,16 @@
 				C1D6C1DA2E74282700F29155 /* SwitchBarRetentionMetrics.swift */,
 			);
 			path = SwitchBar;
+			sourceTree = "<group>";
+		};
+		A1B2C3D02F012345000AABBC /* ChatHistory */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D12F012345000AABBC /* AIChatHistoryItem.swift */,
+				A1B2C3D22F012345000AABBC /* AIChatHistoryListView.swift */,
+				A1B2C3D32F012345000AABBC /* AIChatHistoryManager.swift */,
+			);
+			path = ChatHistory;
 			sourceTree = "<group>";
 		};
 		6FE1273B2C204C0D00EB5724 /* Subviews */ = {
@@ -11234,6 +11251,9 @@
 				31B5E8C02E1D54BB00EECC1E /* NavigationActionBarManager.swift in Sources */,
 				31B5E8C12E1D54BB00EECC1E /* SuggestionTrayManager.swift in Sources */,
 				31B5E8C22E1D54BB00EECC1E /* SwipeContainerManager.swift in Sources */,
+				A1B2C3D42F012345000AABBC /* AIChatHistoryItem.swift in Sources */,
+				A1B2C3D52F012345000AABBC /* AIChatHistoryListView.swift in Sources */,
+				A1B2C3D62F012345000AABBC /* AIChatHistoryManager.swift in Sources */,
 				BDE91CD62C6294020005CB74 /* FeedbackCategoryProviding.swift in Sources */,
 				1E908BF329827C480008C8F3 /* AutoconsentManagement.swift in Sources */,
 				4BEEEA992E24670800B0BE00 /* DBPDebugWebViewWindowManager.swift in Sources */,

@@ -90,6 +90,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var swipeContainerManager: SwipeContainerManager?
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
+    private var aiChatHistoryManager: AIChatHistoryManager?
     private let daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
@@ -227,6 +228,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installSwitchBarVC()
         installSwipeContainer()
         installSuggestionsTray()
+        installChatHistoryList()
         installDaxLogoView()
         installNavigationActionBar()
 
@@ -287,6 +289,16 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         manager.delegate = self
         manager.installInContainerView(searchContainer, parentViewController: containerViewController)
         suggestionTrayManager = manager
+    }
+
+    private func installChatHistoryList() {
+        guard let containerViewController = swipeContainerManager?.containerViewController,
+              let chatContainer = swipeContainerManager?.chatPageContainer else { return }
+
+        let manager = AIChatHistoryManager()
+        manager.delegate = self
+        manager.installInContainerView(chatContainer, parentViewController: containerViewController)
+        aiChatHistoryManager = manager
     }
 
     private func installDaxLogoView() {
@@ -479,14 +491,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
+        let isShowingChatHistory = aiChatHistoryManager != nil
 
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
 
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
-            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled
+            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory
         } else {
-            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
+            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory
         }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
@@ -611,6 +624,16 @@ extension OmniBarEditingStateViewController: VoiceSearchViewControllerDelegate {
         case .AIChat:
             delegate?.onPromptSubmitted(query, tools: nil)
         }
+    }
+}
+
+// MARK: - AIChatHistoryManagerDelegate
+
+extension OmniBarEditingStateViewController: AIChatHistoryManagerDelegate {
+
+    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChat chat: AIChatHistoryItem) {
+        // TODO: Handle chat selection - navigate to the selected chat
+        // For now, this is a placeholder for future API integration
     }
 }
 

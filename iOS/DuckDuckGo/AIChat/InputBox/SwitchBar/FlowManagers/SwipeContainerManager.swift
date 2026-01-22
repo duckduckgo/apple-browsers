@@ -37,6 +37,14 @@ final class SwipeContainerManager: NSObject {
         }
     }
 
+    var chatPageContainer: UIView {
+        if switchBarHandler.isUsingFadeOutAnimation {
+            return fadeOutContainerViewController.chatPageContainer
+        } else {
+            return swipeContainerViewController.chatPageContainer
+        }
+    }
+
     private lazy var swipeContainerViewController = SwipeContainerViewController(switchBarHandler: switchBarHandler)
     private lazy var fadeOutContainerViewController = FadeOutContainerViewController(switchBarHandler: switchBarHandler, featureFlagger: featureFlagger)
 

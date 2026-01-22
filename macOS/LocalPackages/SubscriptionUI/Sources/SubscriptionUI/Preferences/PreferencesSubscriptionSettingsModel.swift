@@ -444,8 +444,8 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
         if let pendingPlan = subscription.firstPendingPlan {
             let effectiveDate = dateFormatter.string(from: pendingPlan.effectiveAt)
             let tierName = pendingPlan.tier.rawValue.capitalized
-            self.subscriptionDetails = UserText.preferencesSubscriptionPendingDowngradeCaption(tierName: tierName, billingPeriod: pendingPlan.billingPeriod, formattedDate: effectiveDate)
-            return
+            let billingPeriodName = pendingPlan.billingPeriod.rawValue
+            self.subscriptionDetails = UserText.preferencesSubscriptionPendingDowngradeCaption(tierName: tierName, billingPeriod: billingPeriodName, formattedDate: effectiveDate)
         }
 
         let hasActiveTrialOffer = subscription.hasActiveTrialOffer

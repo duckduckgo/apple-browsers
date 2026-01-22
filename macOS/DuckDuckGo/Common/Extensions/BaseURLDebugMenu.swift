@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Persistence
 
 /// Debug menu for configuring base URLs at runtime.
 ///
@@ -35,13 +36,14 @@ import AppKit
 /// - The menu displays the current effective URLs
 /// - A browser restart may be required for some cached URLs
 final class BaseURLDebugMenu: NSMenu {
-    private let debugSettings = BaseURLDebugSettings()
+    private let debugSettings: any KeyedStoring<BaseURLDebugSettings>
 
     private let baseURLLabelMenuItem = NSMenuItem(title: "")
     private let duckAIURLLabelMenuItem = NSMenuItem(title: "")
     private let helpURLLabelMenuItem = NSMenuItem(title: "")
 
-    init() {
+    init(_ debugSettings: (any KeyedStoring<BaseURLDebugSettings>)? = nil) {
+        self.debugSettings = if let debugSettings { debugSettings } else { UserDefaults.standard.keyedStoring() }
         super.init(title: "")
 
         buildItems {

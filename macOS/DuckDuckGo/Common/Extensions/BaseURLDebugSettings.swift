@@ -17,79 +17,58 @@
 //
 
 import Foundation
+import Persistence
 
-/// Protocol for accessing and modifying base URL debug settings.
+/// Settings for accessing and modifying base URL overrides for debugging and development.
 ///
 /// These settings allow internal users to override the default DuckDuckGo base URLs
 /// for testing purposes (e.g., pointing to local servers or dev instances).
-public protocol BaseURLDebugSettingsRepresentable {
-    /// Custom BASE_URL override (e.g., "http://localhost:8080")
-    var customBaseURL: String? { get set }
-
-    /// Custom DUCKAI_BASE_URL override
-    var customDuckAIBaseURL: String? { get set }
-
-    /// Resets all custom URLs to defaults
-    func reset()
-}
-
-/// Default implementation of `BaseURLDebugSettingsRepresentable` using UserDefaults.
 ///
 /// ## Usage
 ///
 /// This is used by the Debug menu to allow internal users to change base URLs at runtime:
 ///
 /// ```swift
-/// let settings = BaseURLDebugSettings()
+/// let settings: any KeyedStoring<BaseURLDebugSettings> = UserDefaults.standard.keyedStoring()
 /// settings.customBaseURL = "http://localhost:8080"
 /// // All URLs using URL.base will now use this custom URL
 ///
 /// settings.reset()
 /// // URLs return to production defaults
 /// ```
-public final class BaseURLDebugSettings: BaseURLDebugSettingsRepresentable {
-    private let userDefaults: UserDefaults
+struct BaseURLDebugSettings: StoringKeys {
+    let customBaseURL = StorageKey<String>(.debugCustomBaseURL)
+    let customDuckAIBaseURL = StorageKey<String>(.debugCustomDuckAIBaseURL)
+}
 
-    public init(_ userDefaults: UserDefaults = .standard) {
-        self.userDefaults = userDefaults
-    }
+extension KeyedStoring where Keys == BaseURLDebugSettings {
 
-    public var customBaseURL: String? {
-        get { userDefaults[.debugCustomBaseURL] }
-        set { userDefaults[.debugCustomBaseURL] = newValue }
-    }
-
-    public var customDuckAIBaseURL: String? {
-        get { userDefaults[.debugCustomDuckAIBaseURL] }
-        set { userDefaults[.debugCustomDuckAIBaseURL] = newValue }
-    }
-
-    public func reset() {
-        customBaseURL = nil
-        customDuckAIBaseURL = nil
+    func reset() {
+        self.customBaseURL = nil
+        self.customDuckAIBaseURL = nil
     }
 
     // MARK: - Computed Helpers
 
     /// Returns the current base URL (custom override or environment variable or default)
-    public var effectiveBaseURL: String {
-        if let custom = customBaseURL, !custom.isEmpty {
+    var effectiveBaseURL: String {
+        if let custom = self.customBaseURL, !custom.isEmpty {
             return custom
         }
         return ProcessInfo.processInfo.environment["BASE_URL", default: "https://duckduckgo.com"]
     }
 
     /// Returns the current Duck.ai base URL (custom override or environment variable or default)
-    public var effectiveDuckAIBaseURL: String {
-        if let custom = customDuckAIBaseURL, !custom.isEmpty {
+    var effectiveDuckAIBaseURL: String {
+        if let custom = self.customDuckAIBaseURL, !custom.isEmpty {
             return custom
         }
         return ProcessInfo.processInfo.environment["DUCKAI_BASE_URL", default: "https://duck.ai"]
     }
 
     /// Returns the current help base URL (derived from base URL when overridden)
-    public var effectiveHelpBaseURL: String {
-        let baseURL = effectiveBaseURL
+    var effectiveHelpBaseURL: String {
+        let baseURL = self.effectiveBaseURL
         if baseURL != "https://duckduckgo.com" {
             return baseURL
         }
@@ -97,22 +76,8 @@ public final class BaseURLDebugSettings: BaseURLDebugSettingsRepresentable {
     }
 
     /// Returns true if any custom URL is currently set
-    public var hasCustomURLs: Bool {
-        return (customBaseURL != nil && !customBaseURL!.isEmpty) ||
-               (customDuckAIBaseURL != nil && !customDuckAIBaseURL!.isEmpty)
-    }
-}
-
-// MARK: - UserDefaults Extension
-
-private extension UserDefaults {
-    enum BaseURLDebugKey: String {
-        case debugCustomBaseURL = "debug.customBaseURL"
-        case debugCustomDuckAIBaseURL = "debug.customDuckAIBaseURL"
-    }
-
-    subscript<T>(key: BaseURLDebugKey) -> T? where T: Any {
-        get { value(forKey: key.rawValue) as? T }
-        set { set(newValue, forKey: key.rawValue) }
+    var hasCustomURLs: Bool {
+        return (self.customBaseURL != nil && !self.customBaseURL!.isEmpty) ||
+        (self.customDuckAIBaseURL != nil && !self.customDuckAIBaseURL!.isEmpty)
     }
 }

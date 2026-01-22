@@ -20,7 +20,7 @@ import XCTest
 import Foundation
 import os.log
 
-class MemoryUsageTests: XCTestCase {
+final class MemoryUsageTests: XCTestCase {
 
     private var application: XCUIApplication!
     private var bundleID: String!

@@ -12599,7 +12599,7 @@
 				37C320BD2F1E80A1008F4604 /* SharedTestUtilities */,
 				37C320BE2F1E80A1008F4604 /* Utilities */,
 			);
-			productName = "UI Tests";
+			productName = "Memory Usage Tests";
 			productReference = 37C3210B2F1E80A1008F4604 /* Memory Usage Tests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -18221,7 +18221,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
@@ -18229,7 +18228,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = CI;
 		};
@@ -18237,7 +18235,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -18245,7 +18242,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Alpha;
 		};
@@ -18253,7 +18249,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Review;
 		};

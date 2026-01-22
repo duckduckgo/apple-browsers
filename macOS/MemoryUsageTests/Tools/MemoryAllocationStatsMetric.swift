@@ -70,13 +70,21 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
     // MARK: - XCTMetric
 
     func willBeginMeasuring() {
-        initialStatsSnapshot = try? loadAndDecodeStats(sourceURL: memoryStatsURL)
-        initialStatsAttachment = buildXCTAttachment(sourceURL: memoryStatsURL, description: "Initial Memory Stats")
+        guard let (snapshot, attachment) = try? loadAndDecodeStats(sourceURL: memoryStatsURL, description: "Initial Memory Stats") else {
+            return
+        }
+
+        initialStatsSnapshot = snapshot
+        initialStatsAttachment = attachment
     }
 
     func didStopMeasuring() {
-        finalStatsSnapshot = try? loadAndDecodeStats(sourceURL: memoryStatsURL)
-        finalStatsAttachment = buildXCTAttachment(sourceURL: memoryStatsURL, description: "Final Memory Stats")
+        guard let (snapshot, attachment) = try? loadAndDecodeStats(sourceURL: memoryStatsURL, description: "Final Memory Stats") else {
+            return
+        }
+
+        finalStatsSnapshot = snapshot
+        finalStatsAttachment = attachment
     }
 
     func reportMeasurements(from startTime: XCTPerformanceMeasurementTimestamp, to endTime: XCTPerformanceMeasurementTimestamp) throws -> [XCTPerformanceMeasurement] {
@@ -104,22 +112,41 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
             unitSymbol: "MB"
         )
 
+        // Add attachments to test results
+        runAllocationAttachmentsActivity()
+
         return [finalMemoryUsedMB, initialMemoryUsedMB]
     }
 }
 
 private extension MemoryAllocationStatsMetric {
 
-    func loadAndDecodeStats(sourceURL: URL) throws -> MemoryAllocationStatsSnapshot? {
-        let decoder = JSONDecoder()
+    func loadAndDecodeStats(sourceURL: URL, description: String) throws -> (MemoryAllocationStatsSnapshot, XCTAttachment) {
         let statsAsData = try Data(contentsOf: sourceURL)
-        return try decoder.decode(MemoryAllocationStatsSnapshot.self, from: statsAsData)
+        let snapshot = try decodeStats(statsAsData: statsAsData)
+        let attachment = buildAttachment(statsAsData: statsAsData, description: description)
+
+        return (snapshot, attachment)
     }
 
-    func buildXCTAttachment(sourceURL: URL, description: String) -> XCTAttachment {
-        let attachment = XCTAttachment(contentsOfFile: sourceURL)
+    func decodeStats(statsAsData: Data) throws -> MemoryAllocationStatsSnapshot {
+        try JSONDecoder().decode(MemoryAllocationStatsSnapshot.self, from: statsAsData)
+    }
+
+    func buildAttachment(statsAsData: Data, description: String) -> XCTAttachment {
+        let attachment = XCTAttachment(data: statsAsData, uniformTypeIdentifier: "public.json")
         attachment.name = description
         attachment.lifetime = .keepAlways
         return attachment
+    }
+
+    func runAllocationAttachmentsActivity() {
+        let attachments = [initialStatsAttachment, finalStatsAttachment].compactMap { $0 }
+
+        XCTContext.runActivity(named: "Memory Allocation Stats") { activity in
+            for attachment in attachments {
+                activity.add(attachment)
+            }
+        }
     }
 }

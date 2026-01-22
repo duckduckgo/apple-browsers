@@ -185,28 +185,12 @@ enum UserText {
         return String(format: localized, formattedDate)
     }
 
-    static func preferencesSubscriptionPendingDowngradeCaption(tierName: String, billingPeriod: DuckDuckGoSubscription.BillingPeriod, formattedDate: String) -> String {
-        let localized: String
-
-        switch billingPeriod {
-        case .monthly:
-            localized = NSLocalizedString("subscription.preferences.subscription.pending.downgrade.monthly.caption",
+    static func preferencesSubscriptionPendingDowngradeCaption(tierName: String, billingPeriod: String, formattedDate: String) -> String {
+        let localized = NSLocalizedString("subscription.preferences.subscription.pending.downgrade.caption",
                                           bundle: Bundle.module,
-                                          value: "Your plan will downgrade to %@ Monthly on %@.",
-                                          comment: "Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'")
-        case .yearly:
-            localized = NSLocalizedString("subscription.preferences.subscription.pending.downgrade.yearly.caption",
-                                          bundle: Bundle.module,
-                                          value: "Your plan will downgrade to %@ Yearly on %@.",
-                                          comment: "Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).'")
-        case .unknown:
-            localized = NSLocalizedString("subscription.preferences.subscription.pending.downgrade.unknown.caption",
-                                          bundle: Bundle.module,
-                                          value: "Your plan will downgrade to %@ on %@.",
-                                          comment: "Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).'")
-        }
-
-        return String(format: localized, tierName, formattedDate)
+                                          value: "Your plan will downgrade to %@ %@ on %@.",
+                                          comment: "Pending downgrade info. Parameters are tier name, billing period, and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'")
+        return String(format: localized, tierName, billingPeriod, formattedDate)
     }
 
     static let manageSubscriptionButton = NSLocalizedString("subscription.preferences.manage.subscription.button", bundle: Bundle.module, value: "Manage Subscription", comment: "Button to manage subscription")

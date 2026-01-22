@@ -2993,7 +2993,10 @@
 "settings.address.full.url" = "Показване на пълния адрес на сайта";
 
 /* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Показване на анимация за блокирани тракери";
+"settings.address.trackers.animation" = "Показване в адресната лента";
+
+/* Do not translate - already localized */
+"settings.tracker.blocking.animation.section" = "Анимация за блокиране на тракери";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Търсене и Duck.ai";
@@ -4243,7 +4246,7 @@
 
 /* Tab Switcher tracker count */
 "settings.tabs" = "Раздели";
-"settings.tab.switcher.show.tracker.count" = "Брой тракери за 7 дни";
+"settings.tab.switcher.show.tracker.count" = "Показване в мениджъра на раздели";
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 "tab.switcher.tracker.count.subtitle" = "през последните 7 дни";
 "tab.switcher.tracker.count.hide.title" = "Да се скрие броят на тракерите?";

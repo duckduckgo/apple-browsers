@@ -2993,7 +2993,10 @@
 "settings.address.full.url" = "Rodyti visą svetainės adresą";
 
 /* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Rodyti blokuojamų sekiklių animaciją";
+"settings.address.trackers.animation" = "Rodyti adreso juostoje";
+
+/* Do not translate - already localized */
+"settings.tracker.blocking.animation.section" = "Sekiklių blokavimo animacija";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Paieška ir „Duck.ai“";
@@ -4243,7 +4246,7 @@
 
 /* Tab Switcher tracker count */
 "settings.tabs" = "Skirtukai";
-"settings.tab.switcher.show.tracker.count" = "Sekimo priemonių skaičius per 7 dienas";
+"settings.tab.switcher.show.tracker.count" = "Rodyti skirtukų tvarkytuvėje";
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 "tab.switcher.tracker.count.subtitle" = "per pastarąsias 7 dienas";
 "tab.switcher.tracker.count.hide.title" = "Slėpti sekimo priemonių skaičių?";

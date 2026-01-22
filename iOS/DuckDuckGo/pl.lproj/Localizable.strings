@@ -2993,7 +2993,10 @@
 "settings.address.full.url" = "Pokaż pełny adres witryny internetowej";
 
 /* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Pokaż animację blokowania mechanizmów śledzących";
+"settings.address.trackers.animation" = "Pokaż na pasku adresu";
+
+/* Do not translate - already localized */
+"settings.tracker.blocking.animation.section" = "Animacja blokowania mechanizmów śledzących";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Wyszukiwanie i Duck.ai";
@@ -4243,7 +4246,7 @@
 
 /* Tab Switcher tracker count */
 "settings.tabs" = "Karty";
-"settings.tab.switcher.show.tracker.count" = "Liczba trackerów z ostatnich 7 dni";
+"settings.tab.switcher.show.tracker.count" = "Pokaż w menedżerze kart";
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 "tab.switcher.tracker.count.subtitle" = "z ostatnich 7 dni";
 "tab.switcher.tracker.count.hide.title" = "Ukryć liczbę trackerów?";

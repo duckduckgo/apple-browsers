@@ -2993,7 +2993,10 @@
 "settings.address.full.url" = "Vis hele webstedsadressen";
 
 /* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Vis animation af blokerede trackere";
+"settings.address.trackers.animation" = "Vis i adresselinjen";
+
+/* Do not translate - already localized */
+"settings.tracker.blocking.animation.section" = "Animation af blokering af trackere";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Søg & Duck.ai";
@@ -4243,7 +4246,7 @@
 
 /* Tab Switcher tracker count */
 "settings.tabs" = "Faner";
-"settings.tab.switcher.show.tracker.count" = "Trackerantal de seneste 7 dage";
+"settings.tab.switcher.show.tracker.count" = "Vis i fanestyring";
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 "tab.switcher.tracker.count.subtitle" = "i de seneste 7 dage";
 "tab.switcher.tracker.count.hide.title" = "Skjul trackerantal?";

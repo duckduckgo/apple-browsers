@@ -2993,7 +2993,10 @@
 "settings.address.full.url" = "Zobrazovat celou adresu webu";
 
 /* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Zobrazit animaci zablokovaných trackerů";
+"settings.address.trackers.animation" = "Zobrazit v adresním řádku";
+
+/* Do not translate - already localized */
+"settings.tracker.blocking.animation.section" = "Animace blokování trackerů";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Vyhledávání a Duck.ai";
@@ -4243,7 +4246,7 @@
 
 /* Tab Switcher tracker count */
 "settings.tabs" = "Karty";
-"settings.tab.switcher.show.tracker.count" = "Počet sledovačů za 7 dní";
+"settings.tab.switcher.show.tracker.count" = "Zobrazit ve správci karet";
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 "tab.switcher.tracker.count.subtitle" = "za posledních 7 dní";
 "tab.switcher.tracker.count.hide.title" = "Skrýt počet sledovačů?";

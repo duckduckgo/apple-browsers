@@ -2993,7 +2993,10 @@
 "settings.address.full.url" = "Tam Site Adresini Göster";
 
 /* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Engellenen İzleyiciler Animasyonunu Göster";
+"settings.address.trackers.animation" = "Adres çubuğunda göster";
+
+/* Do not translate - already localized */
+"settings.tracker.blocking.animation.section" = "İzleyici Engelleme Animasyonu";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Arama ve Duck.ai";
@@ -4243,7 +4246,7 @@
 
 /* Tab Switcher tracker count */
 "settings.tabs" = "Sekmeler";
-"settings.tab.switcher.show.tracker.count" = "7 Günlük İzleyici Sayısı";
+"settings.tab.switcher.show.tracker.count" = "Sekme yöneticisinde göster";
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 "tab.switcher.tracker.count.subtitle" = "son 7 günde";
 "tab.switcher.tracker.count.hide.title" = "İzleyici sayısı gizlensin mi?";

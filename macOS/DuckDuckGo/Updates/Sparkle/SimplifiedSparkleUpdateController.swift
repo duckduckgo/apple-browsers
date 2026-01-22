@@ -175,13 +175,12 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
                     progressState.resumeCallback?()
                 }
 
-                userDriver.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
-
                 // Update Sparkle settings when preference changes
-                // Always check for updates; only auto-download when FF on AND automatic enabled
-                let featureFlagEnabled = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+                // Always check for updates; only auto-download based on build-type feature flag AND preference
+                let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: areAutomaticUpdatesEnabled)
                 updater?.automaticallyChecksForUpdates = true
-                updater?.automaticallyDownloadsUpdates = featureFlagEnabled && areAutomaticUpdatesEnabled
+                updater?.automaticallyDownloadsUpdates = shouldAutoDownload
+                userDriver.areAutomaticUpdatesEnabled = shouldAutoDownload
             }
         }
     }
@@ -220,6 +219,19 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
     private let featureFlagger: FeatureFlagger
 
+    /// Computes whether automatic downloads should be enabled, combining:
+    /// - Build-type feature flag (DEBUG/REVIEW require flag, Release/Alpha always allowed)
+    /// - User preference (areAutomaticUpdatesEnabled)
+    private func resolveAutoDownloadEnabled(userPreference: Bool) -> Bool {
+        #if DEBUG
+        return featureFlagger.isFeatureOn(.autoUpdateInDEBUG) && userPreference
+        #elseif REVIEW
+        return featureFlagger.isFeatureOn(.autoUpdateInREVIEW) && userPreference
+        #else
+        return userPreference
+        #endif
+    }
+
     // MARK: - Public
 
     init(internalUserDecider: InternalUserDecider,
@@ -239,9 +251,22 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             internalUserDecider: internalUserDecider,
             areAutomaticUpdatesEnabled: currentAutomaticUpdatesEnabled
         )
+
+        // Compute effective auto-download state before super.init() using inline logic
+        // (resolveAutoDownloadEnabled can't be called before super.init())
+        let shouldAutoDownload: Bool = {
+            #if DEBUG
+            return featureFlagger.isFeatureOn(.autoUpdateInDEBUG) && currentAutomaticUpdatesEnabled
+            #elseif REVIEW
+            return featureFlagger.isFeatureOn(.autoUpdateInREVIEW) && currentAutomaticUpdatesEnabled
+            #else
+            return currentAutomaticUpdatesEnabled
+            #endif
+        }()
+
         self.userDriver = SimplifiedUpdateUserDriver(
             internalUserDecider: internalUserDecider,
-            areAutomaticUpdatesEnabled: currentAutomaticUpdatesEnabled,
+            areAutomaticUpdatesEnabled: shouldAutoDownload,
             onProgressChange: progressState.handleProgressChange
         )
         super.init()
@@ -363,13 +388,6 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     }
 
     func checkForUpdateRespectingRollout() {
-#if DEBUG
-        let featureFlagOn = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-        guard featureFlagOn else {
-            Logger.updates.debug("Skipping update check - autoUpdateInDEBUG feature flag is off")
-            return
-        }
-#endif
         performUpdateCheck()
     }
 
@@ -432,13 +450,14 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
         let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
 
-        let featureFlagEnabled = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+        let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: areAutomaticUpdatesEnabled)
 
         updater.updateCheckInterval = UpdateCheckInterval.interval(isInternalUser: internalUserDecider.isInternalUser)
         // Always check for updates (so user sees update available even in manual mode)
-        // Only auto-download when FF is on AND automatic updates are enabled
+        // Only auto-download based on build-type feature flag AND automatic updates preference
         updater.automaticallyChecksForUpdates = true
-        updater.automaticallyDownloadsUpdates = featureFlagEnabled && areAutomaticUpdatesEnabled
+        updater.automaticallyDownloadsUpdates = shouldAutoDownload
+        userDriver.areAutomaticUpdatesEnabled = shouldAutoDownload
 
         try updater.start()
         self.updater = updater

@@ -53,6 +53,9 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func aiChatContextualSheetCoordinatorDidRequestAttachPage(_ coordinator: AIChatContextualSheetCoordinator) {
             attachPageCallCount += 1
         }
+
+        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
+        }
     }
 
     private final class MockPresentingViewController: UIViewController {

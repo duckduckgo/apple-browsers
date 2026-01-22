@@ -1,5 +1,5 @@
 //
-//  NewTabPageTelemetryEvent.swift
+//  NewTabPageDataModel+Telemetry.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //

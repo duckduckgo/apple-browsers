@@ -42,8 +42,7 @@ extension TabViewController {
                 restoreURL = URL(string: urlString)
             }
 
-            let isFirstDisplay = aiChatContextualSheetCoordinator.sheetViewController == nil && !hasExistingWebVC && !needsColdRestore
-            if isFirstDisplay && aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled {
+            if !needsColdRestore {
                 pageContext = await collectPageContext()
             }
 
@@ -187,40 +186,23 @@ extension TabViewController {
         pageContextUpdateCancellable = script.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
-                guard let self else { return }
-
-                guard let pageContext,
-                      aiChatContextualSheetCoordinator.isSheetPresented,
-                      aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
-                    return
-                }
-
-                guard let enriched = enrichWithFavicon(pageContext) else { return }
-
-                aiChatContextualSheetCoordinator.updatePageContext(enriched)
-            }
-    }
-}
-
-// MARK: - Page Context Auto-Update
-
-extension TabViewController {
-
-    private func subscribeToPageContextUpdates() {
-        guard pageContextUpdateCancellable == nil,
-              let script = pageContextUserScript else { return }
-
-        pageContextUpdateCancellable = script.collectionResultPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] pageContext in
                 guard let self,
                       let pageContext,
-                      aiChatContextualSheetCoordinator.isSheetPresented,
-                      aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
-                    return
-                }
-                if let enriched = enrichWithFavicon(pageContext) {
-                    aiChatContextualSheetCoordinator.updatePageContext(enriched)
+                      let enriched = enrichWithFavicon(pageContext) else { return }
+
+// Always update the store so context is fresh for manual attachment
+                aiChatContextualSheetCoordinator.pageContextStore.update(enriched)
+
+                // Only push to UI when auto-attach is enabled and sheet is presented
+                let isSheetPresented = aiChatContextualSheetCoordinator.isSheetPresented
+                let autoAttachEnabled = aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled
+
+                if isSheetPresented && autoAttachEnabled {
+                    if aiChatContextualSheetCoordinator.hasActiveChat {
+                        aiChatContextualSheetCoordinator.sheetViewController?.pushPageContextToFrontend(enriched)
+                    } else {
+                        aiChatContextualSheetCoordinator.sheetViewController?.didReceivePageContext()
+                    }
                 }
             }
     }

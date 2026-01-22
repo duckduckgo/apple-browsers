@@ -85,11 +85,6 @@
         "description": "The type of software sending the wide pixel",
         "enum": ["app"]
     },
-    "wideEventMetaType": {
-        "key": "meta.type",
-        "type": "string",
-        "description": "Globally unique identifier for the wide event type"
-    },
     "wideEventSampleRate": {
         "key": "global.sample_rate",
         "type": "number",

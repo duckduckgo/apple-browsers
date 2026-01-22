@@ -82,7 +82,7 @@ final class AIChatOmnibarController {
 
     private func subscribeToTextChangesForSuggestions() {
         $currentText
-            .receive(on: DispatchQueue.main)
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
             .sink { [weak self] text in
                 guard let self else { return }
                 self.suggestionsViewModel.updateQuery(text)

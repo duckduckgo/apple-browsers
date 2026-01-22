@@ -60,6 +60,7 @@ final class AIChatSuggestionsView: NSView {
     private var cancellables = Set<AnyCancellable>()
     private var previousSuggestionCount: Int = 0
     private weak var boundViewModel: AIChatSuggestionsViewModel?
+    private var viewTrackingArea: NSTrackingArea?
 
     var onSuggestionClicked: ((AIChatSuggestion) -> Void)?
 
@@ -100,6 +101,31 @@ final class AIChatSuggestionsView: NSView {
 
     private func updateSeparatorColor() {
         separatorView.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
+    }
+
+    // MARK: - Mouse Tracking
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+
+        if let existingArea = viewTrackingArea {
+            removeTrackingArea(existingArea)
+        }
+
+        let trackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeInActiveApp],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(trackingArea)
+        viewTrackingArea = trackingArea
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        // Clear selection when mouse leaves the suggestions view entirely
+        boundViewModel?.clearSelection()
     }
 
     // MARK: - Static Height Calculation
@@ -185,6 +211,8 @@ final class AIChatSuggestionsView: NSView {
     ///   - viewModel: The view model to bind to.
     ///   - onHeightChange: Called when the number of suggestions changes, requiring a height update.
     func bind(to viewModel: AIChatSuggestionsViewModel, onHeightChange: @escaping (CGFloat) -> Void) {
+        cancellables.removeAll()
+
         boundViewModel = viewModel
 
         viewModel.$filteredSuggestions

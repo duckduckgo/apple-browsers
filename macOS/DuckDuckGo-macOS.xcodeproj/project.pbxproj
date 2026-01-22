@@ -18161,7 +18161,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
@@ -18169,7 +18168,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = CI;
 		};
@@ -18177,7 +18175,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -18185,7 +18182,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Alpha;
 		};
@@ -18193,7 +18189,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Review;
 		};

@@ -3710,13 +3710,13 @@
 "subscription.subscription.expiring.yearly.caption" = "Yıllık aboneliğiniz %@ tarihinde sona erecek.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
-"subscription.subscription.pending.downgrade.monthly.caption" = "Planınız %2 tarihinde %1$@ Aylık plana düşürülecek.";
+"subscription.subscription.pending.downgrade.monthly.caption" = "Planınız %2$@  tarihinde %1$@ Aylık plana düşürülecek.";
 
 /* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
-"subscription.subscription.pending.downgrade.unknown.caption" = "Planınız %2 tarihinde %1 planına düşürülecek.";
+"subscription.subscription.pending.downgrade.unknown.caption" = "Planınız %2$@  tarihinde %1$@ planına düşürülecek.";
 
 /* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
-"subscription.subscription.pending.downgrade.yearly.caption" = "Planınız %2 tarihinde %1 Yıllık planına düşürülecek.";
+"subscription.subscription.pending.downgrade.yearly.caption" = "Planınız %2$@  tarihinde %1$@ Yıllık planına düşürülecek.";
 
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Aylık aboneliğiniz %@ tarihinde yenilenecek.";

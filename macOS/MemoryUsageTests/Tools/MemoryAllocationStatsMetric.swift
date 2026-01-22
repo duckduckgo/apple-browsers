@@ -53,12 +53,8 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
     private let memoryStatsURL: URL
     private var initialStatsSnapshot: MemoryAllocationStatsSnapshot?
     private var finalStatsSnapshot: MemoryAllocationStatsSnapshot?
-
     private(set) var initialStatsAttachment: XCTAttachment?
     private(set) var finalStatsAttachment: XCTAttachment?
-    var statsAttachments: [XCTAttachment] {
-        [initialStatsAttachment, finalStatsAttachment].compactMap { $0 }
-    }
 
     init(memoryStatsURL: URL) {
         self.memoryStatsURL = memoryStatsURL

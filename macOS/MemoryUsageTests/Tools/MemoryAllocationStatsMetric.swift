@@ -27,9 +27,25 @@ struct MemoryAllocationStatsSnapshot: Codable {
     let processID: pid_t
     let timestamp: Date
     let mallocZoneCount: UInt
-    let totalAllocatedMB: UInt64
-    let totalInUseMB: UInt64
+    let totalAllocatedBytes: UInt64
+    let totalUsedBytes: UInt64
 }
+
+extension MemoryAllocationStatsSnapshot {
+
+    var totalAllocatedMB: Double {
+        convertToMB(bytes: totalAllocatedBytes)
+    }
+
+    var totalUsedMB: Double {
+        convertToMB(bytes: totalUsedBytes)
+    }
+
+    private func convertToMB(bytes: UInt64) -> Double {
+        Double(bytes) / 1024 / 1024
+    }
+}
+
 
 /// `XCMetric` that processes the `MemoryAllocationStats` JSON file, as exported by `MemoryAllocationStatsExporter`.
 ///
@@ -74,14 +90,14 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
         let initialMemoryUsedMB = XCTPerformanceMeasurement(
             identifier: "com.duckduckgo.memory.allocations.used.initial",
             displayName: "Initial Memory Used",
-            doubleValue: Double(initialState.totalInUseMB),
+            doubleValue: initialState.totalUsedMB,
             unitSymbol: "MB"
         )
 
         let finalMemoryUsedMB = XCTPerformanceMeasurement(
             identifier: "com.duckduckgo.memory.allocations.used.final",
             displayName: "Final Memory Used",
-            doubleValue: Double(finalState.totalInUseMB),
+            doubleValue: finalState.totalUsedMB,
             unitSymbol: "MB"
         )
 

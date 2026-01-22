@@ -1901,8 +1901,12 @@ final class AddressBarButtonsViewController: NSViewController {
             reloadPage: { [weak tabViewModel] in
                 tabViewModel?.reload()
             },
+            setPermissionsNeedReload: { [weak tabViewModel] in
+                tabViewModel?.tab.permissions.setPermissionsNeedReload()
+            },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
-            pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false
+            pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
+            permissionsNeedReload: tabViewModel.permissionsNeedReload
         )
 
         let popover = PermissionCenterPopover(viewModel: viewModel)

@@ -1986,7 +1986,8 @@
             "value" : "View All Plans"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "subscription.preferences.button.view.plans" : {
       "comment" : "Button for viewing subscription plans on expired subscription",
@@ -2284,18 +2285,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Identity Theft Restoration"
-          }
-        }
-      }
-    },
-    "subscription.preferences.manage.payment.or.cancel.button" : {
-      "comment" : "Button to manage payment or cancel subscription",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Manage Payment or Cancel"
           }
         }
       }
@@ -5486,38 +5475,14 @@
         }
       }
     },
-    "subscription.preferences.subscription.pending.downgrade.monthly.caption" : {
-      "comment" : "Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Your plan will downgrade to %1$@ Monthly on %2$@."
-          }
-        }
-      }
-    },
-    "subscription.preferences.subscription.pending.downgrade.unknown.caption" : {
-      "comment" : "Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).'",
+    "subscription.preferences.subscription.pending.downgrade.caption" : {
+      "comment" : "Pending downgrade info. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your plan will downgrade to %1$@ on %2$@."
-          }
-        }
-      }
-    },
-    "subscription.preferences.subscription.pending.downgrade.yearly.caption" : {
-      "comment" : "Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).'",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Your plan will downgrade to %1$@ Yearly on %2$@."
           }
         }
       }

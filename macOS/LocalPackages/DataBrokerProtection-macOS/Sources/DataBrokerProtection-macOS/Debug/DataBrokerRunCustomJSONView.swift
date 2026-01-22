@@ -23,8 +23,6 @@ import FeatureFlags
 
 struct DataBrokerRunCustomJSONView: View {
     private enum Constants {
-        static let maxNames = 3
-        static let maxAddresses = 5
         static let eventTimeColumnWidth: CGFloat = 120
         static let eventKindColumnWidth: CGFloat = 80
         static let eventProfileQueryColumnWidth: CGFloat = 180
@@ -151,47 +149,94 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var scanView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Scan")
-                .font(.headline)
+            HStack(spacing: 12) {
+                Text("Scan")
+                    .font(.headline)
+                Spacer()
+                if #available(macOS 12.0, *) {
+                    if viewModel.isEditingPresets {
+                        Button("Save Presets") {
+                            viewModel.savePresets()
+                            viewModel.isEditingPresets = false
+                        }
+
+                        Button("Cancel") {
+                            viewModel.loadPresets()
+                            viewModel.isEditingPresets = false
+                        }
+                    } else {
+                        Menu("Load Preset...") {
+                            ForEach(viewModel.presets) { preset in
+                                Button(String(describing: preset)) {
+                                    viewModel.applyPreset(preset)
+                                }
+                            }
+                        }
+                        .disabled(viewModel.presets.isEmpty)
+
+                        Button("Edit Presets") {
+                            viewModel.isEditingPresets = true
+                        }
+
+                        Button("Save Form as Preset") {
+                            viewModel.saveCurrentFormAsPreset()
+                        }
+                    }
+                }
+            }
 
             Divider()
 
-            ForEach(0..<min(viewModel.names.count, Constants.maxNames), id: \.self) { index in
-                HStack(spacing: 12) {
-                    TextField("First name", text: $viewModel.names[index].first)
-                        .frame(maxWidth: .infinity)
-                    TextField("Middle", text: $viewModel.names[index].middle)
-                        .frame(minWidth: 120)
-                    TextField("Last name", text: $viewModel.names[index].last)
-                        .frame(maxWidth: .infinity)
+            if #available(macOS 12.0, *), viewModel.isEditingPresets {
+                presetForm
+            } else {
+                scanForm
+            }
+
+            Divider()
+
+            Text("macOS App version: \(viewModel.appVersion())")
+            Text("DBP API endpoint: \(viewModel.dbpEndpoint)")
+
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(dbpFeatureFlagLines, id: \.name) { flag in
+                    Text("\(flag.name): \(flag.value)")
+                        .padding(.top, 6)
                 }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var presetForm: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            TextEditor(text: $viewModel.presetsText)
+                .font(monospacedTextFont)
+                .frame(minHeight: 260)
+        }
+    }
+
+    private var scanForm: some View {
+        Group {
+            ForEach(viewModel.names.prefix(DataBrokerRunCustomJSONViewModel.Constants.maxNames)) { name in
+                NameRow(name: name)
             }
 
             Button("Add other name") {
                 viewModel.names.append(.empty())
             }
-            .disabled(viewModel.names.count >= Constants.maxNames)
+            .disabled(viewModel.names.count >= DataBrokerRunCustomJSONViewModel.Constants.maxNames)
 
             Divider()
 
-            ForEach(0..<min(viewModel.addresses.count, Constants.maxAddresses), id: \.self) { index in
-                HStack(spacing: 12) {
-                    TextField("City", text: $viewModel.addresses[index].city)
-                        .frame(maxWidth: .infinity)
-                    TextField("State (two characters format)", text: $viewModel.addresses[index].state)
-                        .onChange(of: viewModel.addresses[index].state) { newValue in
-                            if newValue.count > 2 {
-                                viewModel.addresses[index].state = String(newValue.prefix(2))
-                            }
-                        }
-                        .frame(minWidth: 180)
-                }
+            ForEach(viewModel.addresses.prefix(DataBrokerRunCustomJSONViewModel.Constants.maxAddresses)) { address in
+                AddressRow(address: address)
             }
 
             Button("Add other address") {
                 viewModel.addresses.append(.empty())
             }
-            .disabled(viewModel.addresses.count >= Constants.maxAddresses)
+            .disabled(viewModel.addresses.count >= DataBrokerRunCustomJSONViewModel.Constants.maxAddresses)
 
             Divider()
 
@@ -222,20 +267,7 @@ struct DataBrokerRunCustomJSONView: View {
                         .foregroundColor(.secondary)
                 }
             }
-
-            Divider()
-
-            Text("macOS App version: \(viewModel.appVersion())")
-            Text("DBP API endpoint: \(viewModel.dbpEndpoint)")
-
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(dbpFeatureFlagLines, id: \.name) { flag in
-                    Text("\(flag.name): \(flag.value)")
-                        .padding(.top, 6)
-                }
-            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     // MARK: - Tab 2: Extracted profiles
@@ -533,3 +565,39 @@ private struct DebugEventRowView: View {
         }
     }
 }
+
+private struct NameRow: View {
+    @ObservedObject var name: NameUI
+
+    var body: some View {
+        HStack(spacing: 12) {
+            TextField("First name", text: $name.first)
+                .frame(maxWidth: .infinity)
+            TextField("Middle", text: $name.middle)
+                .frame(minWidth: 120)
+            TextField("Last name", text: $name.last)
+                .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+private struct AddressRow: View {
+    @ObservedObject var address: AddressUI
+
+    var body: some View {
+        HStack(spacing: 12) {
+            TextField("City", text: $address.city)
+                .frame(maxWidth: .infinity)
+            TextField("State (two characters format)", text: $address.state)
+                .onChange(of: address.state) { newValue in
+                    if newValue.count > 2 {
+                        address.state = String(newValue.prefix(2))
+                    }
+                }
+                .frame(minWidth: 180)
+        }
+    }
+}
+
+extension NameUI: Identifiable {}
+extension AddressUI: Identifiable {}

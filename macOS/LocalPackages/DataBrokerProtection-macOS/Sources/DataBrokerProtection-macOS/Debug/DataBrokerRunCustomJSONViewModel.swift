@@ -73,14 +73,26 @@ final class NameUI: ObservableObject {
         self.last = last
     }
 
+    init?(components: PersonNameComponents) {
+        let first = components.givenName ?? ""
+        let middle = components.middleName ?? ""
+        let last = components.familyName ?? ""
+        if first.isEmpty && middle.isEmpty && last.isEmpty {
+            return nil
+        }
+        self.first = first
+        self.middle = middle
+        self.last = last
+    }
+
     static func empty() -> NameUI {
         .init(first: "", middle: "", last: "")
     }
 
     func toModel() -> DataBrokerProtectionProfile.Name? {
-        let trimmedFirst = first.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedMiddle = middle.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedLast = last.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedFirst = first.trimmed()
+        let trimmedMiddle = middle.trimmed()
+        let trimmedLast = last.trimmed()
         if trimmedFirst.isEmpty, trimmedMiddle.isEmpty, trimmedLast.isEmpty {
             return nil
         }
@@ -105,9 +117,9 @@ final class AddressUI: ObservableObject {
     }
 
     func toModel() -> DataBrokerProtectionProfile.Address? {
-        let trimmedCity = city.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedState = state.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedCity.isEmpty, trimmedState.isEmpty {
+        let trimmedCity = city.trimmed()
+        let trimmedState = state.trimmed()
+        if trimmedCity.isEmpty || trimmedState.isEmpty {
             return nil
         }
         return .init(city: trimmedCity, state: trimmedState)
@@ -121,8 +133,46 @@ struct ScanResult {
     let extractedProfile: ExtractedProfile
 }
 
+/// Preset entries look like this:
+///
+/// John Smith
+/// Dallas, TX
+/// 2000
+///
+/// Jane Doe / Janet Doe
+/// Chicago, IL / Los Angeles, LA
+/// 1980
+struct ProfilePreset: Identifiable, CustomStringConvertible {
+    enum Constants {
+        static let entrySeparator = "/"
+        static let partSeparator = ","
+        static let fieldSeparator = "\n"
+        static let profileSeparator = "\n\n"
+        static let presetKey = "dataBrokerProtectionDebugPresets"
+    }
+
+    let id = UUID()
+    let names: [NameUI]
+    let addresses: [AddressUI]
+    let birthYear: String
+
+    var description: String {
+        let firstName = (names.first?.first ?? "Unnamed").trimmed()
+        let firstAddress = addresses.first.map {
+            "\($0.city.trimmed()), \($0.state.trimmed())"
+        } ?? "Nowhere"
+        let yob = birthYear.trimmed()
+        return "\(firstName) - \(firstAddress) - \(yob)"
+    }
+}
+
 // swiftlint:disable force_try
 final class DataBrokerRunCustomJSONViewModel: ObservableObject {
+    enum Constants {
+        static let maxNames = 3
+        static let maxAddresses = 5
+    }
+
     @Published var birthYear: String = ""
     @Published var age: String = ""
     @Published var results = [ScanResult]()
@@ -133,6 +183,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var debugEvents: [DebugLogEvent] = []
     @Published var progressText: String = "Idle"
     @Published var isProgressActive: Bool = false
+    @Published var isEditingPresets: Bool = false
+    @Published var presetsText: String = ""
+    @Published var presets: [ProfilePreset] = []
 
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
@@ -235,6 +288,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
                                              settings: dbpSettings,
                                              servicePixel: backendServicePixels)
+
+        if #available(macOS 12.0, *) {
+            loadPresets()
+        }
     }
 
     @MainActor
@@ -561,6 +618,122 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             self.progressText = text
             self.isProgressActive = true
         }
+    }
+}
+
+extension DataBrokerRunCustomJSONViewModel {
+    func loadPresets() {
+        guard #available(macOS 12.0, *) else { return }
+        presetsText = UserDefaults.dbp.string(forKey: ProfilePreset.Constants.presetKey) ?? ""
+        presets = parsePresets(from: presetsText)
+    }
+
+    func savePresets() {
+        guard #available(macOS 12.0, *) else { return }
+        UserDefaults.dbp.set(presetsText, forKey: ProfilePreset.Constants.presetKey)
+        presets = parsePresets(from: presetsText)
+    }
+
+    func applyPreset(_ preset: ProfilePreset) {
+        guard #available(macOS 12.0, *) else { return }
+        names = Array(preset.names.prefix(Constants.maxNames))
+        addresses = Array(preset.addresses.prefix(Constants.maxAddresses))
+        if names.isEmpty { names = [NameUI.empty()] }
+        if addresses.isEmpty { addresses = [AddressUI.empty()] }
+        birthYear = preset.birthYear
+        syncAge(fromBirthYear: birthYear)
+    }
+
+    func saveCurrentFormAsPreset() {
+        guard #available(macOS 12.0, *) else { return }
+
+        let namesLine = names.compactMap { name in
+            guard let components = PersonNameComponents(name: name) else { return nil }
+            let formatted = PersonNameComponentsFormatter().string(from: components)
+            return formatted.isEmpty ? nil : formatted
+        }.joined(separator: ProfilePreset.Constants.entrySeparator)
+
+        let addressesLine = addresses.compactMap { address -> String? in
+            guard let model = address.toModel() else { return nil }
+            return "\(model.city)\(ProfilePreset.Constants.partSeparator) \(model.state)"
+        }.joined(separator: ProfilePreset.Constants.entrySeparator)
+
+        let birthYearLine = birthYear.trimmed()
+
+        guard !namesLine.isEmpty, !addressesLine.isEmpty, !birthYearLine.isEmpty else {
+            return
+        }
+
+        let profileBlock = [namesLine, addressesLine, birthYearLine].joined(separator: ProfilePreset.Constants.fieldSeparator)
+
+        presetsText = "\(presetsText)\(ProfilePreset.Constants.profileSeparator)\(profileBlock)"
+        savePresets()
+    }
+
+    private func parsePresets(from text: String) -> [ProfilePreset] {
+        let profileBlocks = text.split(by: ProfilePreset.Constants.profileSeparator)
+        var parsedPresets: [ProfilePreset] = []
+
+        for block in profileBlocks {
+            let lines = block.split(by: ProfilePreset.Constants.fieldSeparator)
+            guard lines.count >= 3 else { continue }
+
+            let names = lines[0].toNames()
+            let addresses = lines[1].toAddresses()
+            let birthYear = lines[2].trimmed()
+
+            parsedPresets.append(ProfilePreset(names: names, addresses: addresses, birthYear: birthYear))
+        }
+
+        return parsedPresets
+    }
+
+}
+
+fileprivate extension String {
+    func trimmed() -> String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func toNames() -> [NameUI] {
+        split(by: ProfilePreset.Constants.entrySeparator).compactMap { entry in
+            guard #available(macOS 12.0, *) else { return nil }
+            let formatter = PersonNameComponentsFormatter()
+            let components = formatter.personNameComponents(from: entry)
+            return components.flatMap { NameUI(components: $0) }
+        }
+    }
+
+    func toAddresses() -> [AddressUI] {
+        split(by: ProfilePreset.Constants.entrySeparator).compactMap { entry in
+            let parts = entry.components(separatedBy: ProfilePreset.Constants.partSeparator).map { $0.trimmed() }
+            guard parts.count == 2 else { return nil }
+            return AddressUI(city: parts[0], state: parts[1])
+        }
+    }
+
+    func split(by separator: String) -> [String] {
+        components(separatedBy: separator)
+            .map { $0.trimmed() }
+            .filter { !$0.isEmpty }
+    }
+}
+
+fileprivate extension PersonNameComponents {
+    init?(name: NameUI) {
+        let trimmedFirst = name.first.trimmed()
+        let trimmedMiddle = name.middle.trimmed()
+        let trimmedLast = name.last.trimmed()
+        if trimmedFirst.isEmpty && trimmedMiddle.isEmpty && trimmedLast.isEmpty {
+            return nil
+        }
+
+        guard #available(macOS 12.0, *) else { return nil }
+
+        self.init()
+        self.givenName = trimmedFirst
+        self.middleName = trimmedMiddle.isEmpty ? nil : trimmedMiddle
+        self.familyName = trimmedLast
     }
 }
 

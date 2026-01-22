@@ -35,7 +35,7 @@ enum MemoryAllocationStatsError: Error {
     case errorSavingSnapshot
 }
 
-class MemoryAllocationStatsExporter {
+final class MemoryAllocationStatsExporter {
 
     /// Exports a fresh MemoryAllocationStats to the specified URL
     ///

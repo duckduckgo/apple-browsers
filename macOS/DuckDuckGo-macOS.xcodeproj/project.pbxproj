@@ -2968,7 +2968,7 @@
 		B5C2886C2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */; };
 		B5C980EB2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */; };
 		B5C980EC2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */; };
-		B5C980F72F228EE300655B21 /* ApplicationMemoryStatsIPCMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980F62F228EE300655B21 /* ApplicationMemoryStatsIPCMetric.swift */; };
+		B5C980F72F228EE300655B21 /* MemoryAllocationStatsMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980F62F228EE300655B21 /* MemoryAllocationStatsMetric.swift */; };
 		B5CBB60B2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
 		B5CBB60C2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
 		B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
@@ -5821,7 +5821,7 @@
 		B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemedTextFieldStyle.swift; sourceTree = "<group>"; };
 		B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CASpringAnimationExtension.swift; sourceTree = "<group>"; };
 		B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryAllocationStatsExporter.swift; sourceTree = "<group>"; };
-		B5C980F62F228EE300655B21 /* ApplicationMemoryStatsIPCMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationMemoryStatsIPCMetric.swift; sourceTree = "<group>"; };
+		B5C980F62F228EE300655B21 /* MemoryAllocationStatsMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryAllocationStatsMetric.swift; sourceTree = "<group>"; };
 		B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTitleView.swift; sourceTree = "<group>"; };
 		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
@@ -7775,7 +7775,7 @@
 		37C3210D2F1E80FC008F4604 /* MemoryUsageTests */ = {
 			isa = PBXGroup;
 			children = (
-				B5C980F62F228EE300655B21 /* ApplicationMemoryStatsIPCMetric.swift */,
+				B5C980F82F2298D900655B21 /* Tools */,
 				B59845C52F22774C00A25DA4 /* MemoryUsageTests.swift */,
 				37C321132F1E81CA008F4604 /* macOS Memory Usage Tests.xctestplan */,
 			);
@@ -11184,6 +11184,14 @@
 				B546599C2F105847000009DE /* ThemePopoverDecider.swift */,
 			);
 			path = Themes;
+			sourceTree = "<group>";
+		};
+		B5C980F82F2298D900655B21 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				B5C980F62F228EE300655B21 /* MemoryAllocationStatsMetric.swift */,
+			);
+			path = Tools;
 			sourceTree = "<group>";
 		};
 		B5E197EA2E8C645500C447CC /* VisualRefresh */ = {
@@ -15718,7 +15726,7 @@
 				37C321562F1F8C82008F4604 /* XCUIElementQueryExtension.swift in Sources */,
 				37C321572F1F8C82008F4604 /* XCUIApplicationExtension.swift in Sources */,
 				37C321582F1F8C82008F4604 /* NSPredicateExtension.swift in Sources */,
-				B5C980F72F228EE300655B21 /* ApplicationMemoryStatsIPCMetric.swift in Sources */,
+				B5C980F72F228EE300655B21 /* MemoryAllocationStatsMetric.swift in Sources */,
 				37C321592F1F8C82008F4604 /* XCUIElementTypeExtension.swift in Sources */,
 				37C3215A2F1F8C82008F4604 /* XCUIElementSnapshotExtension.swift in Sources */,
 				37C3215B2F1F8C82008F4604 /* UITests.swift in Sources */,

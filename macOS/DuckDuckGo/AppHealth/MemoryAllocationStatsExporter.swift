@@ -47,7 +47,9 @@ final class MemoryAllocationStatsExporter {
     ///
     func exportSnapshot(targetURL: URL) throws {
         let snapshot = try buildStatsSnapshot()
-        try write(snapshot: snapshot, to: targetURL)
+        let encoded = try encodeToJSON(snapshot: snapshot)
+
+        try write(payload: encoded, to: targetURL)
     }
 
     /// Exports a fresh MemoryStatsSnapshot to a Temporary URL: `/tmp/[Bundle-ID]-allocations.json`
@@ -112,10 +114,9 @@ private extension MemoryAllocationStatsExporter {
 
 private extension MemoryAllocationStatsExporter {
 
-    func write(snapshot: MemoryAllocationStatsSnapshot, to targetURL: URL) throws {
+    func write(payload: Data, to targetURL: URL) throws {
         do {
-            let encoded = try encodeToJSON(snapshot: snapshot)
-            try encoded.write(to: targetURL, options: .atomic)
+            try payload.write(to: targetURL, options: .atomic)
         } catch {
             throw MemoryAllocationStatsError.errorSavingSnapshot
         }

@@ -139,7 +139,7 @@ final class SubscriptionURLTests: XCTestCase {
 
     func testUpgradeURLForProduction() throws {
         // Given
-        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?)!
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans")!
 
         // When
         let url = SubscriptionURL.upgrade.subscriptionURL(environment: .production)

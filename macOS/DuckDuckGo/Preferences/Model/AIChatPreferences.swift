@@ -27,8 +27,6 @@ final class AIChatPreferences: ObservableObject {
 
     private var storage: AIChatPreferencesStorage
     private var cancellables = Set<AnyCancellable>()
-    private let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/approach-to-ai")!
-    private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings?return=aiFeatures#aifeatures")!
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private var windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
@@ -159,7 +157,7 @@ final class AIChatPreferences: ObservableObject {
     }
 
     @MainActor func openLearnMoreLink() {
-        windowControllersManager.show(url: learnMoreURL, source: .ui, newTab: true, selected: true)
+        windowControllersManager.show(url: URL.aiChatApproachToAI, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor func openAIChatLink() {
@@ -167,6 +165,6 @@ final class AIChatPreferences: ObservableObject {
     }
 
     @MainActor func openSearchAssistSettings() {
-        windowControllersManager.show(url: searchAssistSettingsURL, source: .ui, newTab: true, selected: true)
+        windowControllersManager.show(url: URL.aiChatSettings, source: .ui, newTab: true, selected: true)
     }
 }

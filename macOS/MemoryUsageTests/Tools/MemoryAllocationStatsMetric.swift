@@ -46,7 +46,6 @@ extension MemoryAllocationStatsSnapshot {
     }
 }
 
-
 /// `XCMetric` that processes the `MemoryAllocationStats` JSON file, as exported by `MemoryAllocationStatsExporter`.
 ///
 final class MemoryAllocationStatsMetric: NSObject, XCTMetric {

@@ -52,8 +52,10 @@ extension MemoryAllocationStatsSnapshot {
 final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
 
     private let memoryStatsURL: URL
-    private var initialState: MemoryAllocationStatsSnapshot?
-    private var finalState: MemoryAllocationStatsSnapshot?
+    private var initialStatsSnapshot: MemoryAllocationStatsSnapshot?
+    private var finalStatsSnapshot: MemoryAllocationStatsSnapshot?
+    private(set) var initialStatsAttachment: XCTAttachment?
+    private(set) var finalStatsAttachment: XCTAttachment?
 
     init(memoryStatsURL: URL) {
         self.memoryStatsURL = memoryStatsURL
@@ -69,20 +71,22 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
     // MARK: - XCTMetric
 
     func willBeginMeasuring() {
-        initialState = try? loadAndDecodeStats(sourceURL: memoryStatsURL)
+        initialStatsSnapshot = try? loadAndDecodeStats(sourceURL: memoryStatsURL)
+        initialStatsAttachment = buildXCTAttachment(sourceURL: memoryStatsURL, description: "Initial Memory Stats")
     }
 
     func didStopMeasuring() {
-        finalState = try? loadAndDecodeStats(sourceURL: memoryStatsURL)
+        finalStatsSnapshot = try? loadAndDecodeStats(sourceURL: memoryStatsURL)
+        finalStatsAttachment = buildXCTAttachment(sourceURL: memoryStatsURL, description: "Final Memory Stats")
     }
 
     func reportMeasurements(from startTime: XCTPerformanceMeasurementTimestamp, to endTime: XCTPerformanceMeasurementTimestamp) throws -> [XCTPerformanceMeasurement] {
-        guard let initialState else {
+        guard let initialStatsSnapshot else {
             XCTFail("Missing Initial Memory Measurement")
             return []
         }
 
-        guard let finalState else {
+        guard let finalStatsSnapshot else {
             XCTFail("Missing Final Memory Measurement")
             return []
         }
@@ -90,14 +94,14 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
         let initialMemoryUsedMB = XCTPerformanceMeasurement(
             identifier: "com.duckduckgo.memory.allocations.used.initial",
             displayName: "Initial Memory Used",
-            doubleValue: initialState.totalUsedMB,
+            doubleValue: initialStatsSnapshot.totalUsedMB,
             unitSymbol: "MB"
         )
 
         let finalMemoryUsedMB = XCTPerformanceMeasurement(
             identifier: "com.duckduckgo.memory.allocations.used.final",
             displayName: "Final Memory Used",
-            doubleValue: finalState.totalUsedMB,
+            doubleValue: finalStatsSnapshot.totalUsedMB,
             unitSymbol: "MB"
         )
 
@@ -111,5 +115,12 @@ private extension MemoryAllocationStatsMetric {
         let decoder = JSONDecoder()
         let statsAsData = try Data(contentsOf: sourceURL)
         return try decoder.decode(MemoryAllocationStatsSnapshot.self, from: statsAsData)
+    }
+
+    func buildXCTAttachment(sourceURL: URL, description: String) -> XCTAttachment {
+        let attachment = XCTAttachment(contentsOfFile: sourceURL)
+        attachment.name = description
+        attachment.lifetime = .keepAlways
+        return attachment
     }
 }

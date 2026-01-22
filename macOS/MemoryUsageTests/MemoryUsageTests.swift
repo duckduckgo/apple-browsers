@@ -19,6 +19,7 @@
 import XCTest
 import Foundation
 import os.log
+import SharedTestUtilities
 
 class MemoryUsageTests: XCTestCase {
 

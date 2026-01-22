@@ -37,18 +37,17 @@ public struct TabHistoryStore: TabHistoryStoring {
     }
 
     /// Inserts standalone tab history record without Visit relationship.
-    /// Used when global history is disabled but tab navigation must work.
+    /// Used when global history is disabled.
     ///
     /// Creates an "orphaned" TabHistory record (visit = nil).
     public func insertTabHistory(for tabID: String, url: URL) async throws {
         return try await withCheckedThrowingContinuation { continuation in
             context.perform { [context] in
                 // Create orphaned record (visit = nil)
-                guard let _ = self.createTabHistoryRecord(tabID: tabID,
-                                                          url: url,
-                                                          linkedVisit: nil,  // ← Orphaned!
-                                                          in: context
-                ) else {
+                guard self.createTabHistoryRecord(tabID: tabID,
+                                                   url: url,
+                                                   linkedVisit: nil,
+                                                   in: context) != nil else {
                     context.reset()
                     continuation.resume(throwing: HistoryDatabaseError.saveFailed)
                     return
@@ -65,6 +64,10 @@ public struct TabHistoryStore: TabHistoryStoring {
         }
     }
 
+    /// Creates a TabHistory managed object in the given context.
+    /// Used by HistoryStore to insert a visit and wire up the relationship between *PageVisit* and *TabHistory*
+    /// *Does NOT handle saving the context*
+    /// - Returns: The created `TabHistoryManagedObject`, or `nil` if creation failed.
     internal func createTabHistoryRecord(tabID: String?,
                                          url: URL?,
                                          linkedVisit: PageVisitManagedObject?,
@@ -85,6 +88,7 @@ public struct TabHistoryStore: TabHistoryStoring {
         return tabHistoryMO
     }
 
+    /// Fetches all URLs stored in the tab history for a given tab.
     public func tabHistory(for tabID: String) async throws -> [URL] {
         try await withCheckedThrowingContinuation { continuation in
             context.perform { [context, eventMapper] in
@@ -105,6 +109,8 @@ public struct TabHistoryStore: TabHistoryStoring {
         }
     }
 
+    /// Removes all tab history records for the specified tabs.
+    /// Uses a batch delete request for efficient removal of multiple records.
     public func removeTabHistory(for tabIDs: [String]) async throws {
         try await withCheckedThrowingContinuation { continuation in
             context.perform { [context, eventMapper] in

@@ -46,9 +46,11 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     private var userContentController: DataBrokerUserContentController?
 
     private var webView: WebView?
+    private var urlObservation: NSKeyValueObservation?
 
 #if os(macOS)
     private var window: NSWindow?
+    private var addressBarTextField: NSTextField?
 #elseif os(iOS)
     private var window: UIWindow?
 #endif
@@ -77,6 +79,12 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
         webView = WebView(frame: CGRect(origin: .zero, size: CGSize(width: 1024, height: 1024)), configuration: configuration)
         webView?.navigationDelegate = self
+        urlObservation = webView?.observe(\.url, options: [.initial, .new]) { [weak self] _, change in
+            let url = change.newValue ?? nil
+            Task { @MainActor in
+                self?.updateAddressBar(with: url)
+            }
+        }
 
         if showWebView {
 #if os(macOS)
@@ -88,7 +96,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
             window?.title = "Data Broker Protection"
             window?.delegate = self
             window?.isReleasedWhenClosed = false
-            window?.contentView = self.webView
+            window?.contentView = makeDebugContentView(webView: webView)
             window?.makeKeyAndOrderFront(nil)
 #elseif os(iOS)
             cleanupExistingPIRDebugWindow()
@@ -140,6 +148,8 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         userContentController = nil
         webView?.navigationDelegate = nil
         webView = nil
+        urlObservation?.invalidate()
+        urlObservation = nil
     }
 
     deinit {
@@ -272,6 +282,63 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 }
 
 #if os(macOS)
+private extension DataBrokerProtectionWebViewHandler {
+    @objc func copyURLFromAddressBar() {
+        let urlString = addressBarTextField?.stringValue ?? ""
+        guard !urlString.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(urlString, forType: .string)
+    }
+
+    func makeDebugContentView(webView: WKWebView?) -> NSView {
+        let containerView = NSView()
+        let verticalStack = NSStackView()
+        verticalStack.orientation = .vertical
+        verticalStack.spacing = 8
+        verticalStack.distribution = .fill
+        verticalStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let addressField = NSTextField(string: "")
+        addressField.isEditable = false
+        addressField.isSelectable = true
+        addressField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        addressField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        addressBarTextField = addressField
+
+        let copyButton = NSButton(title: "Copy URL", target: self, action: #selector(copyURLFromAddressBar))
+        copyButton.setContentHuggingPriority(.required, for: .horizontal)
+        copyButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let addressRow = NSStackView(views: [addressField, copyButton])
+        addressRow.orientation = .horizontal
+        addressRow.spacing = 8
+        addressRow.alignment = .centerY
+        addressRow.distribution = .fill
+        addressRow.translatesAutoresizingMaskIntoConstraints = false
+
+        if let webView {
+            webView.translatesAutoresizingMaskIntoConstraints = false
+            verticalStack.addArrangedSubview(addressRow)
+            verticalStack.addArrangedSubview(webView)
+        }
+
+        containerView.addSubview(verticalStack)
+        NSLayoutConstraint.activate([
+            verticalStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            verticalStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+            verticalStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
+            verticalStack.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
+            addressRow.widthAnchor.constraint(equalTo: verticalStack.widthAnchor)
+        ])
+
+        return containerView
+    }
+
+    func updateAddressBar(with url: URL?) {
+        addressBarTextField?.stringValue = url?.absoluteString ?? ""
+    }
+}
+
 extension DataBrokerProtectionWebViewHandler: NSWindowDelegate {
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         sender.orderOut(nil)
@@ -287,6 +354,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         Logger.action.log("WebViewHandler didFinish")
+        updateAddressBar(with: webView.url)
 
         self.activeContinuation?.resume()
         self.activeContinuation = nil
@@ -302,6 +370,10 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         Logger.action.error("WebViewHandler didFailProvisionalNavigation: \(error.localizedDescription, privacy: .public)")
         self.activeContinuation?.resume(throwing: error)
         self.activeContinuation = nil
+    }
+
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        updateAddressBar(with: webView.url)
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {

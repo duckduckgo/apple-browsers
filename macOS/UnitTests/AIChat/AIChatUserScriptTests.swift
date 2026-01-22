@@ -20,6 +20,8 @@ import AIChat
 import Combine
 import UserScript
 import WebKit
+import Persistence
+import PersistenceTestingUtils
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -331,10 +333,8 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 }
 // swiftlint:enable inclusive_language
 
-final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {
-    var customURLHostname: String?
-    var customURL: String?
-    func reset() { }
+func AIChatMockDebugSettings() -> any KeyedStoring<AIChatDebugURLSettings> {
+    return MockKeyValueStore().keyedStoring()
 }
 
 private final class MockAIChatMessageHandling: AIChatMessageHandling {

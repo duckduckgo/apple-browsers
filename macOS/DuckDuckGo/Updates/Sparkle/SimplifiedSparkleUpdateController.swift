@@ -31,9 +31,9 @@ import os.log
 
 /// Simplified Sparkle update controller.
 ///
-/// Update checks rely on Sparkle's built-in scheduling (SUScheduledCheckInterval in Info.plist,
-/// currently 3 hours) plus check-on-launch. Sparkle's `canCheckForUpdates` and `sessionInProgress`
-/// guards prevent concurrent or invalid checks.
+/// Update checks rely on Sparkle's built-in scheduling plus check-on-launch.
+/// Internal users check every 30 minutes; external users check every hour.
+/// Sparkle's `canCheckForUpdates` and `sessionInProgress` guards prevent concurrent or invalid checks.
 final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     enum Constants {
@@ -55,6 +55,17 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             }
 
             return isInternalUser ? internalRegular : externalRegular
+        }
+    }
+
+    /// Update check intervals based on user type.
+    /// Internal users check more frequently for faster update validation.
+    enum UpdateCheckInterval {
+        static let `internal`: TimeInterval = .minutes(30)
+        static let external: TimeInterval = .hours(1)
+
+        static func interval(isInternalUser: Bool) -> TimeInterval {
+            isInternalUser ? `internal` : external
         }
     }
 
@@ -102,6 +113,7 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
     private let progressState: UpdateProgressManaging = UpdateProgressState()
     private var progressCancellable: AnyCancellable?
+    private var internalUserCancellable: AnyCancellable?
 
     var updateProgress: UpdateCycleProgress { progressState.updateProgress }
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { progressState.updateProgressPublisher }
@@ -238,6 +250,13 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         progressCancellable = progressState.updateProgressPublisher
             .sink { [weak self] progress in
                 self?.handleProgressChange(progress)
+            }
+
+        // Update check interval when internal user status changes
+        internalUserCancellable = internalUserDecider.isInternalUserPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isInternal in
+                self?.updater?.updateCheckInterval = UpdateCheckInterval.interval(isInternalUser: isInternal)
             }
 
         // Clean up abandoned flows from previous sessions before starting any new checks
@@ -415,7 +434,7 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
         let featureFlagEnabled = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
 
-        updater.updateCheckInterval = 10_800
+        updater.updateCheckInterval = UpdateCheckInterval.interval(isInternalUser: internalUserDecider.isInternalUser)
         // Always check for updates (so user sees update available even in manual mode)
         // Only auto-download when FF is on AND automatic updates are enabled
         updater.automaticallyChecksForUpdates = true

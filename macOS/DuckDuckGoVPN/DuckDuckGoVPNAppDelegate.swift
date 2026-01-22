@@ -136,7 +136,10 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         experimentManager: nil,
         for: FeatureFlag.self)
     private let wideEventVPNAppStorageSuiteName: String = "com.duckduckgo.vpn.wideEvent"
-    private lazy var wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: UserDefaults(suiteName: wideEventVPNAppStorageSuiteName) ?? .standard))
+    private lazy var wideEvent = WideEvent(
+        storage: WideEventUserDefaultsStorage(userDefaults: UserDefaults(suiteName: wideEventVPNAppStorageSuiteName) ?? .standard),
+        featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
+    )
 
     public init(subscriptionManager: any SubscriptionManager,
                 subscriptionEnvironment: SubscriptionEnvironment) {

@@ -173,9 +173,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620280912
     case syncIdentities
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866478543578
-    case aiChatDataClearing
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
 
@@ -275,9 +272,13 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
     case heuristicAction
 
-    /// Next Steps cards widget with a single card displayed at a time on New Tab page
+    /// Enables Next Steps List widget with a single card displayed at a time on New Tab page
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
     case nextStepsListWidget
+
+    /// Whether the wide event POST endpoint is enabled
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
+    case wideEventPostEndpoint
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -309,6 +310,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarOnboarding,
                 .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
+                .wideEventPostEndpoint,
                 .memoryPressureReporting,
                 .themes,
                 .nextStepsListWidget:
@@ -372,7 +374,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
-                .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
                 .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
@@ -400,7 +401,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryPressureReporting,
                 .aiChatSync,
                 .heuristicAction,
-                .nextStepsListWidget:
+                .nextStepsListWidget,
+                .wideEventPostEndpoint:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -516,8 +518,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
-        case .aiChatDataClearing:
-            return .remoteReleasable(.feature(.duckAiDataClearing))
         case .storeSerpSettings:
             return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
@@ -576,6 +576,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         case .nextStepsListWidget:
             return .internalOnly()
+        case .wideEventPostEndpoint:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
         }
     }
 }

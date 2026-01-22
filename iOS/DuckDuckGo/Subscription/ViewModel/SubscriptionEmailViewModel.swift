@@ -111,11 +111,14 @@ final class SubscriptionEmailViewModel: ObservableObject {
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
+        let webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
+                                                           allowedDomains: allowedDomains,
+                                                           userScriptsDependencies: nil,
+                                                           featureFlagger: featureFlagger)
+
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,
-                                                          settings: AsyncHeadlessWebViewSettings(bounces: false,
-                                                                                                 allowedDomains: allowedDomains,
-                                                                                                 userScriptsDependencies: nil))
+                                                          settings: webViewSettings)
     }
 
     func setEmailFlowMode(_ flow: EmailViewFlow) {

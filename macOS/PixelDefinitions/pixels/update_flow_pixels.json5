@@ -39,10 +39,24 @@
         "triggers": ["other"],
         "parameters": [
             {
-                "key": "error",
+                "key": "e",
+                "type": "integer",
+                "description": "Error code of the LatestReleaseError enum"
+            },
+            {
+                "key": "d",
                 "type": "string",
-                "description": "Type of error that occurred",
-                "enum": ["network_error", "decoding_error", "invalid_url", "metadata_not_found", "unknown_error"]
+                "description": "Error description of the LatestReleaseError enum"
+            },
+            {
+                "key": "ud",
+                "type": "string",
+                "description": "Error domain of the LatestReleaseError enum"
+            },
+            {
+                "key": "ud2",
+                "type": "string",
+                "description": "Underlying error of the LatestReleaseError enum"
             },
             "appVersion",
             "pixelSource"

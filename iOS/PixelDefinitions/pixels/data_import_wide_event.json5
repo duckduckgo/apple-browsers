@@ -43,7 +43,7 @@
                 "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_status_reason",
                 "type": "string",
                 "description": "Optional reason accompanying the per-type status",
-                "enum": ["partial_data", "timeout"]
+                "enum": ["partial_data", "timeout", "document_picker_cancelled"]
             },
             // Overall latency
             {

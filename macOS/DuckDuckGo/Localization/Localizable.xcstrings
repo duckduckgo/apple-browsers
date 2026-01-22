@@ -71523,55 +71523,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Keine Karten"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "No Cards"
+            "value" : "No credit cards saved yet"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Sin tarjetas"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Aucune carte"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Nessuna carta"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Geen kaarten"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Brak kart"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Sem cartões"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Нет карт"
           }
         }
@@ -71633,6 +71633,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Импортировать из другого браузера"
+          }
+        }
+      }
+    },
+    "pm.empty.default.cards.description.extended.v2" : {
+      "comment" : "Label for empty state description when user has no credit cards saved",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Credit cards are stored securely on your device."
           }
         }
       }

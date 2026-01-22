@@ -326,9 +326,12 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     var emptyStateMessageDescription: String {
-        if sortDescriptor.category == .logins {
+        switch sortDescriptor.category {
+        case .logins:
             return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStatePasswordsDefaultDescription : UserText.pmEmptyStatePasswordsDefaultDescriptionAutolockOff
-        } else {
+        case .cards:
+            return UserText.pmEmptyStateCardsDefaultDescription
+        default:
             return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStateDefaultDescription : UserText.pmEmptyStateDefaultDescriptionAutolockOff
         }
     }
@@ -356,6 +359,14 @@ final class PasswordManagementItemListModel: ObservableObject {
 
     var emptyStateMessageLinkURL: URL {
         URL.passwordManagerLearnMore
+    }
+
+    var emptyStateHideLearnMoreLink: Bool {
+        sortDescriptor.category == .cards
+    }
+
+    var emptyStateHideLockIcon: Bool {
+        sortDescriptor.category == .cards
     }
 
     @Published private(set) var emptyState: EmptyState = .none

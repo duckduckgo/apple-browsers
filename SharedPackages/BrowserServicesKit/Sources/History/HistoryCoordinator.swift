@@ -42,7 +42,6 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor var history: BrowsingHistory? { get }
     @MainActor var allHistoryVisits: [Visit]? { get }
     @MainActor var historyDictionary: [URL: HistoryEntry]? { get }
-    @MainActor func tabHistory(tabID: String) async throws -> [URL]
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { get }
 
     @discardableResult @MainActor func addVisit(of url: URL, tabID: String?) -> Visit?
@@ -71,6 +70,7 @@ extension HistoryCoordinating {
         addVisit(of: url, at: Date(), tabID: nil)
     }
 
+    @discardableResult
     @MainActor public func addVisit(of url: URL, tabID: String?) -> Visit? {
         addVisit(of: url, at: Date(), tabID: tabID)
     }
@@ -112,11 +112,6 @@ final public class HistoryCoordinator: HistoryCoordinating {
     @MainActor
     public var allHistoryVisits: [Visit]? {
         history?.flatMap { $0.visits }
-    }
-
-    @MainActor
-    public func tabHistory(tabID: String) async throws -> [URL] {
-        return try await historyStoring.tabHistory(tabID: tabID)
     }
 
     @MainActor

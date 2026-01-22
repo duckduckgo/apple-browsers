@@ -1,7 +1,7 @@
 //
-//  HistoryStoring.swift
+//  HistoryDatabaseError.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2021 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,14 +16,17 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Combine
+public enum HistoryDatabaseError: Error {
 
-public protocol HistoryStoring {
-
-    func cleanOld(until date: Date) async throws -> BrowsingHistory
-    func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)]
-    func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws
-    func removeVisits(_ visits: some Sequence<Visit>) async throws
+    case removeFailed
+    case reloadFailed
+    case cleanEntriesFailed
+    case cleanVisitsFailed
+    case saveFailed
+    case insertVisitFailed
+    case removeVisitsFailed
+    case loadTabHistoryFailed
+    case insertTabHistoryFailed
+    case removeTabHistoryFailed
 
 }

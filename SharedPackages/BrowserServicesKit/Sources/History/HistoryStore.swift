@@ -24,31 +24,15 @@ import os.log
 
 final public class HistoryStore: HistoryStoring {
 
-    public enum HistoryStoreEvents {
-
-        case removeFailed
-        case reloadFailed
-        case cleanEntriesFailed
-        case cleanVisitsFailed
-        case saveFailed
-        case insertVisitFailed
-        case removeVisitsFailed
-        case loadTabHistoryFailed
-        case insertTabHistoryFailed
-        case removeTabHistoryFailed
-
-    }
-
     let context: NSManagedObjectContext
-    let eventMapper: EventMapping<HistoryStoreEvents>
+    let eventMapper: EventMapping<HistoryDatabaseError>
+    private lazy var tabHistoryStore: TabHistoryStore = {
+        TabHistoryStore(context: context, eventMapper: eventMapper)
+    }()
 
-    public init(context: NSManagedObjectContext, eventMapper: EventMapping<HistoryStoreEvents>) {
+    public init(context: NSManagedObjectContext, eventMapper: EventMapping<HistoryDatabaseError>) {
         self.context = context
         self.eventMapper = eventMapper
-    }
-
-    enum HistoryStoreError: Error {
-        case savingFailed
     }
 
     public func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws {
@@ -76,26 +60,6 @@ final public class HistoryStore: HistoryStoring {
                 case .success:
                     let reloadResult = self.reload(self.context)
                     continuation.resume(with: reloadResult)
-                }
-            }
-        }
-    }
-
-    public func tabHistory(tabID: String) async throws -> [URL] {
-        try await withCheckedThrowingContinuation { continuation in
-            context.perform { [context, eventMapper] in
-                let fetchRequest = TabHistoryManagedObject.fetchRequest()
-                fetchRequest.predicate = NSPredicate(format: "%K == %@",
-                                                     #keyPath(TabHistoryManagedObject.tabID),
-                                                     tabID)
-                fetchRequest.returnsObjectsAsFaults = false
-                do {
-                    let fetchedObjects = try context.fetch(fetchRequest)
-                    let urls = fetchedObjects.map { $0.url }
-                    continuation.resume(returning: urls)
-                } catch {
-                    eventMapper.fire(.loadTabHistoryFailed, error: error)
-                    continuation.resume(throwing: error)
                 }
             }
         }
@@ -209,7 +173,7 @@ final public class HistoryStore: HistoryStoring {
                     // Add new
                     let insertedObject = NSEntityDescription.insertNewObject(forEntityName: BrowsingHistoryEntryManagedObject.entityName, into: self.context)
                     guard let historyEntryMO = insertedObject as? BrowsingHistoryEntryManagedObject else {
-                        continuation.resume(throwing: HistoryStoreError.savingFailed)
+                        continuation.resume(throwing: HistoryDatabaseError.saveFailed)
                         return
                     }
                     historyEntryMO.update(with: entry, afterInsertion: true)
@@ -230,7 +194,7 @@ final public class HistoryStore: HistoryStoring {
                     } catch {
                         self.eventMapper.fire(.saveFailed, error: error)
                         self.context.reset()
-                        continuation.resume(throwing: HistoryStoreError.savingFailed)
+                        continuation.resume(throwing: HistoryDatabaseError.saveFailed)
                         return
                     }
 
@@ -269,7 +233,7 @@ final public class HistoryStore: HistoryStoring {
             return .success(result)
         } else {
             context.reset()
-            return .failure(HistoryStoreError.savingFailed)
+            return .failure(HistoryDatabaseError.saveFailed)
         }
     }
 
@@ -280,31 +244,16 @@ final public class HistoryStore: HistoryStoring {
         guard let visitMO = insertedObject as? PageVisitManagedObject else {
             eventMapper.fire(.insertVisitFailed)
             context.reset()
-            return .failure(HistoryStoreError.savingFailed)
+            return .failure(HistoryDatabaseError.saveFailed)
         }
-        let tabHistoryMO = insertTabHistory(for: visit,
-                                            visitManagedObject: visitMO,
-                                            historyEntryManagedObject: historyEntryManagedObject)
+        let tabHistoryMO = tabHistoryStore.createTabHistoryRecord(tabID: visit.tabID,
+                                                                  url: historyEntryManagedObject.url,
+                                                                  linkedVisit: visitMO,
+                                                                  in: context)
         visitMO.update(with: visit,
                        historyEntryManagedObject: historyEntryManagedObject,
                        tabHistoryManagedObject: tabHistoryMO)
         return .success(visitMO)
-    }
-
-    private func insertTabHistory(for visit: Visit,
-                                  visitManagedObject: PageVisitManagedObject,
-                                  historyEntryManagedObject: BrowsingHistoryEntryManagedObject) -> TabHistoryManagedObject? {
-        guard let tabID = visit.tabID,
-              let url = historyEntryManagedObject.url else {
-            return nil
-        }
-        if let tabHistory = NSEntityDescription.insertNewObject(forEntityName: TabHistoryManagedObject.entityName, into: context) as? TabHistoryManagedObject {
-            tabHistory.update(with: tabID, url: url, visitManagedObject: visitManagedObject)
-            return tabHistory
-        } else {
-            eventMapper.fire(.insertTabHistoryFailed)
-            return nil
-        }
     }
 
     public func removeVisits(_ visits: some Sequence<Visit>) async throws {
@@ -468,14 +417,6 @@ private extension Visit {
         let id = visitMO.objectID.uriRepresentation()
         self.init(date: date, identifier: id)
         savingState = .saved
-    }
-
-}
-
-private extension NSManagedObject {
-
-    static var entityName: String {
-        String(describing: self)
     }
 
 }

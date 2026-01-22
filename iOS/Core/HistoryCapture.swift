@@ -19,6 +19,7 @@
 
 import Foundation
 import History
+import os.log
 
 public class HistoryCapture {
 
@@ -29,9 +30,6 @@ public class HistoryCapture {
 
     let historyManager: HistoryManaging
     let tabID: String
-    var coordinator: HistoryCoordinating {
-        historyManager.historyCoordinator
-    }
 
     var url: URL?
 
@@ -44,7 +42,13 @@ public class HistoryCapture {
     public func webViewDidCommit(url: URL) {
         let url = url.urlOrDuckDuckGoCleanQuery
         self.url = url
-        coordinator.addVisit(of: url, tabID: tabID)
+        Task {
+            do {
+                try await historyManager.addVisit(of: url, tabID: tabID)
+            } catch {
+                Logger.history.error("Failed to record visit: \(error.localizedDescription)")
+            }
+        }
     }
 
     @MainActor
@@ -55,8 +59,8 @@ public class HistoryCapture {
 
         guard let title, !title.isEmpty else { return }
 
-        coordinator.updateTitleIfNeeded(title: title, url: url)
-        coordinator.commitChanges(url: url)
+        historyManager.updateTitleIfNeeded(title: title, url: url)
+        historyManager.commitChanges(url: url)
     }
 
 }

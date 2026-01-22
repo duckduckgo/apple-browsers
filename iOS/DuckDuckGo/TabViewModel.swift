@@ -19,6 +19,7 @@
 
 import Core
 import History
+import os.log
 
 @MainActor
 struct TabViewModel {
@@ -50,6 +51,11 @@ struct TabViewModel {
     // MARK: - Tab History
     
     func tabHistory() async -> [URL] {
-        return (try? await historyManager.historyCoordinator.tabHistory(tabID: tab.uid)) ?? []
+        do {
+            return try await historyManager.tabHistory(tabID: tab.uid)
+        } catch {
+            Logger.history.error("Failed to fetch tab history: \(error.localizedDescription)")
+            return []
+        }
     }
 }

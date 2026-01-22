@@ -34,10 +34,10 @@ class HistoryDebugViewController: UIHostingController<HistoryDebugRootView> {
 
 struct HistoryDebugRootView: View {
 
-    @ObservedObject var model: HistoryDebugViewModel
+    @StateObject private var model: HistoryDebugViewModel
 
     init(tabManager: TabManager?) {
-        self.model = HistoryDebugViewModel(tabManager: tabManager)
+        _model = StateObject(wrappedValue: HistoryDebugViewModel(tabManager: tabManager))
     }
 
     var body: some View {

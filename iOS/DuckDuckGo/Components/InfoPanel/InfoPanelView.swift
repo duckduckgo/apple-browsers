@@ -52,7 +52,7 @@ struct InfoPanelView: View {
                 .accessibilityHidden(true)
 
             (Text(model.title).fontWeight(.semibold) + Text(" " + model.subtitle))
-                .font(.system(.subheadline, design: .rounded))
+                .font(.subheadline)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Spacer()
 

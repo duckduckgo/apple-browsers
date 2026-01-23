@@ -217,7 +217,8 @@ struct JsonToRemoteMessageModelMapper {
 
             return .medium(titleText: content.titleText,
                            descriptionText: content.descriptionText,
-                           placeholder: mapToPlaceholder(content.placeholder))
+                           placeholder: mapToPlaceholder(content.placeholder),
+                           imageUrl: content.imageUrl.flatMap(URL.init(string:)))
         case .bigSingleAction:
             guard let primaryActionText = content.primaryActionText,
                   !primaryActionText.isEmpty,
@@ -229,6 +230,7 @@ struct JsonToRemoteMessageModelMapper {
             return .bigSingleAction(titleText: content.titleText,
                                     descriptionText: content.descriptionText,
                                     placeholder: mapToPlaceholder(content.placeholder),
+                                    imageUrl: content.imageUrl.flatMap(URL.init(string:)),
                                     primaryActionText: primaryActionText,
                                     primaryAction: action)
         case .bigTwoAction:
@@ -245,6 +247,7 @@ struct JsonToRemoteMessageModelMapper {
             return .bigTwoAction(titleText: content.titleText,
                                  descriptionText: content.descriptionText,
                                  placeholder: mapToPlaceholder(content.placeholder),
+                                 imageUrl: content.imageUrl.flatMap(URL.init(string:)),
                                  primaryActionText: primaryActionText,
                                  primaryAction: primaryAction,
                                  secondaryActionText: secondaryActionText,
@@ -260,6 +263,7 @@ struct JsonToRemoteMessageModelMapper {
             return .promoSingleAction(titleText: content.titleText,
                                       descriptionText: content.descriptionText,
                                       placeholder: mapToPlaceholder(content.placeholder),
+                                      imageUrl: content.imageUrl.flatMap(URL.init(string:)),
                                       actionText: actionText,
                                       action: action)
 

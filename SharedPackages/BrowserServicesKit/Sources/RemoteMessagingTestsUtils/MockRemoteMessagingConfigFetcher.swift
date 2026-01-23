@@ -51,6 +51,7 @@ public extension RemoteMessageResponse.JsonRemoteMessagingConfig {
                     descriptionText: "Small Message Description",
                     listItems: nil,
                     placeholder: nil,
+                    imageUrl: nil,
                     actionText: nil,
                     action: nil,
                     primaryActionText: nil,

@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import RemoteMessaging
 import Core
+import Kingfisher
 
 struct HomeMessageView: View {
 
@@ -97,14 +98,26 @@ struct HomeMessageView: View {
         .contentShape(Rectangle())
     }
     
+    @ViewBuilder
     private var image: some View {
-        Group {
-            if let image = viewModel.image {
-                Image(image)
-                    .scaledToFit()
-            } else {
-                EmptyView()
-            }
+        if let imageUrl = viewModel.imageUrl {
+            KFImage(imageUrl)
+                .cacheMemoryOnly(false) // TODO: Remove - temporarily disable cache for testing
+                .forceRefresh() // TODO: Remove - temporarily disable cache for testing
+                .placeholder {
+                    if let placeholderImage = viewModel.image {
+                        Image(placeholderImage)
+                            .scaledToFit()
+                    }
+                }
+                .onFailure { _ in
+                    // Failure handled by showing placeholder via fallback
+                }
+                .resizable()
+                .scaledToFit()
+        } else if let image = viewModel.image {
+            Image(image)
+                .scaledToFit()
         }
     }
 
@@ -290,12 +303,14 @@ struct HomeMessageView_Previews: PreviewProvider {
     static let critical: HomeSupportedMessageDisplayType =
         .medium(titleText: "Critical",
                 descriptionText: "Description text",
-                placeholder: .criticalUpdate)
+                placeholder: .criticalUpdate,
+                imageUrl: nil)
 
     static let bigSingle: HomeSupportedMessageDisplayType =
         .bigSingleAction(titleText: "Big Single",
                          descriptionText: "This is a description",
                          placeholder: .ddgAnnounce,
+                         imageUrl: nil,
                          primaryActionText: "Primary",
                          primaryAction: .dismiss)
 
@@ -303,6 +318,7 @@ struct HomeMessageView_Previews: PreviewProvider {
         .bigTwoAction(titleText: "Big Two",
                       descriptionText: "This is a <b>big</b> two style",
                       placeholder: .macComputer,
+                      imageUrl: nil,
                       primaryActionText: "App Store",
                       primaryAction: .appStore,
                       secondaryActionText: "Dismiss",
@@ -312,6 +328,7 @@ struct HomeMessageView_Previews: PreviewProvider {
         .promoSingleAction(titleText: "Promotional",
                            descriptionText: "Description <b>with bold</b> to make a statement.",
                            placeholder: .newForMacAndWindows,
+                           imageUrl: nil,
                            actionText: "Share",
                            action: .share(value: "value", title: "title"))
 

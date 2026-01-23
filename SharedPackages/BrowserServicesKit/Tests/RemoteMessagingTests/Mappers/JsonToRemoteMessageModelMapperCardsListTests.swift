@@ -1010,6 +1010,7 @@ private extension RemoteMessageResponse.JsonContent {
             descriptionText: "",
             listItems: listItems,
             placeholder: placeholder,
+            imageUrl: nil,
             actionText: nil,
             action: nil,
             primaryActionText: primaryActionText,

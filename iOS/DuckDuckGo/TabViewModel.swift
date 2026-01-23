@@ -35,9 +35,16 @@ struct TabViewModel {
     init(tab: Tab, historyManager: HistoryManaging) {
         self.tab = tab
         self.historyManager = historyManager
-        self.historyCapture = .init(historyManager: historyManager, tabID: tab.uid)
+        let tabID = tab.supportsTabHistory ? tab.uid : nil // Only record tab history if the tab supports it
+        self.historyCapture = .init(historyManager: historyManager, tabID: tabID)
     }
     
+    /// Whether this tab supports tab burning.
+    /// Only tabs created after tab history tracking was implemented have complete history.
+    var supportsBurning: Bool {
+        tab.supportsTabHistory
+    }
+
     // MARK: - History Capturing Methods
     
     func captureWebviewDidCommit(_ url: URL) {

@@ -29,11 +29,11 @@ public class HistoryCapture {
     }
 
     let historyManager: HistoryManaging
-    let tabID: String
+    let tabID: String?
 
     var url: URL?
 
-    public init(historyManager: HistoryManaging, tabID: String) {
+    public init(historyManager: HistoryManaging, tabID: String?) {
         self.historyManager = historyManager
         self.tabID = tabID
     }

@@ -125,6 +125,10 @@ final class AIChatContextualInputViewController: UIViewController {
     func hideContextChip(animated: Bool = true) {
         nativeInputViewController.hideContextChip(animated: animated)
     }
+
+    func updateContextChip(title: String, favicon: UIImage?) {
+        nativeInputViewController.updateContextChip(title: title, favicon: favicon)
+    }
 }
 
 // MARK: - Private Setup

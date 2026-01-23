@@ -86,7 +86,7 @@ class AutoClearHandlerTests: XCTestCase {
                                    startupPreferences: startupPreferences,
                                    fireViewModel: fireViewModel,
                                    stateRestorationManager: appStateRestorationManager,
-                                   syncAIChatsCleaner: nil,
+                                   aiChatSyncCleaner: nil,
                                    alertPresenter: mockAlertPresenter)
     }
 

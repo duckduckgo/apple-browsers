@@ -1,5 +1,5 @@
 //
-//  SyncMocks.swift
+//  MockAIChatSyncCleaning.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,23 +17,30 @@
 //
 
 import Foundation
-@testable import DuckDuckGo_Privacy_Browser
+import AIChat
 
-final class MockSyncAIChatsCleaning: SyncAIChatsCleaning {
+public final class MockAIChatSyncCleaning: AIChatSyncCleaning {
 
-    private(set) var recordLocalClearDates: [Date?] = []
-    private(set) var recordLocalClearFromAutoClearBackgroundTimestampIfPresentCallCount = 0
-    private(set) var deleteIfNeededCallCount = 0
+    public private(set) var recordAutoClearBackgroundTimestampDates: [Date?] = []
+    public private(set) var recordLocalClearDates: [Date?] = []
+    public private(set) var recordLocalClearFromAutoClearBackgroundTimestampIfPresentCallCount = 0
+    public private(set) var deleteIfNeededCallCount = 0
 
-    func recordLocalClear(date: Date?) {
+    public init() {}
+
+    public func recordAutoClearBackgroundTimestamp(date: Date?) async {
+        recordAutoClearBackgroundTimestampDates.append(date)
+    }
+
+    public func recordLocalClear(date: Date?) async {
         recordLocalClearDates.append(date)
     }
 
-    func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() {
+    public func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async {
         recordLocalClearFromAutoClearBackgroundTimestampIfPresentCallCount += 1
     }
 
-    func deleteIfNeeded() async {
+    public func deleteIfNeeded() async {
         deleteIfNeededCallCount += 1
     }
 }

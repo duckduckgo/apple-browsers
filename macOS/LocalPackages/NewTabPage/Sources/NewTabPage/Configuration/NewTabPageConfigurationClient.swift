@@ -59,6 +59,7 @@ public protocol NewTabPageLinkOpening {
 
 public enum NewTabPageConfigurationEvent: Equatable {
     case newTabPageError(message: String)
+    case newTabPageTelemetry(payload: NewTabPageDataModel.TelemetryEvent)
 }
 
 public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
@@ -121,9 +122,10 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         case open
         case reportInitException
         case reportPageException
+        case tabsOnDataUpdate = "tabs_onDataUpdate"
+        case telemetryEvent
         case widgetsSetConfig = "widgets_setConfig"
         case widgetsOnConfigUpdated = "widgets_onConfigUpdated"
-        case tabsOnDataUpdate = "tabs_onDataUpdate"
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -133,6 +135,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             MessageName.open.rawValue: { [weak self] in try await self?.open(params: $0, original: $1) },
             MessageName.reportInitException.rawValue: { [weak self] in try await self?.reportException(params: $0, original: $1) },
             MessageName.reportPageException.rawValue: { [weak self] in try await self?.reportException(params: $0, original: $1) },
+            MessageName.telemetryEvent.rawValue: { [weak self] in try await self?.processTelemetryEvent(params: $0, original: $1) },
             MessageName.widgetsSetConfig.rawValue: { [weak self] in try await self?.widgetsSetConfig(params: $0, original: $1) }
         ])
     }
@@ -335,6 +338,15 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         }
         eventMapper?.fire(.newTabPageError(message: exception.message))
         Logger.general.error("New Tab Page error: \("\(exception.message)", privacy: .public)")
+        return nil
+    }
+
+    @MainActor
+    private func processTelemetryEvent(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let event: NewTabPageDataModel.TelemetryEvent = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        eventMapper?.fire(.newTabPageTelemetry(payload: event))
         return nil
     }
 }

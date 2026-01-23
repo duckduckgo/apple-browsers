@@ -303,8 +303,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         if let pendingPlan = subscription.firstPendingPlan {
             let effectiveDate = dateFormatter.string(from: pendingPlan.effectiveAt)
             let tierName = pendingPlan.tier.rawValue.capitalized
-            let billingPeriodName = pendingPlan.billingPeriod.rawValue
-            state.subscriptionDetails = UserText.pendingDowngradeInfo(tierName: tierName, billingPeriod: billingPeriodName, effectiveDate: effectiveDate)
+            state.subscriptionDetails = UserText.pendingDowngradeInfo(tierName: tierName, billingPeriod: pendingPlan.billingPeriod, effectiveDate: effectiveDate)
             return
         }
 

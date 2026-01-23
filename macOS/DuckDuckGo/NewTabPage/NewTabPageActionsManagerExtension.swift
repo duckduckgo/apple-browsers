@@ -201,7 +201,7 @@ extension NewTabPageActionsManager {
                 omnibarConfigProvider: omnibarConfigProvider,
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
-                eventMapper: NewTabPageConfigurationErrorHandler(),
+                eventMapper: NewTabPageConfigurationEventHandler(),
                 stateProvider: stateProvider
             ),
             NewTabPageCustomBackgroundClient(model: customizationProvider),

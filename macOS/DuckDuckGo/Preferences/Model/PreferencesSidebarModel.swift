@@ -473,10 +473,10 @@ final class PreferencesSidebarModel: ObservableObject {
     func selectPane(_ identifier: PreferencePaneIdentifier) {
         // Open a new tab in case of special panes
         if identifier.rawValue.hasPrefix(URL.NavigationalScheme.https.rawValue),
-            let url = URL(string: identifier.rawValue) {
+           let url = URL(string: identifier.rawValue) {
             Application.appDelegate.windowControllersManager.show(url: url,
-                                                 source: .ui,
-                                                 newTab: true)
+                                                                  source: .ui,
+                                                                  newTab: true)
         }
 
         // Required to keep selection since subscription settings need to load its initial state

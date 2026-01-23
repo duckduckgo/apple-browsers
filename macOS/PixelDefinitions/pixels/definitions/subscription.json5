@@ -367,11 +367,6 @@
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                "key": "app.native_apps_experiments",
-                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
-                "type": "string"
-            },
-            {
                 "key": "context.name",
                 "type": "string",
                 "description": "Context name for the flow",
@@ -454,11 +449,6 @@
                 "enum": [-1, 10000, 30000, 60000, 300000, 600000, 900000]
             },
             {
-                "key": "app.native_apps_experiments",
-                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
-                "type": "string"
-            },
-            {
                 "key": "context.name",
                 "type": "string",
                 "description": "Context name for the flow",
@@ -530,11 +520,6 @@
                 "type": "integer",
                 "description": "Bucketed latency for fetch JWKS step (ms)",
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
-            },
-            {
-                "key": "app.native_apps_experiments",
-                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
-                "type": "string"
             }
         ]
     },
@@ -617,11 +602,6 @@
                 "type": "integer",
                 "description": "Bucketed latency for the backend confirmation step (ms)",
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
-            },
-            {
-                "key": "app.native_apps_experiments",
-                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
-                "type": "string"
             },
             {
                 "key": "context.name",

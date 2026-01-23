@@ -201,7 +201,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_sync_tests
+        pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_memory_usage_tests
         pixel-params: |
           runner: ${{ matrix.runner }}
 
@@ -269,7 +269,7 @@ jobs:
 
   notify-failure:
     name: Notify on failure
-    if: ${{ always() && github.event_name == 'schedule' && (needs.sync-end-to-end-tests.result == 'failure' || needs.sync-end-to-end-tests.result == 'cancelled') }}
+    if: ${{ always() && github.event_name == 'schedule' && (needs.memory-usage-tests.result == 'failure' || needs.memory-usage-tests.result == 'cancelled') }}
     needs: [memory-usage-tests]
     runs-on: ubuntu-latest
 

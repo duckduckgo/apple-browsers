@@ -25,11 +25,15 @@ final class TabHistoryCoordinatorTests: XCTestCase {
     private var tabHistoryStoringMock: TabHistoryStoringMock!
     private var coordinator: TabHistoryCoordinator!
 
+    private var openTabIDs: [String] = []
+
     @MainActor
     override func setUp() {
         super.setUp()
         tabHistoryStoringMock = TabHistoryStoringMock()
-        coordinator = TabHistoryCoordinator(tabHistoryStoring: tabHistoryStoringMock)
+        openTabIDs = []
+        coordinator = TabHistoryCoordinator(tabHistoryStoring: tabHistoryStoringMock,
+                                            openTabIDsProvider: { [weak self] in self?.openTabIDs ?? [] })
     }
 
     override func tearDown() {
@@ -99,6 +103,34 @@ final class TabHistoryCoordinatorTests: XCTestCase {
         XCTAssertTrue(removeCalled)
         XCTAssertEqual(removedTabIDs, tabIDs)
     }
+
+    // MARK: - Clean Orphaned Entries Tests
+
+    @MainActor
+    func testWhenCleanOrphanedEntriesIsCalled_ThenStoreCleanupIsCalledWithOpenTabIDs() async throws {
+        openTabIDs = ["open-tab-1", "open-tab-2"]
+
+        // Wait deterministically for initial cleanup from coordinator init to complete
+        let initCleanupExpectation = expectation(description: "Init cleanup completed")
+        Task {
+            while await !tabHistoryStoringMock.cleanOrphanedTabHistoryCalled {
+                try? await Task.sleep(nanoseconds: 10_000_000) // 10ms polling interval
+            }
+            initCleanupExpectation.fulfill()
+        }
+        await fulfillment(of: [initCleanupExpectation], timeout: 5.0)
+
+        // Reset the mock state after init
+        await tabHistoryStoringMock.resetCleanOrphanedState()
+
+        await coordinator.cleanOrphanedEntries()
+
+        let cleanCalled = await tabHistoryStoringMock.cleanOrphanedTabHistoryCalled
+        let excludedTabIDs = await tabHistoryStoringMock.lastExcludedTabIDs
+
+        XCTAssertTrue(cleanCalled)
+        XCTAssertEqual(Set(excludedTabIDs ?? []), Set(openTabIDs))
+    }
 }
 
 // MARK: - TabHistoryStoringMock
@@ -108,14 +140,21 @@ actor TabHistoryStoringMock: TabHistoryStoring {
     var tabHistoryCalled = false
     var insertTabHistoryCalled = false
     var removeTabHistoryCalled = false
+    var cleanOrphanedTabHistoryCalled = false
     var lastQueriedTabID: String?
     var lastInsertedTabID: String?
     var lastInsertedURL: URL?
     var lastRemovedTabIDs: [String]?
+    var lastExcludedTabIDs: [String]?
     var tabHistoryToReturn: [URL] = []
 
     func setTabHistoryToReturn(_ urls: [URL]) {
         tabHistoryToReturn = urls
+    }
+
+    func resetCleanOrphanedState() {
+        cleanOrphanedTabHistoryCalled = false
+        lastExcludedTabIDs = nil
     }
 
     func tabHistory(for tabID: String) async throws -> [URL] {
@@ -133,5 +172,10 @@ actor TabHistoryStoringMock: TabHistoryStoring {
     func removeTabHistory(for tabIDs: [String]) async throws {
         removeTabHistoryCalled = true
         lastRemovedTabIDs = tabIDs
+    }
+
+    func cleanOrphanedTabHistory(excludingTabIDs openTabIDs: [String]) async throws {
+        cleanOrphanedTabHistoryCalled = true
+        lastExcludedTabIDs = openTabIDs
     }
 }

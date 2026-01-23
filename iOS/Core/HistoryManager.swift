@@ -269,6 +269,9 @@ class HistoryStoreEventMapper: EventMapping<History.HistoryDatabaseError> {
                 
             case .removeTabHistoryFailed:
                 Pixel.fire(pixel: .historyRemoveTabHistoryFailed, error: error)
+
+            case .cleanOrphanedTabHistoryFailed:
+                Pixel.fire(pixel: .historyCleanOrphanedTabHistoryFailed, error: error)
             }
 
         }
@@ -284,6 +287,7 @@ extension HistoryManager {
     /// Should only be called once in the app
     public static func make(isAutocompleteEnabledByUser: @autoclosure @escaping () -> Bool,
                             isRecentlyVisitedSitesEnabledByUser: @autoclosure @escaping () -> Bool,
+                            openTabIDsProvider: @escaping () -> [String],
                             tld: TLD) -> Result<HistoryManager, Error> {
 
         let database = HistoryDatabase.make()
@@ -299,7 +303,8 @@ extension HistoryManager {
         let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
         let dbCoordinator = HistoryCoordinator(historyStoring: HistoryStore(context: context, eventMapper: HistoryStoreEventMapper()))
         let tabHistoryStore = TabHistoryStore(context: context, eventMapper: HistoryStoreEventMapper())
-        let tabHistoryCoordinator = TabHistoryCoordinator(tabHistoryStoring: tabHistoryStore)
+        let tabHistoryCoordinator = TabHistoryCoordinator(tabHistoryStoring: tabHistoryStore,
+                                                          openTabIDsProvider: openTabIDsProvider)
         let historyManager = HistoryManager(dbCoordinator: dbCoordinator,
                                             tld: tld,
                                             tabHistoryCoordinator: tabHistoryCoordinator,

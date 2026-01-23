@@ -172,7 +172,8 @@ final class HistoryManagerTests: XCTestCase {
         let store = HistoryStore(context: context, eventMapper: eventMapper)
         let tabHistoryStore = TabHistoryStore(context: context, eventMapper: eventMapper)
         let dbCoordinator = HistoryCoordinator(historyStoring: store)
-        let tabHistoryCoordinator = TabHistoryCoordinator(tabHistoryStoring: tabHistoryStore)
+        let tabHistoryCoordinator = TabHistoryCoordinator(tabHistoryStoring: tabHistoryStore,
+                                                          openTabIDsProvider: { [] })
 
         return HistoryManager(dbCoordinator: dbCoordinator,
                               tld: TLD(),

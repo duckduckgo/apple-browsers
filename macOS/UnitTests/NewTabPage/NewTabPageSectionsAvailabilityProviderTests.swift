@@ -57,7 +57,7 @@ final class NewTabPageSectionsAvailabilityProviderTests: XCTestCase {
         XCTAssertTrue(provider.isNextStepsListWidgetAvailable)
     }
 
-    func testIsNextStepsListWidget_WhenFeatureFlagIsOff_ReturnsFalse() {
+    func testIsNextStepsListWidgetAvailable_WhenFeatureFlagIsOff_ReturnsFalse() {
         featureFlagger.enabledFeatureFlags = []
         provider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
 

@@ -123,7 +123,7 @@ final class AIChatOmnibarController {
             // Check if task was cancelled
             guard !Task.isCancelled else { return }
 
-            self.suggestionsViewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent, query: query)
+            self.suggestionsViewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
         }
     }
 

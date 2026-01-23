@@ -62,7 +62,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         let recentChats = [makeSuggestion(id: "r1", title: "Recent", timestamp: Date())]
 
         // When
-        viewModel.setChats(pinned: pinnedChats, recent: recentChats, query: "test")
+        viewModel.setChats(pinned: pinnedChats, recent: recentChats)
 
         // Then - sorted by recency, most recent first
         XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
@@ -104,39 +104,10 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         }
 
         // When
-        viewModel.setChats(pinned: [], recent: suggestions, query: "test")
+        viewModel.setChats(pinned: [], recent: suggestions)
 
         // Then
         XCTAssertEqual(viewModel.filteredSuggestions.count, 5)
-    }
-
-    func testSetChats_WithEmptyQuery_FiltersOldChats() {
-        // Given - one recent chat, one old chat (older than one week)
-        let now = Date()
-        let recentChat = makeSuggestion(id: "recent", title: "Recent", timestamp: now)
-        let oldChat = makeSuggestion(id: "old", title: "Old", timestamp: now.addingTimeInterval(-8 * 24 * 60 * 60)) // 8 days ago
-
-        // When - empty query applies one-week filter
-        viewModel.setChats(pinned: [], recent: [recentChat, oldChat], query: "")
-
-        // Then - only recent chat remains
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
-        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "recent")
-    }
-
-    func testSetChats_WithNonEmptyQuery_KeepsOldChats() {
-        // Given - one recent chat, one old chat (older than one week)
-        let now = Date()
-        let recentChat = makeSuggestion(id: "recent", title: "Recent", timestamp: now)
-        let oldChat = makeSuggestion(id: "old", title: "Old", timestamp: now.addingTimeInterval(-8 * 24 * 60 * 60)) // 8 days ago
-
-        // When - non-empty query does not apply one-week filter
-        viewModel.setChats(pinned: [], recent: [recentChat, oldChat], query: "search")
-
-        // Then - both chats remain, sorted by recency
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
-        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "recent")
-        XCTAssertEqual(viewModel.filteredSuggestions[1].id, "old")
     }
 
     // MARK: - Selection Tests
@@ -147,7 +118,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First", timestamp: now),
             makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60))
-        ], query: "test")
+        ])
 
         // When
         let result = viewModel.selectNext()
@@ -165,7 +136,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
             makeSuggestion(id: "1", title: "First", timestamp: now),
             makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60)),
             makeSuggestion(id: "3", title: "Third", timestamp: now.addingTimeInterval(-120))
-        ], query: "test")
+        ])
         viewModel.selectNext() // Select first
 
         // When
@@ -182,7 +153,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First", timestamp: now),
             makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60))
-        ], query: "test")
+        ])
         viewModel.selectNext() // Select first (index 0)
         viewModel.selectNext() // Select second (index 1)
 
@@ -210,7 +181,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
             makeSuggestion(id: "1", title: "First", timestamp: now),
             makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60)),
             makeSuggestion(id: "3", title: "Third", timestamp: now.addingTimeInterval(-120))
-        ], query: "test")
+        ])
         viewModel.selectNext() // Select first (index 0)
         viewModel.selectNext() // Select second (index 1)
 
@@ -228,7 +199,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First", timestamp: now),
             makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60))
-        ], query: "test")
+        ])
         viewModel.selectNext() // Select first (index 0)
 
         // When
@@ -246,7 +217,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
             makeSuggestion(id: "1", title: "First", timestamp: now),
             makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60)),
             makeSuggestion(id: "3", title: "Third", timestamp: now.addingTimeInterval(-120))
-        ], query: "test")
+        ])
 
         // When
         let result = viewModel.selectPrevious()
@@ -272,7 +243,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
             makeSuggestion(id: "1", title: "First", timestamp: now),
             makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60)),
             makeSuggestion(id: "3", title: "Third", timestamp: now.addingTimeInterval(-120))
-        ], query: "test")
+        ])
 
         // When
         viewModel.select(at: 1)
@@ -284,7 +255,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectAtIndex_WithInvalidIndex_DoesNothing() {
         // Given
-        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")], query: "test")
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
 
         // When
         viewModel.select(at: 5)
@@ -300,7 +271,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
             makeSuggestion(id: "1", title: "First", timestamp: now),
             makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60))
         ]
-        viewModel.setChats(pinned: [], recent: suggestions, query: "test")
+        viewModel.setChats(pinned: [], recent: suggestions)
         viewModel.selectNext()
         viewModel.selectNext()
 
@@ -312,7 +283,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testClearSelection_RemovesSelection() {
         // Given
-        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")], query: "test")
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
         viewModel.selectNext()
         XCTAssertNotNil(viewModel.selectedIndex)
 
@@ -326,7 +297,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testClearSelection_WithKeepMouseSuppressed_KeepsKeyboardNavigatingTrue() {
         // Given
-        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")], query: "test")
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
         viewModel.selectNext()
         XCTAssertTrue(viewModel.isKeyboardNavigating)
 
@@ -342,7 +313,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testAcknowledgeMouseMovement_DisablesKeyboardNavigating() {
         // Given
-        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")], query: "test")
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
         viewModel.selectNext()
         XCTAssertTrue(viewModel.isKeyboardNavigating)
 
@@ -356,7 +327,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testAcknowledgeMouseMovement_WhenNotKeyboardNavigating_DoesNothing() {
         // Given
-        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")], query: "test")
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
         viewModel.select(at: 0) // Mouse selection
         XCTAssertFalse(viewModel.isKeyboardNavigating)
 
@@ -409,7 +380,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
             makeSuggestion(id: "1", title: "First", timestamp: now),
             makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60)),
             makeSuggestion(id: "3", title: "Third", timestamp: now.addingTimeInterval(-120))
-        ], query: "test")
+        ])
         viewModel.selectNext()
         viewModel.selectNext()
         viewModel.selectNext() // Select Third (index 2)
@@ -418,7 +389,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         // When: Set fewer chats
         viewModel.setChats(pinned: [], recent: [
             makeSuggestion(id: "1", title: "First")
-        ], query: "test")
+        ])
 
         // Then: Selection should adjust to last valid index
         XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
@@ -427,12 +398,12 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSetChats_ClearsSelectionWhenEmpty() {
         // Given
-        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")], query: "test")
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")])
         viewModel.selectNext()
         XCTAssertEqual(viewModel.selectedIndex, 0)
 
         // When: Set empty chats
-        viewModel.setChats(pinned: [], recent: [], query: "test")
+        viewModel.setChats(pinned: [], recent: [])
 
         // Then
         XCTAssertTrue(viewModel.filteredSuggestions.isEmpty)

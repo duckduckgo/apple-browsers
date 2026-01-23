@@ -27,7 +27,6 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
 
     private enum Constants {
         static let maxSuggestions = 5
-        static let oneWeekInterval: TimeInterval = 7 * 24 * 60 * 60
     }
 
     // MARK: - Published Properties
@@ -64,26 +63,15 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
 
     // MARK: - Data Management
 
-    /// Sets the suggestions to display with local filtering applied.
-    /// Merges pinned and recent chats, sorts by recency, applies one-week filter for empty query.
+    /// Sets the suggestions to display with local processing applied.
+    /// Merges pinned and recent chats, sorts by recency, limits to max count.
+    /// Note: One-week filter for empty queries is applied server-side in SuggestionsReader.
     /// - Parameters:
     ///   - pinned: The list of pinned chats.
     ///   - recent: The list of recent chats.
-    ///   - query: The current search query. Empty query applies one-week recency filter.
-    public func setChats(pinned: [AIChatSuggestion], recent: [AIChatSuggestion], query: String = "") {
-        let isEmptyQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
+    public func setChats(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
         // Merge pinned and recent chats
         var allChats = pinned + recent
-
-        // Apply one-week filter only for empty query
-        if isEmptyQuery {
-            let oneWeekAgo = Date().addingTimeInterval(-Constants.oneWeekInterval)
-            allChats = allChats.filter { chat in
-                guard let timestamp = chat.timestamp else { return true }
-                return timestamp >= oneWeekAgo
-            }
-        }
 
         // Sort by recency (most recent first)
         allChats.sort { lhs, rhs in

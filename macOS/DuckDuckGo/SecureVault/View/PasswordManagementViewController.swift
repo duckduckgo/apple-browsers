@@ -890,8 +890,9 @@ final class PasswordManagementViewController: NSViewController {
 
                     switch response {
                     case .alertFirstButtonReturn: // Save
-                        self?.itemModel?.save()
-                        loadNewItemWithID()
+                        if self?.itemModel?.save() == true {
+                            loadNewItemWithID()
+                        }
 
                     case .alertSecondButtonReturn: // Discard
                         self?.itemModel?.cancel()
@@ -1053,8 +1054,9 @@ final class PasswordManagementViewController: NSViewController {
 
                 switch response {
                 case .alertFirstButtonReturn: // Save
-                    self.itemModel?.save()
-                    createNew()
+                    if self.itemModel?.save() == true {
+                        createNew()
+                    }
 
                 case .alertSecondButtonReturn: // Discard
                     self.itemModel?.cancel()
@@ -1087,8 +1089,9 @@ final class PasswordManagementViewController: NSViewController {
 
                 switch response {
                 case .alertFirstButtonReturn: // Save
-                    self.itemModel?.save()
-                    createNew()
+                    if self.itemModel?.save() == true {
+                        createNew()
+                    }
 
                 case .alertSecondButtonReturn: // Discard
                     self.itemModel?.cancel()
@@ -1121,8 +1124,9 @@ final class PasswordManagementViewController: NSViewController {
 
                 switch response {
                 case .alertFirstButtonReturn: // Save
-                    self.itemModel?.save()
-                    createNew()
+                    if self.itemModel?.save() == true {
+                        createNew()
+                    }
 
                 case .alertSecondButtonReturn: // Discard
                     self.itemModel?.cancel()

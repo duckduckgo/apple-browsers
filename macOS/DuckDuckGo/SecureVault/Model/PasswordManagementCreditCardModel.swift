@@ -145,14 +145,14 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         }
     }
 
-    func save() {
-        guard var card = card else { return }
+    func save() -> Bool {
+        guard var card = card else { return false }
 
         validateCardNumber()
 
         let normalizedCardNumber = CreditCardValidation.extractDigits(from: cardNumber)
         guard normalizedCardNumber.isEmpty == false && isCardNumberValid else {
-            return
+            return false
         }
 
         card.title = cardTitle(with: normalizedCardNumber)
@@ -163,6 +163,7 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         card.expirationYear = expirationYear
 
         onSaveRequested(card)
+        return true
     }
 
     private func cardTitle(with normalizedCardNumber: String) -> String {
@@ -218,9 +219,11 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         expirationYear = card?.expirationYear
 
         isDirty = false
-        validateCardNumber()
-
         isNew = card?.id == nil
+
+        if !isNew {
+            validateCardNumber()
+        }
 
         if let date = card?.created {
             createdDate = Self.dateFormatter.string(from: date)

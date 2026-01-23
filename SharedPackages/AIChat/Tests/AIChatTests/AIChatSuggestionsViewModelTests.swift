@@ -35,8 +35,13 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     // MARK: - Helper Methods
 
-    private func makeSuggestion(id: String, title: String, isPinned: Bool = false) -> AIChatSuggestion {
-        AIChatSuggestion(id: id, title: title, isPinned: isPinned, chatId: "chat-\(id)")
+    private func makeSuggestion(
+        id: String,
+        title: String,
+        isPinned: Bool = false,
+        timestamp: Date = Date()
+    ) -> AIChatSuggestion {
+        AIChatSuggestion(id: id, title: title, isPinned: isPinned, chatId: "chat-\(id)", timestamp: timestamp)
     }
 
     // MARK: - Initial State Tests
@@ -51,20 +56,19 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     // MARK: - Setting Chats Tests
 
-    func testSetChats_CombinesPinnedAndRecent() {
-        // Given
-        let pinnedChats = [makeSuggestion(id: "p1", title: "Pinned", isPinned: true)]
-        let recentChats = [makeSuggestion(id: "r1", title: "Recent")]
+    func testSetChats_MergesAndSortsByRecency() {
+        // Given - pinned is older, recent is newer
+        let pinnedChats = [makeSuggestion(id: "p1", title: "Pinned", isPinned: true, timestamp: Date().addingTimeInterval(-3600))]
+        let recentChats = [makeSuggestion(id: "r1", title: "Recent", timestamp: Date())]
 
         // When
         viewModel.setChats(pinned: pinnedChats, recent: recentChats)
 
-        // Then
+        // Then - sorted by recency, most recent first
         XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
         XCTAssertTrue(viewModel.hasSuggestions)
-        // Pinned should come first
-        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "p1")
-        XCTAssertEqual(viewModel.filteredSuggestions[1].id, "r1")
+        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "r1") // More recent
+        XCTAssertEqual(viewModel.filteredSuggestions[1].id, "p1") // Older
     }
 
     func testSetChats_ReplacesExistingChats() {
@@ -76,26 +80,42 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
 
         // When
+        let now = Date()
         viewModel.setChats(
             pinned: [],
             recent: [
-                makeSuggestion(id: "new1", title: "New 1"),
-                makeSuggestion(id: "new2", title: "New 2")
+                makeSuggestion(id: "new1", title: "New 1", timestamp: now),
+                makeSuggestion(id: "new2", title: "New 2", timestamp: now.addingTimeInterval(-60))
             ]
         )
 
-        // Then
+        // Then - sorted by recency
         XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
-        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "new1")
+        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "new1") // More recent
+    }
+
+    func testSetChats_LimitsToMaxSuggestions() {
+        // Given - 7 suggestions, should be limited to 5
+        let now = Date()
+        let suggestions = (1...7).map { i in
+            makeSuggestion(id: "\(i)", title: "Chat \(i)", timestamp: now.addingTimeInterval(Double(-i * 60)))
+        }
+
+        // When
+        viewModel.setChats(pinned: [], recent: suggestions)
+
+        // Then
+        XCTAssertEqual(viewModel.filteredSuggestions.count, 5)
     }
 
     // MARK: - Selection Tests
 
     func testSelectNext_WithNoSelection_SelectsFirst() {
         // Given
+        let now = Date()
         viewModel.setChats(pinned: [], recent: [
-            makeSuggestion(id: "1", title: "First"),
-            makeSuggestion(id: "2", title: "Second")
+            makeSuggestion(id: "1", title: "First", timestamp: now),
+            makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60))
         ])
 
         // When
@@ -109,10 +129,11 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectNext_WithSelection_MovesToNext() {
         // Given
+        let now = Date()
         viewModel.setChats(pinned: [], recent: [
-            makeSuggestion(id: "1", title: "First"),
-            makeSuggestion(id: "2", title: "Second"),
-            makeSuggestion(id: "3", title: "Third")
+            makeSuggestion(id: "1", title: "First", timestamp: now),
+            makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60)),
+            makeSuggestion(id: "3", title: "Third", timestamp: now.addingTimeInterval(-120))
         ])
         viewModel.selectNext() // Select first
 
@@ -126,9 +147,10 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectNext_AtLastItem_ReturnsFalse() {
         // Given
+        let now = Date()
         viewModel.setChats(pinned: [], recent: [
-            makeSuggestion(id: "1", title: "First"),
-            makeSuggestion(id: "2", title: "Second")
+            makeSuggestion(id: "1", title: "First", timestamp: now),
+            makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60))
         ])
         viewModel.selectNext() // Select first (index 0)
         viewModel.selectNext() // Select second (index 1)
@@ -152,10 +174,11 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectPrevious_WithSelection_MovesToPrevious() {
         // Given
+        let now = Date()
         viewModel.setChats(pinned: [], recent: [
-            makeSuggestion(id: "1", title: "First"),
-            makeSuggestion(id: "2", title: "Second"),
-            makeSuggestion(id: "3", title: "Third")
+            makeSuggestion(id: "1", title: "First", timestamp: now),
+            makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60)),
+            makeSuggestion(id: "3", title: "Third", timestamp: now.addingTimeInterval(-120))
         ])
         viewModel.selectNext() // Select first (index 0)
         viewModel.selectNext() // Select second (index 1)
@@ -170,9 +193,10 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectPrevious_AtFirstItem_ClearsSelection() {
         // Given
+        let now = Date()
         viewModel.setChats(pinned: [], recent: [
-            makeSuggestion(id: "1", title: "First"),
-            makeSuggestion(id: "2", title: "Second")
+            makeSuggestion(id: "1", title: "First", timestamp: now),
+            makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60))
         ])
         viewModel.selectNext() // Select first (index 0)
 
@@ -186,10 +210,11 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectPrevious_WithNoSelection_SelectsLastItem() {
         // Given
+        let now = Date()
         viewModel.setChats(pinned: [], recent: [
-            makeSuggestion(id: "1", title: "First"),
-            makeSuggestion(id: "2", title: "Second"),
-            makeSuggestion(id: "3", title: "Third")
+            makeSuggestion(id: "1", title: "First", timestamp: now),
+            makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60)),
+            makeSuggestion(id: "3", title: "Third", timestamp: now.addingTimeInterval(-120))
         ])
 
         // When
@@ -211,10 +236,11 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectAtIndex_WithValidIndex_SelectsItem() {
         // Given
+        let now = Date()
         viewModel.setChats(pinned: [], recent: [
-            makeSuggestion(id: "1", title: "First"),
-            makeSuggestion(id: "2", title: "Second"),
-            makeSuggestion(id: "3", title: "Third")
+            makeSuggestion(id: "1", title: "First", timestamp: now),
+            makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60)),
+            makeSuggestion(id: "3", title: "Third", timestamp: now.addingTimeInterval(-120))
         ])
 
         // When
@@ -238,9 +264,10 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSelectedSuggestion_ReturnsCorrectItem() {
         // Given
+        let now = Date()
         let suggestions = [
-            makeSuggestion(id: "1", title: "First"),
-            makeSuggestion(id: "2", title: "Second")
+            makeSuggestion(id: "1", title: "First", timestamp: now),
+            makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60))
         ]
         viewModel.setChats(pinned: [], recent: suggestions)
         viewModel.selectNext()
@@ -345,10 +372,11 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     func testSetChats_AdjustsSelectionWhenOutOfBounds() {
         // Given
+        let now = Date()
         viewModel.setChats(pinned: [], recent: [
-            makeSuggestion(id: "1", title: "First"),
-            makeSuggestion(id: "2", title: "Second"),
-            makeSuggestion(id: "3", title: "Third")
+            makeSuggestion(id: "1", title: "First", timestamp: now),
+            makeSuggestion(id: "2", title: "Second", timestamp: now.addingTimeInterval(-60)),
+            makeSuggestion(id: "3", title: "Third", timestamp: now.addingTimeInterval(-120))
         ])
         viewModel.selectNext()
         viewModel.selectNext()

@@ -271,6 +271,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
     case contextualDuckAIMode
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
+    case aiChatAutoAttachContextByDefault
+
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
     case aiChatSync
 
@@ -322,7 +325,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showWhatsNewPromptOnDemand,
              .webViewFlashPrevention,
              .wideEventPostEndpoint,
-             .dataImportSummarySyncPromotion:
+             .dataImportSummarySyncPromotion,
+             .aiChatAutoAttachContextByDefault:
             true
         default:
             false
@@ -387,6 +391,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dataImportWideEventMeasurement,
              .appRatingPrompt,
              .contextualDuckAIMode,
+             .aiChatAutoAttachContextByDefault,
              .aiChatSync,
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
@@ -604,6 +609,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt))
         case .contextualDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.contextualDuckAIMode))
+        case .aiChatAutoAttachContextByDefault:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
         case .aiChatSync:
             return .disabled
         case .showWhatsNewPromptOnDemand:

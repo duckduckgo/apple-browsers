@@ -418,7 +418,7 @@ struct SubscriptionSettingsViewV2: View {
         // Upgrade navigation
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makePlansFlowV2(
-                redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue, goToUpgrade: true),
+                redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue, tier: viewModel.firstAvailableUpgradeTier),
                 navigationCoordinator: subscriptionNavigationCoordinator,
                 subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,

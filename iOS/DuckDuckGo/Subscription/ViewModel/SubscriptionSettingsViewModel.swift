@@ -134,7 +134,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     /// Handles navigation to plans page based on subscription platform
     /// - Parameters:
-    ///   - goToUpgrade: If true, navigates to /plans?tier=pro for direct upgrade flow
+    ///   - goToUpgrade: If true, navigates to /plans with tier parameter for direct upgrade flow
     func navigateToPlans(goToUpgrade: Bool = false) {
         guard let platform = state.subscriptionInfo?.platform else { return }
 

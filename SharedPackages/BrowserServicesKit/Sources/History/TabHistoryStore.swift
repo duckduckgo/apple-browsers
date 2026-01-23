@@ -59,6 +59,7 @@ public struct TabHistoryStore: TabHistoryStoring {
                     continuation.resume(returning: ())
                 } catch {
                     context.reset()
+                    eventMapper.fire(.insertTabHistoryFailed, error: error)
                     continuation.resume(throwing: error)
                 }
             }
@@ -125,6 +126,7 @@ public struct TabHistoryStore: TabHistoryStoring {
                     context.reset()
                     continuation.resume(returning: ())
                 } catch {
+                    context.reset()
                     eventMapper.fire(.removeTabHistoryFailed, error: error)
                     continuation.resume(throwing: error)
                 }

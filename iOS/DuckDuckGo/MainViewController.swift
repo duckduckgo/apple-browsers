@@ -399,8 +399,9 @@ class MainViewController: UIViewController {
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
 
-    lazy var newTabDaxDialogFactory: NewTabDaxDialogFactory = {
-        NewTabDaxDialogFactory(
+    lazy var newTabDaxDialogFactory: NewTabDaxDialogProvider = {
+        NewTabDaxDialogProvider(
+            featureFlagger: featureFlagger,
             delegate: self,
             daxDialogsFlowCoordinator: daxDialogsManager,
             onboardingPixelReporter: contextualOnboardingPixelReporter)
@@ -1131,7 +1132,7 @@ class MainViewController: UIViewController {
         // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
         tabModel.viewed = true
 
-        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let newTabDaxDialogFactory = NewTabDaxDialogProvider(featureFlagger: featureFlagger, delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
         let controller = NewTabPageViewController(isFocussedState: false,

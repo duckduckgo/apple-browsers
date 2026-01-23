@@ -25,7 +25,7 @@ import Common
 
 typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & SubscriptionPromotionCoordinating
 
-protocol NewTabDaxDialogProvider {
+protocol NewTabDaxDialogProviding<DaxDialog> {
     associatedtype DaxDialog: View
 
     /// Creates a Dax dialog for a given home screen specification.
@@ -40,7 +40,7 @@ protocol NewTabDaxDialogProvider {
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> DaxDialog
 }
 
-final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
+final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
     private var delegate: OnboardingNavigationDelegate?
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting

@@ -74,7 +74,6 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
     @Published var cardNumber: String = "" {
         didSet {
             isDirty = true
-            validateCardNumber()
         }
     }
 
@@ -174,7 +173,7 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         return title
     }
 
-    private func validateCardNumber() {
+    func validateCardNumber() {
         let normalizedCardNumber = CreditCardValidation.extractDigits(from: cardNumber)
 
         guard normalizedCardNumber.isEmpty == false else {

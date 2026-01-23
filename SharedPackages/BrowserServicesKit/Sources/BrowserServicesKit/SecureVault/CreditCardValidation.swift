@@ -127,11 +127,11 @@ public struct CreditCardValidation {
     }
 
     public static func hasMinimumLength(_ cardNumber: String) -> Bool {
-        return cardNumber.count >= minimumCardNumberLength
+        return extractDigits(from: cardNumber).count >= minimumCardNumberLength
     }
 
     public static func hasMaximumLength(_ cardNumber: String) -> Bool {
-        return cardNumber.count <= maximumCardNumberLength
+        return extractDigits(from: cardNumber).count <= maximumCardNumberLength
     }
 
     public static func isValidCardNumber(_ number: String) -> Bool {

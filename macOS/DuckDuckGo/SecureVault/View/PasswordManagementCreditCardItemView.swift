@@ -53,7 +53,10 @@ struct PasswordManagementCreditCardItemView: View {
                         .padding(.top, 16)
                         .padding(.bottom, model.isInEditMode ? 20 : 30)
 
-                    FormattedCreditCardField(textFieldValue: $model.cardNumber, title: UserText.pmCardNumber, accessibilityIdentifier: "Card Number TextField", placeholder: UserText.pmCardNumberPlaceholder)
+                    FormattedCreditCardField(textFieldValue: $model.cardNumber,
+                                            title: UserText.pmCardNumber,
+                                            accessibilityIdentifier: "Card Number TextField",
+                                            placeholder: UserText.pmCardNumberPlaceholder)
 
                     ExpirationField()
 
@@ -234,29 +237,21 @@ private struct FormattedCreditCardField: View {
     let accessibilityIdentifier: String
     let placeholder: String
 
-    private var shouldShowCardNumberError: Bool {
-        // Only show error if user has entered enough digits and card is invalid
-        let normalizedCardNumber = CreditCardValidation.extractDigits(from: textFieldValue)
-        return CreditCardValidation.hasMinimumLength(normalizedCardNumber) && !model.isCardNumberValid
-    }
-
     var body: some View {
-
         if model.isInEditMode || !textFieldValue.isEmpty {
-
             VStack(alignment: .leading, spacing: 0) {
-
                 Text(title)
                     .bold()
                     .padding(.bottom, 5)
 
                 if model.isEditing || model.isNew {
-
                     VStack(alignment: .leading, spacing: 0) {
-                        FormattedCreditCardTextField(text: $textFieldValue, placeholder: placeholder)
+                        FormattedCreditCardTextField(text: $textFieldValue, placeholder: placeholder, onBlur: {
+                            model.validateCardNumber()
+                        })
                             .accessibility(identifier: accessibilityIdentifier)
 
-                        if shouldShowCardNumberError {
+                        if model.isCardNumberValid == false {
                             HStack(alignment: .center, spacing: 8) {
                                 Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
                                     .foregroundColor(Color(designSystemColor: .destructivePrimary, palette: themeManager.designColorPalette))
@@ -270,9 +265,7 @@ private struct FormattedCreditCardField: View {
                         }
                     }
                     .padding(.bottom, interItemSpacing)
-
                 } else {
-
                     HStack(spacing: 6) {
                         Text(textFieldValue)
 
@@ -289,12 +282,10 @@ private struct FormattedCreditCardField: View {
                     }
                     .padding(.bottom, interItemSpacing)
                 }
-
             }
             .onHover {
                 isHovering = $0
             }
-
         }
     }
 }

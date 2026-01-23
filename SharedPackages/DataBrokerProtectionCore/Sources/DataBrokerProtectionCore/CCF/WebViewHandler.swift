@@ -46,9 +46,9 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     private var userContentController: DataBrokerUserContentController?
 
     private var webView: WebView?
-    private var urlObservation: NSKeyValueObservation?
 
 #if os(macOS)
+    private var urlObservation: NSKeyValueObservation?
     private var window: NSWindow?
     private var addressBarTextField: NSTextField?
     private var toolbar: NSToolbar?
@@ -80,15 +80,16 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
         webView = WebView(frame: CGRect(origin: .zero, size: CGSize(width: 1024, height: 1024)), configuration: configuration)
         webView?.navigationDelegate = self
-        urlObservation = webView?.observe(\.url, options: [.initial, .new]) { [weak self] _, change in
-            let url = change.newValue ?? nil
-            Task { @MainActor in
-                self?.updateAddressBar(with: url)
-            }
-        }
 
         if showWebView {
 #if os(macOS)
+            urlObservation = webView?.observe(\.url, options: [.initial, .new]) { [weak self] _, change in
+                let url = change.newValue ?? nil
+                Task { @MainActor in
+                    self?.updateAddressBar(with: url)
+                }
+            }
+
             window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024),
                 styleMask: [.titled, .closable, .miniaturizable, .resizable],
@@ -155,8 +156,10 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         userContentController = nil
         webView?.navigationDelegate = nil
         webView = nil
+#if os(macOS)
         urlObservation?.invalidate()
         urlObservation = nil
+#endif
     }
 
     deinit {
@@ -384,7 +387,9 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         Logger.action.log("WebViewHandler didFinish")
+#if os(macOS)
         updateAddressBar(with: webView.url)
+#endif
 
         self.activeContinuation?.resume()
         self.activeContinuation = nil
@@ -403,7 +408,9 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+#if os(macOS)
         updateAddressBar(with: webView.url)
+#endif
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {

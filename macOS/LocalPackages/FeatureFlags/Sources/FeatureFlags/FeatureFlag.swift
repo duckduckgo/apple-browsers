@@ -312,8 +312,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillPasswordSearchPrioritizeDomain,
                 .wideEventPostEndpoint,
                 .memoryPressureReporting,
-                .themes,
-                .nextStepsListWidget:
+                .themes:
             true
         default:
             false
@@ -575,7 +574,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .heuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         case .nextStepsListWidget:
-            return .internalOnly()
+            return .disabled
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
         }

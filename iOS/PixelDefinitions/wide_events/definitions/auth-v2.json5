@@ -1,0 +1,61 @@
+{
+    "ios-authv2-token-refresh": {
+        "description": "Sent when AuthV2 has completed a token refresh",
+        "owners": ["ssymons"],
+        "meta": {
+            "type": "ios-authv2-token-refresh",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "authv2-token-refresh",
+            "status": ["SUCCESS", "FAILURE", "UNKNOWN"],
+            "status_reason": ["partial_data"],
+            "data": {
+                "ext": {
+                    "application_state": {
+                        "type": "string",
+                        "description": "The source of the import data. For multi-stage imports, this is the original browser source.",
+                        "enum": ["foreground", "background"]
+                    },
+                    "refresh_trigger": {
+                        "type": "string",
+                        "description": "The source of the import data. For multi-stage imports, this is the original browser source.",
+                        "enum": ["backend", "client", "token_adoption"]
+                    },
+                    "failing_step": {
+                        "type": "string",
+                        "description": "The source of the import data. For multi-stage imports, this is the original browser source.",
+                        "enum": [
+                            "token_read",
+                            "refresh_access_token",
+                            "fetch_jwks",
+                            "verify_access_token",
+                            "verify_refresh_token",
+                            "token_write"
+                        ]
+                    },
+                    "refresh_token_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "The source of the import data. For multi-stage imports, this is the original browser source.",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "fetch_jwks_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "The source of the import data. For multi-stage imports, this is the original browser source.",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    }
+                },
+                "error": {
+                    "domain": {
+                        "type": "string",
+                        "description": "The top level error domain"
+                    },
+                    "code": {
+                        "type": "integer",
+                        "description": "The top level error code"
+                    }
+                }
+            }
+        }
+    }
+}

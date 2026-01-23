@@ -30,7 +30,7 @@ public protocol HistoryCoordinatingDebuggingSupport {
     /**
      * Adds visit at an arbitrary time, rather than current timestamp.
      *
-     * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` should be used.
+     * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` or `addVisit(of: URL, tabID:)` should be used.
      */
     @discardableResult @MainActor func addVisit(of url: URL, at date: Date, tabID: String?) -> Visit?
 }
@@ -44,8 +44,6 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor var historyDictionary: [URL: HistoryEntry]? { get }
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { get }
 
-    @discardableResult @MainActor func addVisit(of url: URL, tabID: String?) -> Visit?
-    @discardableResult @MainActor func addVisit(of url: URL) -> Visit?
     @MainActor func addBlockedTracker(entityName: String, on url: URL)
     @MainActor func trackerFound(on: URL)
     @MainActor func cookiePopupBlocked(on: URL)
@@ -65,6 +63,17 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
 }
 
 extension HistoryCoordinating {
+
+    /**
+     * Adds visit at an arbitrary time, rather than current timestamp.
+     *
+     * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` or `addVisit(of: URL, tabID:)` should be used.
+     */
+    @discardableResult
+    @MainActor public func addVisit(of url: URL, at date: Date) -> Visit? {
+        addVisit(of: url, at: date, tabID: nil)
+    }
+
     @discardableResult
     @MainActor public func addVisit(of url: URL) -> Visit? {
         addVisit(of: url, at: Date(), tabID: nil)

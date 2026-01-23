@@ -82,4 +82,4 @@ scripts/assets
 DuckDuckGoTests/NetworkProtectionVPNLocationViewModelTests.swift*.plist
 *.profraw
 
-PixelDefinitions/pixel_processing_results
+PixelDefinitions/pixels/pixel_processing_results

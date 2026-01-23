@@ -20,8 +20,12 @@ import Foundation
 import PixelKit
 
 public class SubscriptionPurchaseWideEventData: WideEventData {
-    public static let pixelName = "subscription_purchase"
-    public static let featureName = "subscription-purchase"
+    public static let metadata = WideEventMetadata(
+        pixelName: "subscription_purchase",
+        featureName: "subscription-purchase",
+        mobileMetaType: "ios-subscription-purchase",
+        desktopMetaType: "macos-subscription-purchase"
+    )
 
     public static let activationTimeout: TimeInterval = .hours(4)
 

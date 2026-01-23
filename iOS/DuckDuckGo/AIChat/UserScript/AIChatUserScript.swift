@@ -54,6 +54,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case promptInterruption
         case openSettingsAction
         case toggleSidebarAction
+        case syncStatusChanged(AIChatSyncHandler.SyncStatus)
 
         var methodName: String {
             switch self {
@@ -69,6 +70,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitOpenSettingsAction"
             case .toggleSidebarAction:
                 return "submitToggleSidebarAction"
+            case .syncStatusChanged:
+                return "submitSyncStatusChanged"
             }
         }
 
@@ -76,6 +79,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             switch self {
             case .submitPrompt(let prompt):
                 return prompt
+            case .syncStatusChanged(let status):
+                return status
             default:
                 return nil
             }
@@ -107,7 +112,9 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         // Set self as the metric reporting handler
         handler.setMetricReportingHandler(self)
-
+        handler.setSyncStatusChangedHandler { [weak self] status in
+            self?.submitSyncStatusChanged(status)
+        }
     }
 
     private static func buildMessageOriginRules(debugSettings: AIChatDebugSettingsHandling) -> [HostnameMatchingRule] {
@@ -247,6 +254,11 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func submitToggleSidebarAction() {
         push(.toggleSidebarAction)
+    }
+
+    /// Pushes sync status change to the web content when sync state changes (login/logout, availability).
+    func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
+        push(.syncStatusChanged(status))
     }
 
     // MARK: - Private Helper

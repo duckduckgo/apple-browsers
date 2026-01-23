@@ -3622,6 +3622,9 @@
 /* Manage Plan header */
 "subscription.manage.plan" = "Gestionar plan";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Gestionar el pago o cancelar";
+
 /* Header for the subscription section */
 "subscription.manage.title" = "Suscripción";
 
@@ -3718,6 +3721,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Tu suscripción anual caduca el %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Tu plan se revertirá a %1$@ mensualmente el %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Tu plan se se revertirá a %1$@ el %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Tu plan se revertirá a %1$@ anualmente el %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Tu suscripción mensual se renueva el %@.";
 
@@ -3738,6 +3750,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Prueba gratuita activa";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Actualizar a %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Desbloquea una IA más inteligente y más potente";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Actualizar";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Ver todos los planes";

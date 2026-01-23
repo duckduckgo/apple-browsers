@@ -197,7 +197,7 @@ final class MainCoordinator {
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
-                                        syncAiChatsCleaner: syncService.aiChatsCleaner,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         whatsNewRepository: whatsNewRepository)
     }
 

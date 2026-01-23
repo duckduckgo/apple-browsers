@@ -3622,6 +3622,9 @@
 /* Manage Plan header */
 "subscription.manage.plan" = "Faça a gestão do plano";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Gerir pagamento ou Cancelar";
+
 /* Header for the subscription section */
 "subscription.manage.title" = "Subscrição";
 
@@ -3718,6 +3721,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "A tua subscrição anual expira a %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Será feito o downgrade do teu plano para %1$@ mensal a %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Será feito o downgrade do teu plano para %1$@ a %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Será feito o downgrade do teu plano para %1$@ anual a %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "A tua subscrição mensal renova-se a %@.";
 
@@ -3738,6 +3750,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Período de teste gratuito ativo";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Atualiza para o %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Desbloqueia funcionalidades IA mais inteligentes e poderosas";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Atualizar";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Ver todos os planos";

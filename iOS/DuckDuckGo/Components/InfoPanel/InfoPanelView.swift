@@ -30,6 +30,7 @@ struct InfoPanelView: View {
         static let horizontalPadding: CGFloat = 12
         static let verticalPadding: CGFloat = 8
         static let cornerRadius: CGFloat = 16
+        static let maxWidth: CGFloat = 480
     }
 
     struct Model {
@@ -68,13 +69,14 @@ struct InfoPanelView: View {
         }
         .padding(.horizontal, Constants.horizontalPadding)
         .padding(.vertical, Constants.verticalPadding)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-        .onTapGesture { model.onTap() }
         .background(
             RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous)
                 .fill(model.backgroundColor)
         )
+        .contentShape(RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous))
+        .onTapGesture { model.onTap() }
+        .frame(maxWidth: Constants.maxWidth, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(model.title + " " + model.subtitle))
     }

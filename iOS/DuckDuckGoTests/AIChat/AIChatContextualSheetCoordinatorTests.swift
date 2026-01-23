@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import AIChat
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
@@ -75,6 +76,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockDelegate: MockDelegate!
     private var mockPresentingVC: MockPresentingViewController!
     private var mockSettings: MockAIChatSettingsProvider!
+    private var mockPageContextStore: MockAIChatPageContextStore!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
 
     // MARK: - Setup
@@ -82,6 +84,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockSettings = MockAIChatSettingsProvider()
+        mockPageContextStore = MockAIChatPageContextStore()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         sut = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
@@ -89,7 +92,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            pageContextStore: mockPageContextStore
         )
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()
@@ -101,6 +105,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockDelegate = nil
         mockPresentingVC = nil
         mockSettings = nil
+        mockPageContextStore = nil
         contentBlockingSubject = nil
         super.tearDown()
     }
@@ -206,5 +211,78 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertNil(sut.sheetViewController)
+    }
+
+    // MARK: - Page Context Re-presentation Tests
+
+    func testRepresentingSheetWithContextUpdatesStore() {
+        // Given
+        sut.presentSheet(from: mockPresentingVC)
+        let initialUpdateCount = mockPageContextStore.updateCallCount
+        let context = makeTestContext(url: "https://example.com/page2")
+
+        // When
+        sut.presentSheet(from: mockPresentingVC, pageContext: context)
+
+        // Then
+        XCTAssertEqual(mockPageContextStore.updateCallCount, initialUpdateCount + 1)
+        XCTAssertEqual(mockPageContextStore.latestContext?.url, "https://example.com/page2")
+    }
+
+    func testRepresentingSheetWithoutContextDoesNotUpdateStore() {
+        // Given
+        let initialContext = makeTestContext(url: "https://example.com/initial")
+        sut.presentSheet(from: mockPresentingVC, pageContext: initialContext)
+        let updateCountAfterFirstPresent = mockPageContextStore.updateCallCount
+
+        // When
+        sut.presentSheet(from: mockPresentingVC, pageContext: nil)
+
+        // Then
+        XCTAssertEqual(mockPageContextStore.updateCallCount, updateCountAfterFirstPresent)
+        XCTAssertEqual(mockPageContextStore.latestContext?.url, "https://example.com/initial")
+    }
+
+    func testRepresentingSheetWithAutoAttachDisabledDoesNotPushToUI() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        let initialContext = makeTestContext(url: "https://example.com/initial")
+        sut.presentSheet(from: mockPresentingVC, pageContext: initialContext)
+
+        let newContext = makeTestContext(url: "https://example.com/updated")
+
+        // When
+        sut.presentSheet(from: mockPresentingVC, pageContext: newContext)
+
+        // Then
+        XCTAssertEqual(mockPageContextStore.latestContext?.url, "https://example.com/updated")
+    }
+
+    func testRepresentingSheetWithAutoAttachEnabledRefreshesUI() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        let initialContext = makeTestContext(url: "https://example.com/initial")
+        sut.presentSheet(from: mockPresentingVC, pageContext: initialContext)
+
+        let newContext = makeTestContext(url: "https://example.com/updated")
+
+        // When
+        sut.presentSheet(from: mockPresentingVC, pageContext: newContext)
+
+        // Then
+        XCTAssertEqual(mockPageContextStore.latestContext?.url, "https://example.com/updated")
+    }
+
+    // MARK: - Helpers
+
+    private func makeTestContext(url: String = "https://example.com") -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: "Test Page",
+            favicon: [],
+            url: url,
+            content: "Test content",
+            truncated: false,
+            fullContentLength: 12
+        )
     }
 }

@@ -346,6 +346,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables ATB measurement for Duck.ai usage on iOS
     case aiChatAtb
+
+    /// Controls whether automatic page context attachment defaults to enabled
+    case autoAttachContextByDefault
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

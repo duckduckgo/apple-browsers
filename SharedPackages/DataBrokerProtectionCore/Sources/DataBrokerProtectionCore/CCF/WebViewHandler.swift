@@ -51,6 +51,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 #if os(macOS)
     private var window: NSWindow?
     private var addressBarTextField: NSTextField?
+    private var toolbar: NSToolbar?
 #elseif os(iOS)
     private var window: UIWindow?
 #endif
@@ -94,9 +95,15 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
                 backing: .buffered, defer: false
             )
             window?.title = "Data Broker Protection"
+            window?.toolbarStyle = .expanded
+            let toolbar = makeToolbar()
+            self.toolbar = toolbar
+            window?.toolbar = toolbar
+
             window?.delegate = self
             window?.isReleasedWhenClosed = false
-            window?.contentView = makeDebugContentView(webView: webView)
+            window?.contentView = webView
+
             window?.makeKeyAndOrderFront(nil)
 #elseif os(iOS)
             cleanupExistingPIRDebugWindow()
@@ -290,19 +297,23 @@ private extension DataBrokerProtectionWebViewHandler {
         NSPasteboard.general.setString(urlString, forType: .string)
     }
 
-    func makeDebugContentView(webView: WKWebView?) -> NSView {
-        let containerView = NSView()
-        let verticalStack = NSStackView()
-        verticalStack.orientation = .vertical
-        verticalStack.spacing = 8
-        verticalStack.distribution = .fill
-        verticalStack.translatesAutoresizingMaskIntoConstraints = false
+    func makeToolbar() -> NSToolbar {
+        let toolbar = NSToolbar(identifier: NSToolbar.Identifier("PIRDebugToolbar"))
+        toolbar.delegate = self
+        toolbar.displayMode = .iconOnly
+        return toolbar
+    }
 
-        let addressField = NSTextField(string: "")
+    func makeAddressBarView() -> NSView {
+        let containerView = NSView(frame: NSRect(x: 0, y: 0, width: 760, height: 22))
+        let addressField = NSTextField(labelWithString: "")
         addressField.isEditable = false
         addressField.isSelectable = true
+        addressField.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         addressField.setContentHuggingPriority(.defaultLow, for: .horizontal)
         addressField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        addressField.cell?.lineBreakMode = .byTruncatingTail
+        addressField.usesSingleLineMode = true
         addressBarTextField = addressField
 
         let copyButton = NSButton(title: "Copy URL", target: self, action: #selector(copyURLFromAddressBar))
@@ -316,19 +327,12 @@ private extension DataBrokerProtectionWebViewHandler {
         addressRow.distribution = .fill
         addressRow.translatesAutoresizingMaskIntoConstraints = false
 
-        if let webView {
-            webView.translatesAutoresizingMaskIntoConstraints = false
-            verticalStack.addArrangedSubview(addressRow)
-            verticalStack.addArrangedSubview(webView)
-        }
-
-        containerView.addSubview(verticalStack)
+        containerView.addSubview(addressRow)
         NSLayoutConstraint.activate([
-            verticalStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            verticalStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            verticalStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
-            verticalStack.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
-            addressRow.widthAnchor.constraint(equalTo: verticalStack.widthAnchor)
+            addressRow.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            addressRow.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+            addressRow.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 0),
+            addressRow.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: 0)
         ])
 
         return containerView
@@ -343,6 +347,31 @@ extension DataBrokerProtectionWebViewHandler: NSWindowDelegate {
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         sender.orderOut(nil)
         return false
+    }
+}
+
+extension DataBrokerProtectionWebViewHandler: NSToolbarDelegate {
+    private enum ToolbarItemIdentifier {
+        static let addressBar = NSToolbarItem.Identifier("PIRDebugToolbar.AddressBar")
+    }
+
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [ToolbarItemIdentifier.addressBar, .flexibleSpace]
+    }
+
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [ToolbarItemIdentifier.addressBar, .flexibleSpace]
+    }
+
+    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
+                 willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        guard itemIdentifier == ToolbarItemIdentifier.addressBar else { return nil }
+        let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+        let view = makeAddressBarView()
+        item.view = view
+        item.minSize = view.fittingSize
+        item.maxSize = NSSize(width: 2000, height: view.fittingSize.height)
+        return item
     }
 }
 #endif

@@ -107,6 +107,11 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
         XCTAssertTrue(firedPixel.name.contains("wide_subscription_plan_change"))
 
         let params = firedPixel.parameters
+        #if os(iOS)
+        XCTAssertEqual(params["meta.type"], "ios-subscription-plan-change")
+        #elseif os(macOS)
+        XCTAssertEqual(params["meta.type"], "macos-subscription-plan-change")
+        #endif
         XCTAssertEqual(params["feature.status"], "SUCCESS")
         XCTAssertEqual(params["feature.name"], "subscription-plan-change")
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "app_store")

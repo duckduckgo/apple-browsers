@@ -21,12 +21,12 @@ import PixelKit
 
 /// Wide event data for subscription plan changes (upgrades, downgrades, crossgrades)
 public class SubscriptionPlanChangeWideEventData: WideEventData {
-    #if DEBUG
-    public static let pixelName = "subscription_plan_change_debug"
-    #else
-    public static let pixelName = "subscription_plan_change"
-    #endif
-    public static let featureName = "subscription-plan-change"
+    public static let metadata = WideEventMetadata(
+        pixelName: "subscription_plan_change",
+        featureName: "subscription-plan-change",
+        mobileMetaType: "ios-subscription-plan-change",
+        desktopMetaType: "macos-subscription-plan-change"
+    )
 
     public static let confirmationTimeout: TimeInterval = .hours(4)
 

@@ -22,14 +22,12 @@ import Foundation
 final class MemoryUsageTests: XCTestCase {
 
     private var application: XCUIApplication!
-    private var bundleID: String!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
 
         application = XCUIApplication.setUp(featureFlags: ["memoryUsageMonitor": true])
-        bundleID = try XCTUnwrap(application.bundleID)
     }
 
     override func tearDown() {

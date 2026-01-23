@@ -1248,6 +1248,7 @@
 		9F0369EE2F2307AE00A00DCA /* RebrandedNewTabDaxDialogFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0369ED2F2307A000A00DCA /* RebrandedNewTabDaxDialogFactory.swift */; };
 		9F0369F22F23096C00A00DCA /* BrowserDaxDialogProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0369F12F23094100A00DCA /* BrowserDaxDialogProvider.swift */; };
 		9F0369F42F23099800A00DCA /* RebrandedBrowsingDaxDialogFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0369F32F23098900A00DCA /* RebrandedBrowsingDaxDialogFactory.swift */; };
+		9F0369F72F231EBC00A00DCA /* RebrandedOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0369F62F231EB100A00DCA /* RebrandedOnboardingView.swift */; };
 		9F06EB8C2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */; };
 		9F06EB922D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */; };
 		9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */ = {isa = PBXBuildFile; productRef = 9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */; };
@@ -3692,6 +3693,7 @@
 		9F0369ED2F2307A000A00DCA /* RebrandedNewTabDaxDialogFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedNewTabDaxDialogFactory.swift; sourceTree = "<group>"; };
 		9F0369F12F23094100A00DCA /* BrowserDaxDialogProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserDaxDialogProvider.swift; sourceTree = "<group>"; };
 		9F0369F32F23098900A00DCA /* RebrandedBrowsingDaxDialogFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedBrowsingDaxDialogFactory.swift; sourceTree = "<group>"; };
+		9F0369F62F231EB100A00DCA /* RebrandedOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedOnboardingView.swift; sourceTree = "<group>"; };
 		9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionSettingsViewModelTests.swift; sourceTree = "<group>"; };
 		9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionPreferencesManagerTests.swift; sourceTree = "<group>"; };
 		9F0727862E2F2439005894C8 /* SystemSettingsPiPTutorial */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemSettingsPiPTutorial; sourceTree = "<group>"; };
@@ -7251,6 +7253,14 @@
 			path = Rebranding2026;
 			sourceTree = "<group>";
 		};
+		9F0369F52F231EA000A00DCA /* Rebranding */ = {
+			isa = PBXGroup;
+			children = (
+				9F0369F62F231EB100A00DCA /* RebrandedOnboardingView.swift */,
+			);
+			path = Rebranding;
+			sourceTree = "<group>";
+		};
 		9F06EB882D0D737500905426 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -7307,6 +7317,7 @@
 		9F23B7FF2C2BABE000950875 /* OnboardingIntro */ = {
 			isa = PBXGroup;
 			children = (
+				9F0369F52F231EA000A00DCA /* Rebranding */,
 				9FE08BDB2C2A88FA001D5EBC /* OnboardingIntroViewController.swift */,
 				9FB0271C2C293619009EA190 /* OnboardingIntroViewModel.swift */,
 				9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */,
@@ -11084,6 +11095,7 @@
 				1DEAADE82BA38AA500E25A97 /* SettingsGeneralView.swift in Sources */,
 				9FD6E6052DF8226000C2B032 /* AudioSessionManager.swift in Sources */,
 				3132FA2627A0784600DD7A12 /* FilePreviewHelper.swift in Sources */,
+				9F0369F72F231EBC00A00DCA /* RebrandedOnboardingView.swift in Sources */,
 				9820FF502244FECC008D4782 /* UIScrollViewExtension.swift in Sources */,
 				8540BD5423D8D5080057FDD2 /* FireproofingAlert.swift in Sources */,
 				1E87615928A1517200C7C5CE /* PrivacyDashboardViewController.swift in Sources */,

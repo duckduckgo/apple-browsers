@@ -1,7 +1,7 @@
 {
     "ios-authv2-token-refresh": {
         "description": "Sent when AuthV2 has completed a token refresh",
-        "owners": ["ssymons"],
+        "owners": ["samsymons"],
         "meta": {
             "type": "ios-authv2-token-refresh",
             "version": "0.0"

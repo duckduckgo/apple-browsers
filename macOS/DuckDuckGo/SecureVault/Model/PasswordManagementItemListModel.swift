@@ -135,7 +135,7 @@ enum SecureVaultItem: Equatable, Identifiable, Comparable {
         case .account(let account):
             return account.username ?? ""
         case .card(let creditCard):
-            return creditCard.displayName
+            return creditCard.cardSummary
         case .identity(let identity):
             var nameComponents = PersonNameComponents()
             nameComponents.givenName = identity.firstName

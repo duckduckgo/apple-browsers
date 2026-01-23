@@ -124,7 +124,11 @@ public class HistoryManager: HistoryManaging {
 
     @MainActor
     public func removeTabHistory(for tabIDs: [String]) async {
-        try? await tabHistoryCoordinator.removeVisits(for: tabIDs)
+        do {
+            try await tabHistoryCoordinator.removeVisits(for: tabIDs)
+        } catch {
+            Logger.history.error("Failed to remove tab history: \(error.localizedDescription)")
+        }
     }
 
 }

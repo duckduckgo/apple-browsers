@@ -20,12 +20,19 @@ import Combine
 import Foundation
 
 /// View model that manages AI chat suggestions displayed in the omnibar.
-/// Displays suggestions as returned by the server (no local filtering).
+/// Applies local filtering: merges pinned and recent, sorts by recency, limits to max count.
 public final class AIChatSuggestionsViewModel: ObservableObject {
+
+    // MARK: - Constants
+
+    private enum Constants {
+        static let maxSuggestions = 5
+        static let oneWeekInterval: TimeInterval = 7 * 24 * 60 * 60
+    }
 
     // MARK: - Published Properties
 
-    /// The suggestions to display (pinned first, then recent).
+    /// The suggestions to display (merged, sorted by recency, limited to max count).
     @Published public private(set) var filteredSuggestions: [AIChatSuggestion] = []
 
     /// The index of the currently selected suggestion (for keyboard navigation).
@@ -57,13 +64,36 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
 
     // MARK: - Data Management
 
-    /// Sets the suggestions to display.
-    /// Filtering is done server-side, so we just display what we receive.
+    /// Sets the suggestions to display with local filtering applied.
+    /// Merges pinned and recent chats, sorts by recency, applies one-week filter for empty query.
     /// - Parameters:
     ///   - pinned: The list of pinned chats.
     ///   - recent: The list of recent chats.
-    public func setChats(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
-        filteredSuggestions = pinned + recent
+    ///   - query: The current search query. Empty query applies one-week recency filter.
+    public func setChats(pinned: [AIChatSuggestion], recent: [AIChatSuggestion], query: String = "") {
+        let isEmptyQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        // Merge pinned and recent chats
+        var allChats = pinned + recent
+
+        // Apply one-week filter only for empty query
+        if isEmptyQuery {
+            let oneWeekAgo = Date().addingTimeInterval(-Constants.oneWeekInterval)
+            allChats = allChats.filter { chat in
+                guard let timestamp = chat.timestamp else { return true }
+                return timestamp >= oneWeekAgo
+            }
+        }
+
+        // Sort by recency (most recent first)
+        allChats.sort { lhs, rhs in
+            let lhsDate = lhs.timestamp ?? .distantPast
+            let rhsDate = rhs.timestamp ?? .distantPast
+            return lhsDate > rhsDate
+        }
+
+        // Limit to max suggestions
+        filteredSuggestions = Array(allChats.prefix(Constants.maxSuggestions))
 
         // Reset selection if it's now out of bounds
         if let index = selectedIndex, index >= filteredSuggestions.count {

@@ -42,27 +42,33 @@ final class RebrandedNewTabDaxDialogFactory: NewTabDaxDialogProviding {
     }
 
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
+        let button: Button<Text>
         switch homeDialog {
         case .initial:
-            Button(action: onManualDismiss) {
+            button = Button(action: { self.delegate?.searchFromOnboarding(for: "Baby Ducklings") }) {
                 Text(verbatim: "Try A Search!!!")
             }
         case .addFavorite:
-            Button(action: onManualDismiss) {
+            button = Button(action: onManualDismiss) {
                 Text(verbatim: "Add Favourite!!!")
             }
         case .subsequent:
-            Button(action: onManualDismiss) {
+            button = Button(action: onManualDismiss) {
                 Text(verbatim: "Try Visiting A Site!!!")
             }
         case .final:
-            Button(action: { onCompletion(true) }) {
+            button = Button(action: { onCompletion(true) }) {
                 Text(verbatim: "End Of Joruney Dialog!!!")
             }
         case .subscriptionPromotion:
-            Button(action: { onCompletion(true) }) {
+            button = Button(action: { onCompletion(true) }) {
                 Text(verbatim: "Add Favourite!!!")
             }
         }
+
+        return VStack {
+            button
+        }
+        .padding(50)
     }
 }

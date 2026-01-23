@@ -23,20 +23,28 @@ import Core
 import PrivacyConfig
 
 final class BrowserDaxDialogProvider: ContextualDaxDialogsFactory {
-    private let factory: ContextualDaxDialogsFactory
+    private let featureFlagger: FeatureFlagger
+    private let contextualOnboardingLogic: ContextualOnboardingLogic
+    private let contextualOnboardingPixelReporter: OnboardingPixelReporting
 
     init(
         featureFlagger: FeatureFlagger,
         contextualOnboardingLogic: ContextualOnboardingLogic,
         contextualOnboardingPixelReporter: OnboardingPixelReporting
     ) {
+        self.featureFlagger = featureFlagger
+        self.contextualOnboardingLogic = contextualOnboardingLogic
+        self.contextualOnboardingPixelReporter = contextualOnboardingPixelReporter
+    }
+
+    private var factory: ContextualDaxDialogsFactory {
         if featureFlagger.isFeatureOn(.onboardingRebranding) {
-            factory = RebrandedBrowserDaxDialogFactory(
+            return RebrandedBrowserDaxDialogFactory(
                 contextualOnboardingLogic: contextualOnboardingLogic,
                 contextualOnboardingPixelReporter: contextualOnboardingPixelReporter
             )
         } else {
-            factory = ExperimentContextualDaxDialogsFactory(
+            return ExperimentContextualDaxDialogsFactory(
                 contextualOnboardingLogic: contextualOnboardingLogic,
                 contextualOnboardingPixelReporter: contextualOnboardingPixelReporter
             )

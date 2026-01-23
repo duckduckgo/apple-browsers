@@ -25,7 +25,11 @@ import Subscription
 import Common
 
 final class NewTabDaxDialogProvider: NewTabDaxDialogProviding {
-    private let factory: any NewTabDaxDialogProviding
+    private let featureFlagger: FeatureFlagger
+    private let delegate: OnboardingNavigationDelegate?
+    private let daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
+    private let onboardingPixelReporter: OnboardingPixelReporting
+    private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
 
     init(
         featureFlagger: FeatureFlagger,
@@ -34,15 +38,23 @@ final class NewTabDaxDialogProvider: NewTabDaxDialogProviding {
         onboardingPixelReporter: OnboardingPixelReporting,
         onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper()
     ) {
+        self.featureFlagger = featureFlagger
+        self.delegate = delegate
+        self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
+        self.onboardingPixelReporter = onboardingPixelReporter
+        self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
+    }
+
+    private var factory: any NewTabDaxDialogProviding {
         if featureFlagger.isFeatureOn(.onboardingRebranding) {
-            factory = RebrandedNewTabDaxDialogFactory(
+            return RebrandedNewTabDaxDialogFactory(
                 delegate: delegate,
                 daxDialogsFlowCoordinator: daxDialogsFlowCoordinator,
                 onboardingPixelReporter: onboardingPixelReporter,
                 onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper
             )
         } else {
-            factory = NewTabDaxDialogFactory(
+            return NewTabDaxDialogFactory(
                 delegate: delegate,
                 daxDialogsFlowCoordinator: daxDialogsFlowCoordinator,
                 onboardingPixelReporter: onboardingPixelReporter,
@@ -50,7 +62,6 @@ final class NewTabDaxDialogProvider: NewTabDaxDialogProviding {
             )
         }
     }
-
 
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         AnyView(factory.createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss))

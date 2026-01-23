@@ -21,19 +21,15 @@ import SwiftUI
 import SystemSettingsPiPTutorial
 import AIChat
 
-final class OnboardingIntroViewController: UIHostingController<OnboardingView>, Onboarding {
+final class OnboardingIntroViewController<Content: View>: UIHostingController<Content>, Onboarding {
     weak var delegate: OnboardingDelegate?
     private let viewModel: OnboardingIntroViewModel
 
-    init(onboardingPixelReporter: OnboardingPixelReporting,
-         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
-         daxDialogsManager: ContextualDaxDialogDisabling) {
-        viewModel = OnboardingIntroViewModel(
-            pixelReporter: onboardingPixelReporter,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-            daxDialogsManager: daxDialogsManager
-        )
-        let rootView = OnboardingView(model: viewModel)
+    init(
+        rootView: Content,
+        viewModel: OnboardingIntroViewModel
+    ) {
+        self.viewModel = viewModel
         super.init(rootView: rootView)
         
         viewModel.onCompletingOnboardingIntro = { [weak self] in
@@ -58,6 +54,42 @@ final class OnboardingIntroViewController: UIHostingController<OnboardingView>, 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         viewModel.tapped()
+    }
+
+}
+
+extension OnboardingIntroViewController where Content == OnboardingView {
+
+    static func legacy(
+        onboardingPixelReporter: OnboardingPixelReporting,
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+        daxDialogsManager: ContextualDaxDialogDisabling
+    ) -> OnboardingIntroViewController {
+        let viewModel = OnboardingIntroViewModel(
+            pixelReporter: onboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager
+        )
+        let rootView = OnboardingView(model: viewModel)
+        return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)
+    }
+
+}
+
+extension OnboardingIntroViewController where Content == RebrandedOnboardingView {
+
+    static func rebranded(
+        onboardingPixelReporter: OnboardingPixelReporting,
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+        daxDialogsManager: ContextualDaxDialogDisabling
+    ) -> OnboardingIntroViewController {
+        let viewModel = OnboardingIntroViewModel(
+            pixelReporter: onboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager
+        )
+        let rootView = RebrandedOnboardingView(model: viewModel)
+        return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)
     }
 
 }

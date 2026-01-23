@@ -35,7 +35,7 @@ jobs:
         include:
           - xcode-version: "26.1"
             runner: macos-26-xlarge
-            os-version: 26
+            os-version: 26.2
 
     timeout-minutes: 60
 

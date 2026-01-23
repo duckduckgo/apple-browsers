@@ -828,6 +828,11 @@ final class NavigationBarViewController: NSViewController {
                                             usingView: passwordManagementButton,
                                             withDelegate: self)
         } else if autofillPreferences.askToSavePaymentMethods, let card = data.creditCard {
+            guard CreditCardValidation.isValidCardNumber(CreditCardValidation.extractDigits(from: card.cardNumber)) else {
+                Logger.autofill.debug("Invalid credit card number, not presenting save popover")
+                return
+            }
+
             Logger.passwordManager.debug("Presenting Save Credit Card popover")
             popovers.displaySavePaymentMethod(card,
                                               usingView: passwordManagementButton,

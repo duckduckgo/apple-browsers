@@ -21,6 +21,7 @@ import Foundation
 import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
+import DesignResourcesKitIcons
 
 private let interItemSpacing: CGFloat = 23
 private let itemSpacing: CGFloat = 13
@@ -50,9 +51,12 @@ struct PasswordManagementCreditCardItemView: View {
                         .padding(.top, 16)
                         .padding(.bottom, model.isInEditMode ? 20 : 30)
 
-                    EditableCreditCardField(textFieldValue: $model.cardNumber, title: UserText.pmCardNumber, accessibilityIdentifier: "Card Number TextField", placeholder: UserText.pmCardNumberPlaceholder)
+                    FormattedCreditCardField(textFieldValue: $model.cardNumber, title: UserText.pmCardNumber, accessibilityIdentifier: "Card Number TextField", placeholder: UserText.pmCardNumberPlaceholder)
+
                     ExpirationField()
+
                     EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName, accessibilityIdentifier: "Cardholder Name TextField", placeholder: UserText.pmCardholderNamePlaceholder)
+
                     SecureEditableCreditCardField(textFieldValue: $model.cardSecurityCode,
                                                   title: UserText.pmCardVerificationValue,
                                                   hiddenTextLength: 3,
@@ -159,8 +163,8 @@ private struct Buttons: View {
                 Button(UserText.pmSave) {
                     model.save()
                 }
-                .disabled(!model.isDirty)
-                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty))
+                .disabled(!model.isDirty || !model.isCardNumberValid)
+                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardNumberValid))
 
             } else {
                 Button(UserText.pmDelete) {
@@ -216,6 +220,82 @@ private struct EditableCreditCardField: View {
                         if isHovering {
                             Button {
                                 model.copy(textFieldValue)
+                            } label: {
+                                Image(.copy)
+                            }.buttonStyle(PlainButtonStyle())
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.bottom, interItemSpacing)
+                }
+
+            }
+            .onHover {
+                isHovering = $0
+            }
+
+        }
+    }
+}
+
+private struct FormattedCreditCardField: View {
+
+    @EnvironmentObject var model: PasswordManagementCreditCardModel
+
+    @State var isHovering = false
+    @Binding var textFieldValue: String
+
+    let title: String
+    let accessibilityIdentifier: String
+    let placeholder: String
+
+    private var shouldShowCardNumberError: Bool {
+        // Only show error if user has entered enough digits and card is invalid
+        let normalizedCardNumber = CreditCardValidation.extractDigits(from: textFieldValue)
+        return CreditCardValidation.hasMinimumLength(normalizedCardNumber) && !model.isCardNumberValid
+    }
+
+    var body: some View {
+
+        if model.isInEditMode || !textFieldValue.isEmpty {
+
+            VStack(alignment: .leading, spacing: 0) {
+
+                Text(title)
+                    .bold()
+                    .padding(.bottom, 5)
+
+                if model.isEditing || model.isNew {
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        FormattedCreditCardTextField(text: $textFieldValue, placeholder: placeholder)
+                            .accessibility(identifier: accessibilityIdentifier)
+
+                        if shouldShowCardNumberError {
+                            HStack(alignment: .center, spacing: 8) {
+                                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
+                                    .foregroundColor(.red)
+                                    .frame(width: 16, height: 16)
+                                Text(UserText.pmCardNumberError)
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 13))
+                                Spacer()
+                            }
+                            .padding(.top, 6)
+                        }
+                    }
+                    .padding(.bottom, interItemSpacing)
+
+                } else {
+
+                    HStack(spacing: 6) {
+                        Text(textFieldValue)
+
+                        if isHovering {
+                            Button {
+                                let normalizedCardNumber = CreditCardValidation.extractDigits(from: textFieldValue)
+                                model.copy(normalizedCardNumber)
                             } label: {
                                 Image(.copy)
                             }.buttonStyle(PlainButtonStyle())
@@ -347,7 +427,6 @@ private struct ExpirationField: View {
                             }
                         }
                         .labelsHidden()
-
                     }
                     .padding(.bottom, interItemSpacing)
                 } else if let month = model.expirationMonth, let year = model.expirationYear {

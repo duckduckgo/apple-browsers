@@ -74,8 +74,11 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
     @Published var cardNumber: String = "" {
         didSet {
             isDirty = true
+            validateCardNumber()
         }
     }
+
+    @Published var isCardNumberValid: Bool = true
 
     @Published var cardholderName: String = "" {
         didSet {
@@ -146,14 +149,40 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
     func save() {
         guard var card = card else { return }
 
-        card.title = title
-        card.cardNumberData = cardNumber.data(using: .utf8)!
+        validateCardNumber()
+
+        let normalizedCardNumber = CreditCardValidation.extractDigits(from: cardNumber)
+        guard normalizedCardNumber.isEmpty == false && isCardNumberValid else {
+            return
+        }
+
+        card.title = cardTitle(with: normalizedCardNumber)
+        card.cardNumberData = normalizedCardNumber.data(using: .utf8)!
         card.cardholderName = cardholderName
         card.cardSecurityCode = cardSecurityCode
         card.expirationMonth = expirationMonth
         card.expirationYear = expirationYear
 
         onSaveRequested(card)
+    }
+
+    private func cardTitle(with normalizedCardNumber: String) -> String {
+        if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return CreditCardValidation.type(for: normalizedCardNumber).displayName
+        }
+
+        return title
+    }
+
+    private func validateCardNumber() {
+        let normalizedCardNumber = CreditCardValidation.extractDigits(from: cardNumber)
+
+        guard normalizedCardNumber.isEmpty == false else {
+            isCardNumberValid = false
+            return
+        }
+
+        isCardNumberValid = CreditCardValidation.isValidCardNumber(normalizedCardNumber)
     }
 
     func clearSecureVaultModel() {
@@ -179,13 +208,18 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
 
     private func populateViewModelFromCard() {
         title = card?.title ?? ""
-        cardNumber = card?.cardNumber ?? ""
+        if let cardNumberValue = card?.cardNumber, !cardNumberValue.isEmpty {
+            cardNumber = CreditCardValidation.formattedCardNumber(cardNumberValue)
+        } else {
+            cardNumber = ""
+        }
         cardholderName = card?.cardholderName ?? ""
         cardSecurityCode = card?.cardSecurityCode ?? ""
         expirationMonth = card?.expirationMonth
         expirationYear = card?.expirationYear
 
         isDirty = false
+        validateCardNumber()
 
         isNew = card?.id == nil
 

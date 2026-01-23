@@ -83,27 +83,34 @@ struct HistoryDebugRootView: View {
     }
 
     private var tabListView: some View {
-        List(model.tabItems) { tabItem in
-            NavigationLink {
-                TabHistoryDetailView(tabItem: tabItem, tabManager: model.tabManager)
-            } label: {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(tabItem.title)
-                            .font(.system(size: 14, weight: tabItem.isCurrent ? .semibold : .regular))
-                        if let url = tabItem.urlString {
-                            Text(url)
-                                .font(.system(size: 12))
+        List {
+            Section {
+                ForEach(model.tabItems) { tabItem in
+                    NavigationLink {
+                        TabHistoryDetailView(tabItem: tabItem, tabManager: model.tabManager)
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(tabItem.title)
+                                    .font(.system(size: 14, weight: tabItem.isCurrent ? .semibold : .regular))
+                                if let url = tabItem.urlString {
+                                    Text(url)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
+                                }
+                            }
+                            Spacer()
+                            Text("\(tabItem.historyCount) items")
+                                .font(.system(size: 13))
                                 .foregroundColor(.secondary)
-                                .lineLimit(1)
                         }
+                        .padding(.vertical, 4)
                     }
-                    Spacer()
-                    Text("\(tabItem.historyCount) items")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
                 }
-                .padding(.vertical, 4)
+            } footer: {
+                Text("Total stored: \(model.totalTabHistoryCount)")
+                    .font(.system(size: 12))
             }
         }
     }
@@ -203,6 +210,7 @@ class HistoryDebugViewModel: ObservableObject {
 
     @Published private(set) var displayItems: [HistoryDisplayItem] = []
     @Published private(set) var tabItems: [TabHistoryItem] = []
+    @Published private(set) var totalTabHistoryCount: Int = 0
 
     private let database: CoreDataDatabase
     private let context: NSManagedObjectContext
@@ -230,8 +238,14 @@ class HistoryDebugViewModel: ObservableObject {
         case .allHistory:
             fetchAllHistory()
         case .perTab:
+            fetchTotalTabHistoryCount()
             Task { await loadTabItems() }
         }
+    }
+
+    private func fetchTotalTabHistoryCount() {
+        let fetchRequest = TabHistoryManagedObject.fetchRequest()
+        totalTabHistoryCount = (try? context.count(for: fetchRequest)) ?? 0
     }
 
     private func fetchAllHistory() {

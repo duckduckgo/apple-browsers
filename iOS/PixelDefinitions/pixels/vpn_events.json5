@@ -41,6 +41,12 @@
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-vpn-connection"]
+            },
+            {
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",

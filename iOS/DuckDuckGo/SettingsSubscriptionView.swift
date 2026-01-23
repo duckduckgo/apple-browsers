@@ -53,7 +53,8 @@ struct SettingsSubscriptionView: View {
                                                            userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                            wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                           dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
+                                                           dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
+                                                           featureFlagger: settingsViewModel.featureFlagger)
     }
 
     private var manageSubscriptionView: some View {
@@ -322,8 +323,7 @@ struct SettingsSubscriptionView: View {
                     label: UserText.settingsSubscriptionAiChatTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                     statusIndicator: StatusIndicatorView(status: (hasAIChatEntitlement && settingsViewModel.isAIChatEnabled) ? .on : .off),
-                    isGreyedOut: !hasAIChatEntitlement,
-                    optionalBadgeText: UserText.settingsItemNewBadge
+                    isGreyedOut: !hasAIChatEntitlement
                 )
             }
             .disabled(!hasAIChatEntitlement)
@@ -334,7 +334,8 @@ struct SettingsSubscriptionView: View {
 
             let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                  userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)
+                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
+                                                 featureFlagger: settingsViewModel.featureFlagger)
             NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: model)), isActive: $isShowingITP) {
                 SettingsCellView(
                     label: UserText.settingsPProITRTitle,

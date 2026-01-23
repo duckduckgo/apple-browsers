@@ -197,6 +197,18 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 14)
     }
 
+    func testWhenNextStepsCardsDemonstrationDaysIsAccessedThenReturnsPersistorValue() {
+        let persistor = AppearancePreferencesPersistorMock()
+        persistor.continueSetUpCardsNumberOfDaysDemonstrated = 5
+        let model = AppearancePreferences(
+            persistor: persistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+
+        XCTAssertEqual(model.nextStepsCardsDemonstrationDays, 5)
+    }
+
     func testContinueSetUpIsNotDismissedAfterSeveralDemonstrationsWithinSeveralDays() {
         // 1. app installed and launched
         var now = Date()

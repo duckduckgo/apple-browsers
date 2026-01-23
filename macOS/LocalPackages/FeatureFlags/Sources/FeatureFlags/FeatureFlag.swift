@@ -44,16 +44,15 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
-    /// Subfeature: display the Sites section inside History View
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866716610324
-    case historyViewSitesSection
-
     /// Enable WebKit page load timing performance reporting
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615625098
     case webKitPerformanceReporting
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
+
+    /// Controls automatic update downloads in REVIEW builds (off by default)
+    case autoUpdateInREVIEW
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615802881
     case updatesWontAutomaticallyRestartApp
@@ -109,6 +108,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212227266479719
     case aiChatOmnibarCluster
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
+    case aiChatSuggestions
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
     case aiChatOmnibarOnboarding
@@ -176,9 +178,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620280912
     case syncIdentities
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866478543578
-    case aiChatDataClearing
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
@@ -282,6 +281,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Next Steps cards iteration with single card displayed on New Tab page
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
     case nextStepsSingleCardIteration
+
+    /// Whether the wide event POST endpoint is enabled
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
+    case wideEventPostEndpoint
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -301,7 +304,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewSafariFilePicker,
                 .fireDialog,
                 .fireDialogIndividualSitesLink,
-                .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
                 .allowPopupsForCurrentPage,
                 .extendedUserInitiatedPopupTimeout,
@@ -314,6 +316,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarOnboarding,
                 .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
+                .wideEventPostEndpoint,
                 .memoryPressureReporting,
                 .themes:
             true
@@ -337,9 +340,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
-                .historyViewSitesSection,
                 .webExtensions,
                 .autoUpdateInDEBUG,
+                .autoUpdateInREVIEW,
                 .updatesWontAutomaticallyRestartApp,
                 .updatesSimplifiedFlow,
                 .scamSiteProtection,
@@ -358,6 +361,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
+                .aiChatSuggestions,
                 .aiChatOmnibarOnboarding,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
@@ -377,7 +381,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
-                .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
                 .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
@@ -405,7 +408,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryPressureReporting,
                 .aiChatSync,
                 .heuristicAction,
-                .nextStepsSingleCardIteration:
+                .nextStepsSingleCardIteration,
+                .wideEventPostEndpoint:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -435,9 +439,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
-        case .historyViewSitesSection:
-            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
+            return .disabled
+        case .autoUpdateInREVIEW:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
             return .remoteReleasable(.feature(.updatesWontAutomaticallyRestartApp))
@@ -481,6 +485,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarToggle))
         case .aiChatOmnibarCluster:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
+        case .aiChatSuggestions:
+            return .remoteReleasable(.feature(.duckAiChatHistory))
         case .aiChatOmnibarOnboarding:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarOnboarding))
         case .osSupportForceUnsupportedMessage:
@@ -523,8 +529,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
-        case .aiChatDataClearing:
-            return .remoteReleasable(.feature(.duckAiDataClearing))
         case .storeSerpSettings:
             return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
@@ -583,6 +587,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         case .nextStepsSingleCardIteration:
             return .disabled
+        case .wideEventPostEndpoint:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
         }
     }
 }

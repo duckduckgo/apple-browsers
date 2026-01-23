@@ -1360,6 +1360,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Page Content";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai can now help answer questions about the page you're viewing.\n\nPage content is only included when you attach it. You can change this anytime in Settings.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Got It";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Ask about this page";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "View Settings";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
 
@@ -3196,6 +3208,12 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sync & Backup";
 
+/* Settings screen cell title for toggling tracker count banner in tab switcher */
+"settings.tab.switcher.show.tracker.count" = "7-Day Tracker Count";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Tabs";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Default Text Zoom";
 
@@ -3430,6 +3448,9 @@ Take back control of your personal information with the browser designed for dat
 /* Help and support Section header */
 "subscription.help" = "Help and support";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Manage Payment or Cancel";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Manage Plan";
 
@@ -3529,6 +3550,15 @@ Take back control of your personal information with the browser designed for dat
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Your annual subscription expires on %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Your plan will downgrade to %1$@ Monthly on %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Your plan will downgrade to %1$@ on %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Your plan will downgrade to %1$@ Yearly on %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Your monthly subscription renews on %@.";
 
@@ -3549,6 +3579,15 @@ Take back control of your personal information with the browser designed for dat
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Free Trial Active";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Upgrade to %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Unlock smarter, more powerful AI";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Upgrade";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "View All Plans";
@@ -3669,6 +3708,30 @@ Take back control of your personal information with the browser designed for dat
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Bookmark All Tabs";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Hide";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "You can turn this back on in Settings > Appearance.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Hide tracker count?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Tracker count options";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Double tap to show options for hiding this banner";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Keep";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "in the last 7 days";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Increase or decrease text size across all sites.";

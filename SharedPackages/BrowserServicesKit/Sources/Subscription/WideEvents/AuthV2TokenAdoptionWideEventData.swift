@@ -22,8 +22,12 @@ import Networking
 import PixelKit
 
 public class AuthV2TokenAdoptionWideEventData: WideEventData {
-    public static let pixelName = "auth_v2_token_adoption"
-    public static let featureName = "authv2-token-adoption"
+    public static let metadata = WideEventMetadata(
+        pixelName: "auth_v2_token_adoption",
+        featureName: "authv2-token-adoption",
+        mobileMetaType: "ios-authv2-token-adoption",
+        desktopMetaType: "macos-authv2-token-adoption"
+    )
 
     public enum FailingStep: String, Codable, CaseIterable {
         case adoptingToken = "token_adoption"

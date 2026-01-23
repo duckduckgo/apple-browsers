@@ -21,16 +21,7 @@ import SwiftUI
 import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
-
-class BrowsingMenuSheetViewController: UIHostingController<BrowsingMenuSheetView> {
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        // Required for material background to become effective
-        view.backgroundColor = .clear
-    }
-}
+import Kingfisher
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -63,6 +54,8 @@ struct BrowsingMenuSheetView: View {
         static let textDotHorizontalSpacing: CGFloat = 4
 
         static let listTopPaddingAdjustment: CGFloat = 4
+
+        static let websiteHeaderHeight: CGFloat = 56
     }
 
     @Environment(\.presentationMode) var presentationMode
@@ -74,8 +67,14 @@ struct BrowsingMenuSheetView: View {
     @State private var highlightTag: BrowsingMenuModel.Entry.Tag?
     @State private var actionToPerform: (() -> Void)?
 
-    init(model: BrowsingMenuModel, highlightRowWithTag: BrowsingMenuModel.Entry.Tag? = nil, onDismiss: @escaping (_ wasActionSelected: Bool) -> Void) {
+    @ObservedObject private(set) var headerDataSource: BrowsingMenuHeaderDataSource
+
+    init(model: BrowsingMenuModel,
+         headerDataSource: BrowsingMenuHeaderDataSource,
+         highlightRowWithTag: BrowsingMenuModel.Entry.Tag? = nil,
+         onDismiss: @escaping (_ wasActionSelected: Bool) -> Void) {
         self.model = model
+        self.headerDataSource = headerDataSource
         self.onDismiss = onDismiss
         _highlightTag = State(initialValue: highlightRowWithTag)
     }
@@ -123,17 +122,27 @@ struct BrowsingMenuSheetView: View {
     @ViewBuilder
     private var headerSection: some View {
         Section {
-            if !model.headerItems.isEmpty {
-                HStack(spacing: Metrics.headerHorizontalSpacing) {
-                    ForEach(model.headerItems) { headerItem in
-                        MenuHeaderButton(entryData: headerItem) {
-                            actionToPerform = { headerItem.action() }
-                            presentationMode.wrappedValue.dismiss()
+            VStack(spacing: Metrics.headerHorizontalSpacing) {
+                if headerDataSource.isHeaderVisible {
+                    BrowsingMenuHeaderView(
+                        title: headerDataSource.title,
+                        url: headerDataSource.url,
+                        favicon: headerDataSource.favicon,
+                        easterEggLogoURL: headerDataSource.easterEggLogoURL
+                    )
+                }
+
+                if !model.headerItems.isEmpty {
+                    HStack(spacing: Metrics.headerHorizontalSpacing) {
+                        ForEach(model.headerItems) { headerItem in
+                            MenuHeaderButton(entryData: headerItem) {
+                                actionToPerform = { headerItem.action() }
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                            .frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity)
                     }
                 }
-                .background(.clear)
             }
         }
         .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
@@ -279,10 +288,85 @@ private struct MenuHeaderButton: View {
         .buttonStyle(.plain)
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
     }
+}
 
-    enum Constant {
-        static let cornerRadius: CGFloat = 10
+private struct BrowsingMenuHeaderView: View {
+
+    let title: String?
+    let url: URL?
+    let favicon: UIImage?
+    let easterEggLogoURL: URL?
+
+    private var displayURL: String? {
+        url?.host
     }
+
+    var body: some View {
+        HStack(spacing: MenuHeaderConstant.contentSpacing) {
+            faviconView
+
+            textContent
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.bottom, MenuHeaderConstant.bottomPadding)
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var faviconView: some View {
+        Group {
+            if let easterEggLogoURL {
+                KFImage(easterEggLogoURL)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else if let favicon {
+                Image(uiImage: favicon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
+                    .foregroundStyle(Color(designSystemColor: .icons))
+            }
+        }
+        .frame(width: MenuHeaderConstant.faviconSize, height: MenuHeaderConstant.faviconSize)
+        .menuHeaderEntryShape()
+        .padding(MenuHeaderConstant.faviconPadding)
+        .background(Color(designSystemColor: .surface))
+        .menuHeaderEntryShape()
+    }
+
+    @ViewBuilder
+    private var textContent: some View {
+        if let title, !title.isEmpty {
+            VStack(alignment: .leading, spacing: MenuHeaderConstant.textSpacing) {
+                Text(title)
+                    .daxHeadline()
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
+                    .lineLimit(1)
+
+                if let displayURL {
+                    Text(displayURL)
+                        .daxCaption()
+                        .foregroundStyle(Color(designSystemColor: .textSecondary))
+                        .lineLimit(1)
+                }
+            }
+        } else if let displayURL {
+            Text(displayURL)
+                .daxHeadline()
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+                .lineLimit(1)
+        }
+    }
+}
+
+private enum MenuHeaderConstant {
+    static let cornerRadius: CGFloat = 10
+    static let faviconSize: CGFloat = 32
+    static let faviconPadding: CGFloat = 8
+    static let contentSpacing: CGFloat = 12
+    static let textSpacing: CGFloat = 2
+    static let bottomPadding: CGFloat = 8
 }
 
 private extension View {
@@ -294,8 +378,8 @@ private extension View {
                 .contentShape(ButtonBorderShape.automatic)
         } else {
             self
-                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.cornerRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.cornerRadius, style: .continuous))
         }
     }
 

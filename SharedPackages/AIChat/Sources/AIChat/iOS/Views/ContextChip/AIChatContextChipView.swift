@@ -45,11 +45,6 @@ public final class AIChatContextChipView: UIView {
 
         static let contentSpacing: CGFloat = 8
         static let labelSpacing: CGFloat = 2
-        static let separatorHeight: CGFloat = 1
-
-        static let infoIconSize: CGFloat = 16
-        static let infoRowSpacing: CGFloat = 6
-        static let infoRowVerticalPadding: CGFloat = 8
     }
 
     // MARK: - Properties
@@ -60,11 +55,6 @@ public final class AIChatContextChipView: UIView {
     /// The subtitle text displayed below the title.
     public var subtitle: String = "" {
         didSet { subtitleLabel.text = subtitle }
-    }
-
-    /// The info text displayed in the footer row.
-    public var infoText: String = "" {
-        didSet { infoLabel.text = infoText }
     }
 
     // MARK: - UI Components
@@ -134,47 +124,6 @@ public final class AIChatContextChipView: UIView {
         return button
     }()
 
-    private lazy var separatorLine: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .decorationQuaternary)
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-
-    private lazy var infoRowContainer: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-
-    private lazy var infoRowStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.alignment = .center
-        stackView.spacing = Constants.infoRowSpacing
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        return stackView
-    }()
-
-    private lazy var infoIcon: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = DesignSystemImages.Glyphs.Size12.info
-        imageView.tintColor = UIColor(designSystemColor: .textSecondary)
-        imageView.contentMode = .scaleAspectFit
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
-    }()
-
-    private lazy var infoLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.daxCaptionItalic()
-        label.adjustsFontForContentSizeCategory = true
-        label.textColor = UIColor(designSystemColor: .textSecondary)
-        label.numberOfLines = 1
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-
     // MARK: - Initialization
 
     public override init(frame: CGRect) {
@@ -198,6 +147,19 @@ public final class AIChatContextChipView: UIView {
         faviconView.image = favicon ?? placeholderFavicon()
         accessibilityLabel = title
     }
+
+    /// Updates the chip content, preserving the existing favicon if the new one is nil.
+    ///
+    /// - Parameters:
+    ///   - title: The new page title to display.
+    ///   - favicon: The new favicon image. If nil, the existing favicon is preserved.
+    public func update(title: String, favicon: UIImage?) {
+        titleLabel.text = title
+        if let favicon {
+            faviconView.image = favicon
+        }
+        accessibilityLabel = title
+    }
 }
 
 // MARK: - Private Setup
@@ -216,13 +178,6 @@ private extension AIChatContextChipView {
         chipContentView.addSubview(labelsStackView)
         chipContentView.addSubview(removeButton)
         mainStackView.addArrangedSubview(chipContentView)
-
-        mainStackView.addArrangedSubview(separatorLine)
-
-        infoRowStackView.addArrangedSubview(infoIcon)
-        infoRowStackView.addArrangedSubview(infoLabel)
-        infoRowContainer.addSubview(infoRowStackView)
-        mainStackView.addArrangedSubview(infoRowContainer)
 
         setupConstraints()
         setupAccessibility()
@@ -252,15 +207,6 @@ private extension AIChatContextChipView {
             removeButton.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.removeButtonVerticalPadding),
             removeButton.widthAnchor.constraint(equalToConstant: Constants.removeButtonSize),
             removeButton.heightAnchor.constraint(equalToConstant: Constants.removeButtonSize),
-
-            separatorLine.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),
-
-            infoRowStackView.topAnchor.constraint(equalTo: infoRowContainer.topAnchor, constant: Constants.infoRowVerticalPadding),
-            infoRowStackView.centerXAnchor.constraint(equalTo: infoRowContainer.centerXAnchor),
-            infoRowStackView.bottomAnchor.constraint(equalTo: infoRowContainer.bottomAnchor, constant: -Constants.infoRowVerticalPadding),
-
-            infoIcon.widthAnchor.constraint(equalToConstant: Constants.infoIconSize),
-            infoIcon.heightAnchor.constraint(equalToConstant: Constants.infoIconSize),
         ])
     }
 

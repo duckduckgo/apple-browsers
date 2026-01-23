@@ -28,21 +28,18 @@ class AutoClearTests: XCTestCase {
     class MockFireExecutor: FireExecuting {
         
         var burnCallCount = 0
-        var burnOptions: FireOptions?
+        var burnRequest: FireRequest?
         var burnApplicationState: DataStoreWarmup.ApplicationState?
-        var burnFireContext: FireContext?
         
         weak var delegate: FireExecutorDelegate?
         
-        func prepare(for options: FireOptions) { }
+        func prepare(for request: FireRequest) { }
         
-        func burn(options: FireOptions,
-                  applicationState: DataStoreWarmup.ApplicationState,
-                  fireContext: FireContext) async {
+        func burn(request: FireRequest,
+                  applicationState: DataStoreWarmup.ApplicationState) async {
             burnCallCount += 1
-            burnOptions = options
+            burnRequest = request
             burnApplicationState = applicationState
-            burnFireContext = fireContext
         }
     }
     
@@ -115,7 +112,7 @@ class AutoClearTests: XCTestCase {
         // Then
         XCTAssertEqual(mockFireExecutor.burnCallCount, 1)
         XCTAssertEqual(mockFireExecutor.burnApplicationState, .active)
-        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnForeground)
+        XCTAssertEqual(mockFireExecutor.burnRequest?.trigger, .autoClearOnForeground)
     }
     
     func testClearDataIfEnabledWithLaunchingUsesAutoClearOnLaunchContext() async {
@@ -128,7 +125,7 @@ class AutoClearTests: XCTestCase {
         await logic.clearDataIfEnabled(launching: true, applicationState: .active)
 
         // Then
-        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnLaunch)
+        XCTAssertEqual(mockFireExecutor.burnRequest?.trigger, .autoClearOnLaunch)
     }
     
     func testClearDataIfEnabledDoesNothingWhenAutoClearDisabled() async {
@@ -156,7 +153,7 @@ class AutoClearTests: XCTestCase {
 
         // Then
         XCTAssertEqual(mockFireExecutor.burnCallCount, 1)
-        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnForeground)
+        XCTAssertEqual(mockFireExecutor.burnRequest?.trigger, .autoClearOnForeground)
     }
 
 }

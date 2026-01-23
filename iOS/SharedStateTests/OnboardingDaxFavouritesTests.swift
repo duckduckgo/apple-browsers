@@ -34,6 +34,7 @@ import Common
 import SystemSettingsPiPTutorialTestSupport
 import Combine
 import PrivacyConfig
+import AIChatTestingUtilities
 
 // swiftlint:disable force_try
 
@@ -116,6 +117,7 @@ import PrivacyConfig
                                     daxDialogsManager: DummyDaxDialogsManager(),
                                     aiChatSettings: MockAIChatSettingsProvider(),
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+                                    privacyStats: MockPrivacyStats(),
                                     voiceSearchHelper: MockVoiceSearchHelper()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
@@ -169,7 +171,8 @@ import PrivacyConfig
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
-            syncAiChatsCleaner: MockSyncAIChatsCleaning(),
+            privacyStats: MockPrivacyStats(),
+            aiChatSyncCleaner: MockAIChatSyncCleaning(),
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
         )
         let window = UIWindow(frame: UIScreen.main.bounds)

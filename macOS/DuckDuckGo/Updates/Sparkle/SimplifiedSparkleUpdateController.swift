@@ -31,9 +31,9 @@ import os.log
 
 /// Simplified Sparkle update controller.
 ///
-/// Update checks rely on Sparkle's built-in scheduling (SUScheduledCheckInterval in Info.plist,
-/// currently 3 hours) plus check-on-launch. Sparkle's `canCheckForUpdates` and `sessionInProgress`
-/// guards prevent concurrent or invalid checks.
+/// Update checks rely on Sparkle's built-in scheduling plus check-on-launch.
+/// Internal users check every 30 minutes; external users check every hour.
+/// Sparkle's `canCheckForUpdates` and `sessionInProgress` guards prevent concurrent or invalid checks.
 final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     enum Constants {
@@ -55,6 +55,17 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             }
 
             return isInternalUser ? internalRegular : externalRegular
+        }
+    }
+
+    /// Update check intervals based on user type.
+    /// Internal users check more frequently for faster update validation.
+    enum UpdateCheckInterval {
+        static let `internal`: TimeInterval = .minutes(30)
+        static let external: TimeInterval = .hours(1)
+
+        static func interval(isInternalUser: Bool) -> TimeInterval {
+            isInternalUser ? `internal` : external
         }
     }
 
@@ -102,6 +113,8 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
     private let progressState: UpdateProgressManaging = UpdateProgressState()
     private var progressCancellable: AnyCancellable?
+    private var internalUserCancellable: AnyCancellable?
+    private var featureFlagCancellable: AnyCancellable?
 
     var updateProgress: UpdateCycleProgress { progressState.updateProgress }
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { progressState.updateProgressPublisher }
@@ -157,25 +170,27 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         didSet {
             if oldValue != areAutomaticUpdatesEnabled {
                 updateWideEvent.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
+                updateAutoDownloadSettings()
 
                 // If switching to automatic while at download checkpoint, trigger download
-                if areAutomaticUpdatesEnabled && isAtDownloadCheckpoint {
+                let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: areAutomaticUpdatesEnabled)
+                if shouldAutoDownload && isAtDownloadCheckpoint {
                     progressState.resumeCallback?()
                 }
-
-                userDriver.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
-
-                // Update Sparkle settings when preference changes
-                // Always check for updates; only auto-download when FF on AND automatic enabled
-                let featureFlagEnabled = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-                updater?.automaticallyChecksForUpdates = true
-                updater?.automaticallyDownloadsUpdates = featureFlagEnabled && areAutomaticUpdatesEnabled
             }
         }
     }
 
     var isAtRestartCheckpoint: Bool { progressState.isAtRestartCheckpoint }
     var isAtDownloadCheckpoint: Bool { progressState.isAtDownloadCheckpoint }
+
+    /// Updates Sparkle auto-download settings based on current feature flags and user preference.
+    private func updateAutoDownloadSettings() {
+        let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: areAutomaticUpdatesEnabled)
+        updater?.automaticallyChecksForUpdates = true
+        updater?.automaticallyDownloadsUpdates = shouldAutoDownload
+        userDriver.areAutomaticUpdatesEnabled = shouldAutoDownload
+    }
 
     // Simplified: Always returns false - no expiration logic
     var shouldForceUpdateCheck: Bool { false }
@@ -207,16 +222,44 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
+    private let buildType: ApplicationBuildType
+
+    /// Computes whether automatic downloads should be enabled.
+    /// Static for testability - no controller state needed.
+    static func resolveAutoDownloadEnabled(
+        buildType: ApplicationBuildType,
+        featureFlagger: FeatureFlagger,
+        userPreference: Bool
+    ) -> Bool {
+        if buildType.isDebugBuild {
+            return featureFlagger.isFeatureOn(.autoUpdateInDEBUG) && userPreference
+        } else if buildType.isReviewBuild {
+            return featureFlagger.isFeatureOn(.autoUpdateInREVIEW) && userPreference
+        } else {
+            return userPreference
+        }
+    }
+
+    /// Instance wrapper for the static method - convenience for non-static contexts.
+    private func resolveAutoDownloadEnabled(userPreference: Bool) -> Bool {
+        Self.resolveAutoDownloadEnabled(
+            buildType: buildType,
+            featureFlagger: featureFlagger,
+            userPreference: userPreference
+        )
+    }
 
     // MARK: - Public
 
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          keyValueStore: ThrowingKeyValueStoring = NSApp.delegateTyped.keyValueStore,
+         buildType: ApplicationBuildType = StandardApplicationBuildType(),
          updateWideEvent: SparkleUpdateWideEvent? = nil) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
+        self.buildType = buildType
         self.internalUserDecider = internalUserDecider
         self.keyValueStore = keyValueStore
 
@@ -227,9 +270,17 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
             internalUserDecider: internalUserDecider,
             areAutomaticUpdatesEnabled: currentAutomaticUpdatesEnabled
         )
+
+        // Compute effective auto-download state before super.init() using static method
+        let shouldAutoDownload = Self.resolveAutoDownloadEnabled(
+            buildType: buildType,
+            featureFlagger: featureFlagger,
+            userPreference: currentAutomaticUpdatesEnabled
+        )
+
         self.userDriver = SimplifiedUpdateUserDriver(
             internalUserDecider: internalUserDecider,
-            areAutomaticUpdatesEnabled: currentAutomaticUpdatesEnabled,
+            areAutomaticUpdatesEnabled: shouldAutoDownload,
             onProgressChange: progressState.handleProgressChange
         )
         super.init()
@@ -238,6 +289,20 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
         progressCancellable = progressState.updateProgressPublisher
             .sink { [weak self] progress in
                 self?.handleProgressChange(progress)
+            }
+
+        // Update check interval when internal user status changes
+        internalUserCancellable = internalUserDecider.isInternalUserPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isInternal in
+                self?.updater?.updateCheckInterval = UpdateCheckInterval.interval(isInternalUser: isInternal)
+            }
+
+        // Update auto-download settings when feature flags change
+        featureFlagCancellable = featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.updateAutoDownloadSettings()
             }
 
         // Clean up abandoned flows from previous sessions before starting any new checks
@@ -344,13 +409,6 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
     }
 
     func checkForUpdateRespectingRollout() {
-#if DEBUG
-        let featureFlagOn = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-        guard featureFlagOn else {
-            Logger.updates.debug("Skipping update check - autoUpdateInDEBUG feature flag is off")
-            return
-        }
-#endif
         performUpdateCheck()
     }
 
@@ -413,13 +471,14 @@ final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController
 
         let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
 
-        let featureFlagEnabled = NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+        let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: areAutomaticUpdatesEnabled)
 
-        updater.updateCheckInterval = 10_800
+        updater.updateCheckInterval = UpdateCheckInterval.interval(isInternalUser: internalUserDecider.isInternalUser)
         // Always check for updates (so user sees update available even in manual mode)
-        // Only auto-download when FF is on AND automatic updates are enabled
+        // Only auto-download based on build-type feature flag AND automatic updates preference
         updater.automaticallyChecksForUpdates = true
-        updater.automaticallyDownloadsUpdates = featureFlagEnabled && areAutomaticUpdatesEnabled
+        updater.automaticallyDownloadsUpdates = shouldAutoDownload
+        userDriver.areAutomaticUpdatesEnabled = shouldAutoDownload
 
         try updater.start()
         self.updater = updater

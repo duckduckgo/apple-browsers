@@ -1386,6 +1386,7 @@ public struct UserText {
     public static let mainSettings = NSLocalizedString("settings.main.settings", value: "Main Settings", comment: "The name of the settings section containing main settings")
     public static let general = NSLocalizedString("settings.general", value: "General", comment: "The name of the settings subsection containing general settings")
     public static let settingsAppearanceSection = NSLocalizedString("settings.appearance", value: "Appearance", comment: "Settings screen appearance section title")
+    public static let settingsTabsSection = NSLocalizedString("settings.tabs", value: "Tabs", comment: "Settings screen section title for tab-related appearance options")
     public static let accessibility = NSLocalizedString("settings.accessibility", value: "Accessibility", comment: "Settings screen accessibility section title")
     public static let dataClearing = NSLocalizedString("settings.data.clearing", value: "Data Clearing", comment: "The name of a settings subsection related to the data clearing")
     public static let addressBar = NSLocalizedString("settings.address.bar", value: "Address Bar", comment: "Name of the settings subsection related to the address bar")
@@ -1418,11 +1419,33 @@ public struct UserText {
     public static let settingsText = NSLocalizedString("settings.text.size", value: "Default Text Zoom", comment: "Settings screen cell text for text size")
     public static let settingsAddressBarPosition = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
+    public static let tabSwitcherShowTrackerCount = NSLocalizedString("settings.tab.switcher.show.tracker.count", value: "7-Day Tracker Count", comment: "Settings screen cell title for toggling tracker count banner in tab switcher")
     public static let settingsTrackersBlockedAnimation = NSLocalizedString("settings.address.trackers.animation", value: "Show Trackers Blocked Animation", comment: "Settings screen cell title for toggling trackers blocked animation in address bar")
     public static let settingsRefreshButtonPositionTitle = NSLocalizedString("settings.refreshButton.position.title", value: "Reload Button Position", comment: "Settings screen cell text for setting the refresh button position.")
     public static let settingsRefreshButtonPositionAddressBar = NSLocalizedString("settings.refreshButton.position.addressBar", value: "Address Bar", comment: "Settings screen option to set refresh button in the address bar")
     public static let settingsRefreshButtonPositionMenu = NSLocalizedString("settings.refreshButton.position.menu", value: "Menu", comment: "Settings screen option to set refresh button in the menu")
     public static let settingsExperimentalMenu = NSLocalizedString("settings.appearance.experimental.menu", value: "Experimental Browser Menu", comment: "Settings screen cell text for experimental menu")
+
+    // Tab Switcher tracker count
+    private static let tabSwitcherTrackerCountFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter
+    }()
+
+    public static func tabSwitcherTrackerCountTitle(_ count: Int64) -> String {
+        let message = NSLocalizedString("tab.switcher.tracker.count.title", comment: "Do not translate - stringsdict entry")
+        let formattedCount = tabSwitcherTrackerCountFormatter.string(from: NSNumber(value: count)) ?? "\(count)"
+        return String.localizedStringWithFormat(message, count, formattedCount)
+    }
+    public static let tabSwitcherTrackerCountSubtitle = NSLocalizedString("tab.switcher.tracker.count.subtitle", value: "in the last 7 days", comment: "Subtitle for tracker count banner indicating time window")
+    public static let tabSwitcherTrackerCountHideTitle = NSLocalizedString("tab.switcher.tracker.count.hide.title", value: "Hide tracker count?", comment: "Alert title asking user to hide the tracker count banner")
+    public static let tabSwitcherTrackerCountHideMessage = NSLocalizedString("tab.switcher.tracker.count.hide.message", value: "You can turn this back on in Settings > Appearance.", comment: "Alert message explaining how to re-enable tracker count")
+    public static let tabSwitcherTrackerCountHideAction = NSLocalizedString("tab.switcher.tracker.count.hide.action", value: "Hide", comment: "Action button to hide tracker count banner")
+    public static let tabSwitcherTrackerCountKeepAction = NSLocalizedString("tab.switcher.tracker.count.keep.action", value: "Keep", comment: "Action button to keep showing tracker count banner")
+    public static let tabSwitcherTrackerCountInfoA11y = NSLocalizedString("tab.switcher.tracker.count.info.a11y", value: "Tracker count options", comment: "Accessibility label for tracker count info button")
+    public static let tabSwitcherTrackerCountInfoHintA11y = NSLocalizedString("tab.switcher.tracker.count.info.hint.a11y", value: "Double tap to show options for hiding this banner", comment: "Accessibility hint for tracker count info button")
 
 
     // Privacy Section
@@ -1637,11 +1660,25 @@ public struct UserText {
         return String(format: localized, expiryDate)
     }
 
-    static func pendingDowngradeInfo(tierName: String, billingPeriod: String, effectiveDate: String) -> String {
-        let format = NotLocalizedString("subscription.subscription.pending.downgrade.caption",
-                                        value: "Your plan will downgrade to %@ %@ on %@.",
-                                        comment: "Pending downgrade info. Parameters are tier name, billing period, and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'")
-        return String(format: format, tierName, billingPeriod, effectiveDate)
+    static func pendingDowngradeInfo(tierName: String, billingPeriod: DuckDuckGoSubscription.BillingPeriod, effectiveDate: String) -> String {
+        let localized: String
+
+        switch billingPeriod {
+        case .monthly:
+            localized = NSLocalizedString("subscription.subscription.pending.downgrade.monthly.caption",
+                                          value: "Your plan will downgrade to %@ Monthly on %@.",
+                                          comment: "Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'")
+        case .yearly:
+            localized = NSLocalizedString("subscription.subscription.pending.downgrade.yearly.caption",
+                                          value: "Your plan will downgrade to %@ Yearly on %@.",
+                                          comment: "Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).'")
+        case .unknown:
+            localized = NSLocalizedString("subscription.subscription.pending.downgrade.unknown.caption",
+                                          value: "Your plan will downgrade to %@ on %@.",
+                                          comment: "Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).'")
+        }
+
+        return String(format: localized, tierName, effectiveDate)
     }
 
     public static let subscriptionDevicesSectionHeader = NSLocalizedString("duckduckgo.subscription.add.to.devices.header", value: "Add your subscription to other devices", comment: "Header for section for activating subscription on other devices")
@@ -1652,14 +1689,14 @@ public struct UserText {
     public static let subscriptionManagePlan = NSLocalizedString("subscription.manage.plan", value: "Manage Plan", comment: "Manage Plan header")
     public static let subscriptionViewAllPlans = NSLocalizedString("subscription.view.all.plans", value: "View All Plans", comment: "View All Plans button to see available subscription tiers")
     public static let subscriptionPlansTitle = NSLocalizedString("subscription.plans.title", value: "Subscription Plans", comment: "Navigation title for the subscription plans page")
-    public static let subscriptionUpgradeSectionTitle = NotLocalizedString("subscription.upgrade.section.title", value: "Upgrade", comment: "Header for the upgrade section in subscription settings")
-    public static let subscriptionUpgradeSectionCaption = NotLocalizedString("subscription.upgrade.section.caption", value: "Unlock smarter, more powerful AI", comment: "Caption text in the upgrade section promoting AI features")
+    public static let subscriptionUpgradeSectionTitle = NSLocalizedString("subscription.upgrade.section.title", value: "Upgrade", comment: "Header for the upgrade section in subscription settings")
+    public static let subscriptionUpgradeSectionCaption = NSLocalizedString("subscription.upgrade.section.caption", value: "Unlock smarter, more powerful AI", comment: "Caption text in the upgrade section promoting AI features")
     public static func subscriptionUpgradeButton(tierName: String) -> String {
-        let format = NotLocalizedString("subscription.upgrade.button", value: "Upgrade to %@", comment: "Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro')")
+        let format = NSLocalizedString("subscription.upgrade.button", value: "Upgrade to %@", comment: "Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro')")
         return String(format: format, tierName.capitalized)
     }
     public static let subscriptionChangePlan = NSLocalizedString("subscription.change.plan", value: "Update Plan or Cancel", comment: "Change plan or cancel title")
-    public static let subscriptionManagePayment = NotLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
+    public static let subscriptionManagePayment = NSLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
     public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Share Feedback", comment: "Share Feedback Button")
@@ -1931,6 +1968,12 @@ public struct UserText {
     public static let aiChatAttachPageContent = NSLocalizedString("duckai.attach.page.content", value: "Attach Page Content", comment: "Menu option to attach current page content to Duck.ai chat")
     public static let aiChatContextChipSubtitle = NSLocalizedString("duckai.context.chip.subtitle", value: "Page Content", comment: "Subtitle shown on the context chip indicating page content is attached")
     public static let aiChatContextChipInfoFooter = NSLocalizedString("duckai.context.chip.info", value: "Sent with your message to Duck.ai", comment: "Info text shown below the context chip explaining that content will be sent with the message")
+
+    // MARK: - AI Chat Contextual Onboarding
+    public static let aiChatContextualOnboardingTitle = NSLocalizedString("duckai.contextual.onboarding.title", value: "Ask about this page", comment: "Title for the Duck.ai contextual onboarding screen")
+    public static let aiChatContextualOnboardingBody = NSLocalizedString("duckai.contextual.onboarding.body", value: "Duck.ai can now help answer questions about the page you're viewing.\n\nPage content is only included when you attach it. You can change this anytime in Settings.", comment: "Body text for the Duck.ai contextual onboarding screen explaining the feature")
+    public static let aiChatContextualOnboardingGotIt = NSLocalizedString("duckai.contextual.onboarding.gotIt", value: "Got It", comment: "Primary button text to dismiss the Duck.ai contextual onboarding screen")
+    public static let aiChatContextualOnboardingViewSettings = NSLocalizedString("duckai.contextual.onboarding.viewSettings", value: "View Settings", comment: "Secondary button text to open settings from the Duck.ai contextual onboarding screen")
 
     // MARK: - AI Features Picker Footer
     public static let settingsAIPickerFooterDescription = NSLocalizedString(

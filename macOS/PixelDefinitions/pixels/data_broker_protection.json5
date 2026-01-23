@@ -309,23 +309,7 @@
                 "type": "string"
             },
             "dbpActionId",
-            {
-                "key": "action_type",
-                "description": "Type of action that failed",
-                "type": "string",
-                "enum": [
-                    "extract",
-                    "navigate",
-                    "fillForm",
-                    "click",
-                    "expectation",
-                    "emailConfirmation",
-                    "getCaptchaInfo",
-                    "solveCaptcha",
-                    "condition",
-                    "unknown"
-                ]
-            },
+            "dbpActionType",
             {
                 "key": "vpn_connection_state",
                 "description": "Reported VPN connection state when the failure happened",
@@ -649,6 +633,12 @@
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-pir-opt-out-submission"]
+            },
+            {
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
@@ -685,6 +675,12 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-pir-scan-attempt"]
+            },
             {
                 "key": "feature.name",
                 "type": "string",
@@ -734,6 +730,12 @@
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-pir-opt-out-confirmation"]
+            },
+            {
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
@@ -750,6 +752,86 @@
                 "type": "string",
                 "description": "Duration in milliseconds between the record being found and the opt-out confirmation"
             }
+        ]
+    },
+    "m_mac_dbp_search_stage_main_status_success": {
+        "description": "Fired when a PIR scan completes successfully with matches.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            {
+                "key": "num_found",
+                "description": "Number of matches found during the scan",
+                "type": "string"
+            },
+            {
+                "key": "duration",
+                "description": "Total duration of the scan in milliseconds",
+                "type": "number"
+            },
+            "dbpStageTries",
+            {
+                "key": "is_manual_scan",
+                "description": "Whether the scan was initiated manually by the user",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "vpn_connection_state",
+                "description": "Reported VPN connection state when the scan completed",
+                "type": "string"
+            },
+            {
+                "key": "vpn_bypass",
+                "description": "VPN bypass status when the scan completed",
+                "type": "string",
+                "enum": ["on", "off", "unsupported", "unknown"]
+            },
+            "dbpParentBroker",
+            "dbpIsAuthenticated"
+        ]
+    },
+    "m_mac_dbp_search_stage_main_status_no_results": {
+        "description": "Fired when a PIR scan completes with no matches.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            {
+                "key": "duration",
+                "description": "Total duration of the scan in milliseconds",
+                "type": "number"
+            },
+            "dbpStageTries",
+            {
+                "key": "is_manual_scan",
+                "description": "Whether the scan was initiated manually by the user",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "vpn_connection_state",
+                "description": "Reported VPN connection state when the scan completed",
+                "type": "string"
+            },
+            {
+                "key": "vpn_bypass",
+                "description": "VPN bypass status when the scan completed",
+                "type": "string",
+                "enum": ["on", "off", "unsupported", "unknown"]
+            },
+            "dbpParentBroker",
+            "dbpActionId",
+            "dbpActionType",
+            "dbpIsAuthenticated"
         ]
     },
     "m_mac_dbp_search_stage_main_status_error": {
@@ -797,23 +879,8 @@
             },
             "dbpParentBroker",
             "dbpActionId",
-            {
-                "key": "action_type",
-                "description": "Type of action that produced the error",
-                "type": "string",
-                "enum": [
-                    "extract",
-                    "navigate",
-                    "fillForm",
-                    "click",
-                    "expectation",
-                    "emailConfirmation",
-                    "getCaptchaInfo",
-                    "solveCaptcha",
-                    "condition",
-                    "unknown"
-                ]
-            }
+            "dbpActionType",
+            "dbpIsAuthenticated"
         ]
     },
     "m_mac_dbp_data_broker_action-failed_error": {
@@ -851,46 +918,19 @@
         "description": "Fired daily for active PIR users",
         "owners": ["quanganhdo"],
         "triggers": ["scheduled"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "isAuthenticated",
-                "description": "Whether the user is authenticated",
-                "type": "string",
-                "enum": ["true", "false"]
-            }
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated"]
     },
     "m_mac_dbp_engagement_wau": {
         "description": "Fired weekly for active PIR users",
         "owners": ["quanganhdo"],
         "triggers": ["scheduled"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "isAuthenticated",
-                "description": "Whether the user is authenticated",
-                "type": "string",
-                "enum": ["true", "false"]
-            }
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated"]
     },
     "m_mac_dbp_engagement_mau": {
         "description": "Fired monthly for active PIR users",
         "owners": ["quanganhdo"],
         "triggers": ["scheduled"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "isAuthenticated",
-                "description": "Whether the user is authenticated",
-                "type": "string",
-                "enum": ["true", "false"]
-            }
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated"]
     },
     "m_mac_dbp_weekly_child-broker_orphaned-optouts": {
         "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",
@@ -910,12 +950,7 @@
                 "description": "Number of calculated orphaned records",
                 "type": "number"
             },
-            {
-                "key": "isAuthenticated",
-                "description": "Whether the user is authenticated",
-                "type": "string",
-                "enum": ["true", "false"]
-            }
+            "dbpIsAuthenticated"
         ]
     },
     "m_mac_dbp_event_scanning-events_new-match": {

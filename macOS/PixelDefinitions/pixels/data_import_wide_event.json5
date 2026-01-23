@@ -19,6 +19,12 @@
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-data-import"]
+            },
+            {
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
@@ -63,7 +69,7 @@
                 "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_status_reason",
                 "type": "string",
                 "description": "Optional reason accompanying the per-type status",
-                "enum": ["partial_data", "timeout"]
+                "enum": ["partial_data", "timeout", "document_picker_cancelled"]
             },
             // Overall latency
             {

@@ -135,8 +135,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
         self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
                                                             allowedDomains: allowedDomains,
-                                                            userScriptsDependencies: nil)
-
+                                                            userScriptsDependencies: nil,
+                                                            featureFlagger: featureFlagger)
 
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,

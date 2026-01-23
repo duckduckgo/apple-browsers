@@ -78,6 +78,9 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionTierOptionsSuccess
     case subscriptionTierOptionsFailure(error: Error)
     case subscriptionTierOptionsUnexpectedProTier
+    // Plan Change
+    case subscriptionViewAllPlansClick
+    case subscriptionUpgradeClick
     // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionInvalidRefreshTokenSignedOut
@@ -167,6 +170,9 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionTierOptionsSuccess: return "m_mac_\(appDistribution)_subscription_tier-options_success"
         case .subscriptionTierOptionsFailure: return "m_mac_\(appDistribution)_subscription_tier-options_failure"
         case .subscriptionTierOptionsUnexpectedProTier: return "m_mac_\(appDistribution)_subscription_tier-options_unexpected-pro-tier"
+            // Plan Change
+        case .subscriptionViewAllPlansClick: return "m_mac_\(appDistribution)_subscription_settings_view-all-plans_click"
+        case .subscriptionUpgradeClick: return "m_mac_\(appDistribution)_subscription_settings_upgrade_click"
             // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
@@ -310,7 +316,9 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionTierOptionsRequested,
                 .subscriptionTierOptionsSuccess,
                 .subscriptionTierOptionsFailure,
-                .subscriptionTierOptionsUnexpectedProTier:
+                .subscriptionTierOptionsUnexpectedProTier,
+                .subscriptionViewAllPlansClick,
+                .subscriptionUpgradeClick:
             return [.pixelSource]
         }
     }

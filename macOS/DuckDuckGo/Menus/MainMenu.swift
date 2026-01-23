@@ -938,6 +938,7 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
+            NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
 #if SPARKLE
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
 #endif

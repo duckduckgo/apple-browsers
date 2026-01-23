@@ -93,7 +93,7 @@ extension UserText {
     static let pmSignInToManageEmail = NSLocalizedString("pm.signin.to.manage", value: "%@ to manage your Duck Addresses on this device.", comment: "Message displayed to the user when they are logged out of Email protection.")
     static let pmEnableEmailProtection = NSLocalizedString("pm.enable.email.protection", value: "Enable Email Protection", comment: "Text link to email protection website")
     static let pmCardNumber = NSLocalizedString("pm.card.number", value: "Card Number", comment: "Label for card number title")
-    static let pmCardholderName = NSLocalizedString("pm.card.cardholder-name", value: "Cardholder Name", comment: "Label for cardholder name title")
+    static let pmCardholderName = NSLocalizedString("pm.card.cardholder-name", value: "Name on card", comment: "Label for cardholder name title")
     static let pmCardVerificationValue = NSLocalizedString("pm.card.cvv", value: "CVV", comment: "Label for CVV title")
     static let pmCardExpiration = NSLocalizedString("pm.card.expiration-date", value: "Expiration Date", comment: "Label for expiration date title")
     static let pmCardExpiresFormat = NSLocalizedString("pm.card.expires.format", value: "Expires: %@", comment: "Label for credit card expiration date. %@ will be replaced with the formatted date (e.g., '02/2025')")

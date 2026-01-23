@@ -57,14 +57,14 @@ struct PasswordManagementCreditCardItemView: View {
 
                     ExpirationField()
 
-                    EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName, accessibilityIdentifier: "Cardholder Name TextField", placeholder: UserText.pmCardholderNamePlaceholder)
-
                     SecureEditableCreditCardField(textFieldValue: $model.cardSecurityCode,
                                                   title: UserText.pmCardVerificationValue,
                                                   hiddenTextLength: 3,
                                                   toolTipHideText: UserText.autofillHideCardCvvTooltip,
                                                   toolTipShowText: UserText.autofillShowCardCvvTooltip,
                                                   placeholder: UserText.pmCardVerificationValuePlaceholder)
+
+                    EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName, accessibilityIdentifier: "Cardholder Name TextField", placeholder: UserText.pmCardholderNamePlaceholder)
 
                     Spacer(minLength: 0)
 
@@ -330,7 +330,6 @@ private struct SecureEditableCreditCardField: View {
 
                         TextField(placeholder, text: $textFieldValue)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding(.bottom, interItemSpacing)
                             .accessibility(identifier: "Security Code TextField")
 
                     }

@@ -2567,6 +2567,7 @@ extension AddressBarButtonsViewController: NavigationBarBadgeAnimatorDelegate {
     private func playShieldAnimation(for url: URL) {
         guard let tabViewModel, !tabViewModel.isShowingErrorPage else {
             Logger.general.debug("BadgeAnimation: shield animation aborted (error page active)")
+            privacyDashboardButton.isAnimationEnabled = true
             buttonsBadgeAnimator.isShieldAnimationInProgress = false
             updatePrivacyEntryPointIcon()
             buttonsBadgeAnimator.processNextAnimation()

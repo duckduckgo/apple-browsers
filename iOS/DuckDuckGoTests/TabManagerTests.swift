@@ -26,8 +26,6 @@ import PersistenceTestingUtils
 import BrowserServicesKitTestsUtils
 import Combine
 
-// swiftlint:disable force_try
-
 @MainActor
 final class TabManagerTests: XCTestCase {
 

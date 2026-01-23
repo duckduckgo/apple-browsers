@@ -315,6 +315,7 @@ private extension DataBrokerProtectionWebViewHandler {
         addressField.cell?.lineBreakMode = .byTruncatingTail
         addressField.usesSingleLineMode = true
         addressBarTextField = addressField
+        updateAddressBar(with: webView?.url)
 
         let copyButton = NSButton(title: "Copy URL", target: self, action: #selector(copyURLFromAddressBar))
         copyButton.setContentHuggingPriority(.required, for: .horizontal)

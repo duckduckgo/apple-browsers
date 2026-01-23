@@ -166,5 +166,3 @@ final class TabManagerTests: XCTestCase {
     }
 
 }
-
-// swiftlint:enable force_try

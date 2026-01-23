@@ -138,6 +138,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     func navigateToPlans(goToUpgrade: Bool = false) {
         guard let platform = state.subscriptionInfo?.platform else { return }
 
+        // Fire appropriate pixel
+        if goToUpgrade {
+            Pixel.fire(pixel: .subscriptionUpgradeClick)
+        } else {
+            Pixel.fire(pixel: .subscriptionViewAllPlansClick)
+        }
+
         switch platform {
         case .apple:
             if goToUpgrade {

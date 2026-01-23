@@ -2966,6 +2966,11 @@
 		B5BD99652EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */; };
 		B5C2886B2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */; };
 		B5C2886C2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */; };
+		B5C980EB2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */; };
+		B5C980EC2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */; };
+		B5C980F72F228EE300655B21 /* MemoryAllocationStatsMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980F62F228EE300655B21 /* MemoryAllocationStatsMetric.swift */; };
+		B5C980FA2F229EB800655B21 /* XCUIApplication+AllocationStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980F92F229EB800655B21 /* XCUIApplication+AllocationStats.swift */; };
+		B5C980FF2F229F5C00655B21 /* XCTOptions+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980FE2F229F5C00655B21 /* XCTOptions+Helpers.swift */; };
 		B5CBB60B2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
 		B5CBB60C2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
 		B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
@@ -3436,6 +3441,10 @@
 		BB6B4EE72EE7483D00FE23E2 /* QuitSurveyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6B4EE52EE7483D00FE23E2 /* QuitSurveyViewModel.swift */; };
 		BB6B4EE82EE7483D00FE23E2 /* QuitSurveyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6B4EE42EE7483D00FE23E2 /* QuitSurveyView.swift */; };
 		BB6B4EE92EE7483D00FE23E2 /* QuitSurveyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6B4EE52EE7483D00FE23E2 /* QuitSurveyViewModel.swift */; };
+		BB6C58672EFF01CA00B07E6B /* BaseURLDebugSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6C58662EFF01CA00B07E6B /* BaseURLDebugSettings.swift */; };
+		BB6C58682EFF01CA00B07E6B /* BaseURLDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6C58652EFF01CA00B07E6B /* BaseURLDebugMenu.swift */; };
+		BB6C58692EFF01CA00B07E6B /* BaseURLDebugSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6C58662EFF01CA00B07E6B /* BaseURLDebugSettings.swift */; };
+		BB6C586A2EFF01CA00B07E6B /* BaseURLDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6C58652EFF01CA00B07E6B /* BaseURLDebugMenu.swift */; };
 		BB72939D2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB72939E2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */; };
@@ -5817,6 +5826,10 @@
 		B5AE99522E84A5D900F45912 /* ThemeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeName.swift; sourceTree = "<group>"; };
 		B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemedTextFieldStyle.swift; sourceTree = "<group>"; };
 		B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CASpringAnimationExtension.swift; sourceTree = "<group>"; };
+		B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryAllocationStatsExporter.swift; sourceTree = "<group>"; };
+		B5C980F62F228EE300655B21 /* MemoryAllocationStatsMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryAllocationStatsMetric.swift; sourceTree = "<group>"; };
+		B5C980F92F229EB800655B21 /* XCUIApplication+AllocationStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+AllocationStats.swift"; sourceTree = "<group>"; };
+		B5C980FE2F229F5C00655B21 /* XCTOptions+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCTOptions+Helpers.swift"; sourceTree = "<group>"; };
 		B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTitleView.swift; sourceTree = "<group>"; };
 		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
@@ -6130,6 +6143,8 @@
 		BB6B34132E78B807004E4ACE /* Update.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Update.swift; sourceTree = "<group>"; };
 		BB6B4EE42EE7483D00FE23E2 /* QuitSurveyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyView.swift; sourceTree = "<group>"; };
 		BB6B4EE52EE7483D00FE23E2 /* QuitSurveyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyViewModel.swift; sourceTree = "<group>"; };
+		BB6C58652EFF01CA00B07E6B /* BaseURLDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseURLDebugMenu.swift; sourceTree = "<group>"; };
+		BB6C58662EFF01CA00B07E6B /* BaseURLDebugSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseURLDebugSettings.swift; sourceTree = "<group>"; };
 		BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionTests.swift; sourceTree = "<group>"; };
 		BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowTests.swift; sourceTree = "<group>"; };
 		BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresenting.swift; sourceTree = "<group>"; };
@@ -7770,6 +7785,8 @@
 		37C3210D2F1E80FC008F4604 /* MemoryUsageTests */ = {
 			isa = PBXGroup;
 			children = (
+				B5C980FB2F229ECF00655B21 /* Extensions */,
+				B5C980F82F2298D900655B21 /* Tools */,
 				B59845C52F22774C00A25DA4 /* MemoryUsageTests.swift */,
 				37C321132F1E81CA008F4604 /* macOS Memory Usage Tests.xctestplan */,
 			);
@@ -10956,6 +10973,8 @@
 		AADC60E92493B305008F8EF7 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				BB6C58652EFF01CA00B07E6B /* BaseURLDebugMenu.swift */,
+				BB6C58662EFF01CA00B07E6B /* BaseURLDebugSettings.swift */,
 				AA7EB6E427E7D6DC00036718 /* AnimationView.swift */,
 				4BA71ED92B4B81E80002EBCE /* AppVersionExtension.swift */,
 				AA61C0D12727F59B00E6B681 /* ArrayExtension.swift */,
@@ -11178,6 +11197,23 @@
 				B546599C2F105847000009DE /* ThemePopoverDecider.swift */,
 			);
 			path = Themes;
+			sourceTree = "<group>";
+		};
+		B5C980F82F2298D900655B21 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				B5C980F62F228EE300655B21 /* MemoryAllocationStatsMetric.swift */,
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		B5C980FB2F229ECF00655B21 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				B5C980FE2F229F5C00655B21 /* XCTOptions+Helpers.swift */,
+				B5C980F92F229EB800655B21 /* XCUIApplication+AllocationStats.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		B5E197EA2E8C645500C447CC /* VisualRefresh */ = {
@@ -12160,6 +12196,7 @@
 		ED7478162E845958008628A1 /* AppHealth */ = {
 			isa = PBXGroup;
 			children = (
+				B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */,
 				3727A5A62F17F57A002E10E1 /* MemoryPressureReporter.swift */,
 				37E4778F2EF006E1006369D6 /* MemoryUsageMonitor.swift */,
 				ED4470142EB2676A003DC918 /* HangReportingFeatureMonitor.swift */,
@@ -14149,6 +14186,8 @@
 				B696AFFC2AC5924800C93203 /* FileLineError.swift in Sources */,
 				F1D43AEF2B98D8DF00BAB743 /* MainMenuActions+VanillaBrowser.swift in Sources */,
 				B6E1491129A5C30A00AAFBE8 /* FBProtectionTabExtension.swift in Sources */,
+				BB6C58692EFF01CA00B07E6B /* BaseURLDebugSettings.swift in Sources */,
+				BB6C586A2EFF01CA00B07E6B /* BaseURLDebugMenu.swift in Sources */,
 				1EC711502D033D200009EB5C /* UserText+NetworkProtection+Shared.swift in Sources */,
 				EEEFA3472D145328006A3F8A /* SyncPixels.swift in Sources */,
 				3706FAC4293F65D500E42796 /* PrintingUserScript.swift in Sources */,
@@ -15047,6 +15086,7 @@
 				B5DE8DAA2EBE292F005C5EF4 /* SpinnerView.swift in Sources */,
 				56F0CB2F2E20FBD2000FF58B /* SubscriptionTabExtension.swift in Sources */,
 				3706FC65293F65D500E42796 /* BurnerHomePageViewController.swift in Sources */,
+				B5C980EB2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */,
 				371209262C232E76003ADF3D /* RemoteMessagingClient.swift in Sources */,
 				3706FC67293F65D500E42796 /* OperatingSystemVersionExtension.swift in Sources */,
 				7B6545EE2C0779D500115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift in Sources */,
@@ -15707,13 +15747,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				37C321552F1F8C82008F4604 /* XCUIElementExtension.swift in Sources */,
+				B5C980FF2F229F5C00655B21 /* XCTOptions+Helpers.swift in Sources */,
 				37C321562F1F8C82008F4604 /* XCUIElementQueryExtension.swift in Sources */,
 				37C321572F1F8C82008F4604 /* XCUIApplicationExtension.swift in Sources */,
 				37C321582F1F8C82008F4604 /* NSPredicateExtension.swift in Sources */,
+				B5C980F72F228EE300655B21 /* MemoryAllocationStatsMetric.swift in Sources */,
 				37C321592F1F8C82008F4604 /* XCUIElementTypeExtension.swift in Sources */,
 				37C3215A2F1F8C82008F4604 /* XCUIElementSnapshotExtension.swift in Sources */,
 				37C3215B2F1F8C82008F4604 /* UITests.swift in Sources */,
 				B59845C62F22777700A25DA4 /* MemoryUsageTests.swift in Sources */,
+				B5C980FA2F229EB800655B21 /* XCUIApplication+AllocationStats.swift in Sources */,
 				37C3215C2F1F8C82008F4604 /* StringExtensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -16252,6 +16295,8 @@
 				AA7E919F287872EA00AB6B62 /* VisitViewModel.swift in Sources */,
 				467D16682D0C98D5007C020A /* CrashReportSenderExtensions.swift in Sources */,
 				7BD7B0012C19D3830039D20A /* VPNIPCResources.swift in Sources */,
+				BB6C58672EFF01CA00B07E6B /* BaseURLDebugSettings.swift in Sources */,
+				BB6C58682EFF01CA00B07E6B /* BaseURLDebugMenu.swift in Sources */,
 				EE18864F2EB2685300A46272 /* NewImportMoreInfoView.swift in Sources */,
 				C1935A1B2C88F9ED001AD72D /* SyncPromoViewModel.swift in Sources */,
 				37A6A8F12AFCC988008580A3 /* FaviconsFetcherOnboarding.swift in Sources */,
@@ -17112,6 +17157,7 @@
 				9F33445E2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift in Sources */,
 				4B9292D92667124B00AD2C21 /* BookmarkListTreeControllerDataSource.swift in Sources */,
 				B65536A62685B82B00085A79 /* Permissions.swift in Sources */,
+				B5C980EC2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */,
 				EE3ED86F2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift in Sources */,
 				B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */,
 				AAC82C60258B6CB5009B6B42 /* TabPreviewWindowController.swift in Sources */,

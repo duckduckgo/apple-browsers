@@ -19,6 +19,7 @@
 import Foundation
 import XCTest
 import ObjectiveC
+import SharedTestUtilities
 
 /// Helper values for the UI tests
 enum UITests {

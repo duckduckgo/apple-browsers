@@ -77,6 +77,11 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
     case syncManuallyDisabled = "com.duckduckgo.app.key.debug.SyncManuallyDisabled"
     case syncWasDisabledUnexpectedlyPixelFired = "com.duckduckgo.app.key.debug.SyncWasDisabledUnexpectedlyPixelFired"
 
+    // MARK: - BaseURLDebugSettings
+
+    case debugCustomBaseURL = "debug_customBaseURL"
+    case debugCustomDuckAIBaseURL = "debug_customDuckAIBaseURL"
+
     // MARK: - Add more app-wide keys here as they are migrated from UserDefaultsWrapper
 
 }

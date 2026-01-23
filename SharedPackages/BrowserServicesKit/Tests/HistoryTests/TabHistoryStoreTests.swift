@@ -111,8 +111,6 @@ final class TabHistoryStoreTests: XCTestCase {
         XCTAssertEqual(remainingRecords.first?.tabID, tabID3)
     }
 
-    
-
     // MARK: - Clean Orphaned Tab History Tests
 
     func testWhenCleanOrphanedTabHistoryIsCalled_ThenOrphanedRecordsAreDeleted() async throws {

@@ -33,6 +33,9 @@ extension UserText {
     static let pmEmptyStatePasswordsDefaultDescriptionAutolockOff = NSLocalizedString("pm.empty.default.passwords.description.extended.v2.autolock.off",
                                                                              value: "Passwords are encrypted.",
                                                                              comment: "Label for default empty state description when the autolock feature is off")
+    static let pmEmptyStateCardsDefaultDescription = NSLocalizedString("pm.empty.default.cards.description.extended.v2",
+                                                                  value: "Credit cards are stored securely on your device.",
+                                                                  comment: "Label for empty state description when user has no credit cards saved")
     static let pmEmptyStateDefaultDescription = NSLocalizedString("pm.empty.default.description.extended.v2",
                                                                   value: "Passwords and credit cards are encrypted. Nobody but you can see them, not even us.",
                                                                   comment: "Label for default empty state description")
@@ -49,7 +52,7 @@ extension UserText {
 
     static let pmEmptyStateLoginsTitle = NSLocalizedString("pm.empty.logins.title2", value: "No passwords added yet", comment: "Label for logins empty state title")
     static let pmEmptyStateIdentitiesTitle = NSLocalizedString("pm.empty.identities.title", value: "No Identities", comment: "Label for identities empty state title")
-    static let pmEmptyStateCardsTitle = NSLocalizedString("pm.empty.cards.title", value: "No Cards", comment: "Label for cards empty state title")
+    static let pmEmptyStateCardsTitle = NSLocalizedString("pm.empty.cards.title", value: "No credit cards saved yet", comment: "Label for cards empty state title")
     static let pmEmptyStateNotesTitle = NSLocalizedString("pm.empty.notes.title", value: "No Notes", comment: "Label for notes empty state title")
 
     static let pmAddItem = NSLocalizedString("pm.add.new", value: "Add New", comment: "Add New item button")

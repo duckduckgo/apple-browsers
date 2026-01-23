@@ -309,6 +309,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
+
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
+    case onboardingRebranding
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -420,7 +423,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .tabSwitcherTrackerCount,
              .burnSingleTab,
              .uiTestFeatureFlag,
-             .uiTestExperiment:
+             .uiTestExperiment,
+             .onboardingRebranding:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -652,6 +656,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
+        case .onboardingRebranding:
+            return .disabled
         }
     }
 }

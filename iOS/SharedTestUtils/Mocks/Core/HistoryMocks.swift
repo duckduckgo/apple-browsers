@@ -28,6 +28,9 @@ class MockHistoryManager: HistoryManaging {
     
     var addVisitCalls = [URL]()
     var updateTitleIfNeededCalls = [(title: String, url: URL)]()
+    var tabHistoryCalls: [String] = []
+    var removeTabHistoryCalls: [[String]] = []
+    var tabHistoryResult: [URL] = []
 
     let historyCoordinator: HistoryCoordinating
     var isEnabledByUser: Bool
@@ -72,22 +75,41 @@ class MockHistoryManager: HistoryManaging {
     }
     
     func tabHistory(tabID: String) async throws -> [URL] {
-        return []
+        tabHistoryCalls.append(tabID)
+        return tabHistoryResult
     }
     
     func removeTabHistory(for tabIDs: [String]) async {
+        removeTabHistoryCalls.append(tabIDs)
     }
 
  }
 
-struct MockTabHistoryCoordinating: TabHistoryCoordinating {
+class MockTabHistoryCoordinating: TabHistoryCoordinating {
+    var addVisitCalls: [(url: URL, tabID: String?)] = []
+    var tabHistoryCalls: [String] = []
+    var removeVisitsCalls: [[String]] = []
+    var tabHistoryResult: [URL] = []
+
     func tabHistory(tabID: String) async throws -> [URL] {
-        return []
+        tabHistoryCalls.append(tabID)
+        return tabHistoryResult
     }
     
     func addVisit(of url: URL, tabID: String?) async throws {
+        addVisitCalls.append((url, tabID))
     }
     
     func removeVisits(for tabIDs: [String]) async throws {
+        removeVisitsCalls.append(tabIDs)
+    }
+}
+
+class SpyHistoryCoordinator: NullHistoryCoordinator {
+    var addVisitCalls: [(url: URL, tabID: String?)] = []
+    
+    override func addVisit(of url: URL, at date: Date, tabID: String?) -> Visit? {
+        addVisitCalls.append((url, tabID))
+        return nil
     }
 }

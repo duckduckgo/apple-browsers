@@ -21,12 +21,14 @@ import Foundation
 import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
+import DesignResourcesKit
 
 private let interItemSpacing: CGFloat = 18
 private let itemSpacing: CGFloat = 13
 
 struct PasswordManagementIdentityItemView: View {
 
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     @EnvironmentObject var model: PasswordManagementIdentityModel
 
     var body: some View {
@@ -41,7 +43,7 @@ struct PasswordManagementIdentityItemView: View {
                 if editMode {
 
                     RoundedRectangle(cornerRadius: 8)
-                        .foregroundColor(Color(.editingPanel))
+                        .foregroundColor(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
                         .shadow(radius: 6)
 
                 }
@@ -80,6 +82,7 @@ struct PasswordManagementIdentityItemView: View {
 
             }
             .padding(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 10))
+            .environmentObject(themeManager)
 
         }
 
@@ -89,6 +92,7 @@ struct PasswordManagementIdentityItemView: View {
 
 private struct IdentificationView: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementIdentityModel
 
     var body: some View {
@@ -97,7 +101,7 @@ private struct IdentificationView: View {
             if !model.firstName.isEmpty || !model.middleName.isEmpty || !model.lastName.isEmpty || model.isInEditMode {
                 Text(UserText.pmIdentification)
                     .bold()
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: themeManager.designColorPalette))
                     .padding(.bottom, 20)
             }
 
@@ -208,6 +212,7 @@ private struct IdentificationView: View {
 
 private struct AddressView: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementIdentityModel
 
     var body: some View {
@@ -221,7 +226,7 @@ private struct AddressView: View {
                 model.isInEditMode {
                 Text("Address", comment: "Title of the section of the Identities manager where the user can add/modify an address (street city etc,)")
                     .bold()
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: themeManager.designColorPalette))
                     .padding(.bottom, 20)
             }
 
@@ -267,6 +272,7 @@ private struct AddressView: View {
 
 private struct ContactInfoView: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementIdentityModel
 
     var body: some View {
@@ -275,7 +281,7 @@ private struct ContactInfoView: View {
             if !model.homePhone.isEmpty || !model.mobilePhone.isEmpty || !model.emailAddress.isEmpty || model.isInEditMode {
                 Text("Contact Info", comment: "Title of the section of the Identities manager where the user can add/modify contact info (phone, email address)")
                     .bold()
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: themeManager.designColorPalette))
                     .padding(.bottom, 20)
             }
 
@@ -332,7 +338,6 @@ private struct Buttons: View {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
             }
 
             Spacer()
@@ -341,7 +346,6 @@ private struct Buttons: View {
                 Button(UserText.pmCancel) {
                     model.cancel()
                 }
-                .buttonStyle(StandardButtonStyle())
 
                 Button(UserText.pmSave) {
                     model.save()
@@ -353,12 +357,10 @@ private struct Buttons: View {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
 
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-                .buttonStyle(StandardButtonStyle())
 
             }
 

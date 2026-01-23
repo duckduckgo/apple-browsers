@@ -22,12 +22,14 @@ import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
 import DesignResourcesKitIcons
+import DesignResourcesKit
 
 private let interItemSpacing: CGFloat = 23
 private let itemSpacing: CGFloat = 13
 
 struct PasswordManagementCreditCardItemView: View {
 
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     @EnvironmentObject var model: PasswordManagementCreditCardModel
 
     var body: some View {
@@ -40,7 +42,7 @@ struct PasswordManagementCreditCardItemView: View {
                 if model.isInEditMode {
 
                     RoundedRectangle(cornerRadius: 8)
-                        .foregroundColor(Color(.editingPanel))
+                        .foregroundColor(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
                         .shadow(radius: 6)
 
                 }
@@ -76,6 +78,7 @@ struct PasswordManagementCreditCardItemView: View {
 
             }
             .padding(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 10))
+            .environmentObject(themeManager)
 
         }
 
@@ -86,15 +89,6 @@ struct PasswordManagementCreditCardItemView: View {
 private struct HeaderView: View {
 
     @EnvironmentObject var model: PasswordManagementCreditCardModel
-    @Environment(\.colorScheme) var colorScheme
-
-    private var textFieldBackgroundColor: Color {
-        colorScheme == .dark ? Color(.textEditorBackground) : Color(.textBackgroundColor)
-    }
-
-    private var shadowBorderColor: Color {
-        colorScheme == .dark ? Color(white: 1.0, opacity: 0.15) : Color(white: 0.0, opacity: 0.15)
-    }
 
     var body: some View {
 
@@ -142,7 +136,6 @@ private struct Buttons: View {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
             }
 
             Spacer()
@@ -151,7 +144,7 @@ private struct Buttons: View {
                 Button(UserText.pmCancel) {
                     model.cancel()
                 }
-                .buttonStyle(StandardButtonStyle())
+
                 Button(UserText.pmSave) {
                     model.save()
                 }
@@ -162,12 +155,10 @@ private struct Buttons: View {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
 
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-                .buttonStyle(StandardButtonStyle())
 
             }
 
@@ -233,6 +224,7 @@ private struct EditableCreditCardField: View {
 
 private struct FormattedCreditCardField: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementCreditCardModel
 
     @State var isHovering = false
@@ -267,10 +259,10 @@ private struct FormattedCreditCardField: View {
                         if shouldShowCardNumberError {
                             HStack(alignment: .center, spacing: 8) {
                                 Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
-                                    .foregroundColor(.red)
+                                    .foregroundColor(Color(designSystemColor: .destructivePrimary, palette: themeManager.designColorPalette))
                                     .frame(width: 16, height: 16)
                                 Text(UserText.pmCardNumberError)
-                                    .foregroundColor(.red)
+                                    .foregroundColor(Color(designSystemColor: .destructivePrimary, palette: themeManager.designColorPalette))
                                     .font(.system(size: 13))
                                 Spacer()
                             }

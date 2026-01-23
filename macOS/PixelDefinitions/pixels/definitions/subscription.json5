@@ -276,6 +276,12 @@
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-subscription-purchase"]
+            },
+            {
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
@@ -368,6 +374,12 @@
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-subscription-restore"]
+            },
+            {
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
@@ -446,6 +458,12 @@
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-authv2-token-refresh"]
+            },
+            {
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide event",
@@ -506,6 +524,12 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-authv2-token-adoption"]
+            },
             {
                 "key": "feature.name",
                 "type": "string",

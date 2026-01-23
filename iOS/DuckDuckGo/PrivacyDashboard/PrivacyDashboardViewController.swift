@@ -224,8 +224,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
             } catch {
                 Logger.privacyDashboard.error("Failed to generate or send the broken site report: \(error.localizedDescription, privacy: .public)")
             }
-            let message = PixelExperiment.cohort == .control ? UserText.feedbackSumbittedConfirmation : UserText.brokenSiteReportSuccessToast
-            ActionMessageView.present(message: message)
+            ActionMessageView.present(message: UserText.brokenSiteReportSuccessToast)
             privacyDashboardCloseHandler()
         }
     }
@@ -377,7 +376,7 @@ extension PrivacyDashboardViewController {
                                 jsPerformance: webVitalsResult,
                                 extendedPerformanceMetrics: privacyAwareWebVitals,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
-                                variant: PixelExperiment.cohort?.rawValue ?? "",
+                                variant: "",
                                 cookieConsentInfo: privacyInfo.cookieConsentManaged,
                                 debugFlags: privacyInfo.debugFlags,
                                 privacyExperiments: privacyInfo.privacyExperimentCohorts,

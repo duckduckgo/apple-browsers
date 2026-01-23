@@ -1,7 +1,7 @@
 //
-//  SubscriptionPurchaseWideEventData.swift
+//  SubscriptionPlanChangeWideEventData.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,27 +19,28 @@
 import Foundation
 import PixelKit
 
-public class SubscriptionPurchaseWideEventData: WideEventData {
+/// Wide event data for subscription plan changes (upgrades, downgrades, crossgrades)
+public class SubscriptionPlanChangeWideEventData: WideEventData {
     public static let metadata = WideEventMetadata(
-        pixelName: "subscription_purchase",
-        featureName: "subscription-purchase",
-        mobileMetaType: "ios-subscription-purchase",
-        desktopMetaType: "macos-subscription-purchase"
+        pixelName: "subscription_plan_change",
+        featureName: "subscription-plan-change",
+        mobileMetaType: "ios-subscription-plan-change",
+        desktopMetaType: "macos-subscription-plan-change"
     )
 
-    public static let activationTimeout: TimeInterval = .hours(4)
+    public static let confirmationTimeout: TimeInterval = .hours(4)
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
     public var appData: WideEventAppData
 
     public let purchasePlatform: PurchasePlatform
-    public var subscriptionIdentifier: String?
-    public var freeTrialEligible: Bool
+    public let changeType: ChangeType?
+    public let fromPlan: String
+    public let toPlan: String
 
-    public var createAccountDuration: WideEvent.MeasuredInterval?
-    public var completePurchaseDuration: WideEvent.MeasuredInterval?
-    public var activateAccountDuration: WideEvent.MeasuredInterval?
+    public var paymentDuration: WideEvent.MeasuredInterval?
+    public var confirmationDuration: WideEvent.MeasuredInterval?
 
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
@@ -48,29 +49,29 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
 
     private enum CodingKeys: String, CodingKey {
         case globalData, contextData, appData
-        case purchasePlatform, subscriptionIdentifier, freeTrialEligible
-        case createAccountDuration, completePurchaseDuration, activateAccountDuration
+        case purchasePlatform, changeType, fromPlan, toPlan
+        case paymentDuration, confirmationDuration
         case failingStep, errorData
     }
 
     public init(purchasePlatform: PurchasePlatform,
+                changeType: ChangeType?,
+                fromPlan: String,
+                toPlan: String,
                 failingStep: FailingStep? = nil,
-                subscriptionIdentifier: String?,
-                freeTrialEligible: Bool,
-                createAccountDuration: WideEvent.MeasuredInterval? = nil,
-                completePurchaseDuration: WideEvent.MeasuredInterval? = nil,
-                activateAccountDuration: WideEvent.MeasuredInterval? = nil,
+                paymentDuration: WideEvent.MeasuredInterval? = nil,
+                confirmationDuration: WideEvent.MeasuredInterval? = nil,
                 errorData: WideEventErrorData? = nil,
                 contextData: WideEventContextData,
                 appData: WideEventAppData = WideEventAppData(),
                 globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.purchasePlatform = purchasePlatform
+        self.changeType = changeType
+        self.fromPlan = fromPlan
+        self.toPlan = toPlan
         self.failingStep = failingStep
-        self.subscriptionIdentifier = subscriptionIdentifier
-        self.freeTrialEligible = freeTrialEligible
-        self.createAccountDuration = createAccountDuration
-        self.completePurchaseDuration = completePurchaseDuration
-        self.activateAccountDuration = activateAccountDuration
+        self.paymentDuration = paymentDuration
+        self.confirmationDuration = confirmationDuration
         self.errorData = errorData
         self.contextData = contextData
         self.appData = appData
@@ -80,7 +81,7 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
     public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
         switch trigger {
         case .appLaunch:
-            guard var interval = activateAccountDuration, let start = interval.start else {
+            guard var interval = confirmationDuration, let start = interval.start else {
                 return .complete(.unknown(reason: StatusReason.partialData.rawValue))
             }
 
@@ -90,11 +91,11 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
 
             if let checker = entitlementsChecker, await checker() {
                 interval.complete()
-                activateAccountDuration = interval
+                confirmationDuration = interval
                 return .complete(.success(reason: StatusReason.missingEntitlementsDelayedActivation.rawValue))
             }
 
-            if Date() >= start.addingTimeInterval(Self.activationTimeout) {
+            if Date() >= start.addingTimeInterval(Self.confirmationTimeout) {
                 return .complete(.unknown(reason: StatusReason.missingEntitlements.rawValue))
             }
 
@@ -103,18 +104,23 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
     }
 }
 
-extension SubscriptionPurchaseWideEventData {
+extension SubscriptionPlanChangeWideEventData {
 
     public enum PurchasePlatform: String, Codable, CaseIterable {
         case appStore = "app_store"
         case stripe
+        case playStore = "play_store"
+    }
+
+    public enum ChangeType: String, Codable, CaseIterable {
+        case upgrade = "UPGRADE"
+        case downgrade = "DOWNGRADE"
+        case crossgrade = "CROSSGRADE"
     }
 
     public enum FailingStep: String, Codable, CaseIterable {
-        case flowStart = "FLOW_START"
-        case accountCreate = "ACCOUNT_CREATE"
-        case accountPayment = "ACCOUNT_PAYMENT"
-        case accountActivation = "ACCOUNT_ACTIVATION"
+        case payment = "ACCOUNT_PAYMENT"
+        case confirmation = "ACCOUNT_ACTIVATION"
     }
 
     public enum StatusReason: String {
@@ -127,13 +133,14 @@ extension SubscriptionPurchaseWideEventData {
         let bucket: DurationBucket = .bucketed(Self.bucket)
 
         return Dictionary(compacting: [
-            (WideEventParameter.SubscriptionFeature.purchasePlatform, purchasePlatform.rawValue),
-            (WideEventParameter.SubscriptionFeature.failingStep, failingStep?.rawValue),
-            (WideEventParameter.SubscriptionFeature.subscriptionIdentifier, subscriptionIdentifier),
-            (WideEventParameter.SubscriptionFeature.freeTrialEligible, String(freeTrialEligible)),
-            (WideEventParameter.SubscriptionFeature.accountCreationLatency, createAccountDuration?.stringValue(bucket)),
-            (WideEventParameter.SubscriptionFeature.accountPaymentLatency, completePurchaseDuration?.stringValue(bucket)),
-            (WideEventParameter.SubscriptionFeature.accountActivationLatency, activateAccountDuration?.stringValue(bucket)),
+            (WideEventParameter.PlanChangeFeature.purchasePlatform, purchasePlatform.rawValue),
+            (WideEventParameter.PlanChangeFeature.fromPlan, fromPlan),
+            (WideEventParameter.PlanChangeFeature.toPlan, toPlan),
+            (WideEventParameter.PlanChangeFeature.subscriptionIdentifier, toPlan),
+            (WideEventParameter.PlanChangeFeature.changeType, changeType?.rawValue),
+            (WideEventParameter.PlanChangeFeature.failingStep, failingStep?.rawValue),
+            (WideEventParameter.PlanChangeFeature.paymentLatency, paymentDuration?.stringValue(bucket)),
+            (WideEventParameter.PlanChangeFeature.confirmationLatency, confirmationDuration?.stringValue(bucket)),
         ])
     }
 
@@ -153,19 +160,18 @@ extension SubscriptionPurchaseWideEventData {
         default: return 600000
         }
     }
-
 }
 
 extension WideEventParameter {
 
-    public enum SubscriptionFeature {
-        static let purchasePlatform = "feature.data.ext.purchase_platform"
-        static let failingStep = "feature.data.ext.failing_step"
-        static let subscriptionIdentifier = "feature.data.ext.subscription_identifier"
-        static let freeTrialEligible = "feature.data.ext.free_trial_eligible"
-        static let accountCreationLatency = "feature.data.ext.account_creation_latency_ms_bucketed"
-        static let accountPaymentLatency = "feature.data.ext.account_payment_latency_ms_bucketed"
-        static let accountActivationLatency = "feature.data.ext.account_activation_latency_ms_bucketed"
+    public enum PlanChangeFeature {
+        public static let purchasePlatform = "feature.data.ext.purchase_platform"
+        public static let changeType = "feature.data.ext.change_type"
+        public static let fromPlan = "feature.data.ext.from_plan"
+        public static let toPlan = "feature.data.ext.to_plan"
+        public static let subscriptionIdentifier = "feature.data.ext.subscription_identifier"
+        public static let failingStep = "feature.data.ext.failing_step"
+        public static let paymentLatency = "feature.data.ext.payment_latency_ms_bucketed"
+        public static let confirmationLatency = "feature.data.ext.confirmation_latency_ms_bucketed"
     }
-
 }

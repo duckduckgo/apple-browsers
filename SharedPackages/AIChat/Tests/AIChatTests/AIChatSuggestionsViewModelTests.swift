@@ -75,8 +75,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         // Given
         viewModel.setChats(
             pinned: [makeSuggestion(id: "old", title: "Old", isPinned: true)],
-            recent: [],
-            query: "test"
+            recent: []
         )
         XCTAssertEqual(viewModel.filteredSuggestions.count, 1)
 
@@ -87,8 +86,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
             recent: [
                 makeSuggestion(id: "new1", title: "New 1", timestamp: now),
                 makeSuggestion(id: "new2", title: "New 2", timestamp: now.addingTimeInterval(-60))
-            ],
-            query: "test"
+            ]
         )
 
         // Then - sorted by recency
@@ -355,8 +353,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         // Given
         viewModel.setChats(
             pinned: [makeSuggestion(id: "p1", title: "Pinned", isPinned: true)],
-            recent: [makeSuggestion(id: "r1", title: "Recent")],
-            query: "test"
+            recent: [makeSuggestion(id: "r1", title: "Recent")]
         )
         viewModel.selectNext()
         XCTAssertTrue(viewModel.hasSuggestions)

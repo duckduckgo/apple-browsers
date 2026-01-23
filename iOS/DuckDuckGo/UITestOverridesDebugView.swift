@@ -29,10 +29,6 @@ struct UITestOverridesDebugView: View {
     private let testFeatureFlag: FeatureFlag = .uiTestFeatureFlag
     private let testExperiment: FeatureFlag = .uiTestExperiment
 
-    // DuckPlayer rollout subfeature for testing
-    // Maestro usage: -config.rollout.duckPlayer.enableDuckPlayer true
-    private let testSubfeature: DuckPlayerSubfeature = .enableDuckPlayer
-
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfiguration
 

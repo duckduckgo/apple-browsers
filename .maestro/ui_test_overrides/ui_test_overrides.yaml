@@ -28,7 +28,7 @@ tags:
     file: ../shared/open_debug_menu.yaml
 
 # Navigate to UI Test Overrides
-# (internal user is automatically enabled when running UI tests)
+# (internal user is enabled when overrides are applied)
 - scrollUntilVisible:
     element:
         text: "UI Test Overrides"

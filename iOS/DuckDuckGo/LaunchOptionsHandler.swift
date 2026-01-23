@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 import enum Common.DevicePlatform
 
 public final class LaunchOptionsHandler {
@@ -44,13 +45,12 @@ public final class LaunchOptionsHandler {
         /// Launch param format: experiment.<featureFlagRawValue>=<cohortID>
         /// Example: -experiment.onboardingSearchExperience control
         static let experimentCohortPrefix = "experiment."
-
-        /// The UserDefaults key used by InternalUserStore to track internal user status
-        static let internalUserStoreKey = "com.duckduckgo.app.featureFlaggingDidVerifyInternalUser.v2"
     }
 
     private let environment: [String: String]
     private let userDefaults: UserDefaults
+    private let arguments: [String]
+    private var internalUserStore: InternalUserStoring
 
     private let isIpad: Bool
     private let systemVersion: String
@@ -58,11 +58,15 @@ public final class LaunchOptionsHandler {
     public init(
         environment: [String: String] = ProcessInfo.processInfo.environment,
         userDefaults: UserDefaults = .app,
+        arguments: [String] = ProcessInfo.processInfo.arguments,
+        internalUserStore: InternalUserStoring = InternalUserStore(),
         isIpad: Bool = DevicePlatform.isIpad,
         systemVersion: String = UIDevice.current.systemVersion
     ) {
         self.environment = environment
         self.userDefaults = userDefaults
+        self.arguments = arguments
+        self.internalUserStore = internalUserStore
         self.isIpad = isIpad
         self.systemVersion = systemVersion
     }
@@ -150,7 +154,18 @@ extension LaunchOptionsHandler {
 
 extension LaunchOptionsHandler {
 
-    /// Applies all parsed overrides to the appropriate storage.
+    /// Applies UI test overrides from launch arguments to the appropriate storage.
+    ///
+    /// This method reads launch arguments passed by Maestro and translates them into
+    /// the UserDefaults keys that FeatureFlagger and PrivacyConfiguration expect.
+    ///
+    /// ## How it works
+    /// iOS automatically stores launch arguments as key-value pairs in UserDefaults.
+    /// When Maestro passes `"ff.myFlag": "true"`, iOS stores "true" under the key "ff.myFlag"
+    /// in UserDefaults. We iterate `ProcessInfo.arguments` to discover which keys were passed,
+    /// then read their values from UserDefaults.
+    ///
+    /// Internal user is only enabled if at least one override is applied.
     ///
     /// - Parameters:
     ///   - featureFlagOverrideStore: UserDefaults store for feature flag overrides
@@ -159,16 +174,9 @@ extension LaunchOptionsHandler {
         featureFlagOverrideStore: UserDefaults,
         configRolloutStore: UserDefaults
     ) {
-        guard ProcessInfo.isRunningUITests else { return }
+        var didApplyOverride = false
 
-        // Always enable internal user for UI tests (required for feature flag overrides)
-        UserDefaults.standard.set(true, forKey: UITestOverrides.internalUserStoreKey)
-
-        // Find all launch argument keys by looking at ProcessInfo.arguments
-        // Arguments come as pairs: ["-key", "value", "-key2", "value2", ...]
-        let args = ProcessInfo.processInfo.arguments
-
-        for arg in args {
+        for arg in arguments {
             guard arg.hasPrefix("-") else { continue }
             let key = String(arg.dropFirst()) // Remove leading "-"
 
@@ -179,6 +187,7 @@ extension LaunchOptionsHandler {
                     let enabled = value.lowercased() == "true"
                     let targetKey = "localOverride\(flagName.capitalizedFirstLetter)"
                     featureFlagOverrideStore.set(enabled, forKey: targetKey)
+                    didApplyOverride = true
                 }
             }
             
@@ -189,6 +198,7 @@ extension LaunchOptionsHandler {
                     let enabled = value.lowercased() == "true"
                     let targetKey = "config.\(featurePath).enabled"
                     configRolloutStore.set(enabled, forKey: targetKey)
+                    didApplyOverride = true
                 }
             }
             
@@ -198,8 +208,14 @@ extension LaunchOptionsHandler {
                 if let cohortID = userDefaults.string(forKey: key), !cohortID.isEmpty {
                     let targetKey = "localOverride\(flagName.capitalizedFirstLetter)_cohort"
                     featureFlagOverrideStore.set(cohortID, forKey: targetKey)
+                    didApplyOverride = true
                 }
             }
+        }
+
+        // Only enable internal user if we actually applied overrides
+        if didApplyOverride {
+            internalUserStore.isInternalUser = true
         }
     }
 }

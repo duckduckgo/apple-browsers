@@ -249,6 +249,10 @@ final class AIChatContextualSheetViewController: UIViewController {
         updateButtonContainerCornerRadii()
     }
 
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        .portrait
+    }
+
     // MARK: - Actions
 
     @objc private func expandButtonTapped() {

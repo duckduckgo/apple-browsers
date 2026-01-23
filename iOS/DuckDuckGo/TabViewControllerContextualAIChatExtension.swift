@@ -42,8 +42,7 @@ extension TabViewController {
                 restoreURL = URL(string: urlString)
             }
 
-            let isFirstDisplay = aiChatContextualSheetCoordinator.sheetViewController == nil && !hasExistingWebVC && !needsColdRestore
-            if isFirstDisplay && aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled {
+            if !needsColdRestore {
                 pageContext = await collectPageContext()
             }
 
@@ -187,17 +186,22 @@ extension TabViewController {
         pageContextUpdateCancellable = script.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
-                guard let self else { return }
+                guard let self,
+                      let pageContext,
+                      let enriched = enrichWithFavicon(pageContext) else { return }
 
-                guard let pageContext,
-                      aiChatContextualSheetCoordinator.isSheetPresented,
-                      aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled else {
-                    return
+                aiChatContextualSheetCoordinator.pageContextStore.update(enriched)
+
+                let isSheetPresented = aiChatContextualSheetCoordinator.isSheetPresented
+                let autoAttachEnabled = aiChatContextualSheetCoordinator.aiChatSettings.isAutomaticContextAttachmentEnabled
+
+                if isSheetPresented && autoAttachEnabled {
+                    if aiChatContextualSheetCoordinator.hasActiveChat {
+                        aiChatContextualSheetCoordinator.sheetViewController?.pushPageContextToFrontend(enriched)
+                    } else {
+                        aiChatContextualSheetCoordinator.sheetViewController?.didReceivePageContext()
+                    }
                 }
-
-                guard let enriched = enrichWithFavicon(pageContext) else { return }
-
-                aiChatContextualSheetCoordinator.updatePageContext(enriched)
             }
     }
 }

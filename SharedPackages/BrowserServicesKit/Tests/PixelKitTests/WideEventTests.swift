@@ -43,7 +43,7 @@ final class MockWideEventSending: WideEventSending {
         let mockData = data as? MockWideEventData
         let postEndpointEnabled = featureFlagProvider.isEnabled(.postEndpoint)
         let call = CapturedCall(
-            pixelName: T.pixelName,
+            pixelName: T.metadata.pixelName,
             status: status,
             postEndpointEnabled: postEndpointEnabled,
             contextName: data.contextData.name,
@@ -74,8 +74,12 @@ final class MockWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
 // MARK: - Mock Wide Event Data
 
 final class MockWideEventData: WideEventData {
-    static let pixelName = "mock-wide-event"
-    static let featureName = "mock-wide-event"
+    static let metadata = WideEventMetadata(
+        pixelName: "mock-wide-event",
+        featureName: "mock-wide-event",
+        mobileMetaType: "ios-test-mock-wide-event",
+        desktopMetaType: "macos-test-mock-wide-event"
+    )
 
     enum FailingStep: String, Codable {
         case step1 = "step_1"
@@ -292,8 +296,12 @@ final class WideEventTests: XCTestCase {
 
     func testSerializationFailure() throws {
         struct NonSerializableData: WideEventData {
-            static let pixelName = "non_serializable"
-            static let featureName = "non_serializable"
+            static let metadata = WideEventMetadata(
+                pixelName: "non_serializable",
+                featureName: "non_serializable",
+                mobileMetaType: "ios-test-non-serializable",
+                desktopMetaType: "macos-test-non-serializable"
+            )
             let closure: () -> Void = { }
             var contextData: WideEventContextData = WideEventContextData()
             var appData: WideEventAppData = WideEventAppData()
@@ -702,7 +710,7 @@ final class WideEventSendingTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
 
         XCTAssertEqual(mockSender.capturedCalls.count, 1)
-        XCTAssertEqual(mockSender.capturedCalls[0].pixelName, MockWideEventData.pixelName)
+        XCTAssertEqual(mockSender.capturedCalls[0].pixelName, MockWideEventData.metadata.pixelName)
     }
 
     func testWideEventPassesDataToSender() throws {

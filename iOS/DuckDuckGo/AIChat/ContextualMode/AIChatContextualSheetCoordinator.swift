@@ -110,6 +110,18 @@ final class AIChatContextualSheetCoordinator {
 
         if let existingSheet = sheetViewController {
             sheetVC = existingSheet
+
+            if let context = pageContext {
+                pageContextStore.update(context)
+            }
+
+            if aiChatSettings.isAutomaticContextAttachmentEnabled {
+                if hasActiveChat, let context = pageContextStore.latestContext {
+                    existingSheet.pushPageContextToFrontend(context)
+                } else {
+                    existingSheet.didReceivePageContext()
+                }
+            }
         } else {
             if let context = pageContext {
                 pageContextStore.update(context)

@@ -76,5 +76,33 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_selected_pinned_mouse": {
+        "description": "Fired when user selects a pinned recent chat by clicking with the mouse",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_selected_pinned_keyboard": {
+        "description": "Fired when user selects a pinned recent chat by pressing enter",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_selected_mouse": {
+        "description": "Fired when user selects a non-pinned recent chat by clicking with the mouse",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_selected_keyboard": {
+        "description": "Fired when user selects a non-pinned recent chat by pressing enter",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

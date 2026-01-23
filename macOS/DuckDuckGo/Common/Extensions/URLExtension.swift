@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Common
 import Foundation
 import AppKitExtensions
+import Persistence
 import URLPredictor
 import os.log
 #if !SANDBOX_TEST_TOOL
@@ -413,6 +414,87 @@ extension URL {
         return navigationalScheme == .webkitExtension
     }
 
+    // MARK: - Base URLs (Internal User Configurable)
+
+    /// Shared debug settings instance for runtime URL overrides.
+    private static let debugSettings: any KeyedStoring<BaseURLDebugSettings> = UserDefaults.standard.keyedStoring()
+
+    /// Determines if environment variable URL overrides are allowed.
+    ///
+    /// Overrides are permitted only for:
+    /// - Internal users (verified via `UserDefaults.appConfiguration.isInternalUser`)
+    /// - CI environments (detected via `CI` environment variable)
+    /// - UI tests, integration tests, or onboarding UI tests
+    ///
+    /// This security gating prevents external users from being redirected to malicious sites
+    /// via environment variable injection (e.g., if a malicious app launches DuckDuckGo with
+    /// a phishing `BASE_URL`).
+    ///
+    /// ## Testing Usage
+    ///
+    /// To use a custom base URL for testing:
+    ///
+    /// 1. **Debug Menu** (Runtime): Use Debug > Base URL Configuration in the menu bar
+    ///
+    /// 2. **UI Tests**: Set `launchEnvironment` in your test:
+    ///    ```swift
+    ///    app.launchEnvironment = ["BASE_URL": "http://localhost:8080"]
+    ///    app.launch()
+    ///    ```
+    ///
+    /// 3. **Internal Users**: Set the environment variable before launching:
+    ///    ```bash
+    ///    BASE_URL=http://localhost:8080 open DuckDuckGo.app
+    ///    ```
+    ///
+    /// 4. **Xcode Scheme**: Edit scheme > Run > Arguments > Environment Variables
+    ///
+    private static var isOverrideAllowed: Bool {
+        let isTestMode = [.uiTests, .integrationTests, .uiTestsOnboarding].contains(AppVersion.runType)
+        let isCI = ProcessInfo.processInfo.environment["CI"] != nil
+        return isTestMode || isCI || UserDefaults.appConfiguration.isInternalUser
+    }
+
+    /// Base URL for DuckDuckGo (overridable by internal users, CI, or UI tests only).
+    ///
+    /// For external users in production, this always returns `https://duckduckgo.com`.
+    /// For internal users or test environments, this can be overridden via:
+    /// - The Debug menu (runtime)
+    /// - The `BASE_URL` environment variable (launch time)
+    private static var base: String {
+        guard isOverrideAllowed else {
+            return "https://duckduckgo.com"
+        }
+
+        return debugSettings.effectiveBaseURL
+    }
+
+    /// Base URL for Duck.ai (overridable by internal users, CI, or UI tests only).
+    ///
+    /// For external users in production, this always returns `https://duck.ai`.
+    /// For internal users or test environments, this can be overridden via:
+    /// - The Debug menu (runtime)
+    /// - The `DUCKAI_BASE_URL` environment variable (launch time)
+    private static var duckAiBase: String {
+        guard isOverrideAllowed else {
+            return "https://duck.ai"
+        }
+
+        return debugSettings.effectiveDuckAIBaseURL
+    }
+
+    /// Base URL for help pages (overridable by internal users, CI, or UI tests only).
+    ///
+    /// When `BASE_URL` is overridden, help pages also use the same base to enable
+    /// testing with local servers that serve both main and help page content.
+    private static var helpBase: String {
+        guard isOverrideAllowed else {
+            return "https://help.duckduckgo.com"
+        }
+
+        return debugSettings.effectiveHelpBaseURL
+    }
+
     // MARK: - DuckDuckGo
 
     static var onboarding: URL {
@@ -421,13 +503,11 @@ extension URL {
     }
 
     static var duckDuckGo: URL {
-        let duckDuckGoUrlString = "https://duckduckgo.com/"
-        return URL(string: duckDuckGoUrlString)!
+        return URL(string: "\(base)/")!
     }
 
     static var duckAi: URL {
-        let duckAiString = "https://duck.ai/"
-        return URL(string: duckAiString)!
+        return URL(string: "\(duckAiBase)/")!
     }
 
     static var duckDuckGoAutocomplete: URL {
@@ -435,11 +515,11 @@ extension URL {
     }
 
     static var aboutDuckDuckGo: URL {
-        return URL(string: "https://duckduckgo.com/about")!
+        return URL(string: "\(base)/about")!
     }
 
     static var updates: URL {
-        return URL(string: "https://duckduckgo.com/updates")!
+        return URL(string: "\(base)/updates")!
     }
 
     static var internalFeedbackForm: URL {
@@ -447,66 +527,182 @@ extension URL {
     }
 
     static var webTrackingProtection: URL {
-        return URL(string: "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/")!
+        return URL(string: "\(helpBase)/duckduckgo-help-pages/privacy/web-tracking-protections/")!
     }
 
     static var cookieConsentPopUpManagement: URL {
-        return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management")!
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management")!
     }
 
     static var gpcLearnMore: URL {
-        return URL(string: "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/gpc/")!
+        return URL(string: "\(helpBase)/duckduckgo-help-pages/privacy/gpc/")!
     }
 
     static var privateSearchLearnMore: URL {
-        return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/search-privacy/")!
+        return URL(string: "\(base)/duckduckgo-help-pages/search-privacy/")!
     }
 
     static var passwordManagerLearnMore: URL {
-        return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/")!
+        return URL(string: "\(base)/duckduckgo-help-pages/sync-and-backup/password-manager-security/")!
     }
 
-    static var maliciousSiteProtectionLearnMore = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker")!
+    static var maliciousSiteProtectionLearnMore: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/threat-protection/scam-blocker")!
+    }
 
     static var smarterEncryptionLearnMore: URL {
-        return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/")!
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy/smarter-encryption/")!
     }
 
     static var threatProtectionLearnMore: URL {
-        return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/threat-protection/")!
+        return URL(string: "\(base)/duckduckgo-help-pages/threat-protection/")!
     }
 
-    static var dnsBlocklistLearnMore = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists")!
+    static var dnsBlocklistLearnMore: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists")!
+    }
 
     static var searchSettings: URL {
-        return URL(string: "https://duckduckgo.com/settings/")!
+        return URL(string: "\(base)/settings/")!
     }
 
     static var ddgLearnMore: URL {
-        return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/get-duckduckgo/get-duckduckgo-browser-on-mac/")!
+        return URL(string: "\(base)/duckduckgo-help-pages/get-duckduckgo/get-duckduckgo-browser-on-mac/")!
     }
 
     static var theFireButton: URL {
-        return URL(string: "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#the-fire-button")!
+        return URL(string: "\(helpBase)/duckduckgo-help-pages/privacy/web-tracking-protections/#the-fire-button")!
     }
 
     static var privacyPolicy: URL {
-        return URL(string: "https://duckduckgo.com/privacy")!
+        return URL(string: "\(base)/privacy")!
     }
 
     static var termsOfService: URL {
-        URL(string: "https://duckduckgo.com/terms")!
+        URL(string: "\(base)/terms")!
     }
 
     static var subscription: URL {
-        return URL(string: "https://duckduckgo.com/pro")!
+        return URL(string: "\(base)/pro")!
     }
 
-    static var duckDuckGoEmail = URL(string: "https://duckduckgo.com/email-protection")!
-    static var duckDuckGoEmailLogin = URL(string: "https://duckduckgo.com/email")!
+    static var duckDuckGoEmail: URL {
+        return URL(string: "\(base)/email-protection")!
+    }
 
-    static var duckDuckGoEmailInfo = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/")!
-    static var duckDuckGoMorePrivacyInfo = URL(string: "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/atb/")!
+    static var duckDuckGoEmailLogin: URL {
+        return URL(string: "\(base)/email")!
+    }
+
+    static var duckDuckGoEmailInfo: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/")!
+    }
+
+    static var duckDuckGoMorePrivacyInfo: URL {
+        return URL(string: "\(helpBase)/duckduckgo-help-pages/privacy/atb/")!
+    }
+
+    // MARK: - AI Chat
+
+    static var aiChatApproachToAI: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/duckai/approach-to-ai")!
+    }
+
+    static var aiChatSettings: URL {
+        return URL(string: "\(base)/settings?return=aiFeatures#aifeatures")!
+    }
+
+    static var aiChatAccessSubscriberModels: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/duckai/access-subscriber-AI-models")!
+    }
+
+    static var aiChatHelpPages: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/duckai")!
+    }
+
+    // MARK: - Search Settings
+
+    static var moreSearchSettings: URL {
+        return URL(string: "\(base)/settings?return=privateSearch")!
+    }
+
+    // MARK: - Other Platforms
+
+    static var otherPlatforms: URL {
+        return URL(string: "\(base)/app/devices?origin=funnel_app_macos")!
+    }
+
+    // MARK: - Email Protection
+
+    static var emailProtectionLink: URL {
+        return URL(string: "\(base)/email")!
+    }
+
+    static var emailProtectionInContextSignup: URL {
+        return URL(string: "\(base)/email/start-incontext")!
+    }
+
+    static var emailProtectionAccount: URL {
+        return URL(string: "\(base)/email/settings/account")!
+    }
+
+    static var emailProtectionSupport: URL {
+        return URL(string: "\(base)/email/settings/support")!
+    }
+
+    // MARK: - Feedback
+
+    static var feedbackForm: URL {
+        return URL(string: "\(base)/feedback.js")!
+    }
+
+    static var subscriptionSupport: URL {
+        return URL(string: "\(base)/subscription-support")!
+    }
+
+    // MARK: - Privacy Pro Help Pages
+
+    static var pproPaymentsHelp: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy-pro/payments/")!
+    }
+
+    static var pproActivatingHelp: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy-pro/activating/")!
+    }
+
+    static var pproActivatingHelpNoSlash: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy-pro/activating")!
+    }
+
+    // MARK: - VPN Help Pages
+
+    static var vpnTroubleshootingHelp: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy-pro/vpn/troubleshooting/")!
+    }
+
+    static var vpnHelp: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy-pro/vpn/")!
+    }
+
+    // MARK: - PIR Help Pages
+
+    static var pirRemovalProcessHelp: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy-pro/personal-information-removal/removal-process/")!
+    }
+
+    static var pirHelp: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy-pro/personal-information-removal/")!
+    }
+
+    // MARK: - ITR Help Pages
+
+    static var itrHelp: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/")!
+    }
+
+    static var itrIrisHelp: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/iris/")!
+    }
 
     var isDuckDuckGo: Bool {
         absoluteString.starts(with: Self.duckDuckGo.absoluteString)

@@ -286,7 +286,6 @@ extension PrivacyDashboardViewController {
         let openerContext: BrokenSiteReport.OpenerContext?
         let vpnOn: Bool
         let userRefreshCount: Int
-        let performanceMetrics: PerformanceMetricsSubfeature?
         let breakageReportingSubfeature: BreakageReportingSubfeature?
     }
     
@@ -294,32 +293,14 @@ extension PrivacyDashboardViewController {
         case failedToFetchTheCurrentWebsiteInfo
     }
 
-    private func calculateWebVitals(breakageAdditionalInfo: BreakageAdditionalInfo, privacyConfig: PrivacyConfiguration) async -> [Double]? {
-        var webVitalsResult: [Double]?
-        if privacyConfig.isEnabled(featureKey: .performanceMetrics) {
-            webVitalsResult = await withCheckedContinuation({ continuation in
-                guard let performanceMetrics = breakageAdditionalInfo.performanceMetrics else { continuation.resume(returning: nil); return }
-                performanceMetrics.notifyHandler { result in
-                    continuation.resume(returning: result)
-                }
-            })
-        }
-
-        return webVitalsResult
-    }
-
-    private func collectBreakageReportData(breakageAdditionalInfo: BreakageAdditionalInfo, privacyConfig: PrivacyConfiguration) async -> BreakageReportData? {
-        var breakageReportData: BreakageReportData?
-        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
-            breakageReportData = await withCheckedContinuation({ continuation in
-                guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-                breakageReportingSubfeature.notifyHandler { metrics, detectorData in
-                    let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData)
-                    continuation.resume(returning: result)
-                }
-            })
-        }
-        return breakageReportData
+    private func collectBreakageReportData(breakageAdditionalInfo: BreakageAdditionalInfo) async -> BreakageReportData? {
+        await withCheckedContinuation({ continuation in
+            guard let breakageReportingSubfeature = breakageAdditionalInfo.breakageReportingSubfeature else { continuation.resume(returning: nil); return }
+            breakageReportingSubfeature.notifyHandler { metrics, detectorData, jsPerformanceMetrics in
+                let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData, jsPerformance: jsPerformanceMetrics)
+                continuation.resume(returning: result)
+            }
+        })
     }
 
     private func makeBrokenSiteReport(category: String = "",
@@ -331,13 +312,11 @@ extension PrivacyDashboardViewController {
             throw BrokenSiteReportError.failedToFetchTheCurrentWebsiteInfo
         }
 
-        let webVitalsResult = await calculateWebVitals(breakageAdditionalInfo: breakageAdditionalInfo,
-                                                       privacyConfig: privacyConfigurationManager.privacyConfig)
+        let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
 
-        let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo,
-                                                                   privacyConfig: privacyConfigurationManager.privacyConfig)
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
+        let jsPerformance = breakageReportData?.jsPerformance
 
         let blockedTrackerDomains = privacyInfo.trackerInfo.trackersBlocked.compactMap { $0.domain }
         let protectionsState = privacyConfigurationManager.privacyConfig.isFeature(.contentBlocking,
@@ -374,7 +353,7 @@ extension PrivacyDashboardViewController {
                                 httpStatusCodes: statusCodes,
                                 openerContext: breakageAdditionalInfo.openerContext,
                                 vpnOn: breakageAdditionalInfo.vpnOn,
-                                jsPerformance: webVitalsResult,
+                                jsPerformance: jsPerformance,
                                 extendedPerformanceMetrics: privacyAwareWebVitals,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
                                 variant: PixelExperiment.cohort?.rawValue ?? "",

@@ -20,8 +20,12 @@ import Foundation
 import PixelKit
 
 public final class ScanWideEventData: WideEventData {
-    public static let pixelName = "pir_scan_attempt"
-    public static let featureName = "pir-scan-attempt"
+    public static let metadata = WideEventMetadata(
+        pixelName: "pir_scan_attempt",
+        featureName: "pir-scan-attempt",
+        mobileMetaType: "ios-pir-scan-attempt",
+        desktopMetaType: "macos-pir-scan-attempt"
+    )
 
     public enum AttemptType: String, Codable {
         case newScan = "new-data"

@@ -20,7 +20,6 @@ import Foundation
 
 /// Features whose `rawValue` should be the key to access their corresponding `PrivacyConfigurationData.PrivacyFeature` object
 public enum PrivacyFeature: String {
-    case breakageReporting
     case contentBlocking
     case duckPlayer
     case fingerprintingTemporaryStorage
@@ -48,7 +47,6 @@ public enum PrivacyFeature: String {
     case privacyDashboard
     case updates
     case updatesWontAutomaticallyRestartApp
-    case performanceMetrics
     case privacyPro
     case sslCertificates
     case toggleReports
@@ -348,6 +346,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables ATB measurement for Duck.ai usage on iOS
     case aiChatAtb
+
+    /// Controls whether automatic page context attachment defaults to enabled
+    case autoAttachContextByDefault
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

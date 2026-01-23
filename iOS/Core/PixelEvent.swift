@@ -1266,6 +1266,10 @@ extension Pixel {
         case subscriptionTierOptionsFailure
         case subscriptionTierOptionsUnexpectedProTier
 
+        // Plan Change
+        case subscriptionViewAllPlansClick
+        case subscriptionUpgradeClick
+
         // MARK: Apple Ad Attribution
         case appleAdAttribution
 
@@ -2672,6 +2676,11 @@ extension Pixel.Event {
         case .subscriptionTierOptionsSuccess: return "m_subscription_tier-options_success"
         case .subscriptionTierOptionsFailure: return "m_subscription_tier-options_failure"
         case .subscriptionTierOptionsUnexpectedProTier: return "m_subscription_tier-options_unexpected-pro-tier"
+
+        // Plan Change
+        case .subscriptionViewAllPlansClick: return "m_subscription_settings_view-all-plans_click"
+        case .subscriptionUpgradeClick: return "m_subscription_settings_upgrade_click"
+
         case .networkProtectionFailureRecoveryStarted: return "m_netp_ev_failure_recovery_started"
         case .networkProtectionFailureRecoveryFailed: return "m_netp_ev_failure_recovery_failed"
         case .networkProtectionFailureRecoveryCompletedHealthy: return "m_netp_ev_failure_recovery_completed_server_healthy"

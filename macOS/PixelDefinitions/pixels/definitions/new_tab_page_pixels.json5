@@ -44,6 +44,28 @@
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_mac_new-tab-page_customizer_hidden": {
+        "description": "Fires when the user hides the New Tab Page Customizer UI.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_new-tab-page_customizer_shown": {
+        "description": "Fires when the user reveals the New Tab Page Customizer UI.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "themePopoverWasOpen",
+                "type": "boolean",
+                "description": "Whether the Themes Discovery Popover was onscreen, or not"
+            }
+        ]
+    },
     "m_mac_new-tab-page_loading_time": {
         "description": "Loading time (in ms) for the new tab page",
         "owners": ["tomasstrba"],

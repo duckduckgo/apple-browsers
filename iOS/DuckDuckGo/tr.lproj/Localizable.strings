@@ -3622,6 +3622,9 @@
 /* Manage Plan header */
 "subscription.manage.plan" = "Planı Yönetin";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Ödemeyi Yönetin veya İptal Edin";
+
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonelik";
 
@@ -3718,6 +3721,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Yıllık aboneliğiniz %@ tarihinde sona erecek.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Planınız %2$@  tarihinde %1$@ Aylık plana düşürülecek.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Planınız %2$@  tarihinde %1$@ planına düşürülecek.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Planınız %2$@  tarihinde %1$@ Yıllık planına düşürülecek.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Aylık aboneliğiniz %@ tarihinde yenilenecek.";
 
@@ -3738,6 +3750,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Ücretsiz Deneme Süresi Aktif";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "%@ planına yükseltin";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Daha akıllı ve daha güçlü yapay zekanın kilidini açın";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Güncelle";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Bütün Planları Görüntüle";

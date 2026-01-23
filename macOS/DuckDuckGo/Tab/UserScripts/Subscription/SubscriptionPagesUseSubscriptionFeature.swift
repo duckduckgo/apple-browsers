@@ -78,9 +78,10 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     // Wide Event
     private let wideEvent: WideEventManaging
-    private var wideEventData: SubscriptionPurchaseWideEventData?
+    private var purchaseWideEventData: SubscriptionPurchaseWideEventData?
     private var restoreEmailOfferPageWideEventData: SubscriptionRestoreWideEventData?
     private var restoreEmailAppSettingsWideEventData: SubscriptionRestoreWideEventData?
+    private var planChangeWideEventData: SubscriptionPlanChangeWideEventData?
 
     private let pendingTransactionHandler: PendingTransactionHandling
 
@@ -333,7 +334,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                                                              subscriptionIdentifier: subscriptionSelection.id,
                                                              freeTrialEligible: freeTrialEligible,
                                                              contextData: WideEventContextData(name: origin ?? ""))
-                self.wideEventData = data
+                self.purchaseWideEventData = data
                 wideEvent.startFlow(data)
 
                 // 5: No existing subscription was found, so proceed with the remaining purchase flow
@@ -373,9 +374,9 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                         wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
                     } else if error == .activeSubscriptionAlreadyPresent {
                         // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
-                        if let data = self.wideEventData {
+                        if let data = self.purchaseWideEventData {
                             wideEvent.discardFlow(data)
-                            self.wideEventData = nil
+                            self.purchaseWideEventData = nil
                         }
                     } else {
                         switch error {
@@ -406,12 +407,12 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
 
                 func completeWideEventFlow(with error: Error) {
-                    guard let wideEventData = self.wideEventData else { return }
+                    guard let purchaseWideEventData = self.purchaseWideEventData else { return }
                     accountActivationDuration.complete()
-                    wideEventData.activateAccountDuration = accountActivationDuration
-                    wideEventData.markAsFailed(at: .accountActivation, error: error)
-                    wideEvent.updateFlow(wideEventData)
-                    wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
+                    purchaseWideEventData.activateAccountDuration = accountActivationDuration
+                    purchaseWideEventData.markAsFailed(at: .accountActivation, error: error)
+                    wideEvent.updateFlow(purchaseWideEventData)
+                    wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
                 }
 
                 // 9: Handle purchase completion result
@@ -436,8 +437,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
                     switch error {
                     case .cancelledByUser:
-                        if let wideEventData {
-                            wideEvent.completeFlow(wideEventData, status: .cancelled, onComplete: { _, _ in })
+                        if let purchaseWideEventData {
+                            wideEvent.completeFlow(purchaseWideEventData, status: .cancelled, onComplete: { _, _ in })
                         }
                     case .missingEntitlements:
                         // This case deliberately avoids sending a failure wide event in case activation succeeds later
@@ -465,17 +466,17 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                                                          contextData: WideEventContextData(name: contextName))
 
             wideEvent.startFlow(data)
-            self.wideEventData = data
+            self.purchaseWideEventData = data
 
             let result = await stripePurchaseFlow.prepareSubscriptionPurchase(emailAccessToken: emailAccessToken)
             switch result {
             case .success(let success):
-                if let wideEventData = self.wideEventData {
+                if let purchaseWideEventData = self.purchaseWideEventData {
                     if let accountCreationDuration = success.accountCreationDuration {
-                        wideEventData.createAccountDuration = accountCreationDuration
+                        purchaseWideEventData.createAccountDuration = accountCreationDuration
                     }
 
-                    wideEvent.updateFlow(wideEventData)
+                    wideEvent.updateFlow(purchaseWideEventData)
                 }
 
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: success.purchaseUpdate)
@@ -490,10 +491,10 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
 
-                if let wideEventData = self.wideEventData {
-                    wideEventData.markAsFailed(at: .accountCreate, error: error)
-                    wideEvent.updateFlow(wideEventData)
-                    wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
+                if let purchaseWideEventData = self.purchaseWideEventData {
+                    purchaseWideEventData.markAsFailed(at: .accountCreate, error: error)
+                    wideEvent.updateFlow(purchaseWideEventData)
+                    wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
                 }
             }
         }
@@ -512,6 +513,10 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         let message = original
         await setPixelOrigin(from: message)
+        let origin = await originFrom(originalMessage: message)
+
+        // Debug: Log raw params received from frontend
+        Logger.subscription.debug("[TierChange] Raw params received: \(String(describing: params), privacy: .public)")
 
         switch subscriptionManager.currentEnvironment.purchasePlatform {
         case .appStore:
@@ -524,7 +529,26 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                     return nil
                 }
 
-                Logger.subscription.log("[TierChange] Starting \(subscriptionSelection.change ?? "change", privacy: .public) for: \(subscriptionSelection.id, privacy: .public)")
+                Logger.subscription.log("[TierChange] Parsed - id: \(subscriptionSelection.id, privacy: .public), change: \(subscriptionSelection.change ?? "nil", privacy: .public)")
+
+                // Get current subscription info for wide event tracking
+                let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+                let fromPlan = currentSubscription?.productId ?? ""
+
+                // Determine change type from frontend
+                let changeType = determineChangeType(change: subscriptionSelection.change)
+
+                // Initialize wide event data
+                let wideData = SubscriptionPlanChangeWideEventData(
+                    purchasePlatform: .appStore,
+                    changeType: changeType,
+                    fromPlan: fromPlan,
+                    toPlan: subscriptionSelection.id,
+                    paymentDuration: WideEvent.MeasuredInterval.startingNow(),
+                    contextData: WideEventContextData(name: origin ?? "")
+                )
+                self.planChangeWideEventData = wideData
+                wideEvent.startFlow(wideData)
 
                 // 2: Show purchase progress UI to user
                 await uiHandler.presentProgressViewController(withTitle: UserText.purchasingSubscriptionTitle)
@@ -540,21 +564,31 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 switch tierChangeResult {
                 case .success(let transactionJWS):
                     purchaseTransactionJWS = transactionJWS
+                    wideData.paymentDuration?.complete()
+                    wideEvent.updateFlow(wideData)
                 case .failure(let error):
                     reportPurchaseFlowError(error)
 
-                    if error != AppStorePurchaseFlowError.cancelledByUser {
-                        await showSomethingWentWrongAlert()
-                    } else {
+                    if error == AppStorePurchaseFlowError.cancelledByUser {
                         await uiHandler.dismissProgressViewController()
+                        wideEvent.completeFlow(wideData, status: .cancelled, onComplete: { _, _ in })
+                    } else {
+                        await showSomethingWentWrongAlert()
+                        wideData.markAsFailed(at: .payment, error: error)
+                        wideEvent.completeFlow(wideData, status: .failure, onComplete: { _, _ in })
                     }
 
+                    self.planChangeWideEventData = nil
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
                     return nil
                 }
 
                 // 5: Update UI to indicate that the tier change is completing
                 await uiHandler.updateProgressViewController(title: UserText.completingPurchaseTitle)
+
+                // Start confirmation timing
+                wideData.confirmationDuration = WideEvent.MeasuredInterval.startingNow()
+                wideEvent.updateFlow(wideData)
 
                 // 6: Complete the tier change by confirming with the backend
                 let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
@@ -565,6 +599,10 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                     Logger.subscription.log("[TierChange] Tier change completed successfully")
                     notificationCenter.post(name: .subscriptionDidChange, object: self)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
+
+                    wideData.confirmationDuration?.complete()
+                    wideEvent.updateFlow(wideData)
+                    wideEvent.completeFlow(wideData, status: .success, onComplete: { _, _ in })
                 case .failure(let error):
                     reportPurchaseFlowError(error)
 
@@ -573,11 +611,17 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                             self?.notificationCenter.post(name: .subscriptionPageCloseAndOpenPreferences, object: self)
                         }
                         await uiHandler.dismissProgressViewController()
+                        self.planChangeWideEventData = nil
                         return nil
                     }
 
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "completed"))
+
+                    wideData.markAsFailed(at: .confirmation, error: error)
+                    wideEvent.updateFlow(wideData)
+                    wideEvent.completeFlow(wideData, status: .failure, onComplete: { _, _ in })
                 }
+                self.planChangeWideEventData = nil
             }
 
         case .stripe:
@@ -588,7 +632,25 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 return nil
             }
 
-            Logger.subscription.log("[TierChange] Starting Stripe \(subscriptionSelection.change ?? "change", privacy: .public) for: \(subscriptionSelection.id, privacy: .public)")
+            Logger.subscription.log("[TierChange] Stripe - id: \(subscriptionSelection.id, privacy: .public), change: \(subscriptionSelection.change ?? "nil", privacy: .public)")
+
+            // Get current subscription info for wide event tracking
+            let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+            let fromPlan = currentSubscription?.productId ?? ""
+
+            // Determine change type from frontend
+            let changeType = determineChangeType(change: subscriptionSelection.change)
+
+            // Initialize wide event data for Stripe
+            let wideData = SubscriptionPlanChangeWideEventData(
+                purchasePlatform: .stripe,
+                changeType: changeType,
+                fromPlan: fromPlan,
+                toPlan: subscriptionSelection.id,
+                contextData: WideEventContextData(name: origin ?? "")
+            )
+            self.planChangeWideEventData = wideData
+            wideEvent.startFlow(wideData)
 
             // Get the access token - for tier changes, the user must be authenticated
             // since they're modifying an existing subscription
@@ -602,15 +664,42 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
                 await showSomethingWentWrongAlert()
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
+
+                wideData.markAsFailed(at: .payment, error: error)
+                wideEvent.completeFlow(wideData, status: .failure, onComplete: { _, _ in })
+                self.planChangeWideEventData = nil
                 return nil
             }
 
+            // Start confirmation timing (will be completed in completeStripePayment)
+            wideData.confirmationDuration = WideEvent.MeasuredInterval.startingNow()
+            wideEvent.updateFlow(wideData)
+
             // Return redirect with token so frontend handles Stripe checkout
+            // Note: For Stripe, the wide event will be completed when completeStripePayment is called
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.redirect(withToken: accessToken))
         }
 
         await uiHandler.dismissProgressViewController()
         return nil
+    }
+
+    private func determineChangeType(change: String?) -> SubscriptionPlanChangeWideEventData.ChangeType? {
+        // Use the change type from the frontend if provided
+        guard let change = change?.lowercased() else {
+            return nil
+        }
+
+        switch change {
+        case "upgrade":
+            return .upgrade
+        case "downgrade":
+            return .downgrade
+        case "crossgrade":
+            return .crossgrade
+        default:
+            return nil
+        }
     }
 
     // MARK: functions used in SubscriptionAccessActionHandlers
@@ -665,7 +754,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         let changeType = completion?.change
 
         var accountActivationDuration = WideEvent.MeasuredInterval.startingNow()
-        wideEventData?.activateAccountDuration = accountActivationDuration
+        purchaseWideEventData?.activateAccountDuration = accountActivationDuration
 
         await uiHandler.presentProgressViewController(withTitle: UserText.completingPurchaseTitle)
         await stripePurchaseFlow.completeSubscriptionPurchase()
@@ -684,11 +773,21 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
         notificationCenter.post(name: .subscriptionDidChange, object: self)
 
-        if let data = self.wideEventData {
+        // Complete the appropriate wide event based on whether this is a new purchase or tier change
+        // Check planChangeWideEventData first - if it exists, this is a tier change
+        if let data = self.planChangeWideEventData {
+            // Tier change - complete plan change wide event
+            data.confirmationDuration?.complete()
+            wideEvent.updateFlow(data)
+            wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+            self.planChangeWideEventData = nil
+        } else if let data = self.purchaseWideEventData {
+            // New purchase - complete purchase wide event
             accountActivationDuration.complete()
             data.activateAccountDuration = accountActivationDuration
             wideEvent.updateFlow(data)
             wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+            self.purchaseWideEventData = nil
         }
 
         return [String: String]() // cannot be nil, the web app expect something back before redirecting the user to the final page

@@ -21,6 +21,7 @@ import QuartzCore
 import Combine
 import DesignResourcesKitIcons
 import AIChat
+import PixelKit
 
 final class AIChatOmnibarContainerViewController: NSViewController {
 
@@ -211,6 +212,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Handle suggestion clicks
         suggestionsView.onSuggestionClicked = { [weak self] suggestion in
             guard let self else { return }
+            let pixel: AIChatPixel = suggestion.isPinned ? .aiChatRecentChatSelectedPinnedMouse : .aiChatRecentChatSelectedMouse
+            PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
             self.omnibarController.delegate?.aiChatOmnibarController(
                 self.omnibarController,
                 didSelectSuggestion: suggestion

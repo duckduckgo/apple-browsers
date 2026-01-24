@@ -191,16 +191,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - WireGuard
 
     private let wireGuardAdapterEventHandler: WireGuardAdapterEventHandling
-
-    private lazy var adapter: WireGuardAdapter = {
-        WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface, eventHandler: self.wireGuardAdapterEventHandler) { logLevel, message in
-            if logLevel == .error {
-                Logger.networkProtectionWireGuard.error("🔴 Received error from adapter: \(message, privacy: .public)")
-            } else {
-                Logger.networkProtectionWireGuard.log("Received message from adapter: \(message, privacy: .public)")
-            }
-        }
-    }()
+    private var adapter: WireGuardAdapterProtocol!
 
     // MARK: - Timers Support
 
@@ -413,6 +404,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 serverStatusMonitor: ServerStatusMonitoring? = nil,
                 serverSelectionResolver: VPNServerSelectionResolving? = nil,
                 connectionTester: ConnectionTesting? = nil,
+                adapter: WireGuardAdapterProtocol? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -471,6 +463,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.connectionTester = connectionTester ?? NetworkProtectionConnectionTester(timerQueue: timerQueue)
 
         super.init()
+
+        self.adapter = adapter ?? WireGuardAdapter(
+            with: self,
+            wireGuardInterface: wireGuardInterface,
+            eventHandler: wireGuardAdapterEventHandler
+        ) { logLevel, message in
+            if logLevel == .error {
+                Logger.networkProtectionWireGuard.error("🔴 Received error from adapter: \(message, privacy: .public)")
+            } else {
+                Logger.networkProtectionWireGuard.log("Received message from adapter: \(message, privacy: .public)")
+            }
+        }
 
         self.connectionTester.resultHandler = { @MainActor [weak self] result in
             self?.handleConnectionTestResult(result)

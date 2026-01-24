@@ -71037,6 +71037,18 @@
         }
       }
     },
+    "pm.card.expiration.error" : {
+      "comment" : "Error message shown when expiration date is incomplete",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Please enter a valid expiration date"
+          }
+        }
+      }
+    },
     "pm.card.expires.format" : {
       "comment" : "Label for credit card expiration date. %@ will be replaced with the formatted date (e.g., '02/2025')",
       "extractionState" : "extracted_with_value",

@@ -151,8 +151,8 @@ private struct Buttons: View {
                 Button(UserText.pmSave) {
                     model.save()
                 }
-                .disabled(!model.isDirty || !model.isCardNumberValid)
-                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardNumberValid))
+                .disabled(!model.isDirty || !model.isCardValid)
+                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardValid))
 
             } else {
                 Button(UserText.pmDelete) {
@@ -252,16 +252,7 @@ private struct FormattedCreditCardField: View {
                             .accessibility(identifier: accessibilityIdentifier)
 
                         if model.isCardNumberValid == false {
-                            HStack(alignment: .center, spacing: 8) {
-                                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
-                                    .foregroundColor(Color(designSystemColor: .destructivePrimary, palette: themeManager.designColorPalette))
-                                    .frame(width: 16, height: 16)
-                                Text(UserText.pmCardNumberError)
-                                    .foregroundColor(Color(designSystemColor: .destructivePrimary, palette: themeManager.designColorPalette))
-                                    .font(.system(size: 13))
-                                Spacer()
-                            }
-                            .padding(.top, 6)
+                            ValidationErrorView(message: UserText.pmCardNumberError)
                         }
                     }
                     .padding(.bottom, interItemSpacing)
@@ -363,6 +354,7 @@ private struct SecureEditableCreditCardField: View {
 ///
 private struct ExpirationField: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementCreditCardModel
 
     @State private var isHovering = false
@@ -377,30 +369,36 @@ private struct ExpirationField: View {
                     .padding(.bottom, 5)
 
                 if model.isInEditMode {
-                    HStack {
-                        Picker("", selection: $model.expirationMonth) {
-                            if model.expirationMonth == nil {
-                                Text(UserText.pmMonth)
-                                    .tag(nil as Int?)
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Picker("", selection: $model.expirationMonth) {
+                                if model.expirationMonth == nil {
+                                    Text(UserText.pmMonth)
+                                        .tag(nil as Int?)
+                                }
+                                ForEach(Date.monthsWithIndex, id: \.self) { month in
+                                    Text(String(format: "%02d", month.index))
+                                        .tag(month.index as Int?)
+                                }
                             }
-                            ForEach(Date.monthsWithIndex, id: \.self) { month in
-                                Text(String(format: "%02d", month.index))
-                                    .tag(month.index as Int?)
-                            }
-                        }
-                        .labelsHidden()
+                            .labelsHidden()
 
-                        Picker("", selection: $model.expirationYear) {
-                            if model.expirationYear == nil {
-                                Text(UserText.pmYear)
-                                    .tag(nil as Int?)
+                            Picker("", selection: $model.expirationYear) {
+                                if model.expirationYear == nil {
+                                    Text(UserText.pmYear)
+                                        .tag(nil as Int?)
+                                }
+                                ForEach(Date.nextTenYears, id: \.self) { year in
+                                    Text(String(year))
+                                        .tag(year as Int?)
+                                }
                             }
-                            ForEach(Date.nextTenYears, id: \.self) { year in
-                                Text(String(year))
-                                    .tag(year as Int?)
-                            }
+                            .labelsHidden()
                         }
-                        .labelsHidden()
+
+                        if model.isExpirationDateValid == false {
+                            ValidationErrorView(message: UserText.pmCardExpirationError)
+                        }
                     }
                     .padding(.bottom, interItemSpacing)
                 } else if let month = model.expirationMonth, let year = model.expirationYear {
@@ -431,5 +429,25 @@ private struct ExpirationField: View {
                 isHovering = $0
             }
         }
+    }
+}
+
+// MARK: - Validation Error View
+
+private struct ValidationErrorView: View {
+    @EnvironmentObject var themeManager: ThemeManager
+    let message: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
+                .foregroundColor(Color(designSystemColor: .destructivePrimary, palette: themeManager.designColorPalette))
+                .frame(width: 16, height: 16)
+            Text(message)
+                .foregroundColor(Color(designSystemColor: .destructivePrimary, palette: themeManager.designColorPalette))
+                .font(.system(size: 13))
+            Spacer()
+        }
+        .padding(.top, 6)
     }
 }

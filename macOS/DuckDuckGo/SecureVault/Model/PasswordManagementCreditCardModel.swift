@@ -54,6 +54,10 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         return isEditing || isNew
     }
 
+    var isCardValid: Bool {
+        return isCardNumberValid && isExpirationDateValid
+    }
+
     @Published var isEditing = false {
         didSet {
             // Experimental change suggested by the design team to mark an item as dirty as soon as it enters the editing state.
@@ -64,6 +68,10 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
     }
 
     @Published var isNew = false
+
+    @Published var isCardNumberValid: Bool = true
+
+    @Published var isExpirationDateValid: Bool = true
 
     @Published var title: String = "" {
         didSet {
@@ -76,8 +84,6 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
             isDirty = true
         }
     }
-
-    @Published var isCardNumberValid: Bool = true
 
     @Published var cardholderName: String = "" {
         didSet {
@@ -94,12 +100,28 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
     @Published var expirationMonth: Int? {
         didSet {
             isDirty = true
+            clearExpirationValidationIfNecessary()
         }
     }
 
     @Published var expirationYear: Int? {
         didSet {
             isDirty = true
+            clearExpirationValidationIfNecessary()
+        }
+    }
+
+    private var hasCompleteExpirationDate: Bool {
+        let hasMonth = expirationMonth != nil
+        let hasYear = expirationYear != nil
+        return hasMonth == hasYear  // Both or neither
+    }
+
+    private func clearExpirationValidationIfNecessary() {
+        // During editing, we clear the validation error if both fields are now set or both are nil.
+        // But we don't want to trigger the validation error if the user is just adding one field at a time.
+        if hasCompleteExpirationDate {
+            isExpirationDateValid = true
         }
     }
 
@@ -133,6 +155,7 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
                      expirationYear: nil)
 
         isEditing = true
+        isExpirationDateValid = true
     }
 
     func cancel() {
@@ -149,9 +172,10 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         guard var card = card else { return false }
 
         validateCardNumber()
+        validateExpirationDate()
 
         let normalizedCardNumber = CreditCardValidation.extractDigits(from: cardNumber)
-        guard normalizedCardNumber.isEmpty == false && isCardNumberValid else {
+        guard normalizedCardNumber.isEmpty == false && isCardValid else {
             return false
         }
 
@@ -183,6 +207,10 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         }
 
         isCardNumberValid = CreditCardValidation.isValidCardNumber(normalizedCardNumber)
+    }
+
+    func validateExpirationDate() {
+        isExpirationDateValid = hasCompleteExpirationDate
     }
 
     func clearSecureVaultModel() {
@@ -223,6 +251,7 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
 
         if !isNew {
             validateCardNumber()
+            validateExpirationDate()
         }
 
         if let date = card?.created {

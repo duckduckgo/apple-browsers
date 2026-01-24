@@ -581,6 +581,7 @@ private extension AIChatContextualSheetViewController {
     func configureSheetPresentation() {
         guard let sheet = sheetPresentationController else { return }
 
+        sheet.delegate = self
         sheet.detents = [.medium(), .large()]
         sheet.selectedDetentIdentifier = .medium
         sheet.largestUndimmedDetentIdentifier = .medium
@@ -588,6 +589,16 @@ private extension AIChatContextualSheetViewController {
         sheet.prefersGrabberVisible = true
         sheet.prefersEdgeAttachedInCompactHeight = true
         sheet.preferredCornerRadius = Constants.sheetCornerRadius
+    }
+}
+
+// MARK: - UISheetPresentationControllerDelegate
+
+extension AIChatContextualSheetViewController: UISheetPresentationControllerDelegate {
+
+    func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
+        let isMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
+        currentWebViewController?.setMediumDetent(isMediumDetent)
     }
 }
 

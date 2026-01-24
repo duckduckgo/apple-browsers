@@ -259,14 +259,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - Server Selection
 
-    private lazy var serverSelectionResolver: VPNServerSelectionResolving = {
-        let locationRepository = NetworkProtectionLocationListCompositeRepository(
-            environment: settings.selectedEnvironment,
-            tokenHandler: tokenHandlerProvider,
-            errorEvents: debugEvents
-        )
-        return VPNServerSelectionResolver(locationListRepository: locationRepository, vpnSettings: settings)
-    }()
+    private let serverSelectionResolver: VPNServerSelectionResolving
 
     @MainActor
     private var lastSelectedServer: NetworkProtectionServer? {
@@ -418,6 +411,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),
                 deviceManager: NetworkProtectionDeviceManagement? = nil,
                 serverStatusMonitor: ServerStatusMonitoring? = nil,
+                serverSelectionResolver: VPNServerSelectionResolving? = nil,
                 connectionTester: ConnectionTesting? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
@@ -458,6 +452,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             networkClient: NetworkProtectionBackendClient(environment: settings.selectedEnvironment),
             tokenHandler: tokenHandlerProvider
         )
+
+        self.serverSelectionResolver = serverSelectionResolver ?? {
+            let locationRepository = NetworkProtectionLocationListCompositeRepository(
+                environment: settings.selectedEnvironment,
+                tokenHandler: tokenHandlerProvider,
+                errorEvents: debugEvents
+            )
+            return VPNServerSelectionResolver(locationListRepository: locationRepository, vpnSettings: settings)
+        }()
 
         self.wireGuardAdapterEventHandler = WireGuardAdapterEventHandler(
             providerEvents: providerEvents,

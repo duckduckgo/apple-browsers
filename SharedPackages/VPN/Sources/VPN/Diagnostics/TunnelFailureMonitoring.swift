@@ -26,6 +26,7 @@ import Foundation
 protocol TunnelFailureMonitoring: Actor {
 
     /// Indicates whether the monitor is currently running.
+public protocol TunnelFailureMonitoring: Actor {
     var isStarted: Bool { get }
 
     /// Starts monitoring tunnel failures.

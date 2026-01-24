@@ -334,7 +334,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     private var keyExpirationTester: KeyExpirationTesting!
 
-    private lazy var tunnelFailureMonitor = NetworkProtectionTunnelFailureMonitor(handshakeReporter: adapter)
+    private var tunnelFailureMonitor: TunnelFailureMonitoring!
 
     public let latencyMonitor: LatencyMonitoring
     public let entitlementMonitor: EntitlementMonitoring
@@ -394,6 +394,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 connectionTester: ConnectionTesting? = nil,
                 adapter: WireGuardAdapterProtocol? = nil,
                 keyExpirationTester: KeyExpirationTesting? = nil,
+                tunnelFailureMonitor: TunnelFailureMonitoring? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -476,6 +477,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         } rekey: { @MainActor [weak self] in
             try await self?.rekey()
         }
+
+        self.tunnelFailureMonitor = tunnelFailureMonitor ?? NetworkProtectionTunnelFailureMonitor(
+            handshakeReporter: self.adapter
+        )
 
         self.connectionTester.resultHandler = { @MainActor [weak self] result in
             self?.handleConnectionTestResult(result)

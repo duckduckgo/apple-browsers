@@ -332,19 +332,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private var isConnectionTesterEnabled: Bool = true
 
     @MainActor
-    private lazy var keyExpirationTester: KeyExpirationTester = {
-        KeyExpirationTester(keyStore: keyStore, settings: settings) { @MainActor [weak self] in
-            guard let self else { return false }
-
-            // This provides a more frequent active user pixel check
-            providerEvents.fire(.userBecameActive)
-
-            await updateBandwidthAnalyzer()
-            return await bandwidthAnalyzer.isConnectionIdle()
-        } rekey: { @MainActor [weak self] in
-            try await self?.rekey()
-        }
-    }()
+    private var keyExpirationTester: KeyExpirationTesting!
 
     private lazy var tunnelFailureMonitor = NetworkProtectionTunnelFailureMonitor(handshakeReporter: adapter)
 
@@ -405,6 +393,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 serverSelectionResolver: VPNServerSelectionResolving? = nil,
                 connectionTester: ConnectionTesting? = nil,
                 adapter: WireGuardAdapterProtocol? = nil,
+                keyExpirationTester: KeyExpirationTesting? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -474,6 +463,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             } else {
                 Logger.networkProtectionWireGuard.log("Received message from adapter: \(message, privacy: .public)")
             }
+        }
+
+        self.keyExpirationTester = keyExpirationTester ?? KeyExpirationTester(
+            keyStore: keyStore,
+            settings: settings
+        ) { @MainActor [weak self] in
+            guard let self else { return false }
+            self.providerEvents.fire(.userBecameActive)
+            await self.updateBandwidthAnalyzer()
+            return await self.bandwidthAnalyzer.isConnectionIdle()
+        } rekey: { @MainActor [weak self] in
+            try await self?.rekey()
         }
 
         self.connectionTester.resultHandler = { @MainActor [weak self] result in

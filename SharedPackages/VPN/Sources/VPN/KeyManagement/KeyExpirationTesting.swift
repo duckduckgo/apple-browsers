@@ -23,12 +23,11 @@ import Foundation
 /// This protocol defines the interface for monitoring VPN key expiration
 /// and triggering automatic rekeying when keys expire.
 ///
-protocol KeyExpirationTesting: Actor {
+public protocol KeyExpirationTesting: Actor {
 
     /// Starts the key expiration tester.
     ///
     /// - Parameter testImmediately: If `true`, performs an immediate key expiration check
-public protocol KeyExpirationTesting: Actor {
     func start(testImmediately: Bool) async
 
     /// Stops the key expiration tester.

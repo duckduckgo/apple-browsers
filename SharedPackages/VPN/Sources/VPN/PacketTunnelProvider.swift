@@ -395,6 +395,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 adapter: WireGuardAdapterProtocol? = nil,
                 keyExpirationTester: KeyExpirationTesting? = nil,
                 tunnelFailureMonitor: TunnelFailureMonitoring? = nil,
+                failureRecoveryHandler: FailureRecoveryHandling? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -480,6 +481,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         self.tunnelFailureMonitor = tunnelFailureMonitor ?? NetworkProtectionTunnelFailureMonitor(
             handshakeReporter: self.adapter
+        )
+
+        self.failureRecoveryHandler = failureRecoveryHandler ?? FailureRecoveryHandler(
+            deviceManager: self.deviceManager,
+            reassertingControl: self,
+            eventHandler: { [weak self] step in
+                self?.providerEvents.fire(.failureRecoveryAttempt(step))
+            }
         )
 
         self.connectionTester.resultHandler = { @MainActor [weak self] result in
@@ -1471,13 +1480,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
 
-    private lazy var failureRecoveryHandler: FailureRecoveryHandling = FailureRecoveryHandler(
-        deviceManager: deviceManager,
-        reassertingControl: self,
-        eventHandler: { [weak self] step in
-            self?.providerEvents.fire(.failureRecoveryAttempt(step))
-        }
-    )
+    private var failureRecoveryHandler: FailureRecoveryHandling!
 
     private func startServerFailureRecovery() {
         Task {

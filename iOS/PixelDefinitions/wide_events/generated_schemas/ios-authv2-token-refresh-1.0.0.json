@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "description": "Sent when AuthV2 has completed a token refresh",
-    "$comment": "{\"owners\":[\"ssymons\"]}",
+    "$comment": "{\"owners\":[\"samsymons\"]}",
     "type": "object",
     "required": ["meta", "global", "feature", "app"],
     "additionalProperties": false,
@@ -132,6 +132,14 @@
                                 "code": {
                                     "type": "integer",
                                     "description": "The top level error code"
+                                },
+                                "underlying_domain": {
+                                    "type": "string",
+                                    "description": "The underlying error domain"
+                                },
+                                "underlyingcode": {
+                                    "type": "integer",
+                                    "description": "The underlying error code"
                                 }
                             }
                         }

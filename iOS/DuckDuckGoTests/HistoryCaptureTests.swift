@@ -36,14 +36,14 @@ final class HistoryCaptureTests: XCTestCase {
 
     @MainActor
     func test_whenURLIsCommitted_ThenVisitIsStored() async {
-        await sut.webViewDidCommit(url: URL.example)
+        sut.webViewDidCommit(url: URL.example)
         XCTAssertEqual(1, mockHistoryManager.addVisitCalls.count)
         XCTAssertEqual([URL.example], mockHistoryManager.addVisitCalls)
     }
 
     @MainActor
     func test_whenTitleIsUpdatedForMatchingURL_ThenTitleIsSaved() async {
-        await sut.webViewDidCommit(url: URL.example)
+        sut.webViewDidCommit(url: URL.example)
         sut.titleDidChange("test", forURL: URL.example)
         XCTAssertEqual(1, mockHistoryManager.updateTitleIfNeededCalls.count)
         XCTAssertEqual(mockHistoryManager.updateTitleIfNeededCalls[0].title, "test")
@@ -52,14 +52,14 @@ final class HistoryCaptureTests: XCTestCase {
 
     @MainActor
     func test_whenTitleIsUpdatedForDifferentURL_ThenTitleIsIgnored() async {
-        await sut.webViewDidCommit(url: URL.example)
+        sut.webViewDidCommit(url: URL.example)
         sut.titleDidChange("test", forURL: URL.example.appendingPathComponent("path"))
         XCTAssertEqual(0, mockHistoryManager.updateTitleIfNeededCalls.count)
     }
 
     @MainActor
     func test_whenComittedURLIsASearch_thenCleanURLIsUsed() async {
-        await sut.webViewDidCommit(url: URL(string: "https://duckduckgo.com/?q=search+terms&t=osx&ia=web")!)
+        sut.webViewDidCommit(url: URL(string: "https://duckduckgo.com/?q=search+terms&t=osx&ia=web")!)
         
         func assertUrlIsExpected(_ url: URL?) {
             XCTAssertEqual(true, url?.isDuckDuckGoSearch)
@@ -74,7 +74,7 @@ final class HistoryCaptureTests: XCTestCase {
 
     @MainActor
     func test_whenTitleUpdatedForSearchURL_thenCleanURLIsUsed() async {
-        await sut.webViewDidCommit(url: URL(string: "https://duckduckgo.com/?q=search+terms&t=osx&ia=web")!)
+        sut.webViewDidCommit(url: URL(string: "https://duckduckgo.com/?q=search+terms&t=osx&ia=web")!)
 
         // Note parameter order has changed
         sut.titleDidChange("title", forURL: URL(string: "https://duckduckgo.com/?q=search+terms&ia=web&t=osx")!)

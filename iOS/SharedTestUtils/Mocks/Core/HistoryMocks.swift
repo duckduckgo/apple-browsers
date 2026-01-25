@@ -31,6 +31,9 @@ class MockHistoryManager: HistoryManaging {
     var tabHistoryCalls: [String] = []
     var removeTabHistoryCalls: [[String]] = []
     var tabHistoryResult: [URL] = []
+    
+    /// Expectation that is fulfilled when `removeTabHistory` is called
+    var removeTabHistoryExpectation: XCTestExpectation?
 
     let historyCoordinator: HistoryCoordinating
     var isEnabledByUser: Bool
@@ -63,7 +66,7 @@ class MockHistoryManager: HistoryManaging {
         historyCoordinator.history
     }
     
-    func addVisit(of url: URL, tabID: String?) async throws {
+    func addVisit(of url: URL, tabID: String?) {
         addVisitCalls.append(url)
     }
     
@@ -81,9 +84,10 @@ class MockHistoryManager: HistoryManaging {
     
     func removeTabHistory(for tabIDs: [String]) async {
         removeTabHistoryCalls.append(tabIDs)
+        removeTabHistoryExpectation?.fulfill()
     }
 
- }
+}
 
 class MockTabHistoryCoordinating: TabHistoryCoordinating {
     var addVisitCalls: [(url: URL, tabID: String?)] = []
@@ -97,7 +101,7 @@ class MockTabHistoryCoordinating: TabHistoryCoordinating {
         return tabHistoryResult
     }
     
-    func addVisit(of url: URL, tabID: String?) async throws {
+    func addVisit(of url: URL, tabID: String?) {
         addVisitCalls.append((url, tabID))
     }
     

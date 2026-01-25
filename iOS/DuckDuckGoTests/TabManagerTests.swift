@@ -88,12 +88,12 @@ final class TabManagerTests: XCTestCase {
         let tabID = tabToRemove.uid
         
         let mockHistoryManager = MockHistoryManager()
+        mockHistoryManager.removeTabHistoryExpectation = expectation(description: "removeTabHistory called")
         let manager = try makeManager(tabsModel, historyManager: mockHistoryManager)
         
         manager.remove(at: 1)
         
-        // Allow async Task to complete
-        try await Task.sleep(nanoseconds: 100_000_000)
+        await fulfillment(of: [mockHistoryManager.removeTabHistoryExpectation!], timeout: 5.0)
         
         XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 1)
         XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.first, [tabID])
@@ -107,12 +107,12 @@ final class TabManagerTests: XCTestCase {
         let tabIDs = [initialTab.uid, tab1.uid]
         
         let mockHistoryManager = MockHistoryManager()
+        mockHistoryManager.removeTabHistoryExpectation = expectation(description: "removeTabHistory called")
         let manager = try makeManager(tabsModel, historyManager: mockHistoryManager)
         
         manager.removeAll()
         
-        // Allow async Task to complete
-        try await Task.sleep(nanoseconds: 100_000_000)
+        await fulfillment(of: [mockHistoryManager.removeTabHistoryExpectation!], timeout: 5.0)
         
         XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 1)
         XCTAssertEqual(Set(mockHistoryManager.removeTabHistoryCalls.first ?? []), Set(tabIDs))
@@ -133,7 +133,8 @@ final class TabManagerTests: XCTestCase {
     func makeManager(_ model: TabsModel,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
                      historyManager: MockHistoryManager = MockHistoryManager()) throws -> TabManager {
-        let tabsPersistence = try TabsModelPersistence()
+        let tabsPersistence = TabsModelPersistence(store: MockKeyValueFileStore(),
+                                                   legacyStore: MockKeyValueStore())
         return TabManager(model: model,
                           persistence: tabsPersistence,
                           previewsSource: previewsSource,

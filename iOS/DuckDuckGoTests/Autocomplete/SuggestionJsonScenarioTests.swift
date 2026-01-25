@@ -476,7 +476,7 @@ extension SuggestionJsonScenarioTests {
             historyCoordinator.history
         }
         
-        func addVisit(of url: URL, tabID: String?) async throws {
+        func addVisit(of url: URL, tabID: String?) {
         }
         
         func updateTitleIfNeeded(title: String, url: URL) {

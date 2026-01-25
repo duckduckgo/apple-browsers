@@ -57,6 +57,7 @@ protocol AIChatPageContextHandling: AnyObject {
 
 // MARK: - Implementation
 
+@MainActor
 final class AIChatPageContextHandler: AIChatPageContextHandling {
 
     // MARK: - Constants

@@ -23,6 +23,7 @@ import WebKit
 import XCTest
 @testable import DuckDuckGo
 
+@MainActor
 final class AIChatPageContextHandlerTests: XCTestCase {
 
     private var cancellables: Set<AnyCancellable>!

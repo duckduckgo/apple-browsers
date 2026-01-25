@@ -286,8 +286,9 @@ final class AIChatContentHandlerTests: XCTestCase {
             fullContentLength: 12
         )
 
+        let settingsWithAutoAttach = MockAIChatSettingsProvider(isAutomaticContextAttachmentEnabled: true)
         let handlerWithContext = AIChatContentHandler(
-            aiChatSettings: mockSettings,
+            aiChatSettings: settingsWithAutoAttach,
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
             featureDiscovery: MockFeatureDiscovery(),
@@ -312,8 +313,9 @@ final class AIChatContentHandlerTests: XCTestCase {
 
     func testSubmitStartChatActionDoesNotPushContextWhenNil() throws {
         // Given
+        let settingsWithAutoAttach = MockAIChatSettingsProvider(isAutomaticContextAttachmentEnabled: true)
         let handlerWithoutContext = AIChatContentHandler(
-            aiChatSettings: mockSettings,
+            aiChatSettings: settingsWithAutoAttach,
             payloadHandler: mockPayloadHandler,
             pixelMetricHandler: mockMetricHandler,
             featureDiscovery: MockFeatureDiscovery(),

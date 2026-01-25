@@ -174,13 +174,7 @@ final class AIChatContextualSheetCoordinator {
 
         guard let snapshot = currentSnapshot else { return }
 
-        if hasActiveChat {
-            Logger.aiChat.debug("[PageContext] Manually attached to active chat")
-            sheetViewController?.pushPageContextToFrontend(snapshot.context)
-        } else {
-            Logger.aiChat.debug("[PageContext] Manually attached to input box")
-            sheetViewController?.applyContextSnapshot(snapshot)
-        }
+        sheetViewController?.applyContextSnapshot(snapshot)
     }
 
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.

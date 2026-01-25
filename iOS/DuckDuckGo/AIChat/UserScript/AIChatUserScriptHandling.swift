@@ -54,16 +54,12 @@ struct GetPageContextRequest: Codable {
 }
 
 /// Reason for page context request from frontend.
-enum PageContextRequestReason {
+enum PageContextRequestReason: String {
     case userAction
-    case unknown
+    case other
 
     init(rawValue: String?) {
-        if rawValue == "userAction" {
-            self = .userAction
-        } else {
-            self = .unknown
-        }
+        self = rawValue == "userAction" ? .userAction : .other
     }
 }
 

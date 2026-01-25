@@ -194,7 +194,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     /// Submits a start chat action to initiate a new AI Chat conversation.
     /// Only pushes page context if auto-attach is enabled; manual attach goes through explicit pushPageContext calls.
     func submitStartChatAction() {
-        if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = getPageContext?(.unknown) {
+        if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = getPageContext?(.other) {
             userScript?.submitPageContext(context)
         }
         userScript?.submitStartChatAction()

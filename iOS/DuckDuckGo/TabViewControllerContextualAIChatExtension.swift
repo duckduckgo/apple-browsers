@@ -52,7 +52,7 @@ extension TabViewController {
     }
 }
 
-// MARK: - Favicon Helpers (used by coordinator's faviconProvider)
+// MARK: - Favicon Helpers
 
 extension TabViewController {
 

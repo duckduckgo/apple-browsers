@@ -111,7 +111,6 @@ final class AIChatContextualSheetCoordinator {
         if let existingSheet = sheetViewController {
             sheetVC = existingSheet
 
-            // Collect fresh context when re-presenting existing sheet
             if restoreURL == nil {
                 await pageContextHandler.triggerContextCollection()
             }
@@ -124,7 +123,6 @@ final class AIChatContextualSheetCoordinator {
                 }
             }
         } else {
-            // Collect context for new sheet (unless cold restore)
             if restoreURL == nil {
                 await pageContextHandler.triggerContextCollection()
             }
@@ -218,7 +216,6 @@ final class AIChatContextualSheetCoordinator {
 
         Logger.aiChat.debug("[PageContext] Navigation detected - triggering collection")
         await pageContextHandler.triggerContextCollection()
-        // handleContextUpdate will be triggered via contextPublisher
     }
 
     /// Returns true if there's an active chat session (web view retained).
@@ -244,7 +241,7 @@ final class AIChatContextualSheetCoordinator {
         guard contextUpdateCancellable == nil else { return }
 
         contextUpdateCancellable = pageContextHandler.contextPublisher
-            .dropFirst() // Skip initial value, we only want updates
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] context in
                 self?.handleContextUpdate(context)
@@ -296,7 +293,6 @@ private extension AIChatContextualSheetCoordinator {
             }
         )
 
-        // Coordinator handles auto-attach decisions when chat URL changes
         webVC.onContextualChatURLChange = { [weak self, weak webVC] url in
             self?.handleWebViewChatURLChange(url, webViewController: webVC)
         }
@@ -306,7 +302,6 @@ private extension AIChatContextualSheetCoordinator {
 
     /// Handles auto-attach decision when web view's chat URL changes.
     func handleWebViewChatURLChange(_ url: URL?, webViewController: AIChatContextualWebViewController?) {
-        // Only auto-attach when a chat is established (has chat ID)
         guard url != nil,
               aiChatSettings.isAutomaticContextAttachmentEnabled,
               let context = pageContextHandler.latestContext else { return }

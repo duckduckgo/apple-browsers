@@ -48,7 +48,7 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
-    /// Callback for URL changes - coordinator handles auto-attach decisions
+    /// Callback for URL changes.
     var onContextualChatURLChange: ((URL?) -> Void)?
 
     /// Passthrough delegate for the content handler. Set this to receive navigation callbacks.
@@ -246,10 +246,7 @@ final class AIChatContextualWebViewController: UIViewController {
 
         lastContextualChatURL = contextualChatURL
 
-        // Report URL change to delegate - coordinator handles auto-attach decisions
         delegate?.contextualWebViewController(self, didUpdateContextualChatURL: contextualChatURL)
-
-        // Also notify via callback for coordinator's auto-attach handling
         onContextualChatURLChange?(contextualChatURL)
     }
 }

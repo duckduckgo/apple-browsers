@@ -56,9 +56,6 @@ final class TabViewModelTests: XCTestCase {
         
         sut.captureWebviewDidCommit(testURL)
         
-        // Allow the async Task in captureWebviewDidCommit to complete
-        try await Task.sleep(nanoseconds: 100_000_000)
-        
         XCTAssertEqual(mockHistoryManager.addVisitCalls.count, 1)
         XCTAssertEqual(mockHistoryManager.addVisitCalls.first, testURL)
     }
@@ -69,7 +66,6 @@ final class TabViewModelTests: XCTestCase {
         
         // First commit the URL so the history capture tracks it
         sut.captureWebviewDidCommit(testURL)
-        try await Task.sleep(nanoseconds: 100_000_000)
         
         sut.captureTitleDidChange(testTitle, for: testURL)
         

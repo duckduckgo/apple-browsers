@@ -19,7 +19,6 @@
 
 import Foundation
 import History
-import os.log
 
 public class HistoryCapture {
 
@@ -39,14 +38,10 @@ public class HistoryCapture {
     }
 
     @MainActor
-    public func webViewDidCommit(url: URL) async {
+    public func webViewDidCommit(url: URL) {
         let url = url.urlOrDuckDuckGoCleanQuery
         self.url = url
-        do {
-            try await historyManager.addVisit(of: url, tabID: tabID)
-        } catch {
-            Logger.history.error("Failed to record visit: \(error.localizedDescription)")
-        }
+        historyManager.addVisit(of: url, tabID: tabID)
     }
 
     @MainActor

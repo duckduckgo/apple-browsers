@@ -17,10 +17,11 @@
 //
 
 import Foundation
+import os.log
 
 public protocol TabHistoryCoordinating {
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
-    @MainActor func addVisit(of url: URL, tabID: String?) async throws
+    @MainActor func addVisit(of url: URL, tabID: String?)
     @MainActor func removeVisits(for tabIDs: [String]) async throws
 }
 
@@ -38,11 +39,17 @@ final public class TabHistoryCoordinator: TabHistoryCoordinating {
     }
 
     @MainActor
-    public func addVisit(of url: URL, tabID: String?) async throws {
+    public func addVisit(of url: URL, tabID: String?) {
         guard let tabID else {
             return
         }
-        try await tabHistoryStoring.insertTabHistory(for: tabID, url: url)
+        Task {
+            do {
+                try await tabHistoryStoring.insertTabHistory(for: tabID, url: url)
+            } catch {
+                Logger.history.error("Failed to record visit: \(error.localizedDescription)")
+            }
+        }
     }
 
     @MainActor

@@ -56,7 +56,7 @@ final class HistoryManagerTests: XCTestCase {
                      netflixURL,
                      ddgURL]
         for url in urls {
-            try await historyManager.addVisit(of: url, tabID: "1")
+            historyManager.addVisit(of: url, tabID: "1")
             historyManager.updateTitleIfNeeded(title: url.absoluteString, url: url)
             historyManager.commitChanges(url: url)
         }
@@ -106,7 +106,7 @@ final class HistoryManagerTests: XCTestCase {
                                             isRecentlyVisitedSitesEnabledByUser: true)
         
         let testURL = URL(string: "https://example.com")!
-        try await historyManager.addVisit(of: testURL, tabID: "tab-1")
+        historyManager.addVisit(of: testURL, tabID: "tab-1")
         
         XCTAssertEqual(spyHistoryCoordinator.addVisitCalls.count, 1)
         XCTAssertEqual(spyHistoryCoordinator.addVisitCalls.first?.url, testURL)
@@ -125,7 +125,7 @@ final class HistoryManagerTests: XCTestCase {
                                             isRecentlyVisitedSitesEnabledByUser: true)
         
         let testURL = URL(string: "https://example.com")!
-        try await historyManager.addVisit(of: testURL, tabID: "tab-1")
+        historyManager.addVisit(of: testURL, tabID: "tab-1")
         
         XCTAssertTrue(spyHistoryCoordinator.addVisitCalls.isEmpty)
         XCTAssertEqual(mockTabHistoryCoordinator.addVisitCalls.count, 1)

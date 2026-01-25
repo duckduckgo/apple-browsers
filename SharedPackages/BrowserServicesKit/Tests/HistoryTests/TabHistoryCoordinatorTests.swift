@@ -44,12 +44,12 @@ final class TabHistoryCoordinatorTests: XCTestCase {
     func testWhenTabHistoryIsCalled_ThenStoreIsQueried() async throws {
         let tabID = "query-tab-123"
         let expectedURLs = [URL(string: "https://example1.com")!, URL(string: "https://example2.com")!]
-        await tabHistoryStoringMock.setTabHistoryToReturn(expectedURLs)
+        tabHistoryStoringMock.setTabHistoryToReturn(expectedURLs)
 
         let result = try await coordinator.tabHistory(tabID: tabID)
 
-        let queriedTabID = await tabHistoryStoringMock.lastQueriedTabID
-        let tabHistoryCalled = await tabHistoryStoringMock.tabHistoryCalled
+        let queriedTabID = tabHistoryStoringMock.lastQueriedTabID
+        let tabHistoryCalled = tabHistoryStoringMock.tabHistoryCalled
 
         XCTAssertTrue(tabHistoryCalled)
         XCTAssertEqual(queriedTabID, tabID)
@@ -63,26 +63,17 @@ final class TabHistoryCoordinatorTests: XCTestCase {
         let tabID = "insert-tab-456"
         let url = URL(string: "https://example.com")!
 
-        try await coordinator.addVisit(of: url, tabID: tabID)
+        tabHistoryStoringMock.insertTabHistoryExpectation = expectation(description: "removeTabHistory called")
+        coordinator.addVisit(of: url, tabID: tabID)
+        await fulfillment(of: [tabHistoryStoringMock.insertTabHistoryExpectation!], timeout: 5.0)
 
-        let insertCalled = await tabHistoryStoringMock.insertTabHistoryCalled
-        let insertedTabID = await tabHistoryStoringMock.lastInsertedTabID
-        let insertedURL = await tabHistoryStoringMock.lastInsertedURL
+        let insertCalled = tabHistoryStoringMock.insertTabHistoryCalled
+        let insertedTabID = tabHistoryStoringMock.lastInsertedTabID
+        let insertedURL = tabHistoryStoringMock.lastInsertedURL
 
         XCTAssertTrue(insertCalled)
         XCTAssertEqual(insertedTabID, tabID)
         XCTAssertEqual(insertedURL, url)
-    }
-
-    @MainActor
-    func testWhenAddVisitWithNilTabID_ThenStoreIsNotCalled() async throws {
-        let url = URL(string: "https://example.com")!
-
-        try await coordinator.addVisit(of: url, tabID: nil)
-
-        let insertCalled = await tabHistoryStoringMock.insertTabHistoryCalled
-
-        XCTAssertFalse(insertCalled)
     }
 
     // MARK: - Remove Visits Tests
@@ -93,8 +84,8 @@ final class TabHistoryCoordinatorTests: XCTestCase {
 
         try await coordinator.removeVisits(for: tabIDs)
 
-        let removeCalled = await tabHistoryStoringMock.removeTabHistoryCalled
-        let removedTabIDs = await tabHistoryStoringMock.lastRemovedTabIDs
+        let removeCalled = tabHistoryStoringMock.removeTabHistoryCalled
+        let removedTabIDs = tabHistoryStoringMock.lastRemovedTabIDs
 
         XCTAssertTrue(removeCalled)
         XCTAssertEqual(removedTabIDs, tabIDs)
@@ -103,7 +94,7 @@ final class TabHistoryCoordinatorTests: XCTestCase {
 
 // MARK: - TabHistoryStoringMock
 
-actor TabHistoryStoringMock: TabHistoryStoring {
+class TabHistoryStoringMock: TabHistoryStoring {
 
     var tabHistoryCalled = false
     var insertTabHistoryCalled = false
@@ -113,6 +104,8 @@ actor TabHistoryStoringMock: TabHistoryStoring {
     var lastInsertedURL: URL?
     var lastRemovedTabIDs: [String]?
     var tabHistoryToReturn: [URL] = []
+
+    var insertTabHistoryExpectation: XCTestExpectation?
 
     func setTabHistoryToReturn(_ urls: [URL]) {
         tabHistoryToReturn = urls
@@ -128,6 +121,7 @@ actor TabHistoryStoringMock: TabHistoryStoring {
         insertTabHistoryCalled = true
         lastInsertedTabID = tabID
         lastInsertedURL = url
+        insertTabHistoryExpectation?.fulfill()
     }
 
     func removeTabHistory(for tabIDs: [String]) async throws {

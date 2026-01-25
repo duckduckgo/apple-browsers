@@ -66,7 +66,7 @@ class MockHistoryManager: HistoryManaging {
         historyCoordinator.history
     }
     
-    func addVisit(of url: URL, tabID: String?) async throws {
+    func addVisit(of url: URL, tabID: String?) {
         addVisitCalls.append(url)
     }
     
@@ -100,7 +100,7 @@ class MockTabHistoryCoordinating: TabHistoryCoordinating {
         return tabHistoryResult
     }
     
-    func addVisit(of url: URL, tabID: String?) async throws {
+    func addVisit(of url: URL, tabID: String?) {
         addVisitCalls.append((url, tabID))
     }
     

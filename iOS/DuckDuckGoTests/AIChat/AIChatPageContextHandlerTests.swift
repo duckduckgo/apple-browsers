@@ -92,7 +92,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
     func testContextPublisherInitiallyEmitsNil() {
         let handler = makeHandler()
 
-        var receivedValue: AIChatPageContextData?? = nil
+        var receivedValue: AIChatPageContextData??
         handler.contextPublisher
             .first()
             .sink { context in

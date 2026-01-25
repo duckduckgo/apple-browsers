@@ -113,7 +113,6 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         }
 
         script.webView = webViewProvider()
-        startObservingUpdates()
 
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             var cancellable: AnyCancellable?
@@ -143,6 +142,8 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
                 continuation.resume()
             }
         }
+
+        startObservingUpdates()
     }
 
     func clear() {

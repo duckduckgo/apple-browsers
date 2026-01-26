@@ -187,7 +187,6 @@
 		31B5E8C12E1D54BB00EECC1E /* SuggestionTrayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */; };
 		31B5E8C22E1D54BB00EECC1E /* SwipeContainerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */; };
 		A1B2C3D42F012345000AABBC /* AIChatHistoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D12F012345000AABBC /* AIChatHistoryItem.swift */; };
-		A1B2C3D52F012345000AABBC /* AIChatHistoryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D22F012345000AABBC /* AIChatHistoryListView.swift */; };
 		A1B2C3D62F012345000AABBC /* AIChatHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D32F012345000AABBC /* AIChatHistoryManager.swift */; };
 		57797B19E0164BB9B708E805 /* AIChatHistoryListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6854A4EDA6794DEC95352D5B /* AIChatHistoryListViewController.swift */; };
 		A1B2C3D82F012345000AABBC /* AIChatSuggestionsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D72F012345000AABBC /* AIChatSuggestionsReader.swift */; };
@@ -2455,7 +2454,6 @@
 		31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionTrayManager.swift; sourceTree = "<group>"; };
 		31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeContainerManager.swift; sourceTree = "<group>"; };
 		A1B2C3D12F012345000AABBC /* AIChatHistoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryItem.swift; sourceTree = "<group>"; };
-		A1B2C3D22F012345000AABBC /* AIChatHistoryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryListView.swift; sourceTree = "<group>"; };
 		A1B2C3D32F012345000AABBC /* AIChatHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryManager.swift; sourceTree = "<group>"; };
 		6854A4EDA6794DEC95352D5B /* AIChatHistoryListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryListViewController.swift; sourceTree = "<group>"; };
 		A1B2C3D72F012345000AABBC /* AIChatSuggestionsReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSuggestionsReader.swift; sourceTree = "<group>"; };
@@ -6132,7 +6130,6 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D12F012345000AABBC /* AIChatHistoryItem.swift */,
-				A1B2C3D22F012345000AABBC /* AIChatHistoryListView.swift */,
 				6854A4EDA6794DEC95352D5B /* AIChatHistoryListViewController.swift */,
 				A1B2C3D32F012345000AABBC /* AIChatHistoryManager.swift */,
 				A1B2C3D72F012345000AABBC /* AIChatSuggestionsReader.swift */,
@@ -11266,7 +11263,6 @@
 				31B5E8C12E1D54BB00EECC1E /* SuggestionTrayManager.swift in Sources */,
 				31B5E8C22E1D54BB00EECC1E /* SwipeContainerManager.swift in Sources */,
 				A1B2C3D42F012345000AABBC /* AIChatHistoryItem.swift in Sources */,
-				A1B2C3D52F012345000AABBC /* AIChatHistoryListView.swift in Sources */,
 				A1B2C3D62F012345000AABBC /* AIChatHistoryManager.swift in Sources */,
 				57797B19E0164BB9B708E805 /* AIChatHistoryListViewController.swift in Sources */,
 				A1B2C3D82F012345000AABBC /* AIChatSuggestionsReader.swift in Sources */,

@@ -363,7 +363,6 @@ private struct BrowsingMenuHeaderView: View {
     private var closeButton: some View {
         Button(action: onDismiss) {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                .foregroundStyle(Color(designSystemColor: .textSecondary))
         }
         .buttonStyle(BrowsingMenuCloseButtonStyle())
         .accessibilityLabel(UserText.keyCommandClose)

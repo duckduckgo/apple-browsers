@@ -137,21 +137,27 @@ jobs:
     - name: Update xcbaseline with runner hardware specs
       working-directory: macOS
       run: |
-        PLIST_PATH=./DuckDuckGo-macOS.xcodeproj/xcshareddata/xcbaselines/37C320B62F1E80A1008F4604.xcbaseline/Info.plist
-        
         # Get actual hardware specs from the runner
         CPU_KIND=$(sysctl -n machdep.cpu.brand_string)
         CPU_CORES=$(sysctl -n hw.logicalcpu)
         PHYSICAL_CORES=$(sysctl -n hw.physicalcpu)
         MODEL=$(sysctl -n hw.model)
         
-        # Update the plist with actual values
-        /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:E154FD62-5A08-4340-A65B-9F35B579B148:localComputer:cpuKind '$CPU_KIND'" "$PLIST_PATH"
-        /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:E154FD62-5A08-4340-A65B-9F35B579B148:localComputer:logicalCPUCoresPerPackage $CPU_CORES" "$PLIST_PATH"
-        /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:E154FD62-5A08-4340-A65B-9F35B579B148:localComputer:physicalCPUCoresPerPackage $PHYSICAL_CORES" "$PLIST_PATH"
-        /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:E154FD62-5A08-4340-A65B-9F35B579B148:localComputer:modelCode '$MODEL'" "$PLIST_PATH"
-        
-        echo "✅ Updated xcbaseline: CPU=$CPU_KIND, Cores=$CPU_CORES, Model=$MODEL"
+        # Find all Info.plist files within xcbaselines directories
+        find . -path "*/xcbaselines/*/Info.plist" | while read -r PLIST_PATH; do
+          # Get all UUIDs in the plist
+          UUIDS=$(/usr/libexec/PlistBuddy -c "Print :runDestinationsByUUID" "$PLIST_PATH" 2>/dev/null | grep -E "^    [A-F0-9-]+ " | awk '{print $1}')
+          
+          # Update each UUID entry
+          for UUID in $UUIDS; do
+            /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:${UUID}:localComputer:cpuKind '$CPU_KIND'" "$PLIST_PATH" || true
+            /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:${UUID}:localComputer:logicalCPUCoresPerPackage $CPU_CORES" "$PLIST_PATH" || true
+            /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:${UUID}:localComputer:physicalCPUCoresPerPackage $PHYSICAL_CORES" "$PLIST_PATH" || true
+            /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:${UUID}:localComputer:modelCode '$MODEL'" "$PLIST_PATH" || true
+
+            echo "✅ Updated xcbaseline: CPU=$CPU_KIND, Cores=$CPU_CORES, Model=$MODEL, UUID=$UUID"
+          done
+        done
   
     - name: Build Memory Usage Tests
       working-directory: macOS

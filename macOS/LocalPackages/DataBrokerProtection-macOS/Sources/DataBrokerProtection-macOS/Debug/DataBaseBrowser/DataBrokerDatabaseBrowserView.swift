@@ -102,8 +102,9 @@ struct DatabaseTableContainer: View {
 
                         ScrollView {
                             TextEditor(text: $selectedData)
+                                .font(.system(.body, design: .monospaced))
                         }
-                        .frame(height: 120)
+                        .frame(minHeight: 120)
                     }
                     .background(Color(NSColor.controlBackgroundColor))
                     .transition(.move(edge: .bottom).combined(with: .opacity))

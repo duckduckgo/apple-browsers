@@ -123,6 +123,8 @@ public struct TabHistoryStore: TabHistoryStoring {
                 let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
                 do {
                     try context.execute(batchDeleteRequest)
+                    // Batch deletes operate directly on the persistent store, bypassing the context.
+                    // Reset updates the context to reflect the store.
                     context.reset()
                     continuation.resume(returning: ())
                 } catch {
@@ -148,6 +150,8 @@ public struct TabHistoryStore: TabHistoryStoring {
                 let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
                 do {
                     try context.execute(batchDeleteRequest)
+                    // Batch deletes operate directly on the persistent store, bypassing the context.
+                    // Reset updates the context to reflect the store.
                     context.reset()
                     continuation.resume(returning: ())
                 } catch {

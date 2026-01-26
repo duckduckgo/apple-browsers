@@ -21,13 +21,12 @@ import Persistence
 
 /// Debug menu for configuring base URLs at runtime.
 ///
-/// This menu allows internal users to override the default DuckDuckGo base URLs
+/// This menu allows internal users to override the default DuckDuckGo base URL
 /// for testing purposes, such as pointing to local servers or dev instances.
 ///
 /// ## Available Options
 ///
 /// - **Set Custom BASE_URL**: Override the main DuckDuckGo base URL
-/// - **Set Custom DUCKAI_BASE_URL**: Override the Duck.ai base URL
 /// - **Reset to Defaults**: Clear all custom overrides
 ///
 /// ## Usage Notes
@@ -39,7 +38,6 @@ final class BaseURLDebugMenu: NSMenu {
     private let debugSettings: any KeyedStoring<BaseURLDebugSettings>
 
     private let baseURLLabelMenuItem = NSMenuItem(title: "")
-    private let duckAIURLLabelMenuItem = NSMenuItem(title: "")
     private let helpURLLabelMenuItem = NSMenuItem(title: "")
 
     init(_ debugSettings: (any KeyedStoring<BaseURLDebugSettings>)? = nil) {
@@ -50,9 +48,6 @@ final class BaseURLDebugMenu: NSMenu {
             NSMenuItem(title: "Set Custom BASE_URL", action: #selector(setCustomBaseURL))
                 .targetting(self)
 
-            NSMenuItem(title: "Set Custom DUCKAI_BASE_URL", action: #selector(setCustomDuckAIBaseURL))
-                .targetting(self)
-
             NSMenuItem.separator()
 
             NSMenuItem(title: "Reset to Defaults", action: #selector(resetToDefaults))
@@ -61,7 +56,6 @@ final class BaseURLDebugMenu: NSMenu {
             NSMenuItem.separator()
 
             baseURLLabelMenuItem
-            duckAIURLLabelMenuItem
             helpURLLabelMenuItem
 
             NSMenuItem.separator()
@@ -86,10 +80,6 @@ final class BaseURLDebugMenu: NSMenu {
         let isBaseCustom = debugSettings.customBaseURL != nil && !debugSettings.customBaseURL!.isEmpty
         baseURLLabelMenuItem.title = "BASE_URL: \(baseURL)\(isBaseCustom ? " (custom)" : "")"
 
-        let duckAIURL = debugSettings.effectiveDuckAIBaseURL
-        let isDuckAICustom = debugSettings.customDuckAIBaseURL != nil && !debugSettings.customDuckAIBaseURL!.isEmpty
-        duckAIURLLabelMenuItem.title = "DUCKAI_BASE_URL: \(duckAIURL)\(isDuckAICustom ? " (custom)" : "")"
-
         let helpURL = debugSettings.effectiveHelpBaseURL
         helpURLLabelMenuItem.title = "HELP_BASE_URL: \(helpURL)"
     }
@@ -112,26 +102,6 @@ final class BaseURLDebugMenu: NSMenu {
             guard let url = URL(string: value), url.isValid else { return false }
 
             self?.debugSettings.customBaseURL = value
-            return true
-        }
-    }
-
-    @objc func setCustomDuckAIBaseURL() {
-        showURLInputAlert(
-            title: "Set Custom DUCKAI_BASE_URL",
-            message: "Enter the base URL for Duck.ai (e.g., http://localhost:8081)",
-            currentValue: debugSettings.customDuckAIBaseURL
-        ) { [weak self] value in
-            guard let value = value else { return false }
-
-            if value.isEmpty {
-                self?.debugSettings.customDuckAIBaseURL = nil
-                return true
-            }
-
-            guard let url = URL(string: value), url.isValid else { return false }
-
-            self?.debugSettings.customDuckAIBaseURL = value
             return true
         }
     }

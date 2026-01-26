@@ -235,7 +235,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     @MainActor
     func viewAllPlansAction(url: SubscriptionURL = .plans) -> ViewAllPlansAction {
         // Fire appropriate event for pixel tracking
-        if url == .upgrade {
+        if case .upgradeToTier = url {
             userEventHandler(.didClickUpgradeToPro)
         } else {
             userEventHandler(.didClickViewAllPlans)

@@ -1,5 +1,5 @@
 //
-//  WideEventFeatureFlagAdapter.swift
+//  NSManagedObject+Helpers.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,24 +16,12 @@
 //  limitations under the License.
 //
 
-import PixelKit
-import PrivacyConfig
+import CoreData
 
-struct WideEventFeatureFlagAdapter: WideEventFeatureFlagProviding {
-    private let featureFlagger: FeatureFlagger
+internal extension NSManagedObject {
 
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
+    static var entityName: String {
+        String(describing: self)
     }
 
-    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-#if DEBUG || REVIEW || ALPHA
-            return false
-#else
-            return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
-#endif
-        }
-    }
 }

@@ -202,12 +202,6 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         return .async(Task {
             let shouldProceed = await waitForSecondPress()
 
-            // Install event interceptor to prevent beeps for repeated shortcut key events,
-            // reset in the `deciderSequenceCompleted` delegate callback
-            if shouldProceed {
-                installEventInterceptor()
-            }
-
             // Emit completed state - UI will hide overlay
             currentState = .completed(shouldProceed: shouldProceed)
 
@@ -331,7 +325,14 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                     timer?.invalidate()
                     cancellationState.onCancel = nil
                     onHoverChange = nil
-                    (NSApp as? Application)?.resetEventInterceptor(token: interceptorToken)
+                    
+                    // If proceeding: install beep-prevention interceptor that consumes repeated keyDown events
+                    // (user may still be holding the key, which would cause system beeps if not consumed)
+                    if shouldProceed {
+                        self.installEventInterceptor()
+                    } else {
+                        (NSApp as? Application)?.resetEventInterceptor(token: interceptorToken)
+                    }
 
                     continuation.resume(returning: shouldProceed)
                 }

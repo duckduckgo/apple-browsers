@@ -58,7 +58,7 @@ struct FireConfirmationPresenter {
     
     /// Presents a SwiftUI-based confirmation sheet as an alternative UI for the "Fire" action.
     /// 
-    /// This function builds a FireConfirmationView hosted in a UIHostingController and presents it
+    /// This function builds a GranularFireConfirmationView hosted in a UIHostingController and presents it
     /// as either a sheet or popover, depending on the device. Currently, this function is unused but
     /// demonstrates an alternate UI flow for fire confirmation.
     @MainActor
@@ -84,8 +84,8 @@ struct FireConfirmationPresenter {
     @MainActor
     private func makeViewModel(dismissing viewController: UIViewController,
                                onConfirm: @escaping (FireRequest) -> Void,
-                               onCancel: @escaping () -> Void) -> FireConfirmationViewModel {
-        FireConfirmationViewModel(
+                               onCancel: @escaping () -> Void) -> GranularFireConfirmationViewModel {
+        GranularFireConfirmationViewModel(
             tabsModel: tabsModel,
             historyManager: historyManager,
             fireproofing: fireproofing,
@@ -104,8 +104,8 @@ struct FireConfirmationPresenter {
         )
     }
     
-    private func makeHostingController(with viewModel: FireConfirmationViewModel) -> UIHostingController<FireConfirmationView> {
-        let confirmationView = FireConfirmationView(viewModel: viewModel)
+    private func makeHostingController(with viewModel: GranularFireConfirmationViewModel) -> UIHostingController<GranularFireConfirmationView> {
+        let confirmationView = GranularFireConfirmationView(viewModel: viewModel)
         let hostingController = UIHostingController(rootView: confirmationView)
         hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         hostingController.modalTransitionStyle = .coverVertical
@@ -113,7 +113,7 @@ struct FireConfirmationPresenter {
         return hostingController
     }
     
-    private func configurePresentation(for hostingController: UIHostingController<FireConfirmationView>,
+    private func configurePresentation(for hostingController: UIHostingController<GranularFireConfirmationView>,
                                        source: AnyObject,
                                        sourceRect: CGRect,
                                        presentingWidth: CGFloat) {
@@ -145,7 +145,7 @@ struct FireConfirmationPresenter {
     }
     
     private func configureSheetDetents(_ sheet: UISheetPresentationController,
-                                       hostingController: UIHostingController<FireConfirmationView>,
+                                       hostingController: UIHostingController<GranularFireConfirmationView>,
                                        presentingWidth: CGFloat) {
         if #available(iOS 16.0, *) {
             let contentHeight = calculateContentHeight(for: hostingController.rootView,
@@ -163,7 +163,7 @@ struct FireConfirmationPresenter {
         sheet.preferredCornerRadius = Constants.sheetCornerRadius
     }
     
-    private func calculateSheetHeight(for view: FireConfirmationView, width: CGFloat, maxHeight: CGFloat? = nil) -> CGFloat {
+    private func calculateSheetHeight(for view: GranularFireConfirmationView, width: CGFloat, maxHeight: CGFloat? = nil) -> CGFloat {
         if #available(iOS 16.0, *) {
             let contentHeight = calculateContentHeight(for: view, width: width)
             if let maxHeight = maxHeight {
@@ -176,7 +176,7 @@ struct FireConfirmationPresenter {
     }
     
     @available(iOS 16.0, *)
-    private func calculateContentHeight(for view: FireConfirmationView, width: CGFloat) -> CGFloat {
+    private func calculateContentHeight(for view: GranularFireConfirmationView, width: CGFloat) -> CGFloat {
         let sizingController = UIHostingController(rootView: view)
         sizingController.disableSafeArea()
         let targetSize = sizingController.sizeThatFits(in: CGSize(width: width, height: .infinity))

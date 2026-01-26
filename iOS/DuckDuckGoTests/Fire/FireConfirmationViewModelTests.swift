@@ -94,8 +94,8 @@ final class FireConfirmationViewModelTests: XCTestCase {
         settingsStore: FireConfirmationSettingsStoring? = nil,
         onConfirm: @escaping (FireRequest) -> Void = { _ in },
         onCancel: @escaping () -> Void = {}
-    ) -> FireConfirmationViewModel {
-        return FireConfirmationViewModel(
+    ) -> GranularFireConfirmationViewModel {
+        return GranularFireConfirmationViewModel(
             tabsModel: tabsModel,
             historyManager: historyManager,
             fireproofing: fireproofing,

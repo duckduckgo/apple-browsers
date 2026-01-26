@@ -115,7 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
-    private(set) var syncAIChatsCleaner: SyncAIChatsCleaning?
+    private(set) var aiChatSyncCleaner: AIChatSyncCleaning?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
     private var screenLockedCancellable: AnyCancellable?
@@ -786,7 +786,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
                                           pixelFiring: PixelKit.shared,
-                                          syncAIChatsCleaner: { Application.appDelegate.syncAIChatsCleaner })
+                                          aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner })
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
@@ -1609,10 +1609,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             environment: environment
         )
-        let syncAIChatsCleaner = SyncAIChatsCleaner(sync: syncService,
-                                                    keyValueStore: keyValueStore,
-                                                    featureFlagger: featureFlagger)
-        syncService.setCustomOperations([AIChatDeleteOperation(cleaner: syncAIChatsCleaner)])
+        let aiChatSyncCleaner = AIChatSyncCleaner(sync: syncService,
+                                                   keyValueStore: keyValueStore,
+                                                   featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        syncService.setCustomOperations([AIChatDeleteOperation(cleaner: aiChatSyncCleaner)])
 
         syncService.initializeIfNeeded()
         syncDataProviders.setUpDatabaseCleaners(syncService: syncService)
@@ -1626,7 +1626,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         self.syncDataProviders = syncDataProviders
         self.syncService = syncService
-        self.syncAIChatsCleaner = syncAIChatsCleaner
+        self.aiChatSyncCleaner = aiChatSyncCleaner
 
         isSyncInProgressCancellable = syncService.isSyncInProgressPublisher
             .filter { $0 }
@@ -1764,7 +1764,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager,
-                                                syncAIChatsCleaner: syncAIChatsCleaner)
+                                                aiChatSyncCleaner: aiChatSyncCleaner)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()

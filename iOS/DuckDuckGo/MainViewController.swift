@@ -245,7 +245,7 @@ class MainViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
-    private let syncAIChatsCleaner: SyncAIChatsCleaning
+    private let aiChatSyncCleaner: AIChatSyncCleaning
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
@@ -311,7 +311,7 @@ class MainViewController: UIViewController {
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
-        syncAiChatsCleaner: SyncAIChatsCleaning,
+        aiChatSyncCleaner: AIChatSyncCleaning,
         whatsNewRepository: WhatsNewMessageRepository
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -363,7 +363,7 @@ class MainViewController: UIViewController {
         self.privacyStats = privacyStats
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
-        self.syncAIChatsCleaner = syncAiChatsCleaner
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.whatsNewRepository = whatsNewRepository
 
         super.init(nibName: nil, bundle: nil)
@@ -580,12 +580,14 @@ class MainViewController: UIViewController {
                                                     omnibarDependencies: omnibarDependencies) { [weak self] in
 
             guard $0 != self?.tabManager.model.currentIndex else { return }
-            
+
             DailyPixel.fire(pixel: .swipeTabsUsedDaily)
+            self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.select(tabAt: $0)
-            
+
         } newTab: { [weak self] in
             Pixel.fire(pixel: .swipeToOpenNewTab)
+            self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
             self?.performCancel()
@@ -3235,6 +3237,7 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         showBars()
         currentTab?.dismiss()
+        tab.aiChatContextualSheetCoordinator.dismissSheet()
         themeColorManager.updateThemeColor()
 
         // Don't use a request or else the page gets stuck on "about:blank"
@@ -3297,6 +3300,7 @@ extension MainViewController: TabDelegate {
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
         _ = findInPageView.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
+        tab.aiChatContextualSheetCoordinator.dismissSheet()
         if openedByPage {
             showBars()
             newTabAnimation {
@@ -3816,10 +3820,12 @@ extension MainViewController: FireExecutorDelegate {
     }
 
     func willStartBurningAIHistory(fireRequest: FireRequest) {
-        if autoClearInProgress {
-            syncAIChatsCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
-        } else {
-            syncAIChatsCleaner.recordLocalClear(date: Date())
+        Task {
+            if autoClearInProgress {
+                await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+            } else {
+                await aiChatSyncCleaner.recordLocalClear(date: Date())
+            }
         }
     }
     

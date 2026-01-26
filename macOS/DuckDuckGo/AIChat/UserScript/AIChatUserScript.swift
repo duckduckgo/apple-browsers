@@ -72,6 +72,13 @@ final class AIChatUserScript: NSObject, Subfeature {
                 self?.submitAIChatPageContext(pageContext)
             }
             .store(in: &cancellables)
+
+        handler.syncStatusPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                self?.submitSyncStatusChanged(status)
+            }
+            .store(in: &cancellables)
     }
 
     private func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
@@ -87,6 +94,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         }
         let response = PageContextResponse(pageContext: pageContextData)
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
+    }
+
+    private func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
+        guard let webView else {
+            return
+        }
+        broker?.push(method: AIChatUserScriptMessages.submitSyncStatusChanged.rawValue, params: status, for: self, into: webView)
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {

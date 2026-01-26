@@ -53,8 +53,8 @@ final class SuggestionTableRowView: NSTableRowView {
     }
 
     private func updateBackgroundColor() {
-        let mouseOverColor: NSColor = theme?.palette.accentPrimary ?? .controlAccentColor
-        let selectedColor: NSColor = isBurner ? .burnerAccent : mouseOverColor
+        let highlightColor: NSColor = theme?.palette.accentPrimary ?? .controlAccentColor
+        let selectedColor: NSColor = isBurner ? .burnerAccent : highlightColor
 
         backgroundColor = isSelected ? selectedColor : .clear
     }

@@ -139,6 +139,9 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
             }
         }
 
+        // Exclude Memory Usage Tests from the checks - it shares code with UI Tests target
+        otherTargets.removeAll(where: { $0.displayName == "Memory Usage Tests" })
+
         // Validate target sources are only in the target's sources folder
         do {
             try validateTargetSourceFolders(allTargets: appTargets + unitTestsTargets + integrationTestsTargets + otherTargets, projectDirectory: context.xcodeProject.directory)
@@ -199,6 +202,8 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
             return "UnitTests"
         case let name where name.starts(with: "Integration Tests"):
             return "IntegrationTests"
+        case "Memory Usage Tests":
+            return "MemoryUsageTests"
         case "UI Tests":
             return "UITests"
         case let name where name.starts(with: "SyncE2EUITests"):

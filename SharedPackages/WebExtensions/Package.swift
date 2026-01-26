@@ -42,11 +42,11 @@ let package = Package(
                 .product(name: "Persistence", package: "BrowserServicesKit")
             ]
         ),
-//        .testTarget(
-//            name: "WebExtensionsTests",
-//            dependencies: [
-//                "WebExtensions"
-//            ]
-//        ),
+        .testTarget(
+            name: "WebExtensionsTests",
+            dependencies: [
+                "WebExtensions"
+            ]
+        ),
     ]
 )

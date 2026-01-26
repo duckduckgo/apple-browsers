@@ -16,9 +16,8 @@
 //  limitations under the License.
 //
 
-@testable import DuckDuckGo_Privacy_Browser
-import WebExtensions
 import WebKit
+@testable import WebExtensions
 
 @available(macOS 15.4, *)
 final class WebExtensionWindowTabProvidingMock: WebExtensionWindowTabProviding {

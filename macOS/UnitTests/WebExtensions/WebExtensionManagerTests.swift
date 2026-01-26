@@ -17,112 +17,28 @@
 //
 
 import XCTest
-import Combine
-import PrivacyConfig
 import WebExtensions
 @testable import DuckDuckGo_Privacy_Browser
 
+// MARK: - macOS-Specific WebExtension Tests
+//
+// Note: Core WebExtensionManager tests have been migrated to the shared
+// WebExtensions package at SharedPackages/WebExtensions/Tests/WebExtensionsTests/.
+//
+// This file should contain tests for:
+// - WebExtensionManagerFactory
+// - WebExtensionWindowTabProvider (macOS-specific implementation)
+// - macOS UI-specific behavior (toolbar buttons, popovers, etc.)
+
 //@available(macOS 15.4, *)
-//final class WebExtensionManagerTests: XCTestCase {
-//
-//    var pathsStoringMock: WebExtensionPathsStoringMock!
-//    var webExtensionLoadingMock: WebExtensionLoadingMock!
-//    var windowTabProviderMock: WebExtensionWindowTabProvidingMock!
-//    var internalUserStore: MockInternalUserStoring!
-//    var featureFlaggerMock: MockFeatureFlagger!
-//    var configurationMock: WebExtensionConfigurationProvidingMock!
-//
-//    override func setUp() {
-//        super.setUp()
-//
-//        pathsStoringMock = WebExtensionPathsStoringMock()
-//        webExtensionLoadingMock = WebExtensionLoadingMock()
-//        windowTabProviderMock = WebExtensionWindowTabProvidingMock()
-//        internalUserStore = MockInternalUserStoring()
-//        featureFlaggerMock = MockFeatureFlagger()
-//        featureFlaggerMock.internalUserDecider = DefaultInternalUserDecider(store: internalUserStore)
-//        internalUserStore.isInternalUser = true
-//        configurationMock = WebExtensionConfigurationProvidingMock()
-//    }
-//
-//    override func tearDown() {
-//        webExtensionLoadingMock?.cleanupTestExtensions()
-//        pathsStoringMock = nil
-//        webExtensionLoadingMock = nil
-//        windowTabProviderMock = nil
-//        internalUserStore = nil
-//        featureFlaggerMock = nil
-//        configurationMock = nil
-//
-//        super.tearDown()
-//    }
+//final class WebExtensionManagerFactoryTests: XCTestCase {
 //
 //    @MainActor
-//    func testWhenExtensionIsAdded_ThenPathIsStored() async {
-//        let webExtensionManager = WebExtensionManager(
-//            configuration: configurationMock,
-//            windowTabProvider: windowTabProviderMock,
-//            installationStore: pathsStoringMock,
-//            loader: webExtensionLoadingMock
-//        )
+//    func testThatMakeManager_ReturnsConfiguredManager() {
+//        let manager = WebExtensionManagerFactory.makeManager()
 //
-//        let path = "/path/to/extension"
-//        await webExtensionManager.installExtension(path: path)
-//        XCTAssertTrue(pathsStoringMock.addCalled)
-//        XCTAssertEqual(pathsStoringMock.addedURL, path)
+//        XCTAssertNotNil(manager)
+//        XCTAssertNotNil(manager.windowTabProvider)
+//        XCTAssertNotNil(manager.lifecycleDelegate)
 //    }
-//
-//    @MainActor
-//    func testWhenExtensionIsRemoved_ThenPathIsRemovedFromStore() async throws {
-//        let webExtensionManager = WebExtensionManager(
-//            configuration: configurationMock,
-//            windowTabProvider: windowTabProviderMock,
-//            installationStore: pathsStoringMock,
-//            loader: webExtensionLoadingMock
-//        )
-//
-//        let path = "/path/to/extension"
-//        try webExtensionManager.uninstallExtension(path: path)
-//        XCTAssertTrue(pathsStoringMock.removeCalled)
-//        XCTAssertEqual(pathsStoringMock.removedURL, path)
-//    }
-//
-//    @MainActor
-//    func testWhenWebExtensionsAreLoaded_ThenPathsAreFetchedFromStore() async {
-//        let paths = ["/path/to/extension1", "/path/to/extension2"]
-//        pathsStoringMock.paths = paths
-//
-//        let extensionManager = WebExtensionManager(
-//            configuration: configurationMock,
-//            windowTabProvider: windowTabProviderMock,
-//            installationStore: pathsStoringMock,
-//            loader: webExtensionLoadingMock
-//        )
-//
-//        await extensionManager.loadInstalledExtensions()
-//        XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionsCalled)
-//        XCTAssertEqual(webExtensionLoadingMock.loadedPaths, paths)
-//    }
-//
-//    @MainActor
-//    func testThatWebExtensionPaths_ReturnsPathsFromStore() {
-//        let webExtensionManager = WebExtensionManager(
-//            configuration: configurationMock,
-//            windowTabProvider: windowTabProviderMock,
-//            installationStore: pathsStoringMock,
-//            loader: webExtensionLoadingMock
-//        )
-//
-//        let paths = ["/path/to/extension1", "/path/to/extension2"]
-//        pathsStoringMock.paths = paths
-//        let resultPaths = webExtensionManager.webExtensionPaths
-//        XCTAssertEqual(resultPaths, paths)
-//    }
-//}
-//
-//// MARK: - Mocks
-//
-//@available(macOS 15.4, *)
-//final class WebExtensionConfigurationProvidingMock: WebExtensionConfigurationProviding {
-//    var applicationNameForUserAgent: String = "TestUserAgent"
 //}

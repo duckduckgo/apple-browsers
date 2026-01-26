@@ -325,7 +325,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                     timer?.invalidate()
                     cancellationState.onCancel = nil
                     onHoverChange = nil
-                    
+
                     // If proceeding: install beep-prevention interceptor that consumes repeated keyDown events
                     // (user may still be holding the key, which would cause system beeps if not consumed)
                     if shouldProceed {

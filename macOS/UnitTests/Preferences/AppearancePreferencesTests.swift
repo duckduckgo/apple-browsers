@@ -39,7 +39,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 homeButtonPosition: .left,
                 homePageCustomBackground: CustomBackground.gradient(.gradient01).description,
                 centerAlignedBookmarksBar: true,
-                showTabsAndBookmarksBarOnFullScreen: false
+                showTabsAndBookmarksBarOnFullScreen: false,
+                didChangeAnyNewTabPageCustomizationSetting: false
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
@@ -57,6 +58,7 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertTrue(model.centerAlignedBookmarksBarBool)
         XCTAssertFalse(model.showTabsAndBookmarksBarOnFullScreen)
         XCTAssertFalse(model.syncAppIconWithTheme)
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
 
         model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
@@ -72,7 +74,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 homePageCustomBackground: CustomBackground.gradient(.gradient05).description,
                 centerAlignedBookmarksBar: false,
                 showTabsAndBookmarksBarOnFullScreen: true,
-                syncAppIconWithTheme: true
+                syncAppIconWithTheme: true,
+                didChangeAnyNewTabPageCustomizationSetting: true
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
@@ -89,6 +92,7 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertFalse(model.centerAlignedBookmarksBarBool)
         XCTAssertTrue(model.showTabsAndBookmarksBarOnFullScreen)
         XCTAssertTrue(model.syncAppIconWithTheme)
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
     }
 
     func testWhenInitializedWithGarbageThenThemeAppearanceIsSetToSystemDefault() throws {
@@ -282,6 +286,90 @@ final class AppearancePreferencesTests: XCTestCase {
         }
 
         withExtendedLifetime(c) {}
+    }
+
+    func testWhenCurrentThemeIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeName: ThemeName.default.rawValue,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.themeName = ThemeName.green
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenThemeAppearanceIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.light.rawValue,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.themeAppearance = .dark
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenCustomBackgroundIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(homePageCustomBackground: nil,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.homePageCustomBackground = CustomBackground.gradient(.gradient01)
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenOmnibarVisibilityIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(isOmnibarVisible: true,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.isOmnibarVisible = false
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenFavoritesVisibilityIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(isFavoriteVisible: true,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.isFavoriteVisible = false
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenProtectionsReportVisibilityIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(isProtectionsReportVisible: true,
+                                                          didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        model.isProtectionsReportVisible = false
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
     }
 
     // MARK: - Pixel firing tests

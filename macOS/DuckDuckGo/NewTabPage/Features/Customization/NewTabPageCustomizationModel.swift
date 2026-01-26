@@ -197,5 +197,6 @@ final class NewTabPageCustomizationModel: ObservableObject {
         customImagesManager?.availableImages.forEach { image in
             customImagesManager?.deleteImage(image)
         }
+        appearancePreferences.didChangeAnyNewTabPageCustomizationSetting = false
     }
 }

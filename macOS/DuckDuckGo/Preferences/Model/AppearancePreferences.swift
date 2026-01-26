@@ -47,7 +47,7 @@ protocol AppearancePreferencesPersistor {
     var homePageCustomBackground: String? { get set }
     var centerAlignedBookmarksBar: Bool { get set }
     var showTabsAndBookmarksBarOnFullScreen: Bool { get set }
-    var didOpenCustomizationSettings: Bool { get set }
+    var didChangeAnyNewTabPageCustomizationSetting: Bool { get set }
 }
 
 struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersistor {
@@ -55,12 +55,12 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
     enum Key: String {
         case newTabPageIsOmnibarVisible = "new-tab-page.omnibar.is-visible"
         case newTabPageIsProtectionsReportVisible = "new-tab-page.protections-report.is-visible"
-        case newTabPageDidOpenCustomizationSettings = "new-tab-page.did-open-customization-settings"
+        case newTabPageDidChangeAnyCustomizationSetting = "new-tab-page.did-change-any-customization-setting"
     }
 
-    var didOpenCustomizationSettings: Bool {
-        get { (try? keyValueStore.object(forKey: Key.newTabPageDidOpenCustomizationSettings.rawValue) as? Bool) ?? false }
-        set { try? keyValueStore.set(newValue, forKey: Key.newTabPageDidOpenCustomizationSettings.rawValue) }
+    var didChangeAnyNewTabPageCustomizationSetting: Bool {
+        get { (try? keyValueStore.object(forKey: Key.newTabPageDidChangeAnyCustomizationSetting.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.newTabPageDidChangeAnyCustomizationSetting.rawValue) }
     }
 
     var isOmnibarVisible: Bool {
@@ -172,12 +172,10 @@ final class DefaultNewTabPageNavigator: NewTabPageNavigator {
                 if Application.appDelegate.featureFlagger.isFeatureOn(.newTabPagePerTab) {
                     if let webView = window.mainViewController.browserTabViewController.webView {
                         Application.appDelegate.newTabPageCustomizationModel.customizerOpener.openSettings(for: webView)
-                        NSApp.delegateTyped.appearancePreferences.didOpenCustomizationSettings = true
                     }
                 } else {
                     let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
                     NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
-                    NSApp.delegateTyped.appearancePreferences.didOpenCustomizationSettings = true
                 }
             }
         }
@@ -438,9 +436,9 @@ final class AppearancePreferences: ObservableObject {
         NSApp.appearance = themeAppearance.appearance
     }
 
-    @Published var didOpenCustomizationSettings: Bool {
+    @Published var didChangeAnyNewTabPageCustomizationSetting: Bool {
         didSet {
-            persistor.didOpenCustomizationSettings = didOpenCustomizationSettings
+            persistor.didChangeAnyNewTabPageCustomizationSetting = didChangeAnyNewTabPageCustomizationSetting
         }
     }
 
@@ -497,10 +495,11 @@ final class AppearancePreferences: ObservableObject {
         homePageCustomBackground = persistor.homePageCustomBackground.flatMap(CustomBackground.init)
         centerAlignedBookmarksBarBool = persistor.centerAlignedBookmarksBar
         showTabsAndBookmarksBarOnFullScreen = persistor.showTabsAndBookmarksBarOnFullScreen
-        didOpenCustomizationSettings = persistor.didOpenCustomizationSettings
+        didChangeAnyNewTabPageCustomizationSetting = persistor.didChangeAnyNewTabPageCustomizationSetting
 
         isContinueSetUpCardsViewOutdated = shouldHideNextStepsCards
         subscribeToOmnibarFeatureFlagChanges()
+        subscribeToNewTabPageCustomizationSettingChanges()
     }
 
     /// This function reloads preferences with persisted values.
@@ -523,7 +522,7 @@ final class AppearancePreferences: ObservableObject {
         homePageCustomBackground = persistor.homePageCustomBackground.flatMap(CustomBackground.init)
         centerAlignedBookmarksBarBool = persistor.centerAlignedBookmarksBar
         showTabsAndBookmarksBarOnFullScreen = persistor.showTabsAndBookmarksBarOnFullScreen
-        didOpenCustomizationSettings = persistor.didOpenCustomizationSettings
+        didChangeAnyNewTabPageCustomizationSetting = persistor.didChangeAnyNewTabPageCustomizationSetting
     }
 
     private var persistor: AppearancePreferencesPersistor
@@ -553,5 +552,24 @@ final class AppearancePreferences: ObservableObject {
                 self.objectWillChange.send()
             }
             .store(in: &cancellables)
+    }
+
+    func subscribeToNewTabPageCustomizationSettingChanges() {
+        // Skip if already marked as changed
+        guard !didChangeAnyNewTabPageCustomizationSetting else { return }
+
+        // Combine all New Tab Page customization setting publishers
+        let sectionVisibilityPublisher = $isOmnibarVisible.combineLatest($isFavoriteVisible, $isProtectionsReportVisible)
+        $themeAppearance.combineLatest(
+            $themeName,
+            $homePageCustomBackground,
+            sectionVisibilityPublisher
+        )
+        .dropFirst()
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in
+            self?.didChangeAnyNewTabPageCustomizationSetting = true
+        }
+        .store(in: &cancellables)
     }
 }

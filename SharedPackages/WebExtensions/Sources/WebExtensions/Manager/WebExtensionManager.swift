@@ -95,7 +95,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         } catch {
             assertionFailure("Failed to load web extension \(path): \(error)")
         }
-        
+
         notifyUpdate()
     }
 

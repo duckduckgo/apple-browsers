@@ -27,6 +27,7 @@ final class MemoryUsageTests: XCTestCase {
         try super.setUpWithError()
         continueAfterFailure = false
 
+        UITests.firstRun()
         application = XCUIApplication.setUp(featureFlags: ["memoryUsageMonitor": true])
     }
 
@@ -44,6 +45,7 @@ final class MemoryUsageTests: XCTestCase {
         }
 
         application.openNewWindow()
+        sleep(10)
         measure(metrics: [metric], options: options, block: work)
     }
 

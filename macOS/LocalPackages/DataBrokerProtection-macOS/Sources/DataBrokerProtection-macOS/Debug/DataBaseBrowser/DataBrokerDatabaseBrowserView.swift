@@ -420,6 +420,22 @@ extension DatabaseTableView {
             return parent.viewModel.displayValue(for: identifier, value: sortedRows[row].data[identifier])
         }
 
+        func tableView(_ tableView: NSTableView,
+                       willDisplayCell cell: Any,
+                       for tableColumn: NSTableColumn?,
+                       row: Int) {
+            guard row < sortedRows.count else { return }
+            guard let cell = cell as? NSTextFieldCell else { return }
+
+            if rowHasErrorPrefix(sortedRows[row]) {
+                cell.drawsBackground = true
+                cell.backgroundColor = NSColor.systemRed.withAlphaComponent(0.18)
+            } else {
+                cell.drawsBackground = false
+                cell.backgroundColor = nil
+            }
+        }
+
         // MARK: - NSTableViewDelegate
 
         func tableView(_ tableView: NSTableView, didClick tableColumn: NSTableColumn) {
@@ -457,6 +473,15 @@ extension DatabaseTableView {
 
             let key = column.identifier.rawValue
             parent.viewModel.setColumnWidth(column.width, for: key, in: parent.table)
+        }
+
+        private func rowHasErrorPrefix(_ row: DataBrokerDatabaseBrowserData.Row) -> Bool {
+            columnKeys.contains { key in
+                guard let value = row.data[key] else { return false }
+                return parent.viewModel.displayValue(for: key, value: value)
+                    .lowercased()
+                    .hasPrefix("error")
+            }
         }
     }
 }

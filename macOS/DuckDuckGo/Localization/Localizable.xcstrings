@@ -70863,55 +70863,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Name des Karteninhabers"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Cardholder Name"
+            "value" : "Name on card"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Nombre del titular de la tarjeta"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Nom du titulaire de la carte"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Nome del titolare della carta"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Naam kaarthouder"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Nazwisko właściciela karty"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Nome do titular do cartão"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Имя держателя карты"
           }
         }
@@ -71033,6 +71033,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Срок действия"
+          }
+        }
+      }
+    },
+    "pm.card.expiration.error" : {
+      "comment" : "Error message shown when expiration date is incomplete",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Please enter a valid expiration date"
           }
         }
       }
@@ -72561,6 +72573,18 @@
         }
       }
     },
+    "pm.identification.placeholder.title" : {
+      "comment" : "Placeholder for a field showing the title of an saved user identity",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Title"
+          }
+        }
+      }
+    },
     "pm.identity.autofill.title.default" : {
       "comment" : "Default title for Addresses/Identities",
       "extractionState" : "extracted_with_value",
@@ -73457,6 +73481,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "30 мин."
+          }
+        }
+      }
+    },
+    "pm.login.placeholder.title" : {
+      "comment" : "Placeholder for a field showing the title of an saved login",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Title"
           }
         }
       }

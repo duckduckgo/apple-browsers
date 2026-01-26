@@ -22,12 +22,14 @@ import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
 import DesignResourcesKitIcons
+import DesignResourcesKit
 
 private let interItemSpacing: CGFloat = 23
 private let itemSpacing: CGFloat = 13
 
 struct PasswordManagementCreditCardItemView: View {
 
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     @EnvironmentObject var model: PasswordManagementCreditCardModel
 
     var body: some View {
@@ -40,7 +42,7 @@ struct PasswordManagementCreditCardItemView: View {
                 if model.isInEditMode {
 
                     RoundedRectangle(cornerRadius: 8)
-                        .foregroundColor(Color(.editingPanel))
+                        .foregroundColor(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
                         .shadow(radius: 6)
 
                 }
@@ -51,11 +53,12 @@ struct PasswordManagementCreditCardItemView: View {
                         .padding(.top, 16)
                         .padding(.bottom, model.isInEditMode ? 20 : 30)
 
-                    FormattedCreditCardField(textFieldValue: $model.cardNumber, title: UserText.pmCardNumber, accessibilityIdentifier: "Card Number TextField", placeholder: UserText.pmCardNumberPlaceholder)
+                    FormattedCreditCardField(textFieldValue: $model.cardNumber,
+                                            title: UserText.pmCardNumber,
+                                            accessibilityIdentifier: "Card Number TextField",
+                                            placeholder: UserText.pmCardNumberPlaceholder)
 
                     ExpirationField()
-
-                    EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName, accessibilityIdentifier: "Cardholder Name TextField", placeholder: UserText.pmCardholderNamePlaceholder)
 
                     SecureEditableCreditCardField(textFieldValue: $model.cardSecurityCode,
                                                   title: UserText.pmCardVerificationValue,
@@ -63,6 +66,8 @@ struct PasswordManagementCreditCardItemView: View {
                                                   toolTipHideText: UserText.autofillHideCardCvvTooltip,
                                                   toolTipShowText: UserText.autofillShowCardCvvTooltip,
                                                   placeholder: UserText.pmCardVerificationValuePlaceholder)
+
+                    EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName, accessibilityIdentifier: "Cardholder Name TextField", placeholder: UserText.pmCardholderNamePlaceholder)
 
                     Spacer(minLength: 0)
 
@@ -76,6 +81,7 @@ struct PasswordManagementCreditCardItemView: View {
 
             }
             .padding(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 10))
+            .environmentObject(themeManager)
 
         }
 
@@ -86,15 +92,6 @@ struct PasswordManagementCreditCardItemView: View {
 private struct HeaderView: View {
 
     @EnvironmentObject var model: PasswordManagementCreditCardModel
-    @Environment(\.colorScheme) var colorScheme
-
-    private var textFieldBackgroundColor: Color {
-        colorScheme == .dark ? Color(.textEditorBackground) : Color(.textBackgroundColor)
-    }
-
-    private var shadowBorderColor: Color {
-        colorScheme == .dark ? Color(white: 1.0, opacity: 0.15) : Color(white: 0.0, opacity: 0.15)
-    }
 
     var body: some View {
 
@@ -111,17 +108,9 @@ private struct HeaderView: View {
             if model.isNew || model.isEditing {
 
                 TextField(UserText.pmCardNicknamePlaceholder, text: $model.title)
-                    .font(.system(size: 13))
-                    .textFieldStyle(.plain)
-                    .padding(8)
+                    .textFieldStyle(.roundedBorder)
                     .frame(height: 32)
-                    .background(textFieldBackgroundColor)
-                    .cornerRadius(6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(shadowBorderColor, lineWidth: 1)
-                    )
-                    .shadow(color: shadowBorderColor, radius: 0, x: 0, y: 1)
+                    .controlSize(.large)
                     .accessibility(identifier: "Title TextField")
 
             } else {
@@ -150,7 +139,6 @@ private struct Buttons: View {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
             }
 
             Spacer()
@@ -159,23 +147,21 @@ private struct Buttons: View {
                 Button(UserText.pmCancel) {
                     model.cancel()
                 }
-                .buttonStyle(StandardButtonStyle())
+
                 Button(UserText.pmSave) {
                     model.save()
                 }
-                .disabled(!model.isDirty || !model.isCardNumberValid)
-                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardNumberValid))
+                .disabled(!model.isDirty || !model.isCardValid)
+                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardValid))
 
             } else {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
 
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-                .buttonStyle(StandardButtonStyle())
 
             }
 
@@ -241,6 +227,7 @@ private struct EditableCreditCardField: View {
 
 private struct FormattedCreditCardField: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementCreditCardModel
 
     @State var isHovering = false
@@ -250,45 +237,26 @@ private struct FormattedCreditCardField: View {
     let accessibilityIdentifier: String
     let placeholder: String
 
-    private var shouldShowCardNumberError: Bool {
-        // Only show error if user has entered enough digits and card is invalid
-        let normalizedCardNumber = CreditCardValidation.extractDigits(from: textFieldValue)
-        return CreditCardValidation.hasMinimumLength(normalizedCardNumber) && !model.isCardNumberValid
-    }
-
     var body: some View {
-
         if model.isInEditMode || !textFieldValue.isEmpty {
-
             VStack(alignment: .leading, spacing: 0) {
-
                 Text(title)
                     .bold()
                     .padding(.bottom, 5)
 
                 if model.isEditing || model.isNew {
-
                     VStack(alignment: .leading, spacing: 0) {
-                        FormattedCreditCardTextField(text: $textFieldValue, placeholder: placeholder)
+                        FormattedCreditCardTextField(text: $textFieldValue, placeholder: placeholder, onBlur: {
+                            model.validateCardNumber()
+                        })
                             .accessibility(identifier: accessibilityIdentifier)
 
-                        if shouldShowCardNumberError {
-                            HStack(alignment: .center, spacing: 8) {
-                                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
-                                    .foregroundColor(.red)
-                                    .frame(width: 16, height: 16)
-                                Text(UserText.pmCardNumberError)
-                                    .foregroundColor(.red)
-                                    .font(.system(size: 13))
-                                Spacer()
-                            }
-                            .padding(.top, 6)
+                        if model.isCardNumberValid == false {
+                            ValidationErrorView(message: UserText.pmCardNumberError)
                         }
                     }
                     .padding(.bottom, interItemSpacing)
-
                 } else {
-
                     HStack(spacing: 6) {
                         Text(textFieldValue)
 
@@ -305,12 +273,10 @@ private struct FormattedCreditCardField: View {
                     }
                     .padding(.bottom, interItemSpacing)
                 }
-
             }
             .onHover {
                 isHovering = $0
             }
-
         }
     }
 }
@@ -346,7 +312,6 @@ private struct SecureEditableCreditCardField: View {
 
                         TextField(placeholder, text: $textFieldValue)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding(.bottom, interItemSpacing)
                             .accessibility(identifier: "Security Code TextField")
 
                     }
@@ -389,13 +354,14 @@ private struct SecureEditableCreditCardField: View {
 ///
 private struct ExpirationField: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementCreditCardModel
 
     @State private var isHovering = false
 
     var body: some View {
 
-        if model.expirationMonth != nil || model.expirationYear != nil || model.isInEditMode {
+        if model.isInEditMode || (model.expirationMonth != nil && model.expirationYear != nil) {
             VStack(alignment: .leading, spacing: 0) {
 
                 Text(UserText.pmCardExpiration)
@@ -403,30 +369,36 @@ private struct ExpirationField: View {
                     .padding(.bottom, 5)
 
                 if model.isInEditMode {
-                    HStack {
-                        Picker("", selection: $model.expirationMonth) {
-                            if model.expirationMonth == nil {
-                                Text(UserText.pmMonth)
-                                    .tag(nil as Int?)
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Picker("", selection: $model.expirationMonth) {
+                                if model.expirationMonth == nil {
+                                    Text(UserText.pmMonth)
+                                        .tag(nil as Int?)
+                                }
+                                ForEach(Date.monthsWithIndex, id: \.self) { month in
+                                    Text(String(format: "%02d", month.index))
+                                        .tag(month.index as Int?)
+                                }
                             }
-                            ForEach(Date.monthsWithIndex, id: \.self) { month in
-                                Text(String(format: "%02d", month.index))
-                                    .tag(month.index as Int?)
-                            }
-                        }
-                        .labelsHidden()
+                            .labelsHidden()
 
-                        Picker("", selection: $model.expirationYear) {
-                            if model.expirationYear == nil {
-                                Text(UserText.pmYear)
-                                    .tag(nil as Int?)
+                            Picker("", selection: $model.expirationYear) {
+                                if model.expirationYear == nil {
+                                    Text(UserText.pmYear)
+                                        .tag(nil as Int?)
+                                }
+                                ForEach(Date.nextTenYears, id: \.self) { year in
+                                    Text(String(year))
+                                        .tag(year as Int?)
+                                }
                             }
-                            ForEach(Date.nextTenYears, id: \.self) { year in
-                                Text(String(year))
-                                    .tag(year as Int?)
-                            }
+                            .labelsHidden()
                         }
-                        .labelsHidden()
+
+                        if model.isExpirationDateValid == false {
+                            ValidationErrorView(message: UserText.pmCardExpirationError)
+                        }
                     }
                     .padding(.bottom, interItemSpacing)
                 } else if let month = model.expirationMonth, let year = model.expirationYear {
@@ -457,5 +429,25 @@ private struct ExpirationField: View {
                 isHovering = $0
             }
         }
+    }
+}
+
+// MARK: - Validation Error View
+
+private struct ValidationErrorView: View {
+    @EnvironmentObject var themeManager: ThemeManager
+    let message: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
+                .foregroundColor(Color(designSystemColor: .destructivePrimary, palette: themeManager.designColorPalette))
+                .frame(width: 16, height: 16)
+            Text(message)
+                .foregroundColor(Color(designSystemColor: .destructivePrimary, palette: themeManager.designColorPalette))
+                .font(.system(size: 13))
+            Spacer()
+        }
+        .padding(.top, 6)
     }
 }

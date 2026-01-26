@@ -27,6 +27,7 @@ struct FormattedCreditCardTextField: NSViewRepresentable {
 
     @Binding var text: String
     var placeholder: String = ""
+    var onBlur: (() -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -83,6 +84,10 @@ struct FormattedCreditCardTextField: NSViewRepresentable {
             isUpdatingText = false
 
             updateCursorPosition(textField, oldText: currentText, newText: formatted, currentSelection: currentSelectedRange)
+        }
+
+        func controlTextDidEndEditing(_ obj: Notification) {
+            parent.onBlur?()
         }
 
         private func updateCursorPosition(_ textField: NSTextField, oldText: String, newText: String, currentSelection: NSRange) {

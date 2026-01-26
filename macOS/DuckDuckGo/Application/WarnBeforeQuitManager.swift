@@ -102,6 +102,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     // Track whether the shortcut key is still being held (to wait for release in delegate callback)
     private var isShortcutKeyHeld = false
 
+    private let interceptorToken = UUID()
+
     // MARK: - Initialization
 
     init?(currentEvent: NSEvent,
@@ -132,8 +134,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     deinit {
         stateSubject.finish()
-        DispatchQueue.main.async {
-            (NSApp as? Application)?.eventInterceptor = nil
+        DispatchQueue.main.async { [interceptorToken] in
+            (NSApp as? Application)?.resetEventInterceptor(token: interceptorToken)
         }
     }
 
@@ -332,7 +334,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                     timer?.invalidate()
                     cancellationState.onCancel = nil
                     onHoverChange = nil
-                    (NSApp as? Application)?.eventInterceptor = nil
+                    (NSApp as? Application)?.resetEventInterceptor(token: interceptorToken)
 
                     continuation.resume(returning: shouldProceed)
                 }
@@ -365,7 +367,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 }
 
                 // Install event interceptor hook for the shortcut, Escape, and clicks
-                (NSApp as? Application)?.eventInterceptor = { event in
+                // Don't overwrite existing interceptor
+                guard (NSApp as? Application)?.eventInterceptorToken ?? interceptorToken == interceptorToken else { return }
+                (NSApp as? Application)?.installEventInterceptor(token: interceptorToken) { event in
                     switch event.type {
                     case .keyDown where event.keyEquivalent == .escape:
                         Logger.general.debug("WarnBeforeQuitManager: Escape pressed")
@@ -455,8 +459,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         }
         // Reset event interceptor set to prevent beeps for repeated shortcut key events
         // Done on the next pass to let the event loop process any queued repeated key events before resetting the interceptor
-        DispatchQueue.main.async {
-            (NSApp as? Application)?.eventInterceptor = nil
+        DispatchQueue.main.async { [interceptorToken] in
+            (NSApp as? Application)?.resetEventInterceptor(token: interceptorToken)
         }
     }
 
@@ -501,7 +505,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     /// Install event interceptor to prevent beeps from repeated shortcut key presses
     private func installEventInterceptor() {
-        (NSApp as? Application)?.eventInterceptor = { [shortcutKeyEquivalent] event in
+        // Don't overwrite existing interceptor
+        guard (NSApp as? Application)?.eventInterceptorToken ?? interceptorToken == interceptorToken else { return }
+        (NSApp as? Application)?.installEventInterceptor(token: interceptorToken) { [shortcutKeyEquivalent] event in
             if event.type == .keyDown && event.keyEquivalent == shortcutKeyEquivalent {
                 return nil // consume event to prevent beep
             }

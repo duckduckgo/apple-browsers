@@ -27,7 +27,7 @@ import UIKit
 
 /// Protocol for handling AI chat history events
 protocol AIChatHistoryManagerDelegate: AnyObject {
-    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChat chat: AIChatSuggestion)
+    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL)
 }
 
 /// Manages the AI Chat history list installation and interaction
@@ -40,19 +40,18 @@ final class AIChatHistoryManager {
 
     private var hostingController: UIHostingController<AIChatHistoryListView>?
     private let suggestionsReader: AIChatSuggestionsReading
+    private let aiChatSettings: AIChatSettingsProvider
     private let viewModel: AIChatSuggestionsViewModel
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initialization
 
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         privacyConfig: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+    init(featureFlagger: FeatureFlagger,
+         privacyConfig: PrivacyConfigurationManaging,
+         aiChatSettings: AIChatSettingsProvider,
+         viewModel: AIChatSuggestionsViewModel) {
         self.suggestionsReader = AIChatSuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
-        self.viewModel = AIChatSuggestionsViewModel()
-    }
-
-    init(suggestionsReader: AIChatSuggestionsReading, viewModel: AIChatSuggestionsViewModel = AIChatSuggestionsViewModel()) {
-        self.suggestionsReader = suggestionsReader
+        self.aiChatSettings = aiChatSettings
         self.viewModel = viewModel
     }
 
@@ -69,7 +68,8 @@ final class AIChatHistoryManager {
             viewModel: viewModel,
             onChatSelected: { [weak self] chat in
                 guard let self else { return }
-                self.delegate?.aiChatHistoryManager(self, didSelectChat: chat)
+                let url = self.aiChatSettings.aiChatURL.withChatID(chat.chatId)
+                self.delegate?.aiChatHistoryManager(self, didSelectChatURL: url)
             }
         )
 

@@ -85,6 +85,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let aiChatSettings: AIChatSettingsProvider
 
     // MARK: - Manager Components
 
@@ -103,12 +105,16 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     internal init(switchBarHandler: any SwitchBarHandling,
                   switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
                   appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-                  featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+                  featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+                  privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+                  aiChatSettings: AIChatSettingsProvider = AIChatSettings()) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.daxLogoManager = DaxLogoManager()
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.aiChatSettings = aiChatSettings
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -298,7 +304,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         guard let containerViewController = swipeContainerManager?.containerViewController,
               let chatContainer = swipeContainerManager?.chatPageContainer else { return }
 
-        let manager = AIChatHistoryManager()
+        let manager = AIChatHistoryManager(
+            featureFlagger: featureFlagger,
+            privacyConfig: privacyConfigurationManager,
+            aiChatSettings: aiChatSettings,
+            viewModel: AIChatSuggestionsViewModel()
+        )
         manager.delegate = self
         manager.installInContainerView(chatContainer, parentViewController: containerViewController)
         aiChatHistoryManager = manager
@@ -634,8 +645,7 @@ extension OmniBarEditingStateViewController: VoiceSearchViewControllerDelegate {
 
 extension OmniBarEditingStateViewController: AIChatHistoryManagerDelegate {
 
-    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChat chat: AIChatSuggestion) {
-        guard let url = URL.aiChatURL(for: chat.chatId) else { return }
+    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL) {
         delegate?.onChatHistorySelected(url: url)
     }
 }

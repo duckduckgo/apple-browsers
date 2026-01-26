@@ -80,9 +80,6 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
         initialStatsAttachment = attachment
 
         logger.log("[MemoryAllocationStatsMetric] Initial Memory Used: \(snapshot.totalUsedMB)")
-        if let rawLogsInitial = try? String(contentsOf: memoryStatsURL) {
-            logger.log("[MemoryAllocationStatsMetric] Initial Raw Logs: \(rawLogsInitial, privacy: .public)")
-        }
     }
 
     func didStopMeasuring() {
@@ -94,9 +91,6 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
         finalStatsAttachment = attachment
 
         logger.log("[MemoryAllocationStatsMetric] Final Memory Used: \(snapshot.totalUsedMB)")
-        if let rawLogsFinal = try? String(contentsOf: memoryStatsURL) {
-            logger.log("[MemoryAllocationStatsMetric] Final Raw Logs: \(rawLogsFinal, privacy: .public)")
-        }
     }
 
     func reportMeasurements(from startTime: XCTPerformanceMeasurementTimestamp, to endTime: XCTPerformanceMeasurementTimestamp) throws -> [XCTPerformanceMeasurement] {

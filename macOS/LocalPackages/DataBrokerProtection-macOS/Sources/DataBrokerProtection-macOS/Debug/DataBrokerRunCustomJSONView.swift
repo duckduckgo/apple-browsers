@@ -267,18 +267,6 @@ struct DataBrokerRunCustomJSONView: View {
                         .foregroundColor(.secondary)
                 }
             }
-
-            Divider()
-
-            Text("macOS App version: \(viewModel.appVersion())")
-            Text("DBP API endpoint: \(viewModel.dbpEndpoint)")
-
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(dbpFeatureFlagLines, id: \.name) { flag in
-                    Text("\(flag.name): \(flag.value)")
-                        .padding(.top, 6)
-                }
-            }
         }
     }
 

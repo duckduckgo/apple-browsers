@@ -27,7 +27,7 @@ struct FormattedCreditCardTextField: NSViewRepresentable {
 
     @Binding var text: String
     var placeholder: String = ""
-    var onBlur: (() -> Void)? = nil
+    var onBlur: (() -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)

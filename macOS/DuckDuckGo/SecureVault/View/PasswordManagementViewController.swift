@@ -892,6 +892,11 @@ final class PasswordManagementViewController: NSViewController {
                     case .alertFirstButtonReturn: // Save
                         if self?.itemModel?.save() == true {
                             loadNewItemWithID()
+                        } else {
+                            // Validation failed, revert selection
+                            if let previousValue {
+                                self?.listModel?.select(item: previousValue, notify: false)
+                            }
                         }
 
                     case .alertSecondButtonReturn: // Discard
@@ -899,7 +904,7 @@ final class PasswordManagementViewController: NSViewController {
                         loadNewItemWithID()
 
                     default: // Cancel
-                        if let previousValue = previousValue {
+                        if let previousValue {
                             self?.listModel?.select(item: previousValue, notify: false)
                         }
                     }

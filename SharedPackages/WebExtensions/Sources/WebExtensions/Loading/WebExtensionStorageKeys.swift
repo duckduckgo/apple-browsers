@@ -19,7 +19,7 @@
 import Foundation
 import Persistence
 
-@available(macOS 15.4, iOS 18.0, *)
+@available(macOS 15.4, *)
 public enum WebExtensionStorageKeys: String, StorageKeyDescribing {
     case storedPaths = "com.duckduckgo.web.extension.stored-paths"
 }

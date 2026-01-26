@@ -77,10 +77,6 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
     case syncManuallyDisabled = "com.duckduckgo.app.key.debug.SyncManuallyDisabled"
     case syncWasDisabledUnexpectedlyPixelFired = "com.duckduckgo.app.key.debug.SyncWasDisabledUnexpectedlyPixelFired"
 
-    // MARK: - Web Extensions
-
-    case webExtensionStoredPaths = "com.duckduckgo.web.extension.stored-paths"
-
     // MARK: - Add more app-wide keys here as they are migrated from UserDefaultsWrapper
 
 }

@@ -31,20 +31,14 @@ public protocol WebExtensionWindowTabProviding: AnyObject {
     func focusedWindow(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)?
 
     /// Opens a new window with the given configuration.
-    func openNewWindow(
-        using configuration: WKWebExtension.WindowConfiguration,
-        for context: WKWebExtensionContext
-    ) async throws -> (any WKWebExtensionWindow)?
+    func openNewWindow(using configuration: WKWebExtension.WindowConfiguration,
+                       for context: WKWebExtensionContext) async throws -> (any WKWebExtensionWindow)?
 
     /// Opens a new tab with the given configuration.
-    func openNewTab(
-        using configuration: WKWebExtension.TabConfiguration,
-        for context: WKWebExtensionContext
-    ) async throws -> (any WKWebExtensionTab)?
+    func openNewTab(using configuration: WKWebExtension.TabConfiguration,
+                    for context: WKWebExtensionContext) async throws -> (any WKWebExtensionTab)?
 
     /// Presents the action popup for the given extension context.
-    func presentPopup(
-        _ action: WKWebExtension.Action,
-        for context: WKWebExtensionContext
-    ) async throws
+    func presentPopup(_ action: WKWebExtension.Action,
+                      for context: WKWebExtensionContext) async throws
 }

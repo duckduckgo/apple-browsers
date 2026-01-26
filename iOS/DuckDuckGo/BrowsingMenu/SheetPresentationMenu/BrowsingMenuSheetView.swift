@@ -58,6 +58,8 @@ struct BrowsingMenuSheetView: View {
         static let listTopPaddingAdjustment: CGFloat = 4
 
         static let websiteHeaderHeight: CGFloat = 56
+        /// Height of header when only close button is shown (compact mode without website info)
+        static let closeButtonHeaderHeight: CGFloat = 40
     }
 
     @Environment(\.dismiss) var dismiss
@@ -421,7 +423,6 @@ private enum MenuHeaderConstant {
     static let contentSpacing: CGFloat = 12
     static let textSpacing: CGFloat = 2
     static let bottomPadding: CGFloat = 8
-    static let closeButtonSize: CGFloat = 44
 }
 
 private extension View {

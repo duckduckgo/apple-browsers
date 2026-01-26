@@ -50,7 +50,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             title: "Example"
         )
 
-        XCTAssertTrue(dataSource.isHeaderVisible)
+        XCTAssertTrue(dataSource.isWebsiteHeaderVisible)
         XCTAssertEqual(dataSource.title, "Example")
         XCTAssertEqual(dataSource.url, url)
     }
@@ -64,7 +64,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             title: "Example"
         )
 
-        XCTAssertFalse(dataSource.isHeaderVisible)
+        XCTAssertFalse(dataSource.isWebsiteHeaderVisible)
     }
 
     func testWhenNewTabPageThenHeaderIsNotVisible() {
@@ -77,7 +77,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             title: "Example"
         )
 
-        XCTAssertFalse(dataSource.isHeaderVisible)
+        XCTAssertFalse(dataSource.isWebsiteHeaderVisible)
     }
 
     func testWhenAITabThenHeaderIsNotVisible() {
@@ -90,7 +90,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             title: "Example"
         )
 
-        XCTAssertFalse(dataSource.isHeaderVisible)
+        XCTAssertFalse(dataSource.isWebsiteHeaderVisible)
     }
 
     func testWhenErrorPageThenHeaderIsNotVisible() {
@@ -103,7 +103,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             title: "Example"
         )
 
-        XCTAssertFalse(dataSource.isHeaderVisible)
+        XCTAssertFalse(dataSource.isWebsiteHeaderVisible)
     }
 
     func testWhenNoLinkThenHeaderIsNotVisible() {
@@ -113,7 +113,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             hasLink: false
         )
 
-        XCTAssertFalse(dataSource.isHeaderVisible)
+        XCTAssertFalse(dataSource.isWebsiteHeaderVisible)
     }
 
     func testWhenHeaderBecomesHiddenThenDataSourceIsReset() {
@@ -125,7 +125,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             url: URL(string: "https://example.com"),
             title: "Example"
         )
-        XCTAssertTrue(dataSource.isHeaderVisible)
+        XCTAssertTrue(dataSource.isWebsiteHeaderVisible)
 
         // Then hide it
         sut.update(
@@ -137,7 +137,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             title: "Example"
         )
 
-        XCTAssertFalse(dataSource.isHeaderVisible)
+        XCTAssertFalse(dataSource.isWebsiteHeaderVisible)
         XCTAssertNil(dataSource.title)
         XCTAssertNil(dataSource.url)
     }

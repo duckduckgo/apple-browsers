@@ -19,9 +19,9 @@
 
 import SwiftUI
 
-public struct BrowsingMenuCloseButtonStyle: ButtonStyle {
+struct BrowsingMenuCloseButtonStyle: ButtonStyle {
 
-    public func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundColor(Color(designSystemColor: .iconsSecondary))
             .padding(Constant.padding)

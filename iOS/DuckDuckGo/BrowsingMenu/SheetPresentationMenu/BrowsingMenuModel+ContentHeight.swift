@@ -22,7 +22,18 @@ import DesignResourcesKit
 
 extension BrowsingMenuModel {
 
-    func estimatedContentHeight(includesWebsiteHeader: Bool) -> CGFloat {
+    func estimatedContentHeight(
+        headerDataSource: BrowsingMenuHeaderDataSource,
+        verticalSizeClass: UIUserInterfaceSizeClass?
+    ) -> CGFloat {
+        let isCompact = verticalSizeClass == .compact
+        return estimatedContentHeight(
+            includesWebsiteInfo: headerDataSource.isWebsiteHeaderVisible,
+            includesCloseButtonHeader: isCompact && !headerDataSource.isWebsiteHeaderVisible
+        )
+    }
+
+    private func estimatedContentHeight(includesWebsiteInfo: Bool, includesCloseButtonHeader: Bool) -> CGFloat {
         typealias Metrics = BrowsingMenuSheetView.Metrics
 
         let headerFont = UIFont.daxCaption()
@@ -32,7 +43,15 @@ extension BrowsingMenuModel {
         let headerContentHeight = iconHeight + Metrics.headerButtonIconTextSpacing + headerFont.lineHeight
         let headerButtonsHeight = headerItems.isEmpty ? 0 : headerContentHeight + (Metrics.headerButtonVerticalPadding * 2)
 
-        let websiteHeaderHeight = includesWebsiteHeader ? Metrics.websiteHeaderHeight : 0
+        // Header height depends on whether website info is shown or just the close button
+        let websiteHeaderHeight: CGFloat
+        if includesWebsiteInfo {
+            websiteHeaderHeight = Metrics.websiteHeaderHeight
+        } else if includesCloseButtonHeader {
+            websiteHeaderHeight = Metrics.closeButtonHeaderHeight
+        } else {
+            websiteHeaderHeight = 0
+        }
 
         let minTotalVerticalPadding: CGFloat = 16
         let rowHeight = max(Metrics.defaultListRowHeight, rowFont.lineHeight + minTotalVerticalPadding)

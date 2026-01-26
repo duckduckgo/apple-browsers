@@ -1372,12 +1372,6 @@
 /* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
 "duckai.contextual.onboarding.viewSettings" = "View Settings";
 
-/* Section title for recent chats in the AI chat history list */
-"duckai.history.chats.section.title" = "Chats";
-
-/* Section title for pinned chats in the AI chat history list */
-"duckai.history.pinned.section.title" = "Pinned";
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
 

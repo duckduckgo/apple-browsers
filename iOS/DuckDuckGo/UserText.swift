@@ -1969,10 +1969,6 @@ public struct UserText {
     public static let aiChatContextChipSubtitle = NSLocalizedString("duckai.context.chip.subtitle", value: "Page Content", comment: "Subtitle shown on the context chip indicating page content is attached")
     public static let aiChatContextChipInfoFooter = NSLocalizedString("duckai.context.chip.info", value: "Sent with your message to Duck.ai", comment: "Info text shown below the context chip explaining that content will be sent with the message")
 
-    // MARK: - AI Chat History
-    public static let aiChatHistoryPinnedSectionTitle = NSLocalizedString("duckai.history.pinned.section.title", value: "Pinned", comment: "Section title for pinned chats in the AI chat history list")
-    public static let aiChatHistoryChatsSectionTitle = NSLocalizedString("duckai.history.chats.section.title", value: "Chats", comment: "Section title for recent chats in the AI chat history list")
-
     // MARK: - AI Chat Contextual Onboarding
     public static let aiChatContextualOnboardingTitle = NSLocalizedString("duckai.contextual.onboarding.title", value: "Ask about this page", comment: "Title for the Duck.ai contextual onboarding screen")
     public static let aiChatContextualOnboardingBody = NSLocalizedString("duckai.contextual.onboarding.body", value: "Duck.ai can now help answer questions about the page you're viewing.\n\nPage content is only included when you attach it. You can change this anytime in Settings.", comment: "Body text for the Duck.ai contextual onboarding screen explaining the feature")

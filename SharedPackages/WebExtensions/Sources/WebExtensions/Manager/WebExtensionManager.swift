@@ -33,7 +33,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     public var eventsListener: WebExtensionEventsListening
 
     /// Platform-specific window/tab operations.
-    public weak var windowTabProvider: WebExtensionWindowTabProviding?
+    public let windowTabProvider: WebExtensionWindowTabProviding
 
     /// Platform-specific lifecycle hooks.
     public weak var lifecycleDelegate: WebExtensionLifecycleDelegate?
@@ -49,6 +49,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
     @MainActor
     public init(configuration: WebExtensionConfigurationProviding,
+                windowTabProvider: WebExtensionWindowTabProviding,
                 installationStore: WebExtensionPathsStoring = WebExtensionPathsStore(),
                 loader: WebExtensionLoading = WebExtensionLoader(),
                 eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()) {
@@ -56,6 +57,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
+        self.windowTabProvider = windowTabProvider
         self.installationStore = installationStore
         self.loader = loader
         self.eventsListener = eventsListener
@@ -179,24 +181,24 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
 
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        openWindowsFor extensionContext: WKWebExtensionContext) -> [any WKWebExtensionWindow] {
-        windowTabProvider?.openWindows(for: extensionContext) ?? []
+        windowTabProvider.openWindows(for: extensionContext)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        focusedWindowFor extensionContext: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
-        windowTabProvider?.focusedWindow(for: extensionContext)
+        windowTabProvider.focusedWindow(for: extensionContext)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        openNewWindowUsing configuration: WKWebExtension.WindowConfiguration,
                                        for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionWindow)? {
-        try await windowTabProvider?.openNewWindow(using: configuration, for: extensionContext)
+        try await windowTabProvider.openNewWindow(using: configuration, for: extensionContext)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        openNewTabUsing configuration: WKWebExtension.TabConfiguration,
                                        for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionTab)? {
-        try await windowTabProvider?.openNewTab(using: configuration, for: extensionContext)
+        try await windowTabProvider.openNewTab(using: configuration, for: extensionContext)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,
@@ -207,7 +209,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        presentActionPopup action: WKWebExtension.Action,
                                        for extensionContext: WKWebExtensionContext) async throws {
-        try await windowTabProvider?.presentPopup(action, for: extensionContext)
+        try await windowTabProvider.presentPopup(action, for: extensionContext)
     }
 
     // MARK: - Permissions (sensible defaults)

@@ -27,6 +27,7 @@ import WebExtensions
 //
 //    var pathsStoringMock: WebExtensionPathsStoringMock!
 //    var webExtensionLoadingMock: WebExtensionLoadingMock!
+//    var windowTabProviderMock: WebExtensionWindowTabProvidingMock!
 //    var internalUserStore: MockInternalUserStoring!
 //    var featureFlaggerMock: MockFeatureFlagger!
 //    var configurationMock: WebExtensionConfigurationProvidingMock!
@@ -36,6 +37,7 @@ import WebExtensions
 //
 //        pathsStoringMock = WebExtensionPathsStoringMock()
 //        webExtensionLoadingMock = WebExtensionLoadingMock()
+//        windowTabProviderMock = WebExtensionWindowTabProvidingMock()
 //        internalUserStore = MockInternalUserStoring()
 //        featureFlaggerMock = MockFeatureFlagger()
 //        featureFlaggerMock.internalUserDecider = DefaultInternalUserDecider(store: internalUserStore)
@@ -47,6 +49,7 @@ import WebExtensions
 //        webExtensionLoadingMock?.cleanupTestExtensions()
 //        pathsStoringMock = nil
 //        webExtensionLoadingMock = nil
+//        windowTabProviderMock = nil
 //        internalUserStore = nil
 //        featureFlaggerMock = nil
 //        configurationMock = nil
@@ -58,6 +61,7 @@ import WebExtensions
 //    func testWhenExtensionIsAdded_ThenPathIsStored() async {
 //        let webExtensionManager = WebExtensionManager(
 //            configuration: configurationMock,
+//            windowTabProvider: windowTabProviderMock,
 //            installationStore: pathsStoringMock,
 //            loader: webExtensionLoadingMock
 //        )
@@ -72,6 +76,7 @@ import WebExtensions
 //    func testWhenExtensionIsRemoved_ThenPathIsRemovedFromStore() async throws {
 //        let webExtensionManager = WebExtensionManager(
 //            configuration: configurationMock,
+//            windowTabProvider: windowTabProviderMock,
 //            installationStore: pathsStoringMock,
 //            loader: webExtensionLoadingMock
 //        )
@@ -89,6 +94,7 @@ import WebExtensions
 //
 //        let extensionManager = WebExtensionManager(
 //            configuration: configurationMock,
+//            windowTabProvider: windowTabProviderMock,
 //            installationStore: pathsStoringMock,
 //            loader: webExtensionLoadingMock
 //        )
@@ -102,6 +108,7 @@ import WebExtensions
 //    func testThatWebExtensionPaths_ReturnsPathsFromStore() {
 //        let webExtensionManager = WebExtensionManager(
 //            configuration: configurationMock,
+//            windowTabProvider: windowTabProviderMock,
 //            installationStore: pathsStoringMock,
 //            loader: webExtensionLoadingMock
 //        )

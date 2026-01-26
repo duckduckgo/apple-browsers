@@ -112,10 +112,10 @@ enum WebExtensionManagerFactory {
         let lifecycleDelegate = AppWebExtensionLifecycleDelegate()
 
         let manager = WebExtensionManager(
-            configuration: WebExtensionConfigurationProvider()
+            configuration: WebExtensionConfigurationProvider(),
+            windowTabProvider: windowTabProvider
         )
 
-        manager.windowTabProvider = windowTabProvider
         manager.lifecycleDelegate = lifecycleDelegate
 
         internalSiteHandler.dataSource = manager

@@ -49,6 +49,23 @@ public struct UserText {
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
     public static let actionForgetAllWithAIChat = NSLocalizedString("action.title.forgetAllWithAIChat", value: "Clear Tabs, Data, and Duck.ai Chats", comment: "Fire button title when AI chat clearing is enabled")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")
+
+    // MARK: Scoped Fire Confirmation
+
+    public static let scopedFireConfirmationAlertTitle = NSLocalizedString("scoped.fire.confirmation.alert.title", value: "Delete tabs and site data?", comment: "Title for scoped fire confirmation dialog asking user to delete tabs and site data")
+    public static let scopedFireConfirmationAlertTitleWithAIChat = NSLocalizedString("scoped.fire.confirmation.alert.title.with.aichat", value: "Delete tabs, site data, and chats?", comment: "Title for scoped fire confirmation dialog when AI chat clearing is enabled")
+    public static let scopedFireConfirmationDeleteAllButton = NSLocalizedString("scoped.fire.confirmation.delete.all.button", value: "Delete All", comment: "Button to delete all tabs and data in scoped fire confirmation dialog")
+    public static let scopedFireConfirmationDeleteThisTabButton = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.button", value: "Delete This Tab", comment: "Button to delete only the current tab in scoped fire confirmation dialog")
+    public static let scopedFireConfirmationSignOutWarning = NSLocalizedString("scoped.fire.confirmation.sign.out.warning", value: "Deleting site data can sign you out of accounts.", comment: "Warning message explaining that deleting site data may sign users out of accounts")
+    public static let scopedFireConfirmationDeleteThisTabDescription = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.description", value: "\"Delete This Tab\" clears this Duck.ai chat, and any site data from the sites visited in this tab.", comment: "Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data")
+    public static let scopedFireConfirmationDownloadsWarning = NSLocalizedString("scoped.fire.confirmation.downloads.warning", value: "This will cancel downloads in progress.", comment: "Warning message that deleting will cancel any active downloads")
+    public static let scopedFireConfirmationNewTabsInfo = NSLocalizedString("scoped.fire.confirmation.new.tabs.info", value: "New tabs you create also can be deleted individually.", comment: "Informational message explaining that new tabs can also be deleted individually")
+
+    public static func scopedFireConfirmationTabsDeletedToast(tabCount: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "scoped.fire.confirmation.tabs.deleted.toast", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, tabCount)
+    }
+
     public static let actionOpen = NSLocalizedString("action.title.open", value: "Open", comment: "Open action")
     public static let actionCopy = NSLocalizedString("action.title.copy", value: "Copy", comment: "Copy action")
     public static let actionCopyMessage = NSLocalizedString("action.title.copy.message", value: "URL copied", comment: "Floating message indicating URL has been copied")
@@ -1416,6 +1433,7 @@ public struct UserText {
     public static let settingsTheme = NSLocalizedString("settings.theme", value: "Theme", comment: "Settings screen cell text for theme")
     public static let settingsIcon = NSLocalizedString("settings.icon", value: "App Icon", comment: "Settings screen cell text for app icon selection")
     public static let settingsFirebutton = NSLocalizedString("settings.firebutton", value: "Fire Button Animation", comment: "Settings screen cell text for fire button animation")
+    public static let settingsCustomizableButtonDeleteTabsAndData = NSLocalizedString("settings.customizable.button.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Label for customizable toolbar button that deletes tabs and data")
     public static let settingsText = NSLocalizedString("settings.text.size", value: "Default Text Zoom", comment: "Settings screen cell text for text size")
     public static let settingsAddressBarPosition = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
@@ -1477,6 +1495,13 @@ public struct UserText {
     public static let settingsAutoClearCookiesSubtitle = NSLocalizedString("settings.autoclear.cookies.subtitle", value: "Delete all site data, including visited sites. May sign you out of accounts.", comment: "Subtitle explaining what the cookies option does in auto clear settings")
     public static let settingsAutoClearDuckAIChatsTitle = NSLocalizedString("settings.autoclear.duckai.chats.title", value: "Duck.ai Chats", comment: "Title for the Duck.ai chats option in auto clear settings")
     public static let settingsAutoClearDuckAIChatsSubtitle = NSLocalizedString("settings.autoclear.duckai.chats.subtitle", value: "Delete all chats, including pinned chats", comment: "Subtitle explaining what the Duck.ai chats option does in auto clear settings")
+
+    // MARK: Scoped Fire Data Clearing Settings
+
+    public static let settingsDeleteDuckAIChats = NSLocalizedString("settings.delete.duckai.chats", value: "Delete Duck.ai Chats", comment: "Settings screen cell text for option to delete Duck.ai chats when using scoped fire")
+    public static let settingsAutomaticallyDeleteData = NSLocalizedString("settings.automatically.delete.data", value: "Automatically Delete Data", comment: "Settings screen cell text for automatic data deletion option")
+    public static let settingsDeleteTabsAndData = NSLocalizedString("settings.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Settings screen cell text for option to delete tabs and data")
+    public static let settingsAutomaticDataClearingDeleteSectionTitle = NSLocalizedString("settings.automatic.data.clearing.delete.section.title", value: "DELETE", comment: "Section title in automatic data clearing settings")
     public static let settingsAutoClearTimingSectionHeader = NSLocalizedString("settings.autoclear.timing.section.header", value: "Desired Timing", comment: "Section header for the timing options in auto clear settings")
     public static let settingsAutoClearTimingAppExitOnly = NSLocalizedString("settings.autoclear.timing.app.exit.only", value: "App Exit Only", comment: "Timing option to clear data only on app exit")
     public static let settingsAutoClearTimingAppExitInactive5Min = NSLocalizedString("settings.autoclear.timing.app.exit.inactive.5min", value: "App Exit, Inactive for 5 Minutes", comment: "Timing option to clear data on app exit or after 5 minutes of inactivity")

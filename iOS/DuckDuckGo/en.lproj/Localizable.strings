@@ -2764,6 +2764,30 @@ https://duckduckgo.com/mac";
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Open in Another App?";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Delete tabs and site data?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Delete tabs, site data, and chats?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Delete All";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Delete This Tab";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "\"Delete This Tab\" clears this Duck.ai chat, and any site data from the sites visited in this tab.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "This will cancel downloads in progress.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "New tabs you create also can be deleted individually.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Deleting site data can sign you out of accounts.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Search or enter address";
 
@@ -2956,8 +2980,14 @@ Take back control of your personal information with the browser designed for dat
 /* Section footer Autolock description */
 "settings.autolock.description" = "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "DELETE";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatic Data Clearing";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Automatically Delete Data";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browser Feedback";
@@ -2986,6 +3016,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Manage Cookie Pop-ups";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Delete Tabs and Data";
+
 /* Settings title for the customize section */
 "settings.customize" = "Customize";
 
@@ -3003,6 +3036,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Default Browser";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Delete Duck.ai Chats";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Delete Tabs and Data";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Disable Email Protection Autofill";

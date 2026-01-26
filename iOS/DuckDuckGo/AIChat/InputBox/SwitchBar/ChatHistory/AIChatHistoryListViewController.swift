@@ -116,19 +116,6 @@ final class AIChatHistoryListViewController: UIViewController {
             .store(in: &cancellables)
     }
 
-    private func chat(for indexPath: IndexPath) -> AIChatSuggestion? {
-        guard let section = Section(rawValue: indexPath.section) else { return nil }
-
-        switch section {
-        case .pinned:
-            guard indexPath.row < pinnedChats.count else { return nil }
-            return pinnedChats[indexPath.row]
-        case .recent:
-            guard indexPath.row < recentChats.count else { return nil }
-            return recentChats[indexPath.row]
-        }
-    }
-
     private func configureCell(_ cell: UITableViewCell, with chat: AIChatSuggestion, isPinned: Bool) {
         var config = cell.defaultContentConfiguration()
 

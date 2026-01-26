@@ -127,6 +127,7 @@ final class AIChatHistoryManager {
     func tearDown() {
         currentFetchTask?.cancel()
         currentFetchTask = nil
+        cancellables.removeAll()
         suggestionsReader.tearDown()
         viewModel.clearAllChats()
     }

@@ -361,7 +361,7 @@ private struct ExpirationField: View {
 
     var body: some View {
 
-        if model.expirationMonth != nil || model.expirationYear != nil || model.isInEditMode {
+        if model.isInEditMode || (model.expirationMonth != nil && model.expirationYear != nil) {
             VStack(alignment: .leading, spacing: 0) {
 
                 Text(UserText.pmCardExpiration)

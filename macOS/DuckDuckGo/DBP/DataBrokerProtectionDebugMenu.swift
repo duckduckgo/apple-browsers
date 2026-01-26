@@ -55,7 +55,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let defaultEndpointMenuItem = NSMenuItem(title: "Use Default Endpoint", action: #selector(DataBrokerProtectionDebugMenu.useDBPDefaultEndpoint))
     private let customEndpointMenuItem = NSMenuItem(title: "Use Custom Endpoint...", action: #selector(DataBrokerProtectionDebugMenu.useDBPCustomEndpoint))
 
-    private let environmentMenu = NSMenu()
+    private let subscriptionEnvironmentMenuItem = NSMenuItem(title: "Subscription Environment:")
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
 
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
@@ -105,8 +105,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         super.init(title: "Personal Information Removal")
 
         buildItems {
-            NSMenuItem(title: "Environment")
-                .submenu(environmentMenu)
+            subscriptionEnvironmentMenuItem
 
             NSMenuItem(title: "Background Agent") {
                 NSMenuItem(title: "Enable", action: #selector(DataBrokerProtectionDebugMenu.backgroundAgentEnable))
@@ -204,7 +203,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             NSMenuItem(title: "Reset All State and Delete All Data", action: #selector(DataBrokerProtectionDebugMenu.deleteAllDataAndStopAgent))
                 .targetting(self)
 
-            populateDataBrokerProtectionEnvironmentListMenuItems()
+            subscriptionEnvironmentMenuItem.isEnabled = false
         }
     }
 
@@ -217,7 +216,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     override func update() {
         updateWebUIMenuItemsState()
         updateServiceRootMenuItemState()
-        updateEnvironmentMenu()
+        updateSubscriptionEnvironmentMenuItem()
         updateShowStatusMenuIconMenu()
     }
 
@@ -437,14 +436,6 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     // MARK: - Utility Functions
 
-    private func populateDataBrokerProtectionEnvironmentListMenuItems() {
-        environmentMenu.items = [
-            NSMenuItem(title: "⚠️ The environment can be set in the Subscription > Environment menu", action: nil, target: nil),
-            NSMenuItem(title: EnvironmentTitle.production.rawValue, action: nil, target: nil, keyEquivalent: ""),
-            NSMenuItem(title: EnvironmentTitle.staging.rawValue, action: nil, target: nil, keyEquivalent: ""),
-        ]
-    }
-
     private func updateWebUIMenuItemsState() {
         productionURLMenuItem.state = webUISettings.selectedURLType == .custom ? .off : .on
         customURLMenuItem.state = webUISettings.selectedURLType == .custom ? .on : .off
@@ -481,12 +472,9 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         return menuItem
     }
 
-    private func updateEnvironmentMenu() {
-        let selectedEnvironment = settings.selectedEnvironment
-        guard environmentMenu.items.count == 3 else { return }
-
-        environmentMenu.items[1].state = selectedEnvironment == .production ? .on: .off
-        environmentMenu.items[2].state = selectedEnvironment == .staging ? .on: .off
+    private func updateSubscriptionEnvironmentMenuItem() {
+        let environmentText = settings.selectedEnvironment == .production ? "production" : "staging"
+        subscriptionEnvironmentMenuItem.title = "Subscription environment: \(environmentText)"
     }
 
     private func updateShowStatusMenuIconMenu() {

@@ -31,9 +31,6 @@ final class WarnBeforeQuitOverlayPresenter {
     var overlayWindow: NSWindow?
     private let viewModel: WarnBeforeQuitViewModel
     private var observationTask: Task<Void, Never>?
-    private var progressDelayTask: Task<Void, Never>?
-    /// Is completing via second shortcut press (shows quick progress animation) vs button click (no animation)
-    private var isCompletingViaSecondPress = false
 
     let windowProvider: @MainActor () -> NSWindow?
     let anchorViewProvider: (@MainActor () -> NSView?)?
@@ -69,63 +66,28 @@ final class WarnBeforeQuitOverlayPresenter {
         }
     }
 
-    deinit {
-        observationTask?.cancel()
-        progressDelayTask?.cancel()
-    }
-
     // MARK: - Private
 
     private func handle(state: WarnBeforeQuitManager.State) {
         switch state {
         case .idle:
-            isCompletingViaSecondPress = false
+            break
+
+        case .keyDown:
+            // Show overlay but don't start progress yet (waiting to confirm it's a hold)
+            show()
 
         case .holding:
-            // Show overlay and start progress animation to 100% after threshold
-            isCompletingViaSecondPress = false
-            show()
-            // Delay progress animation to prevent showing on quick taps
-            progressDelayTask?.cancel()
-            progressDelayTask = Task { @MainActor [weak viewModel] in
-                try? await Task.sleep(interval: WarnBeforeQuitManager.Constants.progressThreshold)
-                // Only start animation if task wasn't cancelled and viewModel still exists
-                guard !Task.isCancelled, let viewModel = viewModel else { return }
-                let duration = WarnBeforeQuitManager.Constants.requiredHoldDuration - WarnBeforeQuitManager.Constants.progressThreshold
-                viewModel.startProgress(duration: duration)
-            }
+            // Key held past threshold - start progress animation to 100%
+            let duration = WarnBeforeQuitManager.Constants.requiredHoldDuration - WarnBeforeQuitManager.Constants.progressThreshold
+            viewModel.startProgress(duration: duration)
 
         case .waitingForSecondPress:
-            // Stop progress animation and reset
-            progressDelayTask?.cancel()
-            progressDelayTask = nil
-            isCompletingViaSecondPress = false
             // Reset progress with quick spring animation (0.3 seconds)
             viewModel.resetProgress()
 
-        case .completing:
-            // Cancel any pending delay task
-            progressDelayTask?.cancel()
-            progressDelayTask = nil
-            isCompletingViaSecondPress = true
-            // Quick animation to 100% on second press
-            viewModel.startProgressQuick()
-
-        case .completed(let shouldProceed):
-            // Cancel any pending progress animation
-            progressDelayTask?.cancel()
-            progressDelayTask = nil
-            // Hide after a brief delay to let final state render
-            Task {
-                // Only set progress to 100% if action is proceeding via second press (not button click)
-                if shouldProceed && isCompletingViaSecondPress {
-                    viewModel.completeProgress()
-                }
-                isCompletingViaSecondPress = false
-                // Wait for UI to render the final state
-                try? await Task.sleep(interval: 0.033) // 33ms (2 frames at 60fps)
-                hide()
-            }
+        case .completed:
+            self.hide()
             // Just hide - don't call terminate, the decider framework handles that
         }
     }
@@ -180,6 +142,9 @@ final class WarnBeforeQuitOverlayPresenter {
     private func hide() {
         guard let overlayWindow else { return }
 
+        // Trigger view animation
+        viewModel.shouldHide = true
+
         // Animate out with spring animation
         animateOut(window: overlayWindow) { [weak self] in
             // Clear content view to prevent shadow artifacts
@@ -190,45 +155,34 @@ final class WarnBeforeQuitOverlayPresenter {
                 self?.overlayWindow = nil
                 overlayWindow.parent?.removeChildWindow(overlayWindow)
                 overlayWindow.orderOut(nil)
-                // Reset progress after window is hidden
+                // Reset progress and shouldHide after window is hidden
                 self?.viewModel.resetProgress()
+                self?.viewModel.shouldHide = false
             }
         }
     }
 
     // MARK: - Animations
 
-    /// Animates window in with fade animation
+    /// Shows the window immediately (view handles animation)
     /// - Parameters:
-    ///   - window: The window to animate
+    ///   - window: The window to show
     private func animateIn(window: NSWindow) {
-        // Window frame is already set (fills parent), just fade in
-        window.alphaValue = 0
-
-        // Show window before animating
+        // Window is fully opaque - the balloon view handles opacity/scale/offset animation
+        window.alphaValue = 1.0
         window.makeKeyAndOrderFront(nil)
-
-        // Simple fade-in animation
-        NSAnimationContext.runAnimationGroup({ context in
-            context.duration = 0.15
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-
-            window.animator().alphaValue = 1.0
-        }, completionHandler: nil)
     }
 
-    /// Animates window out with fade animation
+    /// Hides the window after animation delay (view handles animation)
     /// - Parameters:
-    ///   - window: The window to animate
-    ///   - completion: Called after animation finishes
+    ///   - window: The window to hide
+    ///   - completion: Called when animation completes
     private func animateOut(window: NSWindow, completion: @escaping () -> Void) {
-        // Simple fade-out animation (window stays full-size, only opacity changes)
-        NSAnimationContext.runAnimationGroup({ context in
-            context.duration = 0.25
-            context.timingFunction = CAMediaTimingFunction(name: .easeIn)
-
-            window.animator().alphaValue = 0
-        }, completionHandler: completion)
+        // Wait for view animation to complete
+        Task { @MainActor in
+            try? await Task.sleep(interval: WarnBeforeQuitView.Constants.animationSettlingTime)
+            completion()
+        }
     }
 
     private func createOverlayWindow() -> NSWindow {

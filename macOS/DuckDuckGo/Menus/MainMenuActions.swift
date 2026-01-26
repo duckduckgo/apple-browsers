@@ -1029,6 +1029,7 @@ extension MainViewController {
         switch query {
         case .sync(let decision):
             let shouldProceed = decision == .next
+            // Close the Tab
             completion(shouldProceed)
             manager.deciderSequenceCompleted(shouldProceed: shouldProceed)
         case .async(let task):
@@ -1036,7 +1037,10 @@ extension MainViewController {
             Task { @MainActor in
                 let decision = await task.value
                 let shouldProceed = decision == .next
+                // Close the Tab
                 completion(shouldProceed)
+                // Let the event loop process the UI update
+                await Task.yield()
                 manager.deciderSequenceCompleted(shouldProceed: shouldProceed)
             }
         }

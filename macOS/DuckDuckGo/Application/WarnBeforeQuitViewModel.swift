@@ -41,21 +41,22 @@ enum ConfirmationAction {
 
 enum ProgressState: Equatable {
     case idle                           // 0%, no animation
-    case animating(duration: TimeInterval)  // animating to 100% with specified duration
+    case animating(duration: TimeInterval, targetValue: CGFloat = 1.0)  // animating to targetValue with specified duration
     case complete                       // 100%, no animation
     case resetting                      // animating back to 0% with spring
 
     var targetProgress: CGFloat {
         switch self {
         case .idle, .resetting: return 0
-        case .animating, .complete: return 1.0
+        case .animating(_, targetValue: let targetValue): return targetValue
+        case .complete: return 1.0
         }
     }
 
     var animationDuration: TimeInterval {
         switch self {
-        case .animating(let duration): return duration
-        default: return 0.42 // Default, not actually used
+        case .idle, .resetting, .complete: return 0
+        case .animating(duration: let duration, _): return duration
         }
     }
 }
@@ -65,6 +66,7 @@ final class WarnBeforeQuitViewModel: ObservableObject {
 
     @Published private(set) var progressState: ProgressState = .idle
     @Published var balloonAnchorPosition: CGPoint = .zero
+    @Published var shouldHide: Bool = false
     let action: ConfirmationAction
     private let startupPreferences: StartupPreferences?
 
@@ -101,20 +103,16 @@ final class WarnBeforeQuitViewModel: ObservableObject {
         }
     }
 
-    func startProgress(duration: TimeInterval = 0.42) {
-        progressState = .animating(duration: duration)
-    }
-
-    func startProgressQuick() {
-        progressState = .animating(duration: 0.1)
-    }
-
-    func resetProgress() {
-        progressState = .resetting
+    func startProgress(duration: TimeInterval = 0.42, targetValue: CGFloat = 1.0) {
+        progressState = .animating(duration: duration, targetValue: targetValue)
     }
 
     func completeProgress() {
         progressState = .complete
+    }
+
+    func resetProgress() {
+        progressState = .resetting
     }
 
     func dontAskAgainTapped() {

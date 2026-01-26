@@ -45,7 +45,10 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         static let extendedHideawayDuration: TimeInterval = 4.0
 
         /// Threshold before progress bar starts filling (prevents immediate visual feedback on quick press)
-        static let progressThreshold: TimeInterval = 0.08
+        static let progressThreshold: TimeInterval = 0.1
+
+        /// Buffer time for detecting quick tap on second press (accounts for animation startup delay)
+        static let quickTapDetectionBuffer: TimeInterval = 0.05
     }
 
     /// The keyboard shortcut to monitor for confirmation (⌘Q, ⌘W…)
@@ -70,9 +73,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     enum State: Equatable {
         case idle
-        case holding(startTime: TimeInterval, targetTime: TimeInterval)
-        case waitingForSecondPress(hideUntil: TimeInterval)
-        case completing(startTime: TimeInterval, targetTime: TimeInterval) // Quick animation to 100%
+        case keyDown  // Key pressed, waiting to confirm it's a hold (before progressThreshold)
+        case holding(startTime: TimeInterval, targetTime: TimeInterval)  // Confirmed hold, progress animating
+        case waitingForSecondPress
         case completed(shouldProceed: Bool)
     }
 
@@ -155,6 +158,11 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             return .sync(.next)
         }
 
+        // Fire shown pixel (only for quit, not close tab)
+        if action == .quit {
+            pixelFiring?.fire(GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount)
+        }
+
         // Show confirmation and wait synchronously for hold completion or release
         switch trackEventsForHoldingPhase() {
         case .completed(let shouldProceed) where action == .quit:
@@ -185,19 +193,15 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             currentState = .completed(shouldProceed: shouldProceed)
             return .sync(shouldProceed ? .next : .cancel)
 
-        case .waitingForSecondPress: break
+        case .releasedEarly:
+            // First press released early - go to waiting for second press
+            break
         }
 
         // Shortcut released early - wait for second press asynchronously
         Logger.general.debug("WarnBeforeQuitManager: Key released early, entering async wait")
         return .async(Task {
             let shouldProceed = await waitForSecondPress()
-
-            // Fire pixel based on result (only for quit, not close tab)
-            if self.action == .quit {
-                let pixel = shouldProceed ? GeneralPixel.warnBeforeQuitQuit : GeneralPixel.warnBeforeQuitCancelled
-                await self.pixelFiring?.fireAndWait(pixel, frequency: .standard)
-            }
 
             // Install event interceptor to prevent beeps for repeated shortcut key events,
             // reset in the `deciderSequenceCompleted` delegate callback
@@ -207,6 +211,12 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
             // Emit completed state - UI will hide overlay
             currentState = .completed(shouldProceed: shouldProceed)
+
+            // Fire pixel based on result (only for quit, not close tab)
+            if self.action == .quit {
+                let pixel = shouldProceed ? GeneralPixel.warnBeforeQuitQuit : GeneralPixel.warnBeforeQuitCancelled
+                await self.pixelFiring?.fireAndWait(pixel, frequency: .standard)
+            }
 
             // Wait for a brief delay for animation to complete before quitting
             if shouldProceed && action == .quit {
@@ -223,26 +233,20 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     private enum HoldingPhaseResult {
         case completed(shouldProceed: Bool)
-        case waitingForSecondPress
+        case releasedEarly
     }
 
     /// Waits synchronously for user to either hold Cmd+[Q|W] long enough or release it early.
-    /// - Returns: `true` if held long enough or "Don't Show Again" clicked, `false` if released early
+    /// - Returns: Result indicating completion or early release
     private func trackEventsForHoldingPhase() -> HoldingPhaseResult {
-        // Start hold timer - UI will show overlay with progress
-        let startTime = now().timeIntervalSinceReferenceDate
-        // Set targetTime to include animation buffer so progress reaches 100% when we actually complete
-        currentState = .holding(startTime: startTime, targetTime: startTime + Constants.requiredHoldDuration + Constants.animationBufferDuration)
-
-        // Fire shown pixel (only for quit, not close tab)
-        if action == .quit {
-            pixelFiring?.fire(GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount)
-        }
-
         let keyEquivalent = shortcutKeyEquivalent
 
-        // Include buffer time to allow the progress animation to complete smoothly
-        let deadline = now().advanced(by: Constants.requiredHoldDuration + Constants.animationBufferDuration)
+        // Start in keyDown state - UI shows overlay but no progress yet
+        currentState = .keyDown
+
+        // Initial deadline: wait for progressThreshold to confirm it's a hold
+        var deadline = now().advanced(by: Constants.progressThreshold)
+
         // Wait for either key release or hold duration completion
         while now() < deadline {
             // Check if warning was disabled during the loop
@@ -252,20 +256,30 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             }
 
             guard let event = eventReceiver([.keyUp, .keyDown, .flagsChanged], deadline, .eventTracking, true) else {
-                // If no event, we reached the deadline - hold completed
-                Logger.general.debug("WarnBeforeQuitManager: Hold completed by deadline")
+                // deadline reached
+                if case .keyDown = currentState {
+                    // Reached progressThreshold - transition to holding and start progress
+                    Logger.general.debug("WarnBeforeQuitManager: progressThreshold reached, transitioning to holding for \(Constants.requiredHoldDuration)s")
+                    let startTime = now().timeIntervalSinceReferenceDate
+                    // Set targetTime with small buffer for smooth visual completion
+                    currentState = .holding(startTime: startTime, targetTime: startTime + Constants.requiredHoldDuration + Constants.animationBufferDuration)
+                    deadline = now().advanced(by: Constants.requiredHoldDuration)
+                    continue
 
-                // Mark that shortcut key is still held - will wait for release in delegate callback
-                isShortcutKeyHeld = true
-
-                return .completed(shouldProceed: true)
+                } else {
+                    // Reached full hold duration - hold completed
+                    Logger.general.debug("WarnBeforeQuitManager: Hold completed by deadline")
+                    // Mark that shortcut key is still held - will wait for release in delegate callback
+                    isShortcutKeyHeld = true
+                    return .completed(shouldProceed: true)
+                }
             }
 
             switch event.type {
             case .flagsChanged where event.modifierFlags.deviceIndependent.intersection(keyEquivalent.modifierMask) != keyEquivalent.modifierMask:
-                // Modifier key was released - need to wait for second press
+                // Modifier key was released early
                 Logger.general.debug("WarnBeforeQuitManager: Modifier released")
-                return .waitingForSecondPress
+                return .releasedEarly
 
             case .keyDown where event.keyEquivalent == shortcutKeyEquivalent:
                 Logger.general.debug("WarnBeforeQuitManager: consuming consequent keyDown for \(event)")
@@ -273,14 +287,14 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
             case .keyDown:
                 // Other key pressed during hold - cancel and pass through
-                Logger.general.debug("WarnBeforeQuitManager: Other key pressed during hold, canceling")
+                Logger.general.debug("WarnBeforeQuitManager: '\(event.keyEquivalent?.charCode ?? "")' key pressed during hold, canceling")
                 NSApp.postEvent(event, atStart: true)
                 return .completed(shouldProceed: false)
 
             case .keyUp where event.charactersIgnoringModifiers == keyEquivalent.charCode:
-                // Shortcut key was released - need to wait for second press
+                // Shortcut key was released early
                 Logger.general.debug("WarnBeforeQuitManager: Key '\(keyEquivalent.charCode)' released")
-                return .waitingForSecondPress
+                return .releasedEarly
 
             default:
                 // Repost other events to keep app responsive
@@ -288,14 +302,13 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             }
         }
 
-        // Loop ended, deadline reached - hold completed
+        // Loop ended, deadline reached - shouldn‘t reach here but handle gracefully
         return .completed(shouldProceed: true)
     }
 
     private func waitForSecondPress() async -> Bool {
         // Emit waiting state - UI can show "press again" or start fadeout
-        let hideUntil = now().timeIntervalSinceReferenceDate + Constants.hideawayDuration
-        currentState = .waitingForSecondPress(hideUntil: hideUntil)
+        currentState = .waitingForSecondPress
 
         final class CancellationState {
             var onCancel: (() -> Void)?
@@ -353,7 +366,6 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
                 // Install event interceptor hook for the shortcut, Escape, and clicks
                 (NSApp as? Application)?.eventInterceptor = { event in
-                    Logger.general.debug("WarnBeforeQuitManager: Received event \(event)")
                     switch event.type {
                     case .keyDown where event.keyEquivalent == .escape:
                         Logger.general.debug("WarnBeforeQuitManager: Escape pressed")
@@ -363,19 +375,50 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                     case .keyDown where event.keyEquivalent == shortcutKeyEquivalent:
                         Logger.general.debug("WarnBeforeQuitManager: ⌘'\(shortcutKeyEquivalent.charCode)' pressed again")
 
-                        // Animate progress to 100% quickly
-                        let animationDuration: TimeInterval = 0.1
-                        let startTime = self.now().timeIntervalSinceReferenceDate
-                        self.currentState = .completing(startTime: startTime, targetTime: startTime + animationDuration)
+                        // Clean up timer and hover callback before entering hold phase
+                        timer?.invalidate()
+                        timer = nil
+                        self.onHoverChange = nil
 
-                        // Mark that shortcut key is still held - will wait for release in delegate callback
-                        self.isShortcutKeyHeld = true
+                        // Record time when second press started (for determining quick tap vs hold)
+                        let secondPressStartTime = self.now()
 
-                        resume(with: true)
+                        // Handle second press with same hold detection as first press
+                        let result = self.trackEventsForHoldingPhase()
+
+                        switch result {
+                        case .completed(let shouldProceed):
+                            if shouldProceed {
+                                // Held through duration - proceed
+                                Logger.general.debug("WarnBeforeQuitManager: Second press held through duration, proceeding")
+                                self.isShortcutKeyHeld = true
+                            } else {
+                                // Cancelled by other key press
+                                Logger.general.debug("WarnBeforeQuitManager: Second press cancelled")
+                            }
+                            resume(with: shouldProceed)
+
+                        case .releasedEarly:
+                            // Check if released before progress visible (quick tap) or after (return to waiting)
+                            let elapsedTime = self.now().timeIntervalSince(secondPressStartTime)
+                            // Reset progress in case it‘s started animating before the key release
+                            self.currentState = .waitingForSecondPress
+                            // Add buffer to account for animation startup time
+                            if elapsedTime < Constants.progressThreshold + Constants.quickTapDetectionBuffer {
+                                // Quick tap - confirm immediately
+                                Logger.general.debug("WarnBeforeQuitManager: Second press released in \(elapsedTime)s, confirming")
+                                resume(with: true)
+                            } else {
+                                // Released after progress started - return to waiting
+                                Logger.general.debug("WarnBeforeQuitManager: Second press released after \(elapsedTime)s, returning to wait")
+                                startTimer(hovering: false)
+                            }
+                        }
+
                         return nil // Consume event
 
                     case .keyDown:
-                        Logger.general.debug("WarnBeforeQuitManager: Other key pressed, canceling")
+                        Logger.general.debug("WarnBeforeQuitManager: '\(event.keyEquivalent?.charCode ?? "")' key pressed, canceling")
                         resume(with: false)
                         return event // Pass through for normal function
 

@@ -37,12 +37,24 @@ struct WarnBeforeQuitView: View {
         // Spacing between elements (circle -> text, text -> button area)
         static var circleToTextSpacing: CGFloat = 16
         static var textToButtonSpacing: CGFloat = 40
+
+        // Animation constants
+        static let animationYOffset: CGFloat = 12  // Vertical offset for enter/exit animation
+        static let animationScale: CGFloat = 0.96  // Scale for enter/exit animation
+        static let animationResponse: Double = 0.28  // Spring response time (converted from stiffness 500, damping 40)
+        static let animationDampingFraction: Double = 0.89  // Spring damping (converted from stiffness 500, damping 40)
+        static let animationSettlingTime: Double = 0.35  // Time to wait for animation to complete before cleanup
     }
 
     @ObservedObject var viewModel: WarnBeforeQuitViewModel
     @State private var isButtonHovered = false
     @State private var isHovering = false
     @Environment(\.colorScheme) private var colorScheme
+
+    // Animation properties
+    @State private var balloonOpacity: Double = 0
+    @State private var balloonYOffset: CGFloat = Constants.animationYOffset
+    @State private var balloonScale: CGFloat = Constants.animationScale
 
     private var backgroundColor: Color {
         colorScheme == .dark ?
@@ -52,8 +64,8 @@ struct WarnBeforeQuitView: View {
 
     // Sizing for close action (compact variant)
     private var isCloseAction: Bool { viewModel.action == .close }
-    private var progressSize: CGFloat { isCloseAction ? 50 : 58 }
-    private var circleSize: CGFloat { isCloseAction ? 44 : 52 }
+    private var progressSize: CGFloat { isCloseAction ? 50 : 55 }
+    private var circleSize: CGFloat { isCloseAction ? 46 : 52 }
     private var shortcutFontSize: CGFloat { isCloseAction ? 13 : 15 }
     private var titleFontSize: CGFloat { isCloseAction ? 15 : 17 }
     private var buttonPaddingH: CGFloat { isCloseAction ? 14 : 16 }
@@ -106,6 +118,19 @@ struct WarnBeforeQuitView: View {
         .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 40, x: 0, y: 20)
         .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 4)
         .padding(Constants.shadowPadding / 2)
+        .opacity(balloonOpacity)
+        .offset(y: balloonYOffset)
+        .scaleEffect(balloonScale)
+        .onAppear {
+            animateIn()
+        }
+        .onChange(of: viewModel.shouldHide) { shouldHide in
+            if shouldHide {
+                animateOut()
+            } else {
+                animateIn()
+            }
+        }
     }
 
     private func calculateCloseOffset() -> CGPoint {
@@ -124,6 +149,38 @@ struct WarnBeforeQuitView: View {
         let y = anchorPosition.y + tabGapOffset - shadowPadding
 
         return CGPoint(x: x, y: y)
+    }
+
+    // MARK: - Animation
+
+    /// Animates the balloon entering with spring animation.
+    /// Spring parameters: stiffness 500, damping 40
+    /// Converted to SwiftUI: response ≈ 0.28, dampingFraction ≈ 0.89
+    private func animateIn() {
+        var response = Constants.animationResponse
+#if DEBUG
+        response *= AnimatedCircleProgress.slowMotionMultiplier
+#endif
+        withAnimation(.spring(response: response, dampingFraction: Constants.animationDampingFraction, blendDuration: 0)) {
+            balloonOpacity = 1.0
+            balloonYOffset = 0
+            balloonScale = 1.0
+        }
+    }
+
+    /// Animates the balloon exiting with spring animation.
+    /// Spring parameters: stiffness 500, damping 40
+    /// Converted to SwiftUI: response ≈ 0.28, dampingFraction ≈ 0.89
+    private func animateOut() {
+        var response = Constants.animationResponse
+#if DEBUG
+        response *= AnimatedCircleProgress.slowMotionMultiplier
+#endif
+        withAnimation(.spring(response: response, dampingFraction: Constants.animationDampingFraction, blendDuration: 0)) {
+            balloonOpacity = 0
+            balloonYOffset = Constants.animationYOffset
+            balloonScale = Constants.animationScale
+        }
     }
 
     private var mainContent: some View {
@@ -273,13 +330,13 @@ struct AnimatedCircleProgress: View {
                 case .idle:
                     displayProgress = 0
 
-                case .animating(var duration):
+                case .animating(var duration, let targetValue):
 #if DEBUG
                     duration *= Self.slowMotionMultiplier
 #endif
                     // Animate to 100% with linear animation
                     withAnimation(.linear(duration: duration)) {
-                        displayProgress = 1.0
+                        displayProgress = targetValue
                     }
 
                 case .complete:
@@ -446,6 +503,43 @@ struct InteractivePreview: View {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 8) {
+                    Text(verbatim: "View Animations:")
+                        .font(.headline)
+
+                    HStack(spacing: 12) {
+                        Button {
+                            guard let vm = viewModel else { return }
+                            Task { @MainActor in
+                                if !vm.shouldHide {
+                                    // Toggle to force animation re-trigger
+                                    vm.shouldHide = true
+                                    try? await Task.sleep(interval: 0.3)
+                                }
+                                vm.shouldHide = false
+                            }
+                        } label: {
+                            Text(verbatim: "Show")
+                        }
+
+                        Button {
+                            guard let vm = viewModel else { return }
+                            Task { @MainActor in
+                                if vm.shouldHide {
+                                    // Toggle to force animation re-trigger
+                                    vm.shouldHide = false
+                                    try? await Task.sleep(interval: 0.3)
+                                }
+                                vm.shouldHide = true
+                            }
+                        } label: {
+                            Text(verbatim: "Hide")
+                        }
+                    }
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 8) {
                     Text(verbatim: "Progress Animations:")
                         .font(.headline)
 
@@ -457,18 +551,17 @@ struct InteractivePreview: View {
                                 if vm.progressState != .idle {
                                     vm.transitionToIdle()
                                 }
-                                // Start animation and transition to complete when done
                                 stateSwitchTask?.cancel()
                                 stateSwitchTask = Task {
                                     try await Task.sleep(interval: 0.05)
-                                    let duration = slowMotion ? 5.0 : 1.0
+                                    let duration = 0.6
                                     vm.startProgress(duration: duration)
                                     // Wait for animation to complete, then transition to complete state
                                     try await Task.sleep(interval: duration)
                                     vm.completeProgress()
                                 }
                             } label: {
-                                Text(verbatim: "Animate Slow (1.0s)")
+                                Text(verbatim: "Start progress")
                             }
 
                             Button {
@@ -477,61 +570,28 @@ struct InteractivePreview: View {
                                 if vm.progressState != .idle {
                                     vm.transitionToIdle()
                                 }
-                                // Start animation and transition to complete when done
                                 stateSwitchTask?.cancel()
                                 stateSwitchTask = Task {
                                     try await Task.sleep(interval: 0.05)
-                                    let duration = slowMotion ? 3.0 : 0.6
-                                    vm.startProgress(duration: duration)
-                                    // Wait for animation to complete, then transition to complete state
-                                    try await Task.sleep(interval: duration)
-                                    vm.completeProgress()
+                                    vm.startProgress(duration: 0.3, targetValue: 0.2)
                                 }
                             } label: {
-                                Text(verbatim: "Animate Medium (0.6s)")
+                                Text(verbatim: "Progress: 20%")
                             }
 
                             Button {
                                 guard let vm = viewModel else { return }
-                                // If not idle, force to idle first
-                                if vm.progressState != .idle {
-                                    vm.transitionToIdle()
-                                }
-                                // Start animation and transition to complete when done
-                                stateSwitchTask?.cancel()
-                                stateSwitchTask = Task {
-                                    try await Task.sleep(interval: 0.05)
-                                    let duration = slowMotion ? 0.5 : 0.1
-                                    vm.startProgress(duration: duration)
-                                    // Wait for animation to complete, then transition to complete state
-                                    try await Task.sleep(interval: duration)
-                                    vm.completeProgress()
-                                }
-                            } label: {
-                                Text(verbatim: "Animate Fast (0.1s)")
-                            }
-                        }
-
-                        Button {
-                            guard let vm = viewModel else { return }
-                            if vm.progressState != .complete {
-                                vm.completeProgress()
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    vm.resetProgress()
-                                }
-                            } else {
                                 vm.resetProgress()
+                                // Transition to idle after reset animation completes
+                                stateSwitchTask?.cancel()
+                                stateSwitchTask = Task {
+                                    // Spring with response 0.3 and damping 0.7 settles in ~1 second
+                                    try await Task.sleep(interval: 1.0)
+                                    vm.transitionToIdle()
+                                }
+                            } label: {
+                                Text(verbatim: "reset")
                             }
-                            // Transition to idle after reset animation completes
-                            stateSwitchTask?.cancel()
-                            stateSwitchTask = Task {
-                                // Spring with response 0.3 and damping 0.7 settles in ~1 second
-                                let settleDuration = slowMotion ? 5.0 : 1.0
-                                try await Task.sleep(interval: settleDuration)
-                                vm.transitionToIdle()
-                            }
-                        } label: {
-                            Text(verbatim: "Reset Progress")
                         }
                     }
 
@@ -541,17 +601,6 @@ struct InteractivePreview: View {
                         .font(.caption)
                 }
 
-                Divider()
-
-                if let vm = viewModel {
-                    HStack {
-                        Text(verbatim: "Current State:")
-                            .font(.caption)
-                        Text(verbatim: "\(stateDescription(vm.progressState))")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
             }
             .padding()
             .background(Color.gray.opacity(0.1))
@@ -560,12 +609,23 @@ struct InteractivePreview: View {
         .padding(40)
         .onAppear {
             DesignSystemPalette.current = colorPalette
-            viewModel = makeViewModel(colorPalette)
+            let vm = makeViewModel(colorPalette)
+            // Center the close action balloon in the preview
+            if vm.action == .close {
+                // Position anchor to center the balloon body
+                vm.balloonAnchorPosition = CGPoint(x: 120, y: 50)
+            }
+            viewModel = vm
             AnimatedCircleProgress.slowMotionMultiplier = slowMotion ? 5.0 : 1.0
         }
         .onChange(of: colorPalette) { newPalette in
             DesignSystemPalette.current = newPalette
-            viewModel = makeViewModel(newPalette)
+            let vm = makeViewModel(newPalette)
+            // Center the close action balloon in the preview
+            if vm.action == .close {
+                vm.balloonAnchorPosition = CGPoint(x: 120, y: 50)
+            }
+            viewModel = vm
             AnimatedCircleProgress.slowMotionMultiplier = slowMotion ? 5.0 : 1.0
         }
         .onChange(of: slowMotion) { newValue in
@@ -573,14 +633,6 @@ struct InteractivePreview: View {
         }
     }
 
-    private func stateDescription(_ state: ProgressState) -> String {
-        switch state {
-        case .idle: return "Idle (0%)"
-        case .animating(let duration): return "Animating (\(String(format: "%.2f", duration))s)"
-        case .complete: return "Complete (100%)"
-        case .resetting: return "Resetting..."
-        }
-    }
 }
 
 // MARK: - Previews

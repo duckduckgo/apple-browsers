@@ -176,7 +176,7 @@ final class TerminationDeciderHandler {
     private func deciderSequenceCompleted(async: Bool, shouldProceed: Bool, invokedDeciders: Int) {
         /// If the decision is asynchronous and the action should not proceed, cancel the termination.
         if async && !shouldProceed {
-            NSApp.reply(toApplicationShouldTerminate: false)
+            replyToApplicationShouldTerminate?(false)
         }
 
         /// Notify all deciders up to the one that was invoked that the sequence has completed.
@@ -186,7 +186,7 @@ final class TerminationDeciderHandler {
 
         /// If the decision is asynchronous and the action should proceed, allow the termination.
         if async && shouldProceed {
-            NSApp.reply(toApplicationShouldTerminate: true)
+            replyToApplicationShouldTerminate?(true)
         }
         // For synchronous responses, the decision is defined by the returned NSApplication.TerminateReply.
     }

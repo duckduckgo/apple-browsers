@@ -20,7 +20,7 @@ import Foundation
 
 // MARK: - URLs, ex URL+Subscription
 
-public enum SubscriptionURL {
+public enum SubscriptionURL: Equatable {
 
     case baseURL
     case purchase
@@ -39,7 +39,7 @@ public enum SubscriptionURL {
     case manageSubscriptionsInAppStore
     case identityTheftRestoration
     case plans
-    case upgrade
+    case upgradeToTier(String)
 
     public enum StaticURLs {
         public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -86,8 +86,8 @@ public enum SubscriptionURL {
                 baseURL.replacing(path: "identity-theft-restoration")
             case .plans:
                 baseURL.appendingPathComponent("plans")
-            case .upgrade:
-                baseURL.appendingPathComponent("plans").appendingParameter(name: "goToUpgrade", value: "true")
+            case .upgradeToTier(let tier):
+                baseURL.appendingPathComponent("plans").appendingParameter(name: "tier", value: tier)
             }
         }()
 
@@ -161,16 +161,19 @@ extension SubscriptionURL {
      *
      * - Parameters:
      *   - origin: Attribution origin for analytics
-     *   - goToUpgrade: If true, includes goToUpgrade=true parameter for direct upgrade flow
+     *   - tier: If provided, includes tier=<value> parameter for direct upgrade flow to the specified tier.
+     *           The tier value should come from the backend's available upgrade tiers (e.g., "pro", "plus").
      *   - environment: The subscription environment (production/staging)
      *
      * - Returns: URLComponents containing the plans URL with origin parameter
      */
-    public static func plansURLComponents(_ origin: String, goToUpgrade: Bool = false, environment: SubscriptionEnvironment.ServiceEnvironment = .production) -> URLComponents? {
-        let subscriptionURL: SubscriptionURL = goToUpgrade ? .upgrade : .plans
-        let url = subscriptionURL
+    public static func plansURLComponents(_ origin: String, tier: String? = nil, environment: SubscriptionEnvironment.ServiceEnvironment = .production) -> URLComponents? {
+        var url = SubscriptionURL.plans
             .subscriptionURL(environment: environment)
             .appendingParameter(name: AttributionParameter.origin, value: origin)
+        if let tier {
+            url = url.appendingParameter(name: "tier", value: tier)
+        }
         return URLComponents(url: url, resolvingAgainstBaseURL: false)
     }
 }

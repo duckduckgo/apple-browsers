@@ -472,15 +472,14 @@ extension URL {
     /// Base URL for Duck.ai (overridable by internal users, CI, or UI tests only).
     ///
     /// For external users in production, this always returns `https://duck.ai`.
-    /// For internal users or test environments, this can be overridden via:
-    /// - The Debug menu (runtime)
-    /// - The `DUCKAI_BASE_URL` environment variable (launch time)
+    /// For internal users or test environments, this can be overridden via
+    /// the `DUCKAI_BASE_URL` environment variable (launch time).
     private static var duckAiBase: String {
         guard isOverrideAllowed else {
             return "https://duck.ai"
         }
 
-        return debugSettings.effectiveDuckAIBaseURL
+        return ProcessInfo.processInfo.environment["DUCKAI_BASE_URL", default: "https://duck.ai"]
     }
 
     /// Base URL for help pages (overridable by internal users, CI, or UI tests only).

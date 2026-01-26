@@ -228,7 +228,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installSwitchBarVC()
         installSwipeContainer()
         installSuggestionsTray()
-        installChatHistoryList()
+        if featureFlagger.isFeatureOn(.aiChatSuggestions) {
+            installChatHistoryList()
+        }
         installDaxLogoView()
         installNavigationActionBar()
 

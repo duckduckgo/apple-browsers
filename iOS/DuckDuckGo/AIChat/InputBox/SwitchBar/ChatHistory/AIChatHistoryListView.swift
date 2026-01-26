@@ -83,7 +83,7 @@ struct AIChatHistoryListView: View {
                 .resizable()
                 .renderingMode(.template)
         } else {
-            Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.history)
                 .resizable()
                 .renderingMode(.template)
         }

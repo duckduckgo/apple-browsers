@@ -35,6 +35,7 @@ final class AIChatHistoryListViewController: UIViewController {
         static let cellHeight: CGFloat = 44
         static let sectionSpacing: CGFloat = 8
         static let horizontalInset: CGFloat = 16
+        static let topContentInset: CGFloat = -30
     }
 
     // MARK: - Section
@@ -60,6 +61,7 @@ final class AIChatHistoryListViewController: UIViewController {
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         tableView.sectionHeaderHeight = 0
         tableView.sectionFooterHeight = Constants.sectionSpacing
+        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
         return tableView
     }()
 

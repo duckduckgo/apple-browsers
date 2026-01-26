@@ -163,8 +163,9 @@ jobs:
         mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Update xcbaseline with runner hardware specs
+      working-directory: macOS
       run: |
-        PLIST_PATH="./macOS/DuckDuckGo-macOS.xcodeproj/xcshareddata/xcbaselines/37C320B62F1E80A1008F4604.xcbaseline/Info.plist"
+        PLIST_PATH=./DuckDuckGo-macOS.xcodeproj/xcshareddata/xcbaselines/37C320B62F1E80A1008F4604.xcbaseline/Info.plist
         
         # Get actual hardware specs from the runner
         CPU_KIND=$(sysctl -n machdep.cpu.brand_string)

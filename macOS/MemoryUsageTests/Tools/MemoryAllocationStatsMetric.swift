@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import os.log
 import XCTest
 
 /// Represents the Memory Allocations Stats, at a given moment.
@@ -51,7 +50,6 @@ extension MemoryAllocationStatsSnapshot {
 final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
 
     private let memoryStatsURL: URL
-    private let logger: os.Logger
     private var initialStatsSnapshot: MemoryAllocationStatsSnapshot?
     private var finalStatsSnapshot: MemoryAllocationStatsSnapshot?
     private(set) var initialStatsAttachment: XCTAttachment?
@@ -59,7 +57,6 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
 
     init(memoryStatsURL: URL) {
         self.memoryStatsURL = memoryStatsURL
-        self.logger = os.Logger(subsystem: "StatsMetric", category: "Memory Usage Tests")
         super.init()
     }
 
@@ -78,8 +75,6 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
 
         initialStatsSnapshot = snapshot
         initialStatsAttachment = attachment
-
-        Logger.log("[MemoryAllocationStatsMetric] Initial Memory Used: \(snapshot.totalUsedMB)")
     }
 
     func didStopMeasuring() {
@@ -89,8 +84,6 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
 
         finalStatsSnapshot = snapshot
         finalStatsAttachment = attachment
-
-        Logger.log("[MemoryAllocationStatsMetric] Final Memory Used: \(snapshot.totalUsedMB)")
     }
 
     func reportMeasurements(from startTime: XCTPerformanceMeasurementTimestamp, to endTime: XCTPerformanceMeasurementTimestamp) throws -> [XCTPerformanceMeasurement] {

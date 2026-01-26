@@ -134,6 +134,24 @@ jobs:
         log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
 
+    - name: Update xcbaseline with runner hardware specs
+      run: |
+        PLIST_PATH="./macOS/DuckDuckGo-macOS.xcodeproj/xcshareddata/xcbaselines/37C320B62F1E80A1008F4604.xcbaseline/Info.plist"
+        
+        # Get actual hardware specs from the runner
+        CPU_KIND=$(sysctl -n machdep.cpu.brand_string)
+        CPU_CORES=$(sysctl -n hw.logicalcpu)
+        PHYSICAL_CORES=$(sysctl -n hw.physicalcpu)
+        MODEL=$(sysctl -n hw.model)
+        
+        # Update the plist with actual values
+        /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:E154FD62-5A08-4340-A65B-9F35B579B148:localComputer:cpuKind '$CPU_KIND'" "$PLIST_PATH"
+        /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:E154FD62-5A08-4340-A65B-9F35B579B148:localComputer:logicalCPUCoresPerPackage $CPU_CORES" "$PLIST_PATH"
+        /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:E154FD62-5A08-4340-A65B-9F35B579B148:localComputer:physicalCPUCoresPerPackage $PHYSICAL_CORES" "$PLIST_PATH"
+        /usr/libexec/PlistBuddy -c "Set :runDestinationsByUUID:E154FD62-5A08-4340-A65B-9F35B579B148:localComputer:modelCode '$MODEL'" "$PLIST_PATH"
+        
+        echo "✅ Updated xcbaseline: CPU=$CPU_KIND, Cores=$CPU_CORES, Model=$MODEL"
+
     - name: Build Memory Usage Tests
       working-directory: macOS
       run: |

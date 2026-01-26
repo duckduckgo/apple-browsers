@@ -355,21 +355,30 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                     }
                 }
 
-                // Set callback for mouse hover state change - stops timer while hovering, restarts when exiting
-                onHoverChange = { isHovering in
-                    if isHovering {
-                        Logger.general.debug("WarnBeforeQuitManager: Hover detected, stopping timer")
-                        timer?.invalidate()
-                        timer = nil
-                    } else {
-                        Logger.general.debug("WarnBeforeQuitManager: Hover ended, restarting timer")
-                        startTimer()
+                @MainActor
+                func setupHoverCallback() {
+                    self.onHoverChange = { isHovering in
+                        if isHovering {
+                            Logger.general.debug("WarnBeforeQuitManager: Hover detected, stopping timer")
+                            timer?.invalidate()
+                            timer = nil
+                        } else {
+                            Logger.general.debug("WarnBeforeQuitManager: Hover ended, restarting timer")
+                            startTimer()
+                        }
                     }
                 }
 
+                // Set callback for mouse hover state change - stops timer while hovering, restarts when exiting
+                setupHoverCallback()
+
                 // Install event interceptor hook for the shortcut, Escape, and clicks
-                // Don't overwrite existing interceptor
-                guard (NSApp as? Application)?.eventInterceptorToken ?? interceptorToken == interceptorToken else { return }
+                // Don't overwrite existing interceptor - if one exists, cancel this manager
+                guard (NSApp as? Application)?.eventInterceptorToken ?? interceptorToken == interceptorToken else {
+                    Logger.general.error("WarnBeforeQuitManager: Another event interceptor already active, cancelling")
+                    resume(with: false)
+                    return
+                }
                 (NSApp as? Application)?.installEventInterceptor(token: interceptorToken) { event in
                     switch event.type {
                     case .keyDown where event.keyEquivalent == .escape:
@@ -416,7 +425,12 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                             } else {
                                 // Released after progress started - return to waiting
                                 Logger.general.debug("WarnBeforeQuitManager: Second press released after \(elapsedTime)s, returning to wait")
-                                startTimer()
+                                // Restore hover callback (was cleared at line 390 before entering hold phase)
+                                setupHoverCallback()
+                                // Only start timer if not already hovering
+                                if !self.isHovering {
+                                    startTimer()
+                                }
                             }
                         }
 
@@ -441,8 +455,13 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                     }
                 }
 
-                // Start hideaway timer (will be stopped if mouse is already hovering)
-                startTimer()
+                // Start hideaway timer unless mouse is already hovering
+                // (onHoverChange only fires on state changes, not initial state)
+                if !isHovering {
+                    startTimer()
+                } else {
+                    Logger.general.debug("WarnBeforeQuitManager: Mouse already hovering, not starting timer")
+                }
             }
         } onCancel: {
             Logger.general.debug("WarnBeforeQuitManager: Task cancelled, triggering cleanup")

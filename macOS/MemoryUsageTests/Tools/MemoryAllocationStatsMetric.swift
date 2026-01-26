@@ -45,7 +45,7 @@ extension MemoryAllocationStatsSnapshot {
         Double(bytes) / 1024 / 1024
     }
 }
-
+Logger
 /// `XCMetric` that processes the `MemoryAllocationStats` JSON file, as exported by `MemoryAllocationStatsExporter`.
 ///
 final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
@@ -79,7 +79,7 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
         initialStatsSnapshot = snapshot
         initialStatsAttachment = attachment
 
-        logger.log("[MemoryAllocationStatsMetric] Initial Memory Used: \(snapshot.totalUsedMB)")
+        Logger.log("[MemoryAllocationStatsMetric] Initial Memory Used: \(snapshot.totalUsedMB)")
     }
 
     func didStopMeasuring() {
@@ -90,7 +90,7 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
         finalStatsSnapshot = snapshot
         finalStatsAttachment = attachment
 
-        logger.log("[MemoryAllocationStatsMetric] Final Memory Used: \(snapshot.totalUsedMB)")
+        Logger.log("[MemoryAllocationStatsMetric] Final Memory Used: \(snapshot.totalUsedMB)")
     }
 
     func reportMeasurements(from startTime: XCTPerformanceMeasurementTimestamp, to endTime: XCTPerformanceMeasurementTimestamp) throws -> [XCTPerformanceMeasurement] {

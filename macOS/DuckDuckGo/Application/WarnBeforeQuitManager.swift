@@ -502,7 +502,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
         while true {
             // Wait for key up or flags changed events with timeout
-            guard let event = eventReceiver([.keyUp, .flagsChanged], deadline, .eventTracking, true) else {
+            guard let event = eventReceiver([.keyDown, .keyUp, .flagsChanged], deadline, .eventTracking, true) else {
                 // Timeout reached - stop waiting
                 Logger.general.debug("WarnBeforeQuitManager: Key release wait timed out after \(timeout)s")
                 return

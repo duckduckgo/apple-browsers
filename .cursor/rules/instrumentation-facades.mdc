@@ -1,0 +1,232 @@
+---
+alwaysApply: false
+---
+# Instrumentation Facades
+
+Feature code often becomes verbose when sending many pixels, or mixing pixel calls and wide event lifecycle management.
+
+Consider a subscription purchase flow that needs to:
+
+- Fire a daily pixel when purchase starts
+- Start a wide event flow
+- Update the wide event with timing data
+- Fire unique pixels on success
+- Complete the wide event with success/failure/cancelled status
+- Handle multiple error cases with different failing steps
+
+This leads to instrumentation code scattered throughout the feature, making it hard to:
+- Understand the feature's core logic
+- Test the feature in isolation
+- Modify instrumentation without touching feature code
+- Ensure all instrumentation points are covered
+
+## How To Improve This: Instrumentation Facades
+
+Define a protocol with domain-specific hooks that the feature calls. Implement the protocol in a dedicated object that handles all instrumentation.
+
+### Benefits
+
+1. **Feature code emits domain events only** - Cleaner, more readable feature logic
+2. **Instrumentation logic is centralized** - Easy to audit and modify
+3. **Easy to inject mocks for unit testing** - Test feature behavior without pixel dependencies
+
+## Pattern Structure
+
+### Step 1: Define the Protocol
+
+Create a protocol with methods for each instrumentation hook your feature needs:
+
+```swift
+public protocol SubscriptionPurchaseInstrumentation: AnyObject {
+    // Purchase flow hooks
+    func purchaseAttemptStarted(selectionID: String, freeTrialEligible: Bool, purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform, origin: String?)
+    func purchaseCancelled()
+    func purchaseFailed(step: SubscriptionPurchaseWideEventData.FailingStep, error: Error)
+    func accountCreated(duration: WideEvent.MeasuredInterval?)
+    func activationStarted()
+    func activationSucceeded()
+    func stripePurchaseSucceeded()
+    func activationFailedWithMissingEntitlements()
+    func activeSubscriptionAlreadyPresent()
+
+    // UI interaction hooks
+    func monthlyPriceClicked()
+    func yearlyPriceClicked()
+    func addEmailSucceeded()
+    func welcomeFaqClicked()
+}
+```
+
+### Step 2: Implement the Default Class
+
+Create an implementation that translates domain events to pixels and wide events:
+
+```swift
+public final class DefaultSubscriptionPurchaseInstrumentation: SubscriptionPurchaseInstrumentation {
+    private let wideEvent: WideEventManaging
+    private var purchaseWideEventData: SubscriptionPurchaseWideEventData?
+
+    public init(wideEvent: WideEventManaging) {
+        self.wideEvent = wideEvent
+    }
+
+    public func purchaseAttemptStarted(selectionID: String, freeTrialEligible: Bool, purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform, origin: String?) {
+        DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseAttempt, pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+
+        let data = SubscriptionPurchaseWideEventData(
+            purchasePlatform: purchasePlatform,
+            subscriptionIdentifier: selectionID,
+            freeTrialEligible: freeTrialEligible,
+            contextData: WideEventContextData(name: origin)
+        )
+
+        purchaseWideEventData = data
+        wideEvent.startFlow(data)
+    }
+
+    public func purchaseCancelled() {
+        guard let data = purchaseWideEventData else { return }
+        wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
+        purchaseWideEventData = nil
+    }
+
+    public func purchaseFailed(step: SubscriptionPurchaseWideEventData.FailingStep, error: Error) {
+        guard let data = purchaseWideEventData else { return }
+        data.markAsFailed(at: step, error: error)
+        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        purchaseWideEventData = nil
+    }
+
+    public func activationSucceeded() {
+        DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseSuccess,
+                                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        UniquePixel.fire(pixel: .subscriptionActivated)
+
+        guard let data = purchaseWideEventData else { return }
+        data.activateAccountDuration?.complete()
+        wideEvent.updateFlow(data)
+        wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+        purchaseWideEventData = nil
+    }
+
+    public func monthlyPriceClicked() {
+        Pixel.fire(pixel: .subscriptionOfferMonthlyPriceClick)
+    }
+
+    // ... other methods
+}
+```
+
+### Step 3: Use in Feature Code
+
+Inject the instrumentation protocol and call it at appropriate points:
+
+```swift
+final class SubscriptionPurchaseFeature {
+    private let instrumentation: SubscriptionPurchaseInstrumentation
+
+    init(instrumentation: SubscriptionPurchaseInstrumentation) {
+        self.instrumentation = instrumentation
+    }
+
+    func subscriptionSelected(id: String, freeTrialEligible: Bool, purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform, origin: String?) async {
+        instrumentation.purchaseAttemptStarted(selectionID: id,
+                                                freeTrialEligible: freeTrialEligible,
+                                                purchasePlatform: purchasePlatform,
+                                                origin: origin)
+
+        switch await performPurchase(id: id) {
+        case .success(let result):
+            instrumentation.accountCreated(duration: result.accountCreationDuration)
+            instrumentation.activationStarted()
+
+            switch await activateAccount() {
+            case .success:
+                instrumentation.activationSucceeded()
+            case .failure(let error):
+                instrumentation.purchaseFailed(step: .accountActivation, error: error)
+            }
+
+        case .failure(let error):
+            if error == .cancelledByUser {
+                instrumentation.purchaseCancelled()
+            } else {
+                instrumentation.purchaseFailed(step: .accountPayment, error: error)
+            }
+        }
+    }
+}
+```
+
+## Testing with Mocks
+
+Create a simple mock for unit tests:
+
+```swift
+final class MockSubscriptionPurchaseInstrumentation: SubscriptionPurchaseInstrumentation {
+    private(set) var purchaseAttemptStartedCalls: [(selectionID: String, freeTrialEligible: Bool, purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform, origin: String?)] = []
+    private(set) var purchaseCancelledCallCount = 0
+    private(set) var purchaseFailedCalls: [(step: SubscriptionPurchaseWideEventData.FailingStep, error: Error)] = []
+    private(set) var activationSucceededCallCount = 0
+
+    func purchaseAttemptStarted(selectionID: String, freeTrialEligible: Bool, purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform, origin: String?) {
+        purchaseAttemptStartedCalls.append((selectionID, freeTrialEligible, purchasePlatform, origin))
+    }
+
+    func purchaseCancelled() {
+        purchaseCancelledCallCount += 1
+    }
+
+    func purchaseFailed(step: SubscriptionPurchaseWideEventData.FailingStep, error: Error) {
+        purchaseFailedCalls.append((step, error))
+    }
+
+    func activationSucceeded() {
+        activationSucceededCallCount += 1
+    }
+
+    // ... other methods
+}
+```
+
+Test the feature behavior:
+
+```swift
+func testPurchaseSuccess() async {
+    let mock = MockSubscriptionPurchaseInstrumentation()
+    let feature = SubscriptionPurchaseFeature(instrumentation: mock)
+
+    await feature.subscriptionSelected(id: "yearly", freeTrialEligible: true, purchasePlatform: .appStore, origin: "settings")
+
+    XCTAssertEqual(mock.purchaseAttemptStartedCalls.count, 1)
+    XCTAssertEqual(mock.purchaseAttemptStartedCalls[0].selectionID, "yearly")
+    XCTAssertEqual(mock.purchaseAttemptStartedCalls[0].purchasePlatform, .appStore)
+    XCTAssertEqual(mock.activationSucceededCallCount, 1)
+    XCTAssertEqual(mock.purchaseCancelledCallCount, 0)
+}
+```
+
+## When to Use Instrumentation Facades
+
+Use this pattern when any of the following are true:
+
+- A feature has 3+ distinct instrumentation calls
+- Pixels and wide events are mixed in the same flow
+- You need to test feature logic without pixel side effects
+- Instrumentation logic is complex (conditional firing, parameter assembly)
+
+Skip this pattern for:
+
+- Simple features with 1-2 pixels
+
+## Design Guidelines
+
+1. **Name methods after domain events, not pixels**: Use `purchaseAttemptStarted`, not `fireSubscriptionPurchaseAttemptPixel`.
+2. **Keep the protocol focused**: One protocol per feature/flow. Don't create a mega-protocol for all app instrumentation.
+3. **Hide implementation details**: The protocol shouldn't expose whether something is a daily pixel, unique pixel, or wide event.
+4. **Document expected call order**: If methods must be called in sequence (e.g., `startPurchase` before `completePurchase`), document this in the protocol.
+
+## Related Documentation
+
+- `pixels.mdc` - One-off instrumentation events
+- `wide-events.mdc` - Instrumentation for user journeys

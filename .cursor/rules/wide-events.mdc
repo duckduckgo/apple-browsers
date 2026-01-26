@@ -1,0 +1,192 @@
+---
+alwaysApply: false
+---
+# Wide Events
+
+Wide events are used to measure the user journey through a feature, culminating in a success, failure, cancelled, or unknown state. They are used for:
+
+- User journeys with multiple steps (e.g., subscription purchase, data import) that end in a success or failure state
+- Measuring latency across flow stages
+- Understanding where users drop off or encounter errors
+
+Unlike pixels, wide events maintain state throughout a journey and send a single event at the end.
+
+## Key Components
+
+### WideEventManaging Protocol
+
+The main interface for managing wide event flows is found in the `WideEvent.swift` file in the `PixelKit` Swift package. This interface allows for starting, updating, and completing flows.
+
+### WideEventData Protocol
+
+Defines the structure for wide event data objects:
+
+```swift
+// SharedPackages/BrowserServicesKit/Sources/PixelKit/WideEvent/WideEventData.swift
+public protocol WideEventData: Codable, WideEventParameterProviding {
+    static var pixelName: String { get }
+
+    var contextData: WideEventContextData { get set }
+    var globalData: WideEventGlobalData { get set }
+    var appData: WideEventAppData { get set }
+    var errorData: WideEventErrorData? { get set }
+
+    func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision
+}
+```
+
+### WideEventStatus
+
+Possible completion states for a wide event:
+
+```swift
+public enum WideEventStatus: Codable, Equatable {
+    case success(reason: String? = nil)
+    case failure
+    case cancelled
+    case unknown(reason: String)
+}
+```
+
+- Success and failure cases are used when a user journey definitively ends with one of these two conclusions.
+- Cancelled events are sent when a user explicitly chooses to abandon a journey, like cancelling  out of a subscription purchase.
+- Unknown events are when something happened during the journey to cause it to stop or time out unexpectedly.
+
+### WideEvent.MeasuredInterval
+
+For timing measurements within flows, use the `MeasuredInterval` object. This allows you to set the start and end dates of a step in a journey.
+
+## Data Structure Sections
+
+Wide events have standardized data sections:
+
+### Global Data
+High-level information about the event itself:
+
+```swift
+public struct WideEventGlobalData: Codable {
+    public var platform: String   // "ios" or "macos"
+    public let type: String       // Always "app" for native clients
+    public var sampleRate: Float  // 0.0 to 1.0 sampling rate
+}
+```
+
+### App Data
+Information about the app sending the event:
+
+```swift
+public struct WideEventAppData: Codable {
+    public var name: String         // Bundle name
+    public var version: String      // App version
+    public var formFactor: String?  // "phone" or "tablet" (iOS only)
+    public var internalUser: Bool?  // Internal user flag
+}
+```
+
+### Context Data
+Information about the context triggering the flow, useful when a journey may start from multiple entry points in the app:
+
+```swift
+public struct WideEventContextData: Codable {
+    public var name: String?  // e.g., "browser-onboarding"
+}
+```
+
+### Error Data
+Captured when a flow fails:
+
+```swift
+public struct WideEventErrorData: Codable {
+    public var domain: String
+    public var code: Int
+    public var description: String?
+    public var underlyingErrors: [UnderlyingError]
+}
+```
+
+## Example: Subscription Purchase Wide Event
+
+See `SubscriptionPurchaseWideEventData` for an example wide event.
+
+## Wide Event Lifecycle
+
+### 1. Start a Flow
+
+```swift
+// Set up the event with your initial values:
+let data = SubscriptionPurchaseWideEventData(
+    purchasePlatform: .appStore,
+    subscriptionIdentifier: selectedID,
+    freeTrialEligible: isEligible,
+    contextData: WideEventContextData(name: "settings")
+)
+
+// Start it, registering the event and causing it to be saved to disk:
+wideEvent.startFlow(data)
+```
+
+### 2. Update During Flow
+
+```swift
+// Update timing
+data.activateAccountDuration = WideEvent.MeasuredInterval.startingNow()
+wideEvent.updateFlow(data)
+```
+
+### 3. Complete the Flow
+
+```swift
+// Success
+wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+
+// Failure with error
+data.markAsFailed(at: .accountPayment, error: purchaseError)
+wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+
+// Cancelled by user
+wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
+```
+
+### 4. Discard (Abandon Without Sending)
+
+```swift
+// Use when starting a flow but later deciding it shouldn't be sent:
+wideEvent.discardFlow(data)
+```
+
+## Parameter Keys
+
+Wide event parameters use dot-notation for their parameters, which are then converted into JSON objects when being sent to the POST endpoint:
+
+```swift
+public enum WideEventParameter {
+    public enum Global {
+        static let platform = "global.platform"
+        static let type = "global.type"
+        static let sampleRate = "global.sample_rate"
+    }
+
+    public enum Feature {
+        public static let name = "feature.name"
+        public static let status = "feature.status"
+        public static let errorDomain = "feature.data.error.domain"
+        public static let errorCode = "feature.data.error.code"
+    }
+}
+```
+
+## Best Practices
+
+1. **Start flows early**: Call `startFlow` as soon as the user begins a journey, not after the first step completes.
+2. **Update incrementally**: Call `updateFlow` after each significant state change to persist progress.
+3. **Always complete or discard**: Every `startFlow` should eventually have a matching `completeFlow` or `discardFlow`.
+4. **Use measured intervals for latency**: Wrap slow operations with `MeasuredInterval.startingNow()` and `.complete()`.
+5. **Include failing step**: When completing with `.failure`, set the `failingStep` to identify where the flow broke.
+6. **Handle app termination**: Wide event data is persisted to disk. The `WideEventService` handles cleanup of stale flows on app launch, and can be used a signal to tell us if a journey may be crashing halfway through.
+
+## Related Files
+
+- `SharedPackages/BrowserServicesKit/Sources/PixelKit/WideEvent/` - Core wide event implementation
+- `SharedPackages/BrowserServicesKit/Sources/Subscription/WideEvents/` - Subscription-specific wide events
+- `iOS/DuckDuckGo/AppServices/WideEventService.swift` - iOS wide event service
+- `macOS/DuckDuckGo/Application/WideEventService.swift` - macOS wide event service

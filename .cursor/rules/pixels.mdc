@@ -1,0 +1,155 @@
+---
+alwaysApply: false
+---
+# Pixels
+
+Pixels are one-off telemetry events sent via HTTP GET with a name and optional parameters. They are used for:
+
+- Basic feature usage events (e.g., button clicks, screen impressions)
+- Errors (e.g., network failures, parsing errors)
+- Conversion and retention (e.g, subscription purchase and activation)
+
+Pixels have the following requirements:
+
+- Use clear & transparent naming, so it's obvious what the pixel and parameters are for
+- Only include information that is essential for the pixel
+- Do not use values that are overly precise, e.g. if using an integer value in a parameter, bucket it into ranges rather than including the value verbatim
+- Never include PII, URLs, or other forms of user-identifiable information in pixel names or parameters
+
+## Types of Pixels
+
+### Standard Pixels
+
+Sent every time the event occurs.
+
+```swift
+Pixel.fire(pixel: .subscriptionRestoreAfterPurchaseAttempt)
+
+Pixel.fire(pixel: .autofillLoginsSavePromptDisplayed, withAdditionalParameters: [
+    PixelParameters.autofillPromptTrigger: "manual"
+])
+```
+
+### Daily Pixels
+
+Sent once per day per event. Used to determine the number of users affected by a particular error 
+
+```swift
+DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseAttempt, pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+```
+
+### Unique Pixels
+
+Sent once per install for the lifetime of the install.
+
+```swift
+UniquePixel.fire(pixel: .subscriptionActivated)
+```
+
+## Pixel Definition Patterns
+
+### iOS Pixels
+
+iOS defines pixels in `iOS/Core/PixelEvent.swift` as enum cases:
+
+```swift
+extension Pixel {
+    public enum Event {
+        case appInstall
+        case appLaunch
+        case subscriptionPurchaseAttempt
+        case subscriptionPurchaseSuccess
+        case subscriptionActivated
+        // ...
+    }
+}
+```
+
+### macOS Pixels (PixelKit)
+
+macOS uses `PixelKitEvent` protocol, typically in feature-specific files. The implementation of the protocol looks like this:
+
+```swift
+// SharedPackages/BrowserServicesKit/Sources/PixelKit/PixelKitEvent.swift
+public protocol PixelKitEvent {
+    var name: String { get }
+    var standardParameters: [PixelKitStandardParameter]? { get }
+    var parameters: [String: String]? { get }
+    var error: NSError? { get }
+}
+```
+
+An example implementation of this protocol is:
+
+```swift
+// macOS/DuckDuckGo/Statistics/SubscriptionPixel.swift
+enum SubscriptionPixel: PixelKitEvent {
+    case subscriptionActive(AuthVersion)
+    case subscriptionPurchaseAttempt
+    case subscriptionPurchaseSuccess
+    // ...
+
+    var name: String {
+        switch self {
+        case .subscriptionActive: return "m_mac_privacy-pro_app_subscription_active"
+        case .subscriptionPurchaseAttempt: return "m_mac_privacy-pro_terms-conditions_subscribe_click"
+        // ...
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .subscriptionActive(let authVersion):
+            return [AuthVersion.key: authVersion.rawValue]
+        default:
+            return nil
+        }
+    }
+}
+```
+
+## Pixel Parameters
+
+Use structured parameter keys when reusing them across multiple pixels:
+
+```swift
+extension PixelParameters {
+    static let source = "source"
+}
+
+Pixel.fire(pixel: .featureUsed, withAdditionalParameters: [
+    PixelParameters.source: "keyboard_shortcut"
+])
+```
+
+## PixelFiring Protocol
+
+For dependency injection and testing, use the `PixelFiring` protocol:
+
+```swift
+// iOS/Core/PixelFiring.swift
+public protocol PixelFiring {
+    static func fire(_ pixel: Pixel.Event,
+                     withAdditionalParameters params: [String: String],
+                     includedParameters: [Pixel.QueryParameters],
+                     onComplete: @escaping (Error?) -> Void)
+
+    static func fire(_ pixel: Pixel.Event,
+                     withAdditionalParameters params: [String: String])
+}
+```
+
+## Best Practices
+
+1. **Choose the right pixel type**: When using a standard pixel, consider using a daily pixel as well, in order to determine how many users may be impacted by an issue.
+2. **Use structured parameters**: Define parameter keys as constants to avoid typos and enable refactoring.
+3. **Include error context**: When firing error pixels, include the error object as part of its error parameters
+4. **Consider using instrumentation facades**: For features with multiple related pixels, consider defining an instrumentation protocol to centralize pixel firing logic. See `instrumentation-facade.mdc`.
+
+## Related Files
+
+- `iOS/Core/Pixel.swift` - iOS pixel firing implementation
+- `iOS/Core/DailyPixel.swift` - Daily pixel implementation
+- `iOS/Core/UniquePixel.swift` - Unique pixel implementation
+- `iOS/Core/PixelEvent.swift` - iOS pixel event definitions
+- `SharedPackages/BrowserServicesKit/Sources/PixelKit/` - Shared PixelKit implementation

@@ -98,7 +98,6 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
         isEnabledByDefault
     }
 
-
     func setEnabled(_ enabled: Bool) {
         try? keyValueStore.set(enabled, forKey: StorageKey.experimentalBrowsingMenuEnabled)
     }

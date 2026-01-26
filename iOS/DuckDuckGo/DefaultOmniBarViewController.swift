@@ -281,6 +281,13 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         }
     }
 
+    func onChatHistorySelected(url: URL) {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+            self.omniDelegate?.onChatHistorySelected(url: url)
+        }
+    }
+
     func onDismissRequested() {
         // Fire cancel pixel only (no other side effects) when experimental bar is dismissed via back button
         omniDelegate?.onExperimentalAddressBarCancelPressed()

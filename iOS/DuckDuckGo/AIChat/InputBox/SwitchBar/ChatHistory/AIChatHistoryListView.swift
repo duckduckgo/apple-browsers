@@ -17,9 +17,10 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import AIChat
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import SwiftUI
 
 /// A view displaying the list of pinned and recent AI chats
 struct AIChatHistoryListView: View {
@@ -28,9 +29,8 @@ struct AIChatHistoryListView: View {
         static let iconTextSpacing: CGFloat = 12
     }
 
-    let pinnedChats: [AIChatHistoryItem]
-    let recentChats: [AIChatHistoryItem]
-    let onChatSelected: (AIChatHistoryItem) -> Void
+    @ObservedObject var viewModel: AIChatSuggestionsViewModel
+    let onChatSelected: (AIChatSuggestion) -> Void
 
     var body: some View {
         List {
@@ -54,10 +54,20 @@ struct AIChatHistoryListView: View {
         .applyBackground()
     }
 
+    // MARK: - Private Computed Properties
+
+    private var pinnedChats: [AIChatSuggestion] {
+        viewModel.filteredSuggestions.filter { $0.isPinned }
+    }
+
+    private var recentChats: [AIChatSuggestion] {
+        viewModel.filteredSuggestions.filter { !$0.isPinned }
+    }
+
     // MARK: - Private Views
 
     @ViewBuilder
-    private func chatRow(chat: AIChatHistoryItem, isPinned: Bool) -> some View {
+    private func chatRow(chat: AIChatSuggestion, isPinned: Bool) -> some View {
         Button {
             onChatSelected(chat)
         } label: {
@@ -96,9 +106,11 @@ struct AIChatHistoryListView: View {
 import SwiftUI
 
 #Preview("AI Chat History List") {
-    AIChatHistoryListView(
-        pinnedChats: AIChatHistoryItem.mockPinnedChats,
-        recentChats: AIChatHistoryItem.mockRecentChats,
+    let viewModel = AIChatSuggestionsViewModel()
+    viewModel.setChats(pinned: [], recent: AIChatSuggestion.mockRecentChats)
+
+    return AIChatHistoryListView(
+        viewModel: viewModel,
         onChatSelected: { chat in
             print("Selected chat: \(chat.title)")
         }

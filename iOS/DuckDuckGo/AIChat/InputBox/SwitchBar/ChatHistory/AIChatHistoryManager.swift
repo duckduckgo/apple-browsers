@@ -17,15 +17,21 @@
 //  limitations under the License.
 //
 
-import UIKit
+import AIChat
+import BrowserServicesKit
+import Combine
+import Core
+import PrivacyConfig
 import SwiftUI
+import UIKit
 
 /// Protocol for handling AI chat history events
 protocol AIChatHistoryManagerDelegate: AnyObject {
-    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChat chat: AIChatHistoryItem)
+    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChat chat: AIChatSuggestion)
 }
 
 /// Manages the AI Chat history list installation and interaction
+@MainActor
 final class AIChatHistoryManager {
 
     // MARK: - Properties
@@ -33,10 +39,22 @@ final class AIChatHistoryManager {
     weak var delegate: AIChatHistoryManagerDelegate?
 
     private var hostingController: UIHostingController<AIChatHistoryListView>?
+    private let suggestionsReader: AIChatSuggestionsReading
+    private let viewModel: AIChatSuggestionsViewModel
+    private var cancellables = Set<AnyCancellable>()
 
-    /// Mock data - will be replaced with real API integration
-    private let pinnedChats: [AIChatHistoryItem] = AIChatHistoryItem.mockPinnedChats
-    private let recentChats: [AIChatHistoryItem] = AIChatHistoryItem.mockRecentChats
+    // MARK: - Initialization
+
+    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         privacyConfig: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+        self.suggestionsReader = AIChatSuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
+        self.viewModel = AIChatSuggestionsViewModel()
+    }
+
+    init(suggestionsReader: AIChatSuggestionsReading, viewModel: AIChatSuggestionsViewModel = AIChatSuggestionsViewModel()) {
+        self.suggestionsReader = suggestionsReader
+        self.viewModel = viewModel
+    }
 
     // MARK: - Public Methods
 
@@ -48,8 +66,7 @@ final class AIChatHistoryManager {
         guard hostingController == nil else { return }
 
         let historyView = AIChatHistoryListView(
-            pinnedChats: pinnedChats,
-            recentChats: recentChats,
+            viewModel: viewModel,
             onChatSelected: { [weak self] chat in
                 guard let self else { return }
                 self.delegate?.aiChatHistoryManager(self, didSelectChat: chat)
@@ -73,5 +90,22 @@ final class AIChatHistoryManager {
 
         hostingController.didMove(toParent: parentViewController)
         self.hostingController = hostingController
+
+        Task {
+            await fetchSuggestions()
+        }
+    }
+
+    /// Fetches suggestions from the API
+    /// - Parameter query: Optional search query to filter results
+    func fetchSuggestions(query: String? = nil) async {
+        let suggestions = await suggestionsReader.fetchSuggestions(query: query)
+        viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
+    }
+
+    /// Tears down the suggestions reader and releases resources
+    func tearDown() {
+        suggestionsReader.tearDown()
+        viewModel.clearAllChats()
     }
 }

@@ -189,6 +189,7 @@
 		A1B2C3D42F012345000AABBC /* AIChatHistoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D12F012345000AABBC /* AIChatHistoryItem.swift */; };
 		A1B2C3D52F012345000AABBC /* AIChatHistoryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D22F012345000AABBC /* AIChatHistoryListView.swift */; };
 		A1B2C3D62F012345000AABBC /* AIChatHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D32F012345000AABBC /* AIChatHistoryManager.swift */; };
+		A1B2C3D82F012345000AABBC /* AIChatSuggestionsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D72F012345000AABBC /* AIChatSuggestionsReader.swift */; };
 		31B5E8C52E1E64D400EECC1E /* DaxLogoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8C42E1E64D400EECC1E /* DaxLogoManager.swift */; };
 		31BB23A42D3A661E00809ABF /* ControlWidgetConfigurable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */; };
 		31BB23A52D3A969400809ABF /* ControlWidgetConfigurable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */; };
@@ -2455,6 +2456,7 @@
 		A1B2C3D12F012345000AABBC /* AIChatHistoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryItem.swift; sourceTree = "<group>"; };
 		A1B2C3D22F012345000AABBC /* AIChatHistoryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryListView.swift; sourceTree = "<group>"; };
 		A1B2C3D32F012345000AABBC /* AIChatHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryManager.swift; sourceTree = "<group>"; };
+		A1B2C3D72F012345000AABBC /* AIChatSuggestionsReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSuggestionsReader.swift; sourceTree = "<group>"; };
 		31B5E8C42E1E64D400EECC1E /* DaxLogoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxLogoManager.swift; sourceTree = "<group>"; };
 		31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlWidgetConfigurable.swift; sourceTree = "<group>"; };
 		31BC5F402C2B0B540004DF37 /* DuckPlayer.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = DuckPlayer.xcassets; sourceTree = "<group>"; };
@@ -6130,6 +6132,7 @@
 				A1B2C3D12F012345000AABBC /* AIChatHistoryItem.swift */,
 				A1B2C3D22F012345000AABBC /* AIChatHistoryListView.swift */,
 				A1B2C3D32F012345000AABBC /* AIChatHistoryManager.swift */,
+				A1B2C3D72F012345000AABBC /* AIChatSuggestionsReader.swift */,
 			);
 			path = ChatHistory;
 			sourceTree = "<group>";
@@ -11262,6 +11265,7 @@
 				A1B2C3D42F012345000AABBC /* AIChatHistoryItem.swift in Sources */,
 				A1B2C3D52F012345000AABBC /* AIChatHistoryListView.swift in Sources */,
 				A1B2C3D62F012345000AABBC /* AIChatHistoryManager.swift in Sources */,
+				A1B2C3D82F012345000AABBC /* AIChatSuggestionsReader.swift in Sources */,
 				BDE91CD62C6294020005CB74 /* FeedbackCategoryProviding.swift in Sources */,
 				1E908BF329827C480008C8F3 /* AutoconsentManagement.swift in Sources */,
 				4BEEEA992E24670800B0BE00 /* DBPDebugWebViewWindowManager.swift in Sources */,

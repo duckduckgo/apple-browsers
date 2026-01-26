@@ -38,6 +38,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onEditFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
+    func onChatHistorySelected(url: URL)
     func onDismissRequested()
 }
 
@@ -633,9 +634,9 @@ extension OmniBarEditingStateViewController: VoiceSearchViewControllerDelegate {
 
 extension OmniBarEditingStateViewController: AIChatHistoryManagerDelegate {
 
-    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChat chat: AIChatHistoryItem) {
-        // TODO: Handle chat selection - navigate to the selected chat
-        // For now, this is a placeholder for future API integration
+    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChat chat: AIChatSuggestion) {
+        guard let url = URL.aiChatURL(for: chat.chatId) else { return }
+        delegate?.onChatHistorySelected(url: url)
     }
 }
 

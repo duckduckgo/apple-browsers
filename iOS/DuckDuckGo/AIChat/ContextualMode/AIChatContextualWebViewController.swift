@@ -65,6 +65,10 @@ final class AIChatContextualWebViewController: UIViewController {
     private var urlObservation: NSKeyValueObservation?
     private var lastContextualChatURL: URL?
 
+    /// Constraint for adjusting WebView bottom when keyboard appears
+    private var webViewBottomConstraint: NSLayoutConstraint?
+    private var isMediumDetent = true
+
     /// URL to load on viewDidLoad instead of the default AI chat URL (for cold restore).
     var initialRestoreURL: URL?
 
@@ -178,6 +182,14 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.load(URLRequest(url: url))
     }
 
+    /// Updates the sheet detent. Keyboard fix only applies in medium detent.
+    func setMediumDetent(_ isMediumDetent: Bool) {
+        self.isMediumDetent = isMediumDetent
+        if !isMediumDetent {
+            webViewBottomConstraint?.constant = 0
+        }
+    }
+
     // MARK: - Private Methods
 
     private func setupUI() {
@@ -186,15 +198,75 @@ final class AIChatContextualWebViewController: UIViewController {
         view.addSubview(webView)
         view.addSubview(loadingView)
 
+        let bottomConstraint = webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        webViewBottomConstraint = bottomConstraint
+
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            bottomConstraint,
 
             loadingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
+
+        setupKeyboardObservers()
+    }
+
+    private func setupKeyboardObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillChangeFrame),
+            name: UIResponder.keyboardWillChangeFrameNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    @objc private func keyboardWillChangeFrame(_ notification: Notification) {
+        guard isMediumDetent else { return }
+        guard let userInfo = notification.userInfo,
+              let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let curve = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else { return }
+
+        let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
+        let keyboardOverlap = max(0, view.bounds.height - keyboardFrameInView.origin.y)
+
+        webViewBottomConstraint?.constant = -keyboardOverlap
+
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: UIView.AnimationOptions(rawValue: curve << 16),
+            animations: {
+                self.view.layoutIfNeeded()
+            }
+        )
+    }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        guard isMediumDetent else { return }
+        guard let userInfo = notification.userInfo,
+              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let curve = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else { return }
+
+        webViewBottomConstraint?.constant = 0
+
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: UIView.AnimationOptions(rawValue: curve << 16),
+            animations: {
+                self.view.layoutIfNeeded()
+            }
+        )
     }
 
     private func createWebViewConfiguration() -> WKWebViewConfiguration {

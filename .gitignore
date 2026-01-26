@@ -66,6 +66,9 @@ default.profraw
 .claude/settings.local.json
 CLAUDE.md
 
+# Cursor
+.cursor/plans
+
 # AI assistants
 AGENTS.md
 .github/copilot-instructions.md

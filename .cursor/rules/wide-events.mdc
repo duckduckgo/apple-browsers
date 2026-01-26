@@ -11,6 +11,84 @@ Wide events are used to measure the user journey through a feature, culminating 
 
 Unlike pixels, wide events maintain state throughout a journey and send a single event at the end.
 
+Wide events should be defined in the module closest to their implementation, for example the `Subscription` module defines the subscription purchase wide event. It's fine for this to be the iOS or macOS app targets too, especially if the feature is platform specific.
+
+## Wide event format
+
+Wide events use a standardized format across all platforms, and each event is customized depending on its use case. The meta format for wide events is:
+
+```
+{
+    "meta": {
+        "version": {
+            "description": "Version of the base_event schema. During processing this is combined with the two-octet version of each event schema to form the full schema version in the form of <base_version>.<event_major_version>.<event_minor_version>",
+            "value": 1
+        }
+    },
+    "app": {
+        "name": {
+            "type": "string",
+            "description": "The name of the application",
+            "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental"]
+        },
+        "version": {
+            "type": "string",
+            "description": "The version of the application",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "form_factor": {
+            "type": "string",
+            "description": "The form factor of the device",
+            "enum": ["phone", "tablet"]
+        }
+    },
+    "global": {
+        "platform": {
+            "type": "string",
+            "description": "The platform the app is running on",
+            "enum": ["iOS"]
+        },
+        "type": {
+            "type": "string",
+            "description": "The type of application",
+            "enum": ["app"]
+        },
+        "sample_rate": {
+            "type": "number",
+            "description": "Sample rate for this event"
+        }
+    },
+    "feature": {
+        "name": {
+            "type": "string",
+            "description": "The feature name for this event" // Unique to each event
+        },
+        "status": {
+            "type": "string",
+            "description": "The overall status of the operation - this will always be one of SUCCESS, FAILURE, CANCELLED, or UNKNOWN"
+        }
+        "data": {
+            // events typically define their event properties here - this tends to be under the `ext` object, e.g. `feature.data.ext.some_property_here`
+        }
+    },
+    "context": {
+        "name": {
+            "type": "string",
+            "description": "Context name for the event" // Unique to each event
+        }
+    }
+}
+```
+
+This format is generic, and will be customized depending on the feature. For example, a subscription purchase event will include `feature.data.ext` objects related to account creation, purchase status, etc.
+
+Here are some guidelines for this format:
+- `context.name` is typically only used when a flow is triggered from multiple places, and is custom per feature; for example, a data import flow that can be triggered during onboarding or from the settings screen may have context names of `onboarding` or `settings`
+- During a flow, you should maintain a `feature.data.ext.failing_step` value which can be sent if the flow fails, so that it's easier to tell which part of the flow is having issues
+- `failing_step` is completely arbitrary, there is no standard naming to use here - define failing step cases that make the most sense for your feature
+- `feature.name` should indicate the feature associated with the event and is typically best formatted as `feature-action`, e.g. `vpn-connection` or `subscription-purchase`
+- Sample rate can be anything between 0 and 1, though it's typical to default to 1 - the developer will specify when a lower sample rate is needed
+
 ## Key Components
 
 ### WideEventManaging Protocol
@@ -19,21 +97,9 @@ The main interface for managing wide event flows is found in the `WideEvent.swif
 
 ### WideEventData Protocol
 
-Defines the structure for wide event data objects:
+Defines the structure for wide event data objects and need to be conformed to by any wide event data instance. There should be one WideEventData instance per wide event feature.
 
-```swift
-// SharedPackages/BrowserServicesKit/Sources/PixelKit/WideEvent/WideEventData.swift
-public protocol WideEventData: Codable, WideEventParameterProviding {
-    static var pixelName: String { get }
-
-    var contextData: WideEventContextData { get set }
-    var globalData: WideEventGlobalData { get set }
-    var appData: WideEventAppData { get set }
-    var errorData: WideEventErrorData? { get set }
-
-    func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision
-}
-```
+See `SharedPackages/BrowserServicesKit/Sources/PixelKit/WideEvent/WideEventData.swift` for the protocol implementation.
 
 ### WideEventStatus
 
@@ -180,9 +246,12 @@ public enum WideEventParameter {
 1. **Start flows early**: Call `startFlow` as soon as the user begins a journey, not after the first step completes.
 2. **Update incrementally**: Call `updateFlow` after each significant state change to persist progress.
 3. **Always complete or discard**: Every `startFlow` should eventually have a matching `completeFlow` or `discardFlow`.
-4. **Use measured intervals for latency**: Wrap slow operations with `MeasuredInterval.startingNow()` and `.complete()`.
+4. **Use measured intervals for latency**: Wrap longer-lived operations with `MeasuredInterval.startingNow()` and `.complete()`, such as network calls - these should be included using bucketed latency values in milliseconds, e.g. `1000`, `3000`, `5000`, `10000`, so that we can tell the user-perceptible impact of a blocking operation
 5. **Include failing step**: When completing with `.failure`, set the `failingStep` to identify where the flow broke.
 6. **Handle app termination**: Wide event data is persisted to disk. The `WideEventService` handles cleanup of stale flows on app launch, and can be used a signal to tell us if a journey may be crashing halfway through.
+7. **Avoid changing imports**: When adding a new wide event to a module, do not add PixelKit or any other dependencies to it without consulting the developer.
+8. **Supplement with pixels when needed**: Wide events can make real-time monitoring difficult, as they are only sent when the flow ends. Most of the time this is fine but for long flows (hours/days) this can be a problem, so it's advised to supplement the feature with regular pixels as well - ask the developer for guidance.
+9. **Capturing failure**: Wide events should contain the information needed to debug why a flow failed, so if there is a relevant `Error` object then attach it to the metadata. The reason for the failure will depend on the feature, though typically this is due to some required operation failing with an `Error`.
 
 ## Related Files
 

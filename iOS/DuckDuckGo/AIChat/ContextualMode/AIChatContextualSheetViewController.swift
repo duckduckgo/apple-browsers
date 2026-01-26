@@ -107,6 +107,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// The current active web view controller showing the chat
     private weak var currentWebViewController: AIChatContextualWebViewController?
 
+    /// Tracks the current sheet detent for syncing with web view
+    private var isCurrentlyMediumDetent = true
+
     /// Hosting controller for the onboarding overlay
     private var onboardingHostingController: UIHostingController<AIChatContextualOnboardingView>?
 
@@ -389,6 +392,7 @@ private extension AIChatContextualSheetViewController {
         embedChildViewController(webVC)
         currentWebViewController = webVC
         existingWebViewController = nil
+        webVC.setMediumDetent(isCurrentlyMediumDetent)
     }
 
     func showWebViewWithPrompt(_ prompt: String) {
@@ -435,7 +439,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
         switch action {
         case .summarize:
-            delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
+            attachPageContext()
         }
         contextualInputViewController.setText(action.prompt)
     }
@@ -624,6 +628,7 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
 
     func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
         let isMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
+        isCurrentlyMediumDetent = isMediumDetent
         currentWebViewController?.setMediumDetent(isMediumDetent)
     }
 }

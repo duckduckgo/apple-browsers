@@ -1,5 +1,5 @@
 //
-//  FireConfirmationViewModelTests.swift
+//  GranularFireConfirmationViewModelTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -29,13 +29,13 @@ import PersistenceTestingUtils
 // swiftlint:disable force_try
 
 @MainActor
-final class FireConfirmationViewModelTests: XCTestCase {
+final class GranularFireConfirmationViewModelTests: XCTestCase {
     
     private var mockKeyValueStore: MockKeyValueFileStore!
     
     override func setUp() {
         super.setUp()
-        mockKeyValueStore = try! MockKeyValueFileStore()
+        mockKeyValueStore = MockKeyValueFileStore()
     }
     
     override func tearDown() {

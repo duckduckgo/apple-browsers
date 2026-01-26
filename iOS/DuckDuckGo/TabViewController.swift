@@ -1767,6 +1767,9 @@ extension TabViewController: WKNavigationDelegate {
     private func onWebpageDidFinishLoading() {
         Logger.general.debug("webpageLoading finished")
 
+        // Flash prevention sets this false, but that breaks some websites.
+        webView?.isOpaque = true
+
         tabModel.link = link
         delegate?.tabLoadingStateDidChange(tab: self)
 

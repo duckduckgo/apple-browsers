@@ -34,6 +34,12 @@ protocol AIChatHistoryManagerDelegate: AnyObject {
 @MainActor
 final class AIChatHistoryManager {
 
+    // MARK: - Constants
+
+    private enum Constants {
+        static let debounceMilliseconds = 150
+    }
+
     // MARK: - Properties
 
     weak var delegate: AIChatHistoryManagerDelegate?
@@ -43,6 +49,7 @@ final class AIChatHistoryManager {
     private let aiChatSettings: AIChatSettingsProvider
     private let viewModel: AIChatSuggestionsViewModel
     private var cancellables = Set<AnyCancellable>()
+    private var currentFetchTask: Task<Void, Never>?
 
     // MARK: - Initialization
 
@@ -90,20 +97,40 @@ final class AIChatHistoryManager {
         hostingController.didMove(toParent: parentViewController)
         self.hostingController = hostingController
 
-        Task {
-            await fetchSuggestions()
-        }
+        // Initial fetch with empty query (shows recent chats from last week)
+        fetchSuggestionsIfNeeded(query: "")
     }
 
-    /// Fetches suggestions from the API
-    /// - Parameter query: Optional search query to filter results
-    func fetchSuggestions(query: String? = nil) async {
-        let suggestions = await suggestionsReader.fetchSuggestions(query: query)
-        viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
+    /// Subscribes to text changes from a publisher with debounce and fetches filtered suggestions
+    /// - Parameter textPublisher: A publisher that emits text changes
+    func subscribeToTextChanges<P: Publisher>(_ textPublisher: P) where P.Output == String, P.Failure == Never {
+        textPublisher
+            .debounce(for: .milliseconds(Constants.debounceMilliseconds), scheduler: DispatchQueue.main)
+            .sink { [weak self] text in
+                guard let self else { return }
+                self.fetchSuggestionsIfNeeded(query: text)
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Fetches suggestions from the API with cancellation support
+    /// - Parameter query: The search query to filter results
+    private func fetchSuggestionsIfNeeded(query: String) {
+        currentFetchTask?.cancel()
+
+        currentFetchTask = Task { [weak self] in
+            guard let self else { return }
+
+            let suggestions = await self.suggestionsReader.fetchSuggestions(query: query.isEmpty ? nil : query)
+            guard !Task.isCancelled else { return }
+            self.viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
+        }
     }
 
     /// Tears down the suggestions reader and releases resources
     func tearDown() {
+        currentFetchTask?.cancel()
+        currentFetchTask = nil
         suggestionsReader.tearDown()
         viewModel.clearAllChats()
     }

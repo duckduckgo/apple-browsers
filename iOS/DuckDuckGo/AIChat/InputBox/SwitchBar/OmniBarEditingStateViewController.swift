@@ -311,6 +311,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                                            viewModel: AIChatSuggestionsViewModel())
         manager.delegate = self
         manager.installInContainerView(chatContainer, parentViewController: containerViewController)
+        manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
         aiChatHistoryManager = manager
     }
 

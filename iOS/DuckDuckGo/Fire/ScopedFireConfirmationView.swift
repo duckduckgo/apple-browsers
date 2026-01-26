@@ -17,4 +17,97 @@
 //  limitations under the License.
 //
 
-import Foundation
+import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import Core
+import DuckUI
+
+struct ScopedFireConfirmationView: View {
+    
+    @ObservedObject var viewModel: ScopedFireConfirmationViewModel
+    let onDismiss: () -> Void
+    
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            ScrollView {
+                contentView
+                    .padding(Constants.viewPadding)
+            }
+            .modifier(ScrollBounceBehaviorModifier())
+            closeButton
+                .padding(16)
+        }
+        .background(Color(designSystemColor: .backgroundTertiary))
+    }
+    
+    private var contentView: some View {
+        VStack(spacing: Constants.mainSectionSpacing) {
+            headerSection
+            scopeButtons
+        }
+    }
+    
+    private var closeButton: some View {
+        Button(action: {
+            onDismiss()
+        }) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
+                .foregroundColor(Color(designSystemColor: .icons))
+                .padding(Constants.closeButtonPadding)
+                .background(Color(designSystemColor: .controlsFillPrimary))
+                .clipShape(Circle())
+        }
+        .accessibilityIdentifier("Fire.Confirmation.Button.Close")
+    }
+    
+    private var headerSection: some View {
+        VStack(spacing: Constants.headerSectionSpacing) {
+            Image(uiImage: DesignSystemImages.Color.Size72.fire)
+                .resizable()
+                .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
+            
+            Text(UserText.scopedFireConfirmationAlertTitle)
+                .daxTitle3()
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(Constants.headerSectionPadding)
+    }
+    
+    /// Scope selection buttons
+    private var scopeButtons: some View {
+        VStack(spacing: Constants.buttonSpacing) {
+            // All Tabs button - Primary Destructive (filled)
+            Button(action: {
+                viewModel.burnAllTabs()
+            }) {
+                Text(UserText.scopedFireConfirmationDeleteAllButton)
+            }
+            .buttonStyle(PrimaryDestructiveButtonStyle())
+            .accessibilityIdentifier("Fire.Confirmation.Button.AllTabs")
+            
+            // This Tab button - Secondary Destructive (outline)
+            Button(action: {
+                viewModel.burnThisTab()
+            }) {
+                Text(UserText.scopedFireConfirmationDeleteThisTabButton)
+            }
+            .buttonStyle(SecondaryDestructiveButtonStyle())
+            .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")
+        }
+    }
+}
+
+private extension ScopedFireConfirmationView {
+    enum Constants {
+        static let viewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
+        static let mainSectionSpacing: CGFloat = 16
+        static let headerSectionSpacing: CGFloat = 8
+        static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
+        static let headerIconSize: CGFloat = 96
+        static let buttonSpacing: CGFloat = 16
+        static let closeButtonPadding: CGFloat = 8
+    }
+}

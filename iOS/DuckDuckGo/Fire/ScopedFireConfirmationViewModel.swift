@@ -18,3 +18,38 @@
 //
 
 import Foundation
+import Core
+
+@MainActor
+final class ScopedFireConfirmationViewModel: ObservableObject {
+    
+    // MARK: - Public Variables
+    
+    let onConfirm: (FireRequest) -> Void
+    let onCancel: () -> Void
+    
+    // MARK: - Private Variables
+    
+    
+    // MARK: - Initializer
+    
+    init(onConfirm: @escaping (FireRequest) -> Void,
+         onCancel: @escaping () -> Void) {
+        self.onConfirm = onConfirm
+        self.onCancel = onCancel
+    }
+    
+    // MARK: - Public Functions
+    
+    func burnAllTabs() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all)
+        onConfirm(request)
+    }
+    
+    func burnThisTab() {
+    }
+    
+    func cancel() {
+        onCancel()
+    }
+}

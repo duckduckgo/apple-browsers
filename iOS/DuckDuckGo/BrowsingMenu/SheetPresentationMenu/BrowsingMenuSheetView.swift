@@ -48,7 +48,7 @@ struct BrowsingMenuSheetView: View {
         /// `.compact` section spacing on iOS 17+. This value is an approximation and
         /// the actual spacing may differ slightly on earlier versions.
         static let listSectionSpacing: CGFloat = 20
-        static let listTopPadding: CGFloat = 20 - listTopPaddingAdjustment
+        static let listTopPadding: CGFloat = 20
         static let grabberHeight: CGFloat = 20
 
         static let headerHorizontalSpacing: CGFloat = 10
@@ -113,6 +113,7 @@ struct BrowsingMenuSheetView: View {
                                 .ignoresSafeArea()
                         }
                     }
+                    .padding(.vertical, headerDataSource.isWebsiteHeaderVisible ? 0 : -4)
             }
         })
         .tint(Color(designSystemColor: .textPrimary))
@@ -129,10 +130,7 @@ struct BrowsingMenuSheetView: View {
             onDismiss: { dismiss() }
         )
         .padding(.horizontal, 20)
-        .padding(.top, 8)
-        .if(verticalSizeClass != .compact) {
-            $0.padding(.top, 8)
-        }
+        .padding(.top, verticalSizeClass == .compact ? 8 : 16)
     }
 
     /// Tracks the header's bottom Y position in global coordinates

@@ -121,7 +121,7 @@ enum SecureVaultItem: Equatable, Identifiable, Comparable {
         case .account(let account):
             return ((account.title ?? "").isEmpty == true ? account.domain : account.title) ?? ""
         case .card(let card):
-            return card.title
+            return card.title.isEmpty ? CreditCardValidation.type(for: card.cardNumber).displayName : card.title
         case .identity(let identity):
             return identity.title
         case .note(let note):

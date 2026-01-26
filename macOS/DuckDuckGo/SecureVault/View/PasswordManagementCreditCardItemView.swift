@@ -115,13 +115,19 @@ private struct HeaderView: View {
 
             } else {
 
-                Text(model.title)
+                Text(cardTitle)
                     .font(.title)
 
             }
 
         }
 
+    }
+
+    private var cardTitle: String {
+        guard let card = model.card else { return "" }
+
+        return card.title.isEmpty ? CreditCardValidation.type(for: card.cardNumber).displayName : card.title
     }
 
 }

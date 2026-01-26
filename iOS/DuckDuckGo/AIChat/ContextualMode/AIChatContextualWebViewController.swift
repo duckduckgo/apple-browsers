@@ -45,9 +45,11 @@ final class AIChatContextualWebViewController: UIViewController {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
-    private let pageContextStore: AIChatPageContextStoring
 
     private(set) var aiChatContentHandler: AIChatContentHandling
+
+    /// Callback for URL changes.
+    var onContextualChatURLChange: ((URL?) -> Void)?
 
     /// Passthrough delegate for the content handler. Set this to receive navigation callbacks.
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
@@ -87,18 +89,25 @@ final class AIChatContextualWebViewController: UIViewController {
 
     // MARK: - Initialization
 
+    /// Initialize the web view controller.
+    /// - Parameters:
+    ///   - aiChatSettings: AI chat settings provider
+    ///   - privacyConfigurationManager: Privacy configuration manager
+    ///   - contentBlockingAssetsPublisher: Content blocking assets publisher
+    ///   - featureDiscovery: Feature discovery
+    ///   - featureFlagger: Feature flagger
+    ///   - getPageContext: Closure to get page context (used by ContentHandler for JS getAIChatPageContext requests)
     init(aiChatSettings: AIChatSettingsProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
-         pageContextStore: AIChatPageContextStoring) {
+         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
-        self.pageContextStore = pageContextStore
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
@@ -106,7 +115,7 @@ final class AIChatContextualWebViewController: UIViewController {
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
             productSurfaceTelemetry: productSurfaceTelemetry,
-            pageContextStore: pageContextStore
+            getPageContext: getPageContext
         )
         super.init(nibName: nil, bundle: nil)
     }
@@ -235,14 +244,10 @@ final class AIChatContextualWebViewController: UIViewController {
 
         guard contextualChatURL != lastContextualChatURL else { return }
 
-        if contextualChatURL != nil,
-           aiChatSettings.isAutomaticContextAttachmentEnabled,
-           let context = pageContextStore.latestContext {
-            pushPageContext(context)
-        }
-
         lastContextualChatURL = contextualChatURL
+
         delegate?.contextualWebViewController(self, didUpdateContextualChatURL: contextualChatURL)
+        onContextualChatURLChange?(contextualChatURL)
     }
 }
 

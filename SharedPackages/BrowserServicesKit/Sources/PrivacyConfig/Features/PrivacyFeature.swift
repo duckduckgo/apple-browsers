@@ -20,7 +20,6 @@ import Foundation
 
 /// Features whose `rawValue` should be the key to access their corresponding `PrivacyConfigurationData.PrivacyFeature` object
 public enum PrivacyFeature: String {
-    case breakageReporting
     case contentBlocking
     case duckPlayer
     case fingerprintingTemporaryStorage
@@ -48,7 +47,6 @@ public enum PrivacyFeature: String {
     case privacyDashboard
     case updates
     case updatesWontAutomaticallyRestartApp
-    case performanceMetrics
     case privacyPro
     case sslCertificates
     case toggleReports
@@ -84,7 +82,7 @@ public enum PrivacyFeature: String {
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport
-    case duckAiDataClearing
+    case duckAiChatHistory
     case serp
     case popupBlocking
     case combinedPermissionView
@@ -166,6 +164,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
+    /// Whether the wide event POST endpoint is enabled
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
+    case wideEventPostEndpoint
+
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
     case memoryPressureReporting
@@ -202,6 +204,16 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1212238464901412?focus=true
     case showWhatsNewPromptOnDemand
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
+    case genericBackgroundTask
+
+    // https://app.asana.com/1/137249556945/project/392891325557410/task/1211597475706631?focus=true
+    case webViewFlashPrevention
+
+    /// Whether the wide event POST endpoint is enabled
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
+    case wideEventPostEndpoint
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -320,6 +332,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar cluster for AI Chat
     case omnibarCluster
 
+    /// Enables showing chat suggestions in the AI Chat omnibar
+    case suggestions
+
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
@@ -331,6 +346,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables ATB measurement for Duck.ai usage on iOS
     case aiChatAtb
+
+    /// Controls whether automatic page context attachment defaults to enabled
+    case autoAttachContextByDefault
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -448,7 +466,6 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
-    case sitesSection
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {

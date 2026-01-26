@@ -85,7 +85,8 @@ extension TabViewController {
                                 browsingMenuSheetCapability: BrowsingMenuSheetCapable,
                                 clearTabsAndData: @escaping () -> Void) -> BrowsingMenuModel? {
         
-        let builder = BrowsingMenuBuilder(entryBuilder: self)
+        let options = BrowsingMenuBuilder.Options(capability: browsingMenuSheetCapability)
+        let builder = BrowsingMenuBuilder(entryBuilder: self, options: options)
         
         return builder.buildMenu(
             context: context,
@@ -930,7 +931,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeReportBrokenSiteEntry() -> BrowsingMenuEntry? {
-        guard validLink != nil else { return nil }
+        guard link != nil else { return nil }
         return buildReportBrokenSiteEntry(useSmallIcon: false)
     }
     

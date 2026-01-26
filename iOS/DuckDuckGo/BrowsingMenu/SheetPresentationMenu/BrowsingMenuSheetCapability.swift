@@ -26,6 +26,8 @@ protocol BrowsingMenuSheetCapable {
     var isExperimentalMenuOptInEnabled: Bool { get }
     var isEnabled: Bool { get }
     var isSettingsOptionVisible: Bool { get }
+    var isWebsiteHeaderEnabled: Bool { get }
+    var mergeActionsAndBookmarks: Bool { get }
 
     func setEnabled(_ enabled: Bool)
 }
@@ -50,6 +52,8 @@ struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
     let isExperimentalMenuOptInEnabled: Bool = false
     let isEnabled: Bool = false
     let isSettingsOptionVisible: Bool = false
+    let isWebsiteHeaderEnabled: Bool = false
+    let mergeActionsAndBookmarks: Bool = false
 
     func setEnabled(_ enabled: Bool) {
         // no-op
@@ -85,6 +89,14 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
             return featureFlagger.internalUserDecider.isInternalUser
         }
         return isExperimentalMenuOptInEnabled
+    }
+
+    var isWebsiteHeaderEnabled: Bool {
+        isEnabledByDefault
+    }
+
+    var mergeActionsAndBookmarks: Bool {
+        isEnabledByDefault
     }
 
     func setEnabled(_ enabled: Bool) {

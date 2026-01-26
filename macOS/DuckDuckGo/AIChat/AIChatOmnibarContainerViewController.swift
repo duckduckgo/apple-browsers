@@ -20,6 +20,8 @@ import Cocoa
 import QuartzCore
 import Combine
 import DesignResourcesKitIcons
+import AIChat
+import PixelKit
 
 final class AIChatOmnibarContainerViewController: NSViewController {
 
@@ -30,6 +32,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let submitButtonCornerRadius: CGFloat = 14
         static let submitButtonTrailingInset: CGFloat = 13
         static let submitButtonBottomInset: CGFloat = 13
+        static let suggestionsBottomPadding: CGFloat = 4
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -37,6 +40,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let innerBorderView = ColorView(frame: .zero)
     private let containerView = NSView()
     private let submitButton = MouseOverButton()
+
+    /// Suggestions view - always in hierarchy, height is 0 when no suggestions
+    private let suggestionsView = AIChatSuggestionsView()
+
+    /// Constraint for suggestions view height
+    private var suggestionsHeightConstraint: NSLayoutConstraint?
+
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
     var themeUpdateCancellable: AnyCancellable?
@@ -44,6 +54,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var textChangeCancellable: AnyCancellable?
     private var windowFrameObserver: AnyCancellable?
     private var viewBoundsObserver: AnyCancellable?
+
+    /// Current suggestions height - cached to avoid recalculation
+    private(set) var suggestionsHeight: CGFloat = 0
+
+    /// Callback when the suggestions height changes, used for layout updates
+    var onSuggestionsHeightChanged: ((CGFloat) -> Void)?
 
     required init?(coder: NSCoder) {
         fatalError("AIChatOmnibarContainerViewController: Bad initializer")
@@ -63,6 +79,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupSuggestionsView()
         subscribeToThemeChanges()
         subscribeToTextChanges()
         applyThemeStyle()
@@ -164,12 +181,60 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
             submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.submitButtonTrailingInset),
-            submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.submitButtonBottomInset),
+            // Bottom constraint is set in setupSuggestionsView() to be above suggestions
             submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize),
             submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
         ])
 
         applyTheme(theme: themeManager.theme)
+    }
+
+    // MARK: - Suggestions Setup
+
+    private func setupSuggestionsView() {
+        suggestionsView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(suggestionsView)
+
+        // Height constraint controls visibility - 0 when no suggestions
+        let heightConstraint = suggestionsView.heightAnchor.constraint(equalToConstant: 0)
+        suggestionsHeightConstraint = heightConstraint
+
+        NSLayoutConstraint.activate([
+            suggestionsView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            suggestionsView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            suggestionsView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.suggestionsBottomPadding),
+            heightConstraint,
+
+            // Submit button sits above suggestions
+            submitButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.submitButtonBottomInset)
+        ])
+
+        // Handle suggestion clicks
+        suggestionsView.onSuggestionClicked = { [weak self] suggestion in
+            guard let self else { return }
+            let pixel: AIChatPixel = suggestion.isPinned ? .aiChatRecentChatSelectedPinnedMouse : .aiChatRecentChatSelectedMouse
+            PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            self.omnibarController.delegate?.aiChatOmnibarController(
+                self.omnibarController,
+                didSelectSuggestion: suggestion
+            )
+        }
+
+        // Bind to view model with height change callback
+        suggestionsView.bind(to: omnibarController.suggestionsViewModel) { [weak self] newHeight in
+            self?.updateSuggestionsHeight(newHeight)
+        }
+    }
+
+    private func updateSuggestionsHeight(_ newHeight: CGFloat) {
+        // Skip if height hasn't changed
+        guard newHeight != suggestionsHeight else { return }
+
+        suggestionsHeight = newHeight
+        suggestionsHeightConstraint?.constant = newHeight
+
+        // Notify about height change for container resize
+        onSuggestionsHeightChanged?(newHeight)
     }
 
     /// Starts event monitoring. Call this when the view controller becomes visible.
@@ -187,6 +252,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         windowFrameObserver = nil
         viewBoundsObserver?.cancel()
         viewBoundsObserver = nil
+        omnibarController.cleanup()
     }
 
     private func addShadowToWindow() {

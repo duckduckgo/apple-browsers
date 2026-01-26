@@ -72,6 +72,7 @@ struct BrokerProfileScanSubJob {
 
         let scanContext = createScanStageContext(brokerProfileQueryData: brokerProfileQueryData,
                                                  isManual: isManual,
+                                                 isAuthenticated: await dependencies.isAuthenticatedUser(),
                                                  database: dependencies.database,
                                                  pixelHandler: dependencies.pixelHandler,
                                                  parentURL: brokerProfileQueryData.dataBroker.parent,
@@ -189,6 +190,7 @@ struct BrokerProfileScanSubJob {
 
     internal func createScanStageContext(brokerProfileQueryData: BrokerProfileQueryData,
                                          isManual: Bool,
+                                         isAuthenticated: Bool,
                                          database: DataBrokerProtectionRepository,
                                          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                          parentURL: String?,
@@ -204,6 +206,7 @@ struct BrokerProfileScanSubJob {
             handler: pixelHandler,
             isImmediateOperation: isManual,
             parentURL: parentURL,
+            isAuthenticated: isAuthenticated,
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus,
             featureFlagger: featureFlagger

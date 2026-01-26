@@ -89,3 +89,22 @@ actor WideEventService {
         }
     }
 }
+
+struct WideEventFeatureFlagAdapter: WideEventFeatureFlagProviding {
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+#if DEBUG || ALPHA || EXPERIMENTAL
+            return false
+#else
+            return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
+#endif
+        }
+    }
+}

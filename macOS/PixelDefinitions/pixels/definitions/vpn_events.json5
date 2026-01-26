@@ -1,0 +1,137 @@
+{
+    "m_mac_netp_ev_adapter_end_temporary_shutdown_state_attempt_failure": {
+        "description": "Fired when the VPN adapter fails to end its temporary shutdown state on the first attempt",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_netp_ev_adapter_end_temporary_shutdown_state_recovery_success": {
+        "description": "Fired when the VPN adapter successfully recovers and ends its temporary shutdown state after an initial failure",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_netp_ev_adapter_end_temporary_shutdown_state_recovery_failure": {
+        "description": "Fired when the VPN adapter fails to recover and end its temporary shutdown state after an initial failure",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211597559231997
+    "m_mac_wide_vpn_connection": {
+        "description": "Wide pixel sent at the end of a vpn connection flow",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventSampleRate",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventErrorDescription",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-vpn-connection"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["vpn-connection"]
+            },
+            {
+                "key": "feature.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status",
+                "enum": ["partial_data", "timeout", "retried"]
+            },
+            {
+                "key": "feature.data.ext.extension_type",
+                "type": "string",
+                "description": "VPN extension type used",
+                "enum": ["app", "system", "unknown"]
+            },
+            {
+                "key": "feature.data.ext.startup_method",
+                "type": "string",
+                "description": "How the VPN setup or connection was initiated",
+                "enum": ["automatic_on_demand", "manual_by_main_app", "manual_by_the_system"]
+            },
+            // As of MacOS 1.168.0, `is_setup` uses the normalized values "yes", "no", and "unknown".
+            // Previous versions may still report legacy values ("true", "false").
+            {
+                "key": "feature.data.ext.is_setup",
+                "type": "string",
+                "description": "Is the current flow setup or reconnection",
+                "enum": ["yes", "no", "unknown", "true", "false"]
+            },
+            {
+                "key": "feature.data.ext.onboarding_status",
+                "type": "string",
+                "description": "The current onboarding status, if applicable",
+                "enum": ["needs_to_allow_extension", "needs_to_allow_vpn_configuration", "unknown", "completed"]
+            },
+            // Overall latency
+            {
+                "key": "feature.data.ext.latency_ms",
+                "type": "integer",
+                "description": "Overall VPN connection latency (in ms)"
+            },
+            // Per-step latencies
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_latency_ms",
+                "type": "integer",
+                "description": "Latency for VPN connection steps (in ms)"
+            },
+            // Per-step error domains
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_error\\.domain",
+                "type": "string",
+                "description": "Error domain for VPN connection step failures"
+            },
+            // Per-step error codes
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_error\\.code",
+                "type": "integer",
+                "description": "Error code for VPN connection step failures"
+            },
+            // Per-step error descriptions
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_error\\.description",
+                "type": "string",
+                "description": "Human-readable error description for VPN connection step failures",
+                "examples": ["simulateControllerFailureError", "loadFromPreferencesFailed"]
+            },
+            // Per-step underlying error domains
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_error\\.underlying_domain[0-9]?",
+                "type": "string",
+                "description": "Underlying error domain for VPN connection step failures"
+            },
+            // Per-step underlying error codes
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_error\\.underlying_code[0-9]?",
+                "type": "integer",
+                "description": "Underlying error code for VPN connection step failures"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Context name for the flow",
+                "enum": ["funnel_appsettings_macos", "funnel_agent_macos", "funnel_systemsettings_multiple", "funnel_others_multiple"]
+            }
+        ]
+    }
+}

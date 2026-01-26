@@ -28,6 +28,7 @@ import TrackerRadarKit
 import PixelKit
 import PrivacyConfig
 import enum UserScript.UserScriptError
+import DDGSync
 
 protocol ScriptSourceProviding {
 
@@ -47,6 +48,7 @@ protocol ScriptSourceProviding {
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
     var cookiePopupProtectionPreferences: CookiePopupProtectionPreferences { get }
     var duckPlayer: DuckPlayer { get }
+    var syncServiceProvider: () -> DDGSyncing? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -75,7 +77,10 @@ protocol ScriptSourceProviding {
         fireproofDomains: Application.appDelegate.fireproofDomains,
         fireCoordinator: Application.appDelegate.fireCoordinator,
         autoconsentManagement: Application.appDelegate.autoconsentManagement,
-        newTabPageActionsManager: nil
+        newTabPageActionsManager: nil,
+        syncServiceProvider: { [weak appDelegate = Application.appDelegate] in
+            return appDelegate?.syncService
+        }
     )
 }
 
@@ -104,6 +109,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let historyCoordinator: HistoryDataSource
     let windowControllersManager: WindowControllersManagerProtocol
     let autoconsentManagement: AutoconsentManagement
+    let syncServiceProvider: () -> DDGSyncing?
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -126,7 +132,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
          autoconsentManagement: AutoconsentManagement,
-         newTabPageActionsManager: NewTabPageActionsManager?
+         newTabPageActionsManager: NewTabPageActionsManager?,
+         syncServiceProvider: @escaping () -> DDGSyncing?
     ) {
 
         self.configStorage = configStorage
@@ -143,6 +150,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.historyCoordinator = historyCoordinator
         self.windowControllersManager = windowControllersManager
         self.autoconsentManagement = autoconsentManagement
+        self.syncServiceProvider = syncServiceProvider
 
         self.newTabPageActionsManager = newTabPageActionsManager
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
@@ -169,12 +177,14 @@ struct ScriptSourceProvider: ScriptSourceProviding {
 
     public func buildAutofillSource() -> AutofillUserScriptSourceProvider {
         let privacyConfig = self.privacyConfigurationManager.privacyConfig
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
         do {
             return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
                                                              properties: ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
                                                                                                 sessionKey: self.sessionKey ?? "",
                                                                                                 messageSecret: self.messageSecret ?? "",
-                                                                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig)),
+                                                                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
+                                                                                                themeVariant: themeVariant),
                                                              isDebug: AutofillPreferences().debugScriptEnabled)
             .withJSLoading()
             .build()

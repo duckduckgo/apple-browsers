@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Lehe sisu";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai aitab nüüd aidata leida vastused küsimustele lehe kohta, mida parasjagu vaatate.\n\nLehe sisu lisatakse ainult siis, kui selle manustate. Seda saate seadetes igal ajal muuta.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Sain aru";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Küsi selle lehekülje kohta";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Vaata sätteid";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo tehisintellekti funktsioonid on privaatsed ja valikulised. Sinu andmeid ei kasutata tehisintellekti treenimiseks.";
 
@@ -3610,6 +3622,9 @@
 /* Manage Plan header */
 "subscription.manage.plan" = "Halda plaani";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Makse haldamine või tühistamine";
+
 /* Header for the subscription section */
 "subscription.manage.title" = "Püsitellimus";
 
@@ -3706,6 +3721,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Teie aastane tellimus aegub %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Teie pakett alandatakse kuutasule %1$@ alates %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Teie pakett alandatakse kuupäeval %2$@ paketile %1$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Teie pakett alandatakse aastasele paketile %1$@ alates %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Teie kuutellimus uueneb %@.";
 
@@ -3726,6 +3750,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Tasuta prooviperiood aktiveeritud";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Uuenda versioonile %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Ava nutikam ja võimsam tehisintellekt";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Uuenda";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Vaata kõiki plaane";
@@ -4228,3 +4261,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Vahekaardid";
+"settings.tab.switcher.show.tracker.count" = "Viimase 7 päeva jälgijate arv";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "viimase 7 päeva jooksul";
+"tab.switcher.tracker.count.hide.title" = "Peita jälgijate arv?";
+"tab.switcher.tracker.count.hide.message" = "Saate selle uuesti sisse lülitada jaotises Seaded > Välimus.";
+"tab.switcher.tracker.count.hide.action" = "Peida";
+"tab.switcher.tracker.count.keep.action" = "Jäta";
+"tab.switcher.tracker.count.info.a11y" = "Jälgijate arvu valikud";
+"tab.switcher.tracker.count.info.hint.a11y" = "Banneri peitmise valikute kuvamiseks topeltpuuduta";

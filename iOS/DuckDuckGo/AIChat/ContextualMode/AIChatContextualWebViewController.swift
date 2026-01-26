@@ -48,6 +48,9 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
+    /// Callback for URL changes.
+    var onContextualChatURLChange: ((URL?) -> Void)?
+
     /// Passthrough delegate for the content handler. Set this to receive navigation callbacks.
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
         get { aiChatContentHandler.delegate }
@@ -61,6 +64,9 @@ final class AIChatContextualWebViewController: UIViewController {
     private var isContentHandlerReady = false
     private var urlObservation: NSKeyValueObservation?
     private var lastContextualChatURL: URL?
+
+    /// URL to load on viewDidLoad instead of the default AI chat URL (for cold restore).
+    var initialRestoreURL: URL?
 
     // MARK: - UI Components
 
@@ -83,11 +89,20 @@ final class AIChatContextualWebViewController: UIViewController {
 
     // MARK: - Initialization
 
+    /// Initialize the web view controller.
+    /// - Parameters:
+    ///   - aiChatSettings: AI chat settings provider
+    ///   - privacyConfigurationManager: Privacy configuration manager
+    ///   - contentBlockingAssetsPublisher: Content blocking assets publisher
+    ///   - featureDiscovery: Feature discovery
+    ///   - featureFlagger: Feature flagger
+    ///   - getPageContext: Closure to get page context (used by ContentHandler for JS getAIChatPageContext requests)
     init(aiChatSettings: AIChatSettingsProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          featureDiscovery: FeatureDiscovery,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -99,7 +114,8 @@ final class AIChatContextualWebViewController: UIViewController {
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
-            productSurfaceTelemetry: productSurfaceTelemetry
+            productSurfaceTelemetry: productSurfaceTelemetry,
+            getPageContext: getPageContext
         )
         super.init(nibName: nil, bundle: nil)
     }
@@ -114,7 +130,11 @@ final class AIChatContextualWebViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupURLObservation()
-        loadAIChat()
+        if let restoreURL = initialRestoreURL {
+            loadChatURL(restoreURL)
+        } else {
+            loadAIChat()
+        }
     }
 
     deinit {
@@ -137,6 +157,10 @@ final class AIChatContextualWebViewController: UIViewController {
         aiChatContentHandler.submitStartChatAction()
     }
 
+    func pushPageContext(_ context: AIChatPageContextData?) {
+        aiChatContentHandler.submitPageContext(context)
+    }
+
     func reload() {
         isPageReady = false
         isContentHandlerReady = false
@@ -146,6 +170,12 @@ final class AIChatContextualWebViewController: UIViewController {
     /// Returns the current contextual chat URL if one exists, nil otherwise.
     var currentContextualChatURL: URL? {
         webView.url.flatMap { $0.duckAIChatID != nil ? $0 : nil }
+    }
+
+    /// Loads a specific chat URL (for cold restore after app restart).
+    func loadChatURL(_ url: URL) {
+        loadingView.startAnimating()
+        webView.load(URLRequest(url: url))
     }
 
     // MARK: - Private Methods
@@ -213,8 +243,11 @@ final class AIChatContextualWebViewController: UIViewController {
         let contextualChatURL = url.flatMap { $0.duckAIChatID != nil ? $0 : nil }
 
         guard contextualChatURL != lastContextualChatURL else { return }
+
         lastContextualChatURL = contextualChatURL
+
         delegate?.contextualWebViewController(self, didUpdateContextualChatURL: contextualChatURL)
+        onContextualChatURLChange?(contextualChatURL)
     }
 }
 

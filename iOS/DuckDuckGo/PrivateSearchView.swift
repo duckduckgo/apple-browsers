@@ -67,7 +67,7 @@ struct PrivateSearchViewSettings: View {
 
         Section {
             // More Search Settings
-            NavigationLink(destination: SERPSettingsView(page: .general).environmentObject(viewModel)) {
+            NavigationLink(destination: SERPSettingsView(page: .general, featureFlagger: viewModel.featureFlagger)) {
                 SettingsCellView(label: UserText.moreSearchSettings,
                                  subtitle: UserText.moreSearchSettingsExplanation)
             }

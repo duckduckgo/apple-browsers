@@ -816,5 +816,25 @@ Boli zablokovaní!
 			<string>%1$d lokalít bolo vylúčených z vymazania</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Sledovanie</string>
+			<key>few</key>
+			<string>%2$@ Sledovania</string>
+			<key>many</key>
+			<string>%2$@ Sledovaní</string>
+			<key>other</key>
+			<string>%2$@ Sledovaní</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

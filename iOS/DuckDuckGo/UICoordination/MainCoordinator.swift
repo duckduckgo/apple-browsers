@@ -28,6 +28,7 @@ import Configuration
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import PrivacyStats
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -57,6 +58,7 @@ final class MainCoordinator {
     private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
+    private let privacyStats: PrivacyStatsProviding
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -113,6 +115,7 @@ final class MainCoordinator {
             featureFlagger: featureFlagger,
             onboardingSearchExperienceProvider: OnboardingSearchExperience()
         )
+        self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,
@@ -141,6 +144,7 @@ final class MainCoordinator {
                                 aiChatSettings: aiChatSettings,
                                 productSurfaceTelemetry: productSurfaceTelemetry,
                                 sharedSecureVault: sharedSecureVault,
+                                privacyStats: privacyStats,
                                 voiceSearchHelper: voiceSearchHelper)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
@@ -152,7 +156,8 @@ final class MainCoordinator {
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: privacyConfigurationManager,
-                                        appSettings: AppDependencyProvider.shared.appSettings)
+                                        appSettings: AppDependencyProvider.shared.appSettings,
+                                        privacyStats: privacyStats)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -191,7 +196,8 @@ final class MainCoordinator {
                                         productSurfaceTelemetry: productSurfaceTelemetry,
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
-                                        syncAiChatsCleaner: syncService.aiChatsCleaner,
+                                        privacyStats: privacyStats,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         whatsNewRepository: whatsNewRepository)
     }
 
@@ -270,6 +276,9 @@ final class MainCoordinator {
 
     func onBackground() {
         resetAppStartTime()
+        Task {
+            await privacyStats.handleAppTermination()
+        }
     }
 
     private func resetAppStartTime() {
@@ -302,6 +311,8 @@ extension MainCoordinator: URLHandling {
     }
 
     private func handleAppDeepLink(url: URL, application: UIApplication = UIApplication.shared) -> Bool {
+        controller.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+
         if url != AppDeepLinkSchemes.openVPN.url && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme {
             controller.clearNavigationStack()
         }
@@ -317,7 +328,8 @@ extension MainCoordinator: URLHandling {
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:
-            controller.forgetAllWithAnimation(options: .all)
+            let request = FireRequest(options: .all, trigger: .manualFire, scope: .all)
+            controller.forgetAllWithAnimation(request: request)
         case .voiceSearch:
             controller.onVoiceSearchPressed()
         case .newEmail:

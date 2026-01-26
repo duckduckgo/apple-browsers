@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "ページコンテンツ";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.aiは、現在表示しているページに関する質問に回答できるようになりました。\n\nページの内容は、添付した場合にのみ含まれます。この設定は、「設定」でいつでも変更できます。";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "了解";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "このページについて質問する";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "設定を表示";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGoのAI機能はプライベートでオプションです。データはAIのトレーニングに使用されません。";
 
@@ -3610,6 +3622,9 @@
 /* Manage Plan header */
 "subscription.manage.plan" = "プランを管理する";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "支払いを管理またはキャンセル";
+
 /* Header for the subscription section */
 "subscription.manage.title" = "定額制";
 
@@ -3706,6 +3721,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "年間サブスクリプションの有効期限は%@です。";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "プランは%2$@に毎月%1$@にダウングレードされます。";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "プランは%2$@に%1$@にダウングレードされます。";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "プランは%2$@に%1$@（年額）にダウングレードされます。";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "月間サブスクリプションは%@に更新されます。";
 
@@ -3726,6 +3750,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "無料トライアルが有効です";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "%@にアップグレード";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "よりスマートで、より強力なAIを利用可能に";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "アップグレード";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "全プランを表示";
@@ -4228,3 +4261,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "タブ";
+"settings.tab.switcher.show.tracker.count" = "過去7日間のトラッカー数";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "過去7日間";
+"tab.switcher.tracker.count.hide.title" = "トラッカー数を非表示にしますか？";
+"tab.switcher.tracker.count.hide.message" = "設定 > 外観 で再び有効にできます。";
+"tab.switcher.tracker.count.hide.action" = "非表示";
+"tab.switcher.tracker.count.keep.action" = "保持";
+"tab.switcher.tracker.count.info.a11y" = "トラッカー数のオプション";
+"tab.switcher.tracker.count.info.hint.a11y" = "ダブルタップしてこのバナーを非表示にするオプションを表示します";

@@ -550,6 +550,16 @@ extension AppDelegate {
         Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
     }
 
+    @MainActor
+    @objc func exportMemoryAllocationStats(_ sender: Any?) {
+        do {
+            let exporter = MemoryAllocationStatsExporter()
+            try exporter.exportSnapshotToTemporaryURL()
+        } catch {
+            Logger.general.error("Failed to export Memory Allocation Stats: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @objc func resetRemoteMessages(_ sender: Any?) {
         Task {
             await remoteMessagingClient.store?.resetRemoteMessages()
@@ -561,14 +571,18 @@ extension AppDelegate {
     }
 
     @objc func debugResetContinueSetup(_ sender: Any?) {
-        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
+        var persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
         persistor.continueSetUpCardsLastDemonstrated = nil
         persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
+        persistor.didOpenCustomizationSettings = false
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         appearancePreferences.continueSetUpCardsClosed = false
         appearancePreferences.isContinueSetUpVisible = true
+        duckPlayer.preferences.youtubeOverlayAnyButtonPressed = false
+        duckPlayer.preferences.duckPlayerMode = .alwaysAsk
+        UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
         homePageSetUpDependencies.clearAll()
-        NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @MainActor
@@ -1368,21 +1382,19 @@ extension MainViewController {
         }
     }
 
-    @objc func debugResetContinueSetup(_ sender: Any?) {
-        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
-        persistor.continueSetUpCardsLastDemonstrated = nil
-        persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
-        NSApp.delegateTyped.appearancePreferences.isContinueSetUpCardsViewOutdated = false
-        NSApp.delegateTyped.appearancePreferences.continueSetUpCardsClosed = false
-        NSApp.delegateTyped.appearancePreferences.isContinueSetUpVisible = true
-        NSApp.delegateTyped.homePageSetUpDependencies.clearAll()
-        NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
+    @objc func debugShiftCardImpression(_ sender: Any?) {
+        let persistor = NewTabPageNextStepsCardsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        let debugPersistor = NewTabPageNextStepsCardsDebugPersistor()
+        guard let card = debugPersistor.debugVisibleCards.first else { return }
+        persistor.setTimesShown(10, for: card)
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @objc func debugShiftNewTabOpeningDate(_ sender: Any?) {
         let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         persistor.continueSetUpCardsLastDemonstrated = (persistor.continueSetUpCardsLastDemonstrated ?? Date()).addingTimeInterval(-.day)
         NSApp.delegateTyped.appearancePreferences.continueSetUpCardsViewDidAppear()
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @objc func debugShiftNewTabOpeningDateNtimes(_ sender: Any?) {

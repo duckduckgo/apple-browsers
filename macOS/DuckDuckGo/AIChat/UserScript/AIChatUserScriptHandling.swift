@@ -51,6 +51,7 @@ protocol AIChatUserScriptHandling {
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
+    var syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
@@ -79,17 +80,20 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
     public let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
+    public let syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
+    private let syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
+    private var syncObserverCancellable: AnyCancellable?
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
     private let statisticsLoader: StatisticsLoader?
-    private let syncHandler: AIChatSyncHandling
+    private let syncServiceProvider: () -> DDGSyncing?
     private let featureFlagger: FeatureFlagger
     private let migrationStore = AIChatMigrationStore()
 
@@ -99,7 +103,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         windowControllersManager: WindowControllersManagerProtocol,
         pixelFiring: PixelFiring?,
         statisticsLoader: StatisticsLoader?,
-        syncHandler: AIChatSyncHandling,
+        syncServiceProvider: @escaping () -> DDGSyncing?,
         featureFlagger: FeatureFlagger,
         notificationCenter: NotificationCenter = .default
     ) {
@@ -108,13 +112,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
         self.statisticsLoader = statisticsLoader
-        self.syncHandler = syncHandler
+        self.syncServiceProvider = syncServiceProvider
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
+        self.syncStatusPublisher = syncStatusSubject.eraseToAnyPublisher()
+
+        setUpSyncStatusObserverIfNeeded()
     }
 
     enum AIChatKeys {
@@ -302,8 +309,35 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return migrationStore.clear()
     }
 
+    // MARK: - Sync
+
+    private func setUpSyncStatusObserverIfNeeded(syncService: DDGSyncing? = nil) {
+        guard syncObserverCancellable == nil else { return }
+        guard let syncService = syncService ?? syncServiceProvider() else { return }
+
+        syncObserverCancellable = syncService.authStatePublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleSyncStatusChanged()
+            }
+    }
+
+    private func handleSyncStatusChanged() {
+        guard let syncHandler = makeSyncHandler() else { return }
+        do {
+            let status = try syncHandler.getSyncStatus(featureAvailable: featureFlagger.isFeatureOn(.aiChatSync))
+            syncStatusSubject.send(status)
+        } catch {
+            return
+        }
+    }
+
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable? {
         do {
+            guard let syncHandler = makeSyncHandler() else {
+                return AIChatErrorResponse(reason: "internal error")
+            }
             return AIChatPayloadResponse(payload: try syncHandler.getSyncStatus(featureAvailable: featureFlagger.isFeatureOn(.aiChatSync)))
         } catch {
             return AIChatErrorResponse(reason: "internal error")
@@ -312,10 +346,18 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor func getScopedSyncAuthToken(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard featureFlagger.isFeatureOn(.aiChatSync) else {
-            return AIChatErrorResponse(reason: "sync disabled")
+            return AIChatErrorResponse(reason: "sync unavailable")
+        }
+
+        func makeErrorResponse(_ reason: String) -> AIChatErrorResponse {
+            pixelFiring?.fire(AIChatPixel.aiChatSyncScopedSyncTokenError(reason: reason), frequency: .dailyAndStandard)
+            return AIChatErrorResponse(reason: reason)
         }
 
         do {
+            guard let syncHandler = makeSyncHandler() else {
+                return makeErrorResponse("internal error")
+            }
             return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
         } catch {
             let reason: String
@@ -333,17 +375,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             default:
                 reason = "internal error"
             }
-            pixelFiring?.fire(AIChatPixel.aiChatSyncScopedSyncTokenError(reason: reason), frequency: .dailyAndStandard)
-            return AIChatErrorResponse(reason: reason)
+            return makeErrorResponse(reason)
         }
     }
 
     func encryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
         guard featureFlagger.isFeatureOn(.aiChatSync) else {
-            return AIChatErrorResponse(reason: "sync disabled")
+            return AIChatErrorResponse(reason: "sync unavailable")
         }
 
-        guard syncHandler.isSyncTurnedOn() else {
+        guard let syncHandler = makeSyncHandler(), syncHandler.isSyncTurnedOn() else {
             return AIChatErrorResponse(reason: "sync off")
         }
 
@@ -369,10 +410,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func decryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
         guard featureFlagger.isFeatureOn(.aiChatSync) else {
-            return AIChatErrorResponse(reason: "sync disabled")
+            return AIChatErrorResponse(reason: "sync unavailable")
         }
 
-        guard syncHandler.isSyncTurnedOn() else {
+        guard let syncHandler = makeSyncHandler(), syncHandler.isSyncTurnedOn() else {
             return AIChatErrorResponse(reason: "sync off")
         }
 
@@ -398,12 +439,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard featureFlagger.isFeatureOn(.aiChatSync) else {
+        guard featureFlagger.isFeatureOn(.aiChatSync), let syncHandler = makeSyncHandler() else {
             return AIChatErrorResponse(reason: "setup disabled")
         }
 
         guard syncHandler.isSyncTurnedOn() == false else {
-            return AIChatErrorResponse(reason: "sync already enabled")
+            return AIChatErrorResponse(reason: "sync already on")
         }
 
         Task { @MainActor in
@@ -419,8 +460,19 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
-        syncHandler.setAIChatHistoryEnabled(enabled)
+        syncServiceProvider()?.setAIChatHistoryEnabled(enabled)
         return nil
+    }
+
+    private func makeSyncHandler() -> AIChatSyncHandler? {
+        guard let sync = syncServiceProvider() else {
+            return nil
+        }
+        setUpSyncStatusObserverIfNeeded(syncService: sync)
+        guard sync.authState != .initializing else {
+            return nil
+        }
+        return AIChatSyncHandler(sync: sync)
     }
 }
 // swiftlint:enable inclusive_language

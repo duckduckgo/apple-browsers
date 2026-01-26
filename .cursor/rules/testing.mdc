@@ -522,9 +522,17 @@ BSK (BrowserServicesKit) tests are specialized for the shared browser services p
 # Use real-time log streaming (in separate terminal)
 log stream --debug --info --predicate 'process == "xctest"' --style syslog &
 swift test
+
+# For Swift Testing framework tests (using @Test macro):
+swift test --enable-swift-testing
+
+# For specific test target with Swift Testing:
+swift test --filter PersistenceTests --enable-swift-testing
 ```
 
 > ⚠️ **AI Assistant Note**: These commands are examples for manual execution only. Never run test commands automatically without explicit user permission.
+>
+> **Note**: Use `--enable-swift-testing` flag when running tests that use the Swift Testing framework (`@Test` macro) instead of XCTest. This enables better test output and proper test discovery for Swift Testing tests.
 
 #### Enabling Private Data in Console App
 

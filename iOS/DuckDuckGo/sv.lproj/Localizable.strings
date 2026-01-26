@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Sidans innehåll";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai kan nu hjälpa till att svara på frågor om sidan du tittar på.\n\nSidinnehåll inkluderas bara när du bifogar det. Du kan när som helst ändra detta i Inställningar.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Jag fattar";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Fråga om den här sidan";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Visa inställningar";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGos AI-funktioner är privata och valfria. Dina data används inte för att träna AI.";
 
@@ -3610,6 +3622,9 @@
 /* Manage Plan header */
 "subscription.manage.plan" = "Hantera abonnemang";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Hantera betalning eller avbryt";
+
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonnemang";
 
@@ -3706,6 +3721,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Ditt årsabonnemang löper ut den %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Din plan kommer att nedgraderas till %1$@ månadsvis den %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Din plan kommer att nedgraderas till %1$@ den %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Din plan kommer att nedgraderas till %1$@ årligen den %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Ditt månadsabonnemang förnyas den %@.";
 
@@ -3726,6 +3750,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Gratis provperiod aktiv";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Uppgradera till %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Lås upp smartare och kraftfullare AI";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Uppgradera";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Visa alla abonnemang";
@@ -4228,3 +4261,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Flikar";
+"settings.tab.switcher.show.tracker.count" = "Spårarantal de senaste 7 dagarna";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "de senaste 7 dagarna";
+"tab.switcher.tracker.count.hide.title" = "Dölj spårarantal?";
+"tab.switcher.tracker.count.hide.message" = "Du kan slå på detta igen i Inställningar > Utseende.";
+"tab.switcher.tracker.count.hide.action" = "Dölj";
+"tab.switcher.tracker.count.keep.action" = "Behåll";
+"tab.switcher.tracker.count.info.a11y" = "Alternativ för spårarantal";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dubbeltryck för att visa alternativ för att dölja den här bannern";

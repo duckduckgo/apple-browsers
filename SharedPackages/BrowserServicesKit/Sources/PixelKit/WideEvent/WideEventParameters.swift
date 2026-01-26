@@ -20,56 +20,23 @@ import Foundation
 
 public protocol WideEventParameterProviding {
     func pixelParameters() -> [String: String]
-    func jsonParameters() throws -> String
+    func jsonParameters() -> [String: Encodable]
 }
 
-extension WideEventParameterProviding {
-    // Wide events will eventually support being sent as JSON to a POST endpoint.
-    // This extension can be used for all wide event data objects to handle this.
-    public func jsonParameters() throws -> String {
-        let object = nestedDictionary(from: pixelParameters())
-        let data = try JSONSerialization.data(withJSONObject: object, options: [])
-
-        guard let json = String(data: data, encoding: .utf8) else {
-            assertionFailure("Failed to create JSON string")
-            return "{}"
-        }
-
-        return json
-    }
-
-    private func nestedDictionary(from parameters: [String: String]) -> [String: Any] {
-        var root: [String: Any] = [:]
-
-        for key in parameters.keys.sorted() {
-            guard let value = parameters[key] else {
-                continue
-            }
-
-            let parts = key.split(separator: ".").map(String.init)
-            assign(value: value, path: parts, dict: &root)
-        }
-
-        return root
-    }
-
-    private func assign(value: String, path: [String], dict: inout [String: Any]) {
-        guard let first = path.first else {
-            return
-        }
-
-        if path.count == 1 {
-            dict[first] = value
-            return
-        }
-
-        var child = dict[first] as? [String: Any] ?? [:]
-        assign(value: value, path: Array(path.dropFirst()), dict: &child)
-        dict[first] = child
+public extension WideEventParameterProviding {
+    func jsonParameters() -> [String: Encodable] {
+        // Allows all event types to get JSON endpoint support for free.
+        // This only needs to be overriden by objects that don't want to return string values in their JSON
+        // bodies, such as the sample_rate value for global data objects.
+        return pixelParameters()
     }
 }
 
 public enum WideEventParameter {
+
+    public enum Meta {
+        static let type = "meta.type"
+    }
 
     public enum Global {
         static let platform = "global.platform"

@@ -1,0 +1,269 @@
+// This file defines commonly used params - this does NOT mean they are added by default
+// In your pixel definitions, you can reference these params by their key
+// See TEMPLATE.json for an example
+{
+    "appVersion": {
+        "key": "appVersion",
+        "type": "string",
+        "description": "",
+        "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+        "examples": ["1.146.0"]
+    },
+    "atb": {
+        "key": "atb",
+        "type": "string",
+        "pattern": "v[0-9]{1,3}-[0-7]([a-z]{2})?",
+        "description": "Add to browser value, corresponding to the users install week and day"
+    },
+    "pixelSource": {
+        "key": "pixelSource",
+        "type": "string",
+        "description": "The channel the user is on",
+        "enum": [
+            "browser-dmg",
+            "browser-appstore",
+            "vpnAgent",
+            "vpnAgentAppStore",
+            "vpnAppExtension",
+            "vpnSystemExtension",
+            "vpnSystemExtensionAppStore",
+            "vpnProxyExtension",
+            "dbpBackgroundAgent"
+        ]
+    },
+    "errorDomain": {
+        "key": "d",
+        "type": "string",
+        "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+        "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+    },
+    "errorCode": {
+        "key": "e",
+        "type": "number",
+        "description": "NSError code"
+    },
+    "themeName": {
+        "key": "themeName",
+        "enum": ["default", "coolGray", "desert", "green", "orange", "rose", "slateBlue", "violet"],
+        "description": "The name of the active Theme"
+    },
+    "themeChangeSource": {
+        "key": "themeChangeSource",
+        "enum": ["new-tab-page", "settings"],
+        "description": "Interface from which the Theme Name or Appearance were updated"
+    },
+    "underlyingErrorCode": {
+        "keyPattern": "^ue[0-9]?$",
+        "type": "number",
+        "description": "Underlying NSError code"
+    },
+    "underlyingErrorDomain": {
+        "keyPattern": "^ud[0-9]?$",
+        "type": "string",
+        "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+        "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+    },
+    "wideEventAppName": {
+        "key": "app.name",
+        "type": "string",
+        "description": "The name of the app sending the pixel"
+    },
+    "wideEventAppVersion": {
+        "key": "app.version",
+        "type": "string",
+        "description": "The version of the app sending the pixel"
+    },
+    "wideEventPlatform": {
+        "key": "global.platform",
+        "type": "string",
+        "description": "The name of the platform that the app is running on",
+        "enum": ["macOS"]
+    },
+    "wideEventType": {
+        "key": "global.type",
+        "type": "string",
+        "description": "The type of software sending the wide pixel",
+        "enum": ["app"]
+    },
+    "wideEventSampleRate": {
+        "key": "global.sample_rate",
+        "type": "number",
+        "description": "Sample rate for this pixel, between 0 and 1"
+    },
+    "wideEventFeatureStatus": {
+        "key": "feature.status",
+        "type": "string",
+        "description": "Final status of the wide event flow",
+        "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+    },
+    "wideEventFeatureStatusReason": {
+        "key": "feature.status_reason",
+        "type": "string",
+        "description": "Optional reason accompanying the feature status"
+    },
+    "wideEventErrorDomain": {
+        "key": "feature.data.error.domain",
+        "type": "string",
+        "description": "Error domain for the failure, when applicable, e.g. SKErrorDomain"
+    },
+    "wideEventErrorCode": {
+        "key": "feature.data.error.code",
+        "type": "integer",
+        "description": "Error code for the failure, when applicable"
+    },
+    "wideEventErrorDescription": {
+        "key": "feature.data.error.description",
+        "type": "string",
+        "description": "Error description for the failure, when applicable",
+        "examples": ["saveToPreferencesFailed", "startVPNFailed"]
+    },
+    "wideEventUnderlyingErrorDomain": {
+        "keyPattern": "feature\\.data\\.error\\.underlying_domain[0-9]?",
+        "type": "string",
+        "description": "Underlying error domain (supports optional numeric index for nested errors)"
+    },
+    "wideEventUnderlyingErrorCode": {
+        "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]?",
+        "type": "integer",
+        "description": "Underlying error code (supports optional numeric index for nested errors)"
+    },
+    "duration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Duration in milliseconds",
+        "examples": [1500, 3200]
+    },
+    "navigation_type": {
+        "key": "navigation_type",
+        "type": "string",
+        "description": "Type of navigation that triggered the loading",
+        "enum": [
+            "linkActivated",
+            "formSubmitted",
+            "formResubmitted",
+            "backForward",
+            "reload",
+            "redirect",
+            "sessionRestoration",
+            "alternateHtmlLoad",
+            "sameDocumentNavigation",
+            "other",
+            "custom.userEnteredUrl",
+            "custom.loadedByStateRestoration",
+            "custom.appOpenUrl",
+            "custom.historyEntry",
+            "custom.bookmark",
+            "custom.ui",
+            "custom.link",
+            "custom.webViewUpdated",
+            "custom.userRequestedPageDownload",
+            "custom.unknown"
+        ]
+    },
+    "dbpDataBroker": {
+        "key": "data_broker",
+        "type": "string",
+        "description": "Name of the data broker involved in the opt-out attempt or action"
+    },
+    "dbpParentBroker": {
+        "key": "parent",
+        "type": "string",
+        "description": "Parent data broker of the entity targeted by the opt-out attempt"
+    },
+    "dbpAttemptId": {
+        "key": "attempt_id",
+        "type": "string",
+        "description": "Client-generated identifier of the opt-out attempt"
+    },
+    "dbpBrokerVersion": {
+        "key": "broker_version",
+        "type": "string",
+        "description": "Version of the broker JSON file used for the flow"
+    },
+    "dbpIsAuthenticated": {
+        "key": "isAuthenticated",
+        "type": "string",
+        "description": "Whether the user is authenticated",
+        "enum": ["true", "false"]
+    },
+    "dbpStageDuration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Stage duration in milliseconds"
+    },
+    "dbpStageTries": {
+        "key": "tries",
+        "type": "string",
+        "description": "Number of tries it took to complete the stage"
+    },
+    "dbpActionId": {
+        "key": "action_id",
+        "type": "string",
+        "description": "Identifier of the broker action executed during the broker flow"
+    },
+    "dbpActionType": {
+        "key": "action_type",
+        "type": "string",
+        "description": "Type of action executed during the broker flow",
+        "enum": [
+            "extract",
+            "navigate",
+            "fillForm",
+            "click",
+            "expectation",
+            "emailConfirmation",
+            "getCaptchaInfo",
+            "solveCaptcha",
+            "condition",
+            "unknown"
+        ]
+    },
+    "dbpActionDuration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Duration of the broker action execution in milliseconds"
+    },
+    "dbpActionTries": {
+        "key": "tries",
+        "type": "integer",
+        "description": "Number of tries it took for the broker action to complete"
+    },
+    "dbpAttemptDuration": {
+        "key": "duration",
+        "type": "number",
+        "description": "Total duration of the opt-out attempt in milliseconds"
+    },
+    "dbpConfirmationAttemptNumber": {
+        "key": "attempt_number",
+        "type": "integer",
+        "description": "Confirmation attempt ordinal (1..3)"
+    },
+    "dbpFeatureDataBrokerVersion": {
+        "key": "feature.data.ext.data_broker_version",
+        "type": "string",
+        "description": "Version of the broker JSON file reported via wide pixels"
+    },
+    "vpnAuthVersion": {
+        "key": "authVersion",
+        "type": "string",
+        "description": "Version of the VPN authentication flow",
+        "enum": ["v1", "v2"]
+    },
+    "vpnSubscriptionActive": {
+        "key": "isSubscriptionActive",
+        "type": "string",
+        "description": "Whether the VPN subscription is active",
+        "enum": ["true", "false", "no_subscription"]
+    },
+    "vpnNotificationObjectClass": {
+        "key": "notificationObjectClass",
+        "type": "string",
+        "description": "Class name of the object that originated the subscription notification"
+    },
+    "vpnLatencyLocation": {
+        "key": "location",
+        "type": "string",
+        "description": "Location selection for the VPN latency test",
+        "enum": ["nearest", "custom"]
+    }
+}

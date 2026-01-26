@@ -18,6 +18,8 @@
 
 import Cocoa
 import Combine
+import AIChat
+import PixelKit
 
 final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening, NSTextViewDelegate {
 
@@ -371,6 +373,8 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         guard let suggestion = omnibarController.suggestionsViewModel.selectedSuggestion else {
             return false
         }
+        let pixel: AIChatPixel = suggestion.isPinned ? .aiChatRecentChatSelectedPinnedKeyboard : .aiChatRecentChatSelectedKeyboard
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
         omnibarController.delegate?.aiChatOmnibarController(omnibarController, didSelectSuggestion: suggestion)
         return true
     }

@@ -21,21 +21,17 @@ import AIChat
 import BrowserServicesKit
 import Common
 import Core
+import os.log
 import PrivacyConfig
 import Foundation
 import WebKit
-
-/// Protocol for providing page context to the AI Chat frontend.
-protocol AIChatPageContextHandling: AnyObject {
-    func getPageContext() -> AIChatPageContextData?
-}
 
 /// Mockable interface to AIChatUserScript
 protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
-    func setPageContextHandler(_ handler: AIChatPageContextHandling?)
+    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
     func submitStartChatAction()
@@ -68,7 +64,7 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 }
 
 /// Handles content initialization, payload management, and URL building for AIChat.
-protocol AIChatContentHandling: AIChatPageContextHandling {
+protocol AIChatContentHandling: AnyObject {
 
     var delegate: AIChatContentHandlingDelegate? { get set }
 
@@ -120,8 +116,9 @@ final class AIChatContentHandler: AIChatContentHandling {
 
     private var userScript: AIChatUserScriptProviding?
 
-    /// Page context store for contextual mode. Nil in full mode.
-    private let pageContextStore: AIChatPageContextStoring?
+    /// Closure to get page context for contextual mode. Nil in full mode.
+    /// Parameter is the request reason (e.g., `.userAction` for manual attach).
+    private let getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?
 
     weak var delegate: AIChatContentHandlingDelegate?
 
@@ -131,14 +128,14 @@ final class AIChatContentHandler: AIChatContentHandling {
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         pageContextStore: AIChatPageContextStoring? = nil) {
+         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         self.productSurfaceTelemetry = productSurfaceTelemetry
-        self.pageContextStore = pageContextStore
+        self.getPageContext = getPageContext
     }
 
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
@@ -147,7 +144,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.userScript?.setDisplayMode(displayMode)
         self.userScript?.setPayloadHandler(payloadHandler)
         self.userScript?.webView = webView
-        self.userScript?.setPageContextHandler(self)
+        self.userScript?.setPageContextProvider(getPageContext)
     }
     
     /// Sets the initial payload data for the AIChat session.
@@ -186,17 +183,18 @@ final class AIChatContentHandler: AIChatContentHandling {
     }
     
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+        if let context = pageContext {
+            Logger.aiChat.debug("[PageContext] Prompt submitted with context - title: \(context.title.prefix(50))")
+        } else {
+            Logger.aiChat.debug("[PageContext] Prompt submitted without context")
+        }
         userScript?.submitPrompt(prompt, pageContext: pageContext)
     }
 
-    func getPageContext() -> AIChatPageContextData? {
-        pageContextStore?.latestContext
-    }
-
     /// Submits a start chat action to initiate a new AI Chat conversation.
-    /// Pushes current page context to frontend before starting (frontend caches context and doesn't re-request).
+    /// Only pushes page context if auto-attach is enabled; manual attach goes through explicit pushPageContext calls.
     func submitStartChatAction() {
-        if let context = pageContextStore?.latestContext {
+        if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = getPageContext?(.other) {
             userScript?.submitPageContext(context)
         }
         userScript?.submitStartChatAction()

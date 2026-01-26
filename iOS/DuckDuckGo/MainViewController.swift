@@ -2307,6 +2307,7 @@ class MainViewController: UIViewController {
                 await networkProtectionTunnelController.stop()
 
                 if userInitiatedSignOut {
+                    tunnelDefaults.resetEntitlementMessaging()
                     await networkProtectionTunnelController.removeVPN(reason: .signedOut)
                 } else {
                     await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)

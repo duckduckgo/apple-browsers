@@ -25,6 +25,8 @@ import LoginItems
 import NetworkProtectionProxy
 import os.log
 import PixelKit
+import SwiftUI
+import SwiftUIExtensions
 import Subscription
 import Configuration
 
@@ -40,14 +42,14 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let waitlistInviteCodeItem = NSMenuItem(title: "Waitlist Invite Code:")
     private let waitlistTermsAndConditionsAcceptedItem = NSMenuItem(title: "T&C Accepted:")
 
-    private let productionURLMenuItem = NSMenuItem(title: "Use Production URL", action: #selector(DataBrokerProtectionDebugMenu.useWebUIProductionURL))
+    private let currentURLMenuItem = NSMenuItem(title: "Current URL:")
 
+    private let productionURLMenuItem = NSMenuItem(title: "Use Production URL", action: #selector(DataBrokerProtectionDebugMenu.useWebUIProductionURL))
     private let customURLMenuItem = NSMenuItem(title: "Use Custom URL", action: #selector(DataBrokerProtectionDebugMenu.useWebUICustomURL))
 
     private var databaseBrowserWindowController: NSWindowController?
     private var dataBrokerForceOptOutWindowController: NSWindowController?
     private var logMonitorWindowController: NSWindowController?
-    private let customURLLabelMenuItem = NSMenuItem(title: "")
     private let customServiceRootLabelMenuItem = NSMenuItem(title: "")
 
     private let environmentMenu = NSMenu()
@@ -158,17 +160,11 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             }
 
             NSMenuItem(title: "Web UI") {
+                currentURLMenuItem.isEnabled = false
+                currentURLMenuItem
+
                 productionURLMenuItem.targetting(self)
                 customURLMenuItem.targetting(self)
-
-                NSMenuItem.separator()
-
-                NSMenuItem(title: "Set Custom URL", action: #selector(DataBrokerProtectionDebugMenu.setWebUICustomURL))
-                    .targetting(self)
-                NSMenuItem(title: "Reset Custom URL", action: #selector(DataBrokerProtectionDebugMenu.resetCustomURL))
-                    .targetting(self)
-
-                customURLLabelMenuItem
             }
 
             NSMenuItem(title: "DBP API") {
@@ -230,22 +226,13 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func useWebUICustomURL() {
-        webUISettings.setURLType(.custom)
-        webUISettings.setCustomURL(webUISettings.productionURL)
-    }
-
-    @objc private func resetCustomURL() {
-        webUISettings.setURLType(.production)
-        webUISettings.setCustomURL(webUISettings.productionURL)
-    }
-
-    @objc private func setWebUICustomURL() {
-        showCustomURLAlert { [weak self] value in
-
-            guard let value = value, let url = URL(string: value), url.isValid else { return false }
-
+        let sheet = CustomWebUIURLSheet(currentURL: webUISettings.customURL ?? webUISettings.productionURL) { [weak self] value in
             self?.webUISettings.setCustomURL(value)
-            return true
+            self?.webUISettings.setURLType(.custom)
+        }
+
+        Task { @MainActor in
+            sheet.show()
         }
     }
 
@@ -440,29 +427,6 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         ]
     }
 
-    func showCustomURLAlert(callback: @escaping (String?) -> Bool) {
-        let alert = NSAlert()
-        alert.messageText = "Enter URL"
-        alert.addButton(withTitle: "Accept")
-        alert.addButton(withTitle: "Cancel")
-
-        let inputTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-        alert.accessoryView = inputTextField
-
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            if !callback(inputTextField.stringValue) {
-                let invalidAlert = NSAlert()
-                invalidAlert.messageText = "Invalid URL"
-                invalidAlert.informativeText = "Please enter a valid URL."
-                invalidAlert.addButton(withTitle: "OK")
-                invalidAlert.runModal()
-            }
-        } else {
-            _ = callback(nil)
-        }
-    }
-
     func showCustomServiceRootAlert(callback: @escaping (String?, Bool) -> Bool) {
         let alert = NSAlert()
         alert.messageText = "Enter custom service root (staging environment only)"
@@ -496,7 +460,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         productionURLMenuItem.state = webUISettings.selectedURLType == .custom ? .off : .on
         customURLMenuItem.state = webUISettings.selectedURLType == .custom ? .on : .off
 
-        customURLLabelMenuItem.title = "Custom URL: [\(webUISettings.customURL ?? "")]"
+        currentURLMenuItem.title = "Current URL: \(webUISettings.selectedURL)"
     }
 
     private func updateServiceRootMenuItemState() {
@@ -525,6 +489,66 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     private func updateShowStatusMenuIconMenu() {
         statusMenuIconMenu.state = settings.showInMenuBar ? .on : .off
+    }
+}
+
+private struct CustomWebUIURLSheet: ModalView {
+    @State private var customURL = ""
+    @State private var isValidURL = true
+    @Environment(\.dismiss) private var dismiss
+
+    let currentURL: String
+    let onApply: (String) -> Void
+
+    init(currentURL: String, onApply: @escaping (String) -> Void) {
+        self.currentURL = currentURL
+        self.onApply = onApply
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Custom Web UI URL")
+                .fontWeight(.bold)
+
+            Divider()
+
+            HStack {
+                Text("Web UI URL")
+                    .padding(.trailing, 10)
+                Spacer()
+                TextField("https://example.com/dbp", text: $customURL)
+                    .frame(width: 250)
+                    .onChange(of: customURL) { newValue in
+                        validateURL(newValue)
+                    }
+            }
+
+            Divider()
+
+            HStack(alignment: .center) {
+                Spacer()
+                Button(UserText.cancel) {
+                    dismiss()
+                }
+                Button("Apply") {
+                    onApply(customURL.trimmingCharacters(in: .whitespacesAndNewlines))
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(!isValidURL)
+            }
+        }
+        .padding(EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20))
+        .frame(width: 400)
+        .onAppear {
+            customURL = currentURL
+            validateURL(customURL)
+        }
+    }
+
+    private func validateURL(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        isValidURL = !trimmed.isEmpty && URL(string: trimmed)?.isValid == true
     }
 }
 

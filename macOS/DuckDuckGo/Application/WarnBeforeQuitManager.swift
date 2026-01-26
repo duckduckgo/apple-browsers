@@ -175,7 +175,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 let pixel = shouldProceed ? GeneralPixel.warnBeforeQuitQuit : GeneralPixel.warnBeforeQuitCancelled
                 await self.pixelFiring?.fireAndWait(pixel, frequency: .standard)
 
-                self.currentState = .completed(shouldProceed: true)
+                self.currentState = .completed(shouldProceed: shouldProceed)
                 return .next
             }
             if shouldProceed {

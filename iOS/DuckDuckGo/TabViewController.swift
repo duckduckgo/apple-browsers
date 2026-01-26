@@ -1719,8 +1719,8 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify contextual AI chat coordinator that the page changed (for context refresh)
         if aiChatContextualSheetCoordinator.hasActiveSheet {
-            Task {
-                await aiChatContextualSheetCoordinator.notifyPageChanged()
+            Task { [weak self] in
+                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
             }
         }
     }

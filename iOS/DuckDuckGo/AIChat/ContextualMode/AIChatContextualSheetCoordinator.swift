@@ -115,6 +115,8 @@ final class AIChatContextualSheetCoordinator {
                 await pageContextHandler.triggerContextCollection()
             }
 
+            // Auto-attach: push to frontend if chat is active (frontend manages context),
+            // otherwise apply to native input view (context submitted with prompt).
             if aiChatSettings.isAutomaticContextAttachmentEnabled {
                 if hasActiveChat, let context = pageContextHandler.latestContext {
                     existingSheet.pushPageContextToFrontend(context)

@@ -1,5 +1,5 @@
 //
-//  PageVisitManagedObject.swift
+//  TabHistoryManagedObject.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,23 +19,20 @@
 import Foundation
 import CoreData
 
-@objc(PageVisitManagedObject)
-public class PageVisitManagedObject: NSManagedObject {
+@objc(TabHistoryManagedObject)
+public class TabHistoryManagedObject: NSManagedObject {
 
 }
 
-extension PageVisitManagedObject {
+extension TabHistoryManagedObject {
 
-    @nonobjc public class func fetchRequest() -> NSFetchRequest<PageVisitManagedObject> {
-        return NSFetchRequest<PageVisitManagedObject>(entityName: "PageVisitManagedObject")
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<TabHistoryManagedObject> {
+        return NSFetchRequest<TabHistoryManagedObject>(entityName: "TabHistoryManagedObject")
     }
 
-    @NSManaged public var date: Date?
-    @NSManaged public var historyEntry: BrowsingHistoryEntryManagedObject?
-    @NSManaged public var tabHistory: TabHistoryManagedObject?
-
+    @NSManaged public var tabID: String
+    @NSManaged public var url: URL
+    @NSManaged public var visit: PageVisitManagedObject?
 }
 
-extension PageVisitManagedObject: Identifiable {
-
-}
+extension TabHistoryManagedObject: Identifiable { }

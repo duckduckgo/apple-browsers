@@ -63,10 +63,22 @@ struct DatabaseTableContainer: View {
         VStack(spacing: 0) {
             // Search bar with export button
             HStack(spacing: 8) {
-                SearchBarView(searchText: Binding(
-                    get: { viewModel.searchText },
-                    set: { viewModel.setSearchText($0, for: table) }
-                ))
+                Picker("Match", selection: Binding(
+                    get: { viewModel.searchMatchMode },
+                    set: { viewModel.setSearchMatchMode($0, for: table) }
+                )) {
+                    Text("AND").tag(DataBrokerDatabaseBrowserViewModel.SearchMatchMode.and)
+                    Text("OR").tag(DataBrokerDatabaseBrowserViewModel.SearchMatchMode.or)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 110)
+
+                SearchBarView(tokens: Binding(
+                    get: { viewModel.searchTokens },
+                    set: { viewModel.setSearchTokens($0, for: table) }
+                ),
+                availableColumns: viewModel.sortedColumnKeys(for: table))
 
                 Button("Export as CSV") {
                     exportTableAsCSV()
@@ -135,40 +147,138 @@ struct DatabaseTableContainer: View {
 }
 
 struct SearchBarView: NSViewRepresentable {
-    @Binding var searchText: String
+    @Binding var tokens: [DataBrokerDatabaseSearchToken]
+    let availableColumns: [String]
 
-    func makeNSView(context: Context) -> NSSearchField {
-        let searchField = NSSearchField()
-        searchField.placeholderString = "Search table..."
-        searchField.target = context.coordinator
-        searchField.action = #selector(Coordinator.searchChanged)
+    func makeNSView(context: Context) -> NSTokenField {
+        let tokenField = NSTokenField()
+        tokenField.placeholderString = "Search table (col:value, comma-separated)..."
+        tokenField.tokenizingCharacterSet = CharacterSet(charactersIn: ",\n")
+        tokenField.isEditable = true
+        tokenField.isSelectable = true
+        tokenField.target = context.coordinator
+        tokenField.action = #selector(Coordinator.tokensChanged)
+        tokenField.delegate = context.coordinator
 
-        context.coordinator.searchField = searchField
+        context.coordinator.tokenField = tokenField
 
-        return searchField
+        return tokenField
     }
 
-    func updateNSView(_ nsView: NSSearchField, context: Context) {
-        if nsView.stringValue != searchText {
-            nsView.stringValue = searchText
+    func updateNSView(_ nsView: NSTokenField, context: Context) {
+        context.coordinator.availableColumns = availableColumns
+        guard nsView.currentEditor() == nil else { return }
+        let currentTokens = context.coordinator.tokens(from: nsView.objectValue)
+        if currentTokens != tokens {
+            nsView.objectValue = tokens
         }
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        Coordinator(self, availableColumns: availableColumns)
     }
 
-    final class Coordinator: NSObject {
+    final class Coordinator: NSObject, NSTokenFieldDelegate {
         let parent: SearchBarView
-        weak var searchField: NSSearchField?
+        var availableColumns: [String]
+        weak var tokenField: NSTokenField?
 
-        init(_ parent: SearchBarView) {
+        init(_ parent: SearchBarView,
+             availableColumns: [String]) {
             self.parent = parent
+            self.availableColumns = availableColumns
         }
 
-        @objc func searchChanged() {
-            guard let searchField = searchField else { return }
-            parent.searchText = searchField.stringValue
+        @objc func tokensChanged() {
+            guard let tokenField = tokenField else { return }
+            let tokens = tokens(from: tokenField.objectValue)
+            parent.tokens = tokens.filter { !$0.normalizedValue.isEmpty }
+        }
+
+        func controlTextDidChange(_ obj: Notification) {
+            tokensChanged()
+        }
+
+        func controlTextDidEndEditing(_ obj: Notification) {
+            tokensChanged()
+        }
+
+        func tokenField(_ tokenField: NSTokenField,
+                        didAdd objects: [Any],
+                        at index: Int) {
+            tokensChanged()
+        }
+
+        func tokenField(_ tokenField: NSTokenField,
+                        didRemove objects: [Any],
+                        at index: Int) {
+            tokensChanged()
+        }
+
+        func tokenField(_ tokenField: NSTokenField,
+                        representedObjectForEditing editingString: String) -> Any? {
+            parseToken(from: editingString)
+        }
+
+        func tokenField(_ tokenField: NSTokenField,
+                        displayStringForRepresentedObject representedObject: Any) -> String? {
+            displayString(for: representedObject)
+        }
+
+        func tokenField(_ tokenField: NSTokenField,
+                        editingStringForRepresentedObject representedObject: Any) -> String? {
+            displayString(for: representedObject)
+        }
+
+        func tokenField(_ tokenField: NSTokenField,
+                        styleForRepresentedObject representedObject: Any) -> NSTokenField.TokenStyle {
+            .rounded
+        }
+
+        func tokens(from objectValue: Any?) -> [DataBrokerDatabaseSearchToken] {
+            guard let array = objectValue as? [Any] else { return [] }
+            return array.compactMap { item in
+                if let token = item as? DataBrokerDatabaseSearchToken {
+                    return token
+                }
+                if let string = item as? String {
+                    return parseToken(from: string)
+                }
+                return nil
+            }
+        }
+
+        private func parseToken(from rawString: String) -> DataBrokerDatabaseSearchToken {
+            let trimmed = rawString.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else {
+                return DataBrokerDatabaseSearchToken(column: nil, value: "")
+            }
+
+            let parts = trimmed.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+            if parts.count == 2 {
+                let columnPart = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
+                let valuePart = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
+                let normalizedColumn = normalizedColumnName(columnPart)
+                return DataBrokerDatabaseSearchToken(column: normalizedColumn ?? columnPart,
+                                                     value: valuePart)
+            }
+
+            return DataBrokerDatabaseSearchToken(column: nil, value: trimmed)
+        }
+
+        private func displayString(for representedObject: Any) -> String? {
+            guard let token = representedObject as? DataBrokerDatabaseSearchToken else {
+                return representedObject as? String
+            }
+
+            if let column = token.column, !column.isEmpty {
+                return "\(column):\(token.value)"
+            }
+            return token.value
+        }
+
+        private func normalizedColumnName(_ column: String) -> String? {
+            availableColumns.first { $0.caseInsensitiveCompare(column) == .orderedSame }
         }
     }
 }

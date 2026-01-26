@@ -41,9 +41,6 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         /// Time to wait after release for another quit shortcut press (in seconds)
         static let hideawayDuration: TimeInterval = 4.0
 
-        /// Extended time to wait when mouse is hovering over the overlay (in seconds)
-        static let extendedHideawayDuration: TimeInterval = 4.0
-
         /// Threshold before progress bar starts filling (prevents immediate visual feedback on quick press)
         static let progressThreshold: TimeInterval = 0.1
 
@@ -348,21 +345,25 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 }
 
                 @MainActor
-                func startTimer(hovering: Bool) {
+                func startTimer() {
                     timer?.invalidate()
-                    let duration = hovering ? Constants.extendedHideawayDuration : Constants.hideawayDuration
-                    Logger.general.debug("WarnBeforeQuitManager: Timer started (\(duration)s\(hovering ? ", extended" : ""))")
+                    let duration = Constants.hideawayDuration
+                    Logger.general.debug("WarnBeforeQuitManager: Timer started (\(duration)s)")
                     timer = timerFactory(duration) {
                         Logger.general.debug("WarnBeforeQuitManager: Timer expired")
                         resume(with: false)
                     }
                 }
 
-                // Set callback for mouse hover state change - restarts timer with extended duration if hovering
+                // Set callback for mouse hover state change - stops timer while hovering, restarts when exiting
                 onHoverChange = { isHovering in
                     if isHovering {
-                        Logger.general.debug("WarnBeforeQuitManager: Hover detected")
-                        startTimer(hovering: isHovering)
+                        Logger.general.debug("WarnBeforeQuitManager: Hover detected, stopping timer")
+                        timer?.invalidate()
+                        timer = nil
+                    } else {
+                        Logger.general.debug("WarnBeforeQuitManager: Hover ended, restarting timer")
+                        startTimer()
                     }
                 }
 
@@ -415,7 +416,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                             } else {
                                 // Released after progress started - return to waiting
                                 Logger.general.debug("WarnBeforeQuitManager: Second press released after \(elapsedTime)s, returning to wait")
-                                startTimer(hovering: false)
+                                startTimer()
                             }
                         }
 
@@ -440,8 +441,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                     }
                 }
 
-                // Start hideaway timer
-                startTimer(hovering: isHovering)
+                // Start hideaway timer (will be stopped if mouse is already hovering)
+                startTimer()
             }
         } onCancel: {
             Logger.general.debug("WarnBeforeQuitManager: Task cancelled, triggering cleanup")

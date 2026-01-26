@@ -74,7 +74,7 @@ struct BrowsingMenuSheetView: View {
     @State private var headerBottomY: CGFloat = 0
 
     private var isHeaderVisible: Bool {
-        headerDataSource.isWebsiteHeaderVisible || verticalSizeClass == .compact
+        headerDataSource.isHeaderVisible || verticalSizeClass == .compact
     }
 
     @ObservedObject private(set) var headerDataSource: BrowsingMenuHeaderDataSource
@@ -110,12 +110,12 @@ struct BrowsingMenuSheetView: View {
                 websiteHeader
                     .background(headerPositionTracker)
                     .background {
-                        if isScrolledBelowHeader && headerDataSource.isWebsiteHeaderVisible {
+                        if isScrolledBelowHeader && headerDataSource.isHeaderVisible {
                             Rectangle().fill(.thickMaterial)
                                 .ignoresSafeArea()
                         }
                     }
-                    .padding(.vertical, headerDataSource.isWebsiteHeaderVisible ? 0 : -4)
+                    .padding(.vertical, headerDataSource.isHeaderVisible ? 0 : -4)
             }
         })
         .tint(Color(designSystemColor: .textPrimary))
@@ -124,11 +124,12 @@ struct BrowsingMenuSheetView: View {
     @ViewBuilder
     private var websiteHeader: some View {
         BrowsingMenuHeaderView(
-            title: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.title : nil,
-            url: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.url : nil,
-            favicon: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.favicon : nil,
-            easterEggLogoURL: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.easterEggLogoURL : nil,
-            isWebsiteInfoVisible: headerDataSource.isWebsiteHeaderVisible,
+            title: headerDataSource.isHeaderVisible ? headerDataSource.title : nil,
+            url: !headerDataSource.isAITab ? headerDataSource.url : nil,
+            favicon: !headerDataSource.isAITab ? headerDataSource.favicon : nil,
+            easterEggLogoURL: !headerDataSource.isAITab ? headerDataSource.easterEggLogoURL : nil,
+            isWebsiteInfoVisible: headerDataSource.isHeaderVisible,
+            isAITab: headerDataSource.isAITab,
             onDismiss: { dismiss() }
         )
         .padding(.horizontal, 20)
@@ -335,6 +336,7 @@ private struct BrowsingMenuHeaderView: View {
     let favicon: UIImage?
     let easterEggLogoURL: URL?
     let isWebsiteInfoVisible: Bool
+    let isAITab: Bool
     let onDismiss: () -> Void
 
     private var displayURL: String? {
@@ -371,7 +373,11 @@ private struct BrowsingMenuHeaderView: View {
     @ViewBuilder
     private var faviconView: some View {
         Group {
-            if let easterEggLogoURL {
+            if isAITab {
+                Image(uiImage: DesignSystemImages.Color.Size24.aiChatGradient)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else if let easterEggLogoURL {
                 KFImage(easterEggLogoURL)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -400,7 +406,7 @@ private struct BrowsingMenuHeaderView: View {
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
                     .lineLimit(1)
 
-                if let displayURL {
+                if let displayURL, !isAITab {
                     Text(displayURL)
                         .daxCaption()
                         .foregroundStyle(Color(designSystemColor: .textSecondary))

@@ -38,16 +38,19 @@ final class BrowsingMenuHeaderStateProvider {
         title: String? = nil,
         easterEggLogoURL: String? = nil
     ) {
-        let isHeaderVisible = isFeatureEnabled && !isNewTabPage && !isAITab && !isError && hasLink
+        let isWebsiteHeaderVisible = isFeatureEnabled && !isNewTabPage && !isAITab && !isError && hasLink
+        let isAIHeaderVisible = isFeatureEnabled && isAITab
 
-        if isHeaderVisible {
+        dataSource.reset()
+
+        if isAIHeaderVisible {
+            dataSource.update(isAITab: true, title: UserText.duckAiFeatureName)
+        } else if isWebsiteHeaderVisible {
             let logoURL = easterEggLogoURL.flatMap { URL(string: $0) }
-            dataSource.update(isHeaderVisible: true, title: title, url: url, easterEggLogoURL: logoURL)
+            dataSource.update(title: title, url: url, easterEggLogoURL: logoURL)
             if logoURL == nil {
                 loadFavicon(for: url, into: dataSource)
             }
-        } else {
-            dataSource.reset()
         }
     }
 

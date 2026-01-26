@@ -433,6 +433,10 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
+        switch action {
+        case .summarize:
+            delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
+        }
         contextualInputViewController.setText(action.prompt)
     }
 

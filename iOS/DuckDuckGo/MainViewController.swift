@@ -2840,7 +2840,8 @@ extension MainViewController: OmniBarDelegate {
                                          })
 
         let controller = BrowsingMenuSheetViewController(rootView: view)
-        let contentHeight = model.estimatedContentHeight(includesWebsiteHeader: browsingMenuHeaderDataSource.isWebsiteHeaderVisible)
+        let includesWebsiteHeader = browsingMenuHeaderDataSource.isWebsiteHeaderVisible || traitCollection.verticalSizeClass == .compact
+        let contentHeight = model.estimatedContentHeight(includesWebsiteHeader: includesWebsiteHeader)
 
         func configureSheetPresentationController(_ sheet: UISheetPresentationController) {
             if context == .newTabPage {

@@ -29,6 +29,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         // Given
         var capturedRequest: FireRequest?
         let sut = ScopedFireConfirmationViewModel(
+            tabViewModel: nil,
             onConfirm: { request in
                 capturedRequest = request
             },
@@ -55,6 +56,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         // Given
         var cancelCalled = false
         let sut = ScopedFireConfirmationViewModel(
+            tabViewModel: nil,
             onConfirm: { _ in },
             onCancel: {
                 cancelCalled = true

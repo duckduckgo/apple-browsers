@@ -220,6 +220,17 @@ class TabManager: TabManaging {
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
     }
+    
+    @MainActor
+    func viewModel(for tab: Tab) -> TabViewModel {
+        TabViewModel()
+    }
+    
+    @MainActor
+    func viewModelForCurrentTab() -> TabViewModel? {
+        guard let tab = model.currentTab else { return nil }
+        return viewModel(for: tab)
+    }
 
     var isEmpty: Bool {
         return tabControllerCache.isEmpty

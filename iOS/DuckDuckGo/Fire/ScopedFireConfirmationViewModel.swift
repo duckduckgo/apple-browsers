@@ -30,11 +30,14 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     
     // MARK: - Private Variables
     
+    let tabViewModel: TabViewModel?
     
     // MARK: - Initializer
     
-    init(onConfirm: @escaping (FireRequest) -> Void,
+    init(tabViewModel: TabViewModel?,
+         onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
+        self.tabViewModel = tabViewModel
         self.onConfirm = onConfirm
         self.onCancel = onCancel
     }
@@ -47,6 +50,11 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     }
     
     func burnThisTab() {
+        guard let tabViewModel else {
+            return
+        }
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .tab(viewModel: tabViewModel))
+        onConfirm(request)
     }
     
     func cancel() {

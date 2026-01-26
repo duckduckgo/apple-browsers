@@ -104,6 +104,7 @@ class SettingsHostingController: UIHostingController<AnyView> {
         presenter.presentFireConfirmation(
             on: self,
             sourceRect: sourceRect,
+            tabViewModel: nil,
             onConfirm: onConfirm,
             onCancel: onCancel
         )

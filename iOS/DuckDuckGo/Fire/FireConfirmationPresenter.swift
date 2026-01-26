@@ -38,11 +38,12 @@ struct FireConfirmationPresenter {
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
+                                 tabViewModel: TabViewModel?,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
         if featureFlagger.isFeatureOn(.burnSingleTab) {
-            presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
+            presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, onConfirm: onConfirm, onCancel: onCancel)
         } else {
             presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
         }
@@ -51,6 +52,7 @@ struct FireConfirmationPresenter {
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  sourceRect: CGRect,
+                                 tabViewModel: TabViewModel?,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         guard let window = UIApplication.shared.firstKeyWindow else {
@@ -58,7 +60,7 @@ struct FireConfirmationPresenter {
             return
         }
         if featureFlagger.isFeatureOn(.burnSingleTab) {
-            presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
+            presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, onConfirm: onConfirm, onCancel: onCancel)
         } else {
             presentLegacyConfirmationAlert(on: viewController, from: window, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
         }
@@ -70,9 +72,10 @@ struct FireConfirmationPresenter {
         private func presentScopeConfirmationSheet(on viewController: UIViewController,
                                                    from source: AnyObject,
                                                    sourceRect: CGRect,
+                                                   tabViewModel: TabViewModel?,
                                                    onConfirm: @escaping (FireRequest) -> Void,
                                                    onCancel: @escaping () -> Void) {
-            let viewModel = ScopedFireConfirmationViewModel(
+            let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                 onConfirm: { [weak viewController] fireOptions in
                     viewController?.dismiss(animated: true) {
                         onConfirm(fireOptions)

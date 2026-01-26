@@ -28,7 +28,6 @@ struct MemoryAllocationStatsSnapshot: Codable {
     let mallocZoneCount: UInt
     let totalAllocatedBytes: UInt64
     let totalUsedBytes: UInt64
-    let debug: String
 }
 
 /// Represents an Error that prevented us from exporting the Allocation Stats.
@@ -79,7 +78,6 @@ private extension MemoryAllocationStatsExporter {
 
         var totalAllocatedBytes: UInt64 = 0
         var totalUsedBytes: UInt64 = 0
-        var debug = ""
 
         for i in 0 ..< Int(zoneCount) {
             let zoneAddress = zonesAddresses[i]
@@ -98,12 +96,6 @@ private extension MemoryAllocationStatsExporter {
             var stats = malloc_statistics_t()
             statsFn(zone, &stats)
 
-            if let zoneName = zone.pointee.zone_name {
-                let name = String(cString: zoneName)
-                let usedMB = Double(stats.size_in_use) / 1024 / 1024
-                debug += name + " Used " + floor(usedMB).description + " ## "
-            }
-
             totalAllocatedBytes &+= UInt64(stats.size_allocated)
             totalUsedBytes &+= UInt64(stats.size_in_use)
         }
@@ -112,8 +104,7 @@ private extension MemoryAllocationStatsExporter {
                                              timestamp: Date().roundedToFullSeconds(),
                                              mallocZoneCount: UInt(zoneCount),
                                              totalAllocatedBytes: totalAllocatedBytes,
-                                             totalUsedBytes: totalUsedBytes,
-                                             debug: debug)
+                                             totalUsedBytes: totalUsedBytes)
     }
 }
 

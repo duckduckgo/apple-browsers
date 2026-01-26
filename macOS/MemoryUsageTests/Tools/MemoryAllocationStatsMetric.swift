@@ -29,7 +29,6 @@ struct MemoryAllocationStatsSnapshot: Codable {
     let mallocZoneCount: UInt
     let totalAllocatedBytes: UInt64
     let totalUsedBytes: UInt64
-    let debug: String?
 }
 
 extension MemoryAllocationStatsSnapshot {

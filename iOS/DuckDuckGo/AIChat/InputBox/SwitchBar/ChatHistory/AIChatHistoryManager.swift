@@ -22,7 +22,6 @@ import BrowserServicesKit
 import Combine
 import Core
 import PrivacyConfig
-import SwiftUI
 import UIKit
 
 /// Protocol for handling AI chat history events
@@ -44,7 +43,7 @@ final class AIChatHistoryManager {
 
     weak var delegate: AIChatHistoryManagerDelegate?
 
-    private var hostingController: UIHostingController<AIChatHistoryListView>?
+    private var historyViewController: AIChatHistoryListViewController?
     private let suggestionsReader: AIChatSuggestionsReading
     private let aiChatSettings: AIChatSettingsProvider
     private let viewModel: AIChatSuggestionsViewModel
@@ -68,9 +67,9 @@ final class AIChatHistoryManager {
     ///   - containerView: The view to install the chat history list into
     ///   - parentViewController: The parent view controller for the hosting controller
     func installInContainerView(_ containerView: UIView, parentViewController: UIViewController) {
-        guard hostingController == nil else { return }
+        guard historyViewController == nil else { return }
 
-        let historyView = AIChatHistoryListView(
+        let viewController = AIChatHistoryListViewController(
             viewModel: viewModel,
             onChatSelected: { [weak self] chat in
                 guard let self else { return }
@@ -79,23 +78,20 @@ final class AIChatHistoryManager {
             }
         )
 
-        let hostingController = UIHostingController(rootView: historyView)
-        hostingController.view.backgroundColor = .clear
+        parentViewController.addChild(viewController)
+        containerView.addSubview(viewController.view)
 
-        parentViewController.addChild(hostingController)
-        containerView.addSubview(hostingController.view)
-
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        viewController.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            hostingController.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            hostingController.view.topAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.topAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.bottomAnchor)
+            viewController.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            viewController.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            viewController.view.topAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.topAnchor),
+            viewController.view.bottomAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.bottomAnchor)
         ])
 
-        hostingController.didMove(toParent: parentViewController)
-        self.hostingController = hostingController
+        viewController.didMove(toParent: parentViewController)
+        self.historyViewController = viewController
 
         // Initial fetch with empty query (shows recent chats from last week)
         fetchSuggestionsIfNeeded(query: "")

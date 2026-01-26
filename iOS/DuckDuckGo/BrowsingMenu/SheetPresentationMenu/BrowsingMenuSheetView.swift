@@ -22,7 +22,6 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
-import DuckUI
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -69,6 +68,12 @@ struct BrowsingMenuSheetView: View {
 
     @State private var highlightTag: BrowsingMenuModel.Entry.Tag?
     @State private var actionToPerform: (() -> Void)?
+    @State private var isScrolledBelowHeader: Bool = false
+    @State private var headerBottomY: CGFloat = 0
+
+    private var isHeaderVisible: Bool {
+        headerDataSource.isWebsiteHeaderVisible || verticalSizeClass == .compact
+    }
 
     @ObservedObject private(set) var headerDataSource: BrowsingMenuHeaderDataSource
 
@@ -98,47 +103,75 @@ struct BrowsingMenuSheetView: View {
             actionToPerform?()
             onDismiss(actionToPerform != nil)
         })
-        .safeAreaInset(edge: .top, content: {
-            if verticalSizeClass == .compact {
-                HStack {
-                    Spacer()
-                    Button(UserText.navigationTitleDone, role: .cancel) {
-                        dismiss()
+        .safeAreaInset(edge: .top, spacing: isHeaderVisible ? -Metrics.listTopPadding : 0, content: {
+            if isHeaderVisible {
+                websiteHeader
+                    .background(headerPositionTracker)
+                    .background {
+                        if isScrolledBelowHeader && headerDataSource.isWebsiteHeaderVisible {
+                            Rectangle().fill(.thickMaterial)
+                                .ignoresSafeArea()
+                        }
                     }
-                    .padding(.top, 16)
-                    .padding(.bottom, 16)
-                    .padding(.horizontal, 24)
-                }
-                .background(.thickMaterial)
-                .padding(.bottom, -24)
             }
         })
         .tint(Color(designSystemColor: .textPrimary))
     }
 
     @ViewBuilder
+    private var websiteHeader: some View {
+        BrowsingMenuHeaderView(
+            title: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.title : nil,
+            url: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.url : nil,
+            favicon: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.favicon : nil,
+            easterEggLogoURL: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.easterEggLogoURL : nil,
+            isWebsiteInfoVisible: headerDataSource.isWebsiteHeaderVisible,
+            onDismiss: { dismiss() }
+        )
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .if(verticalSizeClass != .compact) {
+            $0.padding(.top, 8)
+        }
+    }
+
+    /// Tracks the header's bottom Y position in global coordinates
+    private var headerPositionTracker: some View {
+        GeometryReader { geo in
+            Color.clear
+                .onAppear {
+                    headerBottomY = geo.frame(in: .global).maxY
+                }
+                .onChangeUniversal(of: geo.frame(in: .global).maxY) { newValue in
+                    headerBottomY = newValue
+                }
+        }
+    }
+
+    /// Invisible tracker that detects when content scrolls under the header
+    private var scrollPositionTracker: some View {
+        Color.clear
+            .frame(height: 1)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.onChangeUniversal(of: geo.frame(in: .global).minY) { newValue in
+                        isScrolledBelowHeader = newValue < headerBottomY
+                    }
+                }
+            )
+    }
+
+    @ViewBuilder
     private var headerSection: some View {
         Section {
-            VStack(spacing: Metrics.headerHorizontalSpacing) {
-                if headerDataSource.isHeaderVisible {
-                    BrowsingMenuHeaderView(
-                        title: headerDataSource.title,
-                        url: headerDataSource.url,
-                        favicon: headerDataSource.favicon,
-                        easterEggLogoURL: headerDataSource.easterEggLogoURL
-                        onDismiss: { dismiss() }
-                    )
-                }
-
-                if !model.headerItems.isEmpty {
-                    HStack(spacing: Metrics.headerHorizontalSpacing) {
-                        ForEach(model.headerItems) { headerItem in
-                            MenuHeaderButton(entryData: headerItem) {
-                                actionToPerform = { headerItem.action() }
-                                dismiss()
-                            }
-                            .frame(maxWidth: .infinity)
+            if !model.headerItems.isEmpty {
+                HStack(spacing: Metrics.headerHorizontalSpacing) {
+                    ForEach(model.headerItems) { headerItem in
+                        MenuHeaderButton(entryData: headerItem) {
+                            actionToPerform = { headerItem.action() }
+                            dismiss()
                         }
+                        .frame(maxWidth: .infinity)
                     }
                 }
             }
@@ -146,6 +179,11 @@ struct BrowsingMenuSheetView: View {
         .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
         .listRowSeparatorTint(Color(designSystemColor: .lines))
         .listRowBackground(Color.clear)
+        .overlay(alignment: .top) {
+            if isHeaderVisible {
+                scrollPositionTracker
+            }
+        }
     }
 
     @ViewBuilder
@@ -296,6 +334,7 @@ private struct BrowsingMenuHeaderView: View {
     let url: URL?
     let favicon: UIImage?
     let easterEggLogoURL: URL?
+    let isWebsiteInfoVisible: Bool
     let onDismiss: () -> Void
 
     private var displayURL: String? {
@@ -303,15 +342,21 @@ private struct BrowsingMenuHeaderView: View {
     }
 
     var body: some View {
-        HStack(spacing: MenuHeaderConstant.contentSpacing) {
-            faviconView
+        HStack(spacing: 4) {
+            if isWebsiteInfoVisible {
+                HStack(spacing: MenuHeaderConstant.contentSpacing) {
+                    faviconView
 
-            textContent
-                .frame(maxWidth: .infinity, alignment: .leading)
+                    textContent
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+
+            Spacer()
 
             closeButton
         }
-        .padding(.bottom, MenuHeaderConstant.bottomPadding)
+        .padding(.vertical, MenuHeaderConstant.bottomPadding)
         .frame(maxWidth: .infinity)
     }
 
@@ -320,8 +365,7 @@ private struct BrowsingMenuHeaderView: View {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                 .foregroundStyle(Color(designSystemColor: .textSecondary))
         }
-        .buttonStyle(GhostButtonStyle())
-        .frame(width: MenuHeaderConstant.closeButtonSize, height: MenuHeaderConstant.closeButtonSize)
+        .buttonStyle(BrowsingMenuCloseButtonStyle())
         .accessibilityLabel(UserText.keyCommandClose)
     }
 
@@ -344,7 +388,7 @@ private struct BrowsingMenuHeaderView: View {
         .frame(width: MenuHeaderConstant.faviconSize, height: MenuHeaderConstant.faviconSize)
         .menuHeaderEntryShape()
         .padding(MenuHeaderConstant.faviconPadding)
-        .background(Color.rowBackgroundColor)
+        .background(Color(designSystemColor: .controlsFillPrimary))
         .menuHeaderEntryShape()
     }
 
@@ -403,6 +447,19 @@ private extension View {
             self.scrollBounceBehavior(.basedOnSize)
         } else {
             self
+        }
+    }
+
+    @ViewBuilder
+    func onChangeUniversal<V: Equatable>(of value: V, perform action: @escaping (V) -> Void) -> some View {
+        if #available(iOS 17.0, *) {
+            self.onChange(of: value) { _, newValue in
+                action(newValue)
+            }
+        } else {
+            self.onChange(of: value) { newValue in
+                action(newValue)
+            }
         }
     }
 }

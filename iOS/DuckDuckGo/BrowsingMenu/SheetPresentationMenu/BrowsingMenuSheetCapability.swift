@@ -60,7 +60,6 @@ struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
     }
 }
 
-@available(iOS 17.0, *)
 struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
     let featureFlagger: FeatureFlagger
     private let keyValueStore: ThrowingKeyValueStoring
@@ -98,6 +97,7 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
     var mergeActionsAndBookmarks: Bool {
         isEnabledByDefault
     }
+
 
     func setEnabled(_ enabled: Bool) {
         try? keyValueStore.set(enabled, forKey: StorageKey.experimentalBrowsingMenuEnabled)

@@ -21,14 +21,14 @@ import Foundation
 import UIKit
 
 final class BrowsingMenuHeaderDataSource: ObservableObject {
-    @Published private(set) var isHeaderVisible: Bool = false
+    @Published private(set) var isWebsiteHeaderVisible: Bool = false
     @Published private(set) var title: String?
     @Published private(set) var url: URL?
     @Published private(set) var favicon: UIImage?
     @Published private(set) var easterEggLogoURL: URL?
 
     func update(isHeaderVisible: Bool, title: String?, url: URL?, easterEggLogoURL: URL?) {
-        self.isHeaderVisible = isHeaderVisible
+        self.isWebsiteHeaderVisible = isHeaderVisible
         self.title = title
         self.easterEggLogoURL = easterEggLogoURL
 
@@ -44,7 +44,7 @@ final class BrowsingMenuHeaderDataSource: ObservableObject {
     }
 
     func reset() {
-        isHeaderVisible = false
+        isWebsiteHeaderVisible = false
         title = nil
         url = nil
         favicon = nil

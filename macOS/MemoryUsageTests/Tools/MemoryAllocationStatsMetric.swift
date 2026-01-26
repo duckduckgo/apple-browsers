@@ -45,7 +45,7 @@ extension MemoryAllocationStatsSnapshot {
         Double(bytes) / 1024 / 1024
     }
 }
-Logger
+
 /// `XCMetric` that processes the `MemoryAllocationStats` JSON file, as exported by `MemoryAllocationStatsExporter`.
 ///
 final class MemoryAllocationStatsMetric: NSObject, XCTMetric {

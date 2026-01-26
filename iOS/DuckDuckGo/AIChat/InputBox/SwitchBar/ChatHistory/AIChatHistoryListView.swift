@@ -35,7 +35,7 @@ struct AIChatHistoryListView: View {
     var body: some View {
         List {
             if !pinnedChats.isEmpty {
-                Section(header: Text(UserText.aiChatHistoryPinnedSectionTitle)) {
+                Section {
                     ForEach(pinnedChats) { chat in
                         chatRow(chat: chat, isPinned: true)
                     }
@@ -43,7 +43,7 @@ struct AIChatHistoryListView: View {
             }
 
             if !recentChats.isEmpty {
-                Section(header: Text(UserText.aiChatHistoryChatsSectionTitle)) {
+                Section {
                     ForEach(recentChats) { chat in
                         chatRow(chat: chat, isPinned: false)
                     }

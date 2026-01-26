@@ -141,9 +141,10 @@ public protocol PixelFiring {
 
 ## Best Practices
 
-1. **Choose the right pixel type**: When using a standard pixel, consider using a daily pixel as well, in order to determine how many users may be impacted by an issue.
+1. **Choose the right pixel type**: When using a standard pixel, consider using a daily pixel as well in order to determine how many users may be impacted by an issue.
 2. **Use structured parameters**: Define parameter keys as constants to avoid typos and enable refactoring.
-3. **Include error context**: When firing error pixels, include the error object as part of its error parameters
+3. **Include error context**: When firing error pixels, include the error object as part of its error parameters.
+4. **Considing using EventMapping**: When sending pixels from inside a shared Swift package, define pixels as new enum and emit them using `EventMapping`, then implement the event mapper on the client side.
 4. **Consider using instrumentation facades**: For features with multiple related pixels, consider defining an instrumentation protocol to centralize pixel firing logic. See `instrumentation-facade.mdc`.
 
 ## Related Files

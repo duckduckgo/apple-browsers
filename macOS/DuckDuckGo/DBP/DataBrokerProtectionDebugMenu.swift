@@ -233,7 +233,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             fieldLabel: "Web UI URL",
             placeholder: "https://example.com/dbp",
             content: { _ in
-                Text("Enter a full URL for the Web UI, including scheme and path.")
+                Text(verbatim: "Enter a full URL for the web UI")
                     .dbpSecondaryTextStyle()
             },
             onApply: { [weak self] value in
@@ -518,13 +518,13 @@ private struct CustomTextEntrySheet<Content: View>: ModalView {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(title)
+            Text(verbatim: title)
                 .fontWeight(.bold)
 
             Divider()
 
             HStack {
-                Text(fieldLabel)
+                Text(verbatim: fieldLabel)
                     .padding(.trailing, 10)
                 Spacer()
                 TextField(placeholder, text: $text)
@@ -576,13 +576,15 @@ private struct CustomDBPCustomEndpointSheet: ModalView {
                     ? baseURL
                     : URL(string: baseURL)!.appending(trimmedServiceRoot).absoluteString
 
-                Text("Preview: \(previewURL)")
+                Text(verbatim: "Preview: \(previewURL)")
                     .dbpSecondaryTextStyle()
 
-                Toggle("Remove existing brokers", isOn: $removeBrokers)
+                Toggle(isOn: $removeBrokers) {
+                    Text(verbatim: "Remove existing brokers")
+                }
                     .toggleStyle(.checkbox)
 
-                Text("Please reopen PIR and trigger a new scan for the changes to show up.")
+                Text(verbatim: "Please reopen PIR and trigger a new scan for the changes to show up.")
                     .dbpSecondaryTextStyle()
             },
             onApply: { value in

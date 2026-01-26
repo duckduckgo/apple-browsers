@@ -417,7 +417,7 @@ extension DatabaseTableView {
             guard let identifier = tableColumn?.identifier.rawValue,
                   row < sortedRows.count else { return nil }
 
-            return sortedRows[row].data[identifier]?.description ?? ""
+            return parent.viewModel.displayValue(for: identifier, value: sortedRows[row].data[identifier])
         }
 
         // MARK: - NSTableViewDelegate
@@ -433,9 +433,9 @@ extension DatabaseTableView {
             if tableView.selectedRow >= 0 && tableView.selectedRow < sortedRows.count {
                 let selectedRow = sortedRows[tableView.selectedRow]
                 // Show all data from the selected row with improved formatting
-                let rowData = columnKeys.compactMap { key in
+                let rowData: String = columnKeys.compactMap { key in
                     if let value = selectedRow.data[key] {
-                        return "\(key): \(value)"
+                        return "\(key): \(parent.viewModel.displayValue(for: key, value: value))"
                     }
                     return nil
                 }.joined(separator: "\n\n")  // Double newline for better readability

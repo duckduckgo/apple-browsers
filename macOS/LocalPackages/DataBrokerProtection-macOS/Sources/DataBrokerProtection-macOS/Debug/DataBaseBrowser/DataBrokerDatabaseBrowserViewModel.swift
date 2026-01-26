@@ -50,6 +50,7 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
     private var tableSearchTokens: [String: [DataBrokerDatabaseSearchToken]] = [:]
     private var tableSearchMatchMode: [String: SearchMatchMode] = [:]
     private let dataManager: DataBrokerProtectionDataManager?
+    private var brokerIdToUrl: [Int64: String] = [:]
 
     internal init(tables: [DataBrokerDatabaseBrowserData.Table]? = nil, localBrokerService: LocalBrokerJSONServiceProvider) {
 
@@ -101,6 +102,10 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
 
             let profileBrokers = data.map { $0.dataBroker }
             let dataBrokers = Array(Set(profileBrokers)).sorted { $0.id ?? 0 < $1.id ?? 0 }
+            let brokerIdToUrl = dataBrokers.reduce(into: [Int64: String]()) { result, broker in
+                guard let id = broker.id else { return }
+                result[id] = broker.url
+            }
 
             let profileQuery = Array(Set(data.map { $0.profileQuery }))
             let scanJobs = data.map { $0.scanJobData }
@@ -120,6 +125,7 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
             DispatchQueue.main.async {
                 let updatedTables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable, emailConfirmationsTable]
                 self.tables = updatedTables
+                self.brokerIdToUrl = brokerIdToUrl
             }
         }
  }
@@ -313,6 +319,17 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
             return "\"\(escapedField)\""
         }
         return field
+    }
+
+    func displayValue(for column: String, value: CustomStringConvertible?) -> String {
+        guard let value else { return "" }
+        let stringValue = value.description
+        guard column == "brokerId",
+              let id = Int64(stringValue.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let url = brokerIdToUrl[id] else {
+            return stringValue
+        }
+        return "\(id) (\(url))"
     }
 
     private func convertToGenericRowData<T>(_ item: T) -> DataBrokerDatabaseBrowserData.Row {

@@ -158,16 +158,8 @@
                 "type": "string",
                 "description": "Error Code: 12700, 12701, 12702, 12703, 12704, 12705, 12706"
             },
-            {
-                "key": "ud",
-                "type": "string",
-                "description": "Error Type: com.duckduckgo.subscription.SubscriptionEndpointServiceError"
-            },
-            {
-                "key": "ue",
-                "type": "string",
-                "description": "Error Code: 12300, 12301, 12302"
-            }
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
         ]
     },
     "m_mac_direct_subscription_tier-options_unexpected-pro-tier": {
@@ -211,16 +203,8 @@
                 "type": "string",
                 "description": "Error Code: 12700, 12701, 12702, 12703, 12704, 12705, 12706"
             },
-            {
-                "key": "ud",
-                "type": "string",
-                "description": "Error Type: com.duckduckgo.subscription.SubscriptionEndpointServiceError"
-            },
-            {
-                "key": "ue",
-                "type": "string",
-                "description": "Error Code: 12300, 12301, 12302"
-            }
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
         ]
     },
     "m_mac_store_subscription_tier-options_unexpected-pro-tier": {

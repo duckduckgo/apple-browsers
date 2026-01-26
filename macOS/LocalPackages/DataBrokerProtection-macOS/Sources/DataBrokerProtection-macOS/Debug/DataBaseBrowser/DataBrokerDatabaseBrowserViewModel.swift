@@ -107,6 +107,10 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
         }
  }
 
+    func refresh() {
+        updateTables()
+    }
+
     func sortedRows(for table: DataBrokerDatabaseBrowserData.Table) -> [DataBrokerDatabaseBrowserData.Row] {
         let filteredRows = filteredRows(for: table)
 

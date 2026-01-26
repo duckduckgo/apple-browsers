@@ -43,6 +43,14 @@ struct DataBrokerDatabaseBrowserView: View {
                 Text("No selection")
             }
         }
+        .toolbar {
+            ToolbarItem {
+                Button("Refresh") {
+                    viewModel.refresh()
+                }
+                .keyboardShortcut("r", modifiers: .command)
+            }
+        }
         .frame(minWidth: 1300, minHeight: 1000)
     }
 }

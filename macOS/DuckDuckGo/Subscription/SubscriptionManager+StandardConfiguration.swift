@@ -126,7 +126,11 @@ private struct StaticWideEventFeatureFlagProvider: WideEventFeatureFlagProviding
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
         switch flag {
         case .postEndpoint:
+#if DEBUG || REVIEW || ALPHA
+            return false
+#else
             return isPostEndpointEnabled
+#endif
         }
     }
 }

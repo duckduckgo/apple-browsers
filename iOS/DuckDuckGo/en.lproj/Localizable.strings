@@ -3448,6 +3448,9 @@ Take back control of your personal information with the browser designed for dat
 /* Help and support Section header */
 "subscription.help" = "Help and support";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Manage Payment or Cancel";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Manage Plan";
 
@@ -3547,6 +3550,15 @@ Take back control of your personal information with the browser designed for dat
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Your annual subscription expires on %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Your plan will downgrade to %1$@ Monthly on %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Your plan will downgrade to %1$@ on %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Your plan will downgrade to %1$@ Yearly on %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Your monthly subscription renews on %@.";
 
@@ -3567,6 +3579,15 @@ Take back control of your personal information with the browser designed for dat
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Free Trial Active";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Upgrade to %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Unlock smarter, more powerful AI";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Upgrade";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "View All Plans";

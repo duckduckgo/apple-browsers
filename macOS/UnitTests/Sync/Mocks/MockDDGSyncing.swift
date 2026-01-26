@@ -35,19 +35,23 @@ class MockDDGSyncing: DDGSyncing {
 
     }
 
+    var mainTokenRescopeResult: String?
+    private(set) var mainTokenRescopeScopes: [String] = []
     func mainTokenRescope(to scope: String) async throws -> String? {
-        nil
+        mainTokenRescopeScopes.append(scope)
+        return mainTokenRescopeResult
     }
 
     func deleteAIChats(until: Date) async throws {
     }
 
+    private(set) var setAIChatHistoryEnabledCalls: [Bool] = []
     func setAIChatHistoryEnabled(_ enabled: Bool) {
+        setAIChatHistoryEnabledCalls.append(enabled)
+        isAIChatHistoryEnabled = enabled
     }
 
-    var isAIChatHistoryEnabled: Bool {
-        false
-    }
+    var isAIChatHistoryEnabled: Bool = false
 
     func setCustomOperations(_ operations: [any SyncCustomOperation]) {
     }
@@ -167,12 +171,26 @@ class MockDDGSyncing: DDGSyncing {
         values
     }
 
+    var encryptAndBase64URLEncodeResult: [String]?
+    var encryptAndBase64URLEncodeError: Error?
+    private(set) var encryptAndBase64URLEncodeInputs: [[String]] = []
     func encryptAndBase64URLEncode(_ values: [String]) throws -> [String] {
-        values
+        encryptAndBase64URLEncodeInputs.append(values)
+        if let encryptAndBase64URLEncodeError {
+            throw encryptAndBase64URLEncodeError
+        }
+        return encryptAndBase64URLEncodeResult ?? values
     }
 
+    var base64URLDecodeAndDecryptResult: [String]?
+    var base64URLDecodeAndDecryptError: Error?
+    private(set) var base64URLDecodeAndDecryptInputs: [[String]] = []
     func base64URLDecodeAndDecrypt(_ values: [String]) throws -> [String] {
-        values
+        base64URLDecodeAndDecryptInputs.append(values)
+        if let base64URLDecodeAndDecryptError {
+            throw base64URLDecodeAndDecryptError
+        }
+        return base64URLDecodeAndDecryptResult ?? values
     }
 
     var serverEnvironment: ServerEnvironment = .production

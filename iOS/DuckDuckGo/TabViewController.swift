@@ -171,7 +171,6 @@ class TabViewController: UIViewController {
 
     public var inferredOpenerContext: BrokenSiteReport.OpenerContext?
     private var refreshCountSinceLoad: Int = 0
-    private var performanceMetrics: PerformanceMetricsSubfeature?
     private var breakageReportingSubfeature: BreakageReportingSubfeature?
 
     private var detectedLoginURL: URL?
@@ -184,7 +183,6 @@ class TabViewController: UIViewController {
 
     private let netPConnectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver
     private var netPConnectionObserverCancellable: AnyCancellable?
-    var pageContextUpdateCancellable: AnyCancellable?
     private var netPConnectionStatus: ConnectionStatus = .default
     private var netPConnected: Bool {
         switch netPConnectionStatus {
@@ -499,13 +497,19 @@ class TabViewController: UIViewController {
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
+        let pageContextHandler = AIChatPageContextHandler(
+            webViewProvider: { [weak self] in self?.webView },
+            userScriptProvider: { [weak self] in self?.userScripts?.pageContextUserScript },
+            faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) }
+        )
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
             aiChatSettings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            pageContextHandler: pageContextHandler
         )
         coordinator.delegate = self
         return coordinator
@@ -1412,7 +1416,6 @@ class TabViewController: UIViewController {
                                                                      openerContext: inferredOpenerContext,
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
-                                                                     performanceMetrics: performanceMetrics,
                                                                      breakageReportingSubfeature: breakageReportingSubfeature)
     }
 
@@ -1713,8 +1716,15 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
         specialErrorPageNavigationHandler.handleWebView(webView, didFinish: navigation)
+
+        // Notify contextual AI chat coordinator that the page changed (for context refresh)
+        if aiChatContextualSheetCoordinator.hasActiveSheet {
+            Task { [weak self] in
+                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
+            }
+        }
     }
-    
+
     /// Fires product telemetry related to the current URL
     private func fireProductTelemetry(for webView: WKWebView) {
         guard let url = webView.url else { return }
@@ -2999,9 +3009,6 @@ extension TabViewController: UserContentControllerDelegate {
             userScripts.youtubeOverlayScript?.webView = webView
             userScripts.youtubePlayerUserScript?.webView = webView
         }
-        
-        performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
-        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: performanceMetrics!)
         
         breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: breakageReportingSubfeature!)

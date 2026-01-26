@@ -20,7 +20,6 @@ import Foundation
 
 /// Features whose `rawValue` should be the key to access their corresponding `PrivacyConfigurationData.PrivacyFeature` object
 public enum PrivacyFeature: String {
-    case breakageReporting
     case contentBlocking
     case duckPlayer
     case fingerprintingTemporaryStorage
@@ -48,7 +47,6 @@ public enum PrivacyFeature: String {
     case privacyDashboard
     case updates
     case updatesWontAutomaticallyRestartApp
-    case performanceMetrics
     case privacyPro
     case sslCertificates
     case toggleReports
@@ -84,6 +82,7 @@ public enum PrivacyFeature: String {
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport
+    case duckAiChatHistory
     case serp
     case popupBlocking
     case combinedPermissionView
@@ -333,6 +332,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar cluster for AI Chat
     case omnibarCluster
 
+    /// Enables showing chat suggestions in the AI Chat omnibar
+    case suggestions
+
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
@@ -344,6 +346,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables ATB measurement for Duck.ai usage on iOS
     case aiChatAtb
+
+    /// Controls whether automatic page context attachment defaults to enabled
+    case autoAttachContextByDefault
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

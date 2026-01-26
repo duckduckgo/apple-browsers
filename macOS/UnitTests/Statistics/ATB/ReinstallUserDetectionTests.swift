@@ -25,6 +25,8 @@ import PersistenceTestingUtils
 final class MockApplicationBuildType: ApplicationBuildType {
     var isSparkleBuild: Bool = true
     var isAppStoreBuild: Bool = false
+    var isDebugBuild: Bool = false
+    var isReviewBuild: Bool = false
 }
 
 final class MockBundleURLProvider: BundleURLProviding {

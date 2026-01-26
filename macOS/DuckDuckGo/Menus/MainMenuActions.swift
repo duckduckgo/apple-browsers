@@ -550,6 +550,16 @@ extension AppDelegate {
         Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
     }
 
+    @MainActor
+    @objc func exportMemoryAllocationStats(_ sender: Any?) {
+        do {
+            let exporter = MemoryAllocationStatsExporter()
+            try exporter.exportSnapshotToTemporaryURL()
+        } catch {
+            Logger.general.error("Failed to export Memory Allocation Stats: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @objc func resetRemoteMessages(_ sender: Any?) {
         Task {
             await remoteMessagingClient.store?.resetRemoteMessages()

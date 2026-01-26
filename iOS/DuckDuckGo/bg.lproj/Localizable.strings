@@ -3622,6 +3622,9 @@
 /* Manage Plan header */
 "subscription.manage.plan" = "Управление на плана";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Управлявай плащането или отмени";
+
 /* Header for the subscription section */
 "subscription.manage.title" = "Абонамент";
 
@@ -3718,6 +3721,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Годишният ви абонамент изтича на %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Планът ти ще бъде намален на %1$@ месечно на %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Планът ти ще бъде намален на %1$@ на %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Планът ти ще бъде намален на %1$@ годишно на %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Месечният ви абонамент се подновява на %@.";
 
@@ -3738,6 +3750,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Безплатна пробна версия е активна";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Надгради до %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Отключи по-интелигентен и по-мощен изкуствен интелект";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Актуализация";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Виж всички планове";

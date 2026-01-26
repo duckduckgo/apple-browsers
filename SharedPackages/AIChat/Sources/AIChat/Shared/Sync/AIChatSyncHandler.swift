@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import DDGSync
 
 public protocol AIChatSyncHandling {
 
     func isSyncTurnedOn() -> Bool
+    var authStatePublisher: AnyPublisher<SyncAuthState, Never> { get }
     func getSyncStatus(featureAvailable: Bool) throws -> AIChatSyncHandler.SyncStatus
     func getScopedToken() async throws -> AIChatSyncHandler.SyncToken
     func encrypt(_ string: String) throws -> AIChatSyncHandler.EncryptedData
@@ -42,6 +44,18 @@ public class AIChatSyncHandler: AIChatSyncHandling {
         let deviceId: String?
         let deviceName: String?
         let deviceType: String?
+
+        public init(syncAvailable: Bool,
+                    userId: String? = nil,
+                    deviceId: String? = nil,
+                    deviceName: String? = nil,
+                    deviceType: String? = nil) {
+            self.syncAvailable = syncAvailable
+            self.userId = userId
+            self.deviceId = deviceId
+            self.deviceName = deviceName
+            self.deviceType = deviceType
+        }
     }
 
     public struct SyncToken: Encodable {
@@ -70,6 +84,10 @@ public class AIChatSyncHandler: AIChatSyncHandling {
 
     public func isSyncTurnedOn() -> Bool {
         sync.authState != .initializing && sync.account != nil
+    }
+
+    public var authStatePublisher: AnyPublisher<SyncAuthState, Never> {
+        sync.authStatePublisher
     }
 
     public func getSyncStatus(featureAvailable: Bool) throws -> SyncStatus {

@@ -371,6 +371,12 @@ extension MainViewController: TabsBarDelegate {
   
     func tabsBar(_ controller: TabsBarViewController, didSelectTabAtIndex index: Int) {
         dismissOmniBar()
+
+        // Tabs bar is iPad only and this is to work around on a problem iOS 26 which will be fixed later with Xcode 26.
+        if index != self.tabManager.model.currentIndex {
+            chromeManager.preventNextScrollToTop()
+        }
+        
         select(tabAt: index)
     }
     
@@ -400,5 +406,5 @@ extension MainViewController: TabsBarDelegate {
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController) {
         showTabSwitcher()
     }
-    
+
 }

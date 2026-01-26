@@ -52,7 +52,7 @@ public final class DefaultWideEventSender: WideEventSending {
         featureFlagProvider: WideEventFeatureFlagProviding,
         onComplete: @escaping PixelKit.CompletionBlock
     ) {
-        guard let pixelName = Self.generatePixelName(for: T.pixelName) else {
+        guard let pixelName = Self.generatePixelName(for: T.metadata.pixelName) else {
             Self.logger.warning("Cannot fire wide event: empty pixel name")
             onComplete(false, WideEventError.emptyPixelName)
             return
@@ -76,6 +76,7 @@ public final class DefaultWideEventSender: WideEventSending {
     private func generateFinalParameters<T: WideEventData>(from data: T, status: WideEventStatus) -> [String: String] {
         var parameters: [String: String] = [:]
 
+        parameters.merge(T.metadata.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.globalData.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.appData.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.contextData.pixelParameters(), uniquingKeysWith: { _, new in new })
@@ -85,7 +86,7 @@ public final class DefaultWideEventSender: WideEventSending {
             parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
         }
 
-        parameters[WideEventParameter.Feature.name] = T.featureName
+        parameters[WideEventParameter.Feature.name] = T.metadata.featureName
         parameters[WideEventParameter.Feature.status] = status.description
 
         switch status {
@@ -185,6 +186,7 @@ public final class DefaultWideEventSender: WideEventSending {
     private func generateJSONParameters<T: WideEventData>(from data: T, status: WideEventStatus) -> [String: Encodable] {
         var parameters: [String: Encodable] = [:]
 
+        parameters.merge(T.metadata.jsonParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.globalData.jsonParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.appData.jsonParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(data.contextData.jsonParameters(), uniquingKeysWith: { _, new in new })
@@ -194,7 +196,7 @@ public final class DefaultWideEventSender: WideEventSending {
             parameters.merge(errorData.jsonParameters(), uniquingKeysWith: { _, new in new })
         }
 
-        parameters[WideEventParameter.Feature.name] = T.featureName
+        parameters[WideEventParameter.Feature.name] = T.metadata.featureName
         parameters[WideEventParameter.Feature.status] = status.description
 
         switch status {

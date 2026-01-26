@@ -20,8 +20,12 @@ import Foundation
 import PixelKit
 
 public final class OptOutConfirmationWideEventData: WideEventData {
-    public static let pixelName = "pir_opt_out_confirmation"
-    public static let featureName = "pir-opt-out-confirmation"
+    public static let metadata = WideEventMetadata(
+        pixelName: "pir_opt_out_confirmation",
+        featureName: "pir-opt-out-confirmation",
+        mobileMetaType: "ios-pir-opt-out-confirmation",
+        desktopMetaType: "macos-pir-opt-out-confirmation"
+    )
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData

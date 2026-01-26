@@ -245,7 +245,7 @@ class MainViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
-    private let syncAIChatsCleaner: SyncAIChatsCleaning
+    private let aiChatSyncCleaner: AIChatSyncCleaning
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
@@ -311,7 +311,7 @@ class MainViewController: UIViewController {
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
-        syncAiChatsCleaner: SyncAIChatsCleaning,
+        aiChatSyncCleaner: AIChatSyncCleaning,
         whatsNewRepository: WhatsNewMessageRepository
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -363,7 +363,7 @@ class MainViewController: UIViewController {
         self.privacyStats = privacyStats
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
-        self.syncAIChatsCleaner = syncAiChatsCleaner
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.whatsNewRepository = whatsNewRepository
 
         super.init(nibName: nil, bundle: nil)
@@ -3820,10 +3820,12 @@ extension MainViewController: FireExecutorDelegate {
     }
 
     func willStartBurningAIHistory(fireRequest: FireRequest) {
-        if autoClearInProgress {
-            syncAIChatsCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
-        } else {
-            syncAIChatsCleaner.recordLocalClear(date: Date())
+        Task {
+            if autoClearInProgress {
+                await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+            } else {
+                await aiChatSyncCleaner.recordLocalClear(date: Date())
+            }
         }
     }
     

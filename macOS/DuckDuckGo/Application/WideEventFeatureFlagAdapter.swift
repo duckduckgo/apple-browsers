@@ -29,7 +29,11 @@ struct WideEventFeatureFlagAdapter: WideEventFeatureFlagProviding {
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
         switch flag {
         case .postEndpoint:
+#if DEBUG || REVIEW || ALPHA
+            return false
+#else
             return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
+#endif
         }
     }
 }

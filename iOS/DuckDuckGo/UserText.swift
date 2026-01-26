@@ -1660,11 +1660,25 @@ public struct UserText {
         return String(format: localized, expiryDate)
     }
 
-    static func pendingDowngradeInfo(tierName: String, billingPeriod: String, effectiveDate: String) -> String {
-        let format = NotLocalizedString("subscription.subscription.pending.downgrade.caption",
-                                        value: "Your plan will downgrade to %@ %@ on %@.",
-                                        comment: "Pending downgrade info. Parameters are tier name, billing period, and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'")
-        return String(format: format, tierName, billingPeriod, effectiveDate)
+    static func pendingDowngradeInfo(tierName: String, billingPeriod: DuckDuckGoSubscription.BillingPeriod, effectiveDate: String) -> String {
+        let localized: String
+
+        switch billingPeriod {
+        case .monthly:
+            localized = NSLocalizedString("subscription.subscription.pending.downgrade.monthly.caption",
+                                          value: "Your plan will downgrade to %@ Monthly on %@.",
+                                          comment: "Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).'")
+        case .yearly:
+            localized = NSLocalizedString("subscription.subscription.pending.downgrade.yearly.caption",
+                                          value: "Your plan will downgrade to %@ Yearly on %@.",
+                                          comment: "Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).'")
+        case .unknown:
+            localized = NSLocalizedString("subscription.subscription.pending.downgrade.unknown.caption",
+                                          value: "Your plan will downgrade to %@ on %@.",
+                                          comment: "Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).'")
+        }
+
+        return String(format: localized, tierName, effectiveDate)
     }
 
     public static let subscriptionDevicesSectionHeader = NSLocalizedString("duckduckgo.subscription.add.to.devices.header", value: "Add your subscription to other devices", comment: "Header for section for activating subscription on other devices")
@@ -1675,14 +1689,14 @@ public struct UserText {
     public static let subscriptionManagePlan = NSLocalizedString("subscription.manage.plan", value: "Manage Plan", comment: "Manage Plan header")
     public static let subscriptionViewAllPlans = NSLocalizedString("subscription.view.all.plans", value: "View All Plans", comment: "View All Plans button to see available subscription tiers")
     public static let subscriptionPlansTitle = NSLocalizedString("subscription.plans.title", value: "Subscription Plans", comment: "Navigation title for the subscription plans page")
-    public static let subscriptionUpgradeSectionTitle = NotLocalizedString("subscription.upgrade.section.title", value: "Upgrade", comment: "Header for the upgrade section in subscription settings")
-    public static let subscriptionUpgradeSectionCaption = NotLocalizedString("subscription.upgrade.section.caption", value: "Unlock smarter, more powerful AI", comment: "Caption text in the upgrade section promoting AI features")
+    public static let subscriptionUpgradeSectionTitle = NSLocalizedString("subscription.upgrade.section.title", value: "Upgrade", comment: "Header for the upgrade section in subscription settings")
+    public static let subscriptionUpgradeSectionCaption = NSLocalizedString("subscription.upgrade.section.caption", value: "Unlock smarter, more powerful AI", comment: "Caption text in the upgrade section promoting AI features")
     public static func subscriptionUpgradeButton(tierName: String) -> String {
-        let format = NotLocalizedString("subscription.upgrade.button", value: "Upgrade to %@", comment: "Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro')")
+        let format = NSLocalizedString("subscription.upgrade.button", value: "Upgrade to %@", comment: "Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro')")
         return String(format: format, tierName.capitalized)
     }
     public static let subscriptionChangePlan = NSLocalizedString("subscription.change.plan", value: "Update Plan or Cancel", comment: "Change plan or cancel title")
-    public static let subscriptionManagePayment = NotLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
+    public static let subscriptionManagePayment = NSLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
     public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Share Feedback", comment: "Share Feedback Button")

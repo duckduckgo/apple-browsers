@@ -34,6 +34,10 @@ public extension WideEventParameterProviding {
 
 public enum WideEventParameter {
 
+    public enum Meta {
+        static let type = "meta.type"
+    }
+
     public enum Global {
         static let platform = "global.platform"
         static let type = "global.type"

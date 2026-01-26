@@ -81,7 +81,10 @@ struct AIChatHistoryListView: View {
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .lineLimit(1)
                     .truncationMode(.tail)
+
+                Spacer()
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

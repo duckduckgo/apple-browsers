@@ -46,11 +46,10 @@ final class AIChatHistoryManager {
 
     // MARK: - Initialization
 
-    init(featureFlagger: FeatureFlagger,
-         privacyConfig: PrivacyConfigurationManaging,
+    init(suggestionsReader: AIChatSuggestionsReading,
          aiChatSettings: AIChatSettingsProvider,
          viewModel: AIChatSuggestionsViewModel) {
-        self.suggestionsReader = AIChatSuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
+        self.suggestionsReader = suggestionsReader
         self.aiChatSettings = aiChatSettings
         self.viewModel = viewModel
     }

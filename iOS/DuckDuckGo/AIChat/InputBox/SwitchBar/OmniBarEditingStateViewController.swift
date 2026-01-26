@@ -304,12 +304,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         guard let containerViewController = swipeContainerManager?.containerViewController,
               let chatContainer = swipeContainerManager?.chatPageContainer else { return }
 
-        let manager = AIChatHistoryManager(
-            featureFlagger: featureFlagger,
-            privacyConfig: privacyConfigurationManager,
-            aiChatSettings: aiChatSettings,
-            viewModel: AIChatSuggestionsViewModel()
-        )
+        let suggestionsReader = AIChatSuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+
+        let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
+                                           aiChatSettings: aiChatSettings,
+                                           viewModel: AIChatSuggestionsViewModel())
         manager.delegate = self
         manager.installInContainerView(chatContainer, parentViewController: containerViewController)
         aiChatHistoryManager = manager

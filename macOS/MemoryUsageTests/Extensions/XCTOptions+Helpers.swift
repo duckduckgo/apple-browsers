@@ -1,5 +1,5 @@
 //
-//  WideEventFeatureFlagAdapter.swift
+//  XCTOptions+Helpers.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,24 +16,14 @@
 //  limitations under the License.
 //
 
-import PixelKit
-import PrivacyConfig
+import XCTest
 
-struct WideEventFeatureFlagAdapter: WideEventFeatureFlagProviding {
-    private let featureFlagger: FeatureFlagger
+extension XCTMeasureOptions {
 
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
-    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-#if DEBUG || REVIEW || ALPHA
-            return false
-#else
-            return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
-#endif
-        }
+    static func buildOptions(iterations: Int, manualEvents: Bool = false) -> XCTMeasureOptions {
+        let options = XCTMeasureOptions()
+        options.iterationCount = iterations
+        options.invocationOptions = manualEvents ? [.manuallyStart, .manuallyStop] : []
+        return options
     }
 }

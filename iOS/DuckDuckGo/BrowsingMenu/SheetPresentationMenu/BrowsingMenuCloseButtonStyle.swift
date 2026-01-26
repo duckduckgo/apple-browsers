@@ -32,7 +32,7 @@ public struct BrowsingMenuCloseButtonStyle: ButtonStyle {
     }
     
     private func backgroundColor(_ isPressed: Bool) -> Color {
-        isPressed ? Color(UIColor(designSystemColor: .controlsFillTertiary)) : Color(UIColor(designSystemColor: .controlsFillPrimary))
+        isPressed ? Color(designSystemColor: .controlsFillTertiary) : Color(designSystemColor: .controlsFillPrimary)
     }
 
     struct Constant {

@@ -114,12 +114,14 @@ final class AIChatHistoryManager {
     private func fetchSuggestionsIfNeeded(query: String) {
         currentFetchTask?.cancel()
 
-        currentFetchTask = Task { [weak self] in
-            guard let self else { return }
+        let reader = suggestionsReader
+        let viewModel = viewModel
+        let effectiveQuery = query.isEmpty ? nil : query
 
-            let suggestions = await self.suggestionsReader.fetchSuggestions(query: query.isEmpty ? nil : query)
+        currentFetchTask = Task {
+            let suggestions = await reader.fetchSuggestions(query: effectiveQuery)
             guard !Task.isCancelled else { return }
-            self.viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
+            viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
         }
     }
 
@@ -128,6 +130,14 @@ final class AIChatHistoryManager {
         currentFetchTask?.cancel()
         currentFetchTask = nil
         cancellables.removeAll()
+
+        if let historyVC = historyViewController {
+            historyVC.willMove(toParent: nil)
+            historyVC.view.removeFromSuperview()
+            historyVC.removeFromParent()
+            historyViewController = nil
+        }
+
         suggestionsReader.tearDown()
         viewModel.clearAllChats()
     }

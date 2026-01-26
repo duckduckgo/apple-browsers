@@ -147,6 +147,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        if aiChatHistoryManager == nil && featureFlagger.isFeatureOn(.aiChatSuggestions) {
+            installChatHistoryList()
+        }
+
         switchBarVC.focusTextField()
         if automaticallySelectsTextOnAppear {
             DispatchQueue.main.async {
@@ -160,6 +164,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
         DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        aiChatHistoryManager?.tearDown()
+        aiChatHistoryManager = nil
     }
 
     // MARK: - Public Methods

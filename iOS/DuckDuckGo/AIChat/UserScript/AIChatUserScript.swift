@@ -204,8 +204,8 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.displayMode = displayMode
     }
 
-    func setPageContextHandler(_ handler: AIChatPageContextHandling?) {
-        self.handler.setPageContextHandler(handler)
+    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
+        self.handler.setPageContextProvider(provider)
     }
 
     // MARK: - Input Box Event Subscription

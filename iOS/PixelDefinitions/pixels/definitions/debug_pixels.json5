@@ -5,5 +5,26 @@
         "triggers": ["other"],
         "suffixes": [["platform", "form_factor"]],
         "parameters": ["appVersion"]
+    },
+    "m_debug_history-load-tab-history-failed": {
+        "description": "Fires when loading tab history from the database fails.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": [["platform", "form_factor"]],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_debug_history-insert-tab-history-failed": {
+        "description": "Fires when inserting tab history into the database fails.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": [["platform", "form_factor"]],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_debug_history-remove-tab-history-failed": {
+        "description": "Fires when removing tab history from the database fails.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": [["platform", "form_factor"]],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

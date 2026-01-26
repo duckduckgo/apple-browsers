@@ -466,7 +466,7 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertNil(response?.pageContext)
     }
 
-    func testGetAIChatPageContextReturnsContextWhenHandlerSet() {
+    func testGetAIChatPageContextReturnsContextWhenProviderSet() {
         let expectedContext = AIChatPageContextData(
             title: "Test Page",
             favicon: [],
@@ -475,8 +475,7 @@ extension AIChatUserScriptHandlerTests {
             truncated: false,
             fullContentLength: 12
         )
-        let mockHandler = MockPageContextHandler(context: expectedContext)
-        aiChatUserScriptHandler.setPageContextHandler(mockHandler)
+        aiChatUserScriptHandler.setPageContextProvider { _ in expectedContext }
 
         let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
@@ -487,25 +486,12 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(response?.pageContext?.content, "Test content")
     }
 
-    func testGetAIChatPageContextReturnsNilContextWhenHandlerReturnsNil() {
-        let mockHandler = MockPageContextHandler(context: nil)
-        aiChatUserScriptHandler.setPageContextHandler(mockHandler)
+    func testGetAIChatPageContextReturnsNilContextWhenProviderReturnsNil() {
+        aiChatUserScriptHandler.setPageContextProvider { _ in nil }
 
         let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
         XCTAssertNotNil(response)
         XCTAssertNil(response?.pageContext)
-    }
-}
-
-private final class MockPageContextHandler: AIChatPageContextHandling {
-    private let context: AIChatPageContextData?
-
-    init(context: AIChatPageContextData?) {
-        self.context = context
-    }
-
-    func getPageContext() -> AIChatPageContextData? {
-        context
     }
 }

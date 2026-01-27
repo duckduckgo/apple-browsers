@@ -124,12 +124,10 @@ struct BrowsingMenuSheetView: View {
     @ViewBuilder
     private var websiteHeader: some View {
         BrowsingMenuHeaderView(
-            title: headerDataSource.isHeaderVisible ? headerDataSource.title : nil,
-            url: !headerDataSource.isAITab ? headerDataSource.url : nil,
-            favicon: !headerDataSource.isAITab ? headerDataSource.favicon : nil,
-            easterEggLogoURL: !headerDataSource.isAITab ? headerDataSource.easterEggLogoURL : nil,
+            title: headerDataSource.title,
+            displayURL: headerDataSource.displayURL,
+            iconType: headerDataSource.iconType,
             isWebsiteInfoVisible: headerDataSource.isHeaderVisible,
-            isAITab: headerDataSource.isAITab,
             onDismiss: { dismiss() }
         )
         .padding(.horizontal, 20)
@@ -332,16 +330,10 @@ private struct MenuHeaderButton: View {
 private struct BrowsingMenuHeaderView: View {
 
     let title: String?
-    let url: URL?
-    let favicon: UIImage?
-    let easterEggLogoURL: URL?
+    let displayURL: String?
+    let iconType: HeaderIconType
     let isWebsiteInfoVisible: Bool
-    let isAITab: Bool
     let onDismiss: () -> Void
-
-    private var displayURL: String? {
-        url?.host
-    }
 
     var body: some View {
         HStack(spacing: 4) {
@@ -373,19 +365,20 @@ private struct BrowsingMenuHeaderView: View {
     @ViewBuilder
     private var faviconView: some View {
         Group {
-            if isAITab {
+            switch iconType {
+            case .aiChat:
                 Image(uiImage: DesignSystemImages.Color.Size24.aiChatGradient)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-            } else if let easterEggLogoURL {
-                KFImage(easterEggLogoURL)
+            case .easterEgg(let url):
+                KFImage(url)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-            } else if let favicon {
-                Image(uiImage: favicon)
+            case .favicon(let image):
+                Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-            } else {
+            case .globe:
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
                     .foregroundStyle(Color(designSystemColor: .icons))
             }
@@ -406,7 +399,7 @@ private struct BrowsingMenuHeaderView: View {
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
                     .lineLimit(1)
 
-                if let displayURL, !isAITab {
+                if let displayURL {
                     Text(displayURL)
                         .daxCaption()
                         .foregroundStyle(Color(designSystemColor: .textSecondary))

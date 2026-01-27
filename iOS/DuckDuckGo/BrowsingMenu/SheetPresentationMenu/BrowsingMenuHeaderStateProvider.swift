@@ -44,7 +44,7 @@ final class BrowsingMenuHeaderStateProvider {
         dataSource.reset()
 
         if isAIHeaderVisible {
-            dataSource.update(isAITab: true, title: UserText.duckAiFeatureName)
+            dataSource.update(forAITab: UserText.duckAiFeatureName)
         } else if isWebsiteHeaderVisible {
             let logoURL = easterEggLogoURL.flatMap { URL(string: $0) }
             dataSource.update(title: title, url: url, easterEggLogoURL: logoURL)
@@ -59,7 +59,6 @@ final class BrowsingMenuHeaderStateProvider {
         currentFaviconRequestID = requestID
 
         guard let domain = url?.host else {
-            dataSource.update(favicon: nil)
             return
         }
 
@@ -69,11 +68,12 @@ final class BrowsingMenuHeaderStateProvider {
                 usingCache: .tabs,
                 useFakeFavicon: false
             )
-            let favicon = result.isFake ? nil : result.image
 
             await MainActor.run {
                 guard self?.currentFaviconRequestID == requestID else { return }
-                dataSource.update(favicon: favicon)
+                if let favicon = result.image, !result.isFake {
+                    dataSource.update(favicon: favicon)
+                }
             }
         }
     }

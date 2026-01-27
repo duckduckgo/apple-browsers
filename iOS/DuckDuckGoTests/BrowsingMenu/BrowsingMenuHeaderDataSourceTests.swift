@@ -23,98 +23,136 @@ import XCTest
 // MARK: - BrowsingMenuHeaderDataSource Tests
 
 final class BrowsingMenuHeaderDataSourceTests: XCTestCase {
-    
+
     private var sut: BrowsingMenuHeaderDataSource!
-    
+
     override func setUp() {
         super.setUp()
         sut = BrowsingMenuHeaderDataSource()
     }
-    
+
     override func tearDown() {
         sut = nil
         super.tearDown()
     }
-    
+
+    // MARK: - Initial State
+
     func testInitialState() {
         XCTAssertFalse(sut.isHeaderVisible)
         XCTAssertNil(sut.title)
-        XCTAssertNil(sut.url)
-        XCTAssertNil(sut.favicon)
-        XCTAssertNil(sut.easterEggLogoURL)
+        XCTAssertNil(sut.displayURL)
+        XCTAssertEqual(sut.iconType, .globe)
     }
-    
-    func testUpdateSetsHeaderProperties() {
+
+    // MARK: - Website Header Update
+
+    func testWhenUpdateForWebsiteThenHeaderIsVisible() {
         let url = URL(string: "https://example.com")!
-        
-        sut.update(title: "Test Title", url: url)
-        
+
+        sut.update(title: "Test Title", url: url, easterEggLogoURL: nil)
+
         XCTAssertTrue(sut.isHeaderVisible)
         XCTAssertEqual(sut.title, "Test Title")
-        XCTAssertEqual(sut.url, url)
+        XCTAssertEqual(sut.displayURL, "example.com")
     }
-    
-    func testUpdateFaviconSetsFavicon() {
+
+    func testWhenUpdateForWebsiteThenIconTypeIsGlobe() {
+        let url = URL(string: "https://example.com")!
+
+        sut.update(title: "Test Title", url: url, easterEggLogoURL: nil)
+
+        XCTAssertEqual(sut.iconType, .globe)
+    }
+
+    func testWhenUpdateFaviconThenIconTypeIsFavicon() {
+        let url = URL(string: "https://example.com")!
         let image = UIImage()
-        
+        sut.update(title: "Test Title", url: url, easterEggLogoURL: nil)
+
         sut.update(favicon: image)
-        
-        XCTAssertNotNil(sut.favicon)
+
+        XCTAssertEqual(sut.iconType, .favicon(image))
     }
-    
-    func testResetClearsAllProperties() {
+
+    func testWhenUpdateWithEasterEggThenIconTypeIsEasterEgg() {
         let url = URL(string: "https://example.com")!
-        sut.update(title: "Test", url: url)
-        sut.update(favicon: UIImage())
-        
-        sut.reset()
-        
-        XCTAssertFalse(sut.isHeaderVisible)
-        XCTAssertNil(sut.title)
-        XCTAssertNil(sut.url)
-        XCTAssertNil(sut.favicon)
-        XCTAssertNil(sut.easterEggLogoURL)
+        let easterEggURL = URL(string: "https://example.com/logo.png")!
+
+        sut.update(title: "Test Title", url: url, easterEggLogoURL: easterEggURL)
+
+        XCTAssertEqual(sut.iconType, .easterEgg(easterEggURL))
     }
-    
-    func testWhenURLChangesThenFaviconIsCleared() {
-        let url1 = URL(string: "https://example.com")!
-        let url2 = URL(string: "https://different.com")!
-        sut.update(title: "Page 1", url: url1)
-        sut.update(favicon: UIImage())
-        XCTAssertNotNil(sut.favicon)
-        
-        sut.update(title: "Page 2", url: url2)
-        
-        XCTAssertNil(sut.favicon)
-        XCTAssertEqual(sut.url, url2)
+
+    // MARK: - AI Tab Update
+
+    func testWhenUpdateForAITabThenIconTypeIsAIChat() {
+        sut.update(forAITab: "Duck.ai")
+
+        XCTAssertEqual(sut.iconType, .aiChat)
     }
-    
-    func testWhenURLUnchangedThenFaviconIsPreserved() {
-        let url = URL(string: "https://example.com")!
-        sut.update(title: "Page 1", url: url)
-        sut.update(favicon: UIImage())
-        XCTAssertNotNil(sut.favicon)
-        
-        sut.update(title: "Updated Title", url: url)
-        
-        XCTAssertNotNil(sut.favicon)
-    }
-    
-    func testUpdateForAITabSetsAITabProperties() {
-        sut.update(isAITab: true, title: "Duck.ai")
-        
-        XCTAssertTrue(sut.isAITab)
+
+    func testWhenUpdateForAITabThenHeaderIsVisible() {
+        sut.update(forAITab: "Duck.ai")
+
         XCTAssertTrue(sut.isHeaderVisible)
         XCTAssertEqual(sut.title, "Duck.ai")
     }
-    
-    func testResetClearsAITabState() {
-        sut.update(isAITab: true, title: "Duck.ai")
-        XCTAssertTrue(sut.isAITab)
-        
+
+    func testWhenUpdateForAITabThenDisplayURLIsNil() {
+        sut.update(forAITab: "Duck.ai")
+
+        XCTAssertNil(sut.displayURL)
+    }
+
+    // MARK: - Reset
+
+    func testWhenResetThenAllPropertiesCleared() {
+        let url = URL(string: "https://example.com")!
+        sut.update(title: "Test", url: url, easterEggLogoURL: nil)
+        sut.update(favicon: UIImage())
+
         sut.reset()
-        
-        XCTAssertFalse(sut.isAITab)
+
         XCTAssertFalse(sut.isHeaderVisible)
+        XCTAssertNil(sut.title)
+        XCTAssertNil(sut.displayURL)
+        XCTAssertEqual(sut.iconType, .globe)
+    }
+
+    func testWhenResetAfterAITabThenAllPropertiesCleared() {
+        sut.update(forAITab: "Duck.ai")
+
+        sut.reset()
+
+        XCTAssertFalse(sut.isHeaderVisible)
+        XCTAssertNil(sut.title)
+        XCTAssertEqual(sut.iconType, .globe)
+    }
+
+    // MARK: - URL Change Behavior
+
+    func testWhenURLChangesThenIconTypeResetsToGlobe() {
+        let url1 = URL(string: "https://example.com")!
+        let url2 = URL(string: "https://different.com")!
+        sut.update(title: "Page 1", url: url1, easterEggLogoURL: nil)
+        sut.update(favicon: UIImage())
+        XCTAssertNotEqual(sut.iconType, .globe)
+
+        sut.update(title: "Page 2", url: url2, easterEggLogoURL: nil)
+
+        XCTAssertEqual(sut.iconType, .globe)
+        XCTAssertEqual(sut.displayURL, "different.com")
+    }
+
+    func testWhenURLUnchangedThenFaviconIsPreserved() {
+        let url = URL(string: "https://example.com")!
+        let image = UIImage()
+        sut.update(title: "Page 1", url: url, easterEggLogoURL: nil)
+        sut.update(favicon: image)
+
+        sut.update(title: "Updated Title", url: url, easterEggLogoURL: nil)
+
+        XCTAssertEqual(sut.iconType, .favicon(image))
     }
 }

@@ -40,19 +40,29 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
     // MARK: - Header Visibility
 
     func testWhenRegularWebPageThenHeaderIsVisible() {
-        let url = URL(string: "https://example.com")!
-
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
             hasLink: true,
-            url: url,
+            url: URL(string: "https://example.com"),
             title: "Example"
         )
 
         XCTAssertTrue(dataSource.isHeaderVisible)
         XCTAssertEqual(dataSource.title, "Example")
-        XCTAssertEqual(dataSource.url, url)
+        XCTAssertEqual(dataSource.displayURL, "example.com")
+    }
+
+    func testWhenRegularWebPageThenIconTypeIsGlobe() {
+        sut.update(
+            dataSource: dataSource,
+            isFeatureEnabled: true,
+            hasLink: true,
+            url: URL(string: "https://example.com"),
+            title: "Example"
+        )
+
+        XCTAssertEqual(dataSource.iconType, .globe)
     }
 
     func testWhenFeatureDisabledThenHeaderIsNotVisible() {
@@ -80,7 +90,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         XCTAssertFalse(dataSource.isHeaderVisible)
     }
 
-    func testWhenAITabThenHeaderIsVisibleWithAIContent() {
+    func testWhenAITabThenHeaderIsVisible() {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
@@ -91,8 +101,30 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         )
 
         XCTAssertTrue(dataSource.isHeaderVisible)
-        XCTAssertTrue(dataSource.isAITab)
         XCTAssertEqual(dataSource.title, UserText.duckAiFeatureName)
+    }
+
+    func testWhenAITabThenIconTypeIsAIChat() {
+        sut.update(
+            dataSource: dataSource,
+            isFeatureEnabled: true,
+            isAITab: true,
+            hasLink: true
+        )
+
+        XCTAssertEqual(dataSource.iconType, .aiChat)
+    }
+
+    func testWhenAITabThenDisplayURLIsNil() {
+        sut.update(
+            dataSource: dataSource,
+            isFeatureEnabled: true,
+            isAITab: true,
+            hasLink: true,
+            url: URL(string: "https://example.com")
+        )
+
+        XCTAssertNil(dataSource.displayURL)
     }
 
     func testWhenErrorPageThenHeaderIsNotVisible() {
@@ -141,6 +173,21 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
 
         XCTAssertFalse(dataSource.isHeaderVisible)
         XCTAssertNil(dataSource.title)
-        XCTAssertNil(dataSource.url)
+        XCTAssertNil(dataSource.displayURL)
+    }
+
+    func testWhenEasterEggURLProvidedThenIconTypeIsEasterEgg() {
+        let easterEggURL = "https://example.com/logo.png"
+
+        sut.update(
+            dataSource: dataSource,
+            isFeatureEnabled: true,
+            hasLink: true,
+            url: URL(string: "https://example.com"),
+            title: "Example",
+            easterEggLogoURL: easterEggURL
+        )
+
+        XCTAssertEqual(dataSource.iconType, .easterEgg(URL(string: easterEggURL)!))
     }
 }

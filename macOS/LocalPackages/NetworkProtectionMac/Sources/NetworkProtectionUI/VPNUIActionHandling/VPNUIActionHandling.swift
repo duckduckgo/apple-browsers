@@ -31,4 +31,8 @@ public protocol VPNUIActionHandling {
     /// This allows overriding VPN tunnel control.
     ///
     func willStopVPN() async -> Bool
+
+    /// Called when the user initiates a VPN start.
+    ///
+    func didStartVPN()
 }

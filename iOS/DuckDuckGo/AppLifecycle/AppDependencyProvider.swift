@@ -135,7 +135,7 @@ final class AppDependencyProvider: DependencyProvider {
         }
 
         self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
-        self.freeTrialConversionService = FreeTrialConversionWideEventService(wideEvent: wideEvent)
+        self.freeTrialConversionService = DefaultFreeTrialConversionWideEventService(wideEvent: wideEvent)
         self.freeTrialConversionService.startObservingSubscriptionChanges()
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
@@ -236,7 +236,8 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               featureFlagger: featureFlagger,
                                                                               persistentPixel: persistentPixel,
                                                                               settings: vpnSettings,
-                                                                              wideEvent: wideEvent
+                                                                              wideEvent: wideEvent,
+                                                                              freeTrialConversionService: freeTrialConversionService
         )
     }
 

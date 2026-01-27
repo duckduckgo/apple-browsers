@@ -20,7 +20,20 @@ import Foundation
 import Common
 import PixelKit
 
-/// Service that manages the free trial conversion wide event lifecycle.
+/// Protocol for managing the free trial conversion wide event lifecycle.
+public protocol FreeTrialConversionWideEventService: AnyObject {
+    /// Starts observing subscription changes to automatically manage the wide event lifecycle.
+    /// Call this once during app initialization.
+    func startObservingSubscriptionChanges()
+
+    /// Marks VPN as activated for the current free trial flow.
+    func markVPNActivated()
+
+    /// Marks PIR as activated for the current free trial flow.
+    func markPIRActivated()
+}
+
+/// Default implementation that manages the free trial conversion wide event lifecycle.
 /// Observes subscription changes to automatically start and complete the wide event.
 ///
 /// Call `startObservingSubscriptionChanges()` once during app initialization.
@@ -28,7 +41,7 @@ import PixelKit
 /// - Start tracking when a user begins a free trial
 /// - Complete with success when the user converts to a paid subscription
 /// - Complete with failure when the trial expires without conversion
-public final class FreeTrialConversionWideEventService {
+public final class DefaultFreeTrialConversionWideEventService: FreeTrialConversionWideEventService {
 
     private let wideEvent: WideEventManaging
     private let notificationCenter: NotificationCenter

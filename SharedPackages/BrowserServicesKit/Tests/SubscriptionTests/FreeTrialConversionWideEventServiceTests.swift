@@ -23,7 +23,7 @@ import PixelKit
 
 final class FreeTrialConversionWideEventServiceTests: XCTestCase {
 
-    private var sut: FreeTrialConversionWideEventService!
+    private var sut: DefaultFreeTrialConversionWideEventService!
     private var mockWideEvent: MockWideEventManaging!
     private var notificationCenter: NotificationCenter!
 
@@ -31,7 +31,7 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         super.setUp()
         mockWideEvent = MockWideEventManaging()
         notificationCenter = NotificationCenter()
-        sut = FreeTrialConversionWideEventService(wideEvent: mockWideEvent, notificationCenter: notificationCenter)
+        sut = DefaultFreeTrialConversionWideEventService(wideEvent: mockWideEvent, notificationCenter: notificationCenter)
         sut.startObservingSubscriptionChanges()
     }
 

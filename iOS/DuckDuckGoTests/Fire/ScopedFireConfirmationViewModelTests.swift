@@ -69,4 +69,30 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         // Then
         XCTAssertTrue(cancelCalled)
     }
+    
+    // MARK: - canBurnSingleTab Tests
+    
+    func testWhenTabViewModelIsNilThenCanBurnSingleTabReturnsFalse() {
+        // Given
+        let sut = ScopedFireConfirmationViewModel(
+            tabViewModel: nil,
+            onConfirm: { _ in },
+            onCancel: { }
+        )
+        
+        // Then
+        XCTAssertFalse(sut.canBurnSingleTab)
+    }
+    
+    func testWhenTabViewModelIsNotNilThenCanBurnSingleTabReturnsTrue() {
+        // Given
+        let sut = ScopedFireConfirmationViewModel(
+            tabViewModel: TabViewModel(),
+            onConfirm: { _ in },
+            onCancel: { }
+        )
+        
+        // Then
+        XCTAssertTrue(sut.canBurnSingleTab)
+    }
 }

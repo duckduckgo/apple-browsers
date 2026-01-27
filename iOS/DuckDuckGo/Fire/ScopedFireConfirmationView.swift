@@ -89,13 +89,15 @@ struct ScopedFireConfirmationView: View {
             .accessibilityIdentifier("Fire.Confirmation.Button.AllTabs")
             
             // This Tab button - Secondary Destructive (outline)
-            Button(action: {
-                viewModel.burnThisTab()
-            }) {
-                Text(UserText.scopedFireConfirmationDeleteThisTabButton)
+            if viewModel.canBurnSingleTab {
+                Button(action: {
+                    viewModel.burnThisTab()
+                }) {
+                    Text(UserText.scopedFireConfirmationDeleteThisTabButton)
+                }
+                .buttonStyle(SecondaryDestructiveButtonStyle())
+                .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")
             }
-            .buttonStyle(SecondaryDestructiveButtonStyle())
-            .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")
         }
     }
 }

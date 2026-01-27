@@ -42,6 +42,14 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         self.onCancel = onCancel
     }
     
+    // MARK: - Computed Variables
+    
+    /// Indicates whether the single tab burn option should be shown.
+    /// Returns `true` when a tab view model is available.
+    var canBurnSingleTab: Bool {
+        tabViewModel != nil
+    }
+    
     // MARK: - Public Functions
     
     func burnAllTabs() {

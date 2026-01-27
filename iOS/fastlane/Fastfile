@@ -431,19 +431,16 @@ platform :ios do
     version = lane_context[SharedValues::LATEST_VERSION]
     build_number = lane_context[SharedValues::LATEST_BUILD_NUMBER]
     timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-    is_critical = options[:is_critical] || false
     
     UI.message("App Store version: #{version}")
     UI.message("App Store build: #{build_number}")
-    UI.message("Is critical: #{is_critical}")
     
     # Generate metadata JSON
     metadata = {
       latest_ios_appstore_version: {
         latest_version: version,
         build_number: build_number,
-        release_date: timestamp,
-        is_critical: is_critical
+        release_date: timestamp
       }
     }
     

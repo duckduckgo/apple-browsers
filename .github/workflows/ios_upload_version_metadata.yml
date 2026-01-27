@@ -2,17 +2,7 @@ name: iOS - Upload Version Metadata
 
 on:
   workflow_dispatch:
-    inputs:
-      is_critical:
-        description: 'Mark this release as critical (for hotfixes)'
-        type: boolean
-        default: false
   workflow_call:
-    inputs:
-      is_critical:
-        description: 'Mark this release as critical'
-        type: boolean
-        default: false
     secrets:
       AWS_ACCESS_KEY_ID_RELEASE_S3:
         required: true
@@ -71,5 +61,4 @@ jobs:
           CDN_PATH: ${{ vars.IOS_METADATA_URL_ROOT }}
         run: |
           echo "Uploading App Store version metadata using fastlane..."
-          bundle exec fastlane upload_appstore_version_metadata \
-            is_critical:${{ inputs.is_critical || false }}
+          bundle exec fastlane upload_appstore_version_metadata

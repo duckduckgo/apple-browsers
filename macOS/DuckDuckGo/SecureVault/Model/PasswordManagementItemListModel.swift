@@ -106,7 +106,7 @@ enum SecureVaultItem: Equatable, Identifiable, Comparable {
                 account.username?.lowercased().contains(filter) == true ||
                 account.title?.lowercased().contains(filter) == true
         case .card(let card):
-            return card.title.localizedCaseInsensitiveContains(filter)
+            return card.displayTitle.localizedCaseInsensitiveContains(filter)
         case .identity(let identity):
             return identity.title.localizedCaseInsensitiveContains(filter)
         case .note(let note):
@@ -121,7 +121,7 @@ enum SecureVaultItem: Equatable, Identifiable, Comparable {
         case .account(let account):
             return ((account.title ?? "").isEmpty == true ? account.domain : account.title) ?? ""
         case .card(let card):
-            return card.title
+            return card.displayTitle
         case .identity(let identity):
             return identity.title
         case .note(let note):

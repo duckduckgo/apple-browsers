@@ -179,7 +179,7 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
             return false
         }
 
-        card.title = cardTitle(with: normalizedCardNumber)
+        card.title =  title.trimmingCharacters(in: .whitespacesAndNewlines)
         card.cardNumberData = normalizedCardNumber.data(using: .utf8)!
         card.cardholderName = cardholderName
         card.cardSecurityCode = cardSecurityCode
@@ -188,14 +188,6 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
 
         onSaveRequested(card)
         return true
-    }
-
-    private func cardTitle(with normalizedCardNumber: String) -> String {
-        if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return CreditCardValidation.type(for: normalizedCardNumber).displayName
-        }
-
-        return title
     }
 
     func validateCardNumber() {

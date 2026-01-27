@@ -1,7 +1,7 @@
 //
 //  SecureVaultModels+CreditCardSummary.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,6 +20,12 @@ import Foundation
 import BrowserServicesKit
 
 extension SecureVaultModels.CreditCard {
+
+    /// Returns the display title for the credit card.
+    /// If the card has a custom title, it returns that; otherwise, it returns the card type's display name.
+    var displayTitle: String {
+        return title.isEmpty ? CreditCardValidation.type(for: cardNumber).displayName : title
+    }
 
     /// Returns a formatted summary string for the credit card suitable for display in lists.
     /// Format: "••••(last 4 digits) Expires: MM/yyyy" (if expiration is available)

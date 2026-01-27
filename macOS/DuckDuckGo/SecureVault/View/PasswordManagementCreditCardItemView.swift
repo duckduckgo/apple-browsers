@@ -115,7 +115,7 @@ private struct HeaderView: View {
 
             } else {
 
-                Text(model.title)
+                Text(model.card?.displayTitle ?? "")
                     .font(.title)
 
             }
@@ -123,7 +123,6 @@ private struct HeaderView: View {
         }
 
     }
-
 }
 
 // MARK: - Generic Views
@@ -400,6 +399,7 @@ private struct ExpirationField: View {
                             ValidationErrorView(message: UserText.pmCardExpirationError)
                         }
                     }
+                    .flexibleButtonSizing()
                     .padding(.bottom, interItemSpacing)
                 } else if let month = model.expirationMonth, let year = model.expirationYear {
                     let components = DateComponents(calendar: Calendar.current, year: year, month: month)
@@ -449,5 +449,24 @@ private struct ValidationErrorView: View {
             Spacer()
         }
         .padding(.top, 6)
+    }
+}
+
+// MARK: View extension for picker sizing
+
+private extension View {
+
+    func flexibleButtonSizing() -> some View {
+#if compiler(>=6.2) // Only compile in Xcode 26+ so that `buttonSizing` doesn't break compilation on older versions
+        Group {
+            if #available(macOS 26, *) {
+                self.buttonSizing(.flexible)
+            } else {
+                self
+            }
+        }
+#else
+        self
+#endif
     }
 }

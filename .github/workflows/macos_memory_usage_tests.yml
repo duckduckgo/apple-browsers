@@ -312,6 +312,9 @@ jobs:
     needs: memory-usage-tests
     if: needs.memory-usage-tests.result == 'success'
     runs-on: [ self-hosted, apple ]
+    defaults:
+      run:
+        working-directory: .
 
     steps:
       - name: Download memory metrics

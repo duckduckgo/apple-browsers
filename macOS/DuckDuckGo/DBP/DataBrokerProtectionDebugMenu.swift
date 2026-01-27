@@ -237,7 +237,9 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                     .dbpSecondaryTextStyle()
             },
             onApply: { [weak self] value in
-                self?.webUISettings.setCustomURL(value.trimmingCharacters(in: .whitespacesAndNewlines))
+                let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard let url = URL(string: trimmedValue), url.isValid else { return }
+                self?.webUISettings.setCustomURL(trimmedValue)
                 self?.webUISettings.setURLType(.custom)
             }
         )
@@ -250,12 +252,12 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     // swiftlint:disable force_try
     @objc private func useDBPDefaultEndpoint() {
         settings.serviceRoot = ""
+        forceBrokerJSONFilesUpdate()
     }
 
     @objc private func useDBPCustomEndpoint() {
-        let sheet = CustomDBPCustomEndpointSheet(
-            currentServiceRoot: settings.serviceRoot
-        ) { [weak self] value, removeBrokers in
+        let sheet = CustomDBPEndpointSheet(
+            onApply: { [weak self] value, removeBrokers in
             guard let self else { return }
             self.settings.serviceRoot = value
 
@@ -543,15 +545,12 @@ private struct CustomTextEntrySheet<Content: View>: ModalView {
     }
 }
 
-private struct CustomDBPCustomEndpointSheet: ModalView {
+private struct CustomDBPEndpointSheet: ModalView {
     @State private var removeBrokers = false
 
-    let currentServiceRoot: String
     let onApply: (String, Bool) -> Void
 
-    init(currentServiceRoot: String,
-         onApply: @escaping (String, Bool) -> Void) {
-        self.currentServiceRoot = currentServiceRoot
+    init(onApply: @escaping (String, Bool) -> Void) {
         self.onApply = onApply
     }
 

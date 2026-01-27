@@ -129,6 +129,7 @@ final class AIChatContextualSheetCoordinator {
                 if hasActiveChat, let context = pageContextHandler.latestContext {
                     existingSheet.pushPageContextToFrontend(context)
                 } else if let snapshot = currentSnapshot {
+                    existingSheet.markNextAttachAsAutomatic()
                     existingSheet.applyContextSnapshot(snapshot)
                 }
             }
@@ -293,6 +294,7 @@ final class AIChatContextualSheetCoordinator {
             sheetViewController?.pushPageContextToFrontend(snapshot.context)
         } else {
             Logger.aiChat.debug("[PageContext] Auto-attached to input box")
+            sheetViewController?.markNextAttachAsAutomatic()
             sheetViewController?.applyContextSnapshot(snapshot)
         }
     }
@@ -344,7 +346,6 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidRequestDismiss(_ viewController: AIChatContextualSheetViewController) {
-        pixelHandler.fireSheetDismissed()
         viewController.dismiss(animated: true)
     }
 

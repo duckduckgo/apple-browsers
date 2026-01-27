@@ -318,6 +318,11 @@ final class AIChatContextualSheetViewController: UIViewController {
         currentWebViewController?.pushPageContext(context)
     }
 
+    /// Marks the next context attachment as automatic (for pixel tracking).
+    func markNextAttachAsAutomatic() {
+        isPendingAttachAutomatic = true
+    }
+
     /// Fires the appropriate page context attached pixel based on the attach mode.
     private func firePageContextAttachedPixel() {
         if isPendingAttachAutomatic {
@@ -466,7 +471,6 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         switch action {
         case .summarize:
             pixelHandler.fireQuickActionSummarizeSelected()
-            isPendingAttachAutomatic = true
             attachPageContext()
         }
         contextualInputViewController.setText(action.prompt)

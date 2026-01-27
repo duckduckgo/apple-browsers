@@ -205,18 +205,6 @@ struct SearchBarView: NSViewRepresentable {
         }
 
         func tokenField(_ tokenField: NSTokenField,
-                        didAdd objects: [Any],
-                        at index: Int) {
-            tokensChanged()
-        }
-
-        func tokenField(_ tokenField: NSTokenField,
-                        didRemove objects: [Any],
-                        at index: Int) {
-            tokensChanged()
-        }
-
-        func tokenField(_ tokenField: NSTokenField,
                         representedObjectForEditing editingString: String) -> Any? {
             parseToken(from: editingString)
         }
@@ -224,16 +212,6 @@ struct SearchBarView: NSViewRepresentable {
         func tokenField(_ tokenField: NSTokenField,
                         displayStringForRepresentedObject representedObject: Any) -> String? {
             displayString(for: representedObject)
-        }
-
-        func tokenField(_ tokenField: NSTokenField,
-                        editingStringForRepresentedObject representedObject: Any) -> String? {
-            displayString(for: representedObject)
-        }
-
-        func tokenField(_ tokenField: NSTokenField,
-                        styleForRepresentedObject representedObject: Any) -> NSTokenField.TokenStyle {
-            .rounded
         }
 
         func tokens(from objectValue: Any?) -> [DataBrokerDatabaseSearchToken] {

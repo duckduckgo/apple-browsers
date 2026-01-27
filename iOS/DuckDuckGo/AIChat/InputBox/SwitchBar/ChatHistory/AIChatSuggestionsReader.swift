@@ -27,10 +27,13 @@ import PrivacyConfig
 // MARK: - Protocol
 
 protocol AIChatSuggestionsReading {
+    /// Maximum number of chat history items to display, from privacy config settings.
+    var maxHistoryCount: Int { get }
+
     /// Fetches AI chat suggestions from duck.ai.
     /// - Parameters:
     ///   - query: Optional search query to filter results
-    ///   - maxChats: Maximum number of recent (non-pinned) chats to return
+    ///   - maxChats: Maximum number of recent chats to return
     /// - Returns: Tuple of pinned and recent suggestions. Returns empty arrays on failure.
     @MainActor
     func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])
@@ -43,20 +46,36 @@ protocol AIChatSuggestionsReading {
 
 // MARK: - AIChatSuggestionsReader
 
-/// Wrapper around SuggestionsReader that provides a simpler API for iOS.
-/// Feature flag checks should be done by the caller.
 @MainActor
 final class AIChatSuggestionsReader: AIChatSuggestionsReading {
 
+    enum SettingsKey: String {
+        case maxHistoryCount
+
+        var defaultValue: Int {
+            switch self {
+            case .maxHistoryCount: return 2
+            }
+        }
+    }
+
     private let suggestionsReader: SuggestionsReading
+    private let privacyConfig: PrivacyConfigurationManaging?
+
+    var maxHistoryCount: Int {
+        let settings = privacyConfig?.privacyConfig.settings(for: .duckAiChatHistory)
+        return (settings?[SettingsKey.maxHistoryCount.rawValue] as? Int) ?? SettingsKey.maxHistoryCount.defaultValue
+    }
 
     init(featureFlagger: FeatureFlagger, privacyConfig: PrivacyConfigurationManaging) {
         self.suggestionsReader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
+        self.privacyConfig = privacyConfig
     }
 
     /// For testing - allows injecting a mock reader
     init(suggestionsReader: SuggestionsReading) {
         self.suggestionsReader = suggestionsReader
+        self.privacyConfig = nil
     }
 
     func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {

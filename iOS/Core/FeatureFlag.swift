@@ -322,7 +322,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showWhatsNewPromptOnDemand,
              .webViewFlashPrevention,
              .wideEventPostEndpoint,
-             .dataImportSummarySyncPromotion:
+             .dataImportSummarySyncPromotion,
+             .tabSwitcherTrackerCount:
             true
         default:
             false

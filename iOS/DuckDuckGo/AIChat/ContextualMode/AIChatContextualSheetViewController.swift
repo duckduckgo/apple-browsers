@@ -289,6 +289,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     @objc private func closeButtonTapped() {
+        pixelHandler.fireSheetDismissed()
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
     }
 

@@ -239,6 +239,11 @@ final class AIChatContextualSheetCoordinator {
 
         Logger.aiChat.debug("[PageContext] Navigation detected - triggering collection")
         await pageContextHandler.triggerContextCollection()
+
+        // Fire navigation pixel only when navigation actually happens
+        if let context = pageContextHandler.latestContext {
+            pixelHandler.firePageContextUpdatedOnNavigation(url: context.url)
+        }
     }
 
     /// Returns true if there's an active chat session (web view retained).
@@ -280,8 +285,6 @@ final class AIChatContextualSheetCoordinator {
         guard let context = context else { return }
 
         viewModel?.updateContextAvailability(pageContextHandler.hasContext)
-
-        pixelHandler.firePageContextUpdatedOnNavigation(url: context.url)
 
         let autoAttachEnabled = aiChatSettings.isAutomaticContextAttachmentEnabled
         guard isSheetPresented && autoAttachEnabled else { return }

@@ -180,54 +180,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable? {
-        Logger.aiChat.debug("[PageContext] togglePageContextTelemetry called - displayMode: \(String(describing: self.displayMode))")
+        guard self.displayMode == .contextual else { return nil }
+        guard let paramsDict = params as? [String: Any],
+              let enabled = paramsDict["enabled"] as? Int else { return nil }
 
-        guard self.displayMode == .contextual else {
-            Logger.aiChat.debug("[PageContext] togglePageContextTelemetry - not in contextual mode, ignoring")
-            return nil
-        }
-
-        guard let paramsDict = params as? [String: Any] else {
-            Logger.aiChat.error("[PageContext] togglePageContextTelemetry - params is not a dictionary")
-            return nil
-        }
-
-        // Frontend sends {enabled: 1} or {enabled: 0}
-        if let enabledValue = paramsDict["enabled"] {
-            let isEnabled: Bool
-            if let boolValue = enabledValue as? Bool {
-                isEnabled = boolValue
-            } else if let intValue = enabledValue as? Int {
-                isEnabled = intValue != 0
-            } else if let stringValue = enabledValue as? String {
-                isEnabled = stringValue == "1" || stringValue.lowercased() == "true"
-            } else {
-                Logger.aiChat.error("[PageContext] togglePageContextTelemetry - invalid 'enabled' value type")
-                return nil
-            }
-
-            Logger.aiChat.debug("[PageContext] context toggle - enabled: \(isEnabled), handler: \(self.contextualModePixelHandler != nil ? "set" : "nil")")
-
-            if isEnabled {
-                self.contextualModePixelHandler?.firePageContextManuallyAttachedFrontend()
-            } else {
-                self.contextualModePixelHandler?.firePageContextRemovedFrontend()
-            }
-        }
-        // Also support legacy {action: "attached"/"removed"} format
-        else if let action = paramsDict["action"] as? String {
-            Logger.aiChat.debug("[PageContext] action format - action: \(action), handler: \(self.contextualModePixelHandler != nil ? "set" : "nil")")
-
-            switch action {
-            case "attached":
-                self.contextualModePixelHandler?.firePageContextManuallyAttachedFrontend()
-            case "removed":
-                self.contextualModePixelHandler?.firePageContextRemovedFrontend()
-            default:
-                Logger.aiChat.error("[PageContext] togglePageContextTelemetry - unknown action: \(action)")
-            }
+        if enabled != 0 {
+            self.contextualModePixelHandler?.firePageContextManuallyAttachedFrontend()
         } else {
-            Logger.aiChat.error("[PageContext] togglePageContextTelemetry - neither 'enabled' nor 'action' key found")
+            self.contextualModePixelHandler?.firePageContextRemovedFrontend()
         }
 
         return nil
@@ -327,7 +287,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {
-        Logger.aiChat.debug("[PageContext] setContextualModePixelHandler called")
         self.contextualModePixelHandler = pixelHandler
     }
 

@@ -26,8 +26,6 @@ import PersistenceTestingUtils
 import BrowserServicesKitTestsUtils
 import Combine
 
-// swiftlint:disable force_try
-
 @MainActor
 final class TabManagerTests: XCTestCase {
 
@@ -81,16 +79,69 @@ final class TabManagerTests: XCTestCase {
         manager.removeAll()
     }
 
+    // MARK: - Tab History Cleanup Tests
+    
+    func testWhenTabRemoved_ThenTabHistoryIsCleared() async throws {
+        let tabsModel = TabsModel(desktop: false)
+        let tabToRemove = Tab(link: Link(title: "example", url: URL(string: "https://example.com")!))
+        tabsModel.add(tab: tabToRemove)
+        let tabID = tabToRemove.uid
+        
+        let mockHistoryManager = MockHistoryManager()
+        mockHistoryManager.removeTabHistoryExpectation = expectation(description: "removeTabHistory called")
+        let manager = try makeManager(tabsModel, historyManager: mockHistoryManager)
+        
+        manager.remove(at: 1)
+        
+        await fulfillment(of: [mockHistoryManager.removeTabHistoryExpectation!], timeout: 5.0)
+        
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 1)
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.first, [tabID])
+    }
+    
+    func testWhenAllTabsRemoved_ThenTabHistoryIsCleared() async throws {
+        let tabsModel = TabsModel(desktop: false)
+        let initialTab = tabsModel.get(tabAt: 0)
+        let tab1 = Tab(link: Link(title: "example1", url: URL(string: "https://example1.com")!))
+        tabsModel.add(tab: tab1)
+        let tabIDs = [initialTab.uid, tab1.uid]
+        
+        let mockHistoryManager = MockHistoryManager()
+        mockHistoryManager.removeTabHistoryExpectation = expectation(description: "removeTabHistory called")
+        let manager = try makeManager(tabsModel, historyManager: mockHistoryManager)
+        
+        manager.removeAll()
+        
+        await fulfillment(of: [mockHistoryManager.removeTabHistoryExpectation!], timeout: 5.0)
+        
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 1)
+        XCTAssertEqual(Set(mockHistoryManager.removeTabHistoryCalls.first ?? []), Set(tabIDs))
+    }
+    
+    func testWhenViewModelRequested_ThenReturnsViewModelForTab() throws {
+        let tabsModel = TabsModel(desktop: false)
+        let tab = tabsModel.get(tabAt: 0)
+        
+        let mockHistoryManager = MockHistoryManager()
+        let manager = try makeManager(tabsModel, historyManager: mockHistoryManager)
+        
+        let viewModel = manager.viewModel(for: tab)
+        
+        XCTAssertEqual(viewModel.tab.uid, tab.uid)
+    }
+
     func makeManager(_ model: TabsModel,
-                     previewsSource: TabPreviewsSource = MockTabPreviewsSource()) throws -> TabManager {
-        let tabsPersistence = try TabsModelPersistence()
+                     previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
+                     historyManager: MockHistoryManager = MockHistoryManager()) throws -> TabManager {
+        let tabsPersistence = TabsModelPersistence(store: MockKeyValueFileStore(),
+                                                   legacyStore: MockKeyValueStore())
         return TabManager(model: model,
                           persistence: tabsPersistence,
                           previewsSource: previewsSource,
                           interactionStateSource: TabInteractionStateDiskSource(),
                           privacyConfigurationManager: MockPrivacyConfigurationManager(),
                           bookmarksDatabase: MockBookmarksDatabase.make(prepareFolderStructure: false),
-                          historyManager: MockHistoryManager(),
+                          historyManager: historyManager,
                           syncService: MockDDGSyncing(),
                           userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
                           contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
@@ -107,7 +158,7 @@ final class TabManagerTests: XCTestCase {
                           maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                           maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                           featureDiscovery: MockFeatureDiscovery(),
-                          keyValueStore: try! MockKeyValueFileStore(),
+                          keyValueStore: MockKeyValueFileStore(),
                           daxDialogsManager: DummyDaxDialogsManager(),
                           aiChatSettings: MockAIChatSettingsProvider(),
                           productSurfaceTelemetry: MockProductSurfaceTelemetry(),
@@ -116,5 +167,3 @@ final class TabManagerTests: XCTestCase {
     }
 
 }
-
-// swiftlint:enable force_try

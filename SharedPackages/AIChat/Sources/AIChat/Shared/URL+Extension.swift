@@ -84,6 +84,20 @@ extension URL {
         return chatID
     }
 
+    /// Creates a URL with the specified chatID appended as a query parameter.
+    /// - Parameter chatID: The unique identifier of the chat to open.
+    /// - Returns: A new URL with the chatID appended, or self if URL components cannot be resolved.
+    public func withChatID(_ chatID: String) -> URL {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else {
+            return self
+        }
+        var queryItems = components.queryItems ?? []
+        queryItems.removeAll { $0.name == "chatID" }
+        queryItems.append(URLQueryItem(name: "chatID", value: chatID))
+        components.queryItems = queryItems
+        return components.url ?? self
+    }
+
     // MARK: - Private methods
 
     private var isDuckAIChatQuery: Bool {

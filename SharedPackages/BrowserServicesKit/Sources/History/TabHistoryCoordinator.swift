@@ -16,20 +16,35 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
+import os.log
 
 public protocol TabHistoryCoordinating {
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
-    @MainActor func addVisit(of url: URL, tabID: String?) async throws
+    @MainActor func addVisit(of url: URL, tabID: String?)
     @MainActor func removeVisits(for tabIDs: [String]) async throws
 }
 
 final public class TabHistoryCoordinator: TabHistoryCoordinating {
 
     let tabHistoryStoring: TabHistoryStoring
+    let openTabIDsProvider: () -> [String]
+    private var regularCleaningTimer: Timer?
 
-    public init(tabHistoryStoring: TabHistoryStoring) {
+    public init(tabHistoryStoring: TabHistoryStoring,
+                openTabIDsProvider: @escaping () -> [String]) {
         self.tabHistoryStoring = tabHistoryStoring
+        self.openTabIDsProvider = openTabIDsProvider
+
+        Task { @MainActor in
+            await cleanOrphanedEntries()
+            scheduleRegularCleaning()
+        }
+    }
+
+    deinit {
+        regularCleaningTimer?.invalidate()
     }
 
     @MainActor
@@ -38,15 +53,44 @@ final public class TabHistoryCoordinator: TabHistoryCoordinating {
     }
 
     @MainActor
-    public func addVisit(of url: URL, tabID: String?) async throws {
+    public func addVisit(of url: URL, tabID: String?) {
         guard let tabID else {
             return
         }
-        try await tabHistoryStoring.insertTabHistory(for: tabID, url: url)
+        Task {
+            do {
+                try await tabHistoryStoring.insertTabHistory(for: tabID, url: url)
+            } catch {
+                Logger.history.error("Failed to record visit: \(error.localizedDescription)")
+            }
+        }
     }
 
     @MainActor
     public func removeVisits(for tabIDs: [String]) async throws {
         try await tabHistoryStoring.removeTabHistory(for: tabIDs)
+    }
+
+    @MainActor
+    func cleanOrphanedEntries() async {
+        let openTabIDs = openTabIDsProvider()
+        do {
+            try await tabHistoryStoring.cleanOrphanedTabHistory(excludingTabIDs: openTabIDs)
+            Logger.history.debug("Tab history orphan cleanup completed successfully")
+        } catch {
+            Logger.history.error("Failed to clean orphaned tab history: \(error.localizedDescription)")
+        }
+    }
+
+    private func scheduleRegularCleaning() {
+        let timer = Timer(fire: .startOfDayTomorrow,
+                          interval: .day,
+                          repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                await self?.cleanOrphanedEntries()
+            }
+        }
+        RunLoop.main.add(timer, forMode: RunLoop.Mode.common)
+        regularCleaningTimer = timer
     }
 }

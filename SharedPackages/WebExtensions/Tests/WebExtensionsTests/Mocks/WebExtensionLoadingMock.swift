@@ -1,5 +1,5 @@
 //
-//  WebExtensionLoaderMock.swift
+//  WebExtensionLoadingMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,21 +16,23 @@
 //  limitations under the License.
 //
 
-@testable import DuckDuckGo_Privacy_Browser
 import WebKit
 import Foundation
+@testable import WebExtensions
 
 @available(macOS 15.4, *)
 final class WebExtensionLoadingMock: WebExtensionLoading {
 
     var loadWebExtensionCalled = false
     var loadWebExtensionsCalled = false
+    var unloadExtensionCalled = false
     var loadedPaths: [String] = []
+    var unloadedPath: String?
     var mockLoadResult: WebExtensionLoadResult?
     var mockLoadResults: [Result<WebExtensionLoadResult, Error>] = []
     var mockError: Error?
+    var mockUnloadError: Error?
 
-    // Track created test extensions for cleanup
     private var createdTestExtensions: [URL] = []
 
     @discardableResult
@@ -43,7 +45,6 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
         }
 
         guard let mockLoadResult = mockLoadResult else {
-            // Create a minimal web extension for testing
             let testExtensionURL = try createTestWebExtension()
             let mockExtension = try await WKWebExtension(resourceBaseURL: testExtensionURL)
             let mockContext = await WKWebExtensionContext(for: mockExtension)
@@ -60,7 +61,12 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     }
 
     func unloadExtension(at path: String, from controller: WKWebExtensionController) throws {
-        // Mock implementation
+        unloadExtensionCalled = true
+        unloadedPath = path
+
+        if let mockUnloadError = mockUnloadError {
+            throw mockUnloadError
+        }
     }
 
     // MARK: - Test Helper
@@ -69,7 +75,6 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
         let tempDir = FileManager.default.temporaryDirectory
         let extensionDir = tempDir.appendingPathComponent("TestExtension-\(UUID().uuidString)")
 
-        // Create minimal manifest.json for web extension
         let manifest = """
         {
             "manifest_version": 3,
@@ -83,13 +88,11 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
         try manifest.write(to: extensionDir.appendingPathComponent("manifest.json"),
                           atomically: true, encoding: .utf8)
 
-        // Track for cleanup
         createdTestExtensions.append(extensionDir)
 
         return extensionDir
     }
 
-    /// Clean up any test extensions created during testing
     func cleanupTestExtensions() {
         for extensionURL in createdTestExtensions {
             try? FileManager.default.removeItem(at: extensionURL)

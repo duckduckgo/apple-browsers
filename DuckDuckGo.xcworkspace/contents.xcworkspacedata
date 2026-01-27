@@ -32,6 +32,9 @@
       <FileRef
          location = "group:VPN">
       </FileRef>
+      <FileRef
+         location = "group:WebExtensions">
+      </FileRef>
    </Group>
    <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">

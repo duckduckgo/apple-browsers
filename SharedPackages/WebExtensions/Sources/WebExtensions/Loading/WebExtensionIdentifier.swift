@@ -19,7 +19,7 @@
 import Foundation
 
 @available(macOS 15.4, *)
-enum WebExtensionIdentifier: String {
+public enum WebExtensionIdentifier: String {
     case bitwarden
 
     static func identify(bundle: Bundle) -> WebExtensionIdentifier? {
@@ -36,7 +36,7 @@ enum WebExtensionIdentifier: String {
         }
     }
 
-    var defaultPath: String {
+    public var defaultPath: String {
         switch self {
         case .bitwarden:
             "file:///Applications/Bitwarden.app/Contents/PlugIns/safari.appex"

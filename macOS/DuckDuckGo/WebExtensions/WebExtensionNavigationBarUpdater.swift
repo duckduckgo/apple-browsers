@@ -90,16 +90,9 @@ final class WebExtensionNavigationBarUpdater {
         for (index, context) in loadedExtensions.enumerated() where !buttonIdentifiers.contains(context.uniqueIdentifier) {
 
             let newButton = webExtensionManager.toolbarButton(for: context)
-
-            newButton.target = self
-            newButton.action = #selector(handleButtonClick(_:))
-
             container.insertArrangedSubview(newButton, at: index)
 
             buttons.insert(newButton)
         }
-    }
-
-    @objc private func handleButtonClick(_ sender: NSButton) {
     }
 }

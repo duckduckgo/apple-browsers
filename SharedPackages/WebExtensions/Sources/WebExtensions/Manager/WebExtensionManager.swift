@@ -38,6 +38,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     /// Platform-specific lifecycle hooks.
     public weak var lifecycleDelegate: WebExtensionLifecycleDelegate?
 
+    /// Optional internal site handler for platform-specific URL handling.
+    public var internalSiteHandler: (any WebExtensionInternalSiteHandling)?
+
     // MARK: - AsyncStream
 
     private var continuation: AsyncStream<Void>.Continuation?
@@ -233,6 +236,16 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                                        in tab: (any WKWebExtensionTab)?,
                                        for extensionContext: WKWebExtensionContext) async -> (Set<WKWebExtension.MatchPattern>, Date?) {
         (matchPatterns, nil)
+    }
+}
+
+// MARK: - WebExtensionInternalSiteHandlerDataSource
+
+@available(macOS 15.4, iOS 18.4, *)
+extension WebExtensionManager: WebExtensionInternalSiteHandlerDataSource {
+
+    public func webExtensionContext(for url: URL) -> WKWebExtensionContext? {
+        extensionContext(for: url)
     }
 }
 

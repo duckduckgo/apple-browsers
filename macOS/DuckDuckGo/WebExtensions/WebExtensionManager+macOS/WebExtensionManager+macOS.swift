@@ -1,5 +1,5 @@
 //
-//  WebExtensionManager.swift
+//  WebExtensionManager+macOS.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -81,23 +81,6 @@ extension WebExtensionManager {
     }
 }
 
-// MARK: - WebExtensionInternalSiteHandlerDataSource
-
-@available(macOS 15.4, *)
-extension WebExtensionManager: WebExtensionInternalSiteHandlerDataSource {
-
-    func webExtensionContextForUrl(_ url: URL) -> WKWebExtensionContext? {
-        guard let context = contexts.first(where: {
-            return url.absoluteString.hasPrefix($0.baseURL.absoluteString)
-        }) else {
-            assertionFailure("No context for \(url)")
-            return nil
-        }
-
-        return context
-    }
-}
-
 // MARK: - Factory
 
 @available(macOS 15.4, *)
@@ -105,9 +88,7 @@ enum WebExtensionManagerFactory {
 
     /// Creates a fully configured WebExtensionManager with all macOS-specific providers.
     @MainActor
-    static func makeManager(
-        internalSiteHandler: WebExtensionInternalSiteHandler = WebExtensionInternalSiteHandler()
-    ) -> WebExtensionManager {
+    static func makeManager() -> WebExtensionManager {
         let windowTabProvider = WebExtensionWindowTabProvider()
         let lifecycleDelegate = AppWebExtensionLifecycleDelegate()
 
@@ -118,7 +99,9 @@ enum WebExtensionManagerFactory {
 
         manager.lifecycleDelegate = lifecycleDelegate
 
+        let internalSiteHandler = WebExtensionInternalSiteHandler()
         internalSiteHandler.dataSource = manager
+        manager.internalSiteHandler = internalSiteHandler
 
         return manager
     }

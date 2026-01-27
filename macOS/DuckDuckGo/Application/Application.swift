@@ -32,7 +32,7 @@ final class Application: NSApplication {
 
     /// Event interceptor hook for WarnBeforeQuitManager
     /// Returns nil to consume event, or the event to pass through
-    private var eventInterceptor: (token: UUID, interceptor: ((NSEvent) -> NSEvent?))?
+    private(set) var eventInterceptor: (token: UUID, interceptor: ((NSEvent) -> NSEvent?))?
 
     public var eventInterceptorToken: UUID? {
         eventInterceptor?.token
@@ -125,8 +125,8 @@ final class Application: NSApplication {
         eventInterceptor = (token: token, interceptor: interceptor)
     }
 
-    public func resetEventInterceptor(token: UUID) {
-        guard eventInterceptor?.token == token else { return }
+    public func resetEventInterceptor(token: UUID?) {
+        guard token == nil || eventInterceptor?.token == token else { return }
         eventInterceptor = nil
     }
 

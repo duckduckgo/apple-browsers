@@ -83,7 +83,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Clean up event interceptor from previous tests
         if let app = NSApp as? Application {
-            app.eventInterceptor = nil
+            app.resetEventInterceptor(token: nil)
         }
     }
 
@@ -109,7 +109,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Clean up event interceptor
         if let app = NSApp as? Application {
-            app.eventInterceptor = nil
+            app.resetEventInterceptor(token: nil)
         }
     }
 
@@ -1457,12 +1457,12 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
             // Test that interceptor consumes Cmd+Q events
             let cmdQEvent = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-            let result = app.eventInterceptor?(cmdQEvent)
+            let result = app.eventInterceptor?.interceptor(cmdQEvent)
             XCTAssertNil(result, "Event interceptor should consume Cmd+Q events")
 
             // Test that interceptor passes through other events
             let otherEvent = createKeyEvent(type: .keyDown, character: "a", modifierFlags: [])
-            let passedThrough = app.eventInterceptor?(otherEvent)
+            let passedThrough = app.eventInterceptor?.interceptor(otherEvent)
             XCTAssertNotNil(passedThrough, "Event interceptor should pass through non-Cmd+Q events")
         }
 
@@ -1470,11 +1470,6 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
         XCTAssertEqual(decision, .next)
         pixelFiring.verifyExpectations(file: #file, line: #line)
-
-        // Clean up event interceptor to avoid affecting other tests
-        if let app = NSApp as? Application {
-            app.eventInterceptor = nil
-        }
     }
 
     func testEventInterceptorInstalledWhenClosingTabViaHold() async throws {
@@ -1513,18 +1508,13 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
             // Test that interceptor consumes Cmd+W events
             let cmdWEvent = createKeyEvent(type: .keyDown, character: "w", modifierFlags: .command)
-            let result = app.eventInterceptor?(cmdWEvent)
+            let result = app.eventInterceptor?.interceptor(cmdWEvent)
             XCTAssertNil(result, "Event interceptor should consume Cmd+W events")
 
             // Test that interceptor passes through other events
             let otherEvent = createKeyEvent(type: .keyDown, character: "a", modifierFlags: [])
-            let passedThrough = app.eventInterceptor?(otherEvent)
+            let passedThrough = app.eventInterceptor?.interceptor(otherEvent)
             XCTAssertNotNil(passedThrough, "Event interceptor should pass through non-Cmd+W events")
-        }
-
-        // Clean up event interceptor to avoid affecting other tests
-        if let app = NSApp as? Application {
-            app.eventInterceptor = nil
         }
     }
 
@@ -1585,16 +1575,11 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
             // Test that interceptor consumes Cmd+Q events
             let cmdQEvent = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-            let result = app.eventInterceptor?(cmdQEvent)
+            let result = app.eventInterceptor?.interceptor(cmdQEvent)
             XCTAssertNil(result, "Event interceptor should consume Cmd+Q events")
         }
 
         pixelFiring.verifyExpectations(file: #file, line: #line)
-
-        // Clean up
-        if let app = NSApp as? Application {
-            app.eventInterceptor = nil
-        }
     }
 
     func testEventInterceptorInstalledWhenClosingTabViaSecondPress() async throws {
@@ -1649,13 +1634,8 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
             // Test that interceptor consumes Cmd+W events
             let cmdWEvent = createKeyEvent(type: .keyDown, character: "w", modifierFlags: .command)
-            let result = app.eventInterceptor?(cmdWEvent)
+            let result = app.eventInterceptor?.interceptor(cmdWEvent)
             XCTAssertNil(result, "Event interceptor should consume Cmd+W events")
-        }
-
-        // Clean up
-        if let app = NSApp as? Application {
-            app.eventInterceptor = nil
         }
     }
 

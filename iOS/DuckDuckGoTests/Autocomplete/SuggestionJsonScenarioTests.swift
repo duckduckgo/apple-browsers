@@ -393,10 +393,6 @@ extension SuggestionJsonScenarioTests {
             return nil
         }
         
-        func addVisit(of url: URL, at date: Date) -> History.Visit? {
-            return nil
-        }
-        
         func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
             return nil
         }
@@ -473,6 +469,27 @@ extension SuggestionJsonScenarioTests {
         }
         
         func deleteHistoryForURL(_ url: URL) async {
+        }
+        
+        @MainActor
+        var history: History.BrowsingHistory? {
+            historyCoordinator.history
+        }
+        
+        func addVisit(of url: URL, tabID: String?) {
+        }
+        
+        func updateTitleIfNeeded(title: String, url: URL) {
+        }
+        
+        func commitChanges(url: URL) {
+        }
+        
+        func tabHistory(tabID: String) async throws -> [URL] {
+            return []
+        }
+        
+        func removeTabHistory(for tabIDs: [String]) async {
         }
     }
 }

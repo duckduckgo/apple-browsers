@@ -482,7 +482,6 @@
 		6F9857342CD27FA2001BE9A0 /* BoolFileMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9857332CD27F98001BE9A0 /* BoolFileMarker.swift */; };
 		6FA3438F2C3D3BC300470677 /* Favorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FA3438E2C3D3BC300470677 /* Favorite.swift */; };
 		6FA343922C3D3C3B00470677 /* FavoriteIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FA343912C3D3C3B00470677 /* FavoriteIconView.swift */; };
-		6FAA75C52F277FDF00789A7D /* PrivacyStats in Frameworks */ = {isa = PBXBuildFile; productRef = AA3000060000000000000006 /* PrivacyStats */; };
 		6FAA75CA2F27B2D500789A7D /* BrowsingMenuCloseButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FAA75C92F27B2D500789A7D /* BrowsingMenuCloseButtonStyle.swift */; };
 		6FACA67F2D8AFF7800019C87 /* OmniBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FACA67E2D8AFF7800019C87 /* OmniBar.swift */; };
 		6FACA6812D8B02DF00019C87 /* OmniBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FACA6802D8B02DF00019C87 /* OmniBarView.swift */; };
@@ -1053,7 +1052,6 @@
 		98E563D82DE8B32D00E6E75F /* MockTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563AE2DE8B32D00E6E75F /* MockTimer.swift */; };
 		98E563D92DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563972DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift */; };
 		98E563DB2DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563962DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift */; };
-		C1AITEST2F2E000500E35AD5 /* AIChatPageContextHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AITEST2F2E000400E35AD5 /* AIChatPageContextHandlerTests.swift */; };
 		98E563DC2DE8B32D00E6E75F /* MockDDGSyncing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E5639B2DE8B32D00E6E75F /* MockDDGSyncing.swift */; };
 		98E563DD2DE8B32D00E6E75F /* MockPersistentPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A42DE8B32D00E6E75F /* MockPersistentPixel.swift */; };
 		98E563DE2DE8B32D00E6E75F /* MockTabDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563AA2DE8B32D00E6E75F /* MockTabDelegate.swift */; };
@@ -1606,10 +1604,8 @@
 		C13C60DA2E6D7AE100ED2211 /* SwitchBarSubmissionMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C60D92E6D7AE100ED2211 /* SwitchBarSubmissionMetrics.swift */; };
 		C13C60DC2E6D7B0F00ED2211 /* SwitchBarSubmissionMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C60DB2E6D7B0F00ED2211 /* SwitchBarSubmissionMetricsTests.swift */; };
 		C13EBC4F2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */; };
-		C1AIREPO2F2E000100E35AD5 /* AIChatPageContextHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AIREPO2F2E000000E35AD5 /* AIChatPageContextHandler.swift */; };
 		C13EBC512EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */; };
 		C13EBC532EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */; };
-		C13EBC552EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC542EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift */; };
 		C13EEA1E2D64CFCA001D5DC3 /* DataImportViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */; };
 		C13EEA202D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */; };
 		C13EEA222D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA212D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift */; };
@@ -1701,6 +1697,8 @@
 		C1AICOBV2F1A000100E35AD5 /* AIChatContextualOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AICOBV2F1A000000E35AD5 /* AIChatContextualOnboardingView.swift */; };
 		C1AICSVM2F0E000100E35AD5 /* AIChatContextualSheetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AICSVM2F0E000000E35AD5 /* AIChatContextualSheetViewModel.swift */; };
 		C1AICSVMT2F0E000200E35AD5 /* AIChatContextualSheetViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AICSVMT2F0E000300E35AD5 /* AIChatContextualSheetViewModelTests.swift */; };
+		C1AIREPO2F2E000100E35AD5 /* AIChatPageContextHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AIREPO2F2E000000E35AD5 /* AIChatPageContextHandler.swift */; };
+		C1AITEST2F2E000500E35AD5 /* AIChatPageContextHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AITEST2F2E000400E35AD5 /* AIChatPageContextHandlerTests.swift */; };
 		C1B3BF472D8D99DA00EE1D43 /* AutofillCreditCardListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B3BF432D8D99DA00EE1D43 /* AutofillCreditCardListView.swift */; };
 		C1B3BF482D8D99DA00EE1D43 /* AutofillCreditCardListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B3BF442D8D99DA00EE1D43 /* AutofillCreditCardListViewModel.swift */; };
 		C1B3BF4F2D91805F00EE1D43 /* AutofillCreditCardListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B3BF4E2D91805F00EE1D43 /* AutofillCreditCardListViewController.swift */; };
@@ -3607,7 +3605,6 @@
 		98E563932DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingPresenterMock.swift; sourceTree = "<group>"; };
 		98E563952DE8B32D00E6E75F /* DuckPlayerMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerMocks.swift; sourceTree = "<group>"; };
 		98E563962DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAIChatSettingsProvider.swift; sourceTree = "<group>"; };
-		C1AITEST2F2E000400E35AD5 /* AIChatPageContextHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPageContextHandlerTests.swift; sourceTree = "<group>"; };
 		98E563972DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBookmarksCoreDataStorage.swift; sourceTree = "<group>"; };
 		98E563982DE8B32D00E6E75F /* MockBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBundle.swift; sourceTree = "<group>"; };
 		98E5639A2DE8B32D00E6E75F /* MockDataExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDataExtensions.swift; sourceTree = "<group>"; };
@@ -3976,7 +3973,6 @@
 		C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualModeFeature.swift; sourceTree = "<group>"; };
 		C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualModeFeatureTests.swift; sourceTree = "<group>"; };
 		C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetCoordinatorTests.swift; sourceTree = "<group>"; };
-		C13EBC542EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualQuickActionTests.swift; sourceTree = "<group>"; };
 		C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportViewModelTests.swift; sourceTree = "<group>"; };
 		C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipContentSelectionViewModelTests.swift; sourceTree = "<group>"; };
 		C13EEA212D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewModelTests.swift; sourceTree = "<group>"; };
@@ -4084,9 +4080,10 @@
 		C1AD33312DBAD1DD003B80A4 /* SaveCreditCardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardViewController.swift; sourceTree = "<group>"; };
 		C1AD33322DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardViewModel.swift; sourceTree = "<group>"; };
 		C1AICOBV2F1A000000E35AD5 /* AIChatContextualOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualOnboardingView.swift; sourceTree = "<group>"; };
-		C1AIREPO2F2E000000E35AD5 /* AIChatPageContextHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPageContextHandler.swift; sourceTree = "<group>"; };
 		C1AICSVM2F0E000000E35AD5 /* AIChatContextualSheetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetViewModel.swift; sourceTree = "<group>"; };
 		C1AICSVMT2F0E000300E35AD5 /* AIChatContextualSheetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetViewModelTests.swift; sourceTree = "<group>"; };
+		C1AIREPO2F2E000000E35AD5 /* AIChatPageContextHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPageContextHandler.swift; sourceTree = "<group>"; };
+		C1AITEST2F2E000400E35AD5 /* AIChatPageContextHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPageContextHandlerTests.swift; sourceTree = "<group>"; };
 		C1B3BF432D8D99DA00EE1D43 /* AutofillCreditCardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardListView.swift; sourceTree = "<group>"; };
 		C1B3BF442D8D99DA00EE1D43 /* AutofillCreditCardListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardListViewModel.swift; sourceTree = "<group>"; };
 		C1B3BF4E2D91805F00EE1D43 /* AutofillCreditCardListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardListViewController.swift; sourceTree = "<group>"; };
@@ -5131,7 +5128,6 @@
 				C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */,
 				C1AICSVMT2F0E000300E35AD5 /* AIChatContextualSheetViewModelTests.swift */,
 				C1AITEST2F2E000400E35AD5 /* AIChatPageContextHandlerTests.swift */,
-				C13EBC542EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift */,
 			);
 			path = AIChat;
 			sourceTree = "<group>";
@@ -12214,7 +12210,6 @@
 				C13EBC512EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift in Sources */,
 				C13EBC532EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift in Sources */,
 				C1AICSVMT2F0E000200E35AD5 /* AIChatContextualSheetViewModelTests.swift in Sources */,
-				C13EBC552EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift in Sources */,
 				BBFF18B12C76448100C48D7D /* QuerySubmittedTests.swift in Sources */,
 				9FFDA8392DFA8DC2007923F7 /* VideoPlayerCoordinatorTests.swift in Sources */,
 				CB18A3662E2790C700BE9D8D /* UserAgentConfigurationTests.swift in Sources */,

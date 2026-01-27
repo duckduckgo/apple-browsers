@@ -74,7 +74,7 @@ struct BrowsingMenuSheetView: View {
     @State private var headerBottomY: CGFloat = 0
 
     private var isHeaderVisible: Bool {
-        headerDataSource.isWebsiteHeaderVisible || verticalSizeClass == .compact
+        headerDataSource.isHeaderVisible || verticalSizeClass == .compact
     }
 
     @ObservedObject private(set) var headerDataSource: BrowsingMenuHeaderDataSource
@@ -110,12 +110,12 @@ struct BrowsingMenuSheetView: View {
                 websiteHeader
                     .background(headerPositionTracker)
                     .background {
-                        if isScrolledBelowHeader && headerDataSource.isWebsiteHeaderVisible {
+                        if isScrolledBelowHeader && headerDataSource.isHeaderVisible {
                             Rectangle().fill(.thickMaterial)
                                 .ignoresSafeArea()
                         }
                     }
-                    .padding(.vertical, headerDataSource.isWebsiteHeaderVisible ? 0 : -4)
+                    .padding(.vertical, headerDataSource.isHeaderVisible ? 0 : -4)
             }
         })
         .tint(Color(designSystemColor: .textPrimary))
@@ -124,11 +124,10 @@ struct BrowsingMenuSheetView: View {
     @ViewBuilder
     private var websiteHeader: some View {
         BrowsingMenuHeaderView(
-            title: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.title : nil,
-            url: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.url : nil,
-            favicon: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.favicon : nil,
-            easterEggLogoURL: headerDataSource.isWebsiteHeaderVisible ? headerDataSource.easterEggLogoURL : nil,
-            isWebsiteInfoVisible: headerDataSource.isWebsiteHeaderVisible,
+            title: headerDataSource.title,
+            displayURL: headerDataSource.displayURL,
+            iconType: headerDataSource.iconType,
+            isWebsiteInfoVisible: headerDataSource.isHeaderVisible,
             onDismiss: { dismiss() }
         )
         .padding(.horizontal, 20)
@@ -331,15 +330,10 @@ private struct MenuHeaderButton: View {
 private struct BrowsingMenuHeaderView: View {
 
     let title: String?
-    let url: URL?
-    let favicon: UIImage?
-    let easterEggLogoURL: URL?
+    let displayURL: String?
+    let iconType: HeaderIconType
     let isWebsiteInfoVisible: Bool
     let onDismiss: () -> Void
-
-    private var displayURL: String? {
-        url?.host
-    }
 
     var body: some View {
         HStack(spacing: 4) {
@@ -371,15 +365,20 @@ private struct BrowsingMenuHeaderView: View {
     @ViewBuilder
     private var faviconView: some View {
         Group {
-            if let easterEggLogoURL {
-                KFImage(easterEggLogoURL)
+            switch iconType {
+            case .aiChat:
+                Image(uiImage: DesignSystemImages.Color.Size24.aiChatGradient)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-            } else if let favicon {
-                Image(uiImage: favicon)
+            case .easterEgg(let url):
+                KFImage(url)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-            } else {
+            case .favicon(let image):
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            case .globe:
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
                     .foregroundStyle(Color(designSystemColor: .icons))
             }
@@ -393,25 +392,20 @@ private struct BrowsingMenuHeaderView: View {
 
     @ViewBuilder
     private var textContent: some View {
-        if let title, !title.isEmpty {
-            VStack(alignment: .leading, spacing: MenuHeaderConstant.textSpacing) {
+        VStack(alignment: .leading, spacing: MenuHeaderConstant.textSpacing) {
+            if let title, !title.isEmpty {
                 Text(title)
                     .daxHeadline()
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
                     .lineLimit(1)
-
-                if let displayURL {
-                    Text(displayURL)
-                        .daxCaption()
-                        .foregroundStyle(Color(designSystemColor: .textSecondary))
-                        .lineLimit(1)
-                }
             }
-        } else if let displayURL {
-            Text(displayURL)
-                .daxHeadline()
-                .foregroundStyle(Color(designSystemColor: .textPrimary))
-                .lineLimit(1)
+
+            if let displayURL {
+                Text(displayURL)
+                    .daxCaption1()
+                    .foregroundStyle(Color(designSystemColor: .textSecondary))
+                    .lineLimit(1)
+            }
         }
     }
 }

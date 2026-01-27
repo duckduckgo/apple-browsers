@@ -20,34 +20,57 @@
 import Foundation
 import UIKit
 
+enum HeaderIconType: Equatable {
+    case aiChat
+    case easterEgg(URL)
+    case favicon(UIImage)
+    case globe
+}
+
 final class BrowsingMenuHeaderDataSource: ObservableObject {
-    @Published private(set) var isWebsiteHeaderVisible: Bool = false
+    @Published private(set) var isHeaderVisible: Bool = false
     @Published private(set) var title: String?
-    @Published private(set) var url: URL?
-    @Published private(set) var favicon: UIImage?
-    @Published private(set) var easterEggLogoURL: URL?
+    @Published private(set) var displayURL: String?
+    @Published private(set) var iconType: HeaderIconType = .globe
 
-    func update(isHeaderVisible: Bool, title: String?, url: URL?, easterEggLogoURL: URL?) {
-        self.isWebsiteHeaderVisible = isHeaderVisible
+    /// Tracks the current URL to detect changes for favicon clearing
+    private var currentURL: URL?
+
+    func update(forAITab title: String) {
+        self.isHeaderVisible = true
         self.title = title
-        self.easterEggLogoURL = easterEggLogoURL
-
-        // Clear favicon when URL changes to avoid stale favicon during async load
-        if self.url != url {
-            self.favicon = nil
-        }
-        self.url = url
+        self.displayURL = nil
+        self.iconType = .aiChat
+        self.currentURL = nil
     }
 
-    func update(favicon: UIImage?) {
-        self.favicon = favicon
+    func update(title: String?, url: URL?, easterEggLogoURL: URL?) {
+        self.isHeaderVisible = true
+        self.displayURL = url?.host
+
+        // Clear favicon when URL changes to avoid stale favicon during async load
+        if self.currentURL != url {
+            self.iconType = .globe
+        }
+        self.currentURL = url
+
+        // Always update title with what's passed
+        self.title = title
+
+        if let easterEggLogoURL {
+            self.iconType = .easterEgg(easterEggLogoURL)
+        }
+    }
+
+    func update(favicon: UIImage) {
+        self.iconType = .favicon(favicon)
     }
 
     func reset() {
-        isWebsiteHeaderVisible = false
+        isHeaderVisible = false
         title = nil
-        url = nil
-        favicon = nil
-        easterEggLogoURL = nil
+        displayURL = nil
+        iconType = .globe
+        currentURL = nil
     }
 }

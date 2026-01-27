@@ -28,8 +28,8 @@ extension BrowsingMenuModel {
     ) -> CGFloat {
         let isCompact = verticalSizeClass == .compact
         return estimatedContentHeight(
-            includesWebsiteInfo: headerDataSource.isWebsiteHeaderVisible,
-            includesCloseButtonHeader: isCompact && !headerDataSource.isWebsiteHeaderVisible
+            includesWebsiteInfo: headerDataSource.isHeaderVisible,
+            includesCloseButtonHeader: isCompact && !headerDataSource.isHeaderVisible
         )
     }
 

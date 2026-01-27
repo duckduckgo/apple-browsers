@@ -32,16 +32,21 @@ final class BrowsingMenuHeaderStateProvider {
         isFeatureEnabled: Bool,
         isNewTabPage: Bool = false,
         isAITab: Bool = false,
+        isError: Bool,
         hasLink: Bool,
         url: URL? = nil,
         title: String? = nil,
         easterEggLogoURL: String? = nil
     ) {
         let isHeaderVisible = isFeatureEnabled && !isNewTabPage && !isAITab && hasLink
+        let isAIHeaderVisible = isFeatureEnabled && isAITab
 
-        if isHeaderVisible {
+        if isAIHeaderVisible {
+            dataSource.reset()
+            dataSource.update(forAITab: UserText.duckAiFeatureName)
+        } else if isHeaderVisible {
             let logoURL = easterEggLogoURL.flatMap { URL(string: $0) }
-            dataSource.update(isHeaderVisible: true, title: title, url: url, easterEggLogoURL: logoURL)
+            dataSource.update(title: isError ? nil : title, url: url, easterEggLogoURL: logoURL)
             if logoURL == nil {
                 loadFavicon(for: url, into: dataSource)
             }
@@ -56,7 +61,6 @@ final class BrowsingMenuHeaderStateProvider {
         currentFaviconRequestID = requestID
 
         guard let domain = url?.host else {
-            dataSource.update(favicon: nil)
             return
         }
 
@@ -66,11 +70,12 @@ final class BrowsingMenuHeaderStateProvider {
                 usingCache: .tabs,
                 useFakeFavicon: false
             )
-            let favicon = result.isFake ? nil : result.image
 
             await MainActor.run {
                 guard self?.currentFaviconRequestID == requestID else { return }
-                dataSource.update(favicon: favicon)
+                if let favicon = result.image, !result.isFake {
+                    dataSource.update(favicon: favicon)
+                }
             }
         }
     }

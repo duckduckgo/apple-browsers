@@ -52,10 +52,8 @@ struct InfoPanelView: View {
                 .accessibilityHidden(true)
 
             (Text(model.title).fontWeight(.semibold) + Text(" " + model.subtitle))
-                .font(.system(size: 14))
+                .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
             Spacer()
 
             Button(action: { model.onInfo() }, label: {

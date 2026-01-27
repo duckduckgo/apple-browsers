@@ -176,7 +176,6 @@ jobs:
         | tee ui-tests.log
 
     - name: Build Memory Metrics Report
-      if: always() && steps.run-ui-tests.outcome == 'success'
       working-directory: macOS
       run: |
         XCRESULT_PATH=$(find DerivedData/Logs/Test -name "*.xcresult" | head -1)
@@ -187,7 +186,6 @@ jobs:
         ../scripts/build-memory-metrics.sh "${{ matrix.runner }}" "$XCRESULT_PATH"
 
     - name: Upload memory metrics
-      if: always() && steps.run-ui-tests.outcome == 'success'
       uses: actions/upload-artifact@v4
       with:
         name: memory-metrics
@@ -289,7 +287,6 @@ jobs:
   report-memory-metrics-to-clickhouse:
     name: Report Memory Metrics to ClickHouse
     needs: memory-usage-tests
-    if: needs.memory-usage-tests.result == 'success'
     runs-on: [ self-hosted, apple ]
     defaults:
       run:

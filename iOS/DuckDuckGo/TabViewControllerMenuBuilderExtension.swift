@@ -294,7 +294,7 @@ extension TabViewController {
             entries.append(buildReloadEntry())
         }
 
-        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: true) {
+        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: true, percentageInDetail: false) {
             entries.append(entry)
         }
 
@@ -310,7 +310,7 @@ extension TabViewController {
 
         var entries = [BrowsingMenuEntry]()
 
-        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon) {
+        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon, percentageInDetail: false) {
             entries.append(entry)
         }
 
@@ -396,8 +396,8 @@ extension TabViewController {
         })
     }
     
-    private func buildZoomEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
-        return textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon)
+    private func buildZoomEntry(forLink link: Link, useSmallIcon: Bool = true, useDetailText: Bool = false) -> BrowsingMenuEntry? {
+        return textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon, percentageInDetail: useDetailText)
     }
     
     private func buildReloadEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
@@ -917,7 +917,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     
     func makeZoomEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
-        return buildZoomEntry(forLink: link, useSmallIcon: false)
+        return buildZoomEntry(forLink: link, useSmallIcon: false, useDetailText: true)
     }
     
     func makeReloadEntry() -> BrowsingMenuEntry? {

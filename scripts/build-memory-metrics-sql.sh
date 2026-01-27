@@ -89,26 +89,48 @@ xcrun xcresulttool get test-results metrics \
     --compact > raw-metrics.json
 
 # Step 2: Extract and calculate memory metrics
-jq 'def avg: add / length | floor;
-[.[] |
-    {
-        test_id: .testIdentifier,
-        memory_start: (.testRuns[0].metrics | map(select(.identifier | contains("initial"))) | .[0].measurements | avg),
-        memory_end: (.testRuns[0].metrics | map(select(.identifier | contains("final"))) | .[0].measurements | avg)
-    } |
-    . + { memory_delta: (.memory_end - .memory_start) }
-]' raw-metrics.json > processed-metrics.json
+jq '
+def avg: add / length | floor;
+def metric(name): .testRuns[0].metrics | map(select(.identifier | contains(name))) | .[0].measurements | avg;
+
+[.[] | {
+    test_id: .testIdentifier,
+    memory_start: metric("initial"),
+    memory_end: metric("final")
+} | . + {
+    memory_delta: (.memory_end - .memory_start)
+}]
+' raw-metrics.json > processed-metrics.json
 
 # Step 3: Format as SQL INSERT statements (output to stdout)
-jq -r --arg runner "$RUNNER" \
-      --arg run_id "$RUN_ID" \
-      --arg branch "$BRANCH" \
-      --arg commit_hash "$COMMIT_HASH" \
-      --arg start_time "$START_TIME" \
-      --arg q "'" \
-    '.[] |
-    "INSERT INTO native_apps.macos_performance_memory_test_results
-        (run_id, runs_on, start_time, test_id, branch, commit_hash, memory_start, memory_end, memory_delta)
-    VALUES
-        (\($run_id), \($q)\($runner)\($q), \($q)\($start_time)\($q), \($q)\(.test_id)\($q), \($q)\($branch)\($q), \($q)\($commit_hash)\($q), \(.memory_start), \(.memory_end), \(.memory_delta));"
-    ' processed-metrics.json
+jq -r \
+    --arg runner "$RUNNER" \
+    --arg run_id "$RUN_ID" \
+    --arg branch "$BRANCH" \
+    --arg commit_hash "$COMMIT_HASH" \
+    --arg start_time "$START_TIME" \
+'
+def sql_quote(v): "'\''" + v + "'\''";
+
+.[] | "INSERT INTO native_apps.macos_performance_memory_test_results (
+    run_id,
+    runs_on,
+    start_time,
+    test_id,
+    branch,
+    commit_hash,
+    memory_start,
+    memory_end,
+    memory_delta
+) VALUES (
+    \($run_id),
+    \(sql_quote($runner)),
+    \(sql_quote($start_time)),
+    \(sql_quote(.test_id)),
+    \(sql_quote($branch)),
+    \(sql_quote($commit_hash)),
+    \(.memory_start),
+    \(.memory_end),
+    \(.memory_delta)
+);"
+' processed-metrics.json

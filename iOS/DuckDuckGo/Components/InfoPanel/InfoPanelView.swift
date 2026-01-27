@@ -51,15 +51,11 @@ struct InfoPanelView: View {
                 .frame(width: Constants.iconSize, height: Constants.iconSize)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 0) {
-                Text(model.title)
-                    .fontWeight(.semibold)
-                    .font(.subheadline)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                Text(model.subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-            }
+            (Text(model.title).fontWeight(.semibold) + Text(" " + model.subtitle))
+                .font(.system(size: 14))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             Spacer()
 
             Button(action: { model.onInfo() }, label: {

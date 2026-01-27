@@ -225,9 +225,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatContextualSettingsAutoAttachEnabled)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAutoContextEnabled)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatContextualSettingsAutoAttachDisabled)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAutoContextDisabled)
         }
     }
     

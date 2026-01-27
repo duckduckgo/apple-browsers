@@ -173,11 +173,9 @@ final class AIChatContextualSheetCoordinator {
         startObservingContextUpdates()
         presentingViewController.present(sheetVC, animated: true)
 
-        if isNewSheet {
-            pixelHandler.fireSheetOpened()
-            if restoreURL != nil {
-                pixelHandler.fireSessionRestored()
-            }
+        pixelHandler.fireSheetOpened()
+        if isNewSheet && restoreURL != nil {
+            pixelHandler.fireSessionRestored()
         }
     }
 
@@ -187,18 +185,24 @@ final class AIChatContextualSheetCoordinator {
         Logger.aiChat.debug("[PageContext] Manual attach requested")
 
         pixelHandler.beginManualAttach()
-        defer { pixelHandler.endManualAttach() }
 
         await pageContextHandler.triggerContextCollection()
 
-        guard pageContextHandler.hasContext else { return }
+        guard pageContextHandler.hasContext else {
+            pixelHandler.endManualAttach()
+            return
+        }
 
         viewModel?.updateContextAvailability(true)
 
-        guard let snapshot = currentSnapshot else { return }
+        guard let snapshot = currentSnapshot else {
+            pixelHandler.endManualAttach()
+            return
+        }
 
         sheetViewController?.applyContextSnapshot(snapshot)
         pixelHandler.firePageContextManuallyAttachedNative()
+        pixelHandler.endManualAttach()
     }
 
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.
@@ -213,6 +217,7 @@ final class AIChatContextualSheetCoordinator {
         viewModel = nil
         stopObservingContextUpdates()
         pageContextHandler.clear()
+        pixelHandler.reset()
     }
 
     /// Clears the current page context.

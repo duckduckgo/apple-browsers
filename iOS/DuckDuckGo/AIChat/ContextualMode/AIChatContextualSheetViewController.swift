@@ -322,8 +322,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private func firePageContextAttachedPixel() {
         if isPendingAttachAutomatic {
             pixelHandler.firePageContextAutoAttached()
-            isPendingAttachAutomatic = false
         }
+        isPendingAttachAutomatic = false
     }
 }
 
@@ -371,6 +371,8 @@ private extension AIChatContextualSheetViewController {
             return
         }
 
+        // If no snapshot available, request fresh context from delegate
+        // If this fails, the coordinator won't call applyContextSnapshot, so reset the flag
         delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
     }
 
@@ -657,6 +659,10 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
         let isMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
         isCurrentlyMediumDetent = isMediumDetent
         currentWebViewController?.setMediumDetent(isMediumDetent)
+    }
+
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        pixelHandler.fireSheetDismissed()
     }
 }
 

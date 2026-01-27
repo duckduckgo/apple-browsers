@@ -180,6 +180,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard displayMode == .contextual else { return nil }
         guard let paramsDict = params as? [String: Any],
               let action = paramsDict["action"] as? String else {
             return nil

@@ -53,10 +53,14 @@ protocol AIChatContextualModePixelFiring {
 
     // MARK: - URL Priming
     func primeNavigationURL(_ url: String)
+
+    // MARK: - Reset
+    func reset()
 }
 
 /// Handles all pixel firing for contextual AI chat mode.
 /// Single source of truth for contextual mode analytics.
+@MainActor
 final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     // MARK: - State

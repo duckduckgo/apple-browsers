@@ -1,5 +1,5 @@
 //
-//  RebrandedBrowsingDaxDialogFactory.swift
+//  RebrandedContextualDaxDialogFactory.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -21,7 +21,7 @@ import SwiftUI
 import Core
 import Onboarding
 
-final class RebrandedBrowserDaxDialogFactory: ContextualDaxDialogsFactory {
+final class RebrandedContextualDaxDialogFactory: ContextualDaxDialogsFactory {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let contextualOnboardingSettings: ContextualOnboardingSettings
     private let contextualOnboardingPixelReporter: OnboardingPixelReporting

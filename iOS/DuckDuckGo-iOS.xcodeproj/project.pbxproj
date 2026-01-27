@@ -1247,7 +1247,7 @@
 		9F0369EC2F22FD2F00A00DCA /* NewTabDaxDialogProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0369EB2F22FD2000A00DCA /* NewTabDaxDialogProvider.swift */; };
 		9F0369EE2F2307AE00A00DCA /* RebrandedNewTabDaxDialogFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0369ED2F2307A000A00DCA /* RebrandedNewTabDaxDialogFactory.swift */; };
 		9F0369F22F23096C00A00DCA /* BrowserDaxDialogProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0369F12F23094100A00DCA /* BrowserDaxDialogProvider.swift */; };
-		9F0369F42F23099800A00DCA /* RebrandedBrowsingDaxDialogFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0369F32F23098900A00DCA /* RebrandedBrowsingDaxDialogFactory.swift */; };
+		9F0369F42F23099800A00DCA /* RebrandedContextualDaxDialogFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0369F32F23098900A00DCA /* RebrandedContextualDaxDialogFactory.swift */; };
 		9F0369F72F231EBC00A00DCA /* RebrandedOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0369F62F231EB100A00DCA /* RebrandedOnboardingView.swift */; };
 		9F06EB8C2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */; };
 		9F06EB922D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */; };
@@ -3692,7 +3692,7 @@
 		9F0369EB2F22FD2000A00DCA /* NewTabDaxDialogProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabDaxDialogProvider.swift; sourceTree = "<group>"; };
 		9F0369ED2F2307A000A00DCA /* RebrandedNewTabDaxDialogFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedNewTabDaxDialogFactory.swift; sourceTree = "<group>"; };
 		9F0369F12F23094100A00DCA /* BrowserDaxDialogProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserDaxDialogProvider.swift; sourceTree = "<group>"; };
-		9F0369F32F23098900A00DCA /* RebrandedBrowsingDaxDialogFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedBrowsingDaxDialogFactory.swift; sourceTree = "<group>"; };
+		9F0369F32F23098900A00DCA /* RebrandedContextualDaxDialogFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedContextualDaxDialogFactory.swift; sourceTree = "<group>"; };
 		9F0369F62F231EB100A00DCA /* RebrandedOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedOnboardingView.swift; sourceTree = "<group>"; };
 		9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionSettingsViewModelTests.swift; sourceTree = "<group>"; };
 		9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionPreferencesManagerTests.swift; sourceTree = "<group>"; };
@@ -5939,14 +5939,6 @@
 			path = Localization;
 			sourceTree = "<group>";
 		};
-		56D060202C356B0B003BAEB5 /* ContextualDaxDialogs */ = {
-			isa = PBXGroup;
-			children = (
-				56D060252C359D2E003BAEB5 /* ContextualOnboardingDialogs.swift */,
-			);
-			path = ContextualDaxDialogs;
-			sourceTree = "<group>";
-		};
 		56D060292C381AD1003BAEB5 /* OnboardingHelpers */ = {
 			isa = PBXGroup;
 			children = (
@@ -7234,23 +7226,15 @@
 			path = PictureInPicture;
 			sourceTree = "<group>";
 		};
-		9F0369EA2F22FCF500A00DCA /* Factories */ = {
+		9F0369F02F2307D200A00DCA /* Rebranding */ = {
 			isa = PBXGroup;
 			children = (
-				9F0369F02F2307D200A00DCA /* Rebranding2026 */,
-				564DE4522C3ED1B700D23241 /* NewTabDaxDialogFactory.swift */,
-				9F5E5AAB2C3D0FCD00165F54 /* ContextualDaxDialogsFactory.swift */,
-			);
-			path = Factories;
-			sourceTree = "<group>";
-		};
-		9F0369F02F2307D200A00DCA /* Rebranding2026 */ = {
-			isa = PBXGroup;
-			children = (
-				9F0369F32F23098900A00DCA /* RebrandedBrowsingDaxDialogFactory.swift */,
+				9F0369F32F23098900A00DCA /* RebrandedContextualDaxDialogFactory.swift */,
 				9F0369ED2F2307A000A00DCA /* RebrandedNewTabDaxDialogFactory.swift */,
+				9F0369EB2F22FD2000A00DCA /* NewTabDaxDialogProvider.swift */,
+				9F0369F12F23094100A00DCA /* BrowserDaxDialogProvider.swift */,
 			);
-			path = Rebranding2026;
+			path = Rebranding;
 			sourceTree = "<group>";
 		};
 		9F0369F52F231EA000A00DCA /* Rebranding */ = {
@@ -7314,9 +7298,10 @@
 			path = Providers;
 			sourceTree = "<group>";
 		};
-		9F23B7FF2C2BABE000950875 /* OnboardingIntro */ = {
+		9F23B7FF2C2BABE000950875 /* LinearOnboarding */ = {
 			isa = PBXGroup;
 			children = (
+				9F9C1F322F2889CA005E0D4F /* Components */,
 				9F0369F52F231EA000A00DCA /* Rebranding */,
 				9FE08BDB2C2A88FA001D5EBC /* OnboardingIntroViewController.swift */,
 				9FB0271C2C293619009EA190 /* OnboardingIntroViewModel.swift */,
@@ -7331,7 +7316,7 @@
 				9F7CFF7E2C8A94F70012833E /* OnboardingView+AddressBarPositionContent.swift */,
 				97770B692EC1ECE300CACA68 /* OnboardingView+SearchExperienceContent.swift */,
 			);
-			path = OnboardingIntro;
+			path = LinearOnboarding;
 			sourceTree = "<group>";
 		};
 		9F23B8042C2BE20500950875 /* Onboarding */ = {
@@ -7507,11 +7492,11 @@
 		9F5E5AAA2C3D0FAA00165F54 /* ContextualOnboarding */ = {
 			isa = PBXGroup;
 			children = (
-				9F0369EA2F22FCF500A00DCA /* Factories */,
-				56D060202C356B0B003BAEB5 /* ContextualDaxDialogs */,
+				9F0369F02F2307D200A00DCA /* Rebranding */,
+				564DE4522C3ED1B700D23241 /* NewTabDaxDialogFactory.swift */,
+				9F5E5AAB2C3D0FCD00165F54 /* ContextualDaxDialogsFactory.swift */,
+				56D060252C359D2E003BAEB5 /* ContextualOnboardingDialogs.swift */,
 				9F5E5AAF2C3E4C6000165F54 /* ContextualOnboardingPresenter.swift */,
-				9F0369EB2F22FD2000A00DCA /* NewTabDaxDialogProvider.swift */,
-				9F0369F12F23094100A00DCA /* BrowserDaxDialogProvider.swift */,
 			);
 			path = ContextualOnboarding;
 			sourceTree = "<group>";
@@ -7694,6 +7679,18 @@
 				9FDEC7BB2C91204900C7A692 /* AppIconPickerViewModel.swift */,
 			);
 			path = AppIconPicker;
+			sourceTree = "<group>";
+		};
+		9F9C1F322F2889CA005E0D4F /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				9F8E0F282CCA577E001EA7C5 /* AddToDock */,
+				9FDEC7BD2C9125EC00C7A692 /* AddressBarPositionPicker */,
+				9F9A92322C86B419001D036D /* AppIconPicker */,
+				97770B6F2EC1ED2600CACA68 /* SearchExperiencePicker */,
+				9FCFCD842C75C91A006EB7A0 /* ProgressBarView.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		9FA09DA52EA71F2900E26F3F /* Cooldown */ = {
@@ -7941,23 +7938,18 @@
 			path = WhatsNew;
 			sourceTree = "<group>";
 		};
-		9FF7E9802C22A19800902BE5 /* OnboardingExperiment */ = {
+		9FF7E9802C22A19800902BE5 /* OnboardingFlow */ = {
 			isa = PBXGroup;
 			children = (
 				9F8E0F2B2CCA617C001EA7C5 /* VideoPlayer */,
-				9F8E0F282CCA577E001EA7C5 /* AddToDock */,
 				9F96F73D2C914C3D009E45D5 /* Background */,
-				9FDEC7BD2C9125EC00C7A692 /* AddressBarPositionPicker */,
-				9F9A92322C86B419001D036D /* AppIconPicker */,
 				9F9A922C2C86A560001D036D /* Manager */,
 				9FE05CEC2C36423C00D9046B /* Pixels */,
 				9FE08BD12C2A5B77001D5EBC /* Styles */,
-				9F23B7FF2C2BABE000950875 /* OnboardingIntro */,
+				9F23B7FF2C2BABE000950875 /* LinearOnboarding */,
 				9F5E5AAA2C3D0FAA00165F54 /* ContextualOnboarding */,
-				97770B6F2EC1ED2600CACA68 /* SearchExperiencePicker */,
-				9FCFCD842C75C91A006EB7A0 /* ProgressBarView.swift */,
 			);
-			path = OnboardingExperiment;
+			path = OnboardingFlow;
 			sourceTree = "<group>";
 		};
 		9FF967AD2E0E241E00E45B54 /* DefaultBrowserPrompt */ = {
@@ -9781,7 +9773,7 @@
 			isa = PBXGroup;
 			children = (
 				56D060292C381AD1003BAEB5 /* OnboardingHelpers */,
-				9FF7E9802C22A19800902BE5 /* OnboardingExperiment */,
+				9FF7E9802C22A19800902BE5 /* OnboardingFlow */,
 				984147AA24F0259000362052 /* Onboarding.storyboard */,
 				851B128722200575004781BC /* Onboarding.swift */,
 				F47E53D8250A97330037C686 /* OnboardingDefaultBroswerViewController.swift */,
@@ -11590,7 +11582,7 @@
 				31206F702D3804E800A95D76 /* AIChatDebugView.swift in Sources */,
 				BDD3B3552B8EF8DB005857A8 /* NetworkProtectionUNNotificationPresenter.swift in Sources */,
 				850365F323DE087800D0F787 /* UIImageViewExtension.swift in Sources */,
-				9F0369F42F23099800A00DCA /* RebrandedBrowsingDaxDialogFactory.swift in Sources */,
+				9F0369F42F23099800A00DCA /* RebrandedContextualDaxDialogFactory.swift in Sources */,
 				65A6848B2D6F904A0029FE9E /* DuckPlayerContainer.swift in Sources */,
 				56D060262C359D2E003BAEB5 /* ContextualOnboardingDialogs.swift in Sources */,
 				9F8E0F382CCFAA8A001EA7C5 /* AddToDockPromoView.swift in Sources */,

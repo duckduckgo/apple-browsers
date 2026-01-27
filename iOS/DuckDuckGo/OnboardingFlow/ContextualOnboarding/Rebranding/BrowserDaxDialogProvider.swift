@@ -39,12 +39,12 @@ final class BrowserDaxDialogProvider: ContextualDaxDialogsFactory {
 
     private var factory: ContextualDaxDialogsFactory {
         if featureFlagger.isFeatureOn(.onboardingRebranding) {
-            return RebrandedBrowserDaxDialogFactory(
+            return RebrandedContextualDaxDialogFactory(
                 contextualOnboardingLogic: contextualOnboardingLogic,
                 contextualOnboardingPixelReporter: contextualOnboardingPixelReporter
             )
         } else {
-            return ExperimentContextualDaxDialogsFactory(
+            return DefaultContextualDaxDialogsFactory(
                 contextualOnboardingLogic: contextualOnboardingLogic,
                 contextualOnboardingPixelReporter: contextualOnboardingPixelReporter
             )

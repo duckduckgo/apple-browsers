@@ -107,7 +107,7 @@ struct ScopedFireConfirmationView: View {
     
     @ViewBuilder
     private var animation: some View {
-        LottieView(lottieFile: "fire",
+        LottieView(lottieFile: "fire-icon",
                    isAnimating: $isAnimating,
                    respectBounds: true)
         .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)

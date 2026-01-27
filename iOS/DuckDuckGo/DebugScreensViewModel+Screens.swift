@@ -92,8 +92,8 @@ extension DebugScreensViewModel {
             .view(title: "WebView State Restoration", { _ in
                 WebViewStateRestorationDebugView()
             }),
-            .view(title: "History", { _ in
-                HistoryDebugRootView()
+            .view(title: "History", { d in
+                HistoryDebugRootView(tabManager: d.tabManager)
             }),
             .view(title: "Bookmarks", { _ in
                 BookmarksDebugRootView()

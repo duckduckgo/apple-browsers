@@ -261,6 +261,7 @@ struct WarnBeforeQuitView: View {
                 .conditionalGesture(isHovering: isHovering) {
                     viewModel.dontAskAgainTapped()
                 }
+                .accessibilityIdentifier("WarnBeforeQuitView.dontShowAgainButton")
         }
         .padding(.trailing, horizontalPadding)
         .padding(.leading, horizontalPadding - 2) // Circle has own padding of 2px

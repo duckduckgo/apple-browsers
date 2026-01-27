@@ -34,7 +34,7 @@ enum BookmarkMode {
 
 extension XCUIApplication {
 
-    private enum AccessibilityIdentifiers {
+    enum AccessibilityIdentifiers {
         static let okButton = "OKButton"
         static let addressBarTextField = "AddressBarViewController.addressBarTextField"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
@@ -68,6 +68,9 @@ extension XCUIApplication {
         static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
         static let alwaysAskWhereToSaveFilesCheckbox = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
         static let openPopupOnDownloadCompletionCheckbox = "PreferencesGeneralView.openPopupOnDownloadCompletion"
+        static let warnBeforeQuittingCheckbox = "PreferencesGeneralView.warnBeforeQuitting"
+        static let warnBeforeClosingPinnedTabsCheckbox = "PreferencesGeneralView.warnBeforeClosingPinnedTabs"
+        static let warnBeforeQuitDontShowAgainButton = "WarnBeforeQuitView.dontShowAgainButton"
         static let addBookmarkAddToFavoritesCheckbox = "bookmark.add.add.to.favorites.button"
         static let bookmarkDialogAddButton = "BookmarkDialogButtonsView.defaultButton"
 
@@ -169,6 +172,76 @@ extension XCUIApplication {
     }
     override func closeTab() throws {
         closeCurrentTab()
+    }
+
+    /// Pins current tab using the main menu
+    func pinCurrentTab() {
+        mainMenuPinTabMenuItem.tap()
+    }
+
+    /// Unpins current tab using the main menu
+    func unpinCurrentTab() {
+        mainMenuUnpinTabMenuItem.tap()
+    }
+
+    /// Checks if the current tab can be pinned (i.e., is not already pinned)
+    /// - Returns: true if the "Pin Tab" menu item exists (tab is not pinned), false otherwise
+    func currentTabCanBePinned() -> Bool {
+        return mainMenuPinTabMenuItem.exists
+    }
+
+    // MARK: - Warn Before Quit Settings
+
+    /// Enables the "Warn Before Quitting" setting in General preferences
+    func enableWarnBeforeQuitting(closeSettings: Bool = true) {
+        openGeneralPreferences()
+        warnBeforeQuittingCheckbox.toggleCheckboxIfNeeded(to: true, ensureHittable: ensureHittable)
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
+    }
+
+    /// Disables the "Warn Before Quitting" setting in General preferences
+    func disableWarnBeforeQuitting() {
+        openGeneralPreferences()
+        warnBeforeQuittingCheckbox.toggleCheckboxIfNeeded(to: false, ensureHittable: ensureHittable)
+        typeKey("w", modifierFlags: [.command])
+    }
+
+    /// Enables the "Warn Before Closing Pinned Tabs" setting in General preferences
+    func enableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
+        openGeneralPreferences()
+        warnBeforeClosingPinnedTabsCheckbox.toggleCheckboxIfNeeded(to: true, ensureHittable: ensureHittable)
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
+    }
+
+    /// Disables the "Warn Before Closing Pinned Tabs" setting in General preferences
+    func disableWarnBeforeClosingPinnedTabs() {
+        openGeneralPreferences()
+        warnBeforeClosingPinnedTabsCheckbox.toggleCheckboxIfNeeded(to: false, ensureHittable: ensureHittable)
+        typeKey("w", modifierFlags: [.command])
+    }
+
+    /// Returns the "Warn Before Quitting" checkbox in General preferences
+    var warnBeforeQuittingCheckbox: XCUIElement {
+        preferencesWindow.checkBoxes[AccessibilityIdentifiers.warnBeforeQuittingCheckbox]
+    }
+
+    /// Returns the "Warn Before Closing Pinned Tabs" checkbox in General preferences
+    var warnBeforeClosingPinnedTabsCheckbox: XCUIElement {
+        preferencesWindow.checkBoxes[AccessibilityIdentifiers.warnBeforeClosingPinnedTabsCheckbox]
+    }
+
+    func openGeneralPreferences() {
+        openSettings()
+        let generalButton = buttons["PreferencesSidebar.generalButton"]
+        XCTAssertTrue(
+            generalButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "General preferences button should exist"
+        )
+        generalButton.click()
     }
 
     /// Activate address bar for input
@@ -853,6 +926,20 @@ extension XCUIApplication {
             "Show Right of the Reload Button menu item didn't become available in a reasonable timeframe."
         )
         menuItem.click()
+    }
+
+    /// Sends a key down event with the specified key code
+    func keyDown(keyCode: Int) {
+        UITestCase.$keyEventOverride.withValue((keyCode: keyCode, phase: 0)) {
+            self.typeKey("_", modifierFlags: [])
+        }
+    }
+
+    /// Sends a key up event with the specified key code
+    func keyUp(keyCode: Int) {
+        UITestCase.$keyEventOverride.withValue((keyCode: keyCode, phase: 1)) {
+            self.typeKey("_", modifierFlags: [])
+        }
     }
 
 }

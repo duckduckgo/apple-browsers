@@ -45,6 +45,7 @@ struct LottieView: UIViewRepresentable {
     private let loopMode: LoopMode
     private let animationImageProvider: AnimationImageProvider?
     private let valueProvider: ValueProvider?
+    private let respectBounds: Bool
 
     let animationName: String
     let animation: LottieAnimation?
@@ -56,7 +57,8 @@ struct LottieView: UIViewRepresentable {
         loopMode: LoopMode = .mode(.playOnce),
         isAnimating: Binding<Bool> = .constant(true),
         animationImageProvider: AnimationImageProvider? = nil,
-        valueProvider: ValueProvider? = nil
+        valueProvider: ValueProvider? = nil,
+        respectBounds: Bool = false
     ) {
         self.animationName = lottieFile
         self.animation = LottieAnimation.named(lottieFile)
@@ -65,9 +67,10 @@ struct LottieView: UIViewRepresentable {
         self.loopMode = loopMode
         self.animationImageProvider = animationImageProvider
         self.valueProvider = valueProvider
+        self.respectBounds = respectBounds
     }
 
-    func makeUIView(context: Context) -> some LottieAnimationView {
+    func makeUIView(context: Context) -> some UIView {
         animationView.animation = animation
         animationView.contentMode = .scaleAspectFit
         animationView.clipsToBounds = false
@@ -83,12 +86,30 @@ struct LottieView: UIViewRepresentable {
         case .withIntro: break
         }
 
-        return animationView
+
+        if !respectBounds {
+            return animationView as UIView
+        } else {
+            let containerView = UIView()
+            containerView.backgroundColor = .clear
+            animationView.clipsToBounds = true
+            animationView.translatesAutoresizingMaskIntoConstraints = false
+
+            containerView.addSubview(animationView)
+            NSLayoutConstraint.activate([
+                animationView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+                animationView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+                animationView.topAnchor.constraint(equalTo: containerView.topAnchor),
+                animationView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+            ])
+            
+            return containerView
+        }
     }
  
     func updateUIView(_ uiView: UIViewType, context: Context) {
-        if uiView.isAnimationPlaying, !isAnimating.wrappedValue {
-            uiView.stop()
+        if animationView.isAnimationPlaying, !isAnimating.wrappedValue {
+            animationView.stop()
             return
         }
 
@@ -96,33 +117,33 @@ struct LottieView: UIViewRepresentable {
         // The VPN startup animations have an issue with the initial frame that is introduced when backgrounding and foregrounding the app.
         // The issue can be reproduced using the official Lottie SwiftUI wrapped, so instead it is being worked around by resetting the animation
         // when appropriate.
-        if !isAnimating.wrappedValue, uiView.currentProgress == 0 {
-            if uiView.currentFrame == 0, self.animationName.hasPrefix("vpn-") {
-                uiView.animation = nil
-                uiView.animation = self.animation
+        if !isAnimating.wrappedValue, animationView.currentProgress == 0 {
+            if animationView.currentFrame == 0, self.animationName.hasPrefix("vpn-") {
+                animationView.animation = nil
+                animationView.animation = self.animation
             }
         }
 
-        guard isAnimating.wrappedValue, !uiView.isAnimationPlaying else {
+        guard isAnimating.wrappedValue, !animationView.isAnimationPlaying else {
             return
         }
 
-        if uiView.loopMode == .playOnce && uiView.currentProgress == 1 {
+        if animationView.loopMode == .playOnce && animationView.currentProgress == 1 {
             return
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             switch loopMode {
             case .mode:
-                uiView.play(completion: { _ in
+                animationView.play(completion: { _ in
                     self.isAnimating.wrappedValue = false
                 })
             case .withIntro(let timing):
                 if timing.skipIntro {
-                    uiView.play(fromFrame: timing.loopStartFrame, toFrame: timing.loopEndFrame, loopMode: .loop)
+                    animationView.play(fromFrame: timing.loopStartFrame, toFrame: timing.loopEndFrame, loopMode: .loop)
                 } else {
-                    uiView.play(fromFrame: timing.introStartFrame, toFrame: timing.introEndFrame, loopMode: .playOnce) { _ in
-                        uiView.play(fromFrame: timing.loopStartFrame, toFrame: timing.loopEndFrame, loopMode: .loop)
+                    animationView.play(fromFrame: timing.introStartFrame, toFrame: timing.introEndFrame, loopMode: .playOnce) { _ in
+                        animationView.play(fromFrame: timing.loopStartFrame, toFrame: timing.loopEndFrame, loopMode: .loop)
                     }
                 }
             }

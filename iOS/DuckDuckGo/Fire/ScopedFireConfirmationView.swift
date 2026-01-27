@@ -26,7 +26,13 @@ import DuckUI
 struct ScopedFireConfirmationView: View {
     
     @ObservedObject var viewModel: ScopedFireConfirmationViewModel
+    @State private var isAnimating = false
     let onDismiss: () -> Void
+    
+    init(viewModel: ScopedFireConfirmationViewModel, onDismiss: @escaping () -> Void) {
+        self.viewModel = viewModel
+        self.onDismiss = onDismiss
+    }
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -63,9 +69,7 @@ struct ScopedFireConfirmationView: View {
     
     private var headerSection: some View {
         VStack(spacing: Constants.headerSectionSpacing) {
-            Image(uiImage: DesignSystemImages.Color.Size72.fire)
-                .resizable()
-                .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
+            animation
             
             Text(UserText.scopedFireConfirmationAlertTitle)
                 .daxTitle3()
@@ -100,6 +104,20 @@ struct ScopedFireConfirmationView: View {
             }
         }
     }
+    
+    @ViewBuilder
+    private var animation: some View {
+        LottieView(lottieFile: "fire",
+                   isAnimating: $isAnimating,
+                   respectBounds: true)
+        .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.animationDelay) {
+                isAnimating = true
+            }
+        }
+    }
+    
 }
 
 private extension ScopedFireConfirmationView {
@@ -111,5 +129,6 @@ private extension ScopedFireConfirmationView {
         static let headerIconSize: CGFloat = 96
         static let buttonSpacing: CGFloat = 16
         static let closeButtonPadding: CGFloat = 8
+        static let animationDelay: Double = 0.5
     }
 }

@@ -59,42 +59,32 @@ public struct SubscriptionAPIMockResponseFactory {
         }
     }
 
-    public static func mockGetProducts(destinationMockAPIService apiService: MockAPIService, success: Bool) {
-        let request = SubscriptionRequest.getProducts(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url)!
-        if success {
-            let jsonString = """
-[{"productId":"ddg-privacy-pro-sandbox-monthly-renews-us","productLabel":"Monthly Subscription","billingPeriod":"Monthly","price":"9.99","currency":"USD"},{"productId":"ddg-privacy-pro-sandbox-yearly-renews-us","productLabel":"Yearly Subscription","billingPeriod":"Yearly","price":"99.99","currency":"USD"}]
-"""
-            let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
-                                               statusCode: HTTPStatusCode.ok.rawValue,
-                                               httpVersion: nil,
-                                               headerFields: [:])!
-            let response = APIResponseV2(data: jsonString.data(using: .utf8), httpResponse: httpResponse)
-            apiService.set(response: response, forRequest: request.apiRequest)
-        } else {
-            let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
-                                               statusCode: HTTPStatusCode.badRequest.rawValue,
-                                               httpVersion: nil,
-                                               headerFields: [:])!
-            let response = APIResponseV2(data: someAPIBodyErrorJSONData, httpResponse: httpResponse)
-            apiService.set(response: response, forRequest: request.apiRequest)
+    public static func mockGetTierFeatures(destinationMockAPIService apiService: MockAPIService, success: Bool, subscriptionIDs: [String]) {
+        guard let request = SubscriptionRequest.subscriptionTierFeatures(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url, subscriptionIDs: subscriptionIDs) else {
+            return
         }
-    }
-
-    public static func mockGetFeatures(destinationMockAPIService apiService: MockAPIService, success: Bool, subscriptionID: String) {
-        let request = SubscriptionRequest.subscriptionFeatures(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url, subscriptionID: subscriptionID)!
         if success {
-            let jsonString = """
-{"features":["Data Broker Protection","Identity Theft Restoration","Network Protection"]}
-"""
+            var featuresJSON: [String] = []
+            for id in subscriptionIDs {
+                let featureArray = """
+                "\(id)": [
+                    {"product": "Network Protection", "name": "plus"},
+                    {"product": "Data Broker Protection", "name": "plus"},
+                    {"product": "Identity Theft Restoration", "name": "plus"}
+                ]
+                """
+                featuresJSON.append(featureArray)
+            }
+            let jsonString = "{ \"features\": { \(featuresJSON.joined(separator: ", ")) } }"
             let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
                                                statusCode: HTTPStatusCode.ok.rawValue,
                                                httpVersion: nil,
                                                headerFields: [:])!
-            let response = APIResponseV2(data: jsonString.data(using: .utf8), httpResponse: httpResponse)
-            apiService.set(response: response, forRequest: request.apiRequest)
+            let apiResponse = APIResponseV2(data: jsonString.data(using: .utf8), httpResponse: httpResponse)
+            apiService.set(response: apiResponse, forRequest: request.apiRequest)
         } else {
             setErrorResponse(forRequest: request.apiRequest, apiService: apiService)
         }
     }
+
 }

@@ -58,8 +58,7 @@
                         "type": "string",
                         "description": "The underlying error domain"
                     },
-                    "underlyingcode": {
-                        // TODO: Rename once the pixel-schema fix is merged
+                    "underlying_code": {
                         "type": "integer",
                         "description": "The underlying error code"
                     }

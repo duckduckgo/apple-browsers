@@ -1,5 +1,5 @@
 //
-//  WebExtensionPathsStore.swift
+//  WebExtensionPathsStoringMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,34 +16,26 @@
 //  limitations under the License.
 //
 
-@available(macOS 15.4, *)
-protocol WebExtensionPathsStoring: AnyObject {
-    var paths: [String] { get }
-    func add(_ url: String)
-    func remove(_ url: String)
-}
+@testable import WebExtensions
 
 @available(macOS 15.4, *)
-final class WebExtensionPathsStore: WebExtensionPathsStoring {
+final class WebExtensionPathsStoringMock: WebExtensionPathsStoring {
 
-    @UserDefaultsWrapper(key: .webExtensionStoredPaths, defaultValue: [])
-    var paths: [String]
+    var paths: [String] = []
 
+    var addCalled = false
+    var addedPath: String?
     func add(_ url: String) {
-        guard !paths.contains(url) else {
-            assertionFailure("Cannot add path as it is already stored: \(url)")
-            return
-        }
-
+        addCalled = true
+        addedPath = url
         paths.append(url)
     }
 
+    var removeCalled = false
+    var removedPath: String?
     func remove(_ url: String) {
-        guard paths.contains(url) else {
-            assertionFailure("Cannot remove path as it is already absent: \(url)")
-            return
-        }
-
-        paths.removeAll(where: { $0 == url })
+        removeCalled = true
+        removedPath = url
+        paths.removeAll { $0 == url }
     }
 }

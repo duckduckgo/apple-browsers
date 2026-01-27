@@ -225,7 +225,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         // listen to AppearancePreferences.objectWillChange
         let model = AppearancePreferences(
-            persistor: AppearancePreferencesPersistorMock(            ),
+            persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             dateTimeProvider: { now },
             featureFlagger: MockFeatureFlagger(),
@@ -255,7 +255,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         // listen to AppearancePreferences.objectWillChange
         let model = AppearancePreferences(
-            persistor: AppearancePreferencesPersistorMock(            ),
+            persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             dateTimeProvider: { now },
             featureFlagger: MockFeatureFlagger(),
@@ -616,7 +616,7 @@ final class AppearancePreferencesTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = [.newTabPageOmnibar]
 
         let model = AppearancePreferences(
-            persistor: AppearancePreferencesPersistorMock(            ),
+            persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: featureFlagger,
             aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
@@ -630,7 +630,7 @@ final class AppearancePreferencesTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = []
 
         let model = AppearancePreferences(
-            persistor: AppearancePreferencesPersistorMock(            ),
+            persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: featureFlagger,
             aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()

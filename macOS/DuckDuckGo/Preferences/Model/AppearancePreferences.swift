@@ -560,25 +560,21 @@ final class AppearancePreferences: ObservableObject {
     }
 
     func subscribeToNewTabPageCustomizationSettingChanges() {
-        // Skip if already marked as changed
-        guard !didChangeAnyNewTabPageCustomizationSetting else { return }
-
         // Combine all New Tab Page customization setting publishers
-        let sectionVisibilityPublisher = $isOmnibarVisible
-            .combineLatest($isFavoriteVisible,
-                           $isProtectionsReportVisible)
-            .dropFirst()
-            .map { _, _, _ in return true }
-        let appearancePublisher = $themeAppearance
+        let appearanceSettingsPublisher = $themeAppearance
             .combineLatest($themeName,
                            $homePageCustomBackground)
+            .combineLatest($isOmnibarVisible,
+                           $isFavoriteVisible,
+                           $isProtectionsReportVisible)
             .dropFirst()
-            .map { _, _, _ in return true }
-        Publishers.Merge3(
-            sectionVisibilityPublisher,
-            appearancePublisher,
-            aiChatShortcutSettingProvider.isAIChatShortcutEnabledPublisher.map { _ in return true })
+        appearanceSettingsPublisher.map { _ in () }
+            .merge(with: aiChatShortcutSettingProvider.isAIChatShortcutEnabledPublisher.map { _ in () })
         .receive(on: DispatchQueue.main)
-        .assign(to: &$didChangeAnyNewTabPageCustomizationSetting)
+        .sink { [weak self] _ in
+            guard let self, !didChangeAnyNewTabPageCustomizationSetting else { return }
+            didChangeAnyNewTabPageCustomizationSetting = true
+        }
+        .store(in: &cancellables)
     }
 }

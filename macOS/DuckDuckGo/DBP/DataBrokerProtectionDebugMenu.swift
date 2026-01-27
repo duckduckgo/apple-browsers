@@ -258,26 +258,27 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     @objc private func useDBPCustomEndpoint() {
         let sheet = CustomDBPEndpointSheet(
             onApply: { [weak self] value, removeBrokers in
-            guard let self else { return }
-            self.settings.serviceRoot = value
+                guard let self else { return }
+                self.settings.serviceRoot = value
 
-            if removeBrokers {
-                let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
-                let privacyConfigManager = DBPPrivacyConfigurationManager()
-                let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler, privacyConfigManager: privacyConfigManager)
-                let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-                let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-                let vault = try! vaultFactory.makeVault(reporter: reporter)
-                let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
-                                                            pixelHandler: pixelHandler,
-                                                            vault: vault,
-                                                            localBrokerService: self.brokerUpdater)
-                let dataManager = DataBrokerProtectionDataManager(database: database)
-                try! dataManager.removeAllData()
+                if removeBrokers {
+                    let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
+                    let privacyConfigManager = DBPPrivacyConfigurationManager()
+                    let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler, privacyConfigManager: privacyConfigManager)
+                    let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+                    let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+                    let vault = try! vaultFactory.makeVault(reporter: reporter)
+                    let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                                pixelHandler: pixelHandler,
+                                                                vault: vault,
+                                                                localBrokerService: self.brokerUpdater)
+                    let dataManager = DataBrokerProtectionDataManager(database: database)
+                    try! dataManager.removeAllData()
+                }
+
+                self.forceBrokerJSONFilesUpdate()
             }
-
-            self.forceBrokerJSONFilesUpdate()
-        }
+        )
 
         Task { @MainActor in
             sheet.show()

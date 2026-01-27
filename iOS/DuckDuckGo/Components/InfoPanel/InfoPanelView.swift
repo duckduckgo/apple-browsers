@@ -24,10 +24,10 @@ import DesignResourcesKitIcons
 struct InfoPanelView: View {
 
     private enum Constants {
-        static let contentSpacing: CGFloat = 8
-        static let iconSize: CGFloat = 20
+        static let contentSpacing: CGFloat = 6
+        static let iconSize: CGFloat = 18
         static let infoButtonPadding: CGFloat = 4
-        static let horizontalPadding: CGFloat = 12
+        static let horizontalPadding: CGFloat = 10
         static let verticalPadding: CGFloat = 8
         static let cornerRadius: CGFloat = 16
         static let maxWidth: CGFloat = 480
@@ -52,7 +52,7 @@ struct InfoPanelView: View {
                 .accessibilityHidden(true)
 
             (Text(model.title).fontWeight(.semibold) + Text(" " + model.subtitle))
-                .font(.system(size: 13))
+                .font(.subheadline)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Spacer()
 

@@ -14,17 +14,17 @@
                 "ext": {
                     "application_state": {
                         "type": "string",
-                        "description": "The source of the import data. For multi-stage imports, this is the original browser source.",
+                        "description": "Whether the app is in the foreground or background at the time of the refresh.",
                         "enum": ["foreground", "background"]
                     },
                     "refresh_trigger": {
                         "type": "string",
-                        "description": "The source of the import data. For multi-stage imports, this is the original browser source.",
+                        "description": "The reason for the refresh.",
                         "enum": ["backend", "client", "token_adoption"]
                     },
                     "failing_step": {
                         "type": "string",
-                        "description": "The source of the import data. For multi-stage imports, this is the original browser source.",
+                        "description": "The step that the event failed on, if relevant.",
                         "enum": [
                             "token_read",
                             "refresh_access_token",
@@ -36,12 +36,12 @@
                     },
                     "refresh_token_latency_ms_bucketed": {
                         "type": "integer",
-                        "description": "The source of the import data. For multi-stage imports, this is the original browser source.",
+                        "description": "The latency value of the token refresh call.",
                         "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
                     },
                     "fetch_jwks_latency_ms_bucketed": {
                         "type": "integer",
-                        "description": "The source of the import data. For multi-stage imports, this is the original browser source.",
+                        "description": "The latency value of the JWKS call.",
                         "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
                     }
                 },

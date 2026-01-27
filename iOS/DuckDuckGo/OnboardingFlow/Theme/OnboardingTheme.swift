@@ -19,63 +19,49 @@
 
 import SwiftUI
 
-// MARK: - Theme
+// MARK: - OnboardingTheme
 
 struct OnboardingTheme: Equatable {
     let typography: Typography
     let colorPalette: ColorPalette
 }
 
+extension OnboardingTheme {
 
-// MARK: - Typography
+    static let rebranding2026 = OnboardingTheme(
+        typography: .duckSans,
+        colorPalette: ColorPalette(backgroundColor: .white)
+    )
 
-enum FontFamily: Equatable {
-    case system
-    case duckSansDisplay
-    case duckSansProduct
 }
 
-struct Typography: Equatable {
-    let largeTitle: Font
-    let title: Font
-    let body: Font
-    let row: Font
-    let rowDetails: Font
-    let small: Font
+// MARK: - OnboardingTheme + Typography
 
-    private static func makeFont(size: CGFloat, family: FontFamily, weight: Font.Weight) -> Font {
-        switch family {
-        case .system:
-            return .system(size: size, weight: weight)
-        case .duckSansDisplay:
-            return customFont(baseName: "DuckSansDisplay", weight: weight, size: size)
-        case .duckSansProduct:
-            return customFont(baseName: "DuckSansProduct", weight: weight, size: size)
+extension OnboardingTheme {
+
+    struct Typography: Equatable {
+        let largeTitle: Font
+        let title: Font
+        let body: Font
+        let row: Font
+        let rowDetails: Font
+        let small: Font
+
+        private static func makeFont(size: CGFloat, family: Font.Family, weight: Font.Weight) -> Font {
+            switch family {
+            case .system:
+                return .system(size: size, weight: weight)
+            case .duckSansDisplay, .duckSansProduct:
+                return Font.customFont(type: family, weight: weight, size: size)
+            }
         }
     }
 
-    private static func customFont(baseName: String, weight: Font.Weight, size: CGFloat) -> Font {
-        let weightSuffix: String
-        switch weight {
-        case .regular:
-            weightSuffix = "Regular"
-        case .medium:
-            weightSuffix = "Medium"
-        case .bold:
-            weightSuffix = "Bold"
-        default:
-            // Fallback to Regular for any other weights
-            weightSuffix = "Regular"
-        }
-
-        let fontName = "\(baseName)-\(weightSuffix)"
-        return .custom(fontName, size: size)
-    }
 }
 
-extension Typography {
+extension OnboardingTheme.Typography {
 
-    static let duckSans = Typography(
+    static let duckSans = OnboardingTheme.Typography(
         largeTitle: makeFont(size: 44, family: .duckSansDisplay, weight: .bold),
         title: makeFont(size: 24, family: .duckSansDisplay, weight: .bold),
         body: makeFont(size: 18, family: .duckSansProduct, weight: .regular),
@@ -85,7 +71,7 @@ extension Typography {
     )
 
     // System font fallback for testing/preview
-    static let system = Typography(
+    static let system = OnboardingTheme.Typography(
         largeTitle: .system(size: 44, weight: .bold),
         title: .system(size: 24, weight: .bold),
         body: .system(size: 18, weight: .regular),
@@ -96,7 +82,7 @@ extension Typography {
 
 }
 
-// MARK: - Colors
+// MARK: - OnboardingTheme + Colors
 
 extension OnboardingTheme {
 

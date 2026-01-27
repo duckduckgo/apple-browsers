@@ -1414,6 +1414,7 @@
 		9F9A92342C86B42B001D036D /* AppIconPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9A92332C86B42B001D036D /* AppIconPicker.swift */; };
 		9F9C1F3D2F289D45005E0D4F /* OnboardingTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9C1F3C2F289D41005E0D4F /* OnboardingTheme.swift */; };
 		9F9C1F3F2F28A291005E0D4F /* OnboardingTheme+Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9C1F3E2F28A289005E0D4F /* OnboardingTheme+Environment.swift */; };
+		9F9C1F432F297A61005E0D4F /* Font+Family.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9C1F422F297A5C005E0D4F /* Font+Family.swift */; };
 		9F9EE4D42C37BB1300D4118E /* OnboardingView+Landing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9EE4D32C37BB1300D4118E /* OnboardingView+Landing.swift */; };
 		9F9F325A2CEFA75100211B49 /* MaliciousSiteProtectionSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9F32592CEFA74600211B49 /* MaliciousSiteProtectionSettingsViewModel.swift */; };
 		9FA09D9F2EA5EE4500E26F3F /* Logger+ModalPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09D9E2EA5EE3D00E26F3F /* Logger+ModalPrompt.swift */; };
@@ -3829,6 +3830,7 @@
 		9F9A92332C86B42B001D036D /* AppIconPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconPicker.swift; sourceTree = "<group>"; };
 		9F9C1F3C2F289D41005E0D4F /* OnboardingTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTheme.swift; sourceTree = "<group>"; };
 		9F9C1F3E2F28A289005E0D4F /* OnboardingTheme+Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingTheme+Environment.swift"; sourceTree = "<group>"; };
+		9F9C1F422F297A5C005E0D4F /* Font+Family.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Family.swift"; sourceTree = "<group>"; };
 		9F9EE4D32C37BB1300D4118E /* OnboardingView+Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView+Landing.swift"; sourceTree = "<group>"; };
 		9F9F32592CEFA74600211B49 /* MaliciousSiteProtectionSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionSettingsViewModel.swift; sourceTree = "<group>"; };
 		9FA09D9E2EA5EE3D00E26F3F /* Logger+ModalPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+ModalPrompt.swift"; sourceTree = "<group>"; };
@@ -7741,6 +7743,7 @@
 		9F9C1F3B2F289D3D005E0D4F /* Theme */ = {
 			isa = PBXGroup;
 			children = (
+				9F9C1F422F297A5C005E0D4F /* Font+Family.swift */,
 				9F9C1F3C2F289D41005E0D4F /* OnboardingTheme.swift */,
 				9F9C1F3E2F28A289005E0D4F /* OnboardingTheme+Environment.swift */,
 			);
@@ -12004,6 +12007,7 @@
 				B623C1C22862CA9E0043013E /* DownloadSession.swift in Sources */,
 				6F5938982DB1028200C8C068 /* BrowserChromeButton.swift in Sources */,
 				809F9D152EE12CF600943E8A /* GranularFireConfirmationView.swift in Sources */,
+				9F9C1F432F297A61005E0D4F /* Font+Family.swift in Sources */,
 				809F9D162EE12CF600943E8A /* FireConfirmationPresenter.swift in Sources */,
 				809F9D172EE12CF600943E8A /* GranularFireConfirmationViewModel.swift in Sources */,
 				7B16810C2D10CF44005EAE24 /* WidgetVPNIntents.swift in Sources */,

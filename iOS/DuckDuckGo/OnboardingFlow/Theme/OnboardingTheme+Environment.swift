@@ -20,12 +20,7 @@
 import SwiftUI
 
 private struct OnboardingThemeKey: EnvironmentKey {
-
-    static let defaultValue = OnboardingTheme(
-        typography: Typography.duckSans,
-        colorPalette: OnboardingTheme.ColorPalette(backgroundColor: .white)
-    )
-
+    static let defaultValue = OnboardingTheme.rebranding2026
 }
 
 extension EnvironmentValues {

@@ -32,13 +32,12 @@ final class BrowsingMenuHeaderStateProvider {
         isFeatureEnabled: Bool,
         isNewTabPage: Bool = false,
         isAITab: Bool = false,
-        isError: Bool = false,
         hasLink: Bool,
         url: URL? = nil,
         title: String? = nil,
         easterEggLogoURL: String? = nil
     ) {
-        let isWebsiteHeaderVisible = isFeatureEnabled && !isNewTabPage && !isAITab && !isError && hasLink
+        let isHeaderVisible = isFeatureEnabled && !isNewTabPage && !isAITab && hasLink
         let isAIHeaderVisible = isFeatureEnabled && isAITab
 
         dataSource.reset()
@@ -51,6 +50,8 @@ final class BrowsingMenuHeaderStateProvider {
             if logoURL == nil {
                 loadFavicon(for: url, into: dataSource)
             }
+        } else {
+            currentFaviconRequestID = nil
         }
     }
 

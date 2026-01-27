@@ -21,6 +21,12 @@ import BrowserServicesKit
 
 extension SecureVaultModels.CreditCard {
 
+    /// Returns the display title for the credit card.
+    /// If the card has a custom title, it returns that; otherwise, it returns the card type's display name.
+    var displayTitle: String {
+        return title.isEmpty ? CreditCardValidation.type(for: cardNumber).displayName : title
+    }
+
     /// Returns a formatted summary string for the credit card suitable for display in lists.
     /// Format: "••••(last 4 digits) Expires: MM/yyyy" (if expiration is available)
     ///         "••••(last 4 digits)" (if expiration is not available)

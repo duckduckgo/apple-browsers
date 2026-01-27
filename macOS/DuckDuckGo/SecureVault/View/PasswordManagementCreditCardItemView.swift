@@ -115,7 +115,7 @@ private struct HeaderView: View {
 
             } else {
 
-                Text(cardTitle)
+                Text(model.card?.displayTitle ?? "")
                     .font(.title)
 
             }
@@ -123,13 +123,6 @@ private struct HeaderView: View {
         }
 
     }
-
-    private var cardTitle: String {
-        guard let card = model.card else { return "" }
-
-        return card.title.isEmpty ? CreditCardValidation.type(for: card.cardNumber).displayName : card.title
-    }
-
 }
 
 // MARK: - Generic Views

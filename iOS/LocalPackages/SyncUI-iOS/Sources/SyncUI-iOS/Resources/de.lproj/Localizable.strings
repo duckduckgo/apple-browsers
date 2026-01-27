@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Abbrechen";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "„Synchronisieren und sichern“ aktivieren";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Dadurch wird ein verschlüsseltes Backup deiner Lesezeichen und Autofill-Daten auf dem sicheren Server von DuckDuckGo erstellt, das mit deinen anderen Geräten synchronisiert werden kann.";
 

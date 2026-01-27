@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Confirmare";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Familiarizare contextuală";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Ignorare";
 
@@ -2974,6 +2977,9 @@
 /* about tagline */
 "settings.about.tagline" = "Protecție. Confidențialitate. Liniște sufletească.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo este o companie independentă din domeniul protecției online care se adresează oricărei persoane care dorește să recâștige controlul asupra datelor cu caracter personal.\n\nCredem că cel mai bun mod de a-ți proteja datele cu caracter personal împotriva hackerilor, a escrocilor și a companiilor care încalcă viața privată este să împiedici colectarea lor. De aceea, milioane de persoane [aleg DuckDuckGo în locul Chrome și al altor browsere](ddgQuickLink://duckduckgo.com/compare-privacy) pentru a căuta și naviga online. Motorul nostru de căutare încorporat este asemănător cu Google, dar nu îți urmărește niciodată căutările. Iar mecanismele noastre de protecție pentru navigare, cum ar fi blocarea tehnologiilor de urmărire a reclamelor și blocarea modulelor cookie, contribuie la împiedicarea colectării datelor tale de alte companii. Oh, și browserul nostru este gratuit: obținem câștiguri din [anunțuri de căutare care respectă viața privată](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), nu din exploatarea datelor tale. \n\n%@ \n\nPreia din nou controlul asupra informațiilor tale personale cu browserul conceput pentru protecția datelor, nu pentru colectarea lor.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Accesibilitate";
 
@@ -2992,8 +2998,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Afișați adresa completă a site-ului";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Afișează animația de blocare a tehnologiilor de urmărire";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Afișează în bara de adrese";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Caută pe Duck.ai";
@@ -3370,6 +3376,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sincronizare și copiere de rezervă";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Afișează în managerul de file";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "File";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Zoom text implicit";
 
@@ -3378,6 +3390,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Setări";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animația de blocare a tehnologiilor de urmărire";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Ajută la blocarea tehnologiilor de urmărire externe care încearcă să se deghizeze pe un site web folosind DNS.";
@@ -3619,11 +3634,11 @@
 /* Help and support Section header */
 "subscription.help" = "Ajutor și suport";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Gestionează planul";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Gestionează plata sau anulează";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Gestionează planul";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonament";
@@ -3787,6 +3802,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Configurează sincronizarea";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Sincronizează și creează copii de rezervă pentru cardurile tale de credit";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Sincronizează și creează copii de rezervă pentru datele tale";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nu, mulțumesc";
 
@@ -3876,6 +3897,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Marchează toate filele";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Ascunde";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Poți să activezi din nou această opțiune în Setări > Aspect.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Ascunzi contorul tehnologiilor de urmărire?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Opțiuni pentru contorizarea tehnologiilor de urmărire";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Atinge de două ori pentru a afișa opțiunile de ascundere a acestui banner";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Păstrează";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "în ultimele 7 zile";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Mărește sau micșorează dimensiunea textului pe toate site-urile.";
@@ -4261,15 +4306,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "File";
-"settings.tab.switcher.show.tracker.count" = "Numărul de trackere din ultimele 7 zile";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "în ultimele 7 zile";
-"tab.switcher.tracker.count.hide.title" = "Ascundeți numărul de trackere?";
-"tab.switcher.tracker.count.hide.message" = "Îl puteți activa din nou în Setări > Aspect.";
-"tab.switcher.tracker.count.hide.action" = "Ascunde";
-"tab.switcher.tracker.count.keep.action" = "Păstrează";
-"tab.switcher.tracker.count.info.a11y" = "Opțiuni pentru numărul de trackere";
-"tab.switcher.tracker.count.info.hint.a11y" = "Atingeți de două ori pentru a afișa opțiunile de ascundere a acestui banner";

@@ -327,6 +327,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private func firePageContextAttachedPixel() {
         if isPendingAttachAutomatic {
             pixelHandler.firePageContextAutoAttached()
+        } else {
+            pixelHandler.firePageContextManuallyAttachedNative()
         }
         isPendingAttachAutomatic = false
     }
@@ -373,6 +375,7 @@ private extension AIChatContextualSheetViewController {
                 self?.contextualInputViewController.hideContextChip()
             })
             contextualInputViewController.showContextChip(chipView)
+            firePageContextAttachedPixel()
             return
         }
 

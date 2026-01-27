@@ -202,7 +202,6 @@ final class AIChatContextualSheetCoordinator {
         }
 
         sheetViewController?.applyContextSnapshot(snapshot)
-        pixelHandler.firePageContextManuallyAttachedNative()
         pixelHandler.endManualAttach()
     }
 
@@ -317,7 +316,8 @@ private extension AIChatContextualSheetCoordinator {
                 let autoAttachEnabled = self.aiChatSettings.isAutomaticContextAttachmentEnabled
                 guard autoAttachEnabled || reason == .userAction else { return nil }
                 return self.pageContextHandler.latestContext
-            }
+            },
+            pixelHandler: pixelHandler
         )
 
         webVC.onContextualChatURLChange = { [weak self, weak webVC] url in
@@ -354,6 +354,8 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         viewController.dismiss(animated: true)
         sheetViewController = nil
         viewModel = nil
+        stopObservingContextUpdates()
+        pixelHandler.reset()
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didCreateWebViewController webVC: AIChatContextualWebViewController) {

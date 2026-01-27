@@ -60,6 +60,9 @@ protocol AIChatContextualModePixelFiring {
 
 /// Handles all pixel firing for contextual AI chat mode.
 /// Single source of truth for contextual mode analytics.
+///
+/// **Thread Safety**: This class is not thread-safe and must only be accessed from the main thread.
+/// All current usage is main-thread only (UIKit contexts), but explicit main-thread checks are not enforced.
 final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     // MARK: - State

@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Bevestigen";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Contextuele onboarding";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Overslaan";
 
@@ -2974,6 +2977,9 @@
 /* about tagline */
 "settings.about.tagline" = "Bescherming. Privacy.Gemoedsrust.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo is het onafhankelijke online beveiligingsbedrijf voor iedereen die weer controle wil krijgen over zijn of haar persoonlijke gegevens.\n\nWij zijn ervan overtuigd dat de beste manier om je persoonlijke gegevens te beschermen tegen hackers, oplichters en bedrijven die je privacy schenden is om te voorkomen dat ze worden verzameld. Daarom verkiezen miljoenen mensen [DuckDuckGo boven Chrome en andere browsers](ddgQuickLink://duckduckgo.com/compare-privacy) om online te zoeken en te surfen. Onze ingebouwde zoekmachine is zoals Google, maar volgt je zoekopdrachten nooit. En met onze browsebescherming, zoals blokkering van advertentietrackers en cookieblokkering, voorkom je dat andere bedrijven je gegevens verzamelen. Oh, en onze browser is gratis — we verdienen geld met [zoekadvertenties die de privacy respecteren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), niet door je gegevens uit te buiten. \n\n%@ \n\nKrijg weer de controle over je persoonlijke gegevens met de browser die is ontworpen voor gegevensbescherming, niet voor gegevensverzameling.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Toegankelijkheid";
 
@@ -2992,8 +2998,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Volledig siteadres weergeven";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Toon animatie voor geblokkeerde trackers";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "In adresbalk weergeven";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Zoeken en Duck.ai";
@@ -3370,6 +3376,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synchronisatie en back-up";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Weergeven in Tabbladbeheer";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Tabbladen";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Standaard tekstgrootte";
 
@@ -3378,6 +3390,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Instellingen";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animatie voor geblokkeerde trackers";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Helpt bij het blokkeren van trackers van derden die zich proberen te vermommen binnen een website met behulp van DNS.";
@@ -3619,11 +3634,11 @@
 /* Help and support Section header */
 "subscription.help" = "Hulp en ondersteuning";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Abonnement beheren";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Betaling beheren of annuleren";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Abonnement beheren";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonnement";
@@ -3787,6 +3802,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Synchronisatie instellen";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synchroniseer en back-up je creditcards";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synchroniseer en back-up je gegevens";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nee, bedankt";
 
@@ -3876,6 +3897,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Alle tabbladen toevoegen als bladwijzer?";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Verbergen";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Je kunt dit weer inschakelen in Instellingen > Weergave.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Trackertelling verbergen?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Opties voor trackers";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Dubbel tikken om opties weer te geven voor het verbergen van deze banner";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Bewaren";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "in de afgelopen 7 dagen";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Vergroot of verklein de tekstgrootte op alle sites.";
@@ -4261,15 +4306,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Tabbladen";
-"settings.tab.switcher.show.tracker.count" = "Tracker-aantal van de afgelopen 7 dagen";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "in de afgelopen 7 dagen";
-"tab.switcher.tracker.count.hide.title" = "Tracker-aantal verbergen?";
-"tab.switcher.tracker.count.hide.message" = "Je kunt dit weer inschakelen via Instellingen > Weergave.";
-"tab.switcher.tracker.count.hide.action" = "Verbergen";
-"tab.switcher.tracker.count.keep.action" = "Behouden";
-"tab.switcher.tracker.count.info.a11y" = "Opties voor tracker-aantal";
-"tab.switcher.tracker.count.info.hint.a11y" = "Dubbeltik om opties te tonen om deze banner te verbergen";

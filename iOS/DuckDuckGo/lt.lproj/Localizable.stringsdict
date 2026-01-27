@@ -209,7 +209,7 @@ Užblokavau juos!
 	<key>omnibar.notification.trackers-blocked</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@trackers@</string>
+		<string>%1$#@trackers@</string>
 		<key>trackers</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -819,7 +819,7 @@ Užblokavau juos!
 	<key>tab.switcher.tracker.count.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%1$#@trackers@</string>
+		<string>%#@trackers@</string>
 		<key>trackers</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>

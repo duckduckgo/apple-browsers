@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Confirmar";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Incorporación contextual";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Omitir";
 
@@ -2974,6 +2977,9 @@
 /* about tagline */
 "settings.about.tagline" = "Protección. Privacidad. Tranquilidad.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo es la empresa independiente de protección en Internet para quienes quieren recuperar el control de su información personal.\n\nCreemos que la mejor manera de proteger tu información personal contra hackers, estafadores y empresas que invaden la privacidad es evitar que se recopile. Por eso, millones de personas [eligen DuckDuckGo en lugar de Chrome y otros navegadores](ddgQuickLink://duckduckgo.com/compare-privacy) para buscar y navegar en Internet. Nuestro motor de búsqueda integrado es como Google, pero nunca rastrea tus búsquedas. Y nuestras protecciones de navegación, como el bloqueo de rastreadores de anuncios y el bloqueo de cookies, ayudan a impedir que otras empresas recopilen tus datos. Ah, y nuestro navegador es gratuito: ganamos dinero con [anuncios de búsqueda que respetan la privacidad](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), no explotando tus datos. \n\n%@ \n\nRecupera el control de tu información personal con el navegador diseñado para proteger tus datos, no para recopilarlos.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Accesibilidad";
 
@@ -2992,8 +2998,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Mostrar dirección completa del sitio";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Mostrar animación de rastreadores bloqueados";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Mostrar en la barra de direcciones";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Búsqueda y Duck.ai";
@@ -3370,6 +3376,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sincronización y copia de seguridad";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Mostrar en Gestor de pestañas";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Pestañas";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Zoom de texto predeterminado";
 
@@ -3378,6 +3390,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Ajustes";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animación de rastreadores bloqueados";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Ayuda a bloquear rastreadores de terceros que intentan disfrazarse en un sitio web usando DNS.";
@@ -3619,11 +3634,11 @@
 /* Help and support Section header */
 "subscription.help" = "Ayuda y asistencia";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Gestionar plan";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Gestionar el pago o cancelar";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Gestionar plan";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Suscripción";
@@ -3787,6 +3802,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Configurar la sincronización";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Sincroniza y haz copias de seguridad de tus tarjetas de crédito";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Sincroniza y haz copias de seguridad de tus datos";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "No, gracias";
 
@@ -3876,6 +3897,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Añadir todas las pestañas a marcadores";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Ocultar";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Puedes volver a activarlo en Ajustes > Apariencia.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "¿Ocultar el recuento de rastreadores?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Opciones de recuento de rastreadores";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Toca dos veces para mostrar opciones para ocultar este banner";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Mantener";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "en los últimos 7 días";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Aumenta o disminuye el tamaño del texto en todos los sitios.";
@@ -4261,15 +4306,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "¿Qué quieres importar?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Pestañas";
-"settings.tab.switcher.show.tracker.count" = "Recuento de rastreadores de 7 días";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "en los últimos 7 días";
-"tab.switcher.tracker.count.hide.title" = "¿Ocultar el recuento de rastreadores?";
-"tab.switcher.tracker.count.hide.message" = "Puedes volver a activarlo en Ajustes > Apariencia.";
-"tab.switcher.tracker.count.hide.action" = "Ocultar";
-"tab.switcher.tracker.count.keep.action" = "Mantener";
-"tab.switcher.tracker.count.info.a11y" = "Opciones del recuento de rastreadores";
-"tab.switcher.tracker.count.info.hint.a11y" = "Toca dos veces para mostrar opciones para ocultar este banner";

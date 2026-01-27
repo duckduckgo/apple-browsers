@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Atcelt";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Ieslēgt sinhronizāciju un dublēšanu";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Tādējādi DuckDuckGo drošajā serverī tiek izveidota šifrēta grāmatzīmju un automātiskās aizpildes datu dublējumkopija, ko var sinhronizēt ar citām ierīcēm.";
 

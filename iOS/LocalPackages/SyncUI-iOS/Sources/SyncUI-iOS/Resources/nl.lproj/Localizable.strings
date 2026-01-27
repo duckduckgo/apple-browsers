@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Annuleren";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "'Synchronisatie en back-up' inschakelen";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Hiermee maak je een versleutelde back-up van je bladwijzers en automatisch ingevulde gegevens op de beveiligde server van DuckDuckGo. Deze back-up kan met je andere apparaten worden gesynchroniseerd.";
 

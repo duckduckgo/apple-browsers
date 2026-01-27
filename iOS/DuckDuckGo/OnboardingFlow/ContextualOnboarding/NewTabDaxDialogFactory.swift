@@ -25,7 +25,7 @@ import Common
 
 typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & SubscriptionPromotionCoordinating
 
-protocol NewTabDaxDialogProviding<DaxDialog> {
+protocol NewTabDaxDialogProviding {
     associatedtype DaxDialog: View
 
     /// Creates a Dax dialog for a given home screen specification.

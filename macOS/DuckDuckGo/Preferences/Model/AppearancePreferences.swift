@@ -452,7 +452,8 @@ final class AppearancePreferences: ObservableObject {
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
         dateTimeProvider: @escaping () -> Date = Date.init,
-        featureFlagger: FeatureFlagger?
+        featureFlagger: FeatureFlagger?,
+        aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     ) {
         self.init(
             persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
@@ -460,7 +461,8 @@ final class AppearancePreferences: ObservableObject {
             pixelFiring: pixelFiring,
             newTabPageNavigator: newTabPageNavigator,
             dateTimeProvider: dateTimeProvider,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatShortcutSettingProvider: aiChatShortcutSettingProvider
         )
     }
 
@@ -470,7 +472,8 @@ final class AppearancePreferences: ObservableObject {
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
         dateTimeProvider: @escaping () -> Date = Date.init,
-        featureFlagger: FeatureFlagger?
+        featureFlagger: FeatureFlagger?,
+        aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     ) {
         self.persistor = persistor
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -478,6 +481,7 @@ final class AppearancePreferences: ObservableObject {
         self.newTabPageNavigator = newTabPageNavigator
         self.dateTimeProvider = dateTimeProvider
         self.featureFlagger = featureFlagger
+        self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
 
         /// when adding new properties, make sure to update `reload()` to include them there.
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
@@ -531,6 +535,7 @@ final class AppearancePreferences: ObservableObject {
     private var newTabPageNavigator: NewTabPageNavigator
     private let dateTimeProvider: () -> Date
     private let featureFlagger: FeatureFlagger?
+    private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private var cancellables = Set<AnyCancellable>()
 
     private func requestSync() {
@@ -559,17 +564,21 @@ final class AppearancePreferences: ObservableObject {
         guard !didChangeAnyNewTabPageCustomizationSetting else { return }
 
         // Combine all New Tab Page customization setting publishers
-        let sectionVisibilityPublisher = $isOmnibarVisible.combineLatest($isFavoriteVisible, $isProtectionsReportVisible)
-        $themeAppearance.combineLatest(
-            $themeName,
-            $homePageCustomBackground,
-            sectionVisibilityPublisher
-        )
-        .dropFirst()
+        let sectionVisibilityPublisher = $isOmnibarVisible
+            .combineLatest($isFavoriteVisible,
+                           $isProtectionsReportVisible)
+            .dropFirst()
+            .map { _, _, _ in return true }
+        let appearancePublisher = $themeAppearance
+            .combineLatest($themeName,
+                           $homePageCustomBackground)
+            .dropFirst()
+            .map { _, _, _ in return true }
+        Publishers.Merge3(
+            sectionVisibilityPublisher,
+            appearancePublisher,
+            aiChatShortcutSettingProvider.isAIChatShortcutEnabledPublisher.map { _ in return true })
         .receive(on: DispatchQueue.main)
-        .sink { [weak self] _ in
-            self?.didChangeAnyNewTabPageCustomizationSetting = true
-        }
-        .store(in: &cancellables)
+        .assign(to: &$didChangeAnyNewTabPageCustomizationSetting)
     }
 }

@@ -82,7 +82,8 @@ private extension ThemePopoverDeciderTests {
         let appearancePreferences = AppearancePreferences(
             persistor: appearancePersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         let popoverPersistor = MockThemePopoverPersistor(themePopoverShown: themePopoverShown)

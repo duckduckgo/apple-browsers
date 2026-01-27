@@ -22,13 +22,15 @@ import PersistenceTestingUtils
 import BrowserServicesKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+import AIChat
 
 extension AppearancePreferences {
     static let mock = AppearancePreferences(
         // swiftlint:disable:next force_try
         persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: try! MockKeyValueFileStore()),
         privacyConfigurationManager: MockPrivacyConfigurationManager(),
-        featureFlagger: MockFeatureFlagger()
+        featureFlagger: MockFeatureFlagger(),
+        aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
     )
 }
 #endif

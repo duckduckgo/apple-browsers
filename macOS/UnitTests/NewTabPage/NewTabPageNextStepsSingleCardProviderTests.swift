@@ -59,7 +59,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -898,7 +899,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         return AppearancePreferences(
             persistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
     }
 }

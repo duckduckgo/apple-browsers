@@ -43,7 +43,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 didChangeAnyNewTabPageCustomizationSetting: false
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         XCTAssertEqual(model.showFullURL, false)
@@ -78,7 +79,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 didChangeAnyNewTabPageCustomizationSetting: true
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
         XCTAssertEqual(model.showFullURL, true)
         XCTAssertEqual(model.themeAppearance, ThemeAppearance.light)
@@ -102,7 +104,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 themeName: "garbage"
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         XCTAssertEqual(model.themeAppearance, ThemeAppearance.systemDefault)
@@ -115,7 +118,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 themeName: "garbage"
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         XCTAssertEqual(model.themeName, ThemeName.default)
@@ -128,7 +132,7 @@ final class AppearancePreferencesTests: XCTestCase {
     }
 
     func testWhenThemeAppearanceIsUpdatedThenApplicationAppearanceIsUpdated() throws {
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
 
         model.themeAppearance = ThemeAppearance.systemDefault
         XCTAssertEqual(NSApp.appearance?.name, ThemeAppearance.systemDefault.appearance?.name)
@@ -144,7 +148,7 @@ final class AppearancePreferencesTests: XCTestCase {
     }
 
     func testWhenNewTabPreferencesAreUpdatedThenPersistedValuesAreUpdated() throws {
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
 
         model.isFavoriteVisible = true
         XCTAssertEqual(model.isFavoriteVisible, true)
@@ -191,7 +195,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 9)
@@ -207,7 +212,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         XCTAssertEqual(model.nextStepsCardsDemonstrationDays, 5)
@@ -219,10 +225,11 @@ final class AppearancePreferencesTests: XCTestCase {
 
         // listen to AppearancePreferences.objectWillChange
         let model = AppearancePreferences(
-            persistor: AppearancePreferencesPersistorMock(),
+            persistor: AppearancePreferencesPersistorMock(            ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             dateTimeProvider: { now },
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
         let c = model.objectWillChange.sink {
             XCTFail("Unexpected model.objectWillChange")
@@ -248,10 +255,11 @@ final class AppearancePreferencesTests: XCTestCase {
 
         // listen to AppearancePreferences.objectWillChange
         let model = AppearancePreferences(
-            persistor: AppearancePreferencesPersistorMock(),
+            persistor: AppearancePreferencesPersistorMock(            ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             dateTimeProvider: { now },
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
         var eObjectWillChange: XCTestExpectation!
         let c = model.objectWillChange.sink {
@@ -293,11 +301,23 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(themeName: ThemeName.default.rawValue,
                                                           didChangeAnyNewTabPageCustomizationSetting: false),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
         XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
 
         model.themeName = ThemeName.green
+
+        wait(for: [expectation], timeout: 0.5)
+        cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
     }
@@ -307,11 +327,23 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.light.rawValue,
                                                           didChangeAnyNewTabPageCustomizationSetting: false),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
         XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
 
         model.themeAppearance = .dark
+
+        wait(for: [expectation], timeout: 0.5)
+        cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
     }
@@ -321,11 +353,23 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(homePageCustomBackground: nil,
                                                           didChangeAnyNewTabPageCustomizationSetting: false),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
         XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
 
         model.homePageCustomBackground = CustomBackground.gradient(.gradient01)
+
+        wait(for: [expectation], timeout: 0.5)
+        cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
     }
@@ -335,11 +379,23 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(isOmnibarVisible: true,
                                                           didChangeAnyNewTabPageCustomizationSetting: false),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
         XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
 
         model.isOmnibarVisible = false
+
+        wait(for: [expectation], timeout: 0.5)
+        cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
     }
@@ -349,11 +405,23 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(isFavoriteVisible: true,
                                                           didChangeAnyNewTabPageCustomizationSetting: false),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
         XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
 
         model.isFavoriteVisible = false
+
+        wait(for: [expectation], timeout: 0.5)
+        cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
     }
@@ -363,11 +431,50 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(isProtectionsReportVisible: true,
                                                           didChangeAnyNewTabPageCustomizationSetting: false),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
         XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
 
         model.isProtectionsReportVisible = false
+
+        wait(for: [expectation], timeout: 0.5)
+        cancellable.cancel()
+
+        XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
+    }
+
+    func testWhenAIChatShortcutEnabledIsUpdatedThenDidChangeAnyNewTabPageCustomizationSettingIsTrue() {
+        let mockProvider = MockNewTabPageAIChatShortcutSettingProvider()
+        mockProvider.isAIChatShortcutEnabled = true
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(didChangeAnyNewTabPageCustomizationSetting: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: mockProvider
+        )
+
+        let expectation = XCTestExpectation(description: "Register change to New Tab Page customization setting")
+        let cancellable = model.$didChangeAnyNewTabPageCustomizationSetting
+            .sink { didChange in
+                guard didChange else { return }
+                expectation.fulfill()
+            }
+
+        XCTAssertFalse(model.didChangeAnyNewTabPageCustomizationSetting)
+
+        mockProvider.isAIChatShortcutEnabled = false
+
+        wait(for: [expectation], timeout: 0.5)
+        cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
     }
@@ -382,7 +489,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             pixelFiring: pixelFiringMock,
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         model.themeAppearance = ThemeAppearance.systemDefault
@@ -405,7 +513,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             pixelFiring: pixelFiringMock,
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         model.showFullURL = true
@@ -425,7 +534,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             pixelFiring: pixelFiringMock,
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         model.syncAppIconWithTheme = true
@@ -445,7 +555,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             pixelFiring: pixelFiringMock,
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         model.isFavoriteVisible = false
@@ -475,7 +586,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             pixelFiring: pixelFiringMock,
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         model.isProtectionsReportVisible = false
@@ -504,9 +616,10 @@ final class AppearancePreferencesTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = [.newTabPageOmnibar]
 
         let model = AppearancePreferences(
-            persistor: AppearancePreferencesPersistorMock(),
+            persistor: AppearancePreferencesPersistorMock(            ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         XCTAssertTrue(model.isOmnibarAvailable, "Omnibar should be available when feature flag is ON")
@@ -517,9 +630,10 @@ final class AppearancePreferencesTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = []
 
         let model = AppearancePreferences(
-            persistor: AppearancePreferencesPersistorMock(),
+            persistor: AppearancePreferencesPersistorMock(            ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         XCTAssertFalse(model.isOmnibarAvailable, "Omnibar should NOT be available when feature flag is OFF")
@@ -530,7 +644,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
 
         XCTAssertTrue(model.isOmnibarVisible, "Initial value should be true")

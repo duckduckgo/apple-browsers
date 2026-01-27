@@ -101,7 +101,8 @@ final class TabViewModelTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(showFullURL: false),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
         let tabViewModel = TabViewModel(tab: tab, appearancePreferences: appearancePreferences)
 
@@ -125,7 +126,8 @@ final class TabViewModelTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(showFullURL: true),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
         let tabViewModel = TabViewModel(tab: tab, appearancePreferences: appearancePreferences)
 
@@ -492,7 +494,8 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
             ),
             accessibilityPreferences: AccessibilityPreferences()
         )
@@ -523,7 +526,8 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
             ),
             accessibilityPreferences: accessibilityPreferences
         )
@@ -590,7 +594,8 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
             ),
             accessibilityPreferences: accessibilityPreferences
         )
@@ -616,7 +621,8 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
             ),
             accessibilityPreferences: accessibilityPreferences
         )
@@ -811,7 +817,8 @@ extension TabViewModel {
             let appearancePreferences = AppearancePreferences(
                 keyValueStore: try! MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
             )
             return TabViewModel(
                 tab: tab,

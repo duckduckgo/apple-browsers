@@ -109,7 +109,8 @@ final class AutoconsentStatsPopoverCoordinatorTests: XCTestCase {
         mockAppearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: mockFeatureFlagger
+            featureFlagger: mockFeatureFlagger,
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
         )
         mockAppearancePreferences.isProtectionsReportVisible = true
 

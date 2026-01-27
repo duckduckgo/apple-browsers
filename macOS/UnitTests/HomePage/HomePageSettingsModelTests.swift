@@ -42,7 +42,10 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
         sendPixelEvents = []
 
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        appearancePreferences = .init(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        appearancePreferences = .init(persistor: AppearancePreferencesPersistorMock(),
+                                      privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                      featureFlagger: MockFeatureFlagger(),
+                                      aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
 
         UserDefaultsWrapper<Any>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.homePageLastPickedCustomColor.rawValue)

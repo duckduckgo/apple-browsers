@@ -314,7 +314,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                            aiChatSettings: aiChatSettings,
-                                           viewModel: AIChatSuggestionsViewModel())
+                                           viewModel: AIChatSuggestionsViewModel(maxSuggestions: 10))
         manager.delegate = self
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)

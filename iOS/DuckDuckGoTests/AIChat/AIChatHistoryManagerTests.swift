@@ -150,11 +150,13 @@ private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
     var suggestionsToReturn: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) = ([], [])
     var fetchSuggestionsCallCount = 0
     var lastQuery: String?
+    var lastMaxChats: Int?
     var tearDownCalled = false
 
-    func fetchSuggestions(query: String?) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
+    func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
         fetchSuggestionsCallCount += 1
         lastQuery = query
+        lastMaxChats = maxChats
         return suggestionsToReturn
     }
 

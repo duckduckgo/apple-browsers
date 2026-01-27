@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
 import DuckUI
+import Lottie
 
 struct ScopedFireConfirmationView: View {
     
@@ -105,15 +106,15 @@ struct ScopedFireConfirmationView: View {
     
     @ViewBuilder
     private var animation: some View {
-        LottieView(lottieFile: "fire-icon",
-                   isAnimating: $isAnimating,
-                   respectBounds: true)
-        .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.animationDelay) {
-                isAnimating = true
+        Lottie.LottieView(animation: .named("fire-icon"))
+            .playbackMode(isAnimating ? .playing(.fromProgress(0, toProgress: 1, loopMode: .repeat(2))) : .paused(at: .progress(0)))
+            .resizable()
+            .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + Constants.animationDelay) {
+                    isAnimating = true
+                }
             }
-        }
     }
     
 }

@@ -17,22 +17,27 @@
 //
 
 import XCTest
+import Persistence
+import PersistenceTestingUtils
 @testable import WebExtensions
 
 @available(macOS 15.4, *)
 final class WebExtensionPathsStoreTests: XCTestCase {
 
-    var storageMock: KeyedStoringMock!
+    var inMemoryStore: InMemoryKeyValueStore!
+    var storage: (any KeyedStoring<WebExtensionPathsSettings>)!
     var store: WebExtensionPathsStore!
 
     override func setUp() {
         super.setUp()
-        storageMock = KeyedStoringMock()
-        store = WebExtensionPathsStore(storage: storageMock)
+        inMemoryStore = InMemoryKeyValueStore()
+        storage = inMemoryStore.keyedStoring()
+        store = WebExtensionPathsStore(storage: storage)
     }
 
     override func tearDown() {
-        storageMock = nil
+        inMemoryStore = nil
+        storage = nil
         store = nil
         super.tearDown()
     }
@@ -52,7 +57,7 @@ final class WebExtensionPathsStoreTests: XCTestCase {
 
         store.add(path)
 
-        XCTAssertEqual(storageMock.paths, [path])
+        XCTAssertEqual(storage.paths, [path])
     }
 
     func testWhenMultiplePathsAreAdded_ThenAllAreStored() {
@@ -71,7 +76,7 @@ final class WebExtensionPathsStoreTests: XCTestCase {
 
     func testWhenPathIsRemoved_ThenPathsDoesNotContainIt() {
         let path = "/path/to/extension"
-        storageMock.paths = [path]
+        storage.paths = [path]
 
         store.remove(path)
 
@@ -80,17 +85,17 @@ final class WebExtensionPathsStoreTests: XCTestCase {
 
     func testWhenPathIsRemoved_ThenStorageIsUpdated() {
         let path = "/path/to/extension"
-        storageMock.paths = [path]
+        storage.paths = [path]
 
         store.remove(path)
 
-        XCTAssertEqual(storageMock.paths, [])
+        XCTAssertEqual(storage.paths, [])
     }
 
     func testWhenOnePathIsRemoved_ThenOtherPathsRemain() {
         let path1 = "/path/to/extension1"
         let path2 = "/path/to/extension2"
-        storageMock.paths = [path1, path2]
+        storage.paths = [path1, path2]
 
         store.remove(path1)
 
@@ -100,14 +105,14 @@ final class WebExtensionPathsStoreTests: XCTestCase {
     // MARK: - Paths Property Tests
 
     func testThatPathsReturnsEmptyArrayWhenStorageIsEmpty() {
-        storageMock.paths = nil
+        storage.paths = nil
 
         XCTAssertEqual(store.paths, [])
     }
 
     func testThatPathsReturnsStoredPathsFromStorage() {
         let paths = ["/path/to/extension1", "/path/to/extension2"]
-        storageMock.paths = paths
+        storage.paths = paths
 
         XCTAssertEqual(store.paths, paths)
     }
@@ -115,7 +120,8 @@ final class WebExtensionPathsStoreTests: XCTestCase {
     // MARK: - Custom Storage Tests
 
     func testThatInitWithCustomStorageUsesProvidedStorage() {
-        let customStorage = KeyedStoringMock()
+        let customInMemoryStore = InMemoryKeyValueStore()
+        let customStorage: any KeyedStoring<WebExtensionPathsSettings> = customInMemoryStore.keyedStoring()
         customStorage.paths = ["/custom/path"]
 
         let customStore = WebExtensionPathsStore(storage: customStorage)

@@ -45,7 +45,9 @@ let package = Package(
         .testTarget(
             name: "WebExtensionsTests",
             dependencies: [
-                "WebExtensions"
+                "WebExtensions",
+                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit")
             ]
         ),
     ]

@@ -197,7 +197,6 @@ jobs:
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
-          -enablePerformanceTestsDiagnostics YES \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 

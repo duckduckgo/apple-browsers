@@ -76,6 +76,7 @@ protocol AIChatMetricReportingHandling: AnyObject {
 protocol AIChatUserScriptHandling: AnyObject {
     var displayMode: AIChatDisplayMode? { get set }
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
+    func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
@@ -88,6 +89,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
+    func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable?
     func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
     func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable?
@@ -117,6 +119,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let migrationStore = AIChatMigrationStore()
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
+    private var contextualModePixelHandler: AIChatContextualModePixelFiring?
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -173,6 +176,24 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
             }
         }
+        return nil
+    }
+
+    func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let paramsDict = params as? [String: Any],
+              let action = paramsDict["action"] as? String else {
+            return nil
+        }
+
+        switch action {
+        case "attached":
+            contextualModePixelHandler?.firePageContextManuallyAttachedFrontend()
+        case "removed":
+            contextualModePixelHandler?.firePageContextRemovedFrontend()
+        default:
+            break
+        }
+
         return nil
     }
 
@@ -267,6 +288,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
         self.pageContextProvider = provider
+    }
+
+    func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {
+        self.contextualModePixelHandler = pixelHandler
     }
 
     func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?) {

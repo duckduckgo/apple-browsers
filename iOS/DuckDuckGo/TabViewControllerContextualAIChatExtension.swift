@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Core
 import UIKit
 
 // MARK: - Contextual AI Chat
@@ -37,6 +38,10 @@ extension TabViewController {
 
             if needsColdRestore, let urlString = tabModel.contextualChatURL {
                 restoreURL = URL(string: urlString)
+            }
+
+            if restoreURL == nil, let pageContext = aiChatContextualSheetCoordinator.pageContextHandler.latestContext {
+                aiChatContextualSheetCoordinator.pixelHandler.primeNavigationURL(pageContext.url)
             }
 
             await aiChatContextualSheetCoordinator.presentSheet(

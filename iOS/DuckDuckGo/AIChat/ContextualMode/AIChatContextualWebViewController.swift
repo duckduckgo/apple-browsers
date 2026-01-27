@@ -134,6 +134,7 @@ final class AIChatContextualWebViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         if let restoreURL = initialRestoreURL {
             loadChatURL(restoreURL)

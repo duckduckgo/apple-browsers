@@ -223,6 +223,12 @@ final class AIChatSettings: AIChatSettingsProvider {
     func enableAutomaticContextAttachment(enable: Bool) {
         keyValueStore.set(enable, forKey: .isAIChatAutomaticContextAttachmentEnabledKey)
         triggerSettingsChangedNotification()
+
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatContextualSettingsAutoAttachEnabled)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatContextualSettingsAutoAttachDisabled)
+        }
     }
     
     /// Process the settings view funnels step

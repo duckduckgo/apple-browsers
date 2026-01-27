@@ -150,6 +150,7 @@ class TabViewController: UIViewController {
                                                                                    tld: TabViewController.tld)
     private(set) lazy var extensionPromotionManager: AutofillExtensionPromotionManaging = AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
     private(set) var tabModel: Tab
+    private(set) var viewModel: TabViewModel
     private(set) var privacyInfo: PrivacyInfo?
     private var previousPrivacyInfosByURL: [URL: PrivacyInfo] = [:]
     
@@ -171,7 +172,6 @@ class TabViewController: UIViewController {
 
     public var inferredOpenerContext: BrokenSiteReport.OpenerContext?
     private var refreshCountSinceLoad: Int = 0
-    private var performanceMetrics: PerformanceMetricsSubfeature?
     private var breakageReportingSubfeature: BreakageReportingSubfeature?
 
     private var detectedLoginURL: URL?
@@ -184,7 +184,6 @@ class TabViewController: UIViewController {
 
     private let netPConnectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver
     private var netPConnectionObserverCancellable: AnyCancellable?
-    var pageContextUpdateCancellable: AnyCancellable?
     private var netPConnectionStatus: ConnectionStatus = .default
     private var netPConnected: Bool {
         switch netPConnectionStatus {
@@ -290,7 +289,7 @@ class TabViewController: UIViewController {
             delegate?.tabLoadingStateDidChange(tab: self)
             if let url {
                 let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
-                historyCapture.titleDidChange(title, forURL: finalURL)
+                viewModel.captureTitleDidChange(title, for: finalURL)
             }
         }
     }
@@ -456,7 +455,6 @@ class TabViewController: UIViewController {
 
 
     let historyManager: HistoryManaging
-    let historyCapture: HistoryCapture
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
                                     featureFlagger: AppDependencyProvider.shared.featureFlagger,
@@ -499,13 +497,19 @@ class TabViewController: UIViewController {
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
+        let pageContextHandler = AIChatPageContextHandler(
+            webViewProvider: { [weak self] in self?.webView },
+            userScriptProvider: { [weak self] in self?.userScripts?.pageContextUserScript },
+            faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) }
+        )
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
             aiChatSettings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            pageContextHandler: pageContextHandler
         )
         coordinator.delegate = self
         return coordinator
@@ -546,11 +550,11 @@ class TabViewController: UIViewController {
                    voiceSearchHelper: VoiceSearchHelperProtocol) {
 
         self.tabModel = tabModel
+        self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
         self.privacyConfigurationManager = privacyConfigurationManager
         self.appSettings = appSettings
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
-        self.historyCapture = HistoryCapture(historyManager: historyManager)
         self.syncService = syncService
         self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -1412,7 +1416,6 @@ class TabViewController: UIViewController {
                                                                      openerContext: inferredOpenerContext,
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
-                                                                     performanceMetrics: performanceMetrics,
                                                                      breakageReportingSubfeature: breakageReportingSubfeature)
     }
 
@@ -1534,7 +1537,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
-            historyCapture.webViewDidCommit(url: finalURL)
+            viewModel.captureWebviewDidCommit(finalURL)
             instrumentation.willLoad(url: url)
         }
 
@@ -1713,8 +1716,15 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
         specialErrorPageNavigationHandler.handleWebView(webView, didFinish: navigation)
+
+        // Notify contextual AI chat coordinator that the page changed (for context refresh)
+        if aiChatContextualSheetCoordinator.hasActiveSheet {
+            Task { [weak self] in
+                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
+            }
+        }
     }
-    
+
     /// Fires product telemetry related to the current URL
     private func fireProductTelemetry(for webView: WKWebView) {
         guard let url = webView.url else { return }
@@ -1768,6 +1778,9 @@ extension TabViewController: WKNavigationDelegate {
     
     private func onWebpageDidFinishLoading() {
         Logger.general.debug("webpageLoading finished")
+
+        // Flash prevention sets this false, but that breaks some websites.
+        webView?.isOpaque = true
 
         tabModel.link = link
         delegate?.tabLoadingStateDidChange(tab: self)
@@ -2999,9 +3012,6 @@ extension TabViewController: UserContentControllerDelegate {
             userScripts.youtubeOverlayScript?.webView = webView
             userScripts.youtubePlayerUserScript?.webView = webView
         }
-        
-        performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
-        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: performanceMetrics!)
         
         breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: breakageReportingSubfeature!)

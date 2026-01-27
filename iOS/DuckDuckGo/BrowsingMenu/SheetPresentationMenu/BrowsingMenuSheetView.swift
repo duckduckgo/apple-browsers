@@ -32,8 +32,10 @@ struct BrowsingMenuModel {
 struct BrowsingMenuSheetView: View {
 
     enum Metrics {
-        static let headerButtonVerticalPadding: CGFloat = 8
-        static let headerButtonIconTextSpacing: CGFloat = 2
+        static let headerButtonVerticalPadding: CGFloat = 12
+        static let headerButtonHorizontalPadding: CGFloat = 8
+        static let headerButtonIconSize: CGFloat = 26
+        static let headerButtonIconTextSpacing: CGFloat = 4
         static let footerButtonVerticalPadding: CGFloat = 8
 
         /// Approximate row size for `.insetGrouped` style.
@@ -273,13 +275,15 @@ private struct MenuHeaderButton: View {
         Button(action: action) {
             VStack(spacing: Metrics.headerButtonIconTextSpacing) {
                 Image(uiImage: entryData.image)
+                    .resizable()
+                    .frame(width: Metrics.headerButtonIconSize, height: Metrics.headerButtonIconSize)
                     .tint(Color(designSystemColor: .icons))
                 Text(entryData.name)
-                    .daxFootnoteRegular()
-                    .foregroundStyle(Color(designSystemColor: .textSecondary))
+                    .daxCaption()
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
             }
             .padding(.vertical, Metrics.headerButtonVerticalPadding)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, Metrics.headerButtonHorizontalPadding)
             .frame(maxWidth: .infinity)
             .frame(maxHeight: .infinity)
             .background(Color.rowBackgroundColor)
@@ -331,7 +335,7 @@ private struct BrowsingMenuHeaderView: View {
         .frame(width: MenuHeaderConstant.faviconSize, height: MenuHeaderConstant.faviconSize)
         .menuHeaderEntryShape()
         .padding(MenuHeaderConstant.faviconPadding)
-        .background(Color(designSystemColor: .surface))
+        .background(Color.rowBackgroundColor)
         .menuHeaderEntryShape()
     }
 

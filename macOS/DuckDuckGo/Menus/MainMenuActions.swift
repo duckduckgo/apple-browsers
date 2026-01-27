@@ -550,6 +550,16 @@ extension AppDelegate {
         Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
     }
 
+    @MainActor
+    @objc func exportMemoryAllocationStats(_ sender: Any?) {
+        do {
+            let exporter = MemoryAllocationStatsExporter()
+            try exporter.exportSnapshotToTemporaryURL()
+        } catch {
+            Logger.general.error("Failed to export Memory Allocation Stats: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @objc func resetRemoteMessages(_ sender: Any?) {
         Task {
             await remoteMessagingClient.store?.resetRemoteMessages()
@@ -561,13 +571,13 @@ extension AppDelegate {
     }
 
     @objc func debugResetContinueSetup(_ sender: Any?) {
-        var persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
         persistor.continueSetUpCardsLastDemonstrated = nil
         persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
-        persistor.didOpenCustomizationSettings = false
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         appearancePreferences.continueSetUpCardsClosed = false
         appearancePreferences.isContinueSetUpVisible = true
+        appearancePreferences.didOpenCustomizationSettings = false
         duckPlayer.preferences.youtubeOverlayAnyButtonPressed = false
         duckPlayer.preferences.duckPlayerMode = .alwaysAsk
         UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()

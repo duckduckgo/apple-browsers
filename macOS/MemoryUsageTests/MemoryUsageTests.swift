@@ -18,11 +18,43 @@
 
 import XCTest
 import Foundation
-import os.log
 
 final class MemoryUsageTests: XCTestCase {
 
-    func testSample() {
-        // NO-OP
+    private var application: XCUIApplication!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        continueAfterFailure = false
+
+        application = XCUIApplication.setUp(featureFlags: ["memoryUsageMonitor": true])
+    }
+
+    override func tearDown() {
+        super.tearDown()
+        application.terminate()
+    }
+
+    func testMemoryAllocationsWhenOpeningSingleNewTab() throws {
+        /// We're explicitly **not** closing Tabs between Iterations to avoid interference from both, malloc re-using released blocks, or retain cycles themselves.
+        /// The purpose of this Test is to measure the memory impact of opening a single Tab.
+        ///
+        let (metric, options, work) = buildMemoryMeasurement(application: application, iterations: 5) { application in
+            application.openNewTab()
+        }
+
+        application.openNewWindow()
+        measure(metrics: [metric], options: options, block: work)
+    }
+
+    func testMemoryAllocationsWhenOpeningSingleNewWindow() throws {
+        /// We're explicitly **not** closing Windows between Iterations to avoid interference from both, malloc re-using released blocks, or retain cycles themselves.
+        /// The purpose of this Test is to measure the memory impact of opening a single Window.
+        ///
+        let (metric, options, work) = buildMemoryMeasurement(application: application, iterations: 5) { application in
+            application.openNewWindow()
+        }
+
+        measure(metrics: [metric], options: options, block: work)
     }
 }

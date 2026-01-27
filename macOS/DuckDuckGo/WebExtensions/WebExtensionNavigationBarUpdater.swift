@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+import WebExtensions
 import WebKit
 
 @available(macOS 15.4, *)
@@ -79,6 +81,8 @@ final class WebExtensionNavigationBarUpdater {
     }
 
     private func addButtons(to container: NSStackView, forExtensionsAddedTo loadedExtensions: Set<WKWebExtensionContext>) {
+        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+
         let buttonIdentifiers = buttons.compactMap {
             $0.identifier?.rawValue
         }
@@ -86,8 +90,8 @@ final class WebExtensionNavigationBarUpdater {
         for (index, context) in loadedExtensions.enumerated() where !buttonIdentifiers.contains(context.uniqueIdentifier) {
 
             let newButton = webExtensionManager.toolbarButton(for: context)
-
             container.insertArrangedSubview(newButton, at: index)
+
             buttons.insert(newButton)
         }
     }

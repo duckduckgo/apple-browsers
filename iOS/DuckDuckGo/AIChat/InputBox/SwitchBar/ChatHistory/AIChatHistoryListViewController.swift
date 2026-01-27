@@ -114,7 +114,7 @@ final class AIChatHistoryListViewController: UIViewController {
         config.textProperties.lineBreakMode = .byTruncatingTail
         config.textProperties.numberOfLines = 1
 
-        let icon = chat.isPinned ? DesignSystemImages.Glyphs.Size16.pin : DesignSystemImages.Glyphs.Size16.history
+        let icon = chat.isPinned ? DesignSystemImages.Glyphs.Size24.pin : DesignSystemImages.Glyphs.Size24.chat
         config.image = icon.withRenderingMode(.alwaysTemplate)
         config.imageProperties.tintColor = UIColor(designSystemColor: .icons)
         config.imageProperties.maximumSize = CGSize(width: Constants.iconSize, height: Constants.iconSize)

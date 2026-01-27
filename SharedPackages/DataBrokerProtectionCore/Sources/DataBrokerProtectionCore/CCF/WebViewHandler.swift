@@ -48,7 +48,10 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     private var webView: WebView?
 
 #if os(macOS)
+    private var urlObservation: NSKeyValueObservation?
     private var window: NSWindow?
+    private var addressBarTextField: NSTextField?
+    private var toolbar: NSToolbar?
 #elseif os(iOS)
     private var window: UIWindow?
 #endif
@@ -80,12 +83,28 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
         if showWebView {
 #if os(macOS)
+            urlObservation = webView?.observe(\.url, options: [.initial, .new]) { [weak self] _, change in
+                let url = change.newValue ?? nil
+                Task { @MainActor in
+                    self?.updateAddressBar(with: url)
+                }
+            }
+
             window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024), styleMask: [.titled],
+                contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable],
                 backing: .buffered, defer: false
             )
             window?.title = "Data Broker Protection"
-            window?.contentView = self.webView
+            window?.toolbarStyle = .expanded
+            let toolbar = makeToolbar()
+            self.toolbar = toolbar
+            window?.toolbar = toolbar
+
+            window?.delegate = self
+            window?.isReleasedWhenClosed = false
+            window?.contentView = webView
+
             window?.makeKeyAndOrderFront(nil)
 #elseif os(iOS)
             cleanupExistingPIRDebugWindow()
@@ -137,6 +156,10 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         userContentController = nil
         webView?.navigationDelegate = nil
         webView = nil
+#if os(macOS)
+        urlObservation?.invalidate()
+        urlObservation = nil
+#endif
     }
 
     deinit {
@@ -268,6 +291,95 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
 }
 
+#if os(macOS)
+private extension DataBrokerProtectionWebViewHandler {
+    @objc func copyURLFromAddressBar() {
+        let urlString = addressBarTextField?.stringValue ?? ""
+        guard !urlString.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(urlString, forType: .string)
+    }
+
+    func makeToolbar() -> NSToolbar {
+        let toolbar = NSToolbar(identifier: NSToolbar.Identifier("PIRDebugToolbar"))
+        toolbar.delegate = self
+        toolbar.displayMode = .iconOnly
+        return toolbar
+    }
+
+    func makeAddressBarView() -> NSView {
+        let containerView = NSView(frame: NSRect(x: 0, y: 0, width: 760, height: 22))
+        let addressField = NSTextField(labelWithString: "")
+        addressField.isEditable = false
+        addressField.isSelectable = true
+        addressField.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        addressField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        addressField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        addressField.cell?.lineBreakMode = .byTruncatingTail
+        addressField.usesSingleLineMode = true
+        addressBarTextField = addressField
+        updateAddressBar(with: webView?.url)
+
+        let copyButton = NSButton(title: "Copy URL", target: self, action: #selector(copyURLFromAddressBar))
+        copyButton.setContentHuggingPriority(.required, for: .horizontal)
+        copyButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let addressRow = NSStackView(views: [addressField, copyButton])
+        addressRow.orientation = .horizontal
+        addressRow.spacing = 8
+        addressRow.alignment = .centerY
+        addressRow.distribution = .fill
+        addressRow.translatesAutoresizingMaskIntoConstraints = false
+
+        containerView.addSubview(addressRow)
+        NSLayoutConstraint.activate([
+            addressRow.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            addressRow.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+            addressRow.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 0),
+            addressRow.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: 0)
+        ])
+
+        return containerView
+    }
+
+    func updateAddressBar(with url: URL?) {
+        addressBarTextField?.stringValue = url?.absoluteString ?? ""
+    }
+}
+
+extension DataBrokerProtectionWebViewHandler: NSWindowDelegate {
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        sender.orderOut(nil)
+        return false
+    }
+}
+
+extension DataBrokerProtectionWebViewHandler: NSToolbarDelegate {
+    private enum ToolbarItemIdentifier {
+        static let addressBar = NSToolbarItem.Identifier("PIRDebugToolbar.AddressBar")
+    }
+
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [ToolbarItemIdentifier.addressBar, .flexibleSpace]
+    }
+
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [ToolbarItemIdentifier.addressBar, .flexibleSpace]
+    }
+
+    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
+                 willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        guard itemIdentifier == ToolbarItemIdentifier.addressBar else { return nil }
+        let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+        let view = makeAddressBarView()
+        item.view = view
+        item.minSize = view.fittingSize
+        item.maxSize = NSSize(width: 2000, height: view.fittingSize.height)
+        return item
+    }
+}
+#endif
+
 extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
@@ -275,6 +387,9 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         Logger.action.log("WebViewHandler didFinish")
+#if os(macOS)
+        updateAddressBar(with: webView.url)
+#endif
 
         self.activeContinuation?.resume()
         self.activeContinuation = nil
@@ -290,6 +405,12 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         Logger.action.error("WebViewHandler didFailProvisionalNavigation: \(error.localizedDescription, privacy: .public)")
         self.activeContinuation?.resume(throwing: error)
         self.activeContinuation = nil
+    }
+
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+#if os(macOS)
+        updateAddressBar(with: webView.url)
+#endif
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {

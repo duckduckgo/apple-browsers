@@ -457,6 +457,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: pixelHandler!, vault: vault, localBrokerService: localBrokerService)
         
         self.emailConfirmationDataService = EmailConfirmationDataService(
+            emailConfirmationStore: database,
             database: database,
             emailServiceV0: emailService,
             emailServiceV1: emailServiceV1,

@@ -43,6 +43,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
+            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -57,6 +58,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
+            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -69,6 +71,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: false,
+            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -82,6 +85,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             dataSource: dataSource,
             isFeatureEnabled: true,
             isNewTabPage: true,
+            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -95,6 +99,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             dataSource: dataSource,
             isFeatureEnabled: true,
             isAITab: true,
+            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -109,6 +114,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             dataSource: dataSource,
             isFeatureEnabled: true,
             isAITab: true,
+            isError: false,
             hasLink: true
         )
 
@@ -120,6 +126,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             dataSource: dataSource,
             isFeatureEnabled: true,
             isAITab: true,
+            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com")
         )
@@ -131,6 +138,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
+            isError: false,
             hasLink: false
         )
 
@@ -142,6 +150,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
+            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -153,6 +162,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
             dataSource: dataSource,
             isFeatureEnabled: true,
             isNewTabPage: true,
+            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example"
@@ -169,6 +179,7 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         sut.update(
             dataSource: dataSource,
             isFeatureEnabled: true,
+            isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
             title: "Example",
@@ -176,5 +187,22 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         )
 
         XCTAssertEqual(dataSource.iconType, .easterEgg(URL(string: easterEggURL)!))
+    }
+
+    // MARK: - Error Page
+
+    func testWhenErrorPageThenTitleIsNil() {
+        sut.update(
+            dataSource: dataSource,
+            isFeatureEnabled: true,
+            isError: true,
+            hasLink: true,
+            url: URL(string: "https://example.com"),
+            title: "Stale Title"
+        )
+
+        XCTAssertTrue(dataSource.isHeaderVisible)
+        XCTAssertNil(dataSource.title)
+        XCTAssertEqual(dataSource.displayURL, "example.com")
     }
 }

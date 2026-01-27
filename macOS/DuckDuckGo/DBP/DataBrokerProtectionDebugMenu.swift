@@ -224,6 +224,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func useWebUIProductionURL() {
         webUISettings.setURLType(.production)
+        webUISettings.setCustomURL(webUISettings.productionURL)
     }
 
     @objc private func useWebUICustomURL() {
@@ -236,7 +237,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                     .dbpSecondaryTextStyle()
             },
             onApply: { [weak self] value in
-                self?.webUISettings.setCustomURL(value)
+                self?.webUISettings.setCustomURL(value.trimmingCharacters(in: .whitespacesAndNewlines))
                 self?.webUISettings.setURLType(.custom)
             }
         )
@@ -578,7 +579,7 @@ private struct CustomDBPCustomEndpointSheet: ModalView {
                     .dbpSecondaryTextStyle()
             },
             onApply: { value in
-                onApply(value, removeBrokers)
+                onApply(value.trimmingCharacters(in: .whitespacesAndNewlines), removeBrokers)
             }
         )
     }

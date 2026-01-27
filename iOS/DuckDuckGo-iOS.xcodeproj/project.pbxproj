@@ -7326,6 +7326,7 @@
 				9FB027112C2526DD009EA190 /* OnboardingView+IntroDialogContent.swift */,
 				9F5CA45B2D9AA44500590E25 /* OnboardingView+SkipOnboardingContent.swift */,
 				9FB027132C252E0C009EA190 /* OnboardingView+BrowsersComparisonContent.swift */,
+				9F46BEF72CD8D7490092E0EF /* OnboardingView+AddToDockContent.swift */,
 				9F7CFF752C86BB8F0012833E /* OnboardingView+AppIconPickerContent.swift */,
 				9F7CFF7E2C8A94F70012833E /* OnboardingView+AddressBarPositionContent.swift */,
 				97770B692EC1ECE300CACA68 /* OnboardingView+SearchExperienceContent.swift */,
@@ -7619,7 +7620,6 @@
 				9F8E0F302CCA6390001EA7C5 /* AddToDockTutorialView.swift */,
 				9F8E0F372CCFAA8A001EA7C5 /* AddToDockPromoView.swift */,
 				9F8E0F3C2CCFD071001EA7C5 /* AddToDockPromoViewModel.swift */,
-				9F46BEF72CD8D7490092E0EF /* OnboardingView+AddToDockContent.swift */,
 			);
 			path = AddToDock;
 			sourceTree = "<group>";

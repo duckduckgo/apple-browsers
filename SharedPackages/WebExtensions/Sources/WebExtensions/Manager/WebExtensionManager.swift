@@ -22,7 +22,7 @@ import WebKit
 
 /// Manages web extensions including installation, loading, and lifecycle.
 /// Platform-specific behavior is delegated to the windowTabProvider and lifecycleDelegate.
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 open class WebExtensionManager: NSObject, WebExtensionManaging {
 
     // MARK: - Dependencies
@@ -179,7 +179,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
 // MARK: - WKWebExtensionControllerDelegate
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 extension WebExtensionManager: WKWebExtensionControllerDelegate {
 
     public func webExtensionController(_ controller: WKWebExtensionController,
@@ -251,7 +251,7 @@ extension WebExtensionManager: WebExtensionInternalSiteHandlerDataSource {
 
 // MARK: - Errors
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionControllerDelegateError: Error {
     case notSupported
 }

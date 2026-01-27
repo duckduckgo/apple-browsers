@@ -102,7 +102,7 @@ final class MainCoordinator {
         let tabsModel = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
         let historyManager = try Self.makeHistoryManager(tabsModel: tabsModel)
         reportingService.subscriptionDataReporter.injectTabsModel(tabsModel)
-        let daxDialogsFactory = BrowserDaxDialogProvider(featureFlagger: featureFlagger,
+        let daxDialogsFactory = ContextualDaxDialogProvider(featureFlagger: featureFlagger,
                                                          contextualOnboardingLogic: daxDialogs,
                                                          contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)

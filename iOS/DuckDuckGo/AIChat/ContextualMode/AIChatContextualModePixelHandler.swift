@@ -60,7 +60,6 @@ protocol AIChatContextualModePixelFiring {
 
 /// Handles all pixel firing for contextual AI chat mode.
 /// Single source of truth for contextual mode analytics.
-@MainActor
 final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     // MARK: - State

@@ -51,8 +51,8 @@ extension OnboardingTheme {
             switch family {
             case .system:
                 return .system(size: size, weight: weight)
-            case .duckSansDisplay, .duckSansProduct:
-                return Font.customFont(type: family, weight: weight, size: size)
+            case let .custom(customFamily):
+                return Font.customFont(type: customFamily, weight: weight, size: size)
             }
         }
     }

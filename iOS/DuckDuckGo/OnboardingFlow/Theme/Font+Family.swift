@@ -22,12 +22,18 @@ import SwiftUI
 extension Font {
 
     enum Family: Equatable {
+        enum Custom {
+            case duckSansDisplay
+            case duckSansProduct
+        }
         case system
-        case duckSansDisplay
-        case duckSansProduct
+        case custom(Custom)
+
+        static let duckSansDisplay = Family.custom(.duckSansDisplay)
+        static let duckSansProduct = Family.custom(.duckSansProduct)
     }
 
-    static func customFont(type: Font.Family, weight: Font.Weight, size: CGFloat) -> Font {
+    static func customFont(type: Font.Family.Custom, weight: Font.Weight, size: CGFloat) -> Font {
         let weightSuffix: String
         switch weight {
         case .regular:
@@ -47,9 +53,6 @@ extension Font {
             baseName = "DuckSansDisplay"
         case .duckSansProduct:
             baseName = "DuckSansProduct"
-        case .system:
-            assertionFailure("customFont should not be called with .system")
-            return .system(size: size, weight: weight)
         }
 
         let fontName = "\(baseName)-\(weightSuffix)"

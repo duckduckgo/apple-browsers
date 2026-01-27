@@ -35,6 +35,7 @@ protocol TabManaging {
     @MainActor func prepareAllTabsExceptCurrentForDataClearing()
     @MainActor func prepareCurrentTabForDataClearing()
     func removeAll()
+    @MainActor func viewModelForCurrentTab() -> TabViewModel?
 }
 
 class TabManager: TabManaging {

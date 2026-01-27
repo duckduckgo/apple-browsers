@@ -37,7 +37,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
             persistor: mockPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger(),
-            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+            aiChatMenuConfig: MockAIChatConfig()
         )
         mockPinningManager = MockPinningManager()
     }

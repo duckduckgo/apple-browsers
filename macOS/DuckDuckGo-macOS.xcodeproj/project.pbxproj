@@ -2318,7 +2318,6 @@
 		8400DC4C2C6E26AE006509D2 /* BookmarksBarCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8400DC4A2C6E26AE006509D2 /* BookmarksBarCollectionView.swift */; };
 		8400DC4E2C6E2770006509D2 /* SteppedScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8400DC4D2C6E2770006509D2 /* SteppedScrollView.swift */; };
 		8400DC4F2C6E2770006509D2 /* SteppedScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8400DC4D2C6E2770006509D2 /* SteppedScrollView.swift */; };
-		8402A7B92E9F734F00ACA20C /* AIChatMenuConfigurationMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0FD9352E841FB300B568AC /* AIChatMenuConfigurationMock.swift */; };
 		8402A7BD2E9F8C5B00ACA20C /* FireCoordinatorIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8402A7BA2E9F7CA000ACA20C /* FireCoordinatorIntegrationTests.swift */; };
 		8402A7BE2E9F8C5B00ACA20C /* FireCoordinatorIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8402A7BA2E9F7CA000ACA20C /* FireCoordinatorIntegrationTests.swift */; };
 		8409BD742ED878B200E39FA7 /* PopupHandlingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8409BD732ED878B200E39FA7 /* PopupHandlingUITests.swift */; };
@@ -3774,7 +3773,6 @@
 		CC0DD91A2E5DFA5800277E46 /* SessionRestorePromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD9182E5DFA4D00277E46 /* SessionRestorePromptPopover.swift */; };
 		CC0DD91C2E5EF7CE00277E46 /* SessionRestorePromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD91B2E5EF7C100277E46 /* SessionRestorePromptCoordinator.swift */; };
 		CC0DD91D2E5EF7CE00277E46 /* SessionRestorePromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD91B2E5EF7C100277E46 /* SessionRestorePromptCoordinator.swift */; };
-		CC0FD9372E841FBE00B568AC /* AIChatMenuConfigurationMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0FD9352E841FB300B568AC /* AIChatMenuConfigurationMock.swift */; };
 		CC19E9ED2E82CFC20043F931 /* AIChatHistoryCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC19E9EC2E82CFBB0043F931 /* AIChatHistoryCleaner.swift */; };
 		CC19E9EE2E82CFC20043F931 /* AIChatHistoryCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC19E9EC2E82CFBB0043F931 /* AIChatHistoryCleaner.swift */; };
 		CC19E9F02E82E36A0043F931 /* AIChatHistoryCleanerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC19E9EF2E82E36A0043F931 /* AIChatHistoryCleanerTests.swift */; };
@@ -3803,8 +3801,8 @@
 		CC438E242EBCEB5A008537AD /* MockDefaultBrowserAndDockPromptUIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC438E222EBCEB50008537AD /* MockDefaultBrowserAndDockPromptUIProvider.swift */; };
 		CC4B39BF2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4B39BE2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift */; };
 		CC4B39C02ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4B39BE2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift */; };
-		CC5415252F27C3230084A139 /* MockNewTabPageAIChatShortcutSettingProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC5415242F27C3230084A139 /* MockNewTabPageAIChatShortcutSettingProvider.swift */; };
-		CC5415262F27C3230084A139 /* MockNewTabPageAIChatShortcutSettingProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC5415242F27C3230084A139 /* MockNewTabPageAIChatShortcutSettingProvider.swift */; };
+		CC5415632F29238F0084A139 /* AIChatMenuConfigurationMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC5415622F29238F0084A139 /* AIChatMenuConfigurationMock.swift */; };
+		CC5415642F29238F0084A139 /* AIChatMenuConfigurationMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC5415622F29238F0084A139 /* AIChatMenuConfigurationMock.swift */; };
 		CC55B2342E82BD0D0032E8BD /* BrowserServicesKitTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = CC55B2332E82BD0D0032E8BD /* BrowserServicesKitTestsUtils */; };
 		CC55B2362E82BD160032E8BD /* BrowserServicesKitTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = CC55B2352E82BD160032E8BD /* BrowserServicesKitTestsUtils */; };
 		CC55B23B2E82BF430032E8BD /* BrowserServicesKitTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = CC55B23A2E82BF430032E8BD /* BrowserServicesKitTestsUtils */; };
@@ -6307,7 +6305,6 @@
 		CC0DD9152E5DF4B000277E46 /* SessionRestorePromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptViewModel.swift; sourceTree = "<group>"; };
 		CC0DD9182E5DFA4D00277E46 /* SessionRestorePromptPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptPopover.swift; sourceTree = "<group>"; };
 		CC0DD91B2E5EF7C100277E46 /* SessionRestorePromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptCoordinator.swift; sourceTree = "<group>"; };
-		CC0FD9352E841FB300B568AC /* AIChatMenuConfigurationMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMenuConfigurationMock.swift; sourceTree = "<group>"; };
 		CC19E9EC2E82CFBB0043F931 /* AIChatHistoryCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryCleaner.swift; sourceTree = "<group>"; };
 		CC19E9EF2E82E36A0043F931 /* AIChatHistoryCleanerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryCleanerTests.swift; sourceTree = "<group>"; };
 		CC26B60F2F0BDEC300D380B6 /* NewTabPageNextStepsCardsPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageNextStepsCardsPixelHandler.swift; sourceTree = "<group>"; };
@@ -6322,7 +6319,7 @@
 		CC438E1C2EBCE224008537AD /* DefaultBrowserAndDockPromptUIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptUIProvider.swift; sourceTree = "<group>"; };
 		CC438E222EBCEB50008537AD /* MockDefaultBrowserAndDockPromptUIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserAndDockPromptUIProvider.swift; sourceTree = "<group>"; };
 		CC4B39BE2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptNotificationPresenter.swift; sourceTree = "<group>"; };
-		CC5415242F27C3230084A139 /* MockNewTabPageAIChatShortcutSettingProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewTabPageAIChatShortcutSettingProvider.swift; sourceTree = "<group>"; };
+		CC5415622F29238F0084A139 /* AIChatMenuConfigurationMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMenuConfigurationMock.swift; sourceTree = "<group>"; };
 		CC5B3D002E158B9F00115521 /* ChromiumDataImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumDataImporterTests.swift; sourceTree = "<group>"; };
 		CC6E897B2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		CC6E897F2E5F0DD600F6BED0 /* SessionRestorePromptCoordinatorMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptCoordinatorMock.swift; sourceTree = "<group>"; };
@@ -7263,6 +7260,7 @@
 				31521AC22CC01BC300248E6F /* AIChatTabOpener.swift */,
 				3135647A2D9EB8E800BF4B5D /* AIChatAddressBarPromptExtractor.swift */,
 				31521ABF2CC013A400248E6F /* AIChatMenuVisibilityConfigurable.swift */,
+				CC5415622F29238F0084A139 /* AIChatMenuConfigurationMock.swift */,
 				CC19E9EC2E82CFBB0043F931 /* AIChatHistoryCleaner.swift */,
 				1D5C233F2F16CE000055046E /* PassthroughView.swift */,
 			);
@@ -7378,7 +7376,6 @@
 				1E66454A2E93F3FB000C8E35 /* AIChatSidebarTests.swift */,
 				1E2A887F2E2E532600C29AC0 /* AIChatSidebarPresenterTests.swift */,
 				CC19E9EF2E82E36A0043F931 /* AIChatHistoryCleanerTests.swift */,
-				CC0FD9352E841FB300B568AC /* AIChatMenuConfigurationMock.swift */,
 			);
 			path = AIChat;
 			sourceTree = "<group>";
@@ -7825,7 +7822,6 @@
 				37CD54C727F2FDD100F1F7B9 /* AppearancePreferences.swift */,
 				845F571C2E97D5F200C7F78A /* AppearancePreferencesPersistorMock.swift */,
 				37F09AD52DDE483100643A1B /* AppearancePreferencesMock.swift */,
-				CC5415242F27C3230084A139 /* MockNewTabPageAIChatShortcutSettingProvider.swift */,
 				37CD54C227F2FDD100F1F7B9 /* AutofillPreferencesModel.swift */,
 				7BC16BA82E724CF80016EE8E /* ContentScopePreferences.swift */,
 				3776582E27F82E62009A6B35 /* AutofillPreferences.swift */,
@@ -14130,7 +14126,6 @@
 				1EB01D922E61DF2B006CB411 /* AIChatTranslator.swift in Sources */,
 				F1D042A22BFBB4DD00A31506 /* DataBrokerProtectionSettings+Environment.swift in Sources */,
 				370270BD2C78B6D3002E44E4 /* NewTabBackgroundPixel.swift in Sources */,
-				CC5415262F27C3230084A139 /* MockNewTabPageAIChatShortcutSettingProvider.swift in Sources */,
 				BB7BA64C2D11FC170020B47E /* TabBarRemoteMessagePresenting.swift in Sources */,
 				370DB6E32D521D130055D988 /* NewTabPageConfigurationEventHandler.swift in Sources */,
 				EDD982B72EBB735E00FA281B /* DataImportSummaryDetailView.swift in Sources */,
@@ -14561,6 +14556,7 @@
 				3706FB7C293F65D500E42796 /* KeySetDictionary.swift in Sources */,
 				B6F7127F29F6779000594A45 /* QRSharingService.swift in Sources */,
 				3706FB7E293F65D500E42796 /* FireCoordinator.swift in Sources */,
+				CC5415642F29238F0084A139 /* AIChatMenuConfigurationMock.swift in Sources */,
 				3706FB7F293F65D500E42796 /* GeolocationProvider.swift in Sources */,
 				B603FD9F2A02712E00F3FCA9 /* CIImageExtension.swift in Sources */,
 				3706FB80293F65D500E42796 /* NSAlert+ActiveDownloadsTermination.swift in Sources */,
@@ -15422,7 +15418,6 @@
 				3706FE24293F661700E42796 /* PasteboardFolderTests.swift in Sources */,
 				1D69B7192E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */,
 				BB10556F2E14350E00199F37 /* DefaultVisualizeFireSettingsDeciderTests.swift in Sources */,
-				CC0FD9372E841FBE00B568AC /* AIChatMenuConfigurationMock.swift in Sources */,
 				3706FE27293F661700E42796 /* AppPrivacyConfigurationTests.swift in Sources */,
 				9FFBEE7A2DDEE1E80058B11A /* DefaultBrowserAndDockStoreMigratorTests.swift in Sources */,
 				B626A7652992506A00053070 /* SerpHeadersNavigationResponderTests.swift in Sources */,
@@ -16969,6 +16964,7 @@
 				F1664A682D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeature.swift in Sources */,
 				37EE55FD2D5F197300D53C7C /* NetPPopoverManagerMock.swift in Sources */,
 				37EE55FE2D5F197300D53C7C /* ShowToolbarsOnFullScreenMenuCoordinator.swift in Sources */,
+				CC5415632F29238F0084A139 /* AIChatMenuConfigurationMock.swift in Sources */,
 				37EE55FF2D5F197300D53C7C /* ZoomPopover.swift in Sources */,
 				37EE56002D5F197300D53C7C /* ZoomPopoverViewController.swift in Sources */,
 				9FBD84732BB3E15D00220859 /* InstallationAttributionPixelHandler.swift in Sources */,
@@ -17111,7 +17107,6 @@
 				B693955226F04BEB0015B914 /* LongPressButton.swift in Sources */,
 				B6085D062743905F00A9C456 /* CoreDataStore.swift in Sources */,
 				4B0511E1262CAA8600F6079C /* NSOpenPanelExtensions.swift in Sources */,
-				CC5415252F27C3230084A139 /* MockNewTabPageAIChatShortcutSettingProvider.swift in Sources */,
 				7B99CF312EEAC1A5003FA486 /* UserNotificationAuthorizationService.swift in Sources */,
 				AAE99B8927088A19008B6BD9 /* FirePopover.swift in Sources */,
 				8443DC6E2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */,
@@ -17763,7 +17758,6 @@
 				3783F92329432E1800BCA897 /* WebViewTests.swift in Sources */,
 				EA8AE76A279FBDB20078943E /* ClickToLoadTDSTests.swift in Sources */,
 				374EF08329B751FC003D2E87 /* RecentlyClosedCoordinatorTests.swift in Sources */,
-				8402A7B92E9F734F00ACA20C /* AIChatMenuConfigurationMock.swift in Sources */,
 				BB80DDDB2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */,
 				1DD0DBBE2E40959D00B0E5F1 /* NewTabPageLoadMetricsTests.swift in Sources */,
 				CC5B3D022E158B9F00115521 /* ChromiumDataImporterTests.swift in Sources */,

@@ -127,7 +127,7 @@ final class RemoteMessagingClientTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger(),
-            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+            aiChatMenuConfig: MockAIChatConfig()
         )
         client = RemoteMessagingClient(
             remoteMessagingDatabase: remoteMessagingDatabase,

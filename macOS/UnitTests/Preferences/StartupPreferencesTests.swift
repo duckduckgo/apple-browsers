@@ -283,7 +283,7 @@ fileprivate extension StartupPreferences {
                 persistor: AppearancePreferencesPersistorMock(),
                 privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                 featureFlagger: MockFeatureFlagger(),
-                aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+                aiChatMenuConfig: MockAIChatConfig()
             )
         )
     }

@@ -48,7 +48,7 @@ class OnboardingManagerTests: XCTestCase {
         appearancePreferences = AppearancePreferences(persistor: appearancePersistor,
                                                       privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                                       featureFlagger: MockFeatureFlagger(),
-                                                      aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
+                                                      aiChatMenuConfig: MockAIChatConfig())
         startupPersistor = StartupPreferencesUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
         fireButtonPreferencesPersistor = MockFireButtonPreferencesPersistor()
         dataClearingPreferences = DataClearingPreferences(

@@ -42,7 +42,7 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
             persistor: MockAppearancePreferencesPersistor(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger(),
-            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+            aiChatMenuConfig: MockAIChatConfig()
         )
     }
 

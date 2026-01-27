@@ -22,6 +22,20 @@ import Persistence
 import PersistenceTestingUtils
 @testable import DuckDuckGo_Privacy_Browser
 
+final class MockNewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding {
+    @Published var isAIChatShortcutEnabled: Bool = true
+
+    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAIChatShortcutEnabled.dropFirst().eraseToAnyPublisher()
+    }
+
+    @Published var isAIChatSettingVisible: Bool = true
+
+    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> {
+        $isAIChatSettingVisible.dropFirst().eraseToAnyPublisher()
+    }
+}
+
 final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     // Key used for persistence in the provider

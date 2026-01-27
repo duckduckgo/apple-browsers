@@ -48,7 +48,7 @@ final class BookmarksBarVisibilityManagerTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger(),
-            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+            aiChatMenuConfig: MockAIChatConfig()
         )
     }
 

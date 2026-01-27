@@ -96,7 +96,7 @@ final class SyncPreferencesTests: XCTestCase {
         appearancePreferences = AppearancePreferences(persistor: appearancePersistor,
                                                       privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                                       featureFlagger: MockFeatureFlagger(),
-                                                      aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
+                                                      aiChatMenuConfig: MockAIChatConfig())
         ddgSyncing = MockDDGSyncing(authState: .inactive, scheduler: scheduler, isSyncInProgress: false)
         pausedStateManager = MockSyncPausedStateManaging()
 

@@ -44,7 +44,7 @@ class MainMenuTests: XCTestCase {
             persistor: MockAppearancePreferencesPersistor(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger(),
-            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+            aiChatMenuConfig: MockAIChatConfig()
         )
     }
 

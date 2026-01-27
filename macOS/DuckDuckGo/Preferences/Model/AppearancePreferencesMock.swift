@@ -22,7 +22,6 @@ import PersistenceTestingUtils
 import BrowserServicesKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
-import AIChat
 
 extension AppearancePreferences {
     static let mock = AppearancePreferences(
@@ -30,7 +29,7 @@ extension AppearancePreferences {
         persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: try! MockKeyValueFileStore()),
         privacyConfigurationManager: MockPrivacyConfigurationManager(),
         featureFlagger: MockFeatureFlagger(),
-        aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+        aiChatMenuConfig: MockAIChatConfig()
     )
 }
 #endif

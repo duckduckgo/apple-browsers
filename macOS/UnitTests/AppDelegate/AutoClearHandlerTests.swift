@@ -63,7 +63,7 @@ class AutoClearHandlerTests: XCTestCase {
             persistor: MockAppearancePreferencesPersistor(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger(),
-            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+            aiChatMenuConfig: MockAIChatConfig()
         )
         startupPreferences = StartupPreferences(
             persistor: persistor2,

@@ -58,7 +58,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             keyValueStore: try MockKeyValueFileStore(),
             privacyConfigurationManager: privacyConfigurationManager,
             featureFlagger: featureFlagger,
-            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+            aiChatMenuConfig: MockAIChatConfig()
         )
         let windowControllersManager = WindowControllersManagerMock()
         let startupPreferences = StartupPreferences(

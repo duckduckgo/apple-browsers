@@ -40,7 +40,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(),
                                                       privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                                       featureFlagger: featureFlagger,
-                                                      aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
+                                                      aiChatMenuConfig: MockAIChatConfig())
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
         openFilePanelCalls = 0
@@ -197,7 +197,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(),
                                                           privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                                           featureFlagger: featureFlagger,
-                                                          aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
+                                                          aiChatMenuConfig: MockAIChatConfig())
         appearancePreferences.themeName = .violet
 
         let customizationModel = NewTabPageCustomizationModel(

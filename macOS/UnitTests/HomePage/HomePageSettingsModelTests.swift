@@ -45,7 +45,7 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
         appearancePreferences = .init(persistor: AppearancePreferencesPersistorMock(),
                                       privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                       featureFlagger: MockFeatureFlagger(),
-                                      aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
+                                      aiChatMenuConfig: MockAIChatConfig())
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
 
         UserDefaultsWrapper<Any>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.homePageLastPickedCustomColor.rawValue)

@@ -83,7 +83,7 @@ private extension ThemePopoverDeciderTests {
             persistor: appearancePersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: featureFlagger,
-            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         let popoverPersistor = MockThemePopoverPersistor(themePopoverShown: themePopoverShown)

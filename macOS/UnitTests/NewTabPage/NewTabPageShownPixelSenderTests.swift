@@ -50,7 +50,7 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
             persistor: appearancePreferencesPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger(),
-            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         visibleFeedProvider = MockNewTabPageProtectionsReportVisibleFeedProvider()

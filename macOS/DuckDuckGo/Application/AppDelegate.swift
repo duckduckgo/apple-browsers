@@ -192,7 +192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         featureFlagger: featureFlagger,
         windowControllersManager: windowControllersManager,
         tabsPreferences: tabsPreferences,
-        newTabPageAIChatShortcutSettingProvider: aiChatShortcutSettingProvider,
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
         subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
         protectionsReportModel: newTabPageProtectionsReportModel,
@@ -210,7 +210,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSidebarProvider: AIChatSidebarProviding
     let aiChatPreferences: AIChatPreferences
-    let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
 
     let privacyStats: PrivacyStatsCollecting
     let autoconsentStats: AutoconsentStatsCollecting
@@ -544,16 +543,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger
         )
 
-        aiChatShortcutSettingProvider = NewTabPageAIChatShortcutSettingProvider(
-            aiChatMenuConfiguration: aiChatMenuConfiguration
-        )
-
         appearancePreferences = AppearancePreferences(
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyConfigurationManager,
             pixelFiring: PixelKit.shared,
             featureFlagger: featureFlagger,
-            aiChatShortcutSettingProvider: aiChatShortcutSettingProvider
+            aiChatMenuConfig: aiChatMenuConfiguration
         )
 
 #if DEBUG

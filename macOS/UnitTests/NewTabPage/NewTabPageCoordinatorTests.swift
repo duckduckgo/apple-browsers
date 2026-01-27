@@ -92,7 +92,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             persistor: appearancePreferencesPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: featureFlagger,
-            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider()
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         customizationModel = NewTabPageCustomizationModel(

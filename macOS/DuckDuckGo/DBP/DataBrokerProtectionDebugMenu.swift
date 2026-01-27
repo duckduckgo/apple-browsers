@@ -232,15 +232,20 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             title: "Custom Web UI URL",
             fieldLabel: "Web UI URL",
             placeholder: "https://example.com/dbp",
-            content: { _ in
+            content: { _, isValid in
                 Text(verbatim: "Enter a full URL for the web UI")
                     .dbpSecondaryTextStyle()
+                if !isValid.wrappedValue {
+                    Text(verbatim: "Please enter a valid URL.")
+                        .foregroundColor(.red)
+                }
             },
             onApply: { [weak self] value in
                 let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard let url = URL(string: trimmedValue), url.isValid else { return }
+                guard let url = URL(string: trimmedValue), url.isValid else { return false }
                 self?.webUISettings.setCustomURL(trimmedValue)
                 self?.webUISettings.setURLType(.custom)
+                return true
             }
         )
 
@@ -258,7 +263,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     @objc private func useDBPCustomEndpoint() {
         let sheet = CustomDBPEndpointSheet(
             onApply: { [weak self] value, removeBrokers in
-                guard let self else { return }
+                guard let self else { return false }
                 self.settings.serviceRoot = value
 
                 if removeBrokers {
@@ -277,6 +282,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 }
 
                 self.forceBrokerJSONFilesUpdate()
+                return true
             }
         )
 
@@ -488,19 +494,20 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
 private struct CustomTextEntrySheet<Content: View>: ModalView {
     @State private var text = ""
+    @State private var isValid = true
     @Environment(\.dismiss) private var dismiss
 
     let title: String
     let fieldLabel: String
     let placeholder: String
-    let content: (Binding<String>) -> Content
-    let onApply: (String) -> Void
+    let content: (Binding<String>, Binding<Bool>) -> Content
+    let onApply: (String) -> Bool
 
     init(title: String,
          fieldLabel: String,
          placeholder: String,
-         @ViewBuilder content: @escaping (Binding<String>) -> Content,
-         onApply: @escaping (String) -> Void) {
+         @ViewBuilder content: @escaping (Binding<String>, Binding<Bool>) -> Content,
+         onApply: @escaping (String) -> Bool) {
         self.title = title
         self.fieldLabel = fieldLabel
         self.placeholder = placeholder
@@ -521,9 +528,12 @@ private struct CustomTextEntrySheet<Content: View>: ModalView {
                 Spacer()
                 TextField(placeholder, text: $text)
                     .frame(width: 250)
+                    .onChange(of: text) { _ in
+                        isValid = true
+                    }
             }
 
-            content($text)
+            content($text, $isValid)
 
             Divider()
 
@@ -533,8 +543,11 @@ private struct CustomTextEntrySheet<Content: View>: ModalView {
                     dismiss()
                 }
                 Button {
-                    onApply(text)
-                    dismiss()
+                    if onApply(text) {
+                        dismiss()
+                    } else {
+                        isValid = false
+                    }
                 } label: {
                     Text(verbatim: "Apply")
                 }
@@ -549,9 +562,9 @@ private struct CustomTextEntrySheet<Content: View>: ModalView {
 private struct CustomDBPEndpointSheet: ModalView {
     @State private var removeBrokers = false
 
-    let onApply: (String, Bool) -> Void
+    let onApply: (String, Bool) -> Bool
 
-    init(onApply: @escaping (String, Bool) -> Void) {
+    init(onApply: @escaping (String, Bool) -> Bool) {
         self.onApply = onApply
     }
 
@@ -560,7 +573,7 @@ private struct CustomDBPEndpointSheet: ModalView {
             title: "Custom Service Root",
             fieldLabel: "Service Root",
             placeholder: "branches/some-branch",
-            content: { serviceRoot in
+            content: { serviceRoot, _ in
                 let trimmedServiceRoot = serviceRoot.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
                 let baseURL = "https://dbp-staging.duckduckgo.com"
                 let previewURL = trimmedServiceRoot.isEmpty
@@ -579,7 +592,7 @@ private struct CustomDBPEndpointSheet: ModalView {
                     .dbpSecondaryTextStyle()
             },
             onApply: { value in
-                onApply(value.trimmingCharacters(in: .whitespacesAndNewlines), removeBrokers)
+                return onApply(value.trimmingCharacters(in: .whitespacesAndNewlines), removeBrokers)
             }
         )
     }

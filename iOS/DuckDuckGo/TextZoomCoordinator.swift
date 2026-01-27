@@ -145,11 +145,13 @@ final class TextZoomCoordinator: TextZoomCoordinating {
 
         let label: String
         var detail: String?
+        var accessibilityLabel: String?
         if let domain = tld.eTLDplus1(link.url.host),
            let level = storage.textZoomLevelForDomain(domain) {
             if percentageInDetail {
                 label = UserText.textZoomMenuItem
                 detail = "\(level.rawValue)%"
+                accessibilityLabel = UserText.textZoomWithPercentForMenuItem(level.rawValue)
             } else {
                 label = UserText.textZoomWithPercentForMenuItem(level.rawValue)
             }
@@ -159,6 +161,7 @@ final class TextZoomCoordinator: TextZoomCoordinating {
 
         let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.typeSize : DesignSystemImages.Glyphs.Size24.typeSize
         return BrowsingMenuEntry.regular(name: label,
+                                         accessibilityLabel: accessibilityLabel,
                                          image: image,
                                          showNotificationDot: false,
                                          detailText: detail) { [weak self, weak controller, weak webView] in

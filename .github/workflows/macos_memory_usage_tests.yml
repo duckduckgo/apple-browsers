@@ -31,11 +31,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-xlarge]
+        runner: [macos-15-xlarge]
         include:
-          - xcode-version: "26.1"
-            runner: macos-26-xlarge
-            os-version: 26.2
+          - xcode-version: “16.4"
+            runner: macos-15-xlarge
+            os-version: 15
 
     timeout-minutes: 60
 

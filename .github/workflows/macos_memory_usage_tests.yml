@@ -183,12 +183,17 @@ jobs:
           echo "No .xcresult bundle found"
           exit 1
         fi
+
+        START_TIME=$(date -u -r "${{ steps.start-duration.outputs.start-timestamp }}" '+%Y-%m-%d %H:%M:%S')
+
         ../scripts/build-memory-metrics-sql.sh \
           --runner "${{ matrix.runner }}" \
           --xcresult-path "$XCRESULT_PATH" \
           --run-id "${{ github.run_id }}" \
           --branch "${{ github.ref_name }}" \
-          --commit-hash "${{ github.sha }}"
+          --commit-hash "${{ github.sha }}" \
+          --start-time "$START_TIME" \
+          > insert-statements.sql
 
     - name: Upload memory metrics
       uses: actions/upload-artifact@v4
@@ -305,13 +310,12 @@ jobs:
 
       - name: Report Memory Metrics to ClickHouse
         run: |
-          echo "=== SQL Statements ==="
+          echo "🏁🏁🏁 Reporting Memory Metrics 🏁"
           cat insert-statements.sql
 
-          # Execute INSERT statements
           clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements.sql
 
-          echo "=== Insert complete ==="
+          echo "🏁🏁🏁 Report complete 🏁🏁🏁"
 
   notify-failure:
     name: Notify on failure

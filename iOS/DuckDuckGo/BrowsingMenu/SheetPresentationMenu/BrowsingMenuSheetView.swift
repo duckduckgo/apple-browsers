@@ -392,25 +392,20 @@ private struct BrowsingMenuHeaderView: View {
 
     @ViewBuilder
     private var textContent: some View {
-        if let title, !title.isEmpty {
-            VStack(alignment: .leading, spacing: MenuHeaderConstant.textSpacing) {
+        VStack(alignment: .leading, spacing: MenuHeaderConstant.textSpacing) {
+            if let title, !title.isEmpty {
                 Text(title)
                     .daxHeadline()
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
                     .lineLimit(1)
-
-                if let displayURL {
-                    Text(displayURL)
-                        .daxCaption()
-                        .foregroundStyle(Color(designSystemColor: .textSecondary))
-                        .lineLimit(1)
-                }
             }
-        } else if let displayURL {
-            Text(displayURL)
-                .daxHeadline()
-                .foregroundStyle(Color(designSystemColor: .textPrimary))
-                .lineLimit(1)
+
+            if let displayURL {
+                Text(displayURL)
+                    .font(.caption)
+                    .foregroundStyle(Color(designSystemColor: .textSecondary))
+                    .lineLimit(1)
+            }
         }
     }
 }

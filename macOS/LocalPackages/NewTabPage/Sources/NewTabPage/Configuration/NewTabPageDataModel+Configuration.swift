@@ -32,7 +32,7 @@ public extension NewTabPageDataModel {
 extension NewTabPageDataModel {
 
     enum WidgetId: String, Codable {
-        case rmf, freemiumPIRBanner, subscriptionWinBackBanner, nextSteps, omnibar, favorites, protections
+        case rmf, freemiumPIRBanner, subscriptionWinBackBanner, nextSteps, nextStepsList, omnibar, favorites, protections
     }
 
     struct ContextMenuParams: Codable {

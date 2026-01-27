@@ -20,7 +20,7 @@ import CryptoKit
 import WebKit
 
 @available(macOS 15.4, *)
-protocol WebExtensionLoading: AnyObject {
+public protocol WebExtensionLoading: AnyObject {
     @discardableResult
     func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
     func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
@@ -28,12 +28,14 @@ protocol WebExtensionLoading: AnyObject {
 }
 
 @available(macOS 15.4, *)
-final class WebExtensionLoader: WebExtensionLoading {
+public final class WebExtensionLoader: WebExtensionLoading {
 
     enum WebExtensionLoaderError: Error {
         case failedToCreateURLFromPath(path: String)
         case failedToFindContextForPath(path: String)
     }
+
+    public init() {}
 
     func bundle(from path: String) -> Bundle? {
         let url = URL(fileURLWithPath: path, isDirectory: true)
@@ -41,7 +43,7 @@ final class WebExtensionLoader: WebExtensionLoading {
     }
 
     @MainActor
-    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+    public func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
         guard let extensionURL = URL(string: path) else {
             assertionFailure("Failed to create URL from path: \(path)")
             throw WebExtensionLoaderError.failedToCreateURLFromPath(path: path)
@@ -71,7 +73,7 @@ final class WebExtensionLoader: WebExtensionLoading {
         return WebExtensionLoadResult(context: context, path: path, extensionIdentifier: extensionIdentifier)
     }
 
-    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
+    public func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
         var result = [Result<WebExtensionLoadResult, Error>]()
         for path in paths {
             do {
@@ -85,7 +87,7 @@ final class WebExtensionLoader: WebExtensionLoading {
         return result
     }
 
-    func unloadExtension(at path: String, from controller: WKWebExtensionController) throws {
+    public func unloadExtension(at path: String, from controller: WKWebExtensionController) throws {
         let context = controller.extensionContexts.first {
             $0.uniqueIdentifier == identifierHash(forPath: path)
         }

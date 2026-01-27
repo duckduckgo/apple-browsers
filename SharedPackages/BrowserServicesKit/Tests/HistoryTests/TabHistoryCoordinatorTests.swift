@@ -25,11 +25,15 @@ final class TabHistoryCoordinatorTests: XCTestCase {
     private var tabHistoryStoringMock: TabHistoryStoringMock!
     private var coordinator: TabHistoryCoordinator!
 
+    private var openTabIDs: [String] = []
+
     @MainActor
     override func setUp() {
         super.setUp()
         tabHistoryStoringMock = TabHistoryStoringMock()
-        coordinator = TabHistoryCoordinator(tabHistoryStoring: tabHistoryStoringMock)
+        openTabIDs = []
+        coordinator = TabHistoryCoordinator(tabHistoryStoring: tabHistoryStoringMock,
+                                            openTabIDsProvider: { [weak self] in self?.openTabIDs ?? [] })
     }
 
     override func tearDown() {
@@ -44,12 +48,12 @@ final class TabHistoryCoordinatorTests: XCTestCase {
     func testWhenTabHistoryIsCalled_ThenStoreIsQueried() async throws {
         let tabID = "query-tab-123"
         let expectedURLs = [URL(string: "https://example1.com")!, URL(string: "https://example2.com")!]
-        await tabHistoryStoringMock.setTabHistoryToReturn(expectedURLs)
+        tabHistoryStoringMock.setTabHistoryToReturn(expectedURLs)
 
         let result = try await coordinator.tabHistory(tabID: tabID)
 
-        let queriedTabID = await tabHistoryStoringMock.lastQueriedTabID
-        let tabHistoryCalled = await tabHistoryStoringMock.tabHistoryCalled
+        let queriedTabID = tabHistoryStoringMock.lastQueriedTabID
+        let tabHistoryCalled = tabHistoryStoringMock.tabHistoryCalled
 
         XCTAssertTrue(tabHistoryCalled)
         XCTAssertEqual(queriedTabID, tabID)
@@ -63,26 +67,17 @@ final class TabHistoryCoordinatorTests: XCTestCase {
         let tabID = "insert-tab-456"
         let url = URL(string: "https://example.com")!
 
-        try await coordinator.addVisit(of: url, tabID: tabID)
+        tabHistoryStoringMock.insertTabHistoryExpectation = expectation(description: "removeTabHistory called")
+        coordinator.addVisit(of: url, tabID: tabID)
+        await fulfillment(of: [tabHistoryStoringMock.insertTabHistoryExpectation!], timeout: 5.0)
 
-        let insertCalled = await tabHistoryStoringMock.insertTabHistoryCalled
-        let insertedTabID = await tabHistoryStoringMock.lastInsertedTabID
-        let insertedURL = await tabHistoryStoringMock.lastInsertedURL
+        let insertCalled = tabHistoryStoringMock.insertTabHistoryCalled
+        let insertedTabID = tabHistoryStoringMock.lastInsertedTabID
+        let insertedURL = tabHistoryStoringMock.lastInsertedURL
 
         XCTAssertTrue(insertCalled)
         XCTAssertEqual(insertedTabID, tabID)
         XCTAssertEqual(insertedURL, url)
-    }
-
-    @MainActor
-    func testWhenAddVisitWithNilTabID_ThenStoreIsNotCalled() async throws {
-        let url = URL(string: "https://example.com")!
-
-        try await coordinator.addVisit(of: url, tabID: nil)
-
-        let insertCalled = await tabHistoryStoringMock.insertTabHistoryCalled
-
-        XCTAssertFalse(insertCalled)
     }
 
     // MARK: - Remove Visits Tests
@@ -93,29 +88,66 @@ final class TabHistoryCoordinatorTests: XCTestCase {
 
         try await coordinator.removeVisits(for: tabIDs)
 
-        let removeCalled = await tabHistoryStoringMock.removeTabHistoryCalled
-        let removedTabIDs = await tabHistoryStoringMock.lastRemovedTabIDs
+        let removeCalled = tabHistoryStoringMock.removeTabHistoryCalled
+        let removedTabIDs = tabHistoryStoringMock.lastRemovedTabIDs
 
         XCTAssertTrue(removeCalled)
         XCTAssertEqual(removedTabIDs, tabIDs)
+    }
+
+    // MARK: - Clean Orphaned Entries Tests
+
+    @MainActor
+    func testWhenCleanOrphanedEntriesIsCalled_ThenStoreCleanupIsCalledWithOpenTabIDs() async throws {
+        openTabIDs = ["open-tab-1", "open-tab-2"]
+
+        // Wait deterministically for initial cleanup from coordinator init to complete
+        let initCleanupExpectation = expectation(description: "Init cleanup completed")
+        Task {
+            while await !tabHistoryStoringMock.cleanOrphanedTabHistoryCalled {
+                try? await Task.sleep(nanoseconds: 10_000_000) // 10ms polling interval
+            }
+            initCleanupExpectation.fulfill()
+        }
+        await fulfillment(of: [initCleanupExpectation], timeout: 5.0)
+
+        // Reset the mock state after init
+        await tabHistoryStoringMock.resetCleanOrphanedState()
+
+        await coordinator.cleanOrphanedEntries()
+
+        let cleanCalled = await tabHistoryStoringMock.cleanOrphanedTabHistoryCalled
+        let excludedTabIDs = await tabHistoryStoringMock.lastExcludedTabIDs
+
+        XCTAssertTrue(cleanCalled)
+        XCTAssertEqual(Set(excludedTabIDs ?? []), Set(openTabIDs))
     }
 }
 
 // MARK: - TabHistoryStoringMock
 
-actor TabHistoryStoringMock: TabHistoryStoring {
+class TabHistoryStoringMock: TabHistoryStoring {
 
     var tabHistoryCalled = false
     var insertTabHistoryCalled = false
     var removeTabHistoryCalled = false
+    var cleanOrphanedTabHistoryCalled = false
     var lastQueriedTabID: String?
     var lastInsertedTabID: String?
     var lastInsertedURL: URL?
     var lastRemovedTabIDs: [String]?
+    var lastExcludedTabIDs: [String]?
     var tabHistoryToReturn: [URL] = []
+
+    var insertTabHistoryExpectation: XCTestExpectation?
 
     func setTabHistoryToReturn(_ urls: [URL]) {
         tabHistoryToReturn = urls
+    }
+
+    func resetCleanOrphanedState() {
+        cleanOrphanedTabHistoryCalled = false
+        lastExcludedTabIDs = nil
     }
 
     func tabHistory(for tabID: String) async throws -> [URL] {
@@ -128,10 +160,16 @@ actor TabHistoryStoringMock: TabHistoryStoring {
         insertTabHistoryCalled = true
         lastInsertedTabID = tabID
         lastInsertedURL = url
+        insertTabHistoryExpectation?.fulfill()
     }
 
     func removeTabHistory(for tabIDs: [String]) async throws {
         removeTabHistoryCalled = true
         lastRemovedTabIDs = tabIDs
+    }
+
+    func cleanOrphanedTabHistory(excludingTabIDs openTabIDs: [String]) async throws {
+        cleanOrphanedTabHistoryCalled = true
+        lastExcludedTabIDs = openTabIDs
     }
 }

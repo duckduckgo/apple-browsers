@@ -18,6 +18,7 @@
 
 import AppKit
 import OSLog
+import WebExtensions
 
 @available(macOS 15.4, *)
 final class WebExtensionsDebugMenu: NSMenu {

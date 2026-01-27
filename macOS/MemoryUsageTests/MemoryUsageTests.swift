@@ -36,21 +36,25 @@ final class MemoryUsageTests: XCTestCase {
     }
 
     func testMemoryAllocationsWhenOpeningSingleNewTab() throws {
-        let memoryMetric = MemoryAllocationStatsMetric(memoryStatsURL: application.memoryStatsURL)
+        /// We're explicitly **not** closing Tabs between Iterations to avoid interference from both, malloc re-using released blocks, or retain cycles themselves.
+        /// The purpose of this Test is to measure the memory impact of opening a single Tab.
+        ///
+        let (metric, options, work) = buildMemoryMeasurement(application: application, iterations: 5) { application in
+            application.openNewTab()
+        }
 
         application.openNewWindow()
+        measure(metrics: [metric], options: options, block: work)
+    }
 
-        measure(metrics: [memoryMetric], options: .buildOptions(iterations: 5, manualEvents: true)) {
-            application.cleanExportMemoryStats()
-            startMeasuring()
-
-            /// We're explicitly **not** closing Tabs among Iterations to avoid interference from both, malloc re-using released blocks, or retain cycles themselves.
-            /// The purpose of this Test is to measure the memory impact of opening a single Tab.
-            ///
-            application.openNewTab()
-
-            application.cleanExportMemoryStats()
-            stopMeasuring()
+    func testMemoryAllocationsWhenOpeningSingleNewWindow() throws {
+        /// We're explicitly **not** closing Windows between Iterations to avoid interference from both, malloc re-using released blocks, or retain cycles themselves.
+        /// The purpose of this Test is to measure the memory impact of opening a single Window.
+        ///
+        let (metric, options, work) = buildMemoryMeasurement(application: application, iterations: 5) { application in
+            application.openNewWindow()
         }
+
+        measure(metrics: [metric], options: options, block: work)
     }
 }

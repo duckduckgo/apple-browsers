@@ -149,7 +149,7 @@ final class TextZoomCoordinator: TextZoomCoordinating {
            let level = storage.textZoomLevelForDomain(domain) {
             if percentageInDetail {
                 label = UserText.textZoomMenuItem
-                detail = "\(level.rawValue)%" 
+                detail = "\(level.rawValue)%"
             } else {
                 label = UserText.textZoomWithPercentForMenuItem(level.rawValue)
             }

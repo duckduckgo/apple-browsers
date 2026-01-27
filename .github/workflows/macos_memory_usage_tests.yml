@@ -193,9 +193,9 @@ jobs:
           --compact > raw-metrics.json
 
         # Transform to averaged metrics JSON for ClickHouse
-        jq '[.[] | {
+        jq --arg runner "${{ matrix.runner }}" '[.[] | {
           test: .testIdentifier,
-          device: .testRuns[0].device.deviceName,
+          runner: $runner,
           metrics: [.testRuns[0].metrics[] | {
             identifier: .identifier,
             displayName: .displayName,
@@ -323,9 +323,37 @@ jobs:
           name: memory-metrics
 
       - name: Insert metrics into ClickHouse
+        env:
+          RUN_ID: ${{ github.run_id }}
+          BRANCH: ${{ github.ref_name }}
+          COMMIT_HASH: ${{ github.sha }}
         run: |
-          cat memory-metrics.json
-          # TODO: Add ClickHouse insert logic here
+          echo "=== Memory Metrics JSON ==="
+          cat memory-metrics.json | jq .
+
+          # Transform JSON to ClickHouse INSERT format
+          # Memory values are in MB, rounded to integer
+          jq -r --arg run_id "$RUN_ID" \
+                --arg branch "$BRANCH" \
+                --arg commit_hash "$COMMIT_HASH" \
+                --arg start_time "$(date -u '+%Y-%m-%d %H:%M:%S')" \
+            '.[] | 
+            (.metrics | map(select(.identifier | contains("initial"))) | .[0].average | floor) as $mem_start |
+            (.metrics | map(select(.identifier | contains("final"))) | .[0].average | floor) as $mem_end |
+            ($mem_end - $mem_start) as $mem_delta |
+            "INSERT INTO native_apps.macos_performance_memory_test_results (run_id, runs_on, start_time, test_id, branch, commit_hash, memory_start, memory_end, memory_delta) VALUES (\($run_id), \u0027\(.runner)\u0027, \u0027\($start_time)\u0027, \u0027\(.test)\u0027, \u0027\($branch)\u0027, \u0027\($commit_hash)\u0027, \($mem_start), \($mem_end), \($mem_delta));"
+            ' memory-metrics.json > insert-statements.sql
+
+          echo "=== Generated SQL ==="
+          cat insert-statements.sql
+
+          # Execute INSERT statements
+          while IFS= read -r statement; do
+            echo "Executing: $statement"
+            clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --query "$statement"
+          done < insert-statements.sql
+
+          echo "=== Insert complete ==="
 
   notify-failure:
     name: Notify on failure

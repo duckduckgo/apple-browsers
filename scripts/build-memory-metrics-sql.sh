@@ -16,8 +16,9 @@
 #   --start-time    - Job start time (format: "YYYY-MM-DD HH:MM:SS")
 #
 # Output:
-#   - raw-metrics.json  - Raw metrics extracted from xcresult (file)
-#   - stdout            - SQL INSERT statements for ClickHouse
+#   - raw-metrics.json       - Raw metrics extracted from xcresult (file)
+#   - processed-metrics.json - Calculated memory metrics (file)
+#   - stdout                 - SQL INSERT statements for ClickHouse
 #
 
 set -euo pipefail
@@ -75,8 +76,17 @@ xcrun xcresulttool get test-results metrics \
     --path "$XCRESULT_PATH" \
     --compact > raw-metrics.json
 
-# Transform raw metrics to ClickHouse INSERT statements (output to stdout)
-# Memory values are in MB, rounded to integer
+# Extract and calculate memory metrics (values in MB, rounded to integer)
+jq '[.[] |
+    {
+        test_id: .testIdentifier,
+        memory_start: (.testRuns[0].metrics | map(select(.identifier | contains("initial"))) | .[0].measurements | (add / length) | floor),
+        memory_end: (.testRuns[0].metrics | map(select(.identifier | contains("final"))) | .[0].measurements | (add / length) | floor)
+    } |
+    . + { memory_delta: (.memory_end - .memory_start) }
+]' raw-metrics.json > processed-metrics.json
+
+# Format as SQL INSERT statements (output to stdout)
 jq -r --arg runner "$RUNNER" \
       --arg run_id "$RUN_ID" \
       --arg branch "$BRANCH" \
@@ -84,10 +94,8 @@ jq -r --arg runner "$RUNNER" \
       --arg start_time "$START_TIME" \
       --arg q "'" \
     '.[] |
-    .testIdentifier as $test |
-    .testRuns[0].metrics as $metrics |
-    ($metrics | map(select(.identifier | contains("initial"))) | .[0].measurements | (add / length) | floor) as $mem_start |
-    ($metrics | map(select(.identifier | contains("final"))) | .[0].measurements | (add / length) | floor) as $mem_end |
-    ($mem_end - $mem_start) as $mem_delta |
-    "INSERT INTO native_apps.macos_performance_memory_test_results (run_id, runs_on, start_time, test_id, branch, commit_hash, memory_start, memory_end, memory_delta) VALUES (\($run_id), \($q)\($runner)\($q), \($q)\($start_time)\($q), \($q)\($test)\($q), \($q)\($branch)\($q), \($q)\($commit_hash)\($q), \($mem_start), \($mem_end), \($mem_delta));"
-    ' raw-metrics.json
+    "INSERT INTO native_apps.macos_performance_memory_test_results
+        (run_id, runs_on, start_time, test_id, branch, commit_hash, memory_start, memory_end, memory_delta)
+    VALUES
+        (\($run_id), \($q)\($runner)\($q), \($q)\($start_time)\($q), \($q)\(.test_id)\($q), \($q)\($branch)\($q), \($q)\($commit_hash)\($q), \(.memory_start), \(.memory_end), \(.memory_delta));"
+    ' processed-metrics.json

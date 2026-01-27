@@ -226,7 +226,6 @@ private struct EditableCreditCardField: View {
 
 private struct FormattedCreditCardField: View {
 
-    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementCreditCardModel
 
     @State var isHovering = false
@@ -353,7 +352,6 @@ private struct SecureEditableCreditCardField: View {
 ///
 private struct ExpirationField: View {
 
-    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementCreditCardModel
 
     @State private var isHovering = false

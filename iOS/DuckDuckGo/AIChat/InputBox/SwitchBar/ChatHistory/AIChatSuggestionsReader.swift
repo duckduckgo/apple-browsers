@@ -47,34 +47,16 @@ protocol AIChatSuggestionsReading {
 
 @MainActor
 final class AIChatSuggestionsReader: AIChatSuggestionsReading {
-
-    enum SettingsKey: String {
-        case maxHistoryCount
-
-        var defaultValue: Int {
-            switch self {
-            case .maxHistoryCount: return 2
-            }
-        }
-    }
-
     private let suggestionsReader: SuggestionsReading
-    private let privacyConfig: PrivacyConfigurationManaging?
+    private let historySettings: AIChatHistorySettings
 
     var maxHistoryCount: Int {
-        let settings = privacyConfig?.privacyConfig.settings(for: .duckAiChatHistory)
-        return (settings?[SettingsKey.maxHistoryCount.rawValue] as? Int) ?? SettingsKey.maxHistoryCount.defaultValue
+        historySettings.maxHistoryCount
     }
 
-    init(featureFlagger: FeatureFlagger, privacyConfig: PrivacyConfigurationManaging) {
-        self.suggestionsReader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
-        self.privacyConfig = privacyConfig
-    }
-
-    /// For testing - allows injecting a mock reader
-    init(suggestionsReader: SuggestionsReading) {
+    init(suggestionsReader: SuggestionsReading, historySettings: AIChatHistorySettings) {
         self.suggestionsReader = suggestionsReader
-        self.privacyConfig = nil
+        self.historySettings = historySettings
     }
 
     func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {

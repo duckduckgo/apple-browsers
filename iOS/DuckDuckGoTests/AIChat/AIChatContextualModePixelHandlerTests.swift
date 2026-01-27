@@ -34,7 +34,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testSheetOpenedPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -48,7 +48,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testSheetDismissedPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -62,7 +62,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testSessionRestoredPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -78,7 +78,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testExpandButtonTappedPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -92,7 +92,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testNewChatButtonTappedPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -106,7 +106,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testQuickActionSummarizeSelectedPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -122,7 +122,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testPageContextAutoAttachedPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -136,7 +136,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testPageContextManuallyAttachedNativePixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -150,7 +150,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testPageContextManuallyAttachedFrontendPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -166,7 +166,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testPageContextUpdatedOnNavigationFirstTime() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -248,7 +248,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testPageContextRemovedNativePixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -262,7 +262,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testPageContextRemovedFrontendPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -278,7 +278,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testPromptSubmittedWithContextPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -292,7 +292,7 @@ final class AIChatContextualModePixelHandlerTests {
     func testPromptSubmittedWithoutContextPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event)
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
         })
 
         // WHEN
@@ -487,3 +487,4 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(true)
     }
 }
+

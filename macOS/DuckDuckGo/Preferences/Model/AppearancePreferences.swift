@@ -560,7 +560,6 @@ final class AppearancePreferences: ObservableObject {
     }
 
     func subscribeToNewTabPageCustomizationSettingChanges() {
-        // Combine all New Tab Page customization setting publishers
         let appearanceSettingsPublisher = $themeAppearance
             .combineLatest($themeName,
                            $homePageCustomBackground)
@@ -569,12 +568,12 @@ final class AppearancePreferences: ObservableObject {
                            $isProtectionsReportVisible)
             .dropFirst()
         appearanceSettingsPublisher.map { _ in () }
-            .merge(with: aiChatShortcutSettingProvider.isAIChatShortcutEnabledPublisher.map { _ in () })
-        .receive(on: DispatchQueue.main)
-        .sink { [weak self] _ in
-            guard let self, !didChangeAnyNewTabPageCustomizationSetting else { return }
-            didChangeAnyNewTabPageCustomizationSetting = true
-        }
-        .store(in: &cancellables)
+            .merge(with: aiChatShortcutSettingProvider.isAIChatShortcutEnabledPublisher.map { _ in () }) // Duck.ai section visibility
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, !didChangeAnyNewTabPageCustomizationSetting else { return }
+                didChangeAnyNewTabPageCustomizationSetting = true
+            }
+            .store(in: &cancellables)
     }
 }

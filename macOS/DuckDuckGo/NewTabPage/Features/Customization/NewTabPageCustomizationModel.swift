@@ -197,6 +197,10 @@ final class NewTabPageCustomizationModel: ObservableObject {
         customImagesManager?.availableImages.forEach { image in
             customImagesManager?.deleteImage(image)
         }
-        appearancePreferences.didChangeAnyNewTabPageCustomizationSetting = false
+        // Once customizations have been reset, we can reset the flag for customization setting changes.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            appearancePreferences.didChangeAnyNewTabPageCustomizationSetting = false
+        }
     }
 }

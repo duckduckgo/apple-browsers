@@ -20,18 +20,9 @@
 import SwiftUI
 import Lottie
 
-/// A SwiftUI wrapper for Lottie animations.
-///
-/// Set `respectBounds: true` for large animations that overflow SwiftUI's `.frame()`.
-///
-/// Uses a `Coordinator` to store the `LottieAnimationView` reference, ensuring
-/// `updateUIView` operates on the correct instance when SwiftUI recreates the struct.
+/// Consider using Lottie.LottieView instead, as it's more feature rich and well-maintained.
 struct LottieView: UIViewRepresentable {
-
-    final class Coordinator {
-        var animationView: LottieAnimationView?
-    }
-
+    
     struct LoopWithIntroTiming {
         let skipIntro: Bool
         let introStartFrame: AnimationFrameTime
@@ -55,14 +46,10 @@ struct LottieView: UIViewRepresentable {
     private let loopMode: LoopMode
     private let animationImageProvider: AnimationImageProvider?
     private let valueProvider: ValueProvider?
-    
-    /// When `true`, wraps the animation in a container with Auto Layout constraints
-    /// to ensure it respects SwiftUI's `.frame()` size. Use this for animations with
-    /// large native dimensions that would otherwise overflow their bounds.
-    private let respectBounds: Bool
 
     let animationName: String
     let animation: LottieAnimation?
+    let animationView = LottieAnimationView()
 
     init(
         lottieFile: String,
@@ -70,8 +57,7 @@ struct LottieView: UIViewRepresentable {
         loopMode: LoopMode = .mode(.playOnce),
         isAnimating: Binding<Bool> = .constant(true),
         animationImageProvider: AnimationImageProvider? = nil,
-        valueProvider: ValueProvider? = nil,
-        respectBounds: Bool = false
+        valueProvider: ValueProvider? = nil
     ) {
         self.animationName = lottieFile
         self.animation = LottieAnimation.named(lottieFile)
@@ -80,19 +66,9 @@ struct LottieView: UIViewRepresentable {
         self.loopMode = loopMode
         self.animationImageProvider = animationImageProvider
         self.valueProvider = valueProvider
-        self.respectBounds = respectBounds
     }
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-
-    func makeUIView(context: Context) -> some UIView {
-        let animationView = LottieAnimationView()
-
-        // Store the animation view in the coordinator so updateUIView can access the correct instance
-        context.coordinator.animationView = animationView
-
+    func makeUIView(context: Context) -> some LottieAnimationView {
         animationView.animation = animation
         animationView.contentMode = .scaleAspectFit
         animationView.clipsToBounds = false
@@ -108,37 +84,12 @@ struct LottieView: UIViewRepresentable {
         case .withIntro: break
         }
 
-        if !respectBounds {
-            // Default behavior: return the animation view directly.
-            return animationView as UIView
-        } else {
-            // Constrained behavior: wrap in a container with Auto Layout.
-            // The container receives SwiftUI's proposed size, and the animation is
-            // pinned to all edges, forcing it to scale down if needed.
-            let containerView = UIView()
-            containerView.backgroundColor = .clear
-            animationView.clipsToBounds = true
-            animationView.translatesAutoresizingMaskIntoConstraints = false
-
-            containerView.addSubview(animationView)
-            NSLayoutConstraint.activate([
-                animationView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-                animationView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-                animationView.topAnchor.constraint(equalTo: containerView.topAnchor),
-                animationView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
-            ])
-
-            return containerView
-        }
+        return animationView
     }
  
     func updateUIView(_ uiView: UIViewType, context: Context) {
-        guard let animationView = context.coordinator.animationView else {
-            return
-        }
-
-        if animationView.isAnimationPlaying, !isAnimating.wrappedValue {
-            animationView.stop()
+        if uiView.isAnimationPlaying, !isAnimating.wrappedValue {
+            uiView.stop()
             return
         }
 
@@ -146,33 +97,33 @@ struct LottieView: UIViewRepresentable {
         // The VPN startup animations have an issue with the initial frame that is introduced when backgrounding and foregrounding the app.
         // The issue can be reproduced using the official Lottie SwiftUI wrapped, so instead it is being worked around by resetting the animation
         // when appropriate.
-        if !isAnimating.wrappedValue, animationView.currentProgress == 0 {
-            if animationView.currentFrame == 0, self.animationName.hasPrefix("vpn-") {
-                animationView.animation = nil
-                animationView.animation = self.animation
+        if !isAnimating.wrappedValue, uiView.currentProgress == 0 {
+            if uiView.currentFrame == 0, self.animationName.hasPrefix("vpn-") {
+                uiView.animation = nil
+                uiView.animation = self.animation
             }
         }
 
-        guard isAnimating.wrappedValue, !animationView.isAnimationPlaying else {
+        guard isAnimating.wrappedValue, !uiView.isAnimationPlaying else {
             return
         }
 
-        if animationView.loopMode == .playOnce && animationView.currentProgress == 1 {
+        if uiView.loopMode == .playOnce && uiView.currentProgress == 1 {
             return
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             switch loopMode {
             case .mode:
-                animationView.play(completion: { _ in
+                uiView.play(completion: { _ in
                     self.isAnimating.wrappedValue = false
                 })
             case .withIntro(let timing):
                 if timing.skipIntro {
-                    animationView.play(fromFrame: timing.loopStartFrame, toFrame: timing.loopEndFrame, loopMode: .loop)
+                    uiView.play(fromFrame: timing.loopStartFrame, toFrame: timing.loopEndFrame, loopMode: .loop)
                 } else {
-                    animationView.play(fromFrame: timing.introStartFrame, toFrame: timing.introEndFrame, loopMode: .playOnce) { _ in
-                        animationView.play(fromFrame: timing.loopStartFrame, toFrame: timing.loopEndFrame, loopMode: .loop)
+                    uiView.play(fromFrame: timing.introStartFrame, toFrame: timing.introEndFrame, loopMode: .playOnce) { _ in
+                        uiView.play(fromFrame: timing.loopStartFrame, toFrame: timing.loopEndFrame, loopMode: .loop)
                     }
                 }
             }

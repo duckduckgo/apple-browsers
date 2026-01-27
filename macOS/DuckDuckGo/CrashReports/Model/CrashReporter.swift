@@ -38,7 +38,7 @@ final class CrashReporter {
     private var lastCheckDate: Date?
 
     func checkForNewReports() async {
-#if !DEBUG
+#if !(DEBUG || ALPHA || REVIEW)
         guard let lastCheckDate = lastCheckDate else {
             // Initial run
             self.lastCheckDate = Date()

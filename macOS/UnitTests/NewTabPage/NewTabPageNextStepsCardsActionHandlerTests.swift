@@ -21,6 +21,7 @@ import BrowserServicesKit
 import PrivacyConfigTestsUtils
 import Subscription
 import XCTest
+import PrivacyConfig
 
 final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var actionHandler: NewTabPageNextStepsCardsActionHandler!
@@ -32,6 +33,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
     private var navigator: MockNavigator!
     private var syncLauncher: MockSyncLauncher!
+    private var featureFlagger: MockFeatureFlagger!
 
     @MainActor override func setUp() {
         capturingDefaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -44,6 +46,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         pixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
         navigator = MockNavigator()
         syncLauncher = MockSyncLauncher()
+        featureFlagger = MockFeatureFlagger()
 
         actionHandler = NewTabPageNextStepsCardsActionHandler(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -53,7 +56,8 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
             privacyConfigurationManager: privacyConfigManager,
             pixelHandler: pixelHandler,
             newTabPageNavigator: navigator,
-            syncLauncher: syncLauncher
+            syncLauncher: syncLauncher,
+            featureFlagger: featureFlagger
         )
     }
 
@@ -67,6 +71,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         pixelHandler = nil
         navigator = nil
         syncLauncher = nil
+        featureFlagger = nil
     }
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserCardThenItPresentsTheDefaultBrowserPrompt() {
@@ -84,10 +89,22 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertTrue(capturingDefaultBrowserProvider.openSystemPreferencesCalled)
     }
 
-    @MainActor func testWhenAskedToPerformActionForDockThenItAddsAppToDock() {
-        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
+    @MainActor func testWhenAskedToPerformActionForDockAndFeatureFlagEnabledThenItAddsAppToDockAndCallsRefreshCardsAction() {
+        var cardsRefreshed = false
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
+        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
 
         XCTAssertTrue(dockCustomizer.isAddedToDock)
+        XCTAssertTrue(cardsRefreshed)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForDockAndFeatureFlagDisabledThenItAddsAppToDockWithoutRefreshCardsAction() {
+        var cardsRefreshed = false
+        featureFlagger.enabledFeatureFlags = []
+        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
+
+        XCTAssertTrue(dockCustomizer.isAddedToDock)
+        XCTAssertFalse(cardsRefreshed)
     }
 
     @MainActor func testWhenAskedToPerformActionForImportPromptThenItOpensImportWindowAndCallsRefreshCardsAction() {

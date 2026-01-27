@@ -2531,6 +2531,17 @@ extension AddressBarButtonsViewController: NavigationBarBadgeAnimatorDelegate {
             return
         }
 
+        let isShowingErrorPage = tabViewModel?.isShowingErrorPage ?? false
+        if isShowingErrorPage || !privacyDashboardButton.isShown {
+            Logger.general.debug("BadgeAnimation: skipping shield animation (errorPage=\(isShowingErrorPage), privacyButtonShown=\(self.privacyDashboardButton.isShown))")
+            privacyDashboardButton.isAnimationEnabled = true
+            buttonsBadgeAnimator.isShieldAnimationInProgress = false
+            buttonsBadgeAnimator.processNextAnimation()
+            updatePrivacyEntryPointIcon()
+            playPrivacyInfoHighlightAnimationIfNecessary()
+            return
+        }
+
         guard let tabViewModel = tabViewModel,
               case .url(let url, _, _) = tabViewModel.tab.content else {
             // Re-enable hover when no valid tab/URL
@@ -2561,6 +2572,16 @@ extension AddressBarButtonsViewController: NavigationBarBadgeAnimatorDelegate {
     }
 
     private func playShieldAnimation(for url: URL) {
+        guard let tabViewModel, !tabViewModel.isShowingErrorPage else {
+            Logger.general.debug("BadgeAnimation: shield animation aborted (error page active)")
+            privacyDashboardButton.isAnimationEnabled = true
+            buttonsBadgeAnimator.isShieldAnimationInProgress = false
+            updatePrivacyEntryPointIcon()
+            buttonsBadgeAnimator.processNextAnimation()
+            playPrivacyInfoHighlightAnimationIfNecessary()
+            return
+        }
+
         // Ensure shield is visible and button image is hidden before playing
         privacyDashboardButton.image = nil
         shieldAnimationView.isHidden = false

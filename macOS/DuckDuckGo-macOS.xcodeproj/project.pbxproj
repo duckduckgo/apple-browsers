@@ -445,6 +445,8 @@
 		31FBF2322CDD130900626C17 /* AIChatUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */; };
 		31FC23512DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
 		31FC23522DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
+		36293EDF2F28CD2500E9C644 /* FirePixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36293EDE2F28CD1B00E9C644 /* FirePixels.swift */; };
+		36293EE02F28CD2500E9C644 /* FirePixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36293EDE2F28CD1B00E9C644 /* FirePixels.swift */; };
 		3701C9CE29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */; };
 		3701C9CF29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */; };
 		370245FD2CF7C65400CD79A3 /* PrivacyStatsTrackerDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370245FC2CF7C64B00CD79A3 /* PrivacyStatsTrackerDataProvider.swift */; };
@@ -4672,6 +4674,7 @@
 		31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptTests.swift; sourceTree = "<group>"; };
 		31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarMenuButton.swift; sourceTree = "<group>"; };
 		336B39E22726B4B700C417D3 /* LocalUnprotectedDomains.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalUnprotectedDomains.swift; sourceTree = "<group>"; };
+		36293EDE2F28CD1B00E9C644 /* FirePixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirePixels.swift; sourceTree = "<group>"; };
 		3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxBerkeleyDatabaseReader.swift; sourceTree = "<group>"; };
 		370245FC2CF7C64B00CD79A3 /* PrivacyStatsTrackerDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsTrackerDataProvider.swift; sourceTree = "<group>"; };
 		370270BB2C78AC6F002E44E4 /* NewTabBackgroundPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabBackgroundPixel.swift; sourceTree = "<group>"; };
@@ -7391,6 +7394,14 @@
 				D6E0ACB02CE36DC4005D3486 /* DuckPlayerOverlayPixels.swift */,
 			);
 			path = YoutubePlayer;
+			sourceTree = "<group>";
+		};
+		36293EDD2F28CCBA00E9C644 /* Statistics */ = {
+			isa = PBXGroup;
+			children = (
+				36293EDE2F28CD1B00E9C644 /* FirePixels.swift */,
+			);
+			path = Statistics;
 			sourceTree = "<group>";
 		};
 		370C23172C77C47700A80A3E /* Customization */ = {
@@ -10390,6 +10401,7 @@
 		AA6820E825503A21005ED0D5 /* Fire */ = {
 			isa = PBXGroup;
 			children = (
+				36293EDD2F28CCBA00E9C644 /* Statistics */,
 				F17114842C7C9D28009836C1 /* Logger+Fire.swift */,
 				AA6820E925503A49005ED0D5 /* Model */,
 				84DD63E02E9783DC0043A25E /* Resources */,
@@ -14438,6 +14450,7 @@
 				3706FB44293F65D500E42796 /* Favicon.swift in Sources */,
 				3706FB45293F65D500E42796 /* SuggestionContainerViewModel.swift in Sources */,
 				3706FB46293F65D500E42796 /* FirePopoverWrapperViewController.swift in Sources */,
+				36293EE02F28CD2500E9C644 /* FirePixels.swift in Sources */,
 				1D39F7252DCA29A500F258F0 /* InitialWindowFrameProvider.swift in Sources */,
 				3706FB47293F65D500E42796 /* NSPasteboardItemExtension.swift in Sources */,
 				3706FB48293F65D500E42796 /* AutofillPreferencesModel.swift in Sources */,
@@ -16942,6 +16955,7 @@
 				37EE55EB2D5F197300D53C7C /* BadgeNotificationContainerView.swift in Sources */,
 				37EE55EC2D5F197300D53C7C /* BadgeNotificationContentView.swift in Sources */,
 				37EE55ED2D5F197300D53C7C /* BadgeIconAnimationModel.swift in Sources */,
+				36293EDF2F28CD2500E9C644 /* FirePixels.swift in Sources */,
 				37EE55EE2D5F197300D53C7C /* NavigationBarBadgeAnimationView.swift in Sources */,
 				C150EB232F0D817100A98C97 /* AIChatFeatureFlagProvider.swift in Sources */,
 				37EE55EF2D5F197300D53C7C /* NavigationBarBadgeAnimator.swift in Sources */,

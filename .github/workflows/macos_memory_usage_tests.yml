@@ -207,6 +207,14 @@ jobs:
         echo "=== Memory Metrics (Averaged) ==="
         cat memory-metrics.json | jq .
 
+    - name: Upload memory metrics
+      if: always() && steps.run-ui-tests.outcome == 'success'
+      uses: actions/upload-artifact@v4
+      with:
+        name: memory-metrics
+        path: macOS/memory-metrics.json
+        retention-days: 1
+
     - name: Stop log stream
       if: always()
       working-directory: macOS
@@ -298,6 +306,23 @@ jobs:
         name: "${{ env.ARCHIVE_NAME }}"
         path: "macOS/${{ env.ARCHIVE_NAME }}"
         retention-days: 7
+
+  insert-metrics-into-clickhouse:
+    name: Insert Metrics into ClickHouse
+    needs: memory-usage-tests
+    if: needs.memory-usage-tests.result == 'success'
+    runs-on: [ self-hosted, apple ]
+
+    steps:
+      - name: Download memory metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: memory-metrics
+
+      - name: Insert metrics into ClickHouse
+        run: |
+          cat memory-metrics.json
+          # TODO: Add ClickHouse insert logic here
 
   notify-failure:
     name: Notify on failure

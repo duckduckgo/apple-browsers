@@ -402,7 +402,7 @@ private struct BrowsingMenuHeaderView: View {
 
             if let displayURL {
                 Text(displayURL)
-                    .font(.caption)
+                    .daxCaption1()
                     .foregroundStyle(Color(designSystemColor: .textSecondary))
                     .lineLimit(1)
             }

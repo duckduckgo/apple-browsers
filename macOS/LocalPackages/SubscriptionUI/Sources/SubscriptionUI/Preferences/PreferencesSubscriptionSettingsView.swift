@@ -187,7 +187,7 @@ public struct PreferencesSubscriptionSettingsView: View {
                             .foregroundColor(Color(.textPrimary))
                             .font(.system(size: 13, weight: .semibold))
                         Button(UserText.upgradeButton(tierName: tierName)) {
-                            switch model.viewAllPlansAction(url: .upgrade) {
+                            switch model.viewAllPlansAction(url: .upgradeToTier(tierName)) {
                             case .navigateToPlans(let navigationAction),
                                     .navigateToManageSubscription(let navigationAction):
                                 navigationAction()

@@ -684,7 +684,11 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
         switch flag {
         case .postEndpoint:
+#if DEBUG || ALPHA || EXPERIMENTAL
+            return false
+#else
             return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
+#endif
         }
     }
 }

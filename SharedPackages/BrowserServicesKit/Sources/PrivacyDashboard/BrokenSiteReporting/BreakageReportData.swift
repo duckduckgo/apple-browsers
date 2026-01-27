@@ -22,10 +22,12 @@ import Foundation
 public struct BreakageReportData {
     public let performanceMetrics: PerformanceMetrics?
     public let detectorData: DetectorData?
+    public let jsPerformance: [Double]?
 
-    public init(performanceMetrics: PerformanceMetrics?, detectorData: DetectorData?) {
+    public init(performanceMetrics: PerformanceMetrics?, detectorData: DetectorData?, jsPerformance: [Double]?) {
         self.performanceMetrics = performanceMetrics
         self.detectorData = detectorData
+        self.jsPerformance = jsPerformance
     }
 
     /// Convenience computed property for privacy-aware metrics conversion

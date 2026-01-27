@@ -133,7 +133,7 @@ final class AIChatSettings: AIChatSettingsProvider {
     }
 
     var isAutomaticContextAttachmentEnabled: Bool {
-        keyValueStore.bool(.isAIChatAutomaticContextAttachmentEnabledKey, defaultValue: .isAIChatAutomaticContextAttachmentDefaultValue)
+        keyValueStore.bool(.isAIChatAutomaticContextAttachmentEnabledKey, defaultValue: featureFlagger.isFeatureOn(.aiChatAutoAttachContextByDefault))
     }
 
     var hasSeenContextualOnboarding: Bool {
@@ -287,7 +287,6 @@ private extension Bool {
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
     static let showAIChatExperimentalSearchInputDefaultValue = false
-    static let isAIChatAutomaticContextAttachmentDefaultValue = true
     static let hasSeenContextualOnboardingDefaultValue = false
 
 }

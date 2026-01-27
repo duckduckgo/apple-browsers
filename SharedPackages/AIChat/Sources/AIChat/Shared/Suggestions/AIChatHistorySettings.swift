@@ -39,6 +39,7 @@ public struct AIChatHistorySettings {
 
     public var maxHistoryCount: Int {
         let settings = privacyConfig?.privacyConfig.settings(for: .duckAiChatHistory)
-        return (settings?[SettingsKey.maxHistoryCount.rawValue] as? Int) ?? SettingsKey.defaultMaxHistoryCount
+        let value = (settings?[SettingsKey.maxHistoryCount.rawValue] as? Int) ?? SettingsKey.defaultMaxHistoryCount
+        return max(0, value)
     }
 }

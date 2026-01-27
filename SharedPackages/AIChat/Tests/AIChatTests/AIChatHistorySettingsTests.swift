@@ -91,6 +91,20 @@ final class AIChatHistorySettingsTests: XCTestCase {
         XCTAssertEqual(result, 0)
     }
 
+    func testMaxHistoryCount_WhenSettingsContainsNegativeValue_ReturnsZero() {
+        // Given
+        let mockConfig = MockPrivacyConfiguration()
+        mockConfig.featureSettings = ["maxHistoryCount": -5]
+        let mockManager = MockPrivacyConfigurationManager(privacyConfig: mockConfig)
+        let settings = AIChatHistorySettings(privacyConfig: mockManager)
+
+        // When
+        let result = settings.maxHistoryCount
+
+        // Then
+        XCTAssertEqual(result, 0)
+    }
+
     func testMaxHistoryCount_WhenSettingsContainsLargeValue_ReturnsConfiguredValue() {
         // Given
         let mockConfig = MockPrivacyConfiguration()

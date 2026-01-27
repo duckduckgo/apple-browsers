@@ -49,9 +49,9 @@ final class AIChatSuggestionRowView: NSView {
 
     private enum Constants {
         static let rowHeight: CGFloat = 32
-        static let horizontalPadding: CGFloat = 8
-        static let iconSize: CGFloat = 24
-        static let iconTitleSpacing: CGFloat = 2
+        static let horizontalPadding: CGFloat = 12
+        static let iconSize: CGFloat = 16
+        static let iconTitleSpacing: CGFloat = 6
         static let cornerRadius: CGFloat = 6
 
         // Colors matching SuggestionTableCellView
@@ -153,7 +153,7 @@ final class AIChatSuggestionRowView: NSView {
 
         let icon = suggestion.isPinned
             ? DesignSystemImages.Glyphs.Size16.pin
-            : DesignSystemImages.Glyphs.Size24.chat
+            : DesignSystemImages.Glyphs.Size16.history
         iconImageView.image = icon
         iconImageView.contentTintColor = Constants.iconColor
     }

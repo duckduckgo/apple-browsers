@@ -1,7 +1,7 @@
 {
   "name": "BeenVerified",
   "url": "beenverified.com",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts",
   "mirrorSites": [
     {
@@ -87,6 +87,18 @@
             }
           ],
           "id": "888d175a-9c31-46c8-8a37-eab78c3c37e5"
+        },
+        {
+          "_comment": "Filter menu is hidden on mobile, so we need to click the button to show it",
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "#filters-toggle",
+              "failSilently": true
+            }
+          ],
+          "id": "a1c2e3f4-5678-9abc-def0-123456789abc"
         },
         {
           "actionType": "fillForm",

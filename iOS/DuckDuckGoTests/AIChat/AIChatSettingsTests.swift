@@ -132,19 +132,49 @@ class AIChatSettingsTests: XCTestCase {
         mockNotificationCenter.removeObserver(observer)
     }
 
-    func testEnableAutomaticContextAttachment() {
+    func testEnableAutomaticContextAttachment_WhenFeatureFlagOn_DefaultsToTrue() {
+        // Given
+        (mockFeatureFlagger as? MockFeatureFlagger)?.enabledFeatureFlags = [.aiChatAutoAttachContextByDefault]
+
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
                                       keyValueStore: mockKeyValueStore,
-                                      notificationCenter: mockNotificationCenter)
+                                      notificationCenter: mockNotificationCenter,
+                                      featureFlagger: mockFeatureFlagger)
 
-        // Default value is true
+        // Then
         XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
 
+        // When
         settings.enableAutomaticContextAttachment(enable: false)
+
+        // Then
         XCTAssertFalse(settings.isAutomaticContextAttachmentEnabled)
 
+        // When
         settings.enableAutomaticContextAttachment(enable: true)
+
+        // Then
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+    }
+
+    func testEnableAutomaticContextAttachment_WhenFeatureFlagOff_DefaultsToFalse() {
+        // Given
+        (mockFeatureFlagger as? MockFeatureFlagger)?.enabledFeatureFlags = []
+
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter,
+                                      featureFlagger: mockFeatureFlagger)
+
+        // Then
+        XCTAssertFalse(settings.isAutomaticContextAttachmentEnabled)
+
+        // When
+        settings.enableAutomaticContextAttachment(enable: true)
+
+        // Then
         XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
     }
 

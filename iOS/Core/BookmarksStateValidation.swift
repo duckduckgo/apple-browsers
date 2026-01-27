@@ -28,7 +28,8 @@ public protocol BookmarksStateValidation {
     func validateInitialState(context: NSManagedObjectContext,
                               validationError: BookmarksStateValidator.ValidationError) -> Bool
 
-    func validateBookmarksStructure(context: NSManagedObjectContext)
+    @discardableResult
+    func validateBookmarksStructure(context: NSManagedObjectContext) -> Bool
 }
 
 public class BookmarksStateValidator: BookmarksStateValidation {
@@ -70,7 +71,7 @@ public class BookmarksStateValidator: BookmarksStateValidation {
         return true
     }
 
-    public func validateBookmarksStructure(context: NSManagedObjectContext) {
+    public func validateBookmarksStructure(context: NSManagedObjectContext) -> Bool {
         let isMarkedAsInitialized = keyValueStore.object(forKey: Constants.bookmarksDBIsInitialized) != nil
         if isMarkedAsInitialized == false {
             keyValueStore.set(true, forKey: Constants.bookmarksDBIsInitialized)
@@ -96,10 +97,14 @@ public class BookmarksStateValidator: BookmarksStateValidation {
                 additionalParams["is-marked-as-initialized"] = isMarkedAsInitialized ? "true" : "false"
 
                 errorHandler(.bookmarksStructureBroken, additionalParams)
+                return false
             }
         } catch {
             errorHandler(.validatorError(error), nil)
+            return false
         }
+        
+        return true
     }
 
 }

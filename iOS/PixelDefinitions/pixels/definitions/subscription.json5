@@ -140,16 +140,8 @@
                 "description": "Error code: 12201, 12202, 12203, 12204, 12205, 12206",
                 "type": "string"
             },
-            {
-                "key": "ud",
-                "description": "Underlying Error type: com.duckduckgo.subscription.SubscriptionEndpointServiceError",
-                "type": "string"
-            },
-            {
-                "key": "ue",
-                "description": "Underlying Error code: 12300, 12301, 12302",
-                "type": "string"
-            }
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
         ]
     },
     "m_subscription_tier-options_unexpected-pro-tier": {
@@ -158,6 +150,22 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+
+    // Plan Change Click Pixels
+    "m_subscription_settings_view-all-plans_click": {
+        "description": "Fired when the user clicks 'View All Plans' button in subscription settings",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_subscription_settings_upgrade_click": {
+        "description": "Fired when the user clicks 'Upgrade' button in subscription settings",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
     },
 
     // Win-back Offer Pixels - Impressions
@@ -314,11 +322,6 @@
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                "key": "app.native_apps_experiments",
-                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
-                "type": "string"
-            },
-            {
                 "key": "context.name",
                 "type": "string",
                 "description": "Context name for the flow",
@@ -400,11 +403,6 @@
                 "enum": [-1, 10000, 30000, 60000, 300000, 600000, 900000]
             },
             {
-                "key": "app.native_apps_experiments",
-                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
-                "type": "string"
-            },
-            {
                 "key": "context.name",
                 "type": "string",
                 "description": "Context name for the flow",
@@ -414,6 +412,95 @@
                     "funnel_prepurchasecheck_ios",
                     "funnel_onpurchasecheck_multiple"
                 ]
+            }
+        ]
+    },
+    "m_ios_wide_subscription_plan_change": {
+        "description": "Wide pixel sent at the end of a subscription plan change flow (upgrade/downgrade/crossgrade)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-subscription-plan-change"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["subscription-plan-change"]
+            },
+            {
+                "key": "feature.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN and SUCCESS status pixels",
+                "enum": ["partial_data", "missing_entitlements", "missing_entitlements_delayed_activation"]
+            },
+            {
+                "key": "feature.data.ext.purchase_platform",
+                "type": "string",
+                "description": "Platform used to complete the plan change",
+                "enum": ["app_store", "stripe"]
+            },
+            {
+                "key": "feature.data.ext.change_type",
+                "type": "string",
+                "description": "Type of plan change: upgrade, downgrade, or crossgrade (monthly/yearly switch)",
+                "enum": ["UPGRADE", "DOWNGRADE", "CROSSGRADE"]
+            },
+            {
+                "key": "feature.data.ext.from_plan",
+                "type": "string",
+                "description": "Current subscription product identifier before change"
+            },
+            {
+                "key": "feature.data.ext.to_plan",
+                "type": "string",
+                "description": "New subscription product identifier selected by user"
+            },
+            {
+                "key": "feature.data.ext.subscription_identifier",
+                "type": "string",
+                "description": "The new subscription product identifier, e.g. ddg.privacy.pro.monthly.renews.us"
+            },
+            {
+                "key": "feature.data.ext.failing_step",
+                "type": "string",
+                "description": "The step at which the flow failed, when applicable",
+                "enum": ["ACCOUNT_PAYMENT", "ACCOUNT_ACTIVATION"]
+            },
+            {
+                "key": "feature.data.ext.payment_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for the payment step (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.confirmation_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for the backend confirmation step (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Context name for the flow",
+                "enum": ["funnel_appsettings_ios", "funnel_app_ios"]
             }
         ]
     },
@@ -483,11 +570,6 @@
                 "type": "integer",
                 "description": "Bucketed latency for the JWKS fetch step (ms)",
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
-            },
-            {
-                "key": "app.native_apps_experiments",
-                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
-                "type": "string"
             }
         ]
     }

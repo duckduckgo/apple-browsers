@@ -629,6 +629,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .fireWeeklyPixel:
             Task { @MainActor in
                 await debuggingDelegate?.fireWeeklyPixels()
+                presentAlert(message: "Weekly pixels fired.")
             }
         }
     }

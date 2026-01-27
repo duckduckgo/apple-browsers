@@ -143,7 +143,7 @@ class GranularFireConfirmationViewModel: ObservableObject {
     // MARK: - Private Helpers
     
     private func computeNonFireproofedDomainCount() -> Int {
-        guard let history = historyManager.historyCoordinator.history else {
+        guard let history = historyManager.history else {
             return 0
         }
         

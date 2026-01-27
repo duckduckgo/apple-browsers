@@ -123,11 +123,17 @@ public extension SubJobWebRunning {
         if action is SolveCaptchaAction, let captchaTransactionId = actionsHandler?.captchaTransactionId {
             actionsHandler?.captchaTransactionId = nil
             stageCalculator.setStage(.captchaSolve)
+            recordDebugEvent(kind: .wait,
+                             actionType: action.actionType,
+                             details: "Requesting captcha resolution")
             if let captchaData = try? await captchaService.submitCaptchaToBeResolved(for: captchaTransactionId,
                                                                                      dataBrokerURL: context.dataBroker.url,
                                                                                      dataBrokerVersion: context.dataBroker.version,
                                                                                      attemptId: stageCalculator.attemptId,
                                                                                      shouldRunNextStep: shouldRunNextStep) {
+                recordDebugEvent(kind: .wait,
+                                 actionType: action.actionType,
+                                 details: "Captcha resolution received")
                 stageCalculator.fireOptOutCaptchaSolve()
                 recordDebugEvent(kind: .actionPayload,
                                  actionType: action.actionType,
@@ -145,6 +151,9 @@ public extension SubJobWebRunning {
         if action.needsEmail {
             do {
                 stageCalculator.setStage(.emailGenerate)
+                recordDebugEvent(kind: .wait,
+                                 actionType: action.actionType,
+                                 details: "Requesting email address")
                 let emailData = try await emailConfirmationDataService.getEmailAndOptionallySaveToDatabase(
                     dataBrokerId: context.dataBroker.id,
                     dataBrokerURL: context.dataBroker.url,
@@ -152,6 +161,9 @@ public extension SubJobWebRunning {
                     extractedProfileId: extractedProfile?.id,
                     attemptId: stageCalculator.attemptId
                 )
+                recordDebugEvent(kind: .wait,
+                                 actionType: action.actionType,
+                                 details: "Email address received")
                 extractedProfile?.email = emailData.emailAddress
                 stageCalculator.setEmailPattern(emailData.pattern)
                 stageCalculator.fireOptOutEmailGenerate()
@@ -354,12 +366,18 @@ public extension SubJobWebRunning {
         do {
             stageCalculator.fireOptOutCaptchaParse()
             stageCalculator.setStage(.captchaSend)
+            recordDebugEvent(kind: .wait,
+                             actionType: .getCaptchaInfo,
+                             details: "Submitting captcha information")
             actionsHandler?.captchaTransactionId = try await captchaService.submitCaptchaInformation(
                 captchaInfo,
                 dataBrokerURL: context.dataBroker.url,
                 dataBrokerVersion: context.dataBroker.version,
                 attemptId: stageCalculator.attemptId,
                 shouldRunNextStep: shouldRunNextStep)
+            recordDebugEvent(kind: .wait,
+                             actionType: .getCaptchaInfo,
+                             details: "Captcha information submitted")
             stageCalculator.fireOptOutCaptchaSend()
             await executeNextStep()
         } catch {

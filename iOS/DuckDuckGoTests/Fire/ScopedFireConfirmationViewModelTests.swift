@@ -87,12 +87,20 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     func testWhenTabViewModelIsNotNilThenCanBurnSingleTabReturnsTrue() {
         // Given
         let sut = ScopedFireConfirmationViewModel(
-            tabViewModel: TabViewModel(),
+            tabViewModel: createTabViewModel(),
             onConfirm: { _ in },
             onCancel: { }
         )
         
         // Then
         XCTAssertTrue(sut.canBurnSingleTab)
+    }
+    
+    // MARK: - Helpers
+    
+    private func createTabViewModel() -> TabViewModel {
+        let mockHistoryManager = MockHistoryManager()
+        let tab = Tab()
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
     }
 }

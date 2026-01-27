@@ -137,7 +137,7 @@
                                     "type": "string",
                                     "description": "The underlying error domain"
                                 },
-                                "underlyingcode": {
+                                "underlying_code": {
                                     "type": "integer",
                                     "description": "The underlying error code"
                                 }

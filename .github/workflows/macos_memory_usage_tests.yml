@@ -286,8 +286,8 @@ jobs:
         path: "macOS/${{ env.ARCHIVE_NAME }}"
         retention-days: 7
 
-  insert-metrics-into-clickhouse:
-    name: Insert Metrics into ClickHouse
+  report-memory-metrics-to-clickhouse:
+    name: Report Memory Metrics to ClickHouse
     needs: memory-usage-tests
     if: needs.memory-usage-tests.result == 'success'
     runs-on: [ self-hosted, apple ]
@@ -301,7 +301,7 @@ jobs:
         with:
           name: memory-metrics
 
-      - name: Insert metrics into ClickHouse
+      - name: Report Memory Metrics to ClickHouse
         env:
           RUN_ID: ${{ github.run_id }}
           BRANCH: ${{ github.ref_name }}
@@ -316,11 +316,12 @@ jobs:
                 --arg branch "$BRANCH" \
                 --arg commit_hash "$COMMIT_HASH" \
                 --arg start_time "$(date -u '+%Y-%m-%d %H:%M:%S')" \
+                --arg q "'" \
             '.[] | 
             (.metrics | map(select(.identifier | contains("initial"))) | .[0].average | floor) as $mem_start |
             (.metrics | map(select(.identifier | contains("final"))) | .[0].average | floor) as $mem_end |
             ($mem_end - $mem_start) as $mem_delta |
-            "INSERT INTO native_apps.macos_performance_memory_test_results (run_id, runs_on, start_time, test_id, branch, commit_hash, memory_start, memory_end, memory_delta) VALUES (\($run_id), \u0027\(.runner)\u0027, \u0027\($start_time)\u0027, \u0027\(.test)\u0027, \u0027\($branch)\u0027, \u0027\($commit_hash)\u0027, \($mem_start), \($mem_end), \($mem_delta));"
+            "INSERT INTO native_apps.macos_performance_memory_test_results (run_id, runs_on, start_time, test_id, branch, commit_hash, memory_start, memory_end, memory_delta) VALUES (\($run_id), \($q)\(.runner)\($q), \($q)\($start_time)\($q), \($q)\(.test)\($q), \($q)\($branch)\($q), \($q)\($commit_hash)\($q), \($mem_start), \($mem_end), \($mem_delta));"
             ' memory-metrics.json > insert-statements.sql
 
           echo "=== Generated SQL ==="

@@ -74,6 +74,13 @@ final class SwipeContainerManager: NSObject {
     // MARK: - Public Methods
 
 
+    /// Installs the chat history manager in the chat page container
+    /// - Parameter manager: The AIChatHistoryManager to install
+    @MainActor
+    func installChatHistory(using manager: AIChatHistoryManager) {
+        manager.installInContainerView(chatPageContainer, parentViewController: containerViewController)
+    }
+
     /// Installs the swipe container in the provided parent view
     func installInViewController(_ parentController: UIViewController, asSubviewOf view: UIView, barView: UIView, isTopBarPosition: Bool) {
         parentController.addChild(containerViewController)

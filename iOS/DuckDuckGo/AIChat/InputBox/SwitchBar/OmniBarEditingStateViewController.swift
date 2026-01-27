@@ -245,9 +245,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installSwitchBarVC()
         installSwipeContainer()
         installSuggestionsTray()
-        if featureFlagger.isFeatureOn(.aiChatSuggestions) {
-            installChatHistoryList()
-        }
         installDaxLogoView()
         installNavigationActionBar()
 
@@ -311,8 +308,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func installChatHistoryList() {
-        guard let containerViewController = swipeContainerManager?.containerViewController,
-              let chatContainer = swipeContainerManager?.chatPageContainer else { return }
+        guard let swipeContainerManager else { return }
 
         let suggestionsReader = AIChatSuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
 
@@ -320,7 +316,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                                            aiChatSettings: aiChatSettings,
                                            viewModel: AIChatSuggestionsViewModel())
         manager.delegate = self
-        manager.installInContainerView(chatContainer, parentViewController: containerViewController)
+        swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
         aiChatHistoryManager = manager
     }

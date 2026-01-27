@@ -657,6 +657,7 @@ private extension AIChatContextualSheetViewController {
         guard let sheet = sheetPresentationController else { return }
 
         sheet.delegate = self
+        presentationController?.delegate = self
         sheet.detents = [.medium(), .large()]
         sheet.selectedDetentIdentifier = .medium
         sheet.largestUndimmedDetentIdentifier = .medium

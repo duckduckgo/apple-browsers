@@ -180,11 +180,20 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable? {
-        guard displayMode == .contextual else { return nil }
-        guard let paramsDict = params as? [String: Any],
-              let action = paramsDict["action"] as? String else {
+        Logger.aiChat.debug("[PageContext] togglePageContextTelemetry called - displayMode: \(String(describing: displayMode)), params: \(String(describing: params))")
+
+        guard displayMode == .contextual else {
+            Logger.aiChat.debug("[PageContext] togglePageContextTelemetry - not in contextual mode, ignoring")
             return nil
         }
+
+        guard let paramsDict = params as? [String: Any],
+              let action = paramsDict["action"] as? String else {
+            Logger.aiChat.error("[PageContext] togglePageContextTelemetry - invalid params")
+            return nil
+        }
+
+        Logger.aiChat.debug("[PageContext] togglePageContextTelemetry - action: \(action), handler: \(contextualModePixelHandler != nil ? "set" : "nil")")
 
         switch action {
         case "attached":
@@ -192,6 +201,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         case "removed":
             contextualModePixelHandler?.firePageContextRemovedFrontend()
         default:
+            Logger.aiChat.error("[PageContext] togglePageContextTelemetry - unknown action: \(action)")
             break
         }
 
@@ -292,6 +302,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {
+        Logger.aiChat.debug("[PageContext] setContextualModePixelHandler called")
         self.contextualModePixelHandler = pixelHandler
     }
 

@@ -175,6 +175,38 @@ jobs:
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
+    - name: Extract memory metrics
+      if: always() && steps.run-ui-tests.outcome == 'success'
+      working-directory: macOS
+      run: |
+        XCRESULT_PATH=$(find DerivedData/Logs/Test -name "*.xcresult" | head -1)
+        if [[ -z "$XCRESULT_PATH" ]]; then
+          echo "No .xcresult bundle found"
+          exit 1
+        fi
+
+        echo "Extracting metrics from: $XCRESULT_PATH"
+
+        # Extract raw metrics from xcresult
+        xcrun xcresulttool get test-results metrics \
+          --path "$XCRESULT_PATH" \
+          --compact > raw-metrics.json
+
+        # Transform to averaged metrics JSON for ClickHouse
+        jq '[.[] | {
+          test: .testIdentifier,
+          device: .testRuns[0].device.deviceName,
+          metrics: [.testRuns[0].metrics[] | {
+            identifier: .identifier,
+            displayName: .displayName,
+            unit: .unitOfMeasurement,
+            average: ((.measurements | add) / (.measurements | length))
+          }]
+        }]' raw-metrics.json > memory-metrics.json
+
+        echo "=== Memory Metrics (Averaged) ==="
+        cat memory-metrics.json | jq .
+
     - name: Stop log stream
       if: always()
       working-directory: macOS

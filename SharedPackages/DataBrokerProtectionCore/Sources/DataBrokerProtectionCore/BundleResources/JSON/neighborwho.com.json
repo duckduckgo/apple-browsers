@@ -1,7 +1,7 @@
 {
   "name": "NeighborWho",
   "url": "neighborwho.com",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "parent": "beenverified.com",
   "optOutUrl": "https://www.neighborwho.com/svc/optout/search/optouts",
   "mirrorSites": [
@@ -45,6 +45,10 @@
             {
               "type": "lastName",
               "selector": "//input[@name='ln']"
+            },
+            {
+              "type": "state",
+              "selector": "//input[@name='state']"
             }
           ],
           "id": "777a01d9-630f-42e4-a8b8-4c87ddab91e3"

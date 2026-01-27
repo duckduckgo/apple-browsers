@@ -643,14 +643,14 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
 
-        // When
-        let action = sut.viewAllPlansAction(url: .upgrade)
+        // When - using dynamic tier from backend
+        let action = sut.viewAllPlansAction(url: .upgradeToTier("pro"))
 
         // Then
         if case .navigateToPlans(let navigationAction) = action {
             navigationAction()
             XCTAssertTrue(userEvents.contains { event in
-                if case .openURL(.upgrade) = event { return true }
+                if case .openURL(.upgradeToTier("pro")) = event { return true }
                 return false
             })
         } else {
@@ -677,14 +677,14 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
 
-        // When
-        let action = sut.viewAllPlansAction(url: .upgrade)
+        // When - using dynamic tier from backend
+        let action = sut.viewAllPlansAction(url: .upgradeToTier("pro"))
 
         // Then
         if case .navigateToPlans(let navigationAction) = action {
             navigationAction()
             XCTAssertTrue(userEvents.contains { event in
-                if case .openURL(.upgrade) = event { return true }
+                if case .openURL(.upgradeToTier("pro")) = event { return true }
                 return false
             })
         } else {

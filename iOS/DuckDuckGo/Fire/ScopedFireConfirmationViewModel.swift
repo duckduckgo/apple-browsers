@@ -22,15 +22,12 @@ import Core
 
 @MainActor
 final class ScopedFireConfirmationViewModel: ObservableObject {
-    
-    // MARK: - Public Variables
-    
-    let onConfirm: (FireRequest) -> Void
-    let onCancel: () -> Void
-    
+        
     // MARK: - Private Variables
     
-    let tabViewModel: TabViewModel?
+    private let onConfirm: (FireRequest) -> Void
+    private let onCancel: () -> Void
+    private let tabViewModel: TabViewModel?
     
     // MARK: - Initializer
     

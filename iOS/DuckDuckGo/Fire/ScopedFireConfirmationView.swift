@@ -27,11 +27,9 @@ struct ScopedFireConfirmationView: View {
     
     @ObservedObject var viewModel: ScopedFireConfirmationViewModel
     @State private var isAnimating = false
-    let onDismiss: () -> Void
     
-    init(viewModel: ScopedFireConfirmationViewModel, onDismiss: @escaping () -> Void) {
+    init(viewModel: ScopedFireConfirmationViewModel) {
         self.viewModel = viewModel
-        self.onDismiss = onDismiss
     }
     
     var body: some View {
@@ -56,7 +54,7 @@ struct ScopedFireConfirmationView: View {
     
     private var closeButton: some View {
         Button(action: {
-            onDismiss()
+            viewModel.cancel()
         }) {
             Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
                 .foregroundColor(Color(designSystemColor: .icons))

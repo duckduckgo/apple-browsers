@@ -88,12 +88,7 @@ struct FireConfirmationPresenter {
                 }
             )
             
-            let confirmationView = ScopedFireConfirmationView(viewModel: viewModel, onDismiss: { [weak viewController] in
-                viewController?.dismiss(animated: true) {
-                    onCancel()
-                }
-            })
-            
+            let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
             let hostingController = makeHostingController(with: confirmationView)
             let presentingWidth = viewController.view.frame.width
             configurePresentation(for: hostingController,

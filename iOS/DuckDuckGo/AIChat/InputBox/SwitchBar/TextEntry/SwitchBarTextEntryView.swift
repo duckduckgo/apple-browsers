@@ -465,7 +465,9 @@ class SwitchBarTextEntryView: UIView {
                     // interfere with iOS autocomplete.
                     // Note: Clear button updates textView directly to avoid race conditions.
                     let isUserActivelyTyping = self.textView.isFirstResponder && self.hasBeenInteractedWith
-                    guard !isUserActivelyTyping else { return }
+                    let isNewLineInsertion = text == (self.textView.text ?? "") + "\n"
+                    
+                    guard !isUserActivelyTyping || isNewLineInsertion else { return }
                     
                     self.textView.text = text
                     self.updatePlaceholderVisibility()

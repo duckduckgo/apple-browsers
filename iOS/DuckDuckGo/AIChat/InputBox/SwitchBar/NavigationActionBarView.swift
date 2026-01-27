@@ -333,7 +333,7 @@ final class NavigationActionBarView: UIView {
 
         let shouldShowNewLineButton: Bool
         if isUsingFadeOutAnimation {
-            shouldShowNewLineButton = false
+            shouldShowNewLineButton = !viewModel.isSearchMode && viewModel.isKeyboardVisible && viewModel.hasText
         } else {
             shouldShowNewLineButton = viewModel.isKeyboardVisible && viewModel.hasText && !viewModel.isSearchMode
         }
@@ -344,6 +344,8 @@ final class NavigationActionBarView: UIView {
         if isUsingFadeOutAnimation {
             if viewModel.isSearchMode && !isFloating {
                 shouldShowSearchButton = false
+            } else if viewModel.isSearchMode && viewModel.isTopBarPosition {
+                shouldShowSearchButton = hasText
             } else {
                 shouldShowSearchButton = true
             }

@@ -24,6 +24,7 @@ public protocol TabHistoryStoring {
     func tabHistory(for tabID: String) async throws -> [URL]
     func insertTabHistory(for tabID: String, url: URL) async throws
     func removeTabHistory(for tabIDs: [String]) async throws
+    func cleanOrphanedTabHistory(excludingTabIDs openTabIDs: [String]) async throws
 }
 
 public struct TabHistoryStore: TabHistoryStoring {
@@ -122,11 +123,40 @@ public struct TabHistoryStore: TabHistoryStoring {
                 let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
                 do {
                     try context.execute(batchDeleteRequest)
+                    // Batch deletes operate directly on the persistent store, bypassing the context.
+                    // Reset updates the context to reflect the store.
                     context.reset()
                     continuation.resume(returning: ())
                 } catch {
                     context.reset()
                     eventMapper.fire(.removeTabHistoryFailed, error: error)
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// Removes all tab history records for tabs that are no longer open.
+    /// Uses a batch delete request for efficient removal of orphaned records.
+    public func cleanOrphanedTabHistory(excludingTabIDs openTabIDs: [String]) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform { [context, eventMapper] in
+                let fetchRequest: NSFetchRequest<NSFetchRequestResult> = TabHistoryManagedObject.fetchRequest()
+                if !openTabIDs.isEmpty {
+                    fetchRequest.predicate = NSPredicate(format: "NOT (%K IN %@)",
+                                                         #keyPath(TabHistoryManagedObject.tabID),
+                                                         openTabIDs)
+                }
+                let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+                do {
+                    try context.execute(batchDeleteRequest)
+                    // Batch deletes operate directly on the persistent store, bypassing the context.
+                    // Reset updates the context to reflect the store.
+                    context.reset()
+                    continuation.resume(returning: ())
+                } catch {
+                    context.reset()
+                    eventMapper.fire(.cleanOrphanedTabHistoryFailed, error: error)
                     continuation.resume(throwing: error)
                 }
             }

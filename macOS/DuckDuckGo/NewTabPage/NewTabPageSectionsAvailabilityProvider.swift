@@ -46,7 +46,7 @@ final class NewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabili
 
         overridesHandler.flagDidChangePublisher
             .filter { flag, _ in
-                flag == .newTabPageOmnibar || flag == .nextStepsSingleCardIteration
+                flag == .newTabPageOmnibar || flag == .nextStepsListWidget
             }
             .sink { _ in
                 NotificationCenter.default.post(name: .newTabPageSectionsAvailabilityDidChange, object: nil)
@@ -58,8 +58,8 @@ final class NewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabili
         return featureFlagger.isFeatureOn(.newTabPageOmnibar)
     }
 
-    var isNextStepsSingleCardIterationAvailable: Bool {
-        return featureFlagger.isFeatureOn(.nextStepsSingleCardIteration)
+    var isNextStepsListWidgetAvailable: Bool {
+        return featureFlagger.isFeatureOn(.nextStepsListWidget)
     }
 
 }

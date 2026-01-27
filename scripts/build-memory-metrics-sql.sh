@@ -77,11 +77,12 @@ xcrun xcresulttool get test-results metrics \
     --compact > raw-metrics.json
 
 # Extract and calculate memory metrics (values in MB, rounded to integer)
-jq '[.[] |
+jq 'def avg: add / length | floor;
+[.[] |
     {
         test_id: .testIdentifier,
-        memory_start: (.testRuns[0].metrics | map(select(.identifier | contains("initial"))) | .[0].measurements | (add / length) | floor),
-        memory_end: (.testRuns[0].metrics | map(select(.identifier | contains("final"))) | .[0].measurements | (add / length) | floor)
+        memory_start: (.testRuns[0].metrics | map(select(.identifier | contains("initial"))) | .[0].measurements | avg),
+        memory_end: (.testRuns[0].metrics | map(select(.identifier | contains("final"))) | .[0].measurements | avg)
     } |
     . + { memory_delta: (.memory_end - .memory_start) }
 ]' raw-metrics.json > processed-metrics.json

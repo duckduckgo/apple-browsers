@@ -28,8 +28,8 @@ class MockHistoryCoordinator: NullHistoryCoordinator {
 
     var addVisitCalls = [URL]()
     var updateTitleIfNeededCalls = [(title: String, url: URL)]()
-
-    override func addVisit(of url: URL) -> Visit? {
+    
+    override func addVisit(of url: URL, at date: Date, tabID: String?) -> Visit? {
         addVisitCalls.append(url)
         return nil
     }

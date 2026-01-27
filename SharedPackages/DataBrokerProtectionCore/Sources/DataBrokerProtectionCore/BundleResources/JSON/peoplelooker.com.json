@@ -1,7 +1,7 @@
 {
   "name": "PeopleLooker",
   "url": "peoplelooker.com",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "parent": "beenverified.com",
   "optOutUrl": "https://www.peoplelooker.com/svc/optout/search/optouts",
   "steps": [
@@ -36,6 +36,10 @@
             {
               "type": "lastName",
               "selector": "//input[@name='ln']"
+            },
+            {
+              "type": "state",
+              "selector": "//input[@name='state']"
             }
           ],
           "id": "fffa01d9-630f-42e4-a8b8-4c87ddab91e3"

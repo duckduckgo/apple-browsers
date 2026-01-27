@@ -1,7 +1,7 @@
 //
-//  MockNewTabPageSectionsAvailabilityProviding.swift
+//  NSManagedObject+Helpers.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import Combine
-import NewTabPage
+import CoreData
 
-final class MockNewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding {
-    var isOmnibarAvailable: Bool = true
-    var isNextStepsListWidgetAvailable: Bool = false
+internal extension NSManagedObject {
+
+    static var entityName: String {
+        String(describing: self)
+    }
+
 }

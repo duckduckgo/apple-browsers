@@ -1,5 +1,5 @@
 //
-//  MockNewTabPageSectionsAvailabilityProviding.swift
+//  TabHistoryManagedObject.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -16,10 +16,23 @@
 //  limitations under the License.
 //
 
-import Combine
-import NewTabPage
+import Foundation
+import CoreData
 
-final class MockNewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding {
-    var isOmnibarAvailable: Bool = true
-    var isNextStepsListWidgetAvailable: Bool = false
+@objc(TabHistoryManagedObject)
+public class TabHistoryManagedObject: NSManagedObject {
+
 }
+
+extension TabHistoryManagedObject {
+
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<TabHistoryManagedObject> {
+        return NSFetchRequest<TabHistoryManagedObject>(entityName: "TabHistoryManagedObject")
+    }
+
+    @NSManaged public var tabID: String
+    @NSManaged public var url: URL
+    @NSManaged public var visit: PageVisitManagedObject?
+}
+
+extension TabHistoryManagedObject: Identifiable { }

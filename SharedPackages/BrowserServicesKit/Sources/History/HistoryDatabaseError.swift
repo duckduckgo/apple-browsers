@@ -1,7 +1,7 @@
 //
-//  MockNewTabPageSectionsAvailabilityProviding.swift
+//  HistoryDatabaseError.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2021 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,10 +16,17 @@
 //  limitations under the License.
 //
 
-import Combine
-import NewTabPage
+public enum HistoryDatabaseError: Error {
 
-final class MockNewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding {
-    var isOmnibarAvailable: Bool = true
-    var isNextStepsListWidgetAvailable: Bool = false
+    case removeFailed
+    case reloadFailed
+    case cleanEntriesFailed
+    case cleanVisitsFailed
+    case saveFailed
+    case insertVisitFailed
+    case removeVisitsFailed
+    case loadTabHistoryFailed
+    case insertTabHistoryFailed
+    case removeTabHistoryFailed
+
 }

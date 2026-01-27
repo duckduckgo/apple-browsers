@@ -1111,6 +1111,9 @@ extension Pixel {
         case historySaveFailed
         case historyInsertVisitFailed
         case historyRemoveVisitsFailed
+        case historyLoadTabHistoryFailed
+        case historyInsertTabHistoryFailed
+        case historyRemoveTabHistoryFailed
 
         // MARK: Subscription
         case subscriptionActive
@@ -2569,6 +2572,10 @@ extension Pixel.Event {
         case .historySaveFailed: return "m_debug_history-save-failed"
         case .historyInsertVisitFailed: return "m_debug_history-insert-visit-failed"
         case .historyRemoveVisitsFailed: return "m_debug_history-remove-visits-failed"
+        case .historyLoadTabHistoryFailed: return "m_debug_history-load-tab-history-failed"
+        case .historyInsertTabHistoryFailed: return "m_debug_history-insert-tab-history-failed"
+        case .historyRemoveTabHistoryFailed: return "m_debug_history-remove-tab-history-failed"
+
 
         // MARK: Subscription
         case .subscriptionActive: return "m_privacy-pro_app_subscription_active"

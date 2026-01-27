@@ -109,6 +109,10 @@ class NullHistoryCoordinator: HistoryCoordinating {
     func addVisit(of url: URL, at date: Date) -> History.Visit? {
         return nil
     }
+    
+    func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
+        return nil
+    }
 
     func addBlockedTracker(entityName: String, on url: URL) {
     }
@@ -195,7 +199,7 @@ public class HistoryDatabase {
     }
 }
 
-class HistoryStoreEventMapper: EventMapping<HistoryStore.HistoryStoreEvents> {
+class HistoryStoreEventMapper: EventMapping<History.HistoryDatabaseError> {
     public init() {
         super.init { event, error, _, _ in
             switch event {
@@ -219,12 +223,21 @@ class HistoryStoreEventMapper: EventMapping<HistoryStore.HistoryStoreEvents> {
 
             case .removeVisitsFailed:
                 Pixel.fire(pixel: .historyRemoveVisitsFailed, error: error)
+
+            case .loadTabHistoryFailed:
+                Pixel.fire(pixel: .historyLoadTabHistoryFailed, error: error)
+
+            case .insertTabHistoryFailed:
+                Pixel.fire(pixel: .historyInsertTabHistoryFailed, error: error)
+                
+            case .removeTabHistoryFailed:
+                Pixel.fire(pixel: .historyRemoveTabHistoryFailed, error: error)
             }
 
         }
     }
 
-    override init(mapping: @escaping EventMapping<HistoryStore.HistoryStoreEvents>.Mapping) {
+    override init(mapping: @escaping EventMapping<History.HistoryDatabaseError>.Mapping) {
         fatalError("Use init()")
     }
 }

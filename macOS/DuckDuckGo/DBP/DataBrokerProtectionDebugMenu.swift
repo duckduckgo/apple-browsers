@@ -528,9 +528,11 @@ private struct CustomTextEntrySheet<Content: View>: ModalView {
                 Button(UserText.cancel) {
                     dismiss()
                 }
-                Button("Apply") {
-                    onApply(text.trimmingCharacters(in: .whitespacesAndNewlines))
+                Button {
+                    onApply(text)
                     dismiss()
+                } label: {
+                    Text(verbatim: "Apply")
                 }
                 .keyboardShortcut(.defaultAction)
             }

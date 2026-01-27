@@ -246,7 +246,7 @@ jobs:
 
     - name: Upload xcresult files (passed on retry)
       uses: actions/upload-artifact@v4
-      # if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
         name: "xcresult-${{ matrix.runner }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"

@@ -61,21 +61,29 @@ protocol AIChatContextualModePixelFiring {
 /// Handles all pixel firing for contextual AI chat mode.
 /// Single source of truth for contextual mode analytics.
 ///
-/// **Thread Safety**: This class is not thread-safe and must only be accessed from the main thread.
-/// All current usage is main-thread only (UIKit contexts), but explicit main-thread checks are not enforced.
+/// **Thread Safety**: This class is thread-safe. All mutable state access is synchronized using a serial queue.
 final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     // MARK: - State
 
+    /// Serial queue for synchronizing access to mutable state
+    private let stateQueue = DispatchQueue(label: "com.duckduckgo.aichat.contextual.pixelhandler", qos: .userInitiated)
+
     /// Tracks the last URL for which navigation pixel was fired, to prevent duplicates.
-    private var lastNavigationPixelURL: String?
+    private var _lastNavigationPixelURL: String?
 
     /// Tracks whether a manual attach operation is in progress.
-    private(set) var isManualAttachInProgress = false
+    private var _isManualAttachInProgress = false
 
     // MARK: - Dependencies
 
     private let firePixel: (Pixel.Event) -> Void
+
+    // MARK: - Public Properties
+
+    var isManualAttachInProgress: Bool {
+        stateQueue.sync { _isManualAttachInProgress }
+    }
 
     // MARK: - Initialization
 
@@ -118,9 +126,11 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     }
 
     func firePageContextUpdatedOnNavigation(url: String) {
-        guard !isManualAttachInProgress else { return }
-        guard url != lastNavigationPixelURL else { return }
-        lastNavigationPixelURL = url
+        stateQueue.sync {
+            guard !_isManualAttachInProgress else { return }
+            guard url != _lastNavigationPixelURL else { return }
+            _lastNavigationPixelURL = url
+        }
         firePixel(.aiChatContextualPageContextUpdatedOnNavigation)
     }
 
@@ -155,24 +165,32 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     // MARK: - Manual Attach State
 
     func beginManualAttach() {
-        isManualAttachInProgress = true
+        stateQueue.sync {
+            _isManualAttachInProgress = true
+        }
     }
 
     func endManualAttach() {
-        isManualAttachInProgress = false
+        stateQueue.sync {
+            _isManualAttachInProgress = false
+        }
     }
 
     // MARK: - URL Priming
 
     func primeNavigationURL(_ url: String) {
-        lastNavigationPixelURL = url
+        stateQueue.sync {
+            _lastNavigationPixelURL = url
+        }
     }
 
     // MARK: - Reset
 
     /// Resets state. Call when the contextual session ends.
     func reset() {
-        lastNavigationPixelURL = nil
-        isManualAttachInProgress = false
+        stateQueue.sync {
+            _lastNavigationPixelURL = nil
+            _isManualAttachInProgress = false
+        }
     }
 }

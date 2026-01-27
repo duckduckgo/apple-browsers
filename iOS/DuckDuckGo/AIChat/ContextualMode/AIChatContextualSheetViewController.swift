@@ -371,11 +371,20 @@ private extension AIChatContextualSheetViewController {
     func attachPageContext() {
         if let snapshot = snapshotProvider() {
             cachedSnapshot = snapshot
-            let chipView = createContextChipView(snapshot: snapshot, onRemove: { [weak self] in
-                self?.contextualInputViewController.hideContextChip()
-            })
-            contextualInputViewController.showContextChip(chipView)
-            firePageContextAttachedPixel()
+
+            // Only show and fire pixel if chip is not already visible (prevent duplicate pixels on updates)
+            if contextualInputViewController.isContextChipVisible {
+                contextualInputViewController.updateContextChip(
+                    title: snapshot.title,
+                    favicon: snapshot.favicon
+                )
+            } else {
+                let chipView = createContextChipView(snapshot: snapshot, onRemove: { [weak self] in
+                    self?.contextualInputViewController.hideContextChip()
+                })
+                contextualInputViewController.showContextChip(chipView)
+                firePageContextAttachedPixel()
+            }
             return
         }
 

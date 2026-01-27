@@ -58,8 +58,8 @@ final public class HistoryEntry {
 
     public var visits: Set<Visit>
 
-    func addVisit(at date: Date = Date()) -> Visit {
-        let visit = Visit(date: date, historyEntry: self)
+    func addVisit(at date: Date = Date(), tabID: String?) -> Visit {
+        let visit = Visit(date: date, historyEntry: self, tabID: tabID)
         visits.insert(visit)
 
         lastVisit = numberOfTotalVisits == 0 ? date : max(lastVisit, date)

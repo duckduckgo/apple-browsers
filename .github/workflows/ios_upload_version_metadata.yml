@@ -1,0 +1,10 @@
+name: iOS - Upload Version Metadata
+
+on:
+  workflow_dispatch:
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "placeholder"

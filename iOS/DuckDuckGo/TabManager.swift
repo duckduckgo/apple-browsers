@@ -224,6 +224,7 @@ class TabManager: TabManaging {
     
     @MainActor
     func viewModel(for tab: Tab) -> TabViewModel {
+        // TODO: - Create tab specific view model
         TabViewModel()
     }
     

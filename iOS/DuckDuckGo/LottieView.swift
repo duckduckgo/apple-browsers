@@ -19,7 +19,28 @@
 
 import SwiftUI
 import Lottie
- 
+
+/// A SwiftUI wrapper for Lottie animations.
+///
+/// ## Sizing Behavior
+///
+/// By default (`respectBounds: false`), the `LottieAnimationView` is returned directly.
+/// This works for most animations but can cause issues with large animations (e.g., 960x960)
+/// that overflow their SwiftUI `.frame()` bounds because:
+/// - `UIViewRepresentable` views use their intrinsic content size
+/// - SwiftUI's `.frame()` only *proposes* a size but doesn't enforce it without Auto Layout
+///
+/// When `respectBounds: true`, the animation is wrapped in a container `UIView` with
+/// Auto Layout constraints pinning all edges. This forces the animation to scale down
+/// to fit the SwiftUI-proposed frame via `scaleAspectFit`.
+///
+/// ## Why `animationView` is stored as a property
+///
+/// Although SwiftUI structs are value types that get recreated, `LottieAnimationView` is
+/// a reference type (class). The property is initialized once per struct instance, and
+/// `makeUIView` is only called once when the view is first created. In `updateUIView`,
+/// we access `self.animationView` directly rather than the `uiView` parameter because
+/// when `respectBounds: true`, the parameter is the container—not the animation view.
 struct LottieView: UIViewRepresentable {
     
     struct LoopWithIntroTiming {
@@ -45,10 +66,17 @@ struct LottieView: UIViewRepresentable {
     private let loopMode: LoopMode
     private let animationImageProvider: AnimationImageProvider?
     private let valueProvider: ValueProvider?
+    
+    /// When `true`, wraps the animation in a container with Auto Layout constraints
+    /// to ensure it respects SwiftUI's `.frame()` size. Use this for animations with
+    /// large native dimensions that would otherwise overflow their bounds.
     private let respectBounds: Bool
 
     let animationName: String
     let animation: LottieAnimation?
+    
+    /// Stored as a property (not local to `makeUIView`) so `updateUIView` can access it
+    /// regardless of whether we return the animation directly or wrapped in a container.
     let animationView = LottieAnimationView()
 
     init(
@@ -86,10 +114,13 @@ struct LottieView: UIViewRepresentable {
         case .withIntro: break
         }
 
-
         if !respectBounds {
+            // Default behavior: return the animation view directly.
             return animationView as UIView
         } else {
+            // Constrained behavior: wrap in a container with Auto Layout.
+            // The container receives SwiftUI's proposed size, and the animation is
+            // pinned to all edges, forcing it to scale down if needed.
             let containerView = UIView()
             containerView.backgroundColor = .clear
             animationView.clipsToBounds = true

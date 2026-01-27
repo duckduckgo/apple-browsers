@@ -312,9 +312,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let suggestionsReader = AIChatSuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
 
+        let settings = privacyConfigurationManager.privacyConfig.settings(for: .duckAiChatHistory)
+        let maxHistoryCount = (settings["maxHistoryCount"] as? Int) ?? 10
+
         let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                            aiChatSettings: aiChatSettings,
-                                           viewModel: AIChatSuggestionsViewModel(maxSuggestions: 10))
+                                           viewModel: AIChatSuggestionsViewModel(maxSuggestions: maxHistoryCount))
         manager.delegate = self
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)

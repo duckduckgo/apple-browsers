@@ -26,6 +26,7 @@ import PrivacyConfig
 
 // MARK: - Protocol
 
+@MainActor
 protocol AIChatSuggestionsReading {
     /// Maximum number of chat history items to display, from privacy config settings.
     var maxHistoryCount: Int { get }
@@ -35,12 +36,10 @@ protocol AIChatSuggestionsReading {
     ///   - query: Optional search query to filter results
     ///   - maxChats: Maximum number of recent chats to return
     /// - Returns: Tuple of pinned and recent suggestions. Returns empty arrays on failure.
-    @MainActor
     func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])
 
     /// Tears down the WebView and releases resources.
     /// Should be called when the AI chat mode is deactivated.
-    @MainActor
     func tearDown()
 }
 

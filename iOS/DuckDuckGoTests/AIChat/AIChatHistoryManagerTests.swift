@@ -146,6 +146,7 @@ final class AIChatHistoryManagerTests: XCTestCase {
 
 // MARK: - Mock Classes
 
+@MainActor
 private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
     var suggestionsToReturn: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) = ([], [])
     var fetchSuggestionsCallCount = 0

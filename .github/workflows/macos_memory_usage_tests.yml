@@ -348,10 +348,7 @@ jobs:
           cat insert-statements.sql
 
           # Execute INSERT statements
-          while IFS= read -r statement; do
-            echo "Executing: $statement"
-            clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --query "$statement"
-          done < insert-statements.sql
+          clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements.sql
 
           echo "=== Insert complete ==="
 

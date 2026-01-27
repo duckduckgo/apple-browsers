@@ -93,19 +93,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         XCTAssertFalse(dataSource.isWebsiteHeaderVisible)
     }
 
-    func testWhenErrorPageThenHeaderIsNotVisible() {
-        sut.update(
-            dataSource: dataSource,
-            isFeatureEnabled: true,
-            isError: true,
-            hasLink: true,
-            url: URL(string: "https://example.com"),
-            title: "Example"
-        )
-
-        XCTAssertFalse(dataSource.isWebsiteHeaderVisible)
-    }
-
     func testWhenNoLinkThenHeaderIsNotVisible() {
         sut.update(
             dataSource: dataSource,

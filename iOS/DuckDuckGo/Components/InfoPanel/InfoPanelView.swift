@@ -54,6 +54,7 @@ struct InfoPanelView: View {
             (Text(model.title).fontWeight(.semibold) + Text(" " + model.subtitle))
                 .font(.subheadline)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
+                .lineLimit(1)
             Spacer()
 
             Button(action: { model.onInfo() }, label: {

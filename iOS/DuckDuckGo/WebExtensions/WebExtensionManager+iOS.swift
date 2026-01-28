@@ -26,7 +26,7 @@ import WebKit
 public enum WebExtensionManagerFactory {
 
     @MainActor
-    public static func makeManager(mainViewController: MainViewController) -> WebExtensionManager {
+    static func makeManager(mainViewController: MainViewController) -> WebExtensionManager {
         let windowTabProvider = WebExtensionWindowTabProvider(mainViewController: mainViewController)
 
         let manager = WebExtensionManager(

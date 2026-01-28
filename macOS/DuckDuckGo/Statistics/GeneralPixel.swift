@@ -585,10 +585,13 @@ enum GeneralPixel: PixelKitEvent {
     var name: String {
         switch self {
         case .crash(let appIdentifier):
-            if let appIdentifier {
-                return "m_mac_crash_\(appIdentifier.rawValue)"
-            } else {
+            switch appIdentifier {
+            case .app:
                 return "m_mac_crash"
+            case .some(let identifier):
+                return "m_mac_crash_\(identifier.rawValue)"
+            case .none:
+                return "m_mac_crash_unknown"
             }
 
         case .crashOnCrashHandlersSetUp:

@@ -26,7 +26,6 @@ import Kingfisher
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
     var sections: [BrowsingMenuModel.Section]
-    var footerItems: [BrowsingMenuModel.Entry]
 }
 
 struct BrowsingMenuSheetView: View {

@@ -100,8 +100,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         return BrowsingMenuModel(
             headerItems: headerItems,
-            sections: sections,
-            footerItems: []
+            sections: sections
         )
     }
 
@@ -196,8 +195,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         return BrowsingMenuModel(
             headerItems: headerItems,
-            sections: sections,
-            footerItems: []
+            sections: sections
         )
     }
 }

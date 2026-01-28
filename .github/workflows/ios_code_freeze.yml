@@ -19,10 +19,8 @@ concurrency:
 jobs:
 
   upload_current_metadata:
-    name: Upload Current Release Metadata
+    name: Upload Current iOS App Version Metadata
     uses: ./.github/workflows/ios_upload_version_metadata.yml
-    with:
-      is_critical: false
     secrets:
       AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
       AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}

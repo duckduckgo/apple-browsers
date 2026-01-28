@@ -57,7 +57,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
           # S3 and CDN paths
           RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
-          RELEASE_BUCKET_PREFIX: ${{ vars.RELEASE_BUCKET_PREFIX }}
+          RELEASE_BUCKET_PREFIX: ${{ vars.IOS_METADATA_BUCKET_PREFIX }}
           CDN_PATH: ${{ vars.IOS_METADATA_URL_ROOT }}
         run: |
           echo "Uploading App Store version metadata using fastlane..."

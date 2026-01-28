@@ -446,11 +446,7 @@ platform :ios do
     
     # Get S3 configuration from environment
     s3_bucket = ENV['RELEASE_BUCKET_NAME']
-    UI.message("bucket: #{s3_bucket}")
-
     s3_prefix = ENV['RELEASE_BUCKET_PREFIX']
-    UI.message("prefix: #{s3_prefix}")
-
     cdn_path = ENV['CDN_PATH']
     
     unless s3_bucket && s3_prefix

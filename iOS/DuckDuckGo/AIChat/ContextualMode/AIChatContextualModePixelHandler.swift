@@ -130,8 +130,8 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
             guard !_isManualAttachInProgress else { return }
             guard url != _lastNavigationPixelURL else { return }
             _lastNavigationPixelURL = url
+            firePixel(.aiChatContextualPageContextUpdatedOnNavigation)
         }
-        firePixel(.aiChatContextualPageContextUpdatedOnNavigation)
     }
 
     func firePageContextManuallyAttachedNative() {

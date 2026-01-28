@@ -291,9 +291,9 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Post second Cmd+Q keydown - this triggers new .keyDown -> .holding -> .completed sequence
         let secondPress = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        Logger.tests.debug("\(self.name): NSApp.postEvent \(secondPress) time: \(self.now)")
+        Logger.tests.debug("\(self.name): NSApp.sendEvent \(secondPress) time: \(self.now)")
         TestRunHelper.allowAppSendUserEvents = true
-        NSApp.postEvent(secondPress, atStart: true)
+        NSApp.sendEvent(secondPress)
 
         // Wait for async task and completion state
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
@@ -357,9 +357,9 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Post Escape keydown
         let escapeEvent = createKeyEvent(type: .keyDown, character: "\u{1B}", keyCode: 53)
-        Logger.tests.debug("\(self.name): NSApp.postEvent \(escapeEvent) time: \(self.now)")
+        Logger.tests.debug("\(self.name): NSApp.sendEvent \(escapeEvent) time: \(self.now)")
         TestRunHelper.allowAppSendUserEvents = true
-        NSApp.postEvent(escapeEvent, atStart: false)
+        NSApp.sendEvent(escapeEvent)
 
         // Wait for async task and completion state
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
@@ -645,7 +645,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Post a mouse click to trigger the async check in the event handler
         // The DispatchQueue.main.async will check isWarningEnabled() and resume with true
         let mouseClick = createMouseEvent(type: .leftMouseDown)
-        NSApp.postEvent(mouseClick, atStart: true)
+        NSApp.sendEvent(mouseClick)
 
         // Wait for completion
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
@@ -1012,7 +1012,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Post second Q keydown (while Cmd still held) - this triggers new .keyDown -> .holding -> .completed sequence
         let secondPress = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
         TestRunHelper.allowAppSendUserEvents = true
-        NSApp.postEvent(secondPress, atStart: true)
+        NSApp.sendEvent(secondPress)
 
         // Wait for completion
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
@@ -1090,7 +1090,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Simulate left mouse click
         let mouseClick = createMouseEvent(type: .leftMouseDown)
-        NSApp.postEvent(mouseClick, atStart: true)
+        NSApp.sendEvent(mouseClick)
 
         // Wait for completion
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
@@ -1168,7 +1168,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Simulate right mouse click
         let mouseClick = createMouseEvent(type: .rightMouseDown)
-        NSApp.postEvent(mouseClick, atStart: true)
+        NSApp.sendEvent(mouseClick)
 
         // Wait for completion
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
@@ -1249,7 +1249,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Post unrelated key (should cancel but pass through)
         let otherKey = createKeyEvent(type: .keyDown, character: "a", modifierFlags: [])
         TestRunHelper.allowAppSendUserEvents = true
-        NSApp.postEvent(otherKey, atStart: true)
+        NSApp.sendEvent(otherKey)
 
         // Wait for completion and pass-through
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
@@ -1323,7 +1323,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Simulate other mouse button click
         let mouseClick = createMouseEvent(type: .otherMouseDown)
-        NSApp.postEvent(mouseClick, atStart: true)
+        NSApp.sendEvent(mouseClick)
 
         // Wait for completion
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
@@ -1408,7 +1408,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let expectations2 = setupExpectationsForStateChanges(3, manager: manager)
 
         let secondPress = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        NSApp.postEvent(secondPress, atStart: true)
+        NSApp.sendEvent(secondPress)
 
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
@@ -1417,7 +1417,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let expectations3 = setupExpectationsForStateChanges(3, manager: manager)
 
         let thirdPress = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        NSApp.postEvent(thirdPress, atStart: true)
+        NSApp.sendEvent(thirdPress)
 
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations3, timeout: Constants.expectationTimeout)
@@ -1503,7 +1503,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let expectations2 = setupExpectationsForStateChanges(3, manager: manager)
 
         let secondPress = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        NSApp.postEvent(secondPress, atStart: true)
+        NSApp.sendEvent(secondPress)
 
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
@@ -1649,7 +1649,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let expectations2 = setupExpectationsForStateChanges(1, manager: manager)
 
         let otherKeyPress = createKeyEvent(type: .keyDown, character: "x", modifierFlags: [])
-        NSApp.postEvent(otherKeyPress, atStart: true)
+        NSApp.sendEvent(otherKeyPress)
 
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
@@ -2144,7 +2144,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Post second press - triggers new .keyDown -> .holding -> .completed sequence
         let secondPress = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
         TestRunHelper.allowAppSendUserEvents = true
-        NSApp.postEvent(secondPress, atStart: true)
+        NSApp.sendEvent(secondPress)
 
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
@@ -2204,7 +2204,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Post second press - triggers new .keyDown -> .holding -> .completed sequence
         let secondPress = createKeyEvent(type: .keyDown, character: "w", modifierFlags: .command)
         TestRunHelper.allowAppSendUserEvents = true
-        NSApp.postEvent(secondPress, atStart: true)
+        NSApp.sendEvent(secondPress)
 
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
@@ -2432,7 +2432,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Post second press - triggers new .keyDown -> .holding -> .completed sequence
         let secondPress = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
         TestRunHelper.allowAppSendUserEvents = true
-        NSApp.postEvent(secondPress, atStart: true)
+        NSApp.sendEvent(secondPress)
 
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)

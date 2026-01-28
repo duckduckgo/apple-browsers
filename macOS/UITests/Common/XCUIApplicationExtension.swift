@@ -231,12 +231,7 @@ extension XCUIApplication {
 
     func openGeneralPreferences() {
         openSettings()
-        let generalButton = buttons["PreferencesSidebar.generalButton"]
-        XCTAssertTrue(
-            generalButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "General preferences button should exist"
-        )
-        generalButton.click()
+        preferencesGoToGeneralPane()
     }
 
     /// Activate address bar for input
@@ -300,14 +295,6 @@ extension XCUIApplication {
         )
 
         releaseNotesMenu.click()
-    }
-
-    /// Opens settings
-    func openSettings() {
-        typeKey(",", modifierFlags: .command)
-        XCTAssertTrue(
-            preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView].waitForExistence(timeout: UITests.Timeouts.elementExistence)
-        )
     }
 
     func openSite(pageTitle: String) {
@@ -508,6 +495,9 @@ extension XCUIApplication {
         typeKey(",", modifierFlags: [.command])
         let prefs = preferencesWindow
         _ = prefs.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+    }
+    func openSettings() {
+        openPreferencesWindow()
     }
 
     /// Closes the Preferences window if present

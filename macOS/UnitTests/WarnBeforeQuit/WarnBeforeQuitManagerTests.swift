@@ -1176,41 +1176,68 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
 
-        // Event receiver that returns an unrelated key event - should repost and continue
-        // Mouse events are reposted but don't cancel (only .keyDown with different character cancels)
+        // Mouse events are reposted and cancel the flow
         let mouseEvent = createMouseEvent(type: .leftMouseDown)
-        let totalDuration = WarnBeforeQuitManager.Constants.requiredHoldDuration + WarnBeforeQuitManager.Constants.animationBufferDuration
-        let eventReceiver = makeEventReceiver(events: [
-            (event: mouseEvent, timeAdvance: 0),  // First call returns mouse event - should repost and continue
-            (event: nil, timeAdvance: totalDuration + Constants.earlyReleaseTimeAdvance)  // Second call advances past deadline
+
+        let pixelFiring = PixelKitMock(expecting: [
+            .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.warnBeforeQuitCancelled, frequency: .standard)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver))
+        let eventRepostedExpectation = expectation(description: "Event reposted")
+        var repostedEvent: NSEvent?
+        let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
+            repostedEvent = event
+            eventRepostedExpectation.fulfill()
+            return event
+        }!
+        defer { NSEvent.removeMonitor(eventMonitor) }
+        // Allow app to post events during tests
+        TestRunHelper.allowAppSendUserEvents = true
 
-        // When
-        let expectations = setupExpectationsForStateChanges(3, manager: manager)
+        let eventReceiver = makeEventReceiver(events: [
+            (event: nil, timeAdvance: Constants.earlyReleaseTimeAdvance),  // First, advance to enter .holding state
+            (event: mouseEvent, timeAdvance: 0)  // Then return mouse event - should repost and cancel
+        ])
+
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver
+        ))
+
+        // When - mouse event received during .holding state
+        let stateExpectations = setupExpectationsForStateChanges(3, manager: manager)
 
         let query = manager.shouldTerminate(isAsync: false)
 
-        await fulfillment(of: expectations, timeout: Constants.expectationTimeout)
+        await fulfillment(of: stateExpectations + [eventRepostedExpectation], timeout: Constants.expectationTimeout)
 
-        // Then - quit action returns async to fire pixel (hold completed)
-        guard case .async(let task) = query else {
-            XCTFail("Expected async decision for quit action (fires pixel)")
+        // Then - quit action returns .sync(.cancel) (pixel fires in detached Task)
+        guard case .sync(let decision) = query else {
+            XCTFail("Expected sync decision with .cancel")
             return
         }
 
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
-        XCTAssertEqual(decision, .next)
+        XCTAssertEqual(decision, .cancel)
 
-        // Time was advanced by totalDuration + earlyReleaseTimeAdvance, so .holding startTime reflects that
-        let holdingStartTime = startTime + totalDuration + Constants.earlyReleaseTimeAdvance
-        let holdingTargetTime = holdingStartTime + WarnBeforeQuitManager.Constants.requiredHoldDuration + WarnBeforeQuitManager.Constants.animationBufferDuration
+        // Verify event was reposted
+        XCTAssertNotNil(repostedEvent, "Mouse event should be reposted")
+        XCTAssertEqual(repostedEvent?.type, .leftMouseDown)
+
+        // Verify flow entered .holding then was cancelled
+        let holdingStartTime = startTime + Constants.earlyReleaseTimeAdvance
         XCTAssertEqual(collectedStates, [
             .keyDown,
-            .holding(startTime: holdingStartTime, targetTime: holdingTargetTime),
-            .completed(shouldProceed: true)
+            .holding(startTime: holdingStartTime, targetTime: holdingStartTime + WarnBeforeQuitManager.Constants.requiredHoldDuration + WarnBeforeQuitManager.Constants.animationBufferDuration),
+            .completed(shouldProceed: false)
         ])
+
+        // Verify pixels were fired
+        pixelFiring.verifyExpectations()
     }
 
     // MARK: - Action-Specific Behavior Tests
@@ -1261,7 +1288,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         XCTAssertEqual(decision, .next)
 
         // Verify pixels were fired
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     func testQuitActionWithCancellationReturnsSyncCancel() async throws {
@@ -1319,7 +1346,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         XCTAssertEqual(decision, .cancel)
 
         // Verify pixels were fired
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     func testCloseTabActionReturnsSyncImmediately() async throws {
@@ -1357,7 +1384,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         XCTAssertEqual(decision, .next)
 
         // Verify no pixels were fired
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     func testCloseTabActionReturnsSyncCancelWhenCancelled() async throws {
@@ -1414,7 +1441,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         XCTAssertEqual(decision, .cancel)
 
         // Verify no pixels were fired
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     func testEventInterceptorInstalledWhenQuittingViaHold() async throws {
@@ -1469,7 +1496,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Clean up
         let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
         XCTAssertEqual(decision, .next)
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     func testEventInterceptorInstalledWhenClosingTabViaHold() async throws {
@@ -1579,7 +1606,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             XCTAssertNil(result, "Event interceptor should consume Cmd+Q events")
         }
 
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     func testEventInterceptorInstalledWhenClosingTabViaSecondPress() async throws {
@@ -1700,7 +1727,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             XCTAssertTrue(interceptorIsNowNil, "Event interceptor should be cleaned up after cancelling")
         }
 
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     // MARK: - Pixel Firing Tests
@@ -1741,7 +1768,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
         XCTAssertEqual(decision, .next)
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     func testCancelledPixelFiredWhenKeyReleasedEarly() async throws {
@@ -1798,7 +1825,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         XCTAssertEqual(decision, .cancel)
 
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     func testConfirmedPixelFiredOnSecondPress() async throws {
@@ -1852,7 +1879,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Then
         XCTAssertEqual(decision, .next)
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     // MARK: - Key Release Wait Tests
@@ -1926,7 +1953,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // The key check is that isShortcutKeyHeld is properly managed
         XCTAssertEqual(callCount, 2, "eventReceiver should not be called again since NSEvent.modifierFlags is empty in test environment")
 
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     // MARK: - deciderSequenceCompleted Tests
@@ -2107,7 +2134,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             XCTAssertNil(app.eventInterceptor, "Event interceptor should be cleaned up after deciderSequenceCompleted")
         }
 
-        pixelFiring.verifyExpectations(file: #file, line: #line)
+        pixelFiring.verifyExpectations()
     }
 
     func testDeciderSequenceCompletedCleansUpEventInterceptorForCloseTab() async throws {

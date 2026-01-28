@@ -329,6 +329,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .webViewFlashPrevention,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
+             .tabSwitcherTrackerCount,
              .aiChatAutoAttachContextByDefault:
             true
         default:
@@ -629,8 +630,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint))
-        case .tabSwitcherTrackerCount,
-             .burnSingleTab:
+        case .tabSwitcherTrackerCount:
+            return .internalOnly()
+        case .burnSingleTab:
             return .disabled
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))

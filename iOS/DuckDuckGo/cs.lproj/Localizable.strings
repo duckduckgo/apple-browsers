@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Potvrdit";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontextový onboarding";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Přeskočit";
 
@@ -2974,6 +2977,9 @@
 /* about tagline */
 "settings.about.tagline" = "Soukromí.Ochrana.Pocit jistoty.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo je nezávislá společnost zaměřená na ochranu soukromí na internetu pro každého, kdo chce mít své osobní údaje zase pod kontrolou.\n\nVěříme, že nejlepší způsob, jak ochránit tvoje osobní údaje před hackery, podvodníky a společnostmi, co jim soukromí moc neříká, je vůbec jim přístup k tvým údajům neumožnit. Proto miliony lidí [používají DuckDuckGo místo Chromu a jiných prohlížečů](ddgQuickLink://duckduckgo.com/compare-privacy) k vyhledávání a procházení internetu. Náš vyhledávač integrovaný v prohlížeči je jako Google, ale nikdy nesleduje, co hledáš. A naše sada funkcí na ochranu soukromí, která zahrnuje blokování reklamních trackerů a cookies, brání firmám ve sběru tvých dat. A mimochodem, náš prohlížeč je zdarma – peníze vyděláváme z [reklam ve vyhledávání, které respektují soukromí](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), a ne tím, že bychom využívali tvé údaje. \n\n%@ \n\nPřevezmi kontrolu nad svými osobními údaji a pořiď si prohlížeč navržený tak, aby tvoje data neshromažďoval, ale chránil.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Usnadnění";
 
@@ -2992,8 +2998,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Zobrazovat celou adresu webu";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Zobrazit animaci zablokovaných trackerů";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Zobrazit v adresním řádku";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Vyhledávání a Duck.ai";
@@ -3370,6 +3376,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synchronizace a zálohování";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Zobrazit ve Správci karet";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Karty";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Výchozí velikost textu";
 
@@ -3378,6 +3390,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Nastavení";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animace zablokovaných trackerů";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Pomáhá blokovat trackery třetích stran, které se snaží maskovat na webu pomocí DNS.";
@@ -3619,11 +3634,11 @@
 /* Help and support Section header */
 "subscription.help" = "Nápověda a podpora";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Spravovat tarif";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Správa platby nebo zrušení akce";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Spravovat tarif";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Předplatné";
@@ -3787,6 +3802,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nastavit synchronizaci";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synchronizace a zálohování platebních karet";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synchronizace a zálohování tvých dat";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, děkuji";
 
@@ -3876,6 +3897,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Dát do záložek všechny karty";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Skrýt";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Tuhle funkci můžeš zase zapnout v Nastavení > Vzhled.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Skrýt počet trackerů?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Možnosti počítání trackerů";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Dvojitým klepnutím zobrazíš, jak je možné tento banner skrýt";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Ponechat";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "za posledních 7 dní";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Zvětši nebo zmenši text na všech webech.";
@@ -4261,15 +4306,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Karty";
-"settings.tab.switcher.show.tracker.count" = "Počet sledovačů za 7 dní";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "za posledních 7 dní";
-"tab.switcher.tracker.count.hide.title" = "Skrýt počet sledovačů?";
-"tab.switcher.tracker.count.hide.message" = "Můžete to znovu zapnout v Nastavení > Vzhled.";
-"tab.switcher.tracker.count.hide.action" = "Skrýt";
-"tab.switcher.tracker.count.keep.action" = "Ponechat";
-"tab.switcher.tracker.count.info.a11y" = "Možnosti počtu sledovačů";
-"tab.switcher.tracker.count.info.hint.a11y" = "Dvojitým klepnutím zobrazíte možnosti pro skrytí tohoto banneru";

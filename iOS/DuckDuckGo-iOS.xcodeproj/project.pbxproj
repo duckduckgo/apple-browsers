@@ -290,6 +290,8 @@
 		4B67012D2E3BE3660066176A /* LogEntryDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6701262E3BE3660066176A /* LogEntryDetailViewController.swift */; };
 		4B67012E2E3BE3660066176A /* LogEntry+Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6701252E3BE3660066176A /* LogEntry+Formatting.swift */; };
 		4B67012F2E3BE3660066176A /* LogViewerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6701292E3BE3660066176A /* LogViewerViewController.swift */; };
+		4B69239F2F28720300A816B9 /* AIChat in Frameworks */ = {isa = PBXBuildFile; productRef = 4B69239E2F28720300A816B9 /* AIChat */; };
+		4B6923A12F28720800A816B9 /* AIChat in Frameworks */ = {isa = PBXBuildFile; productRef = 4B6923A02F28720800A816B9 /* AIChat */; };
 		4B6ED9452B992FE4007F5CAA /* vpn-dark-mode.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B6ED9442B992FE4007F5CAA /* vpn-dark-mode.json */; };
 		4B74A1C12E49510400277779 /* NetworkProtectionLogViewerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B74A1C02E49510400277779 /* NetworkProtectionLogViewerViewController.swift */; };
 		4B74A1C32E49512500277779 /* NetworkProtectionLogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B74A1C22E49512500277779 /* NetworkProtectionLogManager.swift */; };
@@ -4692,6 +4694,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4B69239F2F28720300A816B9 /* AIChat in Frameworks */,
 				986CD5352DE8F4FA00AFA98A /* RemoteMessaging in Frameworks */,
 				1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */,
 				1E1D8B652995143200C96994 /* OHHTTPStubsSwift in Frameworks */,
@@ -4732,6 +4735,7 @@
 				98424A962CED4F430071C7DB /* OHHTTPStubs in Frameworks */,
 				374E76102EF56FAE00F8AADE /* PrivacyConfigTestsUtils in Frameworks */,
 				98424A972CED4F430071C7DB /* OHHTTPStubsSwift in Frameworks */,
+				4B6923A12F28720800A816B9 /* AIChat in Frameworks */,
 				4BC95EB32D7417CC002FAB32 /* BrowserServicesKit in Frameworks */,
 				F11595D72E8570AF00CC0481 /* AttributedMetric in Frameworks */,
 				98424A982CED4F430071C7DB /* ContentBlocking in Frameworks */,
@@ -10276,6 +10280,7 @@
 				C1B441E42E2990F7005E2BA9 /* PersistenceTestingUtils */,
 				CC55B2402E82CD860032E8BD /* BrowserServicesKitTestsUtils */,
 				374E760D2EF56D9100F8AADE /* PrivacyConfigTestsUtils */,
+				4B69239E2F28720300A816B9 /* AIChat */,
 			);
 			productName = IntegrationTests;
 			productReference = 85D33FCB25C97B6E002B91A6 /* IntegrationTests.xctest */;
@@ -10352,6 +10357,7 @@
 				7BC26CB52DFC156A00E52480 /* VPNTestUtils */,
 				F11595D62E8570AF00CC0481 /* AttributedMetric */,
 				374E760F2EF56FAE00F8AADE /* PrivacyConfigTestsUtils */,
+				4B6923A02F28720800A816B9 /* AIChat */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 98424AA92CED4F430071C7DB /* WebViewUnitTests.xctest */;
@@ -16406,6 +16412,14 @@
 		4B307E392EA2E44D00D18297 /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Common;
+		};
+		4B69239E2F28720300A816B9 /* AIChat */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AIChat;
+		};
+		4B6923A02F28720800A816B9 /* AIChat */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AIChat;
 		};
 		4B94B79D2D4831D90014AAB8 /* SyncUI-iOS */ = {
 			isa = XCSwiftPackageProductDependency;

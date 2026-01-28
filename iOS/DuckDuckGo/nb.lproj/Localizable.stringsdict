@@ -161,7 +161,7 @@ Jeg blokkerte dem!
 	<key>omnibar.notification.trackers-blocked</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@trackers@</string>
+		<string>%1$#@trackers@</string>
 		<key>trackers</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -647,7 +647,7 @@ Jeg blokkerte dem!
 	<key>tab.switcher.tracker.count.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%1$#@trackers@</string>
+		<string>%#@trackers@</string>
 		<key>trackers</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -657,7 +657,7 @@ Jeg blokkerte dem!
 			<key>one</key>
 			<string>%2$@ Sporer</string>
 			<key>other</key>
-			<string>%2$@ Sporere</string>
+			<string>%2$@ Sekimo priemonių</string>
 		</dict>
 	</dict>
 </dict>

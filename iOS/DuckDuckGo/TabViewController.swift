@@ -65,6 +65,7 @@ class TabViewController: UIViewController {
     @IBOutlet private(set) weak var errorMessage: UILabel!
     @IBOutlet weak var containerStackView: UIStackView!
     @IBOutlet weak var webViewContainer: UIView!
+    @IBOutlet private var containerStackViewSafeAreaBottomConstraint: NSLayoutConstraint!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     private var containerStackViewBottomConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
@@ -646,15 +647,7 @@ class TabViewController: UIViewController {
     }
 
     private func setupContainerStackViewBottomConstraint() {
-        for constraint in view.constraints {
-            if constraint.firstItem === view.safeAreaLayoutGuide &&
-               constraint.firstAttribute == .bottom &&
-               constraint.secondItem === containerStackView &&
-               constraint.secondAttribute == .bottom {
-                constraint.isActive = false
-                break
-            }
-        }
+        containerStackViewSafeAreaBottomConstraint.isActive = false
         containerStackViewBottomConstraint = containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         containerStackViewBottomConstraint?.isActive = true
     }

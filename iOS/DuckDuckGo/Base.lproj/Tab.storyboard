@@ -134,6 +134,7 @@
                     <nil key="simulatedStatusBarMetrics"/>
                     <connections>
                         <outlet property="containerStackView" destination="Wfg-yB-zj4" id="TDY-ap-WRj"/>
+                        <outlet property="containerStackViewSafeAreaBottomConstraint" destination="reE-gN-ecB" id="cSV-sA-bot"/>
                         <outlet property="error" destination="Kd4-Oi-JP2" id="zBn-cG-pfQ"/>
                         <outlet property="errorHeader" destination="6P7-7R-riV" id="IkB-Tc-Eat"/>
                         <outlet property="errorInfoImage" destination="TUO-E3-s7Q" id="ngN-8S-PwR"/>

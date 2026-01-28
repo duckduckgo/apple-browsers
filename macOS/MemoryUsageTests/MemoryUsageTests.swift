@@ -27,7 +27,17 @@ final class MemoryUsageTests: XCTestCase {
         try super.setUpWithError()
         continueAfterFailure = false
 
+        /// Avoids First-Run State
+        UITests.firstRun()
+
+        /// Launch + Open a single New Window
         application = XCUIApplication.setUp(featureFlags: ["memoryUsageMonitor": true])
+        application.openNewWindow()
+
+        /// # Workaround
+        ///     Wait 10s for memory usage to settle, before running the actual measurements.
+        ///     Ref. https://app.asana.com/1/137249556945/project/1211150618152277/task/1212891845324300?focus=true
+        sleep(10)
     }
 
     override func tearDown() {
@@ -36,21 +46,24 @@ final class MemoryUsageTests: XCTestCase {
     }
 
     func testMemoryAllocationsWhenOpeningSingleNewTab() throws {
-        let memoryMetric = MemoryAllocationStatsMetric(memoryStatsURL: application.memoryStatsURL)
-
-        application.openNewWindow()
-
-        measure(metrics: [memoryMetric], options: .buildOptions(iterations: 5, manualEvents: true)) {
-            application.cleanExportMemoryStats()
-            startMeasuring()
-
-            /// We're explicitly **not** closing Tabs among Iterations to avoid interference from both, malloc re-using released blocks, or retain cycles themselves.
-            /// The purpose of this Test is to measure the memory impact of opening a single Tab.
-            ///
+        /// We're explicitly **not** closing Tabs between Iterations to avoid interference from both, malloc re-using released blocks, or retain cycles themselves.
+        /// The purpose of this Test is to measure the memory impact of opening a single Tab.
+        ///
+        let (metric, options, work) = buildMemoryMeasurement(application: application, iterations: 5) { application in
             application.openNewTab()
-
-            application.cleanExportMemoryStats()
-            stopMeasuring()
         }
+
+        measure(metrics: [metric], options: options, block: work)
+    }
+
+    func testMemoryAllocationsWhenOpeningSingleNewWindow() throws {
+        /// We're explicitly **not** closing Windows between Iterations to avoid interference from both, malloc re-using released blocks, or retain cycles themselves.
+        /// The purpose of this Test is to measure the memory impact of opening a single Window.
+        ///
+        let (metric, options, work) = buildMemoryMeasurement(application: application, iterations: 5) { application in
+            application.openNewWindow()
+        }
+
+        measure(metrics: [metric], options: options, block: work)
     }
 }

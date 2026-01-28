@@ -2636,6 +2636,10 @@ extension MainViewController: OmniBarDelegate {
         openAIChat(query, autoSend: true, tools: tools)
     }
 
+    func onChatHistorySelected(url: URL) {
+        loadUrlInNewTab(url, inheritedAttribution: nil)
+    }
+
     func didRequestCurrentURL() -> URL? {
         return currentTab?.url
     }

@@ -1,7 +1,7 @@
 //
-//  WebExtensionLoadResult.swift
+//  WebExtensionError.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,17 +17,9 @@
 //
 
 import Foundation
-import WebKit
 
+/// Errors that can occur when managing web extensions.
 @available(macOS 15.4, *)
-struct WebExtensionLoadResult {
-    let context: WKWebExtensionContext
-    let extensionIdentifier: WebExtensionIdentifier?
-    let path: String
-
-    init(context: WKWebExtensionContext, path: String, extensionIdentifier: WebExtensionIdentifier? = nil) {
-        self.context = context
-        self.path = path
-        self.extensionIdentifier = extensionIdentifier
-    }
+public enum WebExtensionError: Error {
+    case failedToUnloadWebExtension(_ error: Error)
 }

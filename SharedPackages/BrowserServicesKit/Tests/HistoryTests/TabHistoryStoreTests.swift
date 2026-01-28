@@ -111,6 +111,63 @@ final class TabHistoryStoreTests: XCTestCase {
         XCTAssertEqual(remainingRecords.first?.tabID, tabID3)
     }
 
+    // MARK: - Clean Orphaned Tab History Tests
+
+    func testWhenCleanOrphanedTabHistoryIsCalled_ThenOrphanedRecordsAreDeleted() async throws {
+        let openTabID1 = "open-tab-1"
+        let openTabID2 = "open-tab-2"
+        let closedTabID1 = "closed-tab-1"
+        let closedTabID2 = "closed-tab-2"
+        let url = URL(string: "https://example.com")!
+
+        try await tabHistoryStore.insertTabHistory(for: openTabID1, url: url)
+        try await tabHistoryStore.insertTabHistory(for: openTabID2, url: url)
+        try await tabHistoryStore.insertTabHistory(for: closedTabID1, url: url)
+        try await tabHistoryStore.insertTabHistory(for: closedTabID2, url: url)
+
+        XCTAssertEqual(fetchAllTabHistory().count, 4)
+
+        try await tabHistoryStore.cleanOrphanedTabHistory(excludingTabIDs: [openTabID1, openTabID2])
+
+        let remainingRecords = fetchAllTabHistory()
+        XCTAssertEqual(remainingRecords.count, 2)
+        let remainingTabIDs = Set(remainingRecords.map { $0.tabID })
+        XCTAssertTrue(remainingTabIDs.contains(openTabID1))
+        XCTAssertTrue(remainingTabIDs.contains(openTabID2))
+        XCTAssertFalse(remainingTabIDs.contains(closedTabID1))
+        XCTAssertFalse(remainingTabIDs.contains(closedTabID2))
+    }
+
+    func testWhenCleanOrphanedTabHistoryIsCalledWithEmptyOpenTabs_ThenAllRecordsAreDeleted() async throws {
+        let tabID1 = "tab-1"
+        let tabID2 = "tab-2"
+        let url = URL(string: "https://example.com")!
+
+        try await tabHistoryStore.insertTabHistory(for: tabID1, url: url)
+        try await tabHistoryStore.insertTabHistory(for: tabID2, url: url)
+
+        XCTAssertEqual(fetchAllTabHistory().count, 2)
+
+        try await tabHistoryStore.cleanOrphanedTabHistory(excludingTabIDs: [])
+
+        XCTAssertTrue(fetchAllTabHistory().isEmpty)
+    }
+
+    func testWhenCleanOrphanedTabHistoryIsCalledWithNoOrphans_ThenNoRecordsAreDeleted() async throws {
+        let openTabID1 = "open-tab-1"
+        let openTabID2 = "open-tab-2"
+        let url = URL(string: "https://example.com")!
+
+        try await tabHistoryStore.insertTabHistory(for: openTabID1, url: url)
+        try await tabHistoryStore.insertTabHistory(for: openTabID2, url: url)
+
+        XCTAssertEqual(fetchAllTabHistory().count, 2)
+
+        try await tabHistoryStore.cleanOrphanedTabHistory(excludingTabIDs: [openTabID1, openTabID2])
+
+        XCTAssertEqual(fetchAllTabHistory().count, 2)
+    }
+
     // MARK: - Create Tab History Record with Linked Visit Tests
 
     func testWhenCreateTabHistoryRecordWithLinkedVisit_ThenRelationshipIsSet() {

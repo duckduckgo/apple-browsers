@@ -19,7 +19,7 @@
 import WebKit
 
 @available(macOS 15.4, *)
-protocol WebExtensionEventsListening {
+public protocol WebExtensionEventsListening {
 
     var controller: WKWebExtensionController? { get set }
 
@@ -37,52 +37,53 @@ protocol WebExtensionEventsListening {
 }
 
 @available(macOS 15.4, *)
-final class WebExtensionEventsListener: WebExtensionEventsListening {
+public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
-    weak var controller: WKWebExtensionController?
+    public weak var controller: WKWebExtensionController?
 
-    func didOpenWindow(_ window: WKWebExtensionWindow) {
+    public init() {}
+
+    public func didOpenWindow(_ window: WKWebExtensionWindow) {
         controller?.didOpenWindow(window)
     }
 
-    func didCloseWindow(_ window: WKWebExtensionWindow) {
+    public func didCloseWindow(_ window: WKWebExtensionWindow) {
         controller?.didCloseWindow(window)
     }
 
-    func didFocusWindow(_ window: WKWebExtensionWindow) {
+    public func didFocusWindow(_ window: WKWebExtensionWindow) {
         controller?.didFocusWindow(window)
     }
 
-    func didOpenTab(_ tab: WKWebExtensionTab) {
+    public func didOpenTab(_ tab: WKWebExtensionTab) {
         controller?.didOpenTab(tab)
     }
 
-    func didCloseTab(_ tab: WKWebExtensionTab, windowIsClosing: Bool) {
+    public func didCloseTab(_ tab: WKWebExtensionTab, windowIsClosing: Bool) {
         controller?.didCloseTab(tab, windowIsClosing: windowIsClosing)
     }
 
-    func didActivateTab(_ tab: WKWebExtensionTab, previousActiveTab: WKWebExtensionTab?) {
+    public func didActivateTab(_ tab: WKWebExtensionTab, previousActiveTab: WKWebExtensionTab?) {
         controller?.didActivateTab(tab, previousActiveTab: previousActiveTab)
     }
 
-    func didSelectTabs(_ tabs: [WKWebExtensionTab]) {
+    public func didSelectTabs(_ tabs: [WKWebExtensionTab]) {
         controller?.didSelectTabs(tabs)
     }
 
-    func didDeselectTabs(_ tabs: [WKWebExtensionTab]) {
+    public func didDeselectTabs(_ tabs: [WKWebExtensionTab]) {
         controller?.didDeselectTabs(tabs)
     }
 
-    func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow) {
+    public func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow) {
         controller?.didMoveTab(tab, from: oldIndex, in: oldWindow)
     }
 
-    func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {
+    public func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {
         controller?.didReplaceTab(oldTab, with: tab)
     }
 
-    func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {
+    public func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {
         controller?.didChangeTabProperties(properties, for: tab)
     }
-
 }

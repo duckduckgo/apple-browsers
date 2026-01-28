@@ -186,7 +186,8 @@ class FireExecutor: FireExecuting {
 
     @MainActor
     private func didFinishBurning(fireRequest: FireRequest) async {
-        if case .tab(let viewModel) = fireRequest.scope {
+        if case .tab(let viewModel) = fireRequest.scope,
+           fireRequest.options.contains(.tabs) {
             await historyManager.removeTabHistory(for: [viewModel.tab.uid])
         }
         delegate?.didFinishBurning(fireRequest: fireRequest)

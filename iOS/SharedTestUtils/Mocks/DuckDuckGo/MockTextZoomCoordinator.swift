@@ -45,7 +45,7 @@ class MockTextZoomCoordinator: TextZoomCoordinating {
     func showTextZoomEditor(inController controller: UIViewController, forWebView webView: WKWebView) {
     }
     
-    func makeBrowsingMenuEntry(forLink: Link, inController controller: UIViewController, forWebView webView: WKWebView, useSmallIcon: Bool) -> BrowsingMenuEntry? {
+    func makeBrowsingMenuEntry(forLink: Link, inController controller: UIViewController, forWebView webView: WKWebView, useSmallIcon: Bool, percentageInDetail: Bool) -> BrowsingMenuEntry? {
         return nil
     }
 

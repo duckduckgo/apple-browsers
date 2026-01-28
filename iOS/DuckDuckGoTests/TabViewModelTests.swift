@@ -88,4 +88,20 @@ final class TabViewModelTests: XCTestCase {
         XCTAssertEqual(mockHistoryManager.tabHistoryCalls, [tab.uid])
         XCTAssertEqual(result, expectedURLs)
     }
+
+    // MARK: - Visited Domains Tests
+
+    func testWhenVisitedDomainsCalled_ThenExtractsUniqueHostsFromTabHistory() async {
+        mockHistoryManager.tabHistoryResult = [
+            URL(string: "https://example.com/page1")!,
+            URL(string: "https://example.com/page2")!,
+            URL(string: "https://duckduckgo.com")!,
+            URL(string: "https://example.com/page3")!,
+            URL(string: "https://apple.com")!
+        ]
+
+        let result = await sut.visitedDomains()
+
+        XCTAssertEqual(result, Set(["example.com", "duckduckgo.com", "apple.com"]))
+    }
 }

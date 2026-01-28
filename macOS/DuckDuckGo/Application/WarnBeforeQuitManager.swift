@@ -264,7 +264,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 return .completed(shouldProceed: true)
             }
 
-            guard let event = eventReceiver([.keyUp, .keyDown, .flagsChanged], deadline, .eventTracking, true) else {
+            guard let event = eventReceiver([.keyUp, .keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown, .flagsChanged], deadline, .eventTracking, true) else {
                 // deadline reached
                 if case .keyDown = currentState {
                     // Reached progressThreshold - transition to holding and start progress
@@ -294,7 +294,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 Logger.general.debug("WarnBeforeQuitManager: consuming consequent keyDown for \(event)")
                 continue
 
-            case .keyDown:
+            case .keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown:
                 // Other key pressed during hold - cancel and pass through
                 var keyDescr: String { event.type == .keyDown ? "'\(event.keyEquivalent?.charCode ?? "")' key" : "button \(event.buttonNumber)" }
                 Logger.general.debug("WarnBeforeQuitManager: \(keyDescr) pressed during hold, canceling")

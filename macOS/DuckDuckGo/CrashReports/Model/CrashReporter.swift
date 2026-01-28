@@ -80,6 +80,7 @@ final class CrashReporter {
         for crashReport in crashReports {
             guard let contentData = crashReport.contentData else {
                 assertionFailure("CrashReporter: Can't get the content of the crash report")
+                PixelKit.fire(GeneralPixel.crashReportingFailedToReadContents, frequency: .dailyAndStandard)
                 continue
             }
             let result = await sender.send(contentData, crcid: crcidManager.crcid)

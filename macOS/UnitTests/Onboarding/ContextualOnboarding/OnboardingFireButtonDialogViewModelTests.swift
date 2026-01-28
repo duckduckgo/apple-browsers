@@ -53,7 +53,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
 
         windowControllersManager = WindowControllersManagerMock()
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab, .fireDialog]
+        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
         fireCoordinator = FireCoordinator(tld: TLD(),
                                           featureFlagger: featureFlagger,
                                           historyCoordinating: HistoryCoordinatingMock(),

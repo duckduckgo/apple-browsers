@@ -43,10 +43,13 @@ final class ThemePopoverDecider: ThemePopoverDeciding {
     private var persistor: ThemePopoverPersistor
 
     var shouldShowPopover: Bool {
-        featureFlagger.isFeatureOn(.themes)
-            && appearancePreferences.themeName == .default
-            && persistor.themePopoverShown == false
-            && firstLaunchDate.daysSinceNow() >= 2
+        return false
+// TODO: This will be restored via https://app.asana.com/1/137249556945/project/1211150618152277/task/1212930161968007
+///
+//        featureFlagger.isFeatureOn(.themes)
+//            && appearancePreferences.themeName == .default
+//            && persistor.themePopoverShown == false
+//            && firstLaunchDate.daysSinceNow() >= 2
     }
 
     init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, firstLaunchDate: Date, persistor: ThemePopoverPersistor) {

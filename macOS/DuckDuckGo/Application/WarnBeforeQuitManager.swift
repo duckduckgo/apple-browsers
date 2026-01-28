@@ -320,166 +320,152 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         // Emit waiting state - UI can show "press again" or start fadeout
         currentState = .waitingForSecondPress
 
-        let cancellationState = CancellationState()
-        return await withTaskCancellationHandler {
-            await withCheckedContinuation { [shortcutKeyEquivalent] continuation in
-                var timer: Timer?
-                var resumed = false
+        return await withCancellableContinuation(onCancel: false) { [shortcutKeyEquivalent] resumeContinuation, wasResumed in
+            var timer: Timer?
 
-                @MainActor
-                func resume(with shouldProceedDecision: Bool) {
-                    guard !resumed else { return }
-                    resumed = true
+            @MainActor
+            func resume(with shouldProceedDecision: Bool) {
+                timer?.invalidate()
+                timer = nil
+                onHoverChange = nil
 
-                    // If warning was just disabled (e.g., by clicking "Don't Ask Again"), allow action to proceed
-                    let shouldProceed = shouldProceedDecision || !isWarningEnabled()
-                    Logger.general.debug("WarnBeforeQuitManager: Resuming with shouldProceed=\(shouldProceed)\(!shouldProceedDecision && shouldProceed ? " (warning disabled)" : "")")
+                // Check if already resumed
+                guard !wasResumed() else { return }
 
-                    timer?.invalidate()
-                    cancellationState.onCancel = nil
-                    onHoverChange = nil
+                // If warning was just disabled (e.g., by clicking "Don't Ask Again"), allow action to proceed
+                let shouldProceed = shouldProceedDecision || !isWarningEnabled()
+                Logger.general.debug("WarnBeforeQuitManager: Resuming with shouldProceed=\(shouldProceed)\(!shouldProceedDecision && shouldProceed ? " (warning disabled)" : "")")
 
-                    // If proceeding: install beep-prevention interceptor that consumes repeated keyDown events
-                    // (user may still be holding the key, which would cause system beeps if not consumed)
-                    if shouldProceed {
-                        self.installEventInterceptor()
-                    } else {
-                        (NSApp as? Application)?.resetEventInterceptor(token: interceptorToken)
-                    }
-
-                    continuation.resume(returning: shouldProceed)
-                }
-
-                // Set up cancellation handler
-                cancellationState.onCancel = {
-                    DispatchQueue.main.asyncOrNow {
-                        Logger.general.debug("WarnBeforeQuitManager: Cancellation handler invoked, cleaning up")
-                        resume(with: false)
-                    }
-                }
-
-                @MainActor
-                func startTimer() {
-                    timer?.invalidate()
-                    let duration = Constants.hideawayDuration
-                    Logger.general.debug("WarnBeforeQuitManager: Timer started (\(duration)s)")
-                    timer = timerFactory(duration) {
-                        Logger.general.debug("WarnBeforeQuitManager: Timer expired")
-                        resume(with: false)
-                    }
-                }
-
-                @MainActor
-                func setupHoverCallback() {
-                    self.onHoverChange = { isHovering in
-                        if isHovering {
-                            Logger.general.debug("WarnBeforeQuitManager: Hover detected, stopping timer")
-                            timer?.invalidate()
-                            timer = nil
-                        } else {
-                            Logger.general.debug("WarnBeforeQuitManager: Hover ended, restarting timer")
-                            startTimer()
-                        }
-                    }
-                }
-
-                // Set callback for mouse hover state change - stops timer while hovering, restarts when exiting
-                setupHoverCallback()
-
-                // Install event interceptor hook for the shortcut, Escape, and clicks
-                // Don't overwrite existing interceptor - if one exists, cancel this manager
-                guard (NSApp as? Application)?.eventInterceptorToken ?? interceptorToken == interceptorToken else {
-                    Logger.general.error("WarnBeforeQuitManager: Another event interceptor already active, cancelling")
-                    resume(with: false)
-                    return
-                }
-                (NSApp as? Application)?.installEventInterceptor(token: interceptorToken) { event in
-                    switch event.type {
-                    case .keyDown where event.keyEquivalent == .escape:
-                        Logger.general.debug("WarnBeforeQuitManager: Escape pressed")
-                        resume(with: false)
-                        return nil // Consume event
-
-                    case .keyDown where event.keyEquivalent == shortcutKeyEquivalent:
-                        Logger.general.debug("WarnBeforeQuitManager: ⌘'\(shortcutKeyEquivalent.charCode)' pressed again")
-
-                        // Clean up timer and hover callback before entering hold phase
-                        timer?.invalidate()
-                        timer = nil
-                        self.onHoverChange = nil
-
-                        // Record time when second press started (for determining quick tap vs hold)
-                        let secondPressStartTime = self.now()
-
-                        // Handle second press with same hold detection as first press
-                        let result = self.trackEventsForHoldingPhase()
-
-                        switch result {
-                        case .completed(let shouldProceed):
-                            if shouldProceed {
-                                // Held through duration - proceed
-                                Logger.general.debug("WarnBeforeQuitManager: Second press held through duration, proceeding")
-                                self.isShortcutKeyHeld = true
-                            } else {
-                                // Cancelled by other key press
-                                Logger.general.debug("WarnBeforeQuitManager: Second press cancelled")
-                            }
-                            resume(with: shouldProceed)
-
-                        case .releasedEarly:
-                            // Check if released before progress visible (quick tap) or after (return to waiting)
-                            let elapsedTime = self.now().timeIntervalSince(secondPressStartTime)
-                            // Reset progress in case it‘s started animating before the key release
-                            self.currentState = .waitingForSecondPress
-                            // Add buffer to account for animation startup time
-                            if elapsedTime < Constants.progressThreshold + Constants.quickTapDetectionBuffer {
-                                // Quick tap - confirm immediately
-                                Logger.general.debug("WarnBeforeQuitManager: Second press released in \(elapsedTime)s, confirming")
-                                resume(with: true)
-                            } else {
-                                // Released after progress started - return to waiting
-                                Logger.general.debug("WarnBeforeQuitManager: Second press released after \(elapsedTime)s, returning to wait")
-                                // Restore hover callback (was cleared at line 390 before entering hold phase)
-                                setupHoverCallback()
-                                // Only start timer if not already hovering
-                                if !self.isHovering {
-                                    startTimer()
-                                }
-                            }
-                        }
-
-                        return nil // Consume event
-
-                    case .keyDown:
-                        Logger.general.debug("WarnBeforeQuitManager: '\(event.keyEquivalent?.charCode ?? "")' key pressed, canceling")
-                        resume(with: false)
-                        return event // Pass through for normal function
-
-                    case .leftMouseDown, .rightMouseDown, .otherMouseDown:
-                        Logger.general.debug("WarnBeforeQuitManager: \(event.type == .leftMouseDown ? "Left" : event.type == .rightMouseDown ? "Right" : "Other") mouse down")
-                        // Give it some time for the click to be processed first (e.g., "Don't Ask Again" button click)
-                        // The resume function will check if warning was disabled and adjust accordingly
-                        DispatchQueue.main.async {
-                            resume(with: false)
-                        }
-                        return event // Let click be processed by the system
-
-                    default:
-                        return event // Pass through all other events
-                    }
-                }
-
-                // Start hideaway timer unless mouse is already hovering
-                // (onHoverChange only fires on state changes, not initial state)
-                if !isHovering {
-                    startTimer()
+                // If proceeding: install beep-prevention interceptor that consumes repeated keyDown events
+                // (user may still be holding the key, which would cause system beeps if not consumed)
+                if shouldProceed {
+                    self.installEventInterceptor()
                 } else {
-                    Logger.general.debug("WarnBeforeQuitManager: Mouse already hovering, not starting timer")
+                    (NSApp as? Application)?.resetEventInterceptor(token: interceptorToken)
+                }
+
+                // Resume continuation (this must be last)
+                resumeContinuation(shouldProceed)
+            }
+
+            @MainActor
+            func startTimer() {
+                timer?.invalidate()
+                let duration = Constants.hideawayDuration
+                Logger.general.debug("WarnBeforeQuitManager: Timer started (\(duration)s)")
+                timer = timerFactory(duration) {
+                    Logger.general.debug("WarnBeforeQuitManager: Timer expired")
+                    resume(with: false)
                 }
             }
-        } onCancel: {
-            Logger.general.debug("WarnBeforeQuitManager: Task cancelled, triggering cleanup")
-            cancellationState.onCancel?()
+
+            @MainActor
+            func setupHoverCallback() {
+                self.onHoverChange = { isHovering in
+                    if isHovering {
+                        Logger.general.debug("WarnBeforeQuitManager: Hover detected, stopping timer")
+                        timer?.invalidate()
+                        timer = nil
+                    } else {
+                        Logger.general.debug("WarnBeforeQuitManager: Hover ended, restarting timer")
+                        startTimer()
+                    }
+                }
+            }
+
+            // Set callback for mouse hover state change - stops timer while hovering, restarts when exiting
+            setupHoverCallback()
+
+            // Install event interceptor hook for the shortcut, Escape, and clicks
+            // Don't overwrite existing interceptor - if one exists, cancel this manager
+            guard (NSApp as? Application)?.eventInterceptorToken ?? interceptorToken == interceptorToken else {
+                Logger.general.error("WarnBeforeQuitManager: Another event interceptor already active, cancelling")
+                resume(with: false)
+                return
+            }
+            (NSApp as? Application)?.installEventInterceptor(token: interceptorToken) { event in
+                switch event.type {
+                case .keyDown where event.keyEquivalent == .escape:
+                    Logger.general.debug("WarnBeforeQuitManager: Escape pressed")
+                    resume(with: false)
+                    return nil // Consume event
+
+                case .keyDown where event.keyEquivalent == shortcutKeyEquivalent:
+                    Logger.general.debug("WarnBeforeQuitManager: ⌘'\(shortcutKeyEquivalent.charCode)' pressed again")
+
+                    // Clean up timer and hover callback before entering hold phase
+                    timer?.invalidate()
+                    timer = nil
+                    self.onHoverChange = nil
+
+                    // Record time when second press started (for determining quick tap vs hold)
+                    let secondPressStartTime = self.now()
+
+                    // Handle second press with same hold detection as first press
+                    let result = self.trackEventsForHoldingPhase()
+
+                    switch result {
+                    case .completed(let shouldProceed):
+                        if shouldProceed {
+                            // Held through duration - proceed
+                            Logger.general.debug("WarnBeforeQuitManager: Second press held through duration, proceeding")
+                            self.isShortcutKeyHeld = true
+                        } else {
+                            // Cancelled by other key press
+                            Logger.general.debug("WarnBeforeQuitManager: Second press cancelled")
+                        }
+                        resume(with: shouldProceed)
+
+                    case .releasedEarly:
+                        // Check if released before progress visible (quick tap) or after (return to waiting)
+                        let elapsedTime = self.now().timeIntervalSince(secondPressStartTime)
+                        // Reset progress in case it‘s started animating before the key release
+                        self.currentState = .waitingForSecondPress
+                        // Add buffer to account for animation startup time
+                        if elapsedTime < Constants.progressThreshold + Constants.quickTapDetectionBuffer {
+                            // Quick tap - confirm immediately
+                            Logger.general.debug("WarnBeforeQuitManager: Second press released in \(elapsedTime)s, confirming")
+                            resume(with: true)
+                        } else {
+                            // Released after progress started - return to waiting
+                            Logger.general.debug("WarnBeforeQuitManager: Second press released after \(elapsedTime)s, returning to wait")
+                            // Restore hover callback (was cleared at line 390 before entering hold phase)
+                            setupHoverCallback()
+                            // Only start timer if not already hovering
+                            if !self.isHovering {
+                                startTimer()
+                            }
+                        }
+                    }
+
+                    return nil // Consume event
+
+                case .keyDown:
+                    Logger.general.debug("WarnBeforeQuitManager: '\(event.keyEquivalent?.charCode ?? "")' key pressed, canceling")
+                    resume(with: false)
+                    return event // Pass through for normal function
+
+                case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+                    Logger.general.debug("WarnBeforeQuitManager: \(event.type == .leftMouseDown ? "Left" : event.type == .rightMouseDown ? "Right" : "Other") mouse down")
+                    // Give it some time for the click to be processed first (e.g., "Don't Ask Again" button click)
+                    // The resume function will check if warning was disabled and adjust accordingly
+                    DispatchQueue.main.async {
+                        resume(with: false)
+                    }
+                    return event // Let click be processed by the system
+
+                default:
+                    return event // Pass through all other events
+                }
+            }
+
+            // Start hideaway timer unless mouse is already hovering
+            // (onHoverChange only fires on state changes, not initial state)
+            if !isHovering {
+                startTimer()
+            } else {
+                Logger.general.debug("WarnBeforeQuitManager: Mouse already hovering, not starting timer")
+            }
         }
     }
 
@@ -556,26 +542,11 @@ private extension PixelFiring {
     /// Fire a pixel and wait for completion asynchronously (with timeout)
     func fireAndWait(_ event: PixelKitEvent, frequency: PixelKit.Frequency) async {
         do {
-            let cancellationState = CancellationState()
             try await withTimeout(1) {
-                await withTaskCancellationHandler {
-                    await withCheckedContinuation { continuation in
-                        var isResumed = false
-                        func resume() {
-                            guard !isResumed else { return }
-                            isResumed = true
-                            continuation.resume()
-                        }
-                        cancellationState.onCancel = {
-                            resume()
-                        }
-                        fire(event, frequency: frequency) { _, _ in
-                            resume()
-                        }
-                    } as Void
-                } onCancel: {
-                    Logger.general.error("WarnBeforeQuitManager: Pixel firing timed out")
-                    cancellationState.onCancel?()
+                await withCancellableContinuation(onCancel: ()) { resume, _ in
+                    fire(event, frequency: frequency) { _, _ in
+                        resume(())
+                    }
                 }
             }
         } catch {
@@ -585,7 +556,47 @@ private extension PixelFiring {
     }
 }
 
-private final class CancellationState {
-    var onCancel: (() -> Void)?
-    init() {}
+/// Helper to execute an async operation with continuation that supports cancellation and allows multiple resume attempts
+/// - Parameter onCancel: The value to return when the task is cancelled
+/// - Parameter operation: The operation to execute. Receives:
+///   - resume: Callback to resume the continuation with a value
+///   - wasResumed: Callback to check if continuation was already resumed (returns true if already resumed)
+private func withCancellableContinuation<T>(
+    onCancel cancellationValue: T,
+    _ operation: (@escaping (T) -> Void, @escaping () -> Bool) -> Void
+) async -> T {
+    let lock = NSLock()
+    var isResumed = false
+    var cancellationHandler: (() -> Void)?
+
+    return await withTaskCancellationHandler {
+        await withCheckedContinuation { continuation in
+            let checkIfResumed = { () -> Bool in
+                lock.lock()
+                defer { lock.unlock() }
+                return isResumed
+            }
+
+            let resume = { (value: T) in
+                lock.lock()
+                defer { lock.unlock() }
+                guard !isResumed else { return }
+                isResumed = true
+                cancellationHandler = nil
+                continuation.resume(returning: value)
+            }
+
+            // Store cancellation handler for when task is cancelled
+            cancellationHandler = {
+                DispatchQueue.main.asyncOrNow {
+                    Logger.general.debug("WarnBeforeQuitManager: Task cancelled, triggering cleanup")
+                    resume(cancellationValue)
+                }
+            }
+
+            operation(resume, checkIfResumed)
+        }
+    } onCancel: {
+        cancellationHandler?()
+    }
 }

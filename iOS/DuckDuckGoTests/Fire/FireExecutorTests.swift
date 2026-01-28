@@ -436,6 +436,20 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 1)
     }
     
+    func testTabScopeDoesntCancelDownloads() async {
+        // Given
+        let executor = makeFireExecutor()
+        executor.delegate = mockDelegate
+        let tabViewModel = makeTabViewModel()
+        
+        // When
+        let request = makeFireRequest(options: [.tabs, .data], scope: .tab(viewModel: tabViewModel))
+        await executor.burn(request: request, applicationState: .unknown)
+        
+        // Then
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
+    }
+    
     // MARK: - burn AI History Tests
     
     func testBurnAIHistoryCallsDelegateOnSuccess() async {

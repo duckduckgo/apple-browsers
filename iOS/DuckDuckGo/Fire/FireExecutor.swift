@@ -190,7 +190,9 @@ class FireExecutor: FireExecuting {
     // MARK: - General Helpers
     
     private func cancelOngoingDownloadsIfNeeded(_ request: FireRequest) {
-        guard request.options.contains(.tabs), request.options.contains(.data) else {
+        guard case .all = request.scope,
+              request.options.contains(.tabs),
+              request.options.contains(.data) else {
             return
         }
         downloadManager.cancelAllDownloads()

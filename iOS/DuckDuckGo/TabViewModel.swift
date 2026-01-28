@@ -63,13 +63,6 @@ struct TabViewModel {
 
     /// Returns unique domains visited in this tab's session
     func visitedDomains() async -> Set<String> {
-        var domains = Set<String>()
-        let tabHistory = await tabHistory()
-        for url in tabHistory {
-            if let host = url.host {
-                domains.insert(host)
-            }
-        }
-        return domains
+        Set(await tabHistory().compactMap { $0.host })
     }
 }

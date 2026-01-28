@@ -19,11 +19,12 @@
 import Foundation
 import WebExtensions
 import Core
+import Common
 
 @available(iOS 18.4, *)
 struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
 
     var applicationNameForUserAgent: String {
-        DefaultUserAgentManager.shared.defaultAgent
+        "DuckDuckGo/\(AppVersion.shared.versionNumber)"
     }
 }

@@ -298,9 +298,6 @@ jobs:
     name: Report Memory Metrics to ClickHouse
     needs: memory-usage-tests
     runs-on: [ self-hosted, apple ]
-    defaults:
-      run:
-        working-directory: .
 
     steps:
       - name: Download memory metrics

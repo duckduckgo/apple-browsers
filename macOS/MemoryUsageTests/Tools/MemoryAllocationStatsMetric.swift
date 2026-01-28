@@ -82,14 +82,14 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
             return []
         }
 
-        let initialMemoryUsedMB = XCTPerformanceMeasurement(
+        let initialMemoryUsed = XCTPerformanceMeasurement(
             identifier: "com.duckduckgo.memory.allocations.used.initial",
             displayName: "Initial Memory Used",
             doubleValue: Double(initialStatsSnapshot.totalUsedBytes),
             unitSymbol: "Bytes"
         )
 
-        let finalMemoryUsedMB = XCTPerformanceMeasurement(
+        let finalMemoryUsed = XCTPerformanceMeasurement(
             identifier: "com.duckduckgo.memory.allocations.used.final",
             displayName: "Final Memory Used",
             doubleValue: Double(finalStatsSnapshot.totalUsedBytes),
@@ -99,7 +99,7 @@ final class MemoryAllocationStatsMetric: NSObject, XCTMetric {
         // Add attachments to test results
         runAllocationAttachmentsActivity()
 
-        return [finalMemoryUsedMB, initialMemoryUsedMB]
+        return [finalMemoryUsed, initialMemoryUsed]
     }
 }
 

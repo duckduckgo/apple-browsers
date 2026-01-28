@@ -23,16 +23,6 @@
 
 set -euo pipefail
 
-# Ensure cleanup runs on exit (success or failure)
-INTERMEDIATE_FILES=("raw-metrics.json" "processed-metrics.json")
-
-cleanup() {
-    for file in "${INTERMEDIATE_FILES[@]}"; do
-        rm -f "$file"
-    done
-}
-
-trap cleanup EXIT
 
 # Parameters Validation
 RUNNER=""
@@ -84,12 +74,12 @@ fi
 echo "Extracting metrics from: $XCRESULT_PATH" >&2
 
 # Step 1: Extract raw metrics from xcresult
-xcrun xcresulttool get test-results metrics \
+raw_metrics="$(xcrun xcresulttool get test-results metrics \
     --path "$XCRESULT_PATH" \
-    --compact > raw-metrics.json
+    --compact > raw-metrics.json)"
 
 # Step 2: Extract and calculate memory metrics
-jq '
+processed_metrics="$(jq '
 def avg: add / length | floor;
 def metric(name): .testRuns[0].metrics | map(select(.identifier | contains(name))) | .[0].measurements | avg;
 
@@ -100,7 +90,7 @@ def metric(name): .testRuns[0].metrics | map(select(.identifier | contains(name)
 } | . + {
     memory_delta: (.memory_end - .memory_start)
 }]
-' raw-metrics.json > processed-metrics.json
+' <<< "$raw_metrics")"
 
 # Step 3: Format as SQL INSERT statements (output to stdout)
 jq -r \
@@ -133,4 +123,4 @@ def sql_quote(v): "'\''" + v + "'\''";
     \(.memory_end),
     \(.memory_delta)
 );"
-' processed-metrics.json
+' <<< "$processed_metrics"

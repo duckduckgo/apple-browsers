@@ -408,7 +408,7 @@ class TabManager: TabManaging {
         if model.tabs.count == 1 {
             // Since we're not re-inserting we should use the proper removal to ensure
             //  things are cleaned up properly.
-            remove(at: index)
+            remove(at: index, clearTabHistory: clearTabHistory)
         } else {
             let oldTab = model.get(tabAt: index)
             model.remove(at: index)

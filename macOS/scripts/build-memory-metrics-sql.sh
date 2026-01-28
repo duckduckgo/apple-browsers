@@ -76,7 +76,7 @@ echo "Extracting metrics from: $XCRESULT_PATH" >&2
 # Step 1: Extract raw metrics from xcresult
 raw_metrics="$(xcrun xcresulttool get test-results metrics \
     --path "$XCRESULT_PATH" \
-    --compact > raw-metrics.json)"
+    --compact)"
 
 # Step 2: Extract and calculate memory metrics
 processed_metrics="$(jq '

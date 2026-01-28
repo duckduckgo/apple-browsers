@@ -109,11 +109,6 @@ final class TerminationDeciderHandler {
         self.deciders = deciders
     }
 
-    /// Check if termination is currently in progress
-    var isTerminating: Bool {
-        terminationTask != nil
-    }
-
     func executeTerminationDeciders() -> NSApplication.TerminateReply {
         return executeTerminationDeciders(deciders, isAsync: false)
     }

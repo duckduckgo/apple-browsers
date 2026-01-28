@@ -52,13 +52,6 @@ enum ProgressState: Equatable {
         case .complete: return 1.0
         }
     }
-
-    var animationDuration: TimeInterval {
-        switch self {
-        case .idle, .resetting, .complete: return 0
-        case .animating(duration: let duration, _): return duration
-        }
-    }
 }
 
 @MainActor
@@ -94,16 +87,7 @@ final class WarnBeforeQuitViewModel: ObservableObject {
         self.onHoverChange = onHoverChange
     }
 
-    func updateProgress(_ newProgress: CGFloat) {
-        // For backwards compatibility if needed
-        if newProgress == 0 {
-            progressState = .idle
-        } else if newProgress >= 1.0 {
-            progressState = .complete
-        }
-    }
-
-    func startProgress(duration: TimeInterval = 0.42, targetValue: CGFloat = 1.0) {
+    func startProgress(duration: TimeInterval = 0.6, targetValue: CGFloat = 1.0) {
         progressState = .animating(duration: duration, targetValue: targetValue)
     }
 

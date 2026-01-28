@@ -2753,6 +2753,36 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         }
     }
 
+    func testPixelFiringTimeout() async throws {
+        // Given - pixel that never completes (simulates network timeout)
+        final class SlowPixelFiring: PixelFiring, Sendable {
+            let fireExpectation: XCTestExpectation
+            let completionExpectation: XCTestExpectation
+            init(fireExpectation: XCTestExpectation, completionExpectation: XCTestExpectation) {
+                self.fireExpectation = fireExpectation
+                self.completionExpectation = completionExpectation
+            }
+            public func fire(_ event: PixelKitEvent,
+                             frequency: PixelKit.Frequency,
+                             withAdditionalParameters: [String: String]?,
+                             onComplete: @escaping PixelKit.CompletionBlock) {
+                fireExpectation.fulfill()
+                // Never call completion handler - simulates timeout
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    self.completionExpectation.fulfill()
+                    onComplete(true, nil)
+                }
+            }
+        }
+        let fireExpectation = expectation(description: "Pixel fired")
+        let completionExpectation = expectation(description: "Completion called")
+        completionExpectation.isInverted = true
+        let pixelFiring = SlowPixelFiring(fireExpectation: fireExpectation, completionExpectation: completionExpectation)
+        await pixelFiring.fireAndWait(GeneralPixel.warnBeforeQuitQuit, frequency: .standard, timeout: 0.1)
+
+        await fulfillment(of: [fireExpectation, completionExpectation], timeout: 0.2)
+    }
+
     // MARK: - Helpers
 
     /// Sets up expectations for N state changes and starts observing the state stream

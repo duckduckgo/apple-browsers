@@ -224,15 +224,26 @@ extract_from_xcode_project() {
 # Build direct dependencies map (repo_id -> project names)
 build_direct_deps_map() {
     local path="$1"
+    local roots=()
 
     # Clear file
     > "$DIRECT_DEPS_FILE"
 
-    # Extract from Package.swift files
-    extract_from_package_swift "$path" >> "$DIRECT_DEPS_FILE"
+    while IFS= read -r root; do
+        [[ -n "$root" ]] && roots+=("$root")
+    done < <(get_search_roots "$path")
 
-    # Extract from Xcode projects
-    extract_from_xcode_project "$path" >> "$DIRECT_DEPS_FILE"
+    if [[ ${#roots[@]} -eq 0 ]]; then
+        return
+    fi
+
+    for root in "${roots[@]}"; do
+        # Extract from Package.swift files
+        extract_from_package_swift "$root" >> "$DIRECT_DEPS_FILE"
+
+        # Extract from Xcode projects
+        extract_from_xcode_project "$root" >> "$DIRECT_DEPS_FILE"
+    done
 
     # Sort and dedupe
     if [[ -s "$DIRECT_DEPS_FILE" ]]; then
@@ -254,8 +265,8 @@ is_direct_dependency() {
     grep -q "^${repo_id}|" "$DIRECT_DEPS_FILE" 2>/dev/null
 }
 
-# Find all Package.resolved files
-find_resolved_files() {
+# Get search roots limited to expected directories
+get_search_roots() {
     local path="$1"
     local search_roots=(
         "${path%/}/SharedPackages"
@@ -264,19 +275,32 @@ find_resolved_files() {
         "${path%/}/DuckDuckGo.xcworkspace"
     )
 
-    local existing_roots=()
     local root
     for root in "${search_roots[@]}"; do
-        [[ -e "$root" ]] && existing_roots+=("$root")
+        [[ -e "$root" ]] && echo "$root"
     done
 
-    if [[ ${#existing_roots[@]} -eq 0 ]]; then
+    if [[ -z $(for root in "${search_roots[@]}"; do [[ -e "$root" ]] && echo "ok" && break; done) ]]; then
         echo -e "${YELLOW}Warning: None of the expected search roots exist under ${path}.${NC}" >&2
         echo -e "${YELLOW}Checked: ${search_roots[*]}${NC}" >&2
+        return 1
+    fi
+}
+
+# Find all Package.resolved files
+find_resolved_files() {
+    local path="$1"
+    local roots=()
+
+    while IFS= read -r root; do
+        [[ -n "$root" ]] && roots+=("$root")
+    done < <(get_search_roots "$path")
+
+    if [[ ${#roots[@]} -eq 0 ]]; then
         return
     fi
 
-    find "${existing_roots[@]}" \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) \
+    find "${roots[@]}" \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) \
         -not -path "*/.build/*" 2>/dev/null
 }
 

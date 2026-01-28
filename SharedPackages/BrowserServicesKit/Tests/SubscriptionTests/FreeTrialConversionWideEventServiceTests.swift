@@ -207,6 +207,38 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         XCTAssertEqual(mockWideEvent.updatedFlows.count, 0)
     }
 
+    // MARK: - Feature Flag Tests
+
+    func testWhenFeatureFlagDisabled_ItDoesNotStartFlow() {
+        // Given
+        let disabledMockWideEvent = MockWideEventManaging()
+        let disabledNotificationCenter = NotificationCenter()
+        let disabledSut = DefaultFreeTrialConversionWideEventService(
+            wideEvent: disabledMockWideEvent,
+            notificationCenter: disabledNotificationCenter,
+            isFeatureEnabled: { false }
+        )
+        disabledSut.startObservingSubscriptionChanges()
+
+        let subscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+
+        // Set up inverted expectation - flow should NOT start
+        let startExpectation = expectation(description: "Flow should not start")
+        startExpectation.isInverted = true
+        disabledMockWideEvent.onStartFlow = { startExpectation.fulfill() }
+
+        // When
+        disabledNotificationCenter.post(
+            name: .subscriptionDidChange,
+            object: nil,
+            userInfo: [UserDefaultsCacheKey.subscription: subscription]
+        )
+
+        // Then
+        wait(for: [startExpectation], timeout: 0.2)
+        XCTAssertEqual(disabledMockWideEvent.startedFlows.count, 0)
+    }
+
     // MARK: - Helpers
 
     private func makeSubscription(

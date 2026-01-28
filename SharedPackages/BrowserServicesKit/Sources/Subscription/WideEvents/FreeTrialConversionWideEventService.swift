@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import os.log
 import PixelKit
 
 /// Protocol for managing the free trial conversion wide event lifecycle.
@@ -45,11 +46,17 @@ public final class DefaultFreeTrialConversionWideEventService: FreeTrialConversi
 
     private let wideEvent: WideEventManaging
     private let notificationCenter: NotificationCenter
+    private let isFeatureEnabled: () -> Bool
     private var subscriptionObserver: NSObjectProtocol?
 
-    public init(wideEvent: WideEventManaging, notificationCenter: NotificationCenter = .default) {
+    public init(
+        wideEvent: WideEventManaging,
+        notificationCenter: NotificationCenter = .default,
+        isFeatureEnabled: @escaping () -> Bool = { true }
+    ) {
         self.wideEvent = wideEvent
         self.notificationCenter = notificationCenter
+        self.isFeatureEnabled = isFeatureEnabled
     }
 
     deinit {
@@ -81,6 +88,8 @@ public final class DefaultFreeTrialConversionWideEventService: FreeTrialConversi
 
     /// Handles a subscription change to start or complete the wide event as appropriate.
     private func handleSubscriptionChange(_ subscription: DuckDuckGoSubscription) async {
+        guard isFeatureEnabled() else { return }
+
         let existingFlow = wideEvent.getAllFlowData(FreeTrialConversionWideEventData.self).first
 
         if subscription.isActive && subscription.hasActiveTrialOffer {
@@ -88,32 +97,39 @@ public final class DefaultFreeTrialConversionWideEventService: FreeTrialConversi
             guard existingFlow == nil else { return }
             let data = FreeTrialConversionWideEventData(freeTrialPlan: subscription.productId)
             wideEvent.startFlow(data)
+            Logger.subscription.log("[FreeTrialConversion] Started flow for plan: \(subscription.productId, privacy: .public)")
         } else if subscription.isActive, let data = existingFlow {
             // User is active, but not on trial. Mark the existing flow as completed.
             _ = try? await wideEvent.completeFlow(data, status: .success)
+            Logger.subscription.log("[FreeTrialConversion] Completed flow with SUCCESS (user converted to paid)")
         } else if let data = existingFlow {
             // User is no longer active. Mark the existing flow as completed.
             _ = try? await wideEvent.completeFlow(data, status: .failure)
+            Logger.subscription.log("[FreeTrialConversion] Completed flow with FAILURE (trial expired)")
         }
     }
 
     /// Marks VPN as activated for the current free trial flow.
     public func markVPNActivated() {
-        guard let data = wideEvent.getAllFlowData(FreeTrialConversionWideEventData.self).first else {
+        guard isFeatureEnabled(),
+              let data = wideEvent.getAllFlowData(FreeTrialConversionWideEventData.self).first else {
             return
         }
 
         data.markVPNActivated()
         wideEvent.updateFlow(data)
+        Logger.subscription.log("[FreeTrialConversion] VPN activated (D1: \(data.vpnActivatedD1), D2-D7: \(data.vpnActivatedD2ToD7))")
     }
 
     /// Marks PIR as activated for the current free trial flow.
     public func markPIRActivated() {
-        guard let data = wideEvent.getAllFlowData(FreeTrialConversionWideEventData.self).first else {
+        guard isFeatureEnabled(),
+              let data = wideEvent.getAllFlowData(FreeTrialConversionWideEventData.self).first else {
             return
         }
 
         data.markPIRActivated()
         wideEvent.updateFlow(data)
+        Logger.subscription.log("[FreeTrialConversion] PIR activated (D1: \(data.pirActivatedD1), D2-D7: \(data.pirActivatedD2ToD7))")
     }
 }

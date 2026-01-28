@@ -534,7 +534,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.featureFlagger = featureFlagger
 
         wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
-        freeTrialConversionService = DefaultFreeTrialConversionWideEventService(wideEvent: wideEvent)
+        freeTrialConversionService = DefaultFreeTrialConversionWideEventService(
+            wideEvent: wideEvent,
+            isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
+        )
         freeTrialConversionService.startObservingSubscriptionChanges()
         displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 

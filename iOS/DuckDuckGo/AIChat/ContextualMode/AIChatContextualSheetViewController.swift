@@ -305,6 +305,8 @@ final class AIChatContextualSheetViewController: UIViewController {
                 title: snapshot.title,
                 favicon: snapshot.favicon
             )
+            // Reset flag even when chip is already visible to prevent wrong pixel on future manual attach
+            isPendingAttachAutomatic = false
         } else {
             let chipView = createContextChipView(snapshot: snapshot, onRemove: { [weak self] in
                 self?.contextualInputViewController.hideContextChip()
@@ -326,7 +328,10 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Fires the appropriate page context attached pixel based on the attach mode.
     private func firePageContextAttachedPixel() {
-        if isPendingAttachAutomatic {
+        // Check pixel handler's manual attach state first (takes precedence)
+        if pixelHandler.isManualAttachInProgress {
+            pixelHandler.firePageContextManuallyAttachedNative()
+        } else if isPendingAttachAutomatic {
             pixelHandler.firePageContextAutoAttached()
         } else {
             pixelHandler.firePageContextManuallyAttachedNative()
@@ -379,6 +384,8 @@ private extension AIChatContextualSheetViewController {
                     title: snapshot.title,
                     favicon: snapshot.favicon
                 )
+                // Reset flag even when chip is already visible to prevent wrong pixel on future manual attach
+                isPendingAttachAutomatic = false
             } else {
                 let chipView = createContextChipView(snapshot: snapshot, onRemove: { [weak self] in
                     self?.contextualInputViewController.hideContextChip()

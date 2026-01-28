@@ -486,7 +486,6 @@ platform :ios do
     UI.message("Version: #{version}")
     UI.message("Build: #{build_number}")
     UI.message("Release Date: #{timestamp}")
-    UI.message("Is Critical: #{is_critical}")
     UI.message("📍 Available at: #{cdn_url}")
   end
 

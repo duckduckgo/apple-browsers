@@ -1,7 +1,0 @@
-# This file holds the configuration for ActionLint that's run via .github/workflows/actionlint.yml
-# Docs: https://github.com/rhysd/actionlint/blob/main/docs/config.md
-
-self-hosted-runner:
-  # Labels of self-hosted runner in array of strings.
-  labels:
-    - apple

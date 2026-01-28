@@ -4199,6 +4199,15 @@ extension MainViewController: MessageNavigationDelegate {
         }
     }
 
+    func segueToPIR(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToPIRWithSubscriptionCheck()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
+    }
+
 }
 
 extension MainViewController: MainViewEditingStateTransitioning {

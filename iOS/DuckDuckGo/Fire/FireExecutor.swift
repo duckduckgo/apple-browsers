@@ -316,7 +316,11 @@ class FireExecutor: FireExecuting {
     
     @MainActor
     private func burnTabData(tab: TabViewModel) async {
-        // TODO: - Implement tab specific data burning
+        let domainsToClear = await Array(tab.visitedDomains())
+        // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
+        //  this is the same as `WKWebsiteDataStore.default()`
+        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
+        await websiteDataManager.clear(dataStore: storeToUse, forDomains: domainsToClear)
     }
     
     // MARK: - Clear AI History

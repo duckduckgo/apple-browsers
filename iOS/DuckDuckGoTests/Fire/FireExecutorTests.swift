@@ -434,6 +434,28 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockHistoryManager.removeAllHistoryCallCount, 1)
     }
     
+    func testBurnDataForTabScopePerformsAllCleanupActions() async {
+        // Given
+        let fireproofedDomains = ["example.com", "test.org"]
+        let fireproofing = MockFireproofing(domains: fireproofedDomains)
+        let executor = makeFireExecutor(fireproofing: fireproofing)
+        let tabViewModel = makeTabViewModel()
+        
+        mockHistoryManager.tabHistoryResult = [URL(string: "https://test.com")!]
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - Verify delegate calls
+        XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningDataCalled)
+
+        // Then - Verify website data is cleared
+        XCTAssertEqual(mockWebsiteDataManager.clearWithDomainsCallCount, 1)
+        XCTAssertEqual(mockWebsiteDataManager.clearCalledWithDomains, ["test.com"])
+    }
+    
+    
     // MARK: - Burn ongoing downloads
     
     func testBurnTabsAndDataCancelsDownloads() async {

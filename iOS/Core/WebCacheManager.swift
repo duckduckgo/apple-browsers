@@ -50,6 +50,7 @@ public protocol WebsiteDataManaging {
     func removeCookies(forDomains domains: [String], fromDataStore: any DDGWebsiteDataStore) async
     func consumeCookies(into httpCookieStore: DDGHTTPCookieStore) async
     func clear(dataStore: any DDGWebsiteDataStore) async
+    func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async
 
 }
 
@@ -145,6 +146,18 @@ public class WebCacheManager: WebsiteDataManaging {
         await dataStoreCleaner.removeAllContainersAfterDelay(previousCount: count)
 
     }
+    
+    /// Clears website data for specific domains, respecting fireproofing settings.
+    public func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async {
+        let domainsToRemove = domains.filter { domain in
+            !fireproofing.isAllowed(fireproofDomain: domain)
+        }
+
+        guard !domainsToRemove.isEmpty else { return }
+
+        await clearDataRecords(fromStore: dataStore, forDomains: domainsToRemove)
+        await clearCookies(fromStore: dataStore, forDomains: domainsToRemove)
+    }
 
 }
 
@@ -213,6 +226,35 @@ extension WebCacheManager {
 
         let cookiesToRemove = cookies.filter { cookie in
             !fireproofing.isAllowed(cookieDomain: cookie.domain)
+        }
+
+        for cookie in cookiesToRemove {
+            await cookieStore.deleteCookie(cookie)
+        }
+    }
+
+    // MARK: - Domain-Specific Clearing
+
+    @MainActor
+    private func clearDataRecords(fromStore dataStore: some DDGWebsiteDataStore, forDomains domains: [String]) async {
+        let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
+        let recordsToRemove = allRecords.filter { record in
+            domains.contains(record.displayName)
+        }
+
+        guard !recordsToRemove.isEmpty else { return }
+
+        // Remove all data types for these specific domains
+        await dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: recordsToRemove)
+    }
+
+    @MainActor
+    private func clearCookies(fromStore dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async {
+        let cookieStore = dataStore.httpCookieStore
+        let cookies = await cookieStore.allCookies()
+
+        let cookiesToRemove = cookies.filter { cookie in
+            domains.contains(where: { HTTPCookie.cookieDomain(cookie.domain, matchesTestDomain: $0) })
         }
 
         for cookie in cookiesToRemove {

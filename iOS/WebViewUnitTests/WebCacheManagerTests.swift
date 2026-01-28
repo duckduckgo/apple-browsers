@@ -155,6 +155,95 @@ class WebCacheManagerTests: XCTestCase {
         XCTAssertEqual(3, mockHttpCookieStore.cookiesThatWereDeleted.count)
     }
 
+    // MARK: - Domain-Specific Clearing Tests
+
+    func test_WhenClearingForDomains_ThenOnlySpecifiedDomainsAreCleared() async {
+        let mockCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
+            .make(name: "Cookie1", value: "Value", domain: "example.com"),
+            .make(name: "Cookie2", value: "Value", domain: "other.com"),
+            .make(name: "Cookie3", value: "Value", domain: "facebook.com"),
+        ])
+        let dataStore = MockWebsiteDataStore(
+            httpCookieStore: mockCookieStore,
+            dataRecordsOfTypesReturnValue: [
+                MockWebsiteDataRecord(displayName: "example.com"),
+                MockWebsiteDataRecord(displayName: "other.com"),
+                MockWebsiteDataRecord(displayName: "facebook.com"),
+            ]
+        )
+
+        let webCacheManager = makeWebCacheManager()
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "facebook.com"])
+
+        // Verify data records were removed for specified domains only
+        XCTAssertEqual(1, dataStore.removedDataOfTypesForRecords.count)
+        let removedRecords = dataStore.removedDataOfTypesForRecords[0].records
+        XCTAssertEqual(2, removedRecords.count)
+        XCTAssertTrue(removedRecords.contains { $0.displayName == "example.com" })
+        XCTAssertTrue(removedRecords.contains { $0.displayName == "facebook.com" })
+        XCTAssertFalse(removedRecords.contains { $0.displayName == "other.com" })
+
+        // Verify cookies were removed for specified domains only
+        XCTAssertEqual(2, mockCookieStore.cookiesThatWereDeleted.count)
+        XCTAssertTrue(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "Cookie1" })
+        XCTAssertTrue(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "Cookie3" })
+        XCTAssertFalse(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "Cookie2" })
+    }
+
+    func test_WhenClearingForDomains_ThenFireproofedDomainsAreNotCleared() async {
+        fireproofing = MockFireproofing(domains: ["example.com"])
+        let mockCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
+            .make(name: "Cookie1", value: "Value", domain: "example.com"),
+            .make(name: "Cookie2", value: "Value", domain: "facebook.com"),
+        ])
+        let dataStore = MockWebsiteDataStore(
+            httpCookieStore: mockCookieStore,
+            dataRecordsOfTypesReturnValue: [
+                MockWebsiteDataRecord(displayName: "example.com"),
+                MockWebsiteDataRecord(displayName: "facebook.com"),
+            ]
+        )
+
+        let webCacheManager = makeWebCacheManager()
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "facebook.com"])
+
+        // Verify only non-fireproofed domain data records were removed
+        XCTAssertEqual(1, dataStore.removedDataOfTypesForRecords.count)
+        let removedRecords = dataStore.removedDataOfTypesForRecords[0].records
+        XCTAssertEqual(1, removedRecords.count)
+        XCTAssertEqual("facebook.com", removedRecords[0].displayName)
+
+        // Verify only non-fireproofed domain cookies were removed
+        XCTAssertEqual(1, mockCookieStore.cookiesThatWereDeleted.count)
+        XCTAssertEqual("Cookie2", mockCookieStore.cookiesThatWereDeleted[0].name)
+    }
+
+    func test_WhenClearingForDomains_WithDotPrefixedCookies_ThenMatchingCookiesAreCleared() async {
+        let mockCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
+            .make(name: "Cookie1", value: "Value", domain: "example.com"),
+            .make(name: "Cookie2", value: "Value", domain: ".example.com"),
+            .make(name: "Cookie3", value: "Value", domain: ".test.com"),
+            .make(name: "Cookie4", value: "Value", domain: "other.com"),
+        ])
+        let dataStore = MockWebsiteDataStore(
+            httpCookieStore: mockCookieStore,
+            dataRecordsOfTypesReturnValue: [
+                MockWebsiteDataRecord(displayName: "example.com"),
+            ]
+        )
+
+        let webCacheManager = makeWebCacheManager()
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "sub.test.com"])
+
+        // Verify cookies for exact domain and dot-prefixed domain were removed
+        // Note: sub.example.com is a distinct host and not matched when clearing example.com
+        XCTAssertEqual(3, mockCookieStore.cookiesThatWereDeleted.count)
+        XCTAssertTrue(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "Cookie1" })
+        XCTAssertTrue(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "Cookie2" })
+        XCTAssertTrue(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "Cookie3" })
+        XCTAssertFalse(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "Cookie4" })
+    }
+
     @MainActor
     private func makeWebCacheManager() -> WebCacheManager {
         return WebCacheManager(

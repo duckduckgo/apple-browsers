@@ -166,8 +166,10 @@ protocol NewTabPageNavigator {
 final class DefaultNewTabPageNavigator: NewTabPageNavigator {
     func openNewTabPageBackgroundCustomizationSettings() {
         Task { @MainActor in
-            Application.appDelegate.windowControllersManager.showTab(with: .newtab)
-            try? await Task.sleep(interval: 0.2)
+            if Application.appDelegate.windowControllersManager.selectedTab?.content != .newtab {
+                Application.appDelegate.windowControllersManager.showTab(with: .newtab)
+                try? await Task.sleep(interval: 0.2)
+            }
             if let window = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
                 if Application.appDelegate.featureFlagger.isFeatureOn(.newTabPagePerTab) {
                     if let webView = window.mainViewController.browserTabViewController.webView {

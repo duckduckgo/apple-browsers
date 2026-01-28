@@ -20,11 +20,14 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import Foundation
 import AppKit
+import BrowserServicesKit
 import Common
 import LoginItems
 import NetworkProtectionProxy
 import os.log
 import PixelKit
+import SwiftUI
+import SwiftUIExtensions
 import Subscription
 import Configuration
 
@@ -40,17 +43,19 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let waitlistInviteCodeItem = NSMenuItem(title: "Waitlist Invite Code:")
     private let waitlistTermsAndConditionsAcceptedItem = NSMenuItem(title: "T&C Accepted:")
 
-    private let productionURLMenuItem = NSMenuItem(title: "Use Production URL", action: #selector(DataBrokerProtectionDebugMenu.useWebUIProductionURL))
+    private let currentURLMenuItem = NSMenuItem(title: "Current URL:")
 
-    private let customURLMenuItem = NSMenuItem(title: "Use Custom URL", action: #selector(DataBrokerProtectionDebugMenu.useWebUICustomURL))
+    private let productionURLMenuItem = NSMenuItem(title: "Use Production URL", action: #selector(DataBrokerProtectionDebugMenu.useWebUIProductionURL))
+    private let customURLMenuItem = NSMenuItem(title: "Use Custom URL...", action: #selector(DataBrokerProtectionDebugMenu.useWebUICustomURL))
 
     private var databaseBrowserWindowController: NSWindowController?
     private var dataBrokerForceOptOutWindowController: NSWindowController?
     private var logMonitorWindowController: NSWindowController?
-    private let customURLLabelMenuItem = NSMenuItem(title: "")
-    private let customServiceRootLabelMenuItem = NSMenuItem(title: "")
+    private let currentEndpointMenuItem = NSMenuItem(title: "Current Endpoint:")
+    private let defaultEndpointMenuItem = NSMenuItem(title: "Use Default Endpoint", action: #selector(DataBrokerProtectionDebugMenu.useDBPDefaultEndpoint))
+    private let customEndpointMenuItem = NSMenuItem(title: "Use Custom Endpoint...", action: #selector(DataBrokerProtectionDebugMenu.useDBPCustomEndpoint))
 
-    private let environmentMenu = NSMenu()
+    private let subscriptionEnvironmentMenuItem = NSMenuItem(title: "Subscription Environment:")
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
 
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
@@ -100,8 +105,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         super.init(title: "Personal Information Removal")
 
         buildItems {
-            NSMenuItem(title: "Environment")
-                .submenu(environmentMenu)
+            subscriptionEnvironmentMenuItem
 
             NSMenuItem(title: "Background Agent") {
                 NSMenuItem(title: "Enable", action: #selector(DataBrokerProtectionDebugMenu.backgroundAgentEnable))
@@ -158,26 +162,19 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             }
 
             NSMenuItem(title: "Web UI") {
+                currentURLMenuItem.isEnabled = false
+                currentURLMenuItem
+
                 productionURLMenuItem.targetting(self)
                 customURLMenuItem.targetting(self)
-
-                NSMenuItem.separator()
-
-                NSMenuItem(title: "Set Custom URL", action: #selector(DataBrokerProtectionDebugMenu.setWebUICustomURL))
-                    .targetting(self)
-                NSMenuItem(title: "Reset Custom URL", action: #selector(DataBrokerProtectionDebugMenu.resetCustomURL))
-                    .targetting(self)
-
-                customURLLabelMenuItem
             }
 
             NSMenuItem(title: "DBP API") {
-                NSMenuItem(title: "Set Service Root", action: #selector(DataBrokerProtectionDebugMenu.setCustomServiceRoot))
-                    .targetting(self)
+                currentEndpointMenuItem.isEnabled = false
+                currentEndpointMenuItem
 
-                customServiceRootLabelMenuItem
-
-                NSMenuItem(title: "⚠️ Please reopen PIR and trigger a new scan for the changes to show up", action: nil, target: nil)
+                defaultEndpointMenuItem.targetting(self)
+                customEndpointMenuItem.targetting(self)
             }
 
             NSMenuItem.separator()
@@ -206,7 +203,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             NSMenuItem(title: "Reset All State and Delete All Data", action: #selector(DataBrokerProtectionDebugMenu.deleteAllDataAndStopAgent))
                 .targetting(self)
 
-            populateDataBrokerProtectionEnvironmentListMenuItems()
+            subscriptionEnvironmentMenuItem.isEnabled = false
         }
     }
 
@@ -219,7 +216,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     override func update() {
         updateWebUIMenuItemsState()
         updateServiceRootMenuItemState()
-        updateEnvironmentMenu()
+        updateSubscriptionEnvironmentMenuItem()
         updateShowStatusMenuIconMenu()
     }
 
@@ -227,53 +224,70 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func useWebUIProductionURL() {
         webUISettings.setURLType(.production)
+        webUISettings.setCustomURL(webUISettings.productionURL)
     }
 
     @objc private func useWebUICustomURL() {
-        webUISettings.setURLType(.custom)
-        webUISettings.setCustomURL(webUISettings.productionURL)
-    }
+        let sheet = CustomTextEntrySheet(
+            title: "Custom Web UI URL",
+            fieldLabel: "Web UI URL",
+            placeholder: "https://example.com/dbp",
+            content: { _, isValid in
+                Text(verbatim: "Enter a full URL for the web UI")
+                    .dbpSecondaryTextStyle()
+                if !isValid.wrappedValue {
+                    Text(verbatim: "Please enter a valid URL.")
+                        .foregroundColor(.red)
+                }
+            },
+            onApply: { [weak self] value in
+                let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard let url = URL(string: trimmedValue), url.isValid else { return false }
+                self?.webUISettings.setCustomURL(trimmedValue)
+                self?.webUISettings.setURLType(.custom)
+                return true
+            }
+        )
 
-    @objc private func resetCustomURL() {
-        webUISettings.setURLType(.production)
-        webUISettings.setCustomURL(webUISettings.productionURL)
-    }
-
-    @objc private func setWebUICustomURL() {
-        showCustomURLAlert { [weak self] value in
-
-            guard let value = value, let url = URL(string: value), url.isValid else { return false }
-
-            self?.webUISettings.setCustomURL(value)
-            return true
+        Task { @MainActor in
+            sheet.show()
         }
     }
 
     // swiftlint:disable force_try
-    @objc private func setCustomServiceRoot() {
-        showCustomServiceRootAlert { [weak self] value, removeBrokers in
-            guard let value, let self else { return false }
+    @objc private func useDBPDefaultEndpoint() {
+        settings.serviceRoot = ""
+        forceBrokerJSONFilesUpdate()
+    }
 
-            self.settings.serviceRoot = value
+    @objc private func useDBPCustomEndpoint() {
+        let sheet = CustomDBPEndpointSheet(
+            onApply: { [weak self] value, removeBrokers in
+                guard let self else { return false }
+                self.settings.serviceRoot = value
 
-            if removeBrokers {
-                let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
-                let privacyConfigManager = DBPPrivacyConfigurationManager()
-                let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler, privacyConfigManager: privacyConfigManager)
-                let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-                let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-                let vault = try! vaultFactory.makeVault(reporter: reporter)
-                let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
-                                                            pixelHandler: pixelHandler,
-                                                            vault: vault,
-                                                            localBrokerService: self.brokerUpdater)
-                let dataManager = DataBrokerProtectionDataManager(database: database)
-                try! dataManager.removeAllData()
+                if removeBrokers {
+                    let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
+                    let privacyConfigManager = DBPPrivacyConfigurationManager()
+                    let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler, privacyConfigManager: privacyConfigManager)
+                    let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+                    let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+                    let vault = try! vaultFactory.makeVault(reporter: reporter)
+                    let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                                pixelHandler: pixelHandler,
+                                                                vault: vault,
+                                                                localBrokerService: self.brokerUpdater)
+                    let dataManager = DataBrokerProtectionDataManager(database: database)
+                    try! dataManager.removeAllData()
+                }
+
+                self.forceBrokerJSONFilesUpdate()
+                return true
             }
+        )
 
-            self.forceBrokerJSONFilesUpdate()
-
-            return true
+        Task { @MainActor in
+            sheet.show()
         }
     }
     // swiftlint:enable force_try
@@ -432,79 +446,32 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     // MARK: - Utility Functions
 
-    private func populateDataBrokerProtectionEnvironmentListMenuItems() {
-        environmentMenu.items = [
-            NSMenuItem(title: "⚠️ The environment can be set in the Subscription > Environment menu", action: nil, target: nil),
-            NSMenuItem(title: EnvironmentTitle.production.rawValue, action: nil, target: nil, keyEquivalent: ""),
-            NSMenuItem(title: EnvironmentTitle.staging.rawValue, action: nil, target: nil, keyEquivalent: ""),
-        ]
-    }
-
-    func showCustomURLAlert(callback: @escaping (String?) -> Bool) {
-        let alert = NSAlert()
-        alert.messageText = "Enter URL"
-        alert.addButton(withTitle: "Accept")
-        alert.addButton(withTitle: "Cancel")
-
-        let inputTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-        alert.accessoryView = inputTextField
-
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            if !callback(inputTextField.stringValue) {
-                let invalidAlert = NSAlert()
-                invalidAlert.messageText = "Invalid URL"
-                invalidAlert.informativeText = "Please enter a valid URL."
-                invalidAlert.addButton(withTitle: "OK")
-                invalidAlert.runModal()
-            }
-        } else {
-            _ = callback(nil)
-        }
-    }
-
-    func showCustomServiceRootAlert(callback: @escaping (String?, Bool) -> Bool) {
-        let alert = NSAlert()
-        alert.messageText = "Enter custom service root (staging environment only)"
-        alert.informativeText = "Leave blank for default"
-        alert.addButton(withTitle: "Accept")
-        alert.addButton(withTitle: "Cancel")
-        alert.showsSuppressionButton = true
-        alert.suppressionButton?.title = "Remove existing brokers"
-
-        let inputTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-        inputTextField.placeholderString = "branches/some-branch"
-        alert.accessoryView = inputTextField
-
-        let shouldRemoveBrokers = alert.suppressionButton?.state == .on
-
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            if !callback(inputTextField.stringValue, shouldRemoveBrokers) {
-                let invalidAlert = NSAlert()
-                invalidAlert.messageText = "Invalid service root"
-                invalidAlert.informativeText = "Please enter a valid service root."
-                invalidAlert.addButton(withTitle: "OK")
-                invalidAlert.runModal()
-            }
-        } else {
-            _ = callback(nil, shouldRemoveBrokers)
-        }
-    }
-
     private func updateWebUIMenuItemsState() {
         productionURLMenuItem.state = webUISettings.selectedURLType == .custom ? .off : .on
         customURLMenuItem.state = webUISettings.selectedURLType == .custom ? .on : .off
 
-        customURLLabelMenuItem.title = "Custom URL: [\(webUISettings.customURL ?? "")]"
+        currentURLMenuItem.title = "Current URL: \(webUISettings.selectedURL)"
     }
 
     private func updateServiceRootMenuItemState() {
+        currentEndpointMenuItem.title = "Current Endpoint: \(settings.endpointURL.absoluteString)"
         switch settings.selectedEnvironment {
         case .production:
-            customServiceRootLabelMenuItem.title = "Production environment currently in used. Please change it to Staging to use a custom service root"
+            defaultEndpointMenuItem.title = "Use Default Endpoint (env: production)"
+            defaultEndpointMenuItem.state = .on
+            customEndpointMenuItem.state = .off
+            customEndpointMenuItem.isEnabled = false
         case .staging:
-            customServiceRootLabelMenuItem.title = "Endpoint URL: [\(settings.endpointURL)]"
+            defaultEndpointMenuItem.title = "Use Default Endpoint (env: staging)"
+            customEndpointMenuItem.isEnabled = true
+
+            if settings.serviceRoot.isEmpty {
+                defaultEndpointMenuItem.state = .on
+                customEndpointMenuItem.state = .off
+            } else {
+                defaultEndpointMenuItem.state = .off
+                customEndpointMenuItem.state = .on
+            }
         }
     }
 
@@ -515,16 +482,128 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         return menuItem
     }
 
-    private func updateEnvironmentMenu() {
-        let selectedEnvironment = settings.selectedEnvironment
-        guard environmentMenu.items.count == 3 else { return }
-
-        environmentMenu.items[1].state = selectedEnvironment == .production ? .on: .off
-        environmentMenu.items[2].state = selectedEnvironment == .staging ? .on: .off
+    private func updateSubscriptionEnvironmentMenuItem() {
+        let environmentText = settings.selectedEnvironment == .production ? "production" : "staging"
+        subscriptionEnvironmentMenuItem.title = "Subscription environment: \(environmentText)"
     }
 
     private func updateShowStatusMenuIconMenu() {
         statusMenuIconMenu.state = settings.showInMenuBar ? .on : .off
+    }
+}
+
+private struct CustomTextEntrySheet<Content: View>: ModalView {
+    @State private var text = ""
+    @State private var isValid = true
+    @Environment(\.dismiss) private var dismiss
+
+    let title: String
+    let fieldLabel: String
+    let placeholder: String
+    let content: (Binding<String>, Binding<Bool>) -> Content
+    let onApply: (String) -> Bool
+
+    init(title: String,
+         fieldLabel: String,
+         placeholder: String,
+         @ViewBuilder content: @escaping (Binding<String>, Binding<Bool>) -> Content,
+         onApply: @escaping (String) -> Bool) {
+        self.title = title
+        self.fieldLabel = fieldLabel
+        self.placeholder = placeholder
+        self.content = content
+        self.onApply = onApply
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(verbatim: title)
+                .fontWeight(.bold)
+
+            Divider()
+
+            HStack {
+                Text(verbatim: fieldLabel)
+                    .padding(.trailing, 10)
+                Spacer()
+                TextField(placeholder, text: $text)
+                    .frame(width: 250)
+                    .onChange(of: text) { _ in
+                        isValid = true
+                    }
+            }
+
+            content($text, $isValid)
+
+            Divider()
+
+            HStack(alignment: .center) {
+                Spacer()
+                Button(UserText.cancel) {
+                    dismiss()
+                }
+                Button {
+                    if onApply(text) {
+                        dismiss()
+                    } else {
+                        isValid = false
+                    }
+                } label: {
+                    Text(verbatim: "Apply")
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20))
+        .frame(width: 400)
+    }
+}
+
+private struct CustomDBPEndpointSheet: ModalView {
+    @State private var removeBrokers = false
+
+    let onApply: (String, Bool) -> Bool
+
+    init(onApply: @escaping (String, Bool) -> Bool) {
+        self.onApply = onApply
+    }
+
+    var body: some View {
+        CustomTextEntrySheet(
+            title: "Custom Service Root",
+            fieldLabel: "Service Root",
+            placeholder: "branches/some-branch",
+            content: { serviceRoot, _ in
+                let trimmedServiceRoot = serviceRoot.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                let baseURL = "https://dbp-staging.duckduckgo.com"
+                let previewURL = trimmedServiceRoot.isEmpty
+                    ? baseURL
+                    : URL(string: baseURL)!.appending(trimmedServiceRoot).absoluteString
+
+                Text(verbatim: "Preview: \(previewURL)")
+                    .dbpSecondaryTextStyle()
+
+                Toggle(isOn: $removeBrokers) {
+                    Text(verbatim: "Remove existing brokers")
+                }
+                    .toggleStyle(.checkbox)
+
+                Text(verbatim: "Please reopen PIR and trigger a new scan for the changes to show up.")
+                    .dbpSecondaryTextStyle()
+            },
+            onApply: { value in
+                return onApply(value.trimmingCharacters(in: .whitespacesAndNewlines), removeBrokers)
+            }
+        )
+    }
+}
+
+private extension View {
+    func dbpSecondaryTextStyle() -> some View {
+        multilineText()
+            .multilineTextAlignment(.leading)
+            .fixMultilineScrollableText()
+            .foregroundColor(.secondary)
     }
 }
 

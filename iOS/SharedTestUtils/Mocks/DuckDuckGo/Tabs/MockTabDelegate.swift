@@ -154,7 +154,7 @@ extension TabViewController {
             privacyConfigurationManager: PrivacyConfigurationManagerMock(),
             appSettings: AppSettingsMock(),
             bookmarksDatabase: CoreDataDatabase.bookmarksMock,
-            historyManager: MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true),
+            historyManager: MockHistoryManager(),
             syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),

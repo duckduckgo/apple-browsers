@@ -55,6 +55,7 @@ import UserNotifications
 import Utilities
 import VPN
 import VPNAppState
+import WebExtensions
 import WebKit
 import AttributedMetric
 
@@ -1536,7 +1537,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupWebExtensions() {
         if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManager()
+            let webExtensionManager = WebExtensionManagerFactory.makeManager()
             self.webExtensionManager = webExtensionManager
 
             Task {

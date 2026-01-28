@@ -306,6 +306,7 @@ jobs:
           name: memory-metrics
 
       - name: Report Memory Metrics to ClickHouse
+        working-directory: macOS
         run: |
           echo "🏁🏁🏁 Reporting Memory Metrics 🏁"
           cat insert-statements.sql

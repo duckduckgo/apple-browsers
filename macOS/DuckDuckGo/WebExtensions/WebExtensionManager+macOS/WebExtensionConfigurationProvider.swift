@@ -1,7 +1,7 @@
 //
-//  FirePopoverCollectionViewHeader.swift
+//  WebExtensionConfigurationProvider.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 //  limitations under the License.
 //
 
-import Cocoa
+import Foundation
+import WebExtensions
 
-final class FirePopoverCollectionViewHeader: NSView {
+@available(macOS 15.4, *)
+struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
 
-    static let identifier = NSUserInterfaceItemIdentifier(rawValue: "FirePopoverCollectionViewHeader")
-
-    @IBOutlet weak var title: NSTextField!
-
-    override func mouseDown(with event: NSEvent) {}
-
+    var applicationNameForUserAgent: String {
+        UserAgent.brandedDefaultSuffix
+    }
 }

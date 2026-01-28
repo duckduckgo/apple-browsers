@@ -55,6 +55,7 @@ import UserNotifications
 import Utilities
 import VPN
 import VPNAppState
+import WebExtensions
 import WebKit
 import AttributedMetric
 
@@ -1068,16 +1069,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         appIconChanger = AppIconChanger(internalUserDecider: internalUserDecider, appearancePreferences: appearancePreferences)
 
-        // Configure Event handlers
-        let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
-        let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
+        if AppVersion.runType.requiresEnvironment {
+            // Configure Event handlers
+            let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
+            let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
 
-        vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionManager,
-                                                                   tunnelController: tunnelController,
-                                                                   vpnUninstaller: vpnUninstaller)
+            vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionManager,
+                                                                       tunnelController: tunnelController,
+                                                                       vpnUninstaller: vpnUninstaller)
 
-        // Freemium DBP
-        freemiumDBPFeature.subscribeToDependencyUpdates()
+            // Freemium DBP
+            freemiumDBPFeature.subscribeToDependencyUpdates()
+        }
 
         // ignore popovers shown from a view not in view hierarchy
         // https://app.asana.com/0/1201037661562251/1206407295280737/f
@@ -1525,7 +1528,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupWebExtensions() {
         if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManager()
+            let webExtensionManager = WebExtensionManagerFactory.makeManager()
             self.webExtensionManager = webExtensionManager
 
             Task {

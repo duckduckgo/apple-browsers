@@ -28,21 +28,20 @@ public class HistoryCapture {
     }
 
     let historyManager: HistoryManaging
-    var coordinator: HistoryCoordinating {
-        historyManager.historyCoordinator
-    }
+    let tabID: String?
 
     var url: URL?
 
-    public init(historyManager: HistoryManaging) {
+    public init(historyManager: HistoryManaging, tabID: String?) {
         self.historyManager = historyManager
+        self.tabID = tabID
     }
 
     @MainActor
     public func webViewDidCommit(url: URL) {
         let url = url.urlOrDuckDuckGoCleanQuery
         self.url = url
-        coordinator.addVisit(of: url)
+        historyManager.addVisit(of: url, tabID: tabID)
     }
 
     @MainActor
@@ -53,8 +52,8 @@ public class HistoryCapture {
 
         guard let title, !title.isEmpty else { return }
 
-        coordinator.updateTitleIfNeeded(title: title, url: url)
-        coordinator.commitChanges(url: url)
+        historyManager.updateTitleIfNeeded(title: title, url: url)
+        historyManager.commitChanges(url: url)
     }
 
 }

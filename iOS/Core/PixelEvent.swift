@@ -1114,6 +1114,7 @@ extension Pixel {
         case historyLoadTabHistoryFailed
         case historyInsertTabHistoryFailed
         case historyRemoveTabHistoryFailed
+        case historyCleanOrphanedTabHistoryFailed
 
         // MARK: Subscription
         case subscriptionActive
@@ -2575,6 +2576,7 @@ extension Pixel.Event {
         case .historyLoadTabHistoryFailed: return "m_debug_history-load-tab-history-failed"
         case .historyInsertTabHistoryFailed: return "m_debug_history-insert-tab-history-failed"
         case .historyRemoveTabHistoryFailed: return "m_debug_history-remove-tab-history-failed"
+        case .historyCleanOrphanedTabHistoryFailed: return "m_debug_history-clean-orphaned-tab-history-failed"
 
 
         // MARK: Subscription

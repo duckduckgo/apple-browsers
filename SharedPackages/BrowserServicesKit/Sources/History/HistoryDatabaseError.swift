@@ -28,5 +28,6 @@ public enum HistoryDatabaseError: Error {
     case loadTabHistoryFailed
     case insertTabHistoryFailed
     case removeTabHistoryFailed
+    case cleanOrphanedTabHistoryFailed
 
 }

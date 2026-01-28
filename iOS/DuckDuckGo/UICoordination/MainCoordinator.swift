@@ -29,6 +29,7 @@ import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import PrivacyStats
+import WebExtensions
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -59,6 +60,9 @@ final class MainCoordinator {
     private let launchSourceManager: LaunchSourceManaging
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
+
+    private(set) var webExtensionManager: WebExtensionManaging?
+    private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -203,6 +207,25 @@ final class MainCoordinator {
 
     func start() {
         controller.loadViewIfNeeded()
+        setupWebExtensions()
+    }
+
+    private func setupWebExtensions() {
+        if #available(iOS 18.4, *), featureFlagger.isFeatureOn(.webExtensions) {
+            let webExtensionManager = WebExtensionManagerFactory.makeManager(mainViewController: controller)
+            self.webExtensionManager = webExtensionManager
+
+            self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(webExtensionManager: webExtensionManager,
+                                                                               mainViewController: controller)
+
+            controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
+            Task { @MainActor in
+                await webExtensionManager.loadInstalledExtensions()
+            }
+        } else {
+            self.webExtensionManager = nil
+            self.webExtensionEventsCoordinator = nil
+        }
     }
 
     private static func makeHistoryManager(tabsModel: TabsModel) throws -> HistoryManaging {

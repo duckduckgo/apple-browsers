@@ -20,13 +20,13 @@ import UIKit
 import WebKit
 import WebExtensions
 
-@available(iOS 18.4, *)
 @MainActor
 final class WebExtensionEventsCoordinator {
 
     private weak var webExtensionManager: WebExtensionManaging?
     private weak var mainViewController: MainViewController?
 
+    @available(iOS 18.4, *)
     init(webExtensionManager: WebExtensionManaging, mainViewController: MainViewController) {
         self.webExtensionManager = webExtensionManager
         self.mainViewController = mainViewController
@@ -34,24 +34,29 @@ final class WebExtensionEventsCoordinator {
 
     // MARK: - Tab Events
 
+    @available(iOS 18.4, *)
     func didOpenTab(_ tabViewController: TabViewController) {
         webExtensionManager?.eventsListener.didOpenTab(tabViewController)
     }
 
+    @available(iOS 18.4, *)
     func didCloseTab(_ tabViewController: TabViewController, windowIsClosing: Bool = false) {
         webExtensionManager?.eventsListener.didCloseTab(tabViewController, windowIsClosing: windowIsClosing)
     }
 
+    @available(iOS 18.4, *)
     func didActivateTab(_ tabViewController: TabViewController, previousActiveTab: TabViewController?) {
         webExtensionManager?.eventsListener.didActivateTab(tabViewController, previousActiveTab: previousActiveTab)
     }
 
+    @available(iOS 18.4, *)
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tabViewController: TabViewController) {
         webExtensionManager?.eventsListener.didChangeTabProperties(properties, for: tabViewController)
     }
 
     // MARK: - Window Events
 
+    @available(iOS 18.4, *)
     func didFocusWindow() {
         guard let mainViewController else { return }
         webExtensionManager?.eventsListener.didFocusWindow(mainViewController)

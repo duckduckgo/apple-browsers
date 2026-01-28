@@ -21,6 +21,7 @@ import WebKit
 /// Provides platform-specific window and tab operations for web extensions.
 /// This protocol abstracts the platform-specific implementations needed by WKWebExtensionControllerDelegate.
 @available(macOS 15.4, iOS 18.4, *)
+@MainActor
 public protocol WebExtensionWindowTabProviding: AnyObject {
 
     /// Returns the open windows for the given extension context.

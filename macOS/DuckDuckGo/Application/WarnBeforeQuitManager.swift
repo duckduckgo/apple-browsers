@@ -296,7 +296,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
             case .keyDown:
                 // Other key pressed during hold - cancel and pass through
-                Logger.general.debug("WarnBeforeQuitManager: '\(event.keyEquivalent?.charCode ?? "")' key pressed during hold, canceling")
+                var keyDescr: String { event.type == .keyDown ? "'\(event.keyEquivalent?.charCode ?? "")' key" : "button \(event.buttonNumber)" }
+                Logger.general.debug("WarnBeforeQuitManager: \(keyDescr) pressed during hold, canceling")
                 NSApp.postEvent(event, atStart: true)
                 return .completed(shouldProceed: false)
 
@@ -319,7 +320,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         // Emit waiting state - UI can show "press again" or start fadeout
         currentState = .waitingForSecondPress
 
-        return await withCancellableContinuation(onCancel: false) { [shortcutKeyEquivalent] resumeContinuation, wasResumed in
+        return await withCancellableContinuation { [shortcutKeyEquivalent] resumeContinuation, wasResumed in
             var timer: Timer?
 
             @MainActor
@@ -465,6 +466,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             } else {
                 Logger.general.debug("WarnBeforeQuitManager: Mouse already hovering, not starting timer")
             }
+        } onCancel: {
+            Logger.general.debug("WarnBeforeQuitManager: Task cancelled, triggering cleanup")
+            return false
         }
     }
 
@@ -537,20 +541,18 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
 // MARK: - PixelFiring Async Extension
 
-private extension PixelFiring {
+extension PixelFiring {
     /// Fire a pixel and wait for completion asynchronously (with timeout)
-    func fireAndWait(_ event: PixelKitEvent, frequency: PixelKit.Frequency) async {
-        do {
-            try await withTimeout(1) {
-                await withCancellableContinuation(onCancel: ()) { resume, _ in
-                    fire(event, frequency: frequency) { _, _ in
-                        resume(())
-                    }
+    func fireAndWait(_ event: PixelKitEvent, frequency: PixelKit.Frequency, timeout: TimeInterval = 1) async {
+        try? await withTimeout(timeout) {
+            await withCancellableContinuation { resume, _ in
+                fire(event, frequency: frequency) { _, _ in
+                    resume(())
                 }
+            } onCancel: {
+                // Timeout - continue with termination anyway
+                Logger.general.error("WarnBeforeQuitManager: Pixel firing timed out")
             }
-        } catch {
-            // Timeout - continue with termination anyway
-            Logger.general.error("WarnBeforeQuitManager: Pixel firing timed out")
         }
     }
 }
@@ -560,9 +562,9 @@ private extension PixelFiring {
 /// - Parameter operation: The operation to execute. Receives:
 ///   - resume: Callback to resume the continuation with a value
 ///   - wasResumed: Callback to check if continuation was already resumed (returns true if already resumed)
-private func withCancellableContinuation<T>(
-    onCancel cancellationValue: T,
-    _ operation: (@escaping (T) -> Void, @escaping () -> Bool) -> Void
+func withCancellableContinuation<T>(
+    _ operation: (@escaping (T) -> Void, @escaping () -> Bool) -> Void,
+    onCancel cancellationValue: @escaping () -> T
 ) async -> T {
     let lock = NSLock()
     var isResumed = false
@@ -578,24 +580,28 @@ private func withCancellableContinuation<T>(
 
             let resume = { (value: T) in
                 lock.lock()
-                defer { lock.unlock() }
                 guard !isResumed else { return }
                 isResumed = true
                 cancellationHandler = nil
+                lock.unlock()
                 continuation.resume(returning: value)
             }
 
             // Store cancellation handler for when task is cancelled
+            lock.lock()
             cancellationHandler = {
-                DispatchQueue.main.asyncOrNow {
-                    Logger.general.debug("WarnBeforeQuitManager: Task cancelled, triggering cleanup")
-                    resume(cancellationValue)
-                }
+                resume(cancellationValue())
+            }
+            lock.unlock()
+            guard !Task.isCancelled else {
+                resume(cancellationValue())
+                return
             }
 
             operation(resume, checkIfResumed)
         }
     } onCancel: {
+        let cancellationHandler = lock.withLock { cancellationHandler }
         cancellationHandler?()
     }
 }

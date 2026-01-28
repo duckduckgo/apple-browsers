@@ -128,7 +128,11 @@ extension FileManager: FileStore {
     }
 
     func remove(fileAtURL url: URL) {
-        try? removeItem(at: url)
+        do {
+            try removeItem(at: url)
+        } catch {
+            FirePixels.measure(with: FirePixels.burnLastSessionStateError(error))
+        }
     }
 
     func move(fileAt from: URL, to: URL) {

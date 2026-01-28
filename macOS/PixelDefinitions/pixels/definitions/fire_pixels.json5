@@ -1,0 +1,304 @@
+// Fire Button / Data Clearing Flow Pixels
+{
+    "m_mac_fire_completion": {
+        "description": "Measures total data clearing operation duration from fire button trigger to when all clearing operations finish. Tracks clearing scope (tab/window/all), included data types, execution path, and auto-clear status.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "clearing_option",
+                "type": "string",
+                "enum": ["currentTab", "currentWindow", "allData"],
+                "description": "Scope of data clearing operation"
+            },
+            {
+                "key": "domains",
+                "type": "string",
+                "description": "Comma-separated list of data domains cleared (History,TabsAndWindows,CookiesAndSiteData,ChatHistory)"
+            },
+            {
+                "key": "path",
+                "type": "string",
+                "enum": ["burnEntity", "burnAll", "burnVisits", "burnAIChats"],
+                "description": "Code path taken through Fire.swift"
+            },
+            {
+                "key": "autoClear",
+                "type": "string",
+                "enum": ["true", "false"],
+                "description": "Whether clearing was triggered by auto-clear (quit/launch) vs manual fire button"
+            },
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Total duration in milliseconds for the entire fire operation"
+            }
+        ]
+    },
+    
+    "m_mac_fire_retrigger_in_20s": {
+        "description": "Fired when fire button is triggered within 20 seconds of a previous clearing operation. Helps identify clearing effectiveness issues or user confusion.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button"],
+        "parameters": [
+            "appVersion",
+            "pixelSource"
+        ]
+    },
+    
+    // ------------------ burnWebCache ------------------
+    
+    "m_mac_fire_burn_web_cache_error": {
+        "description": "Fired when burnWebCache() encounters an error",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain"
+        ]
+    },
+    
+    "m_mac_fire_burn_web_cache_duration": {
+        "description": "Records burnWebCache() execution duration (fired on both success and error)",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Duration in milliseconds"
+            }
+        ]
+    },
+    
+    "m_mac_fire_burn_web_cache_has_residue": {
+        "description": "Fired when burnWebCache() leaves residual data (incomplete clearing)",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    
+    // ------------------ burnHistory ------------------
+    
+    "m_mac_fire_burn_history_error": {
+        "description": "Fired when burnHistory() encounters an error",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    
+    "m_mac_fire_burn_history_duration": {
+        "description": "Records burnHistory() execution duration",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {"key": "duration", "type": "integer", "description": "Duration in milliseconds"}
+        ]
+    },
+    
+    "m_mac_fire_burn_history_has_residue": {
+        "description": "Fired when burnHistory() leaves residual history entries",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    
+    // ------------------ burnChatHistory ------------------
+    
+    "m_mac_fire_burn_chat_history_error": {
+        "description": "Fired when burnChatHistory() encounters an error",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    
+    "m_mac_fire_burn_chat_history_duration": {
+        "description": "Records burnChatHistory() execution duration",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {"key": "duration", "type": "integer", "description": "Duration in milliseconds"}
+        ]
+    },
+    
+    "m_mac_fire_burn_chat_history_has_residue": {
+        "description": "Fired when burnChatHistory() leaves residual chat data",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    
+    // ------------------ burnVisitedLinks ------------------
+    
+    "m_mac_fire_burn_visited_links_error": {
+        "description": "Fired when burnVisitedLinks() encounters an error",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    
+    "m_mac_fire_burn_visited_links_duration": {
+        "description": "Records burnVisitedLinks() execution duration",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {"key": "duration", "type": "integer", "description": "Duration in milliseconds"}
+        ]
+    },
+    
+    "m_mac_fire_burn_visited_links_has_residue": {
+        "description": "Fired when burnVisitedLinks() leaves residual visited link indicators",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    
+    // ------------------ burnVisits ------------------
+    
+    "m_mac_fire_burn_visits_error": {
+        "description": "Fired when burnVisits() encounters an error",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "history_view"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    
+    "m_mac_fire_burn_visits_duration": {
+        "description": "Records burnVisits() execution duration",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "history_view"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {"key": "duration", "type": "integer", "description": "Duration in milliseconds"}
+        ]
+    },
+    
+    "m_mac_fire_burn_visits_has_residue": {
+        "description": "Fired when burnVisits() leaves residual visit entries",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "history_view"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    
+    // ------------------ burnLastSessionState ------------------
+    
+    "m_mac_fire_burn_last_session_state_error": {
+        "description": "Fired when burnLastSessionState() encounters an error",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    
+    "m_mac_fire_burn_last_session_state_duration": {
+        "description": "Records burnLastSessionState() execution duration",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {"key": "duration", "type": "integer", "description": "Duration in milliseconds"}
+        ]
+    },
+    
+    "m_mac_fire_burn_last_session_state_has_residue": {
+        "description": "Fired when burnLastSessionState() leaves residual session state",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    
+    // ------------------ burnTabs ------------------
+    
+    "m_mac_fire_burn_tabs_error": {
+        "description": "Fired when burnTabs() encounters an error",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    
+    "m_mac_fire_burn_tabs_duration": {
+        "description": "Records burnTabs() execution duration",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {"key": "duration", "type": "integer", "description": "Duration in milliseconds"}
+        ]
+    },
+    
+    "m_mac_fire_burn_tabs_has_residue": {
+        "description": "Fired when burnTabs() leaves residual tabs/windows",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    
+    // ------------------ burnDownloads ------------------
+    
+    "m_mac_fire_burn_downloads_error": {
+        "description": "Fired when burnDownloads() encounters an error",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    
+    "m_mac_fire_burn_downloads_duration": {
+        "description": "Records burnDownloads() execution duration",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {"key": "duration", "type": "integer", "description": "Duration in milliseconds"}
+        ]
+    },
+    
+    "m_mac_fire_burn_downloads_has_residue": {
+        "description": "Fired when burnDownloads() leaves residual download entries",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    
+    // ------------------ burnRecentlyClosed ------------------
+    
+    "m_mac_fire_burn_recently_closed_error": {
+        "description": "Fired when burnRecentlyClosed() encounters an error",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    
+    "m_mac_fire_burn_recently_closed_duration": {
+        "description": "Records burnRecentlyClosed() execution duration",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {"key": "duration", "type": "integer", "description": "Duration in milliseconds"}
+        ]
+    },
+    
+    "m_mac_fire_burn_recently_closed_has_residue": {
+        "description": "Fired when burnRecentlyClosed() leaves residual recently closed entries",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["fire_button", "auto_clear"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

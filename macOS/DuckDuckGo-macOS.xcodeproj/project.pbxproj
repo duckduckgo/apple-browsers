@@ -447,6 +447,8 @@
 		31FC23522DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
 		36293EDF2F28CD2500E9C644 /* FirePixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36293EDE2F28CD1B00E9C644 /* FirePixels.swift */; };
 		36293EE02F28CD2500E9C644 /* FirePixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36293EDE2F28CD1B00E9C644 /* FirePixels.swift */; };
+		36293EE22F2AA84600E9C644 /* ResidueChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36293EE12F2AA83800E9C644 /* ResidueChecker.swift */; };
+		36293EE32F2AA84600E9C644 /* ResidueChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36293EE12F2AA83800E9C644 /* ResidueChecker.swift */; };
 		3701C9CE29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */; };
 		3701C9CF29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */; };
 		370245FD2CF7C65400CD79A3 /* PrivacyStatsTrackerDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370245FC2CF7C64B00CD79A3 /* PrivacyStatsTrackerDataProvider.swift */; };
@@ -4675,6 +4677,7 @@
 		31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarMenuButton.swift; sourceTree = "<group>"; };
 		336B39E22726B4B700C417D3 /* LocalUnprotectedDomains.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalUnprotectedDomains.swift; sourceTree = "<group>"; };
 		36293EDE2F28CD1B00E9C644 /* FirePixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirePixels.swift; sourceTree = "<group>"; };
+		36293EE12F2AA83800E9C644 /* ResidueChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResidueChecker.swift; sourceTree = "<group>"; };
 		3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxBerkeleyDatabaseReader.swift; sourceTree = "<group>"; };
 		370245FC2CF7C64B00CD79A3 /* PrivacyStatsTrackerDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsTrackerDataProvider.swift; sourceTree = "<group>"; };
 		370270BB2C78AC6F002E44E4 /* NewTabBackgroundPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabBackgroundPixel.swift; sourceTree = "<group>"; };
@@ -7399,6 +7402,7 @@
 		36293EDD2F28CCBA00E9C644 /* Statistics */ = {
 			isa = PBXGroup;
 			children = (
+				36293EE12F2AA83800E9C644 /* ResidueChecker.swift */,
 				36293EDE2F28CD1B00E9C644 /* FirePixels.swift */,
 			);
 			path = Statistics;
@@ -14819,6 +14823,7 @@
 				3173072C2CD2490700C492AB /* AutofillToolbarOnboardingView.swift in Sources */,
 				EED4D3E02C8A298D00C79EEA /* AutofillPixelEvent.swift in Sources */,
 				3706FBE3293F65D500E42796 /* WindowControllersManager.swift in Sources */,
+				36293EE22F2AA84600E9C644 /* ResidueChecker.swift in Sources */,
 				37197EAA2942443D00394917 /* ModalSheetCancellable.swift in Sources */,
 				31267C6B2B640C5200FEF811 /* DataBrokerProtectionAppEvents.swift in Sources */,
 				1DD6A7B22D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */,
@@ -16897,6 +16902,7 @@
 				EA0BA3A9272217E6002A0B6C /* ClickToLoadUserScript.swift in Sources */,
 				AAA892EA250A4CEF005B37B2 /* WindowControllersManager.swift in Sources */,
 				85C5991B27D10CF000E605B2 /* FireAnimationView.swift in Sources */,
+				36293EE32F2AA84600E9C644 /* ResidueChecker.swift in Sources */,
 				371BBC5E2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift in Sources */,
 				B6B4D1CA2B0C8C9200C26286 /* FirefoxCompatibilityPreferences.swift in Sources */,
 				AA6197C4276B314D008396F0 /* FaviconUrlReference.swift in Sources */,

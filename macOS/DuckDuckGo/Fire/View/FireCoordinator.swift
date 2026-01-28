@@ -279,6 +279,8 @@ extension FireCoordinator {
 
     @MainActor
     func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool) async {
+        FirePixels.startRetriggerTimer()
+        
         if result.includeChatHistory {
             pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
         }
@@ -287,6 +289,7 @@ extension FireCoordinator {
            result.includeHistory, !isAllHistorySelected,
            let visits = result.selectedVisits, !visits.isEmpty {
 
+            let startTime = Date()
             await fireViewModel.fire.burnVisits(visits,
                                                 except: fireViewModel.fire.fireproofDomains,
                                                 isToday: result.isToday,
@@ -294,6 +297,7 @@ extension FireCoordinator {
                                                 clearSiteData: result.includeCookiesAndSiteData,
                                                 clearChatHistory: result.includeChatHistory,
                                                 urlToOpenIfWindowsAreClosed: nil)
+            FirePixels.measureCompletion(from: startTime, dialogResult: result, path: .burnVisits, autoClear: false)
             return
         }
         pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
@@ -309,10 +313,12 @@ extension FireCoordinator {
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
                                                 close: result.includeTabsAndWindows)
+            let startTime = Date()
             await fireViewModel.fire.burnEntity(entity,
                                                 includingHistory: result.includeHistory,
                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
                                                 includeChatHistory: result.includeChatHistory)
+            FirePixels.measureCompletion(from: startTime, dialogResult: result, path: .burnEntity, autoClear: false)
 
         case .currentWindow:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
@@ -323,28 +329,34 @@ extension FireCoordinator {
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
+            let startTime = Date()
             await fireViewModel.fire.burnEntity(entity,
                                                 includingHistory: result.includeHistory,
                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
                                                 includeChatHistory: result.includeChatHistory)
+            FirePixels.measureCompletion(from: startTime, dialogResult: result, path: .burnEntity, autoClear: false)
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
+                let startTime = Date()
                 await fireViewModel.fire.burnAll(isBurnOnExit: false,
                                                  opening: .newtab,
                                                  includeCookiesAndSiteData: result.includeCookiesAndSiteData,
                                                  includeChatHistory: result.includeChatHistory)
+                FirePixels.measureCompletion(from: startTime, dialogResult: result, path: .burnEntity, autoClear: false)
             } else {
                 let entity = Fire.BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers,
                                                            selectedDomains: result.selectedCookieDomains ?? [],
                                                            customURLToOpen: nil,
                                                            close: result.includeTabsAndWindows)
+                let startTime = Date()
                 await fireViewModel.fire.burnEntity(entity,
                                                     includingHistory: result.includeHistory,
                                                     includeCookiesAndSiteData: result.includeCookiesAndSiteData,
                                                     includeChatHistory: result.includeChatHistory)
+                FirePixels.measureCompletion(from: startTime, dialogResult: result, path: .burnEntity, autoClear: false)
             }
         }
         if result.includeHistory,

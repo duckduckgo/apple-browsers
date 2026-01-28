@@ -225,6 +225,19 @@ final class Fire: FireProtocol {
                 return nil
             }
         }
+        
+        var description: String {
+            switch self {
+            case .none:
+                return "none"
+            case .tab:
+                return "tab"
+            case .window:
+                return "window"
+            case .allWindows:
+                return "allWindows"
+            }
+        }
 
         func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
             switch self {
@@ -494,7 +507,16 @@ final class Fire: FireProtocol {
         domains = domains.convertedToETLDPlus1(tld: tld)
 
         burnVisitedLinks(visits)
+        
+        let startTime = Date()
         historyCoordinating.burnVisits(visits) {
+            FirePixels.measure(with: FirePixels.burnVisitsDuration, from: startTime)
+            FirePixels.measure(with: FirePixels.burnVisitsHasResidue) {
+                visits.contains { visit in
+                    visit.historyEntry?.visits.contains(visit) ?? false
+                }
+            }
+            
             // If cookie/site data should not be cleared, finish after history burn
             guard clearSiteData else {
                 completion?()
@@ -522,7 +544,9 @@ final class Fire: FireProtocol {
 
     @MainActor
     func burnChatHistory() async {
+        let startTime = Date()
         await aiChatHistoryCleaner.cleanAIChatHistory()
+        FirePixels.measure(with: FirePixels.burnChatHistoryDuration, from: startTime)
         if syncService?.authState != .inactive {
             syncService?.scheduler.requestSyncImmediately()
         }
@@ -619,12 +643,14 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnHistory(ofEntity entity: BurningEntity, completion: @escaping @MainActor () -> Void) {
+        let burnHistoryStartTime = Date()
         let visits: [Visit]
 
         switch entity {
         case .none(selectedDomains: let domains):
             burnHistory(of: domains) { urls in
                 self.burnVisitedLinks(urls)
+                FirePixels.measure(with: FirePixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
                 completion()
             }
             return
@@ -639,28 +665,66 @@ final class Fire: FireProtocol {
 
         case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _, close: _):
             // clear all tabs navigation history
+            let startTime = Date()
             mainWindowControllers.forEach { wc in
                 wc.mainViewController.tabCollectionViewModel.clearLocalHistory(keepingCurrent: true)
             }
 
             burnAllVisitedLinks()
-            burnAllHistory(completion: completion)
+            burnAllHistory {
+                FirePixels.measure(with: FirePixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
+                completion()
+            }
 
             return
         }
 
         burnVisitedLinks(visits)
-        historyCoordinating.burnVisits(visits, completion: completion)
+        FirePixels.measure(with: FirePixels.burnHistoryHasResidue) {
+            !visits.isEmpty
+        }
+        let burnVisitsStartTime = Date()
+        historyCoordinating.burnVisits(visits) {
+            FirePixels.measure(with: FirePixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
+            FirePixels.measure(with: FirePixels.burnVisitsDuration, from: burnVisitsStartTime)
+            completion()
+        }
+        
+        
     }
 
     @MainActor
     private func burnHistory(of baseDomains: Set<String>, completion: @escaping @MainActor (Set<URL>) -> Void) {
-        historyCoordinating.burnDomains(baseDomains, tld: tld, completion: completion)
+        historyCoordinating.burnDomains(baseDomains, tld: tld) { [weak self] url in
+            guard let self else {
+                completion(url)
+                return
+            }
+            
+            FirePixels.measure(with: FirePixels.burnHistoryHasResidue) {
+                self.historyCoordinating.historyDictionary?.values.contains { entry in
+                    guard let host = entry.url.host else { return false }
+                    let baseDomain = self.tld.eTLDplus1(host) ?? host
+                    return baseDomains.contains(baseDomain)
+                } ?? false
+            }
+            completion(url)
+        }
     }
 
     @MainActor
     private func burnAllHistory(completion: @escaping @MainActor () -> Void) {
-        historyCoordinating.burnAll(completion: completion)
+        historyCoordinating.burnAll { [weak self] in
+            guard let self else {
+                completion()
+                return
+            }
+            
+            FirePixels.measure(with: FirePixels.burnHistoryHasResidue) {
+                !(self.historyCoordinating.history?.isEmpty ?? true)
+            }
+            completion()
+        }
     }
 
     // MARK: - Privacy Stats
@@ -677,24 +741,30 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnAllVisitedLinks() {
+        let startTime = Date()
         getVisitedLinkStore()?.removeAll()
+        FirePixels.measure(with: FirePixels.burnVisitedLinksDuration, from: startTime)
     }
 
     @MainActor
     private func burnVisitedLinks(_ visits: [Visit]) {
         guard let visitedLinkStore = getVisitedLinkStore() else { return }
+        let startTime = Date()
         for visit in visits {
             guard let url = visit.historyEntry?.url else { continue }
             visitedLinkStore.removeVisitedLink(with: url)
         }
+        FirePixels.measure(with: FirePixels.burnVisitedLinksDuration, from: startTime)
     }
 
     @MainActor
     private func burnVisitedLinks(_ urls: Set<URL>) {
         guard let visitedLinkStore = getVisitedLinkStore() else { return }
+        let startTime = Date()
         for url in urls {
             visitedLinkStore.removeVisitedLink(with: url)
         }
+        FirePixels.measure(with: FirePixels.burnVisitedLinksDuration, from: startTime)
     }
 
     // MARK: - Zoom levels
@@ -726,7 +796,9 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnDownloads(of baseDomains: Set<String>) {
+        let startTime = Date()
         self.downloadListCoordinator.cleanupInactiveDownloads(for: baseDomains, tld: tld)
+        FirePixels.measure(with: FirePixels.burnDownloadsDuration, from: startTime)
     }
 
     // MARK: - Favicons
@@ -765,6 +837,11 @@ final class Fire: FireProtocol {
     @MainActor
     /// Closes tabs/windows when `close` is true; otherwise clears back/forward history and session state when requested.
     private func burnTabs(burningEntity: BurningEntity) {
+        
+        enum BurnTabsError: Error {
+            case noPinnedTabsManager
+            case tabsViewModelMismatch
+        }
 
         func replacementPinnedTab(from pinnedTab: Tab) -> Tab {
             return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
@@ -778,6 +855,7 @@ final class Fire: FireProtocol {
 
         func burnPinnedTabs(in tabCollectionViewModel: TabCollectionViewModel) {
             guard let pinnedTabsManager = tabCollectionViewModel.pinnedTabsManager else {
+                FirePixels.measure(with: FirePixels.burnTabsError(BurnTabsError.noPinnedTabsManager))
                 assertionFailure("No pinned tabs manager")
                 return
             }
@@ -795,8 +873,16 @@ final class Fire: FireProtocol {
                   selectedDomains: _,
                   parentTabCollectionViewModel: let tabCollectionViewModel,
                   close: let shouldClose):
-            assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
+            guard tabViewModel === tabCollectionViewModel.selectedTabViewModel else {
+                FirePixels.measure(with: FirePixels.burnTabsError(BurnTabsError.tabsViewModelMismatch))
+                assertionFailure("TabViewModel mismatch")
+                return
+            }
+
             if shouldClose {
+                let startTime = Date()
+                let countBeforeBurn = tabCollectionViewModel.tabCollection.tabs.count
+
                 if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
                     let tab = replacementPinnedTab(from: tabViewModel.tab)
                     if let index = tabCollectionViewModel.selectionIndex {
@@ -810,12 +896,20 @@ final class Fire: FireProtocol {
                     }
                     tabCollectionViewModel.removeSelected(forceChange: true)
                 }
+
+                FirePixels.measure(with: FirePixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
+                let expectedCount = (countBeforeBurn == 1) ? 1 : countBeforeBurn - 1
+                FirePixels.measure(with: FirePixels.burnTabsHasResidue) {
+                    tabCollectionViewModel.tabCollection.tabs.count != expectedCount
+                }
             }
 
         case .window(tabCollectionViewModel: let tabCollectionViewModel,
                      selectedDomains: _,
                      close: let shouldClose):
             if shouldClose {
+                let startTime = Date()
+
                 // If closing last Window: Insert a new tab to prevent key window closing:
                 var insertedTabIndex: Int?
                 if windowControllersManager.mainWindowControllers.count == 1 {
@@ -824,6 +918,11 @@ final class Fire: FireProtocol {
                 tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
                 burnPinnedTabs(in: tabCollectionViewModel)
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
+
+                FirePixels.measure(with: FirePixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
+                FirePixels.measure(with: FirePixels.burnTabsHasResidue) {
+                    tabCollectionViewModel.tabCollection.tabs.count > 1
+                }
             }
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
@@ -831,12 +930,19 @@ final class Fire: FireProtocol {
                          customURLToOpen: let customURL,
                          close: let shouldClose):
             guard shouldClose else { break }
+            let startTime = Date()
+
             for windowController in mainWindowControllers {
                 // If closing all Tabs/Windows: Insert a new tab to prevent key window closing:
                 let insertedTabIndex = insertNewTabIfNeeded(into: windowController, with: customURL)
                 windowController.mainViewController.tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
                 burnPinnedTabs(in: windowController.mainViewController.tabCollectionViewModel)
                 selectPinnedTabIfNeeded(in: windowController.mainViewController.tabCollectionViewModel)
+            }
+
+            FirePixels.measure(with: FirePixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
+            FirePixels.measure(with: FirePixels.burnTabsHasResidue) {
+                mainWindowControllers.contains { $0.mainViewController.tabCollectionViewModel.tabCollection.tabs.count > 1 }
             }
         }
     }
@@ -886,14 +992,21 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnLastSessionState() {
+        let startTime = Date()
         stateRestorationManager?.clearLastSessionState()
+        FirePixels.measure(with: FirePixels.burnLastSessionStateDuration, from: startTime)
+        FirePixels.measure(with: FirePixels.burnLastSessionStateHasResidue) {
+            stateRestorationManager?.canRestoreLastSessionState ?? false
+        }
     }
 
     // MARK: - Burn Recently Closed
 
     @MainActor
     private func burnRecentlyClosed(baseDomains: Set<String>? = nil) {
+        let startTime = Date()
         recentlyClosedCoordinator?.burnCache(baseDomains: baseDomains, tld: tld)
+        FirePixels.measure(with: FirePixels.burnRecentlyClosedDuration, from: startTime)
     }
 
     // MARK: - Bookmarks cleanup

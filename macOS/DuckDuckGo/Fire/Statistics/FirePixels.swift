@@ -1,97 +1,79 @@
-//
-//  FirePixels.swift
-//
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//  http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
-
 import Foundation
 import PixelKit
 
 enum FirePixels {
     
-    // MARK: - Overall Flow Metrics
+    // Overall Flow Metrics
     
-    /// Clearing completed - total fire operation duration
-    case clearingCompletion(duration: Int)  // milliseconds
+    /// Fire completed
+    case fireCompletion(duration: Int, option: String, domains: String, path: String, autoClear: String)
     
     /// Fire button retriggered within 20 seconds
     case retriggerIn20s
     
-    // MARK: - Per-Action Quality Metrics (3 per action: Error, Duration, HasResidue)
-    
-    // burnWebCache
+    // Per-Action Quality Metrics
+
     case burnWebCacheError(Error)
-    case burnWebCacheDuration(Int)
-    case burnWebCacheHasResidue
+    case burnWebCacheDuration(duration: Int)
+    case burnWebCacheHasResidue(String)
     
-    // burnHistory
-    case burnHistoryError(Error)
-    case burnHistoryDuration(Int)
+    case burnHistoryError(error: Error)
+    case burnHistoryDuration(entity: String, duration: Int)
     case burnHistoryHasResidue
     
-    // burnChatHistory
     case burnChatHistoryError(Error)
     case burnChatHistoryDuration(Int)
     case burnChatHistoryHasResidue
     
-    // burnVisitedLinks
     case burnVisitedLinksError(Error)
     case burnVisitedLinksDuration(Int)
     case burnVisitedLinksHasResidue
     
-    // burnVisits
     case burnVisitsError(Error)
     case burnVisitsDuration(Int)
     case burnVisitsHasResidue
     
-    // burnLastSessionState
     case burnLastSessionStateError(Error)
     case burnLastSessionStateDuration(Int)
     case burnLastSessionStateHasResidue
     
-    // burnTabs
     case burnTabsError(Error)
-    case burnTabsDuration(Int)
+    case burnTabsDuration(entity: String, duration: Int)
     case burnTabsHasResidue
     
-    // burnDownloads
     case burnDownloadsError(Error)
-    case burnDownloadsDuration(Int)
+    case burnDownloadsDuration(duration: Int)
     case burnDownloadsHasResidue
     
-    // burnRecentlyClosed
     case burnRecentlyClosedError(Error)
-    case burnRecentlyClosedDuration(Int)
+    case burnRecentlyClosedDuration(duration: Int)
     case burnRecentlyClosedHasResidue
     
     // Retrigger Timer
+
     private static var retriggerTimer: Timer?
     private static let retriggerWindow: TimeInterval = 20.0
     private static var isWithinRetriggerWindow = false
 }
 
-
-// MARK: - Measurement Helpers
+// MARK: - Overall Flow Measurement
 
 extension FirePixels {
     
-    // Retrigger Timer
+    static func measureCompletion(from startTime: Date, dialogResult: FireDialogResult, path: FirePixels.BurnPath, autoClear: Bool) {
+        PixelKit.fire(
+            FirePixels.fireCompletion(
+                duration: prepareDuration(from: startTime, to: Date()),
+                option: prepareOptionString(dialogResult.clearingOption),
+                domains: prepareDomainsString(dialogResult),
+                path: preparePathString(path),
+                autoClear: String(autoClear)
+            )
+        )
+    }
     
-    /// Starts the 20-second retrigger detection window
+    // Retrigger Measurement
     static func startRetriggerTimer() {
-        // If timer is active, fire retrigger pixel
         if isWithinRetriggerWindow {
             PixelKit.fire(FirePixels.retriggerIn20s, frequency: .standard)
         }
@@ -104,79 +86,91 @@ extension FirePixels {
             isWithinRetriggerWindow = false
         }
     }
+}
+
+// MARK: - Per-Action Quality Metrics
+
+extension FirePixels {
     
-    // Duration Measurement Helper
     
-    /// Measures execution time and automatically fires the duration pixel
-    /// - Parameters:
-    ///   - durationPixel: A closure that takes duration in milliseconds and returns the appropriate FirePixels duration case
-    ///   - operation: The operation to measure and execute
-    /// - Throws: Rethrows any error from the operation
-    /// - Returns: The result of the operation
-    @discardableResult
-    static func measured<T>(
-        _ durationPixel: @escaping (Int) -> FirePixels,
-        operation: () async throws -> T
-    ) async rethrows -> T {
-        let startTime = Date()
-        do {
-            let result = try await operation()
-            let duration = Int(Date().timeIntervalSince(startTime) * 1000)
-            PixelKit.fire(durationPixel(duration), frequency: .standard)
-            return result
-        } catch {
-            let duration = Int(Date().timeIntervalSince(startTime) * 1000)
-            PixelKit.fire(durationPixel(duration), frequency: .standard)
-            throw error
-        }
+    // Duration
+    
+    static func measure(with durationPixel: @escaping (Int) -> FirePixels, from startTime: Date, to endTime: Date = Date()) {
+        PixelKit.fire(
+            durationPixel(prepareDuration(from: startTime, to: endTime))
+        )
     }
     
-    /// Synchronous variant for non-async operations
-    @discardableResult
-    static func measured<T>(
-        _ durationPixel: @escaping (Int) -> FirePixels,
-        operation: () throws -> T
-    ) rethrows -> T {
-        let startTime = Date()
-        do {
-            let result = try operation()
-            let duration = Int(Date().timeIntervalSince(startTime) * 1000)
-            PixelKit.fire(durationPixel(duration), frequency: .standard)
-            return result
-        } catch {
-            let duration = Int(Date().timeIntervalSince(startTime) * 1000)
-            PixelKit.fire(durationPixel(duration), frequency: .standard)
-            throw error
-        }
+    static func measure(with durationPixel: @escaping (String, Int) -> FirePixels, from startTime: Date, to endTime: Date = Date(), entity: String) {
+        PixelKit.fire(
+            durationPixel(entity, prepareDuration(from: startTime, to: endTime))
+        )
     }
     
-    // Residue Detection
+    // Effectiveness
     
-    /// Checks for residual data and automatically fires the residue pixel if found
-    /// - Parameters:
-    ///   - residuePixel: The residue pixel to fire if residual data is detected
-    ///   - check: Closure that performs the residue check, returns true if residue exists
-    static func checkResidue(
-        _ residuePixel: FirePixels,
-        check: () async -> Bool
-    ) async {
-        let hasResidue = await check()
+    static func measure(with residuePixel: FirePixels, recheck: () -> Bool) {
+        let hasResidue = recheck()
         if hasResidue {
             PixelKit.fire(residuePixel, frequency: .standard)
         }
     }
     
-    /// Synchronous variant for non-async residue checks
-    static func checkResidue(
-        _ residuePixel: FirePixels,
-        check: () -> Bool
-    ) {
-        let hasResidue = check()
-        if hasResidue {
-            PixelKit.fire(residuePixel, frequency: .standard)
-        }
+    static func measure(with residuePixel: @escaping (String) -> FirePixels, stepsWithResidue: String) {
+        PixelKit.fire(residuePixel(stepsWithResidue), frequency: .standard)
     }
     
+
+    // Error
+    
+    static func measure(with errorPixel: FirePixels) {
+        PixelKit.fire(
+            errorPixel
+        )
+    }
+    
+}
+
+// MARK: - Measurement Helpers
+
+extension FirePixels {
+    
+    enum BurnPath: String {
+        case burnEntity = "burn_entity"
+        case burnAll = "burn_all"
+        case burnVisits =  "burn_visits"
+    }
+    
+    private static func prepareDuration(from startTime: Date, to endTime: Date) -> Int {
+        return Int(endTime.timeIntervalSince(startTime) * 1000)
+    }
+    
+    /// Computes the domains array from FireDialogResult
+    private static func prepareDomainsString(_ result: FireDialogResult) -> String {
+        var domains: [String] = []
+        if result.includeHistory {
+            domains.append("History")
+        }
+        if result.includeTabsAndWindows {
+            domains.append("TabsAndWindows")
+        }
+        if result.includeCookiesAndSiteData {
+            domains.append("CookiesAndSiteData")
+        }
+        if result.includeChatHistory {
+            domains.append("ChatHistory")
+        }
+        return domains.joined(separator: ",")
+    }
+    
+    /// Converts ClearingOption to string for pixel
+    private static func prepareOptionString(_ option: FireDialogViewModel.ClearingOption) -> String {
+        return option.string
+    }
+    
+    private static func preparePathString(_ path: FirePixels.BurnPath) -> String {
+        return path.rawValue
+    }
 }
 
 // MARK: - PixelKitEvent Protocol
@@ -185,12 +179,11 @@ extension FirePixels: PixelKitEvent {
     
     var name: String {
         switch self {
-        case .clearingCompletion:
+        case .fireCompletion:
             return "m_mac_fire_completion"
         case .retriggerIn20s:
             return "m_mac_fire_retrigger_in_20s"
             
-        // burnWebCache
         case .burnWebCacheError:
             return "m_mac_fire_burn_web_cache_error"
         case .burnWebCacheDuration:
@@ -198,7 +191,6 @@ extension FirePixels: PixelKitEvent {
         case .burnWebCacheHasResidue:
             return "m_mac_fire_burn_web_cache_has_residue"
             
-        // burnHistory
         case .burnHistoryError:
             return "m_mac_fire_burn_history_error"
         case .burnHistoryDuration:
@@ -206,7 +198,6 @@ extension FirePixels: PixelKitEvent {
         case .burnHistoryHasResidue:
             return "m_mac_fire_burn_history_has_residue"
             
-        // burnChatHistory
         case .burnChatHistoryError:
             return "m_mac_fire_burn_chat_history_error"
         case .burnChatHistoryDuration:
@@ -214,7 +205,6 @@ extension FirePixels: PixelKitEvent {
         case .burnChatHistoryHasResidue:
             return "m_mac_fire_burn_chat_history_has_residue"
             
-        // burnVisitedLinks
         case .burnVisitedLinksError:
             return "m_mac_fire_burn_visited_links_error"
         case .burnVisitedLinksDuration:
@@ -222,7 +212,6 @@ extension FirePixels: PixelKitEvent {
         case .burnVisitedLinksHasResidue:
             return "m_mac_fire_burn_visited_links_has_residue"
             
-        // burnVisits
         case .burnVisitsError:
             return "m_mac_fire_burn_visits_error"
         case .burnVisitsDuration:
@@ -230,7 +219,6 @@ extension FirePixels: PixelKitEvent {
         case .burnVisitsHasResidue:
             return "m_mac_fire_burn_visits_has_residue"
             
-        // burnLastSessionState
         case .burnLastSessionStateError:
             return "m_mac_fire_burn_last_session_state_error"
         case .burnLastSessionStateDuration:
@@ -238,7 +226,6 @@ extension FirePixels: PixelKitEvent {
         case .burnLastSessionStateHasResidue:
             return "m_mac_fire_burn_last_session_state_has_residue"
             
-        // burnTabs
         case .burnTabsError:
             return "m_mac_fire_burn_tabs_error"
         case .burnTabsDuration:
@@ -246,7 +233,6 @@ extension FirePixels: PixelKitEvent {
         case .burnTabsHasResidue:
             return "m_mac_fire_burn_tabs_has_residue"
             
-        // burnDownloads
         case .burnDownloadsError:
             return "m_mac_fire_burn_downloads_error"
         case .burnDownloadsDuration:
@@ -254,7 +240,6 @@ extension FirePixels: PixelKitEvent {
         case .burnDownloadsHasResidue:
             return "m_mac_fire_burn_downloads_has_residue"
             
-        // burnRecentlyClosed
         case .burnRecentlyClosedError:
             return "m_mac_fire_burn_recently_closed_error"
         case .burnRecentlyClosedDuration:
@@ -264,36 +249,40 @@ extension FirePixels: PixelKitEvent {
         }
     }
     
-    
-    var standardParameters: [PixelKitStandardParameter]? {
-        return [.pixelSource]
-    }
-    
     var parameters: [String: String]? {
         switch self {
-        case .clearingCompletion(let duration):
-            return ["duration": String(duration)]
+        case .fireCompletion(let duration, let option, let domains, let path, let autoClear):
+            return [
+                "duration": String(duration),
+                "clearing_option": option,
+                "domains": domains,
+                "path": path,
+                "autoClear": autoClear
+            ]
             
         case .retriggerIn20s:
             return nil
             
-        // Duration pixels (all 9 actions have duration)
-        case .burnWebCacheDuration(let ms),
-             .burnHistoryDuration(let ms),
-             .burnChatHistoryDuration(let ms),
-             .burnVisitedLinksDuration(let ms),
-             .burnVisitsDuration(let ms),
-             .burnLastSessionStateDuration(let ms),
-             .burnTabsDuration(let ms),
-             .burnDownloadsDuration(let ms),
-             .burnRecentlyClosedDuration(let ms):
-            return ["duration": String(ms)]
+        case .burnWebCacheDuration(let duration),
+            .burnChatHistoryDuration(let duration),
+            .burnDownloadsDuration(let duration),
+            .burnRecentlyClosedDuration(let duration),
+             .burnVisitedLinksDuration(let duration),
+             .burnVisitsDuration(let duration),
+             .burnLastSessionStateDuration(let duration):
+            return ["duration": String(duration)]
+        
+        case .burnHistoryDuration(let entity, let duration),
+            .burnTabsDuration(let entity, let duration):
+            return ["entity": entity, "duration": String(duration)]
             
-        // All other pixels have no parameters (error auto-extracted, residue is count only)
+        case .burnWebCacheHasResidue(let steps):
+            return ["step": steps]
+            
         case .burnWebCacheError, .burnHistoryError, .burnChatHistoryError,
              .burnVisitedLinksError, .burnVisitsError, .burnLastSessionStateError,
              .burnTabsError, .burnDownloadsError, .burnRecentlyClosedError,
-             .burnWebCacheHasResidue, .burnHistoryHasResidue, .burnChatHistoryHasResidue,
+             .burnHistoryHasResidue, .burnChatHistoryHasResidue,
              .burnVisitedLinksHasResidue, .burnVisitsHasResidue, .burnLastSessionStateHasResidue,
              .burnTabsHasResidue, .burnDownloadsHasResidue, .burnRecentlyClosedHasResidue:
             return nil
@@ -315,5 +304,9 @@ extension FirePixels: PixelKitEvent {
         default:
             return nil
         }
+    }
+    
+    var standardParameters: [PixelKitStandardParameter]? {
+        return [.pixelSource]
     }
 }

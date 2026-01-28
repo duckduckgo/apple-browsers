@@ -545,9 +545,18 @@ final class DownloadListCoordinator {
     @MainActor
     func cleanupInactiveDownloads(for fireWindowSession: FireWindowSessionRef?) {
         Logger.fileDownload.debug("coordinator: cleanupInactiveDownloads")
+        let startTime = Date()
 
         for (id, item) in self.items where item.fireWindowSession == fireWindowSession && item.progress == nil {
             remove(downloadWithIdentifier: id)
+        }
+        FirePixels.measure(with: FirePixels.burnDownloadsDuration, from: startTime)
+        FirePixels.measure(with: FirePixels.burnDownloadsHasResidue) { [weak self] in
+            guard let self else { return false }
+            
+            return self.items.values.contains { item in
+                item.fireWindowSession == fireWindowSession && item.progress == nil
+            }
         }
     }
 
@@ -565,6 +574,7 @@ final class DownloadListCoordinator {
     @MainActor
     func cleanupInactiveDownloads(for baseDomains: Set<String>, tld: TLD) {
         Logger.fileDownload.debug("coordinator: cleanupInactiveDownloads for \(baseDomains)")
+        let startTime = Date()
 
         for (id, item) in self.items where item.progress == nil {
             let websiteUrlBaseDomain = tld.eTLDplus1(item.websiteURL?.host) ?? ""
@@ -572,6 +582,16 @@ final class DownloadListCoordinator {
             if baseDomains.contains(websiteUrlBaseDomain) ||
                 baseDomains.contains(itemUrlBaseDomain) {
                 remove(downloadWithIdentifier: id)
+            }
+        }
+
+        FirePixels.measure(with: FirePixels.burnDownloadsDuration, from: startTime)
+        FirePixels.measure(with: FirePixels.burnDownloadsHasResidue) {
+            self.items.values.contains { item in
+                guard item.progress == nil else { return false }
+                let websiteUrlBaseDomain = tld.eTLDplus1(item.websiteURL?.host) ?? ""
+                let itemUrlBaseDomain = tld.eTLDplus1(item.downloadURL.host) ?? ""
+                return baseDomains.contains(websiteUrlBaseDomain) || baseDomains.contains(itemUrlBaseDomain)
             }
         }
     }

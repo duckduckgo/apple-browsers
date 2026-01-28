@@ -65,9 +65,7 @@ class TabViewController: UIViewController {
     @IBOutlet private(set) weak var errorMessage: UILabel!
     @IBOutlet weak var containerStackView: UIStackView!
     @IBOutlet weak var webViewContainer: UIView!
-    @IBOutlet private var containerStackViewSafeAreaBottomConstraint: NSLayoutConstraint!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
-    private var containerStackViewBottomConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
     
     /// Stores the visual state of the web view
@@ -642,14 +640,6 @@ class TabViewController: UIViewController {
 
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
-
-        setupContainerStackViewBottomConstraint()
-    }
-
-    private func setupContainerStackViewBottomConstraint() {
-        containerStackViewSafeAreaBottomConstraint.isActive = false
-        containerStackViewBottomConstraint = containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        containerStackViewBottomConstraint?.isActive = true
     }
 
     override func viewWillAppear(_ animated: Bool) {

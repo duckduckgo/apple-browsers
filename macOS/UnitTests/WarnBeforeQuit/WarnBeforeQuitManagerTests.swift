@@ -215,7 +215,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         XCTAssertTrue(isWarningEnabled)
     }
 
-    func testStateStreamEmitsHoldingAndWaitingStatesWhenKeyReleasedEarly() async throws {
+    func testEarlyReleaseTransitionsToWaitingForSecondPress() async throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
 
@@ -535,56 +535,72 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         ])
     }
 
-    func testLoopEndsNaturallyWhenDeadlineReached() async throws {
+    func testHoldingKeyToCompletionQuitsApp() async throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
 
-        // Custom event receiver that returns non-release events past the deadline
-        // to allow the loop to end naturally (line 214-216 in WarnBeforeQuitManager.swift)
+        let pixelFiring = PixelKitMock(expecting: [
+            .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.warnBeforeQuitQuit, frequency: .standard)
+        ])
+
+        // Event receiver that advances time past the deadline (hold duration + animation buffer)
         let totalDuration = WarnBeforeQuitManager.Constants.requiredHoldDuration + WarnBeforeQuitManager.Constants.animationBufferDuration
-        var callCount = 0
-        let eventReceiver: (NSEvent.EventTypeMask, Date, RunLoop.Mode, Bool) -> NSEvent? = { [self] _, _, _, _ in
-            defer { callCount += 1 }
+        let eventReceiver = makeEventReceiver(events: [
+            (event: nil, timeAdvance: totalDuration + Constants.earlyReleaseTimeAdvance)
+        ])
 
-            // Return a non-release event that advances time past deadline
-            if callCount == 0 {
-                now = now.addingTimeInterval(totalDuration + Constants.earlyReleaseTimeAdvance)
-                // Return a mouse event (will be reposted and loop continues)
-                return createMouseEvent(type: .leftMouseDown)
-            }
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            animationDelay: 0
+        ))
 
-            // Second call: return nil after time is past deadline
-            // This allows the while condition to become false naturally
-            return nil
-        }
-
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver))
-
-        // When
-        let expectations = setupExpectationsForStateChanges(2, manager: manager)
+        // When - user holds key to completion
+        let expectations = setupExpectationsForStateChanges(3, manager: manager)
 
         let query = manager.shouldTerminate(isAsync: false)
 
         await fulfillment(of: expectations, timeout: Constants.expectationTimeout)
 
-        // Then - loop ended naturally (time advanced past full duration), quit action returns async to fire pixel
+        // Then - holding key to completion allows quit
         guard case .async(let task) = query else {
-            XCTFail("Expected async decision for quit action (fires pixel)")
+            XCTFail("Expected async decision for quit action (fires pixel), got: \(query)")
             return
         }
 
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         XCTAssertEqual(decision, .next)
-        // Time advanced past full duration before transitioning to .holding, so loop exits directly to .completed
+
+        // Verify flow went through keyDown -> holding -> completed
+        let holdingStartTime = startTime + totalDuration + Constants.earlyReleaseTimeAdvance
+        let holdingTargetTime = holdingStartTime + WarnBeforeQuitManager.Constants.requiredHoldDuration + WarnBeforeQuitManager.Constants.animationBufferDuration
         XCTAssertEqual(collectedStates, [
             .keyDown,
+            .holding(startTime: holdingStartTime, targetTime: holdingTargetTime),
             .completed(shouldProceed: true)
         ])
+
+        pixelFiring.verifyExpectations()
     }
 
     func testDisableWarningDuringAsyncWait() async throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        let eventPassedThroughExpectation = expectation(description: "Event passed through")
+        var passedThroughEvent: NSEvent?
+        let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
+            passedThroughEvent = event
+            eventPassedThroughExpectation.fulfill()
+            return event
+        }!
+        defer { NSEvent.removeMonitor(eventMonitor) }
+        TestRunHelper.allowAppSendUserEvents = true
 
         // Mock timer that doesn't fire automatically
         let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer = { _, _ in
@@ -958,7 +974,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
     // MARK: - Character Key Release Tests
 
-    func testCharacterKeyReleaseDuringHold() async throws {
+    func testEarlyReleaseFollowedBySecondPressCompletes() async throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
 
@@ -1244,6 +1260,405 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         pixelFiring.verifyExpectations()
     }
 
+    func testOtherMouseDownCancelsFlow() async throws {
+        // Given
+        let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        let pixelFiring = PixelKitMock(expecting: [
+            .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.warnBeforeQuitCancelled, frequency: .standard)
+        ])
+
+        let eventRepostedExpectation = expectation(description: "Event reposted")
+        var repostedEvent: NSEvent?
+        let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .otherMouseDown) { event in
+            repostedEvent = event
+            eventRepostedExpectation.fulfill()
+            return event
+        }!
+        defer { NSEvent.removeMonitor(eventMonitor) }
+        TestRunHelper.allowAppSendUserEvents = true
+
+        // Mock timer to prevent automatic expiry
+        let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer = { _, _ in
+            return Timer()
+        }
+
+        let releaseEvent = createKeyEvent(type: .flagsChanged, modifierFlags: [.option])
+        let eventReceiver = makeEventReceiver(events: [
+            (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
+        ])
+
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            timerFactory: timerFactory,
+            animationDelay: 0
+        ))
+
+        let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
+
+        // When - start async wait
+        let query = manager.shouldTerminate(isAsync: false)
+        guard case .async(let task) = query else {
+            XCTFail("Expected async query, got: \(query)")
+            return
+        }
+
+        // Wait for .keyDown and .waitingForSecondPress states (early release skips .holding)
+        await fulfillment(of: expectations1, timeout: Constants.expectationTimeout)
+
+        let expectations2 = setupExpectationsForStateChanges(1, manager: manager)
+
+        // Simulate other mouse button click
+        let mouseClick = createMouseEvent(type: .otherMouseDown)
+        NSApp.postEvent(mouseClick, atStart: true)
+
+        // Wait for completion
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations2 + [eventRepostedExpectation], timeout: Constants.expectationTimeout)
+
+        // Then - should cancel
+        XCTAssertEqual(decision, .cancel)
+        XCTAssertEqual(collectedStates, [
+            .keyDown,
+            .waitingForSecondPress,
+            .completed(shouldProceed: false)
+        ])
+
+        // Verify event was reposted
+        XCTAssertNotNil(repostedEvent, "Mouse event should be reposted")
+        XCTAssertEqual(repostedEvent?.type, .otherMouseDown)
+
+        // Verify pixels were fired
+        pixelFiring.verifyExpectations()
+    }
+
+    // MARK: - Complex State Flow Tests
+
+    func testWaitingForSecondPressToHoldingToQuickTapComplete() async throws {
+        // Given - wait -> hold (2nd press) -> early release -> quick tap completes
+        let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        let pixelFiring = PixelKitMock(expecting: [
+            .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.warnBeforeQuitQuit, frequency: .standard)
+        ])
+
+        // Mock timer to prevent automatic expiry during waiting phases
+        let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer = { _, _ in
+            return Timer()
+        }
+
+        let releaseEvent = createKeyEvent(type: .flagsChanged, modifierFlags: [.option])
+
+        // Event receiver provides events for each hold phase:
+        // 1. First hold: release early (before progressThreshold) → waitingForSecondPress
+        // 2. Second hold: reach threshold (→ holding), then release after quickTapDetectionBuffer → back to waitingForSecondPress  
+        // 3. Third hold: quick tap (release before progressThreshold) → confirms and completes
+        // Note: To avoid quick-tap confirmation on second hold, it must be released after progressThreshold + quickTapDetectionBuffer (0.15s total)
+        let secondHoldReleaseTime: TimeInterval = 0.06  // After reaching threshold (0.1s), release at 0.06s = 0.16s total (> 0.15s threshold)
+
+        let eventReceiver = makeEventReceiver(events: [
+            (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance),             // First hold: release at 0.01s
+            (event: nil, timeAdvance: WarnBeforeQuitManager.Constants.progressThreshold),      // Second hold: advance to progress threshold
+            (event: releaseEvent, timeAdvance: secondHoldReleaseTime),                         // Second hold: release while in holding (total 0.16s)
+            (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)              // Third hold: quick tap at 0.01s confirms
+        ])
+
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            timerFactory: timerFactory,
+            animationDelay: 0
+        ))
+
+        TestRunHelper.allowAppSendUserEvents = true
+
+        // Expect: keyDown -> waitingForSecondPress
+        let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
+
+        // When - start flow
+        let query = manager.shouldTerminate(isAsync: false)
+
+        guard case .async(let task) = query else {
+            XCTFail("Expected async query, got: \(query)")
+            return
+        }
+
+        await fulfillment(of: expectations1, timeout: Constants.expectationTimeout)
+
+        // Now in waitingForSecondPress - post second press
+        // Expect: keyDown -> holding -> waitingForSecondPress
+        let expectations2 = setupExpectationsForStateChanges(3, manager: manager)
+
+        let secondPress = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+        NSApp.postEvent(secondPress, atStart: true)
+
+        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
+
+        // Now in waitingForSecondPress again - post third press (quick tap)
+        // Expect: keyDown -> waitingForSecondPress -> completed (quick tap sets waitingForSecondPress, then confirms)
+        let expectations3 = setupExpectationsForStateChanges(3, manager: manager)
+
+        let thirdPress = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+        NSApp.postEvent(thirdPress, atStart: true)
+
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations3, timeout: Constants.expectationTimeout)
+
+        // Then
+        XCTAssertEqual(decision, .next)
+
+        // Verify state progression: first press early release, second press hold then release, third press quick tap confirms
+        guard case .holding(let startTime, let targetTime) = collectedStates[3] else {
+            XCTFail("Expected .holding at index 3, got: \(collectedStates[3])")
+            return
+        }
+
+        XCTAssertEqual(collectedStates, [
+            .keyDown,                                   // First press starts
+            .waitingForSecondPress,                     // First press released early
+            .keyDown,                                   // Second press starts
+            .holding(startTime: startTime, targetTime: targetTime),  // Second press reaches threshold
+            .waitingForSecondPress,                     // Second press released during holding
+            .keyDown,                                   // Third press starts (quick tap)
+            .waitingForSecondPress,                     // Third press released (before quick tap check)
+            .completed(shouldProceed: true)             // Third press quick tap confirmed
+        ])
+
+        pixelFiring.verifyExpectations()
+    }
+
+    func testWaitingForSecondPressToHoldingToWaitingToTimeout() async throws {
+        // Given - wait -> hold (2nd press) -> early release -> wait times out
+        let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        let pixelFiring = PixelKitMock(expecting: [
+            .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.warnBeforeQuitCancelled, frequency: .standard)
+        ])
+
+        var timerCallback: (() -> Void)?
+        let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer = { _, callback in
+            timerCallback = callback
+            return Timer()
+        }
+
+        let releaseEvent = createKeyEvent(type: .flagsChanged, modifierFlags: [.option])
+        let secondReleaseEvent = createKeyEvent(type: .flagsChanged, modifierFlags: [.option])
+
+        // Release after progressThreshold to ensure we're in holding state (total > 0.15s to avoid quick tap)
+        let secondHoldReleaseTime: TimeInterval = 0.06  // After threshold, release at +0.06s (total 0.16s > 0.15s)
+
+        let eventReceiver = makeEventReceiver(events: [
+            (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance),           // First release - enter waiting
+            (event: nil, timeAdvance: WarnBeforeQuitManager.Constants.progressThreshold),    // Second press: advance to threshold
+            (event: secondReleaseEvent, timeAdvance: secondHoldReleaseTime)                  // Second release during holding - back to waiting
+        ])
+
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            timerFactory: timerFactory,
+            animationDelay: 0
+        ))
+
+        TestRunHelper.allowAppSendUserEvents = true
+
+        // Expect states: .keyDown -> .waitingForSecondPress
+        let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
+
+        // When
+        let query = manager.shouldTerminate(isAsync: false)
+
+        guard case .async(let task) = query else {
+            XCTFail("Expected async query, got: \(query)")
+            return
+        }
+
+        await fulfillment(of: expectations1, timeout: Constants.expectationTimeout)
+
+        // Post second press during waiting
+        // Expect states: .keyDown -> .holding -> .waitingForSecondPress
+        let expectations2 = setupExpectationsForStateChanges(3, manager: manager)
+
+        let secondPress = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+        NSApp.postEvent(secondPress, atStart: true)
+
+        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
+
+        // Now trigger timer expiry
+        let expectations3 = setupExpectationsForStateChanges(1, manager: manager)
+        timerCallback?()
+
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations3, timeout: Constants.expectationTimeout)
+
+        // Then
+        XCTAssertEqual(decision, .cancel)
+
+        // Verify state progression
+        guard case .holding(let startTime, let targetTime) = collectedStates[3] else {
+            XCTFail("Expected .holding at index 3, got: \(collectedStates[3])")
+            return
+        }
+
+        XCTAssertEqual(collectedStates, [
+            .keyDown,                                   // First press starts
+            .waitingForSecondPress,                     // First press released early
+            .keyDown,                                   // Second press starts
+            .holding(startTime: startTime, targetTime: targetTime),  // Second press reaches threshold
+            .waitingForSecondPress,                     // Second press released during holding
+            .completed(shouldProceed: false)            // Timer expires
+        ])
+
+        pixelFiring.verifyExpectations()
+    }
+
+    func testWaitingForKeyReleaseAfterCompletion() async throws {
+        // Given - user holds key through completion and releases after
+        let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        let pixelFiring = PixelKitMock(expecting: [
+            .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.warnBeforeQuitQuit, frequency: .standard)
+        ])
+
+        let totalDuration = WarnBeforeQuitManager.Constants.requiredHoldDuration + WarnBeforeQuitManager.Constants.animationBufferDuration
+        let releaseEvent = createKeyEvent(type: .keyUp, character: "q", modifierFlags: .command)
+
+        // Flow: advance to threshold -> complete hold -> wait for key release -> key released
+        let eventReceiver = makeEventReceiver(events: [
+            (event: nil, timeAdvance: WarnBeforeQuitManager.Constants.progressThreshold),  // Advance to threshold (enter holding)
+            (event: nil, timeAdvance: WarnBeforeQuitManager.Constants.requiredHoldDuration),  // Complete hold
+            (event: releaseEvent, timeAdvance: 0)  // Key released in waitForKeyRelease
+        ])
+
+        // Mock modifier check to return true (key is held) to trigger waitForKeyRelease loop
+        let isModifierHeld: (NSEvent.ModifierFlags) -> Bool = { _ in true }
+
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            animationDelay: 0,
+            isModifierHeld: isModifierHeld
+        ))
+
+        // Expect states: .keyDown -> .holding -> .completed
+        let stateExpectations = setupExpectationsForStateChanges(3, manager: manager)
+
+        // When
+        let query = manager.shouldTerminate(isAsync: false)
+
+        guard case .async(let task) = query else {
+            XCTFail("Expected async query, got: \(query)")
+            return
+        }
+
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: stateExpectations, timeout: Constants.expectationTimeout)
+
+        // Then - flow completes successfully
+        XCTAssertEqual(decision, .next)
+
+        let holdingStartTime = startTime + WarnBeforeQuitManager.Constants.progressThreshold
+        XCTAssertEqual(collectedStates, [
+            .keyDown,
+            .holding(startTime: holdingStartTime, targetTime: holdingStartTime + totalDuration),
+            .completed(shouldProceed: true)
+        ])
+
+        // Call deciderSequenceCompleted to trigger waitForKeyRelease (simulates ApplicationTerminationDeciderProxy behavior)
+        manager.deciderSequenceCompleted(shouldProceed: true)
+
+        pixelFiring.verifyExpectations()
+    }
+
+    func testWaitingForSecondPressCancelledByOtherKey() async throws {
+        // Given - first press released early, then other key pressed during waiting
+        let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        let pixelFiring = PixelKitMock(expecting: [
+            .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.warnBeforeQuitCancelled, frequency: .standard)
+        ])
+
+        // Mock timer to prevent automatic expiry
+        let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer = { _, _ in
+            return Timer()
+        }
+
+        let releaseEvent = createKeyEvent(type: .flagsChanged, modifierFlags: [.option])
+
+        let eventReceiver = makeEventReceiver(events: [
+            (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)  // First release - enter waiting
+        ])
+
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            timerFactory: timerFactory,
+            animationDelay: 0
+        ))
+
+        TestRunHelper.allowAppSendUserEvents = true
+
+        // Expect states: .keyDown -> .waitingForSecondPress
+        let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
+
+        // When
+        let query = manager.shouldTerminate(isAsync: false)
+
+        guard case .async(let task) = query else {
+            XCTFail("Expected async query, got: \(query)")
+            return
+        }
+
+        await fulfillment(of: expectations1, timeout: Constants.expectationTimeout)
+
+        // Post other key press during waiting
+        // Expect state: .completed(shouldProceed: false)
+        let expectations2 = setupExpectationsForStateChanges(1, manager: manager)
+
+        let otherKeyPress = createKeyEvent(type: .keyDown, character: "x", modifierFlags: [])
+        NSApp.postEvent(otherKeyPress, atStart: true)
+
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
+
+        // Then - should cancel
+        XCTAssertEqual(decision, .cancel)
+        XCTAssertEqual(collectedStates, [
+            .keyDown,
+            .waitingForSecondPress,
+            .completed(shouldProceed: false)
+        ])
+
+        // Verify pixels were fired
+        pixelFiring.verifyExpectations()
+    }
+
     // MARK: - Event Reposting Tests
 
     func testOtherEventsRepostedDuringHold() async throws {
@@ -1513,6 +1928,56 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
         XCTAssertEqual(decision, .cancel)
+
+        // Verify no pixels were fired
+        pixelFiring.verifyExpectations()
+    }
+
+    func testCloseTabActionReturnsSyncCancelWhenCancelledDuringHold() async throws {
+        // Given - close tab action cancelled by other key during holding phase
+        let event = createKeyEvent(type: .keyDown, character: "w", modifierFlags: .command)
+        let pixelFiring = PixelKitMock(expecting: [
+            // No pixels should be fired for close tab action
+        ])
+
+        let otherKeyEvent = createKeyEvent(type: .keyDown, character: "x", modifierFlags: [])
+        let eventReceiver = makeEventReceiver(events: [
+            (event: nil, timeAdvance: Constants.earlyReleaseTimeAdvance),  // Advance to enter holding
+            (event: otherKeyEvent, timeAdvance: 0)  // Other key cancels
+        ])
+
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .close,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            animationDelay: 0
+        ))
+
+        // Expect states: .keyDown -> .holding -> .completed(shouldProceed: false)
+        let expectations = setupExpectationsForStateChanges(3, manager: manager)
+
+        // When - other key pressed during hold
+        let query = manager.shouldTerminate(isAsync: false)
+
+        await fulfillment(of: expectations, timeout: Constants.expectationTimeout)
+
+        // Then - should return .sync(.cancel) immediately for close tab action
+        guard case .sync(let decision) = query else {
+            XCTFail("Expected sync decision for close tab action, got: \(query)")
+            return
+        }
+        XCTAssertEqual(decision, .cancel)
+
+        guard case .holding = collectedStates[1] else {
+            XCTFail("Expected .holding at index 1, got: \(collectedStates[1])")
+            return
+        }
+
+        XCTAssertEqual(collectedStates[0], .keyDown)
+        XCTAssertEqual(collectedStates[2], .completed(shouldProceed: false))
 
         // Verify no pixels were fired
         pixelFiring.verifyExpectations()

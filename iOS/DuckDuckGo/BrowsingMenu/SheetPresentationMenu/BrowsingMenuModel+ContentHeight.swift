@@ -22,15 +22,19 @@ import DesignResourcesKit
 
 extension BrowsingMenuModel {
 
-    var estimatedContentHeight: CGFloat {
+    func estimatedContentHeight(includesWebsiteHeader: Bool) -> CGFloat {
         typealias Metrics = BrowsingMenuSheetView.Metrics
 
-        let headerFont = UIFont.daxFootnoteRegular()
+        let headerFont = UIFont.daxCaption()
         let rowFont = UIFont.daxBodyRegular()
-        let iconHeight: CGFloat = 24
+        let iconHeight = Metrics.headerButtonIconSize
 
         let headerContentHeight = iconHeight + Metrics.headerButtonIconTextSpacing + headerFont.lineHeight
-        let headerHeight = headerItems.isEmpty ? 0 : headerContentHeight + (Metrics.headerButtonVerticalPadding * 2)
+        let headerButtonsHeight = headerItems.isEmpty ? 0 : headerContentHeight + (Metrics.headerButtonVerticalPadding * 2)
+        let websiteHeaderHeight = includesWebsiteHeader ? Metrics.websiteHeaderHeight : 0
+
+        // Spacing between website header and header buttons when both are present
+        let headerSectionSpacing = (includesWebsiteHeader && !headerItems.isEmpty) ? Metrics.headerHorizontalSpacing : 0
 
         let minTotalVerticalPadding: CGFloat = 16
         let rowHeight = max(Metrics.defaultListRowHeight, rowFont.lineHeight + minTotalVerticalPadding)
@@ -45,11 +49,14 @@ extension BrowsingMenuModel {
         let itemCount = sections.reduce(0) { $0 + $1.items.count }
         let menuSectionCount = sections.count
 
-        // When header items are present, there's an additional
-        // gap between the header section and the first menu section
-        let sectionGapsCount = headerItems.isEmpty ? max(0, menuSectionCount - 1) : menuSectionCount
+        // When header section has content (website header or header buttons),
+        // there's an additional gap between it and the first menu section
+        let hasHeaderSectionContent = includesWebsiteHeader || !headerItems.isEmpty
+        let sectionGapsCount = hasHeaderSectionContent ? menuSectionCount : max(0, menuSectionCount - 1)
 
-        return headerHeight
+        return websiteHeaderHeight
+            + headerSectionSpacing
+            + headerButtonsHeight
             + (CGFloat(itemCount) * rowHeight)
             + (CGFloat(sectionGapsCount) * Metrics.listSectionSpacing)
             + (footerItems.isEmpty ? 0 : footerHeight)

@@ -20,27 +20,17 @@ import AppKit
 import AppKitExtensions
 import Common
 import Foundation
+import Persistence
 
 extension UserDefaults {
     /// The app group's shared UserDefaults
     static let netP = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .netP))!
     static let subs = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .subs))!
     static let appConfiguration = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))!
-}
 
-public struct UserDefaultsWrapperKey: RawRepresentable {
-    public let rawValue: String
-    public init(rawValue: String) {
-        self.rawValue = rawValue
-    }
-}
+    @available(*, deprecated, message: "Use `@Storage protocol SettingsPrototocolName: KeyValueStoring {…}` instead" )
+    enum Key: String, CaseIterable, StorageKeyDescribing {
 
-@propertyWrapper
-public struct UserDefaultsWrapper<T> {
-
-    public typealias DefaultsKey = UserDefaultsWrapperKey
-
-    public enum Key: String, CaseIterable {
         /// system setting defining window title double-click action
         case appleActionOnDoubleClick = "AppleActionOnDoubleClick"
 
@@ -268,9 +258,6 @@ public struct UserDefaultsWrapper<T> {
         case lastBrokenSiteToastShownDate = "brokenSitePrompt.last-broken-site-toast-shown-date"
         case toastDismissStreakCounter = "brokenSitePrompt.toast-dismiss-streak-counter"
 
-        // Web Extensions
-        case webExtensionStoredPaths = "com.duckduckgo.web.extension.stored-paths"
-
         // SAD/ATT Debug
         case debugSetDefaultAndAddToDockPromptCurrentDateKey = "com.duckduckgo.ios.debug.setDefaultAndAddToDockPromptCurrentDate"
         case debugSetDefaultAndAddToDockPromptInstallDateKey = "com.duckduckgo.debug.setDefaultAndAddToDockPromptInstallDate"
@@ -296,6 +283,15 @@ public struct UserDefaultsWrapper<T> {
         case shouldShowNetworkProtectionSystemExtensionUpgradePrompt = "network-protection.show-system-extension-upgrade-prompt"
         case vpnRedditWorkaroundInstalled = "com.duckduckgo.ios.vpn.workaroundInstalled"
     }
+
+}
+
+@available(*, deprecated, message: "Use KeyedStoring pattern instead - see UserDefaultsKeys for migration")
+@propertyWrapper
+struct UserDefaultsWrapper<T> {
+
+    typealias DefaultsKey = UserDefaults.Key
+    typealias Key = DefaultsKey
 
     private let key: DefaultsKey
     private let getter: (Any?) -> T
@@ -400,23 +396,6 @@ public struct UserDefaultsWrapper<T> {
         }
     }
 
-    @_disfavoredOverload
-    public init(key: Key, defaultValue: T, defaults: UserDefaults? = nil) {
-        self.init(key: .init(rawValue: key.rawValue), defaultValue: defaultValue, defaults: defaults)
-    }
-
-    public init<Wrapped>(key: Key, defaults: UserDefaults? = nil) where T == Wrapped? {
-        self.init(key: .init(rawValue: key.rawValue), defaults: defaults)
-    }
-
-    public init<RawValue>(key: Key, defaultValue: T, defaults: UserDefaults? = nil) where T: RawRepresentable<RawValue> {
-        self.init(key: .init(rawValue: key.rawValue), defaultValue: defaultValue, defaults: defaults)
-    }
-
-    public init<Wrapped, RawValue>(key: Key, defaults: UserDefaults? = nil) where T == Wrapped?, Wrapped: RawRepresentable<RawValue> {
-        self.init(key: .init(rawValue: key.rawValue), defaults: defaults)
-    }
-
     public var wrappedValue: T {
         get {
             let storedValue = defaults.object(forKey: key.rawValue)
@@ -429,14 +408,14 @@ public struct UserDefaultsWrapper<T> {
 
     static func clearAll() {
         let defaults = sharedDefaults
-        Key.allCases.forEach { key in
+        DefaultsKey.allCases.forEach { key in
             defaults.removeObject(forKey: key.rawValue)
         }
     }
 
     static func clearRemovedKeys() {
         let defaults = sharedDefaults
-        RemovedKeys.allCases.forEach { key in
+        UserDefaults.RemovedKeys.allCases.forEach { key in
             defaults.removeObject(forKey: key.rawValue)
         }
     }
@@ -448,9 +427,6 @@ public struct UserDefaultsWrapper<T> {
 }
 
 extension UserDefaultsWrapper where T == Any {
-    static func clear(_ key: Key) {
-        sharedDefaults.removeObject(forKey: key.rawValue)
-    }
     static func clear(_ key: DefaultsKey) {
         sharedDefaults.removeObject(forKey: key.rawValue)
     }

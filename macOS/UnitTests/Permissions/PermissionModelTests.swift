@@ -1445,7 +1445,7 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertFalse(queryShown)
     }
 
-    func testWhenNewPermissionViewEnabledAndSystemPermissionDeniedThenStoredAllowIsIgnored() {
+    func testWhenNewPermissionViewEnabledAndSystemPermissionDeniedThenStoredAllowDeniesAndShowsInfoPopover() {
         // Enable new permission view feature flag
         featureFlaggerMock.featuresStub[FeatureFlag.newPermissionView.rawValue] = true
 
@@ -1455,26 +1455,36 @@ final class PermissionModelTests: XCTestCase {
         // Store an "allow" permission - should be ignored when system permission is denied
         permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .geolocation)
 
-        let e = expectation(description: "Query received")
-        let c = model.$authorizationQuery.sink { query in
-            guard query != nil else { return }
+        let e = expectation(description: "Permission blocked by system")
+        var receivedDomain: String?
+        var receivedPermissionType: PermissionType?
+        let c = model.permissionBlockedBySystem.sink { (domain, permissionType) in
+            receivedDomain = domain
+            receivedPermissionType = permissionType
             e.fulfill()
         }
 
+        var permissionResult: Bool?
         // Request geolocation permission
         if #available(macOS 12, *) {
-            self.webView(webView, requestGeolocationPermissionFor: securityOrigin, initiatedBy: frameInfo) { _ in }
+            self.webView(webView, requestGeolocationPermissionFor: securityOrigin, initiatedBy: frameInfo) { decision in
+                permissionResult = (decision == .grant)
+            }
         } else {
-            self.webView(webView, requestGeolocationPermissionFor: frameInfo) { _ in }
+            self.webView(webView, requestGeolocationPermissionFor: frameInfo) { granted in
+                permissionResult = granted
+            }
         }
 
         withExtendedLifetime(c) {
             waitForExpectations(timeout: 1)
         }
 
-        // Query should be shown even though stored permission is "allow"
-        // because system permission is denied
-        XCTAssertNotNil(model.authorizationQuery)
+        // No query shown - permission denied immediately, info popover triggered instead
+        XCTAssertNil(model.authorizationQuery)
+        XCTAssertEqual(permissionResult, false)
+        XCTAssertEqual(receivedDomain, URL.duckDuckGo.host)
+        XCTAssertEqual(receivedPermissionType, .geolocation)
     }
 
     func testWhenNewPermissionViewEnabledAndSystemPermissionDeniedButUserSetNeverAllowThenDenyDirectly() {

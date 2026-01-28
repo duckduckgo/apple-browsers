@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Sadržaj stranice";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai sada može pomoći u odgovaranju na pitanja o stranici koju pregledavaš.\n\nSadržaj stranice uključuje se samo kada ga priložiš. To možeš promijeniti u bilo kojem trenutku u Postavkama.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Shvatio/la sam";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Pitaj o ovoj stranici";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Prikaži postavke";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI značajke privatne su i neobavezne. Tvoji podaci se ne koriste za obuku AI-a.";
 
@@ -3610,6 +3622,9 @@
 /* Manage Plan header */
 "subscription.manage.plan" = "Upravljanje planom";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Upravljanje plaćanjem ili otkazivanje";
+
 /* Header for the subscription section */
 "subscription.manage.title" = "Pretplata";
 
@@ -3706,6 +3721,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Tvoja godišnja pretplata istječe %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Tvoj će se plan smanjiti na %1$@ mjesečno dana %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Tvoj će se plan vratiti na %1$@ dana %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Tvoj će se plan smanjiti na %1$@ godišnje dana %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Tvoja će se mjesečna pretplata obnoviti %@.";
 
@@ -3726,6 +3750,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Besplatno probno razdoblje je aktivno";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Nadogradi na %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Otključaj pametniju i moćniju umjetnu inteligenciju";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Nadogradnja";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Pogledaj sve planove";
@@ -4228,3 +4261,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Što želiš uvesti?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Kartice";
+"settings.tab.switcher.show.tracker.count" = "Broj pratitelja u 7 dana";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "u posljednjih 7 dana";
+"tab.switcher.tracker.count.hide.title" = "Sakriti broj pratitelja?";
+"tab.switcher.tracker.count.hide.message" = "Ovo možeš ponovno uključiti u Postavke > Izgled.";
+"tab.switcher.tracker.count.hide.action" = "Sakrij";
+"tab.switcher.tracker.count.keep.action" = "Zadrži";
+"tab.switcher.tracker.count.info.a11y" = "Mogućnosti broja pratitelja";
+"tab.switcher.tracker.count.info.hint.a11y" = "Dvaput dodirni za prikaz mogućnosti skrivanja ovog natpisa";

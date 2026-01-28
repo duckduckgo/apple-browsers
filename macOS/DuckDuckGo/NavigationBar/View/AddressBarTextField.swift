@@ -653,7 +653,8 @@ final class AddressBarTextField: NSTextField {
                                                                     suggestionContainerViewModel: self.suggestionContainerViewModel!,
                                                                     isBurner: self.isBurner,
                                                                     themeManager: self.themeManager,
-                                                                    aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage())
+                                                                    aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
+                                                                    featureFlagger: Application.appDelegate.featureFlagger)
             suggestionViewController?.delegate = self
             return suggestionViewController
         }

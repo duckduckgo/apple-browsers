@@ -34,6 +34,7 @@ import Common
 import SystemSettingsPiPTutorialTestSupport
 import Combine
 import PrivacyConfig
+import AIChatTestingUtilities
 
 // swiftlint:disable force_try
 
@@ -67,7 +68,7 @@ import PrivacyConfig
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-        let historyManager = MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true)
+        let historyManager = MockHistoryManager()
         let syncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
         let featureFlagger = MockFeatureFlagger()
         let fireproofing = MockFireproofing()
@@ -116,6 +117,7 @@ import PrivacyConfig
                                     daxDialogsManager: DummyDaxDialogsManager(),
                                     aiChatSettings: MockAIChatSettingsProvider(),
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+                                    privacyStats: MockPrivacyStats(),
                                     voiceSearchHelper: MockVoiceSearchHelper()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
@@ -169,7 +171,8 @@ import PrivacyConfig
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
-            syncAiChatsCleaner: MockSyncAIChatsCleaning(),
+            privacyStats: MockPrivacyStats(),
+            aiChatSyncCleaner: MockAIChatSyncCleaning(),
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
         )
         let window = UIWindow(frame: UIScreen.main.bounds)

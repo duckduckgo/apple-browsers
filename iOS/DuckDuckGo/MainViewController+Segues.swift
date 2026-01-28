@@ -202,6 +202,7 @@ extension MainViewController {
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
                                       appSettings: self.appSettings,
+                                      privacyStats: self.privacyStats,
                                       productSurfaceTelemetry: self.productSurfaceTelemetry,
                                       historyManager: self.historyManager,
                                       fireproofing: self.fireproofing,
@@ -366,7 +367,8 @@ extension MainViewController {
             remoteMessageActionHandler: remoteMessagingActionHandler,
             isIPad: UIDevice.current.userInterfaceIdiom == .pad,
             pixelReporter: nil,
-            userScriptsDependencies: userScriptsDependencies)
+            userScriptsDependencies: userScriptsDependencies,
+            featureFlagger: featureFlagger)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
@@ -413,6 +415,7 @@ extension MainViewController {
 
                 // We are still presenting legacy views, so use a Navcontroller
                 let navController = SettingsUINavigationController(rootViewController: settingsController)
+                navController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
                 settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
 
                 // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)

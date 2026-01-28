@@ -45,6 +45,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
     private let newTabPageNavigator: NewTabPageNavigator
     private let syncLauncher: SyncDeviceFlowLaunching?
+    private let featureFlagger: FeatureFlagger
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
@@ -58,7 +59,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          privacyConfigurationManager: PrivacyConfigurationManaging,
          pixelHandler: NewTabPageNextStepsCardsPixelHandling,
          newTabPageNavigator: NewTabPageNavigator,
-         syncLauncher: SyncDeviceFlowLaunching? = nil) {
+         syncLauncher: SyncDeviceFlowLaunching? = nil,
+         featureFlagger: FeatureFlagger) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.dockCustomizer = dockCustomizer
@@ -68,6 +70,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.pixelHandler = pixelHandler
         self.newTabPageNavigator = newTabPageNavigator
         self.syncLauncher = syncLauncher
+        self.featureFlagger = featureFlagger
     }
 
     @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
@@ -76,7 +79,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         case .defaultApp:
             performDefaultBrowserAction()
         case .addAppToDockMac:
-            performDockAction()
+            performDockAction(completion: refreshCardsAction)
         case .bringStuff:
             performImportBookmarksAndPasswordsAction(completion: refreshCardsAction)
         case .duckplayer:
@@ -121,9 +124,11 @@ private extension NewTabPageNextStepsCardsActionHandler {
         tabOpener.openTab(tab)
     }
 
-    func performDockAction() {
+    func performDockAction(completion: (() -> Void)?) {
         pixelHandler.fireAddedToDockPixel()
-        dockCustomizer.addToDock()
+        if dockCustomizer.addToDock(), featureFlagger.isFeatureOn(.nextStepsListWidget) {
+            completion?()
+        }
     }
 
     @MainActor

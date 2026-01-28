@@ -54,6 +54,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case promptInterruption
         case openSettingsAction
         case toggleSidebarAction
+        case syncStatusChanged(AIChatSyncHandler.SyncStatus)
 
         var methodName: String {
             switch self {
@@ -69,6 +70,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitOpenSettingsAction"
             case .toggleSidebarAction:
                 return "submitToggleSidebarAction"
+            case .syncStatusChanged:
+                return "submitSyncStatusChanged"
             }
         }
 
@@ -76,6 +79,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             switch self {
             case .submitPrompt(let prompt):
                 return prompt
+            case .syncStatusChanged(let status):
+                return status
             default:
                 return nil
             }
@@ -107,6 +112,9 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         // Set self as the metric reporting handler
         handler.setMetricReportingHandler(self)
+        handler.setSyncStatusChangedHandler { [weak self] status in
+            self?.submitSyncStatusChanged(status)
+        }
     }
 
     private static func buildMessageOriginRules(debugSettings: AIChatDebugSettingsHandling) -> [HostnameMatchingRule] {
@@ -147,6 +155,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatNativeConfigValues
         case .getAIChatNativeHandoffData:
             return handler.getAIChatNativeHandoffData
+        case .getAIChatPageContext:
+            return handler.getAIChatPageContext
         case .openAIChat:
             return handler.openAIChat
         case .hideChatInput:
@@ -194,6 +204,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.displayMode = displayMode
     }
 
+    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
+        self.handler.setPageContextProvider(provider)
+    }
+
     // MARK: - Input Box Event Subscription
 
     private func subscribeToInputBoxEvents() {
@@ -233,12 +247,27 @@ final class AIChatUserScript: NSObject, Subfeature {
         push(.openSettingsAction)
     }
 
-    /// Submits a toggle sidebar action to the web content, opening/closing the sidebar.
+    /// Submits page context to the frontend (push update).
+    func submitPageContext(_ context: AIChatPageContextData?) {
+        pushPageContextToFrontend(context)
+    }
+
     func submitToggleSidebarAction() {
         push(.toggleSidebarAction)
     }
 
+    /// Pushes sync status change to the web content when sync state changes (login/logout, availability).
+    func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
+        push(.syncStatusChanged(status))
+    }
+
     // MARK: - Private Helper
+
+    private func pushPageContextToFrontend(_ context: AIChatPageContextData?) {
+        guard let webView = webView else { return }
+        let response = PageContextResponse(pageContext: context)
+        broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
+    }
 
     private func push(_ message: AIChatPushMessage) {
         guard let webView = webView else { return }

@@ -19,6 +19,7 @@
 @testable import AIChat
 import Combine
 import Common
+@testable import DDGSync
 import PixelKitTestingUtilities
 import PrivacyConfig
 import SharedTestUtilities
@@ -56,6 +57,7 @@ final class MockAIChatMessageHandler: AIChatMessageHandling {
     }
 }
 
+// swiftlint:disable inclusive_language
 struct AIChatUserScriptHandlerTests {
     private var storage = MockAIChatPreferencesStorage()
     private var messageHandler = MockAIChatMessageHandler()
@@ -64,7 +66,6 @@ struct AIChatUserScriptHandlerTests {
     private var pixelFiring = PixelKitMock()
     private var handler: AIChatUserScriptHandler
     private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
-    private var mockAIChatSyncHandler: MockAIChatSyncHandling = MockAIChatSyncHandling()
 
     @MainActor
     init() {
@@ -76,7 +77,7 @@ struct AIChatUserScriptHandlerTests {
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring,
             statisticsLoader: statisticsLoader,
-            syncHandler: mockAIChatSyncHandler,
+            syncServiceProvider: { nil },
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -312,7 +313,7 @@ struct AIChatUserScriptHandlerTests {
                 windowControllersManager: windowControllersManager,
                 pixelFiring: pixelFiring,
                 statisticsLoader: loader,
-                syncHandler: mockAIChatSyncHandler,
+                syncServiceProvider: { nil },
                 featureFlagger: MockFeatureFlagger(),
                 notificationCenter: notificationCenter
             )
@@ -342,7 +343,7 @@ struct AIChatUserScriptHandlerTests {
                 windowControllersManager: windowControllersManager,
                 pixelFiring: pixelFiring,
                 statisticsLoader: loader,
-                syncHandler: mockAIChatSyncHandler,
+                syncServiceProvider: { nil },
                 featureFlagger: MockFeatureFlagger(),
                 notificationCenter: notificationCenter
             )
@@ -369,7 +370,7 @@ struct AIChatUserScriptHandlerTests {
             windowControllersManager: windowControllersManager,
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
-            syncHandler: mockAIChatSyncHandler,
+            syncServiceProvider: { nil },
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -395,7 +396,7 @@ struct AIChatUserScriptHandlerTests {
             windowControllersManager: windowControllersManager,
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
-            syncHandler: mockAIChatSyncHandler,
+            syncServiceProvider: { nil },
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -420,7 +421,7 @@ struct AIChatUserScriptHandlerTests {
             windowControllersManager: windowControllersManager,
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
-            syncHandler: mockAIChatSyncHandler,
+            syncServiceProvider: { nil },
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -443,48 +444,275 @@ struct AIChatUserScriptHandlerTests {
         #expect(testPixelFiring.actualFireCalls.isEmpty)
     }
 
+    // MARK: - Sync tests
+
+    @Test("getSyncStatus returns internal error when sync status could not be obtained")
+    @MainActor
+    func testThatGetSyncStatusReturnsInternalErrorWhenSyncServiceUnavailable() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
+
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let errorResponse = try #require(response as? AIChatErrorResponse)
+        #expect(errorResponse.reason == "internal error")
+    }
+
+    @Test("getSyncStatus returns internal error when sync service is unavailable")
+    @MainActor
+    func testThatGetSyncStatusReturnsInternalErrorWhenFeatureOffAndSyncServiceUnavailable() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
+
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let errorResponse = try #require(response as? AIChatErrorResponse)
+        #expect(errorResponse.reason == "internal error")
+    }
+
+    @Test("getSyncStatus returns syncAvailable=false when feature is off and sync service is available")
+    @MainActor
+    func testThatGetSyncStatusReturnsSyncNotAvailableWhenFeatureOffAndSyncServiceAvailable() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let syncService = makeSyncService(authState: .active, account: nil)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let payloadResponse = try #require(response as? AIChatPayloadResponse)
+        let status = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncStatus)
+        #expect(status.syncAvailable == false)
+        #expect(status.userId == nil)
+        #expect(status.deviceId == nil)
+        #expect(status.deviceName == nil)
+        #expect(status.deviceType == nil)
+    }
+
+    @Test("getSyncStatus returns nil ids when sync service is available but account is missing")
+    @MainActor
+    func testThatGetSyncStatusReturnsNilIdentifiersWhenAccountMissing() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let syncService = makeSyncService(authState: .active, account: nil)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let payloadResponse = try #require(response as? AIChatPayloadResponse)
+        let status = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncStatus)
+        #expect(status.syncAvailable == true)
+        #expect(status.userId == nil)
+        #expect(status.deviceId == nil)
+        #expect(status.deviceName == nil)
+        #expect(status.deviceType == nil)
+    }
+
+    @Test("getSyncStatus returns ids when sync is available and account exists")
+    @MainActor
+    func testThatGetSyncStatusReturnsAccountIdentifiersWhenAccountExists() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let account = SyncAccount(deviceId: "test-device-id",
+                                  deviceName: "Test Device",
+                                  deviceType: "desktop",
+                                  userId: "test-user-id",
+                                  primaryKey: Data(),
+                                  secretKey: Data(),
+                                  token: nil,
+                                  state: .active)
+        let syncService = makeSyncService(authState: .active, account: account)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let payloadResponse = try #require(response as? AIChatPayloadResponse)
+        let status = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncStatus)
+        #expect(status.syncAvailable == true)
+        #expect(status.userId == "test-user-id")
+        #expect(status.deviceId == "test-device-id")
+        #expect(status.deviceName == "Test Device")
+        #expect(status.deviceType == "desktop")
+    }
+
+    @Test("getScopedSyncAuthToken returns sync unavailable when feature is off")
+    func testThatGetScopedSyncAuthTokenReturnsSyncUnavailableWhenFeatureOff() async throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let testHandler = await MainActor.run {
+            makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
+        }
+
+        let response = await testHandler.getScopedSyncAuthToken(params: [String: Any](), message: WKScriptMessage())
+        let errorResponse = try #require(response as? AIChatErrorResponse)
+        #expect(errorResponse.reason == "sync unavailable")
+    }
+
+    @Test("getScopedSyncAuthToken returns payload when token rescope succeeds")
+    func testThatGetScopedSyncAuthTokenReturnsPayloadWhenRescopeSucceeds() async throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let syncService = makeSyncService(authState: .active, account: SyncAccount(deviceId: "id",
+                                                                                   deviceName: "name",
+                                                                                   deviceType: "desktop",
+                                                                                   userId: "user",
+                                                                                   primaryKey: Data(),
+                                                                                   secretKey: Data(),
+                                                                                   token: nil,
+                                                                                   state: .active))
+        syncService.mainTokenRescopeResult = "scoped-token"
+
+        let testHandler = await MainActor.run {
+            makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+        }
+
+        let response = await testHandler.getScopedSyncAuthToken(params: [String: Any](), message: WKScriptMessage())
+        let payloadResponse = try #require(response as? AIChatPayloadResponse)
+        let tokenPayload = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncToken)
+        #expect(tokenPayload.token == "scoped-token")
+        #expect(syncService.mainTokenRescopeScopes == ["ai_chats"])
+    }
+
+    @Test("encryptWithSyncMasterKey returns payload when sync is on and params are valid")
+    @MainActor
+    func testThatEncryptWithSyncMasterKeyReturnsPayloadWhenSyncIsOn() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let syncService = makeSyncService(authState: .active, account: SyncAccount(deviceId: "id",
+                                                                                   deviceName: "name",
+                                                                                   deviceType: "desktop",
+                                                                                   userId: "user",
+                                                                                   primaryKey: Data(),
+                                                                                   secretKey: Data(),
+                                                                                   token: nil,
+                                                                                   state: .active))
+        syncService.encryptAndBase64URLEncodeResult = ["encrypted-data"]
+
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.encryptWithSyncMasterKey(params: ["data": "plain"], message: WKScriptMessage())
+        let payloadResponse = try #require(response as? AIChatPayloadResponse)
+        let encryptedPayload = try #require(payloadResponse.payload as? AIChatSyncHandler.EncryptedData)
+        #expect(encryptedPayload.encryptedData == "encrypted-data")
+        #expect(syncService.encryptAndBase64URLEncodeInputs == [["plain"]])
+    }
+
+    @Test("decryptWithSyncMasterKey returns payload when sync is on and params are valid")
+    @MainActor
+    func testThatDecryptWithSyncMasterKeyReturnsPayloadWhenSyncIsOn() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let syncService = makeSyncService(authState: .active, account: SyncAccount(deviceId: "id",
+                                                                                   deviceName: "name",
+                                                                                   deviceType: "desktop",
+                                                                                   userId: "user",
+                                                                                   primaryKey: Data(),
+                                                                                   secretKey: Data(),
+                                                                                   token: nil,
+                                                                                   state: .active))
+        syncService.base64URLDecodeAndDecryptResult = ["decrypted-data"]
+
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.decryptWithSyncMasterKey(params: ["data": "cipher"], message: WKScriptMessage())
+        let payloadResponse = try #require(response as? AIChatPayloadResponse)
+        let decryptedPayload = try #require(payloadResponse.payload as? AIChatSyncHandler.DecryptedData)
+        #expect(decryptedPayload.decryptedData == "decrypted-data")
+        #expect(syncService.base64URLDecodeAndDecryptInputs == [["cipher"]])
+    }
+
+    @Test("sendToSyncSettings returns ok and opens sync settings pane")
+    @MainActor
+    func testThatSendToSyncSettingsShowsSyncSettingsPane() async throws {
+        let response = handler.sendToSyncSettings(params: [String: Any](), message: WKScriptMessage())
+        let okResponse = try #require(response as? AIChatOKResponse)
+        #expect(okResponse.ok)
+
+        // Allow the Task { @MainActor } to run.
+        await Task.yield()
+        #expect(windowControllersManager.showTabCalls.contains(.settings(pane: .sync)))
+    }
+
+    @Test("sendToSetupSync returns setup disabled when feature is off")
+    @MainActor
+    func testThatSendToSetupSyncReturnsSetupDisabledWhenFeatureOff() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
+
+        let response = testHandler.sendToSetupSync(params: [String: Any](), message: WKScriptMessage())
+        let errorResponse = try #require(response as? AIChatErrorResponse)
+        #expect(errorResponse.reason == "setup disabled")
+    }
+
+    @Test("sendToSetupSync returns setup disabled when sync service is unavailable")
+    @MainActor
+    func testThatSendToSetupSyncReturnsSetupDisabledWhenSyncServiceUnavailable() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
+
+        let response = testHandler.sendToSetupSync(params: [String: Any](), message: WKScriptMessage())
+        let errorResponse = try #require(response as? AIChatErrorResponse)
+        #expect(errorResponse.reason == "setup disabled")
+    }
+
+    @Test("setAIChatHistoryEnabled is notify-only and best-effort persists even when account is missing")
+    @MainActor
+    func testThatSetAIChatHistoryEnabledBestEffortPersistsWhenAccountIsMissing() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let syncService = makeSyncService(authState: .active, account: nil)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage())
+        #expect(response == nil)
+        #expect(syncService.setAIChatHistoryEnabledCalls == [true])
+    }
+
+    @Test("setAIChatHistoryEnabled calls sync service when sync is on")
+    @MainActor
+    func testThatSetAIChatHistoryEnabledCallsSyncServiceWhenSyncIsOn() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let syncService = makeSyncService(authState: .active, account: SyncAccount(deviceId: "id",
+                                                                                   deviceName: "name",
+                                                                                   deviceType: "desktop",
+                                                                                   userId: "user",
+                                                                                   primaryKey: Data(),
+                                                                                   secretKey: Data(),
+                                                                                   token: nil,
+                                                                                   state: .active))
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage())
+        #expect(response == nil)
+        #expect(syncService.setAIChatHistoryEnabledCalls == [true])
+        #expect(syncService.isAIChatHistoryEnabled)
+    }
+
+    @Test("setAIChatHistoryEnabled is notify-only and best-effort persists when feature is off")
+    @MainActor
+    func testThatSetAIChatHistoryEnabledBestEffortPersistsWhenFeatureOff() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let syncService = makeSyncService(authState: .active, account: nil)
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage())
+        #expect(response == nil)
+        #expect(syncService.setAIChatHistoryEnabledCalls == [true])
+    }
+
+    // MARK: - Sync helpers
+
+    private func makeFeatureFlagger(aiChatSyncEnabled: Bool) -> MockFeatureFlagger {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub["aiChatSync"] = aiChatSyncEnabled
+        return featureFlagger
+    }
+
+    private func makeSyncService(authState: SyncAuthState = .active,
+                                 account: SyncAccount? = nil) -> MockDDGSyncing {
+        MockDDGSyncing(authState: authState, account: account, isSyncInProgress: false)
+    }
+
+    @MainActor
+    private func makeHandler(featureFlagger: FeatureFlagger,
+                             syncServiceProvider: @escaping () -> DDGSyncing?) -> AIChatUserScriptHandler {
+        AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: syncServiceProvider,
+            featureFlagger: featureFlagger,
+            notificationCenter: notificationCenter
+        )
+    }
 }
-
-/// Mock implementation of AIChatSyncHandling for testing
-final class MockAIChatSyncHandling: AIChatSyncHandling {
-
-    var syncTurnedOn = false
-    var syncStatus: AIChatSyncHandler.SyncStatus = AIChatSyncHandler.SyncStatus(syncAvailable: false,
-                                                                                userId: nil,
-                                                                                deviceId: nil,
-                                                                                deviceName: nil,
-                                                                                deviceType: nil)
-    var scopedToken: AIChatSyncHandler.SyncToken = AIChatSyncHandler.SyncToken(token: "token")
-    var encryptValue: (String) throws -> String = { "encrypted_\($0)" }
-    var decryptValue: (String) throws -> String = { $0.dropping(prefix: "encrypted_") }
-
-    private(set) var encryptCalls: [String] = []
-    private(set) var decryptCalls: [String] = []
-    private(set) var setAIChatHistoryEnabledCalls: [Bool] = []
-
-    func isSyncTurnedOn() -> Bool {
-        syncTurnedOn
-    }
-
-    func getSyncStatus(featureAvailable: Bool) throws -> AIChatSyncHandler.SyncStatus {
-        syncStatus
-    }
-
-    func getScopedToken() async throws -> AIChatSyncHandler.SyncToken {
-        scopedToken
-    }
-
-    func encrypt(_ string: String) throws -> AIChatSyncHandler.EncryptedData {
-        encryptCalls.append(string)
-        return AIChatSyncHandler.EncryptedData(encryptedData: try encryptValue(string))
-    }
-
-    func decrypt(_ string: String) throws -> AIChatSyncHandler.DecryptedData {
-        decryptCalls.append(string)
-        return AIChatSyncHandler.DecryptedData(decryptedData: try decryptValue(string))
-    }
-
-    func setAIChatHistoryEnabled(_ enabled: Bool) {
-        setAIChatHistoryEnabledCalls.append(enabled)
-    }
-}
+// swiftlint:enable inclusive_language

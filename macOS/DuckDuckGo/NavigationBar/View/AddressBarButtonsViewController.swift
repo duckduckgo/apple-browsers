@@ -29,6 +29,7 @@ import AppKitExtensions
 import AIChat
 import UIComponents
 import DesignResourcesKitIcons
+import SwiftUI
 
 // MARK: - Toggle Interaction Tracking
 
@@ -95,6 +96,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionCenterPopover: PermissionCenterPopover?
 
     private var popupBlockedPopover: PopupBlockedPopover?
+    private var systemDisabledInfoPopover: NSPopover?
+
     private func popupBlockedPopoverCreatingIfNeeded() -> PopupBlockedPopover {
         return popupBlockedPopover ?? {
             let popover = PopupBlockedPopover(featureFlagger: featureFlagger)
@@ -488,6 +491,9 @@ final class AddressBarButtonsViewController: NSViewController {
         if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
             permissionAuthorizationPopover.close()
         }
+        if let systemDisabledInfoPopover, systemDisabledInfoPopover.isShown {
+            systemDisabledInfoPopover.close()
+        }
 
         for case let .some(animationView) in [shieldDotAnimationView, shieldAnimationView] {
             animationView.stop()
@@ -624,6 +630,14 @@ final class AddressBarButtonsViewController: NSViewController {
             .dropFirst().sink { [weak self] _ in
                 self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
+
+        // Show informational popover when permission blocked due to system being disabled
+        tabViewModel?.tab.permissions.permissionBlockedBySystem
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] (domain, permissionType) in
+                self?.showSystemDisabledInfoPopover(for: domain, permissionType: permissionType)
+            }
+            .store(in: &permissionsCancellables)
     }
 
     private func subscribeToPrivacyEntryPointIconUpdateTrigger() {
@@ -1702,6 +1716,23 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionAuthorizationPopover?.close()
         popupBlockedPopover?.close()
         permissionCenterPopover?.close()
+        systemDisabledInfoPopover?.close()
+    }
+
+    private func showSystemDisabledInfoPopover(for domain: String, permissionType: PermissionType) {
+        guard permissionCenterButton.isVisible else { return }
+
+        let view = SystemDisabledPermissionInfoView(domain: domain, permissionType: permissionType)
+        let controller = NSHostingController(rootView: view)
+        controller.preferredContentSize = controller.view.fittingSize
+
+        let popover = NSPopover()
+        systemDisabledInfoPopover = popover
+        popover.contentViewController = controller
+        popover.behavior = .transient  // Click outside to dismiss
+        popover.show(relativeTo: permissionCenterButton.bounds,
+                     of: permissionCenterButton,
+                     preferredEdge: .maxY)
     }
 
     func openPrivacyDashboard() {
@@ -1867,8 +1898,15 @@ final class AddressBarButtonsViewController: NSViewController {
             grantPermission: { [weak tabViewModel] query in
                 tabViewModel?.tab.permissions.allow(query)
             },
+            reloadPage: { [weak tabViewModel] in
+                tabViewModel?.reload()
+            },
+            setPermissionsNeedReload: { [weak tabViewModel] in
+                tabViewModel?.tab.permissions.setPermissionsNeedReload()
+            },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
-            pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false
+            pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
+            permissionsNeedReload: tabViewModel.permissionsNeedReload
         )
 
         let popover = PermissionCenterPopover(viewModel: viewModel)
@@ -2493,6 +2531,17 @@ extension AddressBarButtonsViewController: NavigationBarBadgeAnimatorDelegate {
             return
         }
 
+        let isShowingErrorPage = tabViewModel?.isShowingErrorPage ?? false
+        if isShowingErrorPage || !privacyDashboardButton.isShown {
+            Logger.general.debug("BadgeAnimation: skipping shield animation (errorPage=\(isShowingErrorPage), privacyButtonShown=\(self.privacyDashboardButton.isShown))")
+            privacyDashboardButton.isAnimationEnabled = true
+            buttonsBadgeAnimator.isShieldAnimationInProgress = false
+            buttonsBadgeAnimator.processNextAnimation()
+            updatePrivacyEntryPointIcon()
+            playPrivacyInfoHighlightAnimationIfNecessary()
+            return
+        }
+
         guard let tabViewModel = tabViewModel,
               case .url(let url, _, _) = tabViewModel.tab.content else {
             // Re-enable hover when no valid tab/URL
@@ -2523,6 +2572,16 @@ extension AddressBarButtonsViewController: NavigationBarBadgeAnimatorDelegate {
     }
 
     private func playShieldAnimation(for url: URL) {
+        guard let tabViewModel, !tabViewModel.isShowingErrorPage else {
+            Logger.general.debug("BadgeAnimation: shield animation aborted (error page active)")
+            privacyDashboardButton.isAnimationEnabled = true
+            buttonsBadgeAnimator.isShieldAnimationInProgress = false
+            updatePrivacyEntryPointIcon()
+            buttonsBadgeAnimator.processNextAnimation()
+            playPrivacyInfoHighlightAnimationIfNecessary()
+            return
+        }
+
         // Ensure shield is visible and button image is hidden before playing
         privacyDashboardButton.image = nil
         shieldAnimationView.isHidden = false

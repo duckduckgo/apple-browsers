@@ -201,7 +201,7 @@ extension NewTabPageActionsManager {
                 omnibarConfigProvider: omnibarConfigProvider,
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
-                eventMapper: NewTabPageConfigurationErrorHandler(),
+                eventMapper: NewTabPageConfigurationEventHandler(),
                 stateProvider: stateProvider
             ),
             NewTabPageCustomBackgroundClient(model: customizationProvider),
@@ -221,7 +221,8 @@ extension NewTabPageActionsManager {
                         tabOpener: NewTabPageTabOpener(),
                         privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                         pixelHandler: nextStepsPixelHandler,
-                        newTabPageNavigator: DefaultNewTabPageNavigator()
+                        newTabPageNavigator: DefaultNewTabPageNavigator(),
+                        featureFlagger: featureFlagger
                     ),
                     appearancePreferences: appearancePreferences,
                     legacySubscriptionCardPersistor: subscriptionCardPersistor,

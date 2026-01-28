@@ -335,6 +335,10 @@ enum Preferences {
                         guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
                         pixelHandler(.subscriptionWinBackOfferSettingsPageCTAClicked, .standard)
                         showTab(.subscription(url))
+                    case .didClickViewAllPlans:
+                        pixelHandler(.subscriptionViewAllPlansClick, .standard)
+                    case .didClickUpgradeToPro:
+                        pixelHandler(.subscriptionUpgradeClick, .standard)
                     }
                 }
             }

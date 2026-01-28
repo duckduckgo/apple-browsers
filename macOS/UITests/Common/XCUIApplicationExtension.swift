@@ -118,7 +118,11 @@ extension XCUIApplication {
     }
 
     @nonobjc var path: String? {
-        self.value(forKey: "path") as? String
+        value(forKey: "path") as? String
+    }
+
+    var bundleID: String? {
+        value(forKey: "bundleID") as? String
     }
 
     /// Dismiss popover with the passed button identifier if exists. If it does not exist it continues the execution without failing.

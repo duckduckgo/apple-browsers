@@ -21,16 +21,7 @@ import SwiftUI
 import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
-
-class BrowsingMenuSheetViewController: UIHostingController<BrowsingMenuSheetView> {
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        // Required for material background to become effective
-        view.backgroundColor = .clear
-    }
-}
+import Kingfisher
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -41,8 +32,10 @@ struct BrowsingMenuModel {
 struct BrowsingMenuSheetView: View {
 
     enum Metrics {
-        static let headerButtonVerticalPadding: CGFloat = 8
-        static let headerButtonIconTextSpacing: CGFloat = 2
+        static let headerButtonVerticalPadding: CGFloat = 12
+        static let headerButtonHorizontalPadding: CGFloat = 8
+        static let headerButtonIconSize: CGFloat = 26
+        static let headerButtonIconTextSpacing: CGFloat = 4
         static let footerButtonVerticalPadding: CGFloat = 8
 
         /// Approximate row size for `.insetGrouped` style.
@@ -59,10 +52,10 @@ struct BrowsingMenuSheetView: View {
         static let grabberHeight: CGFloat = 20
 
         static let headerHorizontalSpacing: CGFloat = 10
-        static let iconTitleHorizontalSpacing: CGFloat = 16
-        static let textDotHorizontalSpacing: CGFloat = 4
 
         static let listTopPaddingAdjustment: CGFloat = 4
+
+        static let websiteHeaderHeight: CGFloat = 56
     }
 
     @Environment(\.presentationMode) var presentationMode
@@ -74,8 +67,14 @@ struct BrowsingMenuSheetView: View {
     @State private var highlightTag: BrowsingMenuModel.Entry.Tag?
     @State private var actionToPerform: (() -> Void)?
 
-    init(model: BrowsingMenuModel, highlightRowWithTag: BrowsingMenuModel.Entry.Tag? = nil, onDismiss: @escaping (_ wasActionSelected: Bool) -> Void) {
+    @ObservedObject private(set) var headerDataSource: BrowsingMenuHeaderDataSource
+
+    init(model: BrowsingMenuModel,
+         headerDataSource: BrowsingMenuHeaderDataSource,
+         highlightRowWithTag: BrowsingMenuModel.Entry.Tag? = nil,
+         onDismiss: @escaping (_ wasActionSelected: Bool) -> Void) {
         self.model = model
+        self.headerDataSource = headerDataSource
         self.onDismiss = onDismiss
         _highlightTag = State(initialValue: highlightRowWithTag)
     }
@@ -123,17 +122,27 @@ struct BrowsingMenuSheetView: View {
     @ViewBuilder
     private var headerSection: some View {
         Section {
-            if !model.headerItems.isEmpty {
-                HStack(spacing: Metrics.headerHorizontalSpacing) {
-                    ForEach(model.headerItems) { headerItem in
-                        MenuHeaderButton(entryData: headerItem) {
-                            actionToPerform = { headerItem.action() }
-                            presentationMode.wrappedValue.dismiss()
+            VStack(spacing: Metrics.headerHorizontalSpacing) {
+                if headerDataSource.isHeaderVisible {
+                    BrowsingMenuHeaderView(
+                        title: headerDataSource.title,
+                        url: headerDataSource.url,
+                        favicon: headerDataSource.favicon,
+                        easterEggLogoURL: headerDataSource.easterEggLogoURL
+                    )
+                }
+
+                if !model.headerItems.isEmpty {
+                    HStack(spacing: Metrics.headerHorizontalSpacing) {
+                        ForEach(model.headerItems) { headerItem in
+                            MenuHeaderButton(entryData: headerItem) {
+                                actionToPerform = { headerItem.action() }
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                            .frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity)
                     }
                 }
-                .background(.clear)
             }
         }
         .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
@@ -173,6 +182,7 @@ extension BrowsingMenuModel {
         let image: UIImage
         let showNotificationDot: Bool
         let customDotColor: UIColor?
+        let detail: Detail?
         let action: () -> Void
         let tag: Tag?
 
@@ -187,6 +197,14 @@ extension BrowsingMenuModel {
         enum Tag {
             case favorite
         }
+
+        enum Detail {
+            case text(String)
+        }
+
+        var hasDetails: Bool {
+            showNotificationDot || detail != nil
+        }
     }
 }
 
@@ -200,21 +218,20 @@ extension BrowsingMenuModel.Entry {
 
             return nil
 
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let action):
+        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detail, let action):
             self.init(
                 name: name,
                 accessibilityLabel: accessibilityLabel,
                 image: image,
                 showNotificationDot: showNotificationDot,
                 customDotColor: customDotColor,
+                detail: detail.map { .text($0) },
                 action: action,
                 tag: tag
             )
         }
     }
 }
-
-private typealias Metrics = BrowsingMenuSheetView.Metrics
 
 private struct MenuRowButton: View {
 
@@ -239,13 +256,10 @@ private struct MenuRowButton: View {
                     Text(entryData.name)
                         .daxBodyRegular()
 
-                    if entryData.showNotificationDot {
-                        Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
-                            .frame(width: 8, height: 8)
-                            .padding(.leading, 6)
-                            .padding(.trailing, 12)
+                    Spacer()
 
-                        Spacer()
+                    if entryData.hasDetails {
+                        DetailView(entryData: entryData)
                     }
                 }
             }
@@ -253,9 +267,39 @@ private struct MenuRowButton: View {
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
     }
 
+    struct DetailView: View {
+        fileprivate let entryData: BrowsingMenuModel.Entry
+
+        var body: some View {
+            HStack(spacing: Metrics.detailStackSpacing) {
+                if entryData.showNotificationDot {
+                    Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
+                        .frame(width: Metrics.dotSize, height: Metrics.dotSize)
+                }
+
+                if let detail = entryData.detail {
+                    switch detail {
+                    case .text(let string):
+                        Text(string)
+                            .daxBodyRegular()
+                            .foregroundStyle(Color(designSystemColor: .textSecondary))
+                    }
+                }
+            }
+        }
+    }
+
+    private struct Metrics {
+        static let dotSize: CGFloat = 8.0
+        static let detailStackSpacing: CGFloat = 4.0
+        static let iconTitleHorizontalSpacing: CGFloat = 16
+        static let textDotHorizontalSpacing: CGFloat = 4
+    }
 }
 
 private struct MenuHeaderButton: View {
+
+    private typealias Metrics = BrowsingMenuSheetView.Metrics
 
     fileprivate let entryData: BrowsingMenuModel.Entry
     let action: () -> Void
@@ -264,13 +308,15 @@ private struct MenuHeaderButton: View {
         Button(action: action) {
             VStack(spacing: Metrics.headerButtonIconTextSpacing) {
                 Image(uiImage: entryData.image)
+                    .resizable()
+                    .frame(width: Metrics.headerButtonIconSize, height: Metrics.headerButtonIconSize)
                     .tint(Color(designSystemColor: .icons))
                 Text(entryData.name)
-                    .daxFootnoteRegular()
-                    .foregroundStyle(Color(designSystemColor: .textSecondary))
+                    .daxCaption()
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
             }
             .padding(.vertical, Metrics.headerButtonVerticalPadding)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, Metrics.headerButtonHorizontalPadding)
             .frame(maxWidth: .infinity)
             .frame(maxHeight: .infinity)
             .background(Color.rowBackgroundColor)
@@ -279,10 +325,85 @@ private struct MenuHeaderButton: View {
         .buttonStyle(.plain)
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
     }
+}
 
-    enum Constant {
-        static let cornerRadius: CGFloat = 10
+private struct BrowsingMenuHeaderView: View {
+
+    let title: String?
+    let url: URL?
+    let favicon: UIImage?
+    let easterEggLogoURL: URL?
+
+    private var displayURL: String? {
+        url?.host
     }
+
+    var body: some View {
+        HStack(spacing: MenuHeaderConstant.contentSpacing) {
+            faviconView
+
+            textContent
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.bottom, MenuHeaderConstant.bottomPadding)
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var faviconView: some View {
+        Group {
+            if let easterEggLogoURL {
+                KFImage(easterEggLogoURL)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else if let favicon {
+                Image(uiImage: favicon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
+                    .foregroundStyle(Color(designSystemColor: .icons))
+            }
+        }
+        .frame(width: MenuHeaderConstant.faviconSize, height: MenuHeaderConstant.faviconSize)
+        .menuHeaderEntryShape()
+        .padding(MenuHeaderConstant.faviconPadding)
+        .background(Color.rowBackgroundColor)
+        .menuHeaderEntryShape()
+    }
+
+    @ViewBuilder
+    private var textContent: some View {
+        if let title, !title.isEmpty {
+            VStack(alignment: .leading, spacing: MenuHeaderConstant.textSpacing) {
+                Text(title)
+                    .daxHeadline()
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
+                    .lineLimit(1)
+
+                if let displayURL {
+                    Text(displayURL)
+                        .daxCaption()
+                        .foregroundStyle(Color(designSystemColor: .textSecondary))
+                        .lineLimit(1)
+                }
+            }
+        } else if let displayURL {
+            Text(displayURL)
+                .daxHeadline()
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+                .lineLimit(1)
+        }
+    }
+}
+
+private enum MenuHeaderConstant {
+    static let cornerRadius: CGFloat = 10
+    static let faviconSize: CGFloat = 32
+    static let faviconPadding: CGFloat = 8
+    static let contentSpacing: CGFloat = 12
+    static let textSpacing: CGFloat = 2
+    static let bottomPadding: CGFloat = 8
 }
 
 private extension View {
@@ -294,8 +415,8 @@ private extension View {
                 .contentShape(ButtonBorderShape.automatic)
         } else {
             self
-                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.cornerRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.cornerRadius, style: .continuous))
         }
     }
 
@@ -326,6 +447,9 @@ private extension View {
 }
 
 private struct FloatingToolbarModifier: ViewModifier {
+
+    private typealias Metrics = BrowsingMenuSheetView.Metrics
+
     let footerItems: [BrowsingMenuModel.Entry]
     @Binding var actionToPerform: (() -> Void)?
     let presentationMode: Binding<PresentationMode>

@@ -19,6 +19,7 @@
 
 import Foundation
 import SwiftUI
+import PrivacyConfig
 
 struct SubscriptionContainerView: View {
     
@@ -33,11 +34,14 @@ struct SubscriptionContainerView: View {
     private let flowViewModel: SubscriptionFlowViewModel
     private let restoreViewModel: SubscriptionRestoreViewModel
     private let emailViewModel: SubscriptionEmailViewModel
-        
+    private let featureFlagger: FeatureFlagger
+
     init(currentView: CurrentViewType,
-         viewModel: SubscriptionContainerViewModel) {
+         viewModel: SubscriptionContainerViewModel,
+         featureFlagger: FeatureFlagger) {
         _currentViewType = State(initialValue: currentView)
         self.viewModel = viewModel
+        self.featureFlagger = featureFlagger
         flowViewModel = viewModel.flow
         restoreViewModel = viewModel.restore
         emailViewModel = viewModel.email
@@ -48,15 +52,18 @@ struct SubscriptionContainerView: View {
             switch currentViewType {
             case .subscribe:
                 SubscriptionFlowView(viewModel: flowViewModel,
-                                     currentView: $currentViewType)
+                                     currentView: $currentViewType,
+                                     featureFlagger: featureFlagger)
                 .environmentObject(subscriptionNavigationCoordinator)
             case .restore:
                 SubscriptionRestoreView(viewModel: restoreViewModel,
                                         emailViewModel: emailViewModel,
-                                        currentView: $currentViewType)
+                                        currentView: $currentViewType,
+                                        featureFlagger: featureFlagger)
                 .environmentObject(subscriptionNavigationCoordinator)
             case .email:
-                SubscriptionEmailView(viewModel: emailViewModel)
+                SubscriptionEmailView(viewModel: emailViewModel,
+                                      featureFlagger: featureFlagger)
             }
         }
     }

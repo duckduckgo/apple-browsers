@@ -111,6 +111,9 @@ public extension SubJobWebRunning {
                 try await runEmailConfirmationAction(action: emailConfirmationAction)
                 await executeNextStep()
             } catch {
+                recordDebugEvent(kind: .actionResponse,
+                                 actionType: emailConfirmationAction.actionType,
+                                 details: errorDetails(error))
                 await onError(error: DataBrokerProtectionError.emailError(error as? EmailError))
             }
 
@@ -120,12 +123,21 @@ public extension SubJobWebRunning {
         if action is SolveCaptchaAction, let captchaTransactionId = actionsHandler?.captchaTransactionId {
             actionsHandler?.captchaTransactionId = nil
             stageCalculator.setStage(.captchaSolve)
+            recordDebugEvent(kind: .wait,
+                             actionType: action.actionType,
+                             details: "Requesting captcha resolution")
             if let captchaData = try? await captchaService.submitCaptchaToBeResolved(for: captchaTransactionId,
                                                                                      dataBrokerURL: context.dataBroker.url,
                                                                                      dataBrokerVersion: context.dataBroker.version,
                                                                                      attemptId: stageCalculator.attemptId,
                                                                                      shouldRunNextStep: shouldRunNextStep) {
+                recordDebugEvent(kind: .wait,
+                                 actionType: action.actionType,
+                                 details: "Captcha resolution received")
                 stageCalculator.fireOptOutCaptchaSolve()
+                recordDebugEvent(kind: .actionPayload,
+                                 actionType: action.actionType,
+                                 details: prettyPrintedJSON(from: CCFRequestData.solveCaptcha(CaptchaToken(token: captchaData))))
                 await webViewHandler?.execute(action: action,
                                               ofType: stepType,
                                               data: .solveCaptcha(CaptchaToken(token: captchaData)))
@@ -139,6 +151,9 @@ public extension SubJobWebRunning {
         if action.needsEmail {
             do {
                 stageCalculator.setStage(.emailGenerate)
+                recordDebugEvent(kind: .wait,
+                                 actionType: action.actionType,
+                                 details: "Requesting email address")
                 let emailData = try await emailConfirmationDataService.getEmailAndOptionallySaveToDatabase(
                     dataBrokerId: context.dataBroker.id,
                     dataBrokerURL: context.dataBroker.url,
@@ -146,6 +161,9 @@ public extension SubJobWebRunning {
                     extractedProfileId: extractedProfile?.id,
                     attemptId: stageCalculator.attemptId
                 )
+                recordDebugEvent(kind: .wait,
+                                 actionType: action.actionType,
+                                 details: "Email address received")
                 extractedProfile?.email = emailData.emailAddress
                 stageCalculator.setEmailPattern(emailData.pattern)
                 stageCalculator.fireOptOutEmailGenerate()
@@ -161,9 +179,16 @@ public extension SubJobWebRunning {
 
         if featureFlagger.isClickActionDelayReductionOptimizationOn && action is ClickAction {
             Logger.action.log("Executing click action delay BEFORE click: \(self.clickAwaitTime)s")
+            recordDebugEvent(kind: .wait,
+                             actionType: action.actionType,
+                             details: "Waiting \(clickAwaitTime)s (click delay before click)")
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
         }
 
+        let request = CCFRequestData.userData(context.profileQuery, self.extractedProfile)
+        recordDebugEvent(kind: .actionPayload,
+                         actionType: action.actionType,
+                         details: prettyPrintedJSON(from: request))
         await webViewHandler?.execute(action: action,
                                       ofType: stepType,
                                       data: .userData(context.profileQuery, self.extractedProfile))
@@ -171,8 +196,11 @@ public extension SubJobWebRunning {
 
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {
         if let email = extractedProfile?.email {
+            recordDebugEvent(kind: .actionResponse,
+                             actionType: action.actionType,
+                             details: "Email confirmation started (polling interval \(action.pollingTime)s)")
             stageCalculator.setStage(.emailReceive)
-            let url =  try await emailConfirmationDataService.getConfirmationLink(
+            let url = try await emailConfirmationDataService.getConfirmationLink(
                 from: email,
                 numberOfRetries: 10, // Move to constant
                 pollingInterval: action.pollingTime,
@@ -188,6 +216,9 @@ public extension SubJobWebRunning {
                 return
             }
 
+            recordDebugEvent(kind: .actionResponse,
+                             actionType: action.actionType,
+                             details: "Email confirmation link received")
             stageCalculator.fireOptOutEmailConfirm()
         } else {
             throw EmailError.cantFindEmail
@@ -244,6 +275,9 @@ public extension SubJobWebRunning {
 
             do  {
                 try await webViewHandler?.load(url: url)
+                recordDebugEvent(kind: .actionResponse,
+                                 actionType: .navigate,
+                                 details: prettyPrintedJSON(from: ["url": url.absoluteString]))
                 await successNextSteps()
             } catch let error as DataBrokerProtectionError {
                 guard error == error404 && self is BrokerProfileScanSubJobWebRunner else {
@@ -276,6 +310,9 @@ public extension SubJobWebRunning {
     }
 
     func success(actionId: String, actionType: ActionType) async {
+        recordDebugEvent(kind: .actionResponse,
+                         actionType: actionType,
+                         details: prettyPrintedJSON(from: ["actionId": actionId, "actionType": actionType.rawValue]))
         let isForOptOut = actionsHandler?.isForOptOut == true
 
         switch actionType {
@@ -287,6 +324,9 @@ public extension SubJobWebRunning {
             // When ON, the delay happens before the click in runNextAction
             if !featureFlagger.isClickActionDelayReductionOptimizationOn {
                 Logger.action.log("Executing click action delay AFTER click: \(self.clickAwaitTime)s")
+                recordDebugEvent(kind: .wait,
+                                 actionType: .click,
+                                 details: "Waiting \(clickAwaitTime)s (click delay after click)")
                 try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
             }
             await executeNextStep()
@@ -300,6 +340,8 @@ public extension SubJobWebRunning {
     }
 
     func conditionSuccess(actions: [Action]) async {
+        recordDebugEvent(kind: .actionResponse,
+                         details: prettyPrintedJSON(from: actions))
         if actions.isEmpty {
             Logger.action.log(loggerContext(), message: "Condition action completed with no follow-up actions")
             if actionsHandler?.stepType == .optOut {
@@ -318,15 +360,24 @@ public extension SubJobWebRunning {
     }
 
     func captchaInformation(captchaInfo: GetCaptchaInfoResponse) async {
+        recordDebugEvent(kind: .actionResponse,
+                         actionType: .getCaptchaInfo,
+                         details: prettyPrintedJSON(from: captchaInfo))
         do {
             stageCalculator.fireOptOutCaptchaParse()
             stageCalculator.setStage(.captchaSend)
+            recordDebugEvent(kind: .wait,
+                             actionType: .getCaptchaInfo,
+                             details: "Submitting captcha information")
             actionsHandler?.captchaTransactionId = try await captchaService.submitCaptchaInformation(
                 captchaInfo,
                 dataBrokerURL: context.dataBroker.url,
                 dataBrokerVersion: context.dataBroker.version,
                 attemptId: stageCalculator.attemptId,
                 shouldRunNextStep: shouldRunNextStep)
+            recordDebugEvent(kind: .wait,
+                             actionType: .getCaptchaInfo,
+                             details: "Captcha information submitted")
             stageCalculator.fireOptOutCaptchaSend()
             await executeNextStep()
         } catch {
@@ -339,6 +390,9 @@ public extension SubJobWebRunning {
     }
 
     func solveCaptcha(with response: SolveCaptchaResponse) async {
+        recordDebugEvent(kind: .actionResponse,
+                         actionType: .solveCaptcha,
+                         details: prettyPrintedJSON(from: response))
         do {
             try await webViewHandler?.evaluateJavaScript(response.callback.eval)
 
@@ -349,6 +403,9 @@ public extension SubJobWebRunning {
     }
 
     func onError(error: Error) async {
+        recordDebugEvent(kind: .actionResponse,
+                         actionType: actionsHandler?.currentAction()?.actionType,
+                         details: errorDetails(error))
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
             Logger.action.log(loggerContext(for: currentAction),
                               message: "Condition action did NOT meet its expectation, continuing with regular action execution")
@@ -371,11 +428,17 @@ public extension SubJobWebRunning {
 
     func executeCurrentAction() async {
         let waitTimeUntilRunningTheActionAgain: TimeInterval = 3
+        recordDebugEvent(kind: .wait,
+                         actionType: actionsHandler?.currentAction()?.actionType,
+                         details: "Waiting \(waitTimeUntilRunningTheActionAgain)s (retry)")
         try? await Task.sleep(nanoseconds: UInt64(waitTimeUntilRunningTheActionAgain) * 1_000_000_000)
 
         if let currentAction = self.actionsHandler?.currentAction() {
             decrementRetriesCountOnError()
             Logger.dataBrokerProtection.log("Retrying current action")
+            recordDebugEvent(kind: .actionRetry,
+                             actionType: currentAction.actionType,
+                             details: "Retrying action")
             await runNextAction(currentAction)
         } else {
             resetRetriesCount()

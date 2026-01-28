@@ -1426,6 +1426,18 @@
 /* Subtitle shown on the context chip indicating page content is attached */
 "duckai.context.chip.subtitle" = "Sivun sisältö";
 
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai voi nyt auttaa vastaamaan katselemaasi sivuun liittyviin kysymyksiin.\n\nSivun sisältö sisällytetään vain, kun liität sen. Voit muuttaa tätä milloin tahansa asetuksista.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Selvä";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Kysy tästä sivusta";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Näytä asetukset";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
 
@@ -3610,6 +3622,9 @@
 /* Manage Plan header */
 "subscription.manage.plan" = "Hallinnoi suunnitelmaa";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Hallitse maksua tai peruuta";
+
 /* Header for the subscription section */
 "subscription.manage.title" = "Tilaus";
 
@@ -3706,6 +3721,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Vuositilauksesi päättyy %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Tilauksesi alenee kuukausitilaukseen %1$@ alkaen %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Sopimuksesi alenee tasolle %1$@ alkaen %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Tilauksesi alenee tasolle %1$@ vuositilaus alkaen %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Kuukausitilauksesi uusiutuu %@.";
 
@@ -3726,6 +3750,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Ilmainen kokeilujakso on aktiivinen";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Päivitä tasoon %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Avaa älykkäämpi ja tehokkaampi tekoäly";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Päivitä";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Näytä kaikki tilaukset";
@@ -4228,3 +4261,15 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
+
+/* Tab Switcher tracker count */
+"settings.tabs" = "Välilehdet";
+"settings.tab.switcher.show.tracker.count" = "Viimeisten 7 päivän seurantamäärä";
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+"tab.switcher.tracker.count.subtitle" = "viimeisten 7 päivän aikana";
+"tab.switcher.tracker.count.hide.title" = "Piilotetaanko seurantamäärä?";
+"tab.switcher.tracker.count.hide.message" = "Voit ottaa tämän uudelleen käyttöön kohdassa Asetukset > Ulkoasu.";
+"tab.switcher.tracker.count.hide.action" = "Piilota";
+"tab.switcher.tracker.count.keep.action" = "Pidä";
+"tab.switcher.tracker.count.info.a11y" = "Seurantamäärän valinnat";
+"tab.switcher.tracker.count.info.hint.a11y" = "Näytä tämän bannerin piilotusvaihtoehdot kaksoisnapauttamalla";

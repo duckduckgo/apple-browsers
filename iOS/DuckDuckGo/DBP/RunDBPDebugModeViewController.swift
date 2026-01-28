@@ -403,7 +403,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         )
         
         self.fakePixelHandler = EventMapping { event, _, _, _ in
-            print("Debug Pixel: \(event)")
+            Logger.general.debug("Debug Pixel: \(String(describing: event), privacy: .public)")
         }
         if let pixelKit = PixelKit.shared {
             self.pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
@@ -457,6 +457,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: pixelHandler!, vault: vault, localBrokerService: localBrokerService)
         
         self.emailConfirmationDataService = EmailConfirmationDataService(
+            emailConfirmationStore: database,
             database: database,
             emailServiceV0: emailService,
             emailServiceV1: emailServiceV1,
@@ -815,7 +816,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func fireOptOutFillForm() {}
     func fireOptOutValidate() {}
     func fireOptOutSubmitSuccess(tries: Int) {}
-    func fireOptOutFailure(tries: Int) {}
+    func fireOptOutFailure(tries: Int, error: Error) {}
     func fireScanSuccess(matchesFound: Int) {}
     func fireScanNoResults() {}
     func fireScanError(error: Error) {}

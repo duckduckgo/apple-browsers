@@ -85,7 +85,8 @@ extension TabViewController {
                                 browsingMenuSheetCapability: BrowsingMenuSheetCapable,
                                 clearTabsAndData: @escaping () -> Void) -> BrowsingMenuModel? {
         
-        let builder = BrowsingMenuBuilder(entryBuilder: self)
+        let options = BrowsingMenuBuilder.Options(capability: browsingMenuSheetCapability)
+        let builder = BrowsingMenuBuilder(entryBuilder: self, options: options)
         
         return builder.buildMenu(
             context: context,
@@ -293,7 +294,7 @@ extension TabViewController {
             entries.append(buildReloadEntry())
         }
 
-        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: true) {
+        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: true, percentageInDetail: false) {
             entries.append(entry)
         }
 
@@ -309,7 +310,7 @@ extension TabViewController {
 
         var entries = [BrowsingMenuEntry]()
 
-        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon) {
+        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon, percentageInDetail: false) {
             entries.append(entry)
         }
 
@@ -395,8 +396,8 @@ extension TabViewController {
         })
     }
     
-    private func buildZoomEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
-        return textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon)
+    private func buildZoomEntry(forLink link: Link, useSmallIcon: Bool = true, useDetailText: Bool = false) -> BrowsingMenuEntry? {
+        return textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon, percentageInDetail: useDetailText)
     }
     
     private func buildReloadEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
@@ -758,12 +759,13 @@ extension TabViewController {
         })
     }
 
-    private func buildVPNEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+    private func buildVPNEntry(useSmallIcon: Bool = true, showStatusStringInDetail: Bool = false) -> BrowsingMenuEntry {
         let vpnPromoHelper = VPNSubscriptionPromotionHelper()
         var image: UIImage = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOff : DesignSystemImages.Glyphs.Size24.vpnUnlocked
         var showNotificationDot: Bool = true
         var customDotColor: UIColor?
         var accessibilityLabel: String?
+        var detailText: String?
 
         switch vpnPromoHelper.subscriptionPromoStatus {
         case .promo:
@@ -775,9 +777,11 @@ extension TabViewController {
                 image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOn : DesignSystemImages.Glyphs.Size24.vpn
                 accessibilityLabel = "\(UserText.actionVPN), \(UserText.settingsOn)"
                 customDotColor = UIColor(designSystemColor: .alertGreen)
+                detailText = UserText.settingsOn
             } else {
                 accessibilityLabel = "\(UserText.actionVPN), \(UserText.settingsOff)"
                 customDotColor = UIColor(designSystemColor: .textSecondary).withAlphaComponent(0.33)
+                detailText = UserText.settingsOff
             }
         }
 
@@ -785,7 +789,8 @@ extension TabViewController {
                                          accessibilityLabel: accessibilityLabel,
                                          image: image,
                                          showNotificationDot: showNotificationDot,
-                                         customDotColor: customDotColor) { [weak self] in
+                                         customDotColor: customDotColor,
+                                         detailText: showStatusStringInDetail ? detailText : nil) { [weak self] in
             self?.onOpenVPNAction(with: vpnPromoHelper)
             Pixel.fire(pixel: .browsingMenuVPN)
         }
@@ -896,7 +901,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
               AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable else {
             return nil
         }
-        return buildVPNEntry(useSmallIcon: false)
+        return buildVPNEntry(useSmallIcon: false, showStatusStringInDetail: true)
     }
     
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? {
@@ -916,7 +921,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     
     func makeZoomEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
-        return buildZoomEntry(forLink: link, useSmallIcon: false)
+        return buildZoomEntry(forLink: link, useSmallIcon: false, useDetailText: true)
     }
     
     func makeReloadEntry() -> BrowsingMenuEntry? {
@@ -930,7 +935,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeReportBrokenSiteEntry() -> BrowsingMenuEntry? {
-        guard validLink != nil else { return nil }
+        guard link != nil else { return nil }
         return buildReportBrokenSiteEntry(useSmallIcon: false)
     }
     

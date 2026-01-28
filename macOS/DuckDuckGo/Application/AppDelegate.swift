@@ -55,6 +55,7 @@ import UserNotifications
 import Utilities
 import VPN
 import VPNAppState
+import WebExtensions
 import WebKit
 import AttributedMetric
 
@@ -114,7 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
-    private(set) var syncAIChatsCleaner: SyncAIChatsCleaning?
+    private(set) var aiChatSyncCleaner: AIChatSyncCleaning?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
     private var screenLockedCancellable: AnyCancellable?
@@ -421,7 +422,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
-        wideEvent = WideEvent()
 
         if AppVersion.runType.requiresEnvironment {
             let commonDatabase = Database()
@@ -532,6 +532,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
+        wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
@@ -785,7 +786,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
                                           pixelFiring: PixelKit.shared,
-                                          syncAIChatsCleaner: { Application.appDelegate.syncAIChatsCleaner })
+                                          aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner })
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
@@ -1527,7 +1528,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupWebExtensions() {
         if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManager()
+            let webExtensionManager = WebExtensionManagerFactory.makeManager()
             self.webExtensionManager = webExtensionManager
 
             Task {
@@ -1610,10 +1611,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             environment: environment
         )
-        let syncAIChatsCleaner = SyncAIChatsCleaner(sync: syncService,
-                                                    keyValueStore: keyValueStore,
-                                                    featureFlagger: featureFlagger)
-        syncService.setCustomOperations([AIChatDeleteOperation(cleaner: syncAIChatsCleaner)])
+        let aiChatSyncCleaner = AIChatSyncCleaner(sync: syncService,
+                                                   keyValueStore: keyValueStore,
+                                                   featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        syncService.setCustomOperations([AIChatDeleteOperation(cleaner: aiChatSyncCleaner)])
 
         syncService.initializeIfNeeded()
         syncDataProviders.setUpDatabaseCleaners(syncService: syncService)
@@ -1627,7 +1628,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         self.syncDataProviders = syncDataProviders
         self.syncService = syncService
-        self.syncAIChatsCleaner = syncAIChatsCleaner
+        self.aiChatSyncCleaner = aiChatSyncCleaner
 
         isSyncInProgressCancellable = syncService.isSyncInProgressPublisher
             .filter { $0 }
@@ -1765,7 +1766,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager,
-                                                syncAIChatsCleaner: syncAIChatsCleaner)
+                                                aiChatSyncCleaner: aiChatSyncCleaner)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()

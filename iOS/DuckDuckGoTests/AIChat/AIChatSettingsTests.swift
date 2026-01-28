@@ -132,20 +132,68 @@ class AIChatSettingsTests: XCTestCase {
         mockNotificationCenter.removeObserver(observer)
     }
 
-    func testEnableAutomaticContextAttachment() {
+    func testEnableAutomaticContextAttachment_WhenFeatureFlagOn_DefaultsToTrue() {
+        // Given
+        (mockFeatureFlagger as? MockFeatureFlagger)?.enabledFeatureFlags = [.aiChatAutoAttachContextByDefault]
+
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter,
+                                      featureFlagger: mockFeatureFlagger)
+
+        // Then
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+
+        // When
+        settings.enableAutomaticContextAttachment(enable: false)
+
+        // Then
+        XCTAssertFalse(settings.isAutomaticContextAttachmentEnabled)
+
+        // When
+        settings.enableAutomaticContextAttachment(enable: true)
+
+        // Then
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+    }
+
+    func testEnableAutomaticContextAttachment_WhenFeatureFlagOff_DefaultsToFalse() {
+        // Given
+        (mockFeatureFlagger as? MockFeatureFlagger)?.enabledFeatureFlags = []
+
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter,
+                                      featureFlagger: mockFeatureFlagger)
+
+        // Then
+        XCTAssertFalse(settings.isAutomaticContextAttachmentEnabled)
+
+        // When
+        settings.enableAutomaticContextAttachment(enable: true)
+
+        // Then
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+    }
+
+    func testContextualOnboardingSeenState() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
                                       keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter)
 
-        // Default value is true
-        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+        // Default value is false
+        XCTAssertFalse(settings.hasSeenContextualOnboarding)
 
-        settings.enableAutomaticContextAttachment(enable: false)
-        XCTAssertFalse(settings.isAutomaticContextAttachmentEnabled)
+        // Marking as seen sets it to true
+        settings.markContextualOnboardingSeen()
+        XCTAssertTrue(settings.hasSeenContextualOnboarding)
 
-        settings.enableAutomaticContextAttachment(enable: true)
-        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+        // Reset sets it back to false
+        settings.resetContextualOnboarding()
+        XCTAssertFalse(settings.hasSeenContextualOnboarding)
     }
 
 }

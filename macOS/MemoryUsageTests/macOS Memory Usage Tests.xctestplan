@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "4A3A1056-0495-490B-9A73-8D78CADF4C3E",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",
+        "identifier" : "37C320B62F1E80A1008F4604",
+        "name" : "Memory Usage Tests"
+      }
+    }
+  ],
+  "version" : 1
+}

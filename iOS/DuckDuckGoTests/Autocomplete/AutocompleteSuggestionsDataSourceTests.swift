@@ -85,7 +85,7 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
     @MainActor
     private func makeDataSource() -> AutocompleteSuggestionsDataSource {
 
-        var mockHistoryCoordinator = MockHistoryCoordinator()
+        var mockHistoryCoordinator = NullHistoryCoordinator()
         mockHistoryCoordinator.history = [
             makeHistory(.appStore, "App Store"),
             makeHistory(.mac, "DDG for macOS")

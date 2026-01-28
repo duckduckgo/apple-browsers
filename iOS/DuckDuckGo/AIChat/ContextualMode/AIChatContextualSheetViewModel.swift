@@ -22,6 +22,24 @@ import Combine
 import DesignResourcesKitIcons
 import UIKit
 
+// MARK: - Snapshot DTO
+
+/// Lightweight snapshot of page context for UI display.
+/// UI components receive this snapshot rather than accessing AIChatPageContextHandling directly.
+struct AIChatPageContextSnapshot {
+    let title: String
+    let favicon: UIImage?
+    let context: AIChatPageContextData
+
+    init(context: AIChatPageContextData, favicon: UIImage?) {
+        self.title = context.title
+        self.favicon = favicon
+        self.context = context
+    }
+}
+
+// MARK: - ViewModel
+
 /// ViewModel for the contextual AI chat sheet, managing state and business logic.
 final class AIChatContextualSheetViewModel {
 
@@ -33,12 +51,12 @@ final class AIChatContextualSheetViewModel {
     /// Whether the new chat button should be visible
     @Published private(set) var isNewChatButtonVisible: Bool = false
 
+    /// Whether page context is available
+    @Published private(set) var hasContext: Bool
+
     // MARK: - Properties
 
     private let settings: AIChatSettingsProvider
-
-    /// Single source of truth for page context
-    let pageContextStore: AIChatPageContextStoring
 
     /// Tracks whether the user has submitted at least one prompt
     private(set) var hasSubmittedPrompt = false
@@ -49,10 +67,10 @@ final class AIChatContextualSheetViewModel {
     // MARK: - Initialization
 
     init(settings: AIChatSettingsProvider,
-         pageContextStore: AIChatPageContextStoring,
+         hasContext: Bool,
          hasExistingChat: Bool = false) {
         self.settings = settings
-        self.pageContextStore = pageContextStore
+        self.hasContext = hasContext
         if hasExistingChat {
             hasSubmittedPrompt = true
             isNewChatButtonVisible = true
@@ -79,15 +97,10 @@ final class AIChatContextualSheetViewModel {
         return [attachPageAction]
     }
 
-    /// Creates and configures a context chip view with the current page context
-    func createContextChipView(onRemove: @escaping () -> Void) -> AIChatContextChipView? {
-        guard let context = pageContextStore.latestContext else { return nil }
-
-        let chipView = AIChatContextChipView()
-        chipView.configure(title: context.title, favicon: pageContextStore.latestFavicon)
-        chipView.subtitle = UserText.aiChatContextChipSubtitle
-        chipView.onRemove = onRemove
-        return chipView
+    /// Updates the context availability state.
+    /// Called by coordinator when context changes.
+    func updateContextAvailability(_ hasContext: Bool) {
+        self.hasContext = hasContext
     }
 
     /// Whether automatic context attachment is enabled
@@ -130,11 +143,6 @@ final class AIChatContextualSheetViewModel {
     func setInitialContextualChatURL(_ url: URL?) {
         contextualChatURL = url
         updateExpandButtonState()
-    }
-
-    /// Clears the page context (called when user removes the context chip)
-    func clearPageContext() {
-        pageContextStore.clear()
     }
 
     // MARK: - Private Methods

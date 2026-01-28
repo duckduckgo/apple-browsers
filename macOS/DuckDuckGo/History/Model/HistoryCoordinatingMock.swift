@@ -39,7 +39,7 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
 
     public var addVisitCalled = false
     public var visit: Visit?
-    public func addVisit(of url: URL, at date: Date) -> Visit? {
+    public func addVisit(of url: URL, at date: Date, tabID: String?) -> Visit? {
         addVisitCalled = true
         return visit
     }

@@ -189,6 +189,11 @@ final class FireExecutorTests: XCTestCase {
         FireRequest(options: options, trigger: trigger, scope: scope)
     }
     
+    private func makeTabViewModel() -> TabViewModel {
+        let tab = Tab(uid: "test-tab-uid")
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+    
     // MARK: - prepare Tests
     
     func testPrepareWithTabsOptionCallsPrepareForBurningTabs() {
@@ -213,6 +218,35 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertFalse(mockTabManager.prepareAllTabsExceptCurrentCalled)
     }
     
+    func testPrepareWithTabScopeForNonCurrentTabCallsPrepareTab() {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = false
+        
+        // When
+        executor.prepare(for: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)))
+        
+        // Then
+        XCTAssertTrue(mockTabManager.prepareTabCalled)
+        XCTAssertEqual(mockTabManager.prepareTabCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.isCurrentTabCalledWith, tabViewModel.tab)
+    }
+    
+    func testPrepareWithTabScopeForCurrentTabDoesNotCallPrepareTab() {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = true
+        
+        // When
+        executor.prepare(for: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)))
+        
+        // Then
+        XCTAssertFalse(mockTabManager.prepareTabCalled)
+        XCTAssertEqual(mockTabManager.isCurrentTabCalledWith, tabViewModel.tab)
+    }
+    
     // MARK: - burn Tabs Tests
     
     func testBurnTabsCallsDelegateAndClearsTabs() async {
@@ -230,6 +264,42 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockTabManager.removeAllCalled)
         // Downloads are only cancelled when both .tabs and .data are present
         XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
+    }
+    
+    func testBurnTabsWithTabScopeForCurrentTabCallsPrepareTab() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = true
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then
+        XCTAssertTrue(mockTabManager.prepareTabCalled)
+        XCTAssertEqual(mockTabManager.prepareTabCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.isCurrentTabCalledWith, tabViewModel.tab)
+    }
+    
+    func testBurnTabsWithTabScopeForNonCurrentTabDoesNotCallPrepareTab() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = false
+        
+        // When
+        let request = makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel))
+        executor.prepare(for: request)
+        
+        // Then
+        XCTAssertTrue(mockTabManager.prepareTabCalled)
+        
+        // When
+        mockTabManager.prepareTabCalled = false
+        await executor.burn(request: request, applicationState: .unknown)
+        
+        // Then
+        XCTAssertFalse(mockTabManager.prepareTabCalled)
     }
     
     // MARK: - burn Data Tests

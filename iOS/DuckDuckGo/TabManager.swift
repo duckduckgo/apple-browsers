@@ -36,6 +36,8 @@ protocol TabManaging {
     @MainActor func prepareCurrentTabForDataClearing()
     func removeAll()
     @MainActor func viewModelForCurrentTab() -> TabViewModel?
+    @MainActor func prepareTab(_ tab: Tab)
+    @MainActor func isCurrentTab(_ tab: Tab) -> Bool
 }
 
 class TabManager: TabManaging {
@@ -458,6 +460,16 @@ class TabManager: TabManaging {
     @MainActor
     func prepareCurrentTabForDataClearing() {
         current()?.prepareForDataClearing()
+    }
+    
+    @MainActor
+    func prepareTab(_ tab: Tab) {
+        controller(for: tab)?.prepareForDataClearing()
+    }
+    
+    @MainActor
+    func isCurrentTab(_ tab: Tab) -> Bool {
+        model.currentTab === tab
     }
 
     func cleanupTabsFaviconCache() {

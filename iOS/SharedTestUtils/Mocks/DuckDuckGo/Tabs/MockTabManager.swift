@@ -26,6 +26,12 @@ class MockTabManager: TabManaging {
     private(set) var prepareAllTabsExceptCurrentCalled = false
     private(set) var prepareCurrentTabCalled = false
     nonisolated(unsafe) private(set) var removeAllCalled = false
+    var prepareTabCalled = false
+    private(set) var prepareTabCalledWith: Tab?
+    
+    /// Configurable return value for isCurrentTab
+    var isCurrentTabReturnValue = false
+    private(set) var isCurrentTabCalledWith: Tab?
     
     func prepareAllTabsExceptCurrentForDataClearing() {
         prepareAllTabsExceptCurrentCalled = true
@@ -41,5 +47,15 @@ class MockTabManager: TabManaging {
 
     func viewModelForCurrentTab() -> DuckDuckGo.TabViewModel? {
         return nil
+    }
+    
+    func prepareTab(_ tab: Tab) {
+        prepareTabCalled = true
+        prepareTabCalledWith = tab
+    }
+    
+    func isCurrentTab(_ tab: Tab) -> Bool {
+        isCurrentTabCalledWith = tab
+        return isCurrentTabReturnValue
     }
 }

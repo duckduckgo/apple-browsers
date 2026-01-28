@@ -26,5 +26,12 @@
         "triggers": ["other"],
         "suffixes": [["platform", "form_factor"]],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_debug_history-clean-orphaned-tab-history-failed": {
+        "description": "Fires when cleaning orphaned tab history from the database fails.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": [["platform", "form_factor"]],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

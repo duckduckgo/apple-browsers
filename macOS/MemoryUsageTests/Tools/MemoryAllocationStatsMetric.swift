@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import os.log
 import XCTest
 
 /// Represents the Memory Allocations Stats, at a given moment.

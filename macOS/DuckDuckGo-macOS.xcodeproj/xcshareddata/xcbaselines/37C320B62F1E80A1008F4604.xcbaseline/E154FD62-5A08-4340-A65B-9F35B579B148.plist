@@ -23,6 +23,23 @@
 					<string>Local Baseline</string>
 				</dict>
 			</dict>
+			<key>testMemoryAllocationsWhenOpeningSingleNewWindow()</key>
+			<dict>
+				<key>com.duckduckgo.memory.allocations.used.final</key>
+				<dict>
+					<key>baselineAverage</key>
+					<real>186.309030</real>
+					<key>baselineIntegrationDisplayName</key>
+					<string>Local Baseline</string>
+				</dict>
+				<key>com.duckduckgo.memory.allocations.used.initial</key>
+				<dict>
+					<key>baselineAverage</key>
+					<real>178.914594</real>
+					<key>baselineIntegrationDisplayName</key>
+					<string>Local Baseline</string>
+				</dict>
+			</dict>
 		</dict>
 	</dict>
 </dict>

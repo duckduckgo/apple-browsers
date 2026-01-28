@@ -3225,7 +3225,15 @@ extension MainViewController: NewTabPageControllerDelegate {
 }
 
 extension MainViewController: TabDelegate {
+
+    var isEmailProtectionSignedIn: Bool {
+        emailManager.isSignedIn
+    }
     
+    func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {
+        newEmailAddress()
+    }
+
     var isAIChatEnabled: Bool {
         return aiChatSettings.isAIChatEnabled
     }

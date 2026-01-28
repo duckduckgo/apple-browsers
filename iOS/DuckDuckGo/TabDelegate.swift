@@ -128,6 +128,9 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestNavigationToDifferentSite(tab: TabViewController)
     
     var isAIChatEnabled: Bool { get }
+
+    var isEmailProtectionSignedIn: Bool { get }
+    func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
 }
 
 extension TabDelegate {

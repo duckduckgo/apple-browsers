@@ -33,7 +33,7 @@ jobs:
       matrix:
         runner: [macos-15-xlarge]
         include:
-          - xcode-version: “16.4"
+          - xcode-version: 16.4
             runner: macos-15-xlarge
             os-version: 15
 

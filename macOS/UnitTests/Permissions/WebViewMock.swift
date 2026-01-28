@@ -18,6 +18,7 @@
 
 import CommonObjCExtensions
 import Foundation
+import Navigation
 import WebKit
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -191,8 +192,8 @@ extension WKWebView {
     override var port: Int { _port }
 
     internal func setURL(_ url: URL) {
-        self._protocol = url.scheme!
-        self._host = url.host!
+        self._protocol = url.scheme ?? ""
+        self._host = url.host ?? ""
         self._port = url.port ?? url.navigationalScheme?.defaultPort ?? 0
     }
 
@@ -204,21 +205,62 @@ extension WKWebView {
 
 }
 
-final class WKFrameInfoMock: WKFrameInfo {
-    var _isMainFrame: Bool!
-    override var isMainFrame: Bool { _isMainFrame }
-    var _request: URLRequest!
-    override var request: URLRequest { _request }
-    var _securityOrigin: WKSecurityOrigin!
-    override var securityOrigin: WKSecurityOrigin { _securityOrigin }
-    weak var _webView: WKWebView?
-    override var webView: WKWebView? { _webView }
+final class WKFrameInfoMock: NSObject {
+    @objc var isMainFrame: Bool
+    @objc var request: URLRequest!
+    @objc var securityOrigin: WKSecurityOrigin!
+    @objc weak var webView: WKWebView?
 
-    init(webView: WKWebView, securityOrigin: WKSecurityOrigin, request: URLRequest, isMainFrame: Bool) {
-        self._webView = webView
-        self._securityOrigin = securityOrigin
-        self._request = request
-        self._isMainFrame = isMainFrame
+    fileprivate var frameInfo: WKFrameInfo {
+        withUnsafePointer(to: self) { $0.withMemoryRebound(to: WKFrameInfo.self, capacity: 1) { $0 } }.pointee
     }
 
+    @objc var _handle: UnsafeMutableRawPointer? {
+        guard let webView else { return nil }
+        let selector = NSSelectorFromString("_mainFrame")
+        let method = class_getInstanceMethod(WKWebView.self, selector)!
+        let imp = method_getImplementation(method)
+        typealias GetHandleType = @convention(c) (WKWebView, ObjectiveC.Selector) -> UnsafeMutableRawPointer?
+        let getHandle = unsafeBitCast(imp, to: GetHandleType.self)
+        return getHandle(webView, selector)
+    }
+    override func value(forKey key: String) -> Any? {
+        if key == "handle" {
+            if let _handle {
+                return _handle
+            }
+            return FrameHandle(rawValue: (isMainFrame ? 4 /*.fallbackMainFrameHandle*/ : 9 /*.fallbackNonMainFrameHandle*/) as UInt64)
+        }
+        return super.value(forKey: key)
+    }
+
+    init(webView: WKWebView?, securityOrigin: WKSecurityOrigin, request: URLRequest, isMainFrame: Bool) {
+        self.webView = webView
+        self.securityOrigin = securityOrigin
+        self.request = request
+        self.isMainFrame = isMainFrame
+    }
+
+}
+
+extension WKFrameInfo {
+    static func mock(for webView: WKWebView?, isMain: Bool = true, securityOrigin: WKSecurityOrigin? = nil, request: URLRequest? = nil) -> WKFrameInfo {
+        let url = request?.url ?? webView?.url ?? .empty
+        return WKFrameInfoMock(webView: webView, securityOrigin: securityOrigin ?? WKSecurityOriginMock.new(url: url), request: request ?? URLRequest(url: .empty), isMainFrame: isMain).frameInfo
+    }
+
+    private static let webViewKey = UnsafeRawPointer(bitPattern: "webViewKey".hashValue)!
+
+    static func mock(url: URL? = nil) -> WKFrameInfo {
+        let webView = WKWebView()
+        let frameInfo = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
+            securityOrigin: WKSecurityOriginMock.new(url: url ?? .empty),
+            request: URLRequest(url: url ?? .empty)
+        )
+        // keep the WebView alive
+        objc_setAssociatedObject(frameInfo, Self.webViewKey, webView, .OBJC_ASSOCIATION_RETAIN)
+        return frameInfo
+    }
 }

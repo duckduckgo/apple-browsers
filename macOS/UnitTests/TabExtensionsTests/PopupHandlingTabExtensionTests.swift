@@ -103,11 +103,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     private func makeMockNavigationAction(url: URL, isUserInitiated: Bool = false) -> WKNavigationAction {
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
             request: URLRequest(url: URL(string: "https://example.com")!),
-            isMainFrame: true
         )
         return MockWKNavigationAction(
             request: URLRequest(url: url),
@@ -1701,11 +1701,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Non-user-initiated popup from exact allowlisted domain
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
-            request: URLRequest(url: URL(string: "https://example.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://example.com")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -1732,11 +1732,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from subdomain (accounts.google.com)
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://accounts.google.com")!),
-            request: URLRequest(url: URL(string: "https://accounts.google.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://accounts.google.com")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -1763,11 +1763,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from apex domain (google.com itself)
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://google.com")!),
-            request: URLRequest(url: URL(string: "https://google.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://google.com")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -1796,11 +1796,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from non-allowlisted domain
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://other.com")!),
-            request: URLRequest(url: URL(string: "https://other.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://other.com")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -1827,11 +1827,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             return nil
         }
 
-        let githubFrame = WKFrameInfoMock(
-            webView: webView,
+        let githubFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://github.com")!),
-            request: URLRequest(url: URL(string: "https://github.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://github.com")!)
         )
         let githubAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -1849,11 +1849,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             return nil
         }
 
-        let redditFrame = WKFrameInfoMock(
-            webView: webView,
+        let redditFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://oauth.reddit.com")!),
-            request: URLRequest(url: URL(string: "https://oauth.reddit.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://oauth.reddit.com")!)
         )
         let redditAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -1879,11 +1879,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from deep.subdomain.example.com (child of allowlisted subdomain.example.com)
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://deep.subdomain.example.com")!),
-            request: URLRequest(url: URL(string: "https://deep.subdomain.example.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://deep.subdomain.example.com")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -1911,11 +1911,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from deep.sub.example.com (child of allowlisted example.com)
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://deep.sub.example.com")!),
-            request: URLRequest(url: URL(string: "https://deep.sub.example.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://deep.sub.example.com")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -1943,11 +1943,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from very deep subdomain
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://a.b.c.x.example.com")!),
-            request: URLRequest(url: URL(string: "https://a.b.c.x.example.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://a.b.c.x.example.com")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -1976,11 +1976,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from parent domain (example.com) not in allowlist
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
-            request: URLRequest(url: URL(string: "https://example.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://example.com")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -2009,11 +2009,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from sibling domain (notallowed.example.com) not in allowlist
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://notallowed.example.com")!),
-            request: URLRequest(url: URL(string: "https://notallowed.example.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://notallowed.example.com")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -2042,11 +2042,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from invalid domain
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://invalidtld")!),
-            request: URLRequest(url: URL(string: "https://invalidtld")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://invalidtld")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -2073,11 +2073,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from domain with mixed casing (GiThUb.CoM)
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://GiThUb.CoM")!),
-            request: URLRequest(url: URL(string: "https://GiThUb.CoM")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://GiThUb.CoM")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -2104,11 +2104,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from www subdomain
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://www.github.com")!),
-            request: URLRequest(url: URL(string: "https://www.github.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://www.github.com")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -2135,11 +2135,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from www subdomain with mixed casing (www.ReDdIt.CoM)
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://www.ReDdIt.CoM")!),
-            request: URLRequest(url: URL(string: "https://www.ReDdIt.CoM")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://www.ReDdIt.CoM")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -2166,11 +2166,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - Popup from subdomain with mixed casing (AcCoUnTs.GoOgLe.CoM)
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://AcCoUnTs.GoOgLe.CoM")!),
-            request: URLRequest(url: URL(string: "https://AcCoUnTs.GoOgLe.CoM")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://AcCoUnTs.GoOgLe.CoM")!)
         )
         let navigationAction = MockWKNavigationAction(
             request: URLRequest(url: URL(string: "https://popup.com")!),
@@ -2293,11 +2293,11 @@ private extension NSEvent {
 private extension WKNavigationAction {
 
     static func mock(url: URL, webView: WKWebView, isUserInitiated: Bool = false) -> WKNavigationAction {
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
+        let sourceFrame = WKFrameInfo.mock(
+            for: webView,
+            isMain: true,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
-            request: URLRequest(url: URL(string: "https://example.com")!),
-            isMainFrame: true
+            request: URLRequest(url: URL(string: "https://example.com")!)
         )
         return MockWKNavigationAction(
             request: URLRequest(url: url),

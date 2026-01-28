@@ -125,22 +125,14 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
 
         let pixelScope = HistoryViewPixel.DeletedBatchKind(adjustedQuery)
         switch result {
-        case .burn(let burnChats):
-            // FireCoordinator handles the result of the new Fire Dialog
-            if featureFlagger.isFeatureOn(.fireDialog) {
-                await dataProvider.refreshData()
-            } else {
-                await dataProvider.burnVisits(matching: adjustedQuery, and: burnChats)
-            }
+        case .burn:
+            // FireCoordinator handles the result of the Fire Dialog
+            await dataProvider.refreshData()
             self.firePixel(.delete, .daily)
             self.firePixel(.multipleItemsDeleted(pixelScope, burn: true), .dailyAndStandard)
-        case .delete(let deleteChats):
-            // FireCoordinator handles the result of the new Fire Dialog
-            if featureFlagger.isFeatureOn(.fireDialog) {
-                await dataProvider.refreshData()
-            } else {
-                await dataProvider.deleteVisits(matching: adjustedQuery, and: deleteChats)
-            }
+        case .delete:
+            // FireCoordinator handles the result of the Fire Dialog
+            await dataProvider.refreshData()
             self.firePixel(.delete, .daily)
             self.firePixel(.multipleItemsDeleted(pixelScope, burn: false), .dailyAndStandard)
         case .noAction: break

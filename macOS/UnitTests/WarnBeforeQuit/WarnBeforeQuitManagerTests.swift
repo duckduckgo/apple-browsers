@@ -1018,6 +1018,21 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
 
+        let pixelFiring = PixelKitMock(expecting: [
+            .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.warnBeforeQuitCancelled, frequency: .standard)
+        ])
+
+        let eventRepostedExpectation = expectation(description: "Event reposted")
+        var repostedEvent: NSEvent?
+        let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
+            repostedEvent = event
+            eventRepostedExpectation.fulfill()
+            return event
+        }!
+        defer { NSEvent.removeMonitor(eventMonitor) }
+        TestRunHelper.allowAppSendUserEvents = true
+
         // Mock timer to prevent automatic expiry
         let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer = { _, _ in
             return Timer()
@@ -1028,7 +1043,15 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            timerFactory: timerFactory
+        ))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -1046,12 +1069,11 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Simulate left mouse click
         let mouseClick = createMouseEvent(type: .leftMouseDown)
-        TestRunHelper.allowAppSendUserEvents = true
         NSApp.postEvent(mouseClick, atStart: true)
 
         // Wait for completion
         let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
-        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations2 + [eventRepostedExpectation], timeout: Constants.expectationTimeout)
 
         // Then - should cancel
         XCTAssertEqual(decision, .cancel)
@@ -1060,11 +1082,33 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             .waitingForSecondPress,
             .completed(shouldProceed: false)
         ])
+
+        // Verify event was reposted
+        XCTAssertNotNil(repostedEvent, "Mouse event should be reposted")
+        XCTAssertEqual(repostedEvent?.type, .leftMouseDown)
+
+        // Verify pixels were fired
+        pixelFiring.verifyExpectations()
     }
 
     func testRightMouseClickDuringWait() async throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        let pixelFiring = PixelKitMock(expecting: [
+            .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.warnBeforeQuitCancelled, frequency: .standard)
+        ])
+
+        let eventRepostedExpectation = expectation(description: "Event reposted")
+        var repostedEvent: NSEvent?
+        let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .rightMouseDown) { event in
+            repostedEvent = event
+            eventRepostedExpectation.fulfill()
+            return event
+        }!
+        defer { NSEvent.removeMonitor(eventMonitor) }
+        TestRunHelper.allowAppSendUserEvents = true
 
         // Mock timer to prevent automatic expiry
         let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer = { _, _ in
@@ -1076,7 +1120,15 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            timerFactory: timerFactory
+        ))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -1094,12 +1146,11 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Simulate right mouse click
         let mouseClick = createMouseEvent(type: .rightMouseDown)
-        TestRunHelper.allowAppSendUserEvents = true
         NSApp.postEvent(mouseClick, atStart: true)
 
         // Wait for completion
         let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
-        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations2 + [eventRepostedExpectation], timeout: Constants.expectationTimeout)
 
         // Then - should cancel
         XCTAssertEqual(decision, .cancel)
@@ -1108,11 +1159,23 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             .waitingForSecondPress,
             .completed(shouldProceed: false)
         ])
+
+        // Verify event was reposted
+        XCTAssertNotNil(repostedEvent, "Mouse event should be reposted")
+        XCTAssertEqual(repostedEvent?.type, .rightMouseDown)
+
+        // Verify pixels were fired
+        pixelFiring.verifyExpectations()
     }
 
     func testOtherKeyPressDuringWait() async throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        let pixelFiring = PixelKitMock(expecting: [
+            .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.warnBeforeQuitCancelled, frequency: .standard)
+        ])
 
         // Mock timer to prevent automatic expiry (event will cancel instead)
         let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer = { _, _ in
@@ -1124,7 +1187,15 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: qKeyUpEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            timerFactory: timerFactory
+        ))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -1168,6 +1239,9 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             .waitingForSecondPress,
             .completed(shouldProceed: false)
         ])
+
+        // Verify pixels were fired
+        pixelFiring.verifyExpectations()
     }
 
     // MARK: - Event Reposting Tests

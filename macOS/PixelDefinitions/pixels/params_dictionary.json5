@@ -90,6 +90,12 @@
         "type": "number",
         "description": "Sample rate for this pixel, between 0 and 1"
     },
+    "wideEventMetaVersion": {
+        "key": "meta.version",
+        "type": "string",
+        "description": "Schema version of the wide event (MAJOR.MINOR.PATCH format)",
+        "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
     "wideEventFeatureStatus": {
         "key": "feature.status",
         "type": "string",

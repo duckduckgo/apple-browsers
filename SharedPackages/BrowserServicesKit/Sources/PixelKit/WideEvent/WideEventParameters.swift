@@ -36,6 +36,7 @@ public enum WideEventParameter {
 
     public enum Meta {
         static let type = "meta.type"
+        static let version = "meta.version"
     }
 
     public enum Global {

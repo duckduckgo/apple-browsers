@@ -66,6 +66,7 @@ class TabViewController: UIViewController {
     @IBOutlet weak var containerStackView: UIStackView!
     @IBOutlet weak var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
+    private var containerStackViewBottomConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
     
     /// Stores the visual state of the web view
@@ -637,9 +638,25 @@ class TabViewController: UIViewController {
         }
 
         observeNetPConnectionStatusChanges()
-        
+
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
+
+        setupContainerStackViewBottomConstraint()
+    }
+
+    private func setupContainerStackViewBottomConstraint() {
+        for constraint in view.constraints {
+            if constraint.firstItem === view.safeAreaLayoutGuide &&
+               constraint.firstAttribute == .bottom &&
+               constraint.secondItem === containerStackView &&
+               constraint.secondAttribute == .bottom {
+                constraint.isActive = false
+                break
+            }
+        }
+        containerStackViewBottomConstraint = containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        containerStackViewBottomConstraint?.isActive = true
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -690,8 +707,19 @@ class TabViewController: UIViewController {
     }
 
     private func updateWebViewBottomAnchor() {
-        let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
-        webViewBottomAnchorConstraint?.constant = appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
+        updateWebViewBottomAnchor(for: 1.0)
+    }
+
+    func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
+        if appSettings.currentAddressBarPosition == .bottom {
+            /// When address bar is at bottom, offset webview to make room for the bars
+            let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
+            webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
+        } else {
+            /// When address bar is at top, webview fills the container
+            /// The container already follows the toolbar position
+            webViewBottomAnchorConstraint?.constant = 0
+        }
     }
 
     private func observeNetPConnectionStatusChanges() {

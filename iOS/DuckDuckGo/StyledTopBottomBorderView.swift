@@ -127,6 +127,7 @@ extension StyledTopBottomBorderView {
 
     func updateForAddressBarPosition(_ addressBarPosition: AddressBarPosition) {
         isTopVisible = addressBarPosition == .top
+        isBottomVisible = addressBarPosition == .bottom
     }
 
 }

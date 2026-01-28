@@ -52,7 +52,7 @@ final class PermissionModelTests: XCTestCase {
 
     var frameInfo: WKFrameInfo {
         let request = URLRequest(url: .duckDuckGo)
-        return WKFrameInfoMock(webView: webView, securityOrigin: securityOrigin, request: request, isMainFrame: true)
+        return .mock(for: webView, isMain: true, securityOrigin: securityOrigin, request: request)
     }
 
     override class func setUp() {

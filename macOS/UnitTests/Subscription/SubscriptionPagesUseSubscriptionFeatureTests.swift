@@ -46,14 +46,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     private var broker: UserScriptMessageBroker!
 
     private struct Constants {
-        static let subscriptionOptions = SubscriptionOptions(platform: SubscriptionPlatformName.macos,
-                                                             options: [
-                                                                SubscriptionOption(id: "1",
-                                                                                   cost: SubscriptionOptionCost(displayPrice: "9 USD", recurrence: "monthly")),
-                                                                SubscriptionOption(id: "2",
-                                                                                   cost: SubscriptionOptionCost(displayPrice: "99 USD", recurrence: "yearly"))
-                                                             ],
-                                                               availableEntitlements: [.networkProtection, .dataBrokerProtection, .identityTheftRestoration])
         static let mockParams: [String: String] = [:]
         @MainActor static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
     }
@@ -66,7 +58,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
         subscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
         subscriptionSuccessPixelHandler = SubscriptionAttributionPixelHandler()
-        let mockStripePurchaseFlowV2 = StripePurchaseFlowMock(subscriptionOptionsResult: .failure(.noProductsFound), prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
+        let mockStripePurchaseFlowV2 = StripePurchaseFlowMock(prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
         mockUIHandler = SubscriptionUIHandlerMock { _ in }
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,
                                                                                   usesUnifiedFeedbackForm: false)
@@ -193,7 +185,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-
+        XCTAssertTrue(featureValue.useGetSubscriptionTierOptions)
         XCTAssertTrue(featureValue.usePaidDuckAi)
         XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
     }
@@ -213,45 +205,9 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-
+        XCTAssertTrue(featureValue.useGetSubscriptionTierOptions)
         XCTAssertFalse(featureValue.usePaidDuckAi)
         XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
-    }
-
-    func testGetFeatureConfig_WhenTierMessagingEnabled_ReturnsCorrectConfig() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isTierMessagingEnabled = true
-
-        // When
-        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
-
-        // Then
-        guard let featureValue = result as? GetFeatureValue else {
-            XCTFail("Expected GetFeatureValue type")
-            return
-        }
-
-        XCTAssertTrue(featureValue.useUnifiedFeedback)
-
-        XCTAssertTrue(featureValue.useGetSubscriptionTierOptions)
-    }
-
-    func testGetFeatureConfig_WhenTierMessagingDisabled_ReturnsCorrectConfig() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isTierMessagingEnabled = false
-
-        // When
-        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
-
-        // Then
-        guard let featureValue = result as? GetFeatureValue else {
-            XCTFail("Expected GetFeatureValue type")
-            return
-        }
-
-        XCTAssertTrue(featureValue.useUnifiedFeedback)
-
-        XCTAssertFalse(featureValue.useGetSubscriptionTierOptions)
     }
 
     // MARK: - Feature Selection Tests
@@ -563,7 +519,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         )
 
         let mockStripePurchaseFlow = StripePurchaseFlowMock(
-            subscriptionOptionsResult: .success(.empty),
             prepareSubscriptionPurchaseResult: .failure(.noProductsFound),
             subscriptionTierOptionsResult: .success(expectedTierOptions)
         )
@@ -625,7 +580,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         )
 
         let mockStripePurchaseFlow = StripePurchaseFlowMock(
-            subscriptionOptionsResult: .success(.empty),
             prepareSubscriptionPurchaseResult: .failure(.noProductsFound),
             subscriptionTierOptionsResult: .success(expectedTierOptions)
         )

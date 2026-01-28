@@ -3307,6 +3307,10 @@ extension MainViewController: TabDelegate {
         newTab()
     }
 
+    func tabDidRequestActivate(_ tab: TabViewController) {
+        select(tab: tab)
+    }
+
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {

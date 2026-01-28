@@ -125,7 +125,7 @@ extension TabViewController: WKWebExtensionTab {
     }
 
     func activate(for context: WKWebExtensionContext) async throws {
-        delegate?.tabDidRequestNewTabButton(self)
+        delegate?.tabDidRequestActivate(self)
     }
 
     func isSelected(for context: WKWebExtensionContext) -> Bool {

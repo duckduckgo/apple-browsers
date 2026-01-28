@@ -46,6 +46,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
         /// Buffer time for detecting quick tap on second press (accounts for animation startup delay)
         static let quickTapDetectionBuffer: TimeInterval = 0.05
+
+        /// Default delay to wait for UI animation to complete before proceeding with quit
+        static let defaultAnimationDelay: TimeInterval = 0.3
     }
 
     /// The keyboard shortcut to monitor for confirmation (⌘Q, ⌘W…)
@@ -65,6 +68,12 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     /// Creates timers (injectable for testing)
     private let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer
+
+    /// Delay to wait for UI animation to complete before proceeding with quit (injectable for testing)
+    private let animationDelay: TimeInterval
+
+    /// Checks if modifiers are currently held (injectable for testing)
+    private let isModifierHeld: (NSEvent.ModifierFlags) -> Bool
 
     // State machine
 
@@ -109,7 +118,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
           pixelFiring: PixelFiring? = PixelKit.shared,
           now: @escaping () -> Date = Date.init,
           eventReceiver: ((NSEvent.EventTypeMask, Date, RunLoop.Mode, Bool) -> NSEvent?)? = nil,
-          timerFactory: ((TimeInterval, @escaping () -> Void) -> Timer)? = nil) {
+          timerFactory: ((TimeInterval, @escaping () -> Void) -> Timer)? = nil,
+          animationDelay: TimeInterval = Constants.defaultAnimationDelay,
+          isModifierHeld: ((NSEvent.ModifierFlags) -> Bool)? = nil) {
         // Validate this is a keyDown event with modifier and valid character
         guard currentEvent.type == .keyDown,
               let keyEquivalent = currentEvent.keyEquivalent, !keyEquivalent.modifierMask.isEmpty else { return nil }
@@ -124,6 +135,11 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             let timer = Timer(timeInterval: interval, repeats: false) { _ in block() }
             RunLoop.current.add(timer, forMode: .common)
             return timer
+        }
+        self.animationDelay = animationDelay
+        self.isModifierHeld = isModifierHeld ?? { requiredModifiers in
+            let currentModifiers = NSEvent.modifierFlags.deviceIndependent
+            return currentModifiers.intersection(requiredModifiers) == requiredModifiers
         }
         // Create state AsyncStream for external observation
         (stateStreamStorage, stateSubject) = AsyncStream<State>.makeStream(of: State.self, bufferingPolicy: .bufferingNewest(3))
@@ -212,8 +228,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             }
 
             // Wait for a brief delay for animation to complete before quitting
-            if shouldProceed && action == .quit {
-                try? await Task.sleep(interval: 0.3)
+            if shouldProceed && action == .quit && self.animationDelay > 0 {
+                try? await Task.sleep(interval: self.animationDelay)
             }
 
             let decision: TerminationDecision = shouldProceed ? .next : .cancel
@@ -304,11 +320,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         // Emit waiting state - UI can show "press again" or start fadeout
         currentState = .waitingForSecondPress
 
-        final class CancellationState {
-            var onCancel: (() -> Void)?
-        }
         let cancellationState = CancellationState()
-
         return await withTaskCancellationHandler {
             await withCheckedContinuation { [shortcutKeyEquivalent] continuation in
                 var timer: Timer?
@@ -489,8 +501,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     /// Wait for the shortcut key to be released (to prevent sending it to the next active app)
     private func waitForKeyRelease(keyEquivalent: NSEvent.KeyEquivalent) {
         // Safety check: If the key is already released, don't wait
-        let currentModifiers = NSEvent.modifierFlags.deviceIndependent
-        guard currentModifiers.intersection(keyEquivalent.modifierMask) == keyEquivalent.modifierMask else {
+        guard isModifierHeld(keyEquivalent.modifierMask) else {
             Logger.general.debug("WarnBeforeQuitManager: Key already released, no need to wait")
             return
         }
@@ -545,11 +556,26 @@ private extension PixelFiring {
     /// Fire a pixel and wait for completion asynchronously (with timeout)
     func fireAndWait(_ event: PixelKitEvent, frequency: PixelKit.Frequency) async {
         do {
+            let cancellationState = CancellationState()
             try await withTimeout(1) {
-                await withCheckedContinuation { continuation in
-                    fire(event, frequency: frequency) { _, _ in
-                        continuation.resume()
-                    }
+                await withTaskCancellationHandler {
+                    await withCheckedContinuation { continuation in
+                        var isResumed = false
+                        func resume() {
+                            guard !isResumed else { return }
+                            isResumed = true
+                            continuation.resume()
+                        }
+                        cancellationState.onCancel = {
+                            resume()
+                        }
+                        fire(event, frequency: frequency) { _, _ in
+                            resume()
+                        }
+                    } as Void
+                } onCancel: {
+                    Logger.general.error("WarnBeforeQuitManager: Pixel firing timed out")
+                    cancellationState.onCancel?()
                 }
             }
         } catch {
@@ -557,4 +583,9 @@ private extension PixelFiring {
             Logger.general.error("WarnBeforeQuitManager: Pixel firing timed out")
         }
     }
+}
+
+private final class CancellationState {
+    var onCancel: (() -> Void)?
+    init() {}
 }

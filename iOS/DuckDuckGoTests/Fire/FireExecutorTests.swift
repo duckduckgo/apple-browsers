@@ -334,6 +334,19 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
     }
     
+    func testBurnTabsWithTabScopeCleansUpTabHistoryAfterBurnCompletes() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Tab history should be removed after burn completes
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 1)
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.first, [tabViewModel.tab.uid])
+    }
+    
     // MARK: - burn Data Tests
     
     func testBurnDataCallsDelegateAndClearsData() async {

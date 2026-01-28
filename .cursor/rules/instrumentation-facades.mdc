@@ -6,7 +6,6 @@ alwaysApply: false
 Feature code often becomes verbose when sending many pixels, or mixing pixel calls and wide event lifecycle management.
 
 Consider a subscription purchase flow that needs to:
-
 - Fire a daily pixel when purchase starts
 - Start a wide event flow
 - Update the wide event with timing data
@@ -20,9 +19,7 @@ This leads to instrumentation code scattered throughout the feature, making it h
 - Modify instrumentation without touching feature code
 - Ensure all instrumentation points are covered
 
-## How To Improve This: Instrumentation Facades
-
-Define a protocol with domain-specific hooks that the feature calls. Implement the protocol in a dedicated object that handles all instrumentation.
+We can improve this using the facade pattern, abstracting our instrumentation behind a protocol. This is done by defining a protocol with domain-specific hooks that the feature calls, then implementing the protocol in a dedicated object that handles all instrumentation.
 
 ### Benefits
 

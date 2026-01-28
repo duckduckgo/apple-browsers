@@ -38,14 +38,12 @@ import Persistence
 /// ```
 struct BaseURLDebugSettings: StoringKeys {
     let customBaseURL = StorageKey<String>(.debugCustomBaseURL)
-    let customDuckAIBaseURL = StorageKey<String>(.debugCustomDuckAIBaseURL)
 }
 
 extension KeyedStoring where Keys == BaseURLDebugSettings {
 
     func reset() {
         self.customBaseURL = nil
-        self.customDuckAIBaseURL = nil
     }
 
     // MARK: - Computed Helpers
@@ -56,14 +54,6 @@ extension KeyedStoring where Keys == BaseURLDebugSettings {
             return custom
         }
         return ProcessInfo.processInfo.environment["BASE_URL", default: "https://duckduckgo.com"]
-    }
-
-    /// Returns the current Duck.ai base URL (custom override or environment variable or default)
-    var effectiveDuckAIBaseURL: String {
-        if let custom = self.customDuckAIBaseURL, !custom.isEmpty {
-            return custom
-        }
-        return ProcessInfo.processInfo.environment["DUCKAI_BASE_URL", default: "https://duck.ai"]
     }
 
     /// Returns the current help base URL (derived from base URL when overridden)
@@ -77,7 +67,6 @@ extension KeyedStoring where Keys == BaseURLDebugSettings {
 
     /// Returns true if any custom URL is currently set
     var hasCustomURLs: Bool {
-        return (self.customBaseURL != nil && !self.customBaseURL!.isEmpty) ||
-        (self.customDuckAIBaseURL != nil && !self.customDuckAIBaseURL!.isEmpty)
+        return self.customBaseURL != nil && !self.customBaseURL!.isEmpty
     }
 }

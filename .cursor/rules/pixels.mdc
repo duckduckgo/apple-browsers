@@ -194,6 +194,8 @@ Key fields:
 
 Prefer referencing shared suffix/parameter keys where possible to keep definitions consistent and validatable.
 
+Pixels have some default values, please check the Pixel implementation in the respective platform to determine what those are.
+
 ## Related Files
 
 - `iOS/Core/Pixel.swift` - iOS pixel firing implementation

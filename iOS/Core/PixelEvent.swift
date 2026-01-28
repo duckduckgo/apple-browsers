@@ -1240,6 +1240,7 @@ extension Pixel {
         case settingsShowFullURLOn
         case settingsShowFullURLOff
         case settingsTrackerCountInAddressBarToggled
+        case settingsTrackerCountInTabSwitcherToggled
         case settingsDataClearingOpen
         case settingsFireButtonSelectorPressed
         case settingsDataClearingClearDataOpen
@@ -1655,6 +1656,7 @@ extension Pixel.Event {
         case .settingsShowFullURLOn: return "m_settings_show_full_url_on"
         case .settingsShowFullURLOff: return "m_settings_show_full_url_off"
         case .settingsTrackerCountInAddressBarToggled: return "m_appearance_settings_tracker_count_in_address_bar_toggled"
+        case .settingsTrackerCountInTabSwitcherToggled: return "m_appearance_settings_tracker_count_in_tab_switcher_toggled"
         case .settingsDataClearingOpen: return "m_settings_data_clearing_open"
         case .settingsFireButtonSelectorPressed: return "m_settings_fire_button_selector_pressed"
         case .settingsDataClearingClearDataOpen: return "m_settings_data_clearing_clear_data_open"

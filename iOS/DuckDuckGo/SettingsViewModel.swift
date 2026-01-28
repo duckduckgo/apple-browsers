@@ -1452,6 +1452,8 @@ extension SettingsViewModel {
             get: { self.tabSwitcherSettings.showTrackerCountInTabSwitcher },
             set: { newValue in
                 self.tabSwitcherSettings.showTrackerCountInTabSwitcher = newValue
+                Pixel.fire(pixel: .settingsTrackerCountInTabSwitcherToggled,
+                          withAdditionalParameters: [PixelParameters.enabled: String(newValue)])
             }
         )
     }

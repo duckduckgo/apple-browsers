@@ -179,11 +179,6 @@ extension XCUIApplication {
         mainMenuPinTabMenuItem.tap()
     }
 
-    /// Unpins current tab using the main menu
-    func unpinCurrentTab() {
-        mainMenuUnpinTabMenuItem.tap()
-    }
-
     /// Checks if the current tab can be pinned (i.e., is not already pinned)
     /// - Returns: true if the "Pin Tab" menu item exists (tab is not pinned), false otherwise
     func currentTabCanBePinned() -> Bool {

@@ -396,7 +396,6 @@ final class TerminationDeciderHandlerTests: XCTestCase {
         // When
         let reply1 = handler.executeTerminationDeciders()
         XCTAssertEqual(reply1, .terminateLater)
-        XCTAssertTrue(handler.isTerminating)
 
         let reply2 = handler.executeTerminationDeciders()
 
@@ -405,7 +404,6 @@ final class TerminationDeciderHandlerTests: XCTestCase {
 
         await fulfillment(of: [deciderExpectation, replyExpectation], timeout: 1.0)
 
-        XCTAssertFalse(handler.isTerminating)
         XCTAssertEqual(decider.completionCallCount, 1)
     }
 

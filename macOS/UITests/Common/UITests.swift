@@ -257,7 +257,6 @@ extension UITestCase {
             self.setKeyCode(keyEvent.keyCode)
             self.setKeyPhase(keyEvent.phase)
             self.keyModifierFlags = (XCUIDevice.activeKeyModifiers ?? []).toNSEventModifierFlags()
-            self.setShouldRedact(false)
             Logger.log("[\(self) setKey: \(key) keyCode: \(keyEvent.keyCode) phase: \(keyEvent.phase) modifierFlags: \(self.keyModifierFlags)]")
             return
         }
@@ -273,8 +272,6 @@ extension UITestCase {
         get { [] }
         set {}
     }
-    @objc private dynamic func setOffset(_: NSPoint) {}
-    @objc private dynamic func setShouldRedact(_: Bool) {}
 
     override func tearDown() {
         cleanupTrackedFiles()

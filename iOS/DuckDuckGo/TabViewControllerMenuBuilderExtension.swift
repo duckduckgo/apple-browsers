@@ -577,7 +577,7 @@ extension TabViewController {
     private func buildUseNewDuckAddressEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
         guard emailManager?.isSignedIn == true else { return nil }
         let title = UserText.emailBrowsingMenuUseNewDuckAddress
-        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.email : DesignSystemImages.Glyphs.Size24.email
+        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.email : DesignSystemImages.Glyphs.Size24.emailProtection
 
         return BrowsingMenuEntry.regular(name: title, image: image) { [weak self] in
             (self?.parent as? MainViewController)?.newEmailAddress()

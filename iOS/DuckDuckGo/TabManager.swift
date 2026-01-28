@@ -38,6 +38,7 @@ protocol TabManaging {
     @MainActor func viewModelForCurrentTab() -> TabViewModel?
     @MainActor func prepareTab(_ tab: Tab)
     @MainActor func isCurrentTab(_ tab: Tab) -> Bool
+    @MainActor func closeTab(_ tab: Tab, shouldCreateEmptyTabAtSamePosition: Bool)
 }
 
 class TabManager: TabManaging {
@@ -470,6 +471,12 @@ class TabManager: TabManaging {
     @MainActor
     func isCurrentTab(_ tab: Tab) -> Bool {
         model.currentTab === tab
+    }
+    
+    @MainActor
+    func closeTab(_ tab: Tab, shouldCreateEmptyTabAtSamePosition: Bool) {
+        guard let controller = controller(for: tab) else { return }
+        delegate?.tabDidRequestClose(controller, shouldCreateEmptyTabAtSamePosition: shouldCreateEmptyTabAtSamePosition)
     }
 
     func cleanupTabsFaviconCache() {

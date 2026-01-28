@@ -33,6 +33,10 @@ class MockTabManager: TabManaging {
     var isCurrentTabReturnValue = false
     private(set) var isCurrentTabCalledWith: Tab?
     
+    private(set) var closeTabCalled = false
+    private(set) var closeTabCalledWith: Tab?
+    private(set) var closeTabShouldCreateEmptyTab: Bool?
+    
     func prepareAllTabsExceptCurrentForDataClearing() {
         prepareAllTabsExceptCurrentCalled = true
     }
@@ -57,5 +61,11 @@ class MockTabManager: TabManaging {
     func isCurrentTab(_ tab: Tab) -> Bool {
         isCurrentTabCalledWith = tab
         return isCurrentTabReturnValue
+    }
+    
+    func closeTab(_ tab: Tab, shouldCreateEmptyTabAtSamePosition: Bool) {
+        closeTabCalled = true
+        closeTabCalledWith = tab
+        closeTabShouldCreateEmptyTab = shouldCreateEmptyTabAtSamePosition
     }
 }

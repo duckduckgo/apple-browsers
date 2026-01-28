@@ -225,9 +225,9 @@ class FireExecutor: FireExecuting {
             if tabManager.isCurrentTab(viewModel.tab) {
                 tabManager.prepareTab(viewModel.tab)
             }
-            return
-            // TODO: Prepare the tab if it's the current tab (non-current tabs were prepared earlier)
-            // TODO: Remove just this tab from TabManager
+            let isLastOpenTab = tabManager.count == 1
+            tabManager.closeTab(viewModel.tab, shouldCreateEmptyTabAtSamePosition: isLastOpenTab)
+            // TODO: Remove just this tab from Favicons
         }
     }
     

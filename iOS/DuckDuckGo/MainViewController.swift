@@ -3816,7 +3816,7 @@ extension MainViewController: FireExecutorDelegate {
         case .all:
             refreshUIAfterClear()
         case .tab:
-            // TODO: - Custom logic if needed
+            // For single tab, the UI was already updated in closeTab() → updateCurrentTab()
             return
         }
     }

@@ -46,7 +46,8 @@ JSON_OUTPUT=false
 NO_COLOR=false
 SHOW_ALL=false
 LIST_OUTPUT=false
-SEARCH_PATH="."
+SEARCH_PATH=""
+WORKSPACE_PATH=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -57,7 +58,7 @@ while [[ $# -gt 0 ]]; do
         -l|--list) LIST_OUTPUT=true; shift ;;
         --no-color) NO_COLOR=true; shift ;;
         -*) echo "Unknown option: $1"; show_help; exit 1 ;;
-        *) SEARCH_PATH="$1"; shift ;;
+        *) echo "Unknown argument: $1"; show_help; exit 1 ;;
     esac
 done
 
@@ -256,8 +257,76 @@ is_direct_dependency() {
 # Find all Package.resolved files
 find_resolved_files() {
     local path="$1"
-    find "$path" \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) \
+    local search_roots=(
+        "${path%/}/SharedPackages"
+        "${path%/}/iOS"
+        "${path%/}/macOS"
+        "${path%/}/DuckDuckGo.xcworkspace"
+    )
+
+    local existing_roots=()
+    local root
+    for root in "${search_roots[@]}"; do
+        [[ -e "$root" ]] && existing_roots+=("$root")
+    done
+
+    if [[ ${#existing_roots[@]} -eq 0 ]]; then
+        return
+    fi
+
+    find "${existing_roots[@]}" \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) \
         -not -path "*/.build/*" 2>/dev/null
+}
+
+# Resolve packages for workspace
+resolve_workspace_packages() {
+    local workspace="$1"
+
+    if ! command -v xcodebuild >/dev/null 2>&1; then
+        echo -e "${YELLOW}Warning: xcodebuild not found; skipping package resolution.${NC}" >&2
+        return
+    fi
+
+    if [[ ! -d "$workspace" ]]; then
+        echo -e "${YELLOW}Warning: ${workspace} not found; skipping package resolution.${NC}" >&2
+        return
+    fi
+
+    if [[ "$JSON_OUTPUT" != true ]] && [[ "$QUIET" != true ]]; then
+        echo -e "${DIM}Resolving Swift packages for ${workspace}...${NC}" >&2
+    fi
+    if ! xcodebuild -resolvePackageDependencies -workspace "$workspace" >/dev/null 2>&1; then
+        local scheme
+        scheme=$(xcodebuild -list -workspace "$workspace" 2>/dev/null | \
+            awk '/Schemes:/ {found=1; next} found && NF {gsub(/^[ \t]+/, ""); print; exit}')
+        if [[ -n "$scheme" ]]; then
+            if [[ "$JSON_OUTPUT" != true ]] && [[ "$QUIET" != true ]]; then
+                echo -e "${DIM}Retrying package resolution with scheme ${scheme}...${NC}" >&2
+            fi
+            if ! xcodebuild -resolvePackageDependencies -workspace "$workspace" -scheme "$scheme" >/dev/null 2>&1; then
+                echo -e "${YELLOW}Warning: Package resolution failed for ${workspace} (scheme ${scheme}). Continuing.${NC}" >&2
+            fi
+        else
+            echo -e "${YELLOW}Warning: Package resolution failed for ${workspace}. Continuing.${NC}" >&2
+        fi
+    fi
+}
+
+# Detect DuckDuckGo.xcworkspace in . or ..
+detect_workspace() {
+    local cwd
+    cwd=$(pwd)
+
+    if [[ -d "${cwd}/DuckDuckGo.xcworkspace" ]]; then
+        WORKSPACE_PATH="${cwd}/DuckDuckGo.xcworkspace"
+        SEARCH_PATH="${cwd}"
+        return
+    fi
+
+    if [[ -d "${cwd%/}/../DuckDuckGo.xcworkspace" ]]; then
+        WORKSPACE_PATH="${cwd%/}/../DuckDuckGo.xcworkspace"
+        SEARCH_PATH="${cwd%/}/.."
+    fi
 }
 
 # Parse Package.resolved and output packages (url|version per line)
@@ -290,6 +359,15 @@ parse_resolved_files() {
 # Main logic
 main() {
     local resolved_files
+
+    detect_workspace
+    if [[ -z "$WORKSPACE_PATH" ]] || [[ -z "$SEARCH_PATH" ]]; then
+        echo -e "${RED}DuckDuckGo.xcworkspace not found in . or ..${NC}" >&2
+        exit 1
+    fi
+
+    # Force workspace package resolution before reading Package.resolved files
+    resolve_workspace_packages "$WORKSPACE_PATH"
     resolved_files=$(find_resolved_files "$SEARCH_PATH")
 
     if [[ -z "$resolved_files" ]]; then

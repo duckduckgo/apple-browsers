@@ -64,7 +64,8 @@ final class CrashReporter {
                 let parameters = [PixelKit.Parameters.appVersion: appVersion]
                 PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard, withAdditionalParameters: parameters, includeAppVersionParameter: false)
             } else {
-                PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard)
+                let parameters = ["failedToReadCrashVersion": "true"]
+                PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard, withAdditionalParameters: parameters)
             }
         }
 

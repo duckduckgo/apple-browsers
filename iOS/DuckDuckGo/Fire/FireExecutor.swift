@@ -157,7 +157,7 @@ class FireExecutor: FireExecuting {
         delegate?.willStartBurning(fireRequest: request)
         if request.options.contains(.tabs) {
             delegate?.willStartBurningTabs(fireRequest: request)
-            burnTabs(scope: request.scope)
+            await burnTabs(scope: request.scope)
             delegate?.didFinishBurningTabs(fireRequest: request)
         }
         
@@ -214,7 +214,7 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnTabs(scope: FireRequest.Scope) {
+    private func burnTabs(scope: FireRequest.Scope) async {
         switch scope {
         case .all:
             tabManager.prepareCurrentTabForDataClearing()
@@ -227,7 +227,9 @@ class FireExecutor: FireExecuting {
             }
             let isLastOpenTab = tabManager.count == 1
             tabManager.closeTab(viewModel.tab, shouldCreateEmptyTabAtSamePosition: isLastOpenTab)
-            // TODO: Remove just this tab from Favicons
+            
+            let domainsToClear = await Array(viewModel.visitedDomains())
+            Favicons.shared.removeTabFavicons(forDomains: domainsToClear)
         }
     }
     

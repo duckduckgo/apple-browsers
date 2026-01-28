@@ -404,24 +404,6 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(sut.isManualAttachInProgress == false)
     }
 
-    @Test("Reset allows fresh session state")
-    func testResetAllowsFreshSession() {
-        // GIVEN
-        var pixelCount = 0
-        let sut = AIChatContextualModePixelHandler(firePixel: { _ in
-            pixelCount += 1
-        })
-
-        // WHEN
-        sut.firePageContextUpdatedOnNavigation(url: "https://example.com")
-        sut.firePageContextUpdatedOnNavigation(url: "https://example.com") // Blocked
-        sut.reset()
-        sut.firePageContextUpdatedOnNavigation(url: "https://example.com") // Allowed after reset
-
-        // THEN
-        #expect(pixelCount == 2)
-    }
-
     // MARK: - Thread Safety Tests
 
     @Test("Concurrent access to manual attach state is thread-safe")

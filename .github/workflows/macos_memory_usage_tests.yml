@@ -195,6 +195,12 @@ jobs:
           --start-time "$START_TIME" \
           > insert-statements.sql
 
+    - name: Debug Insert SQL SQL
+      working-directory: macOS
+      run: |
+        echo "Generated insert-statements.sql:"
+        cat insert-statements.sql
+
     - name: Upload memory metrics
       uses: actions/upload-artifact@v4
       with:
@@ -306,7 +312,7 @@ jobs:
           name: memory-metrics
 
       - name: Report Memory Metrics to ClickHouse
-        working-directory: macOS
+        working-directory: .
         run: |
           echo "🏁🏁🏁 Reporting Memory Metrics 🏁"
           cat insert-statements.sql

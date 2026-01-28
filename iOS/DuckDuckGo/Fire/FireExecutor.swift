@@ -168,14 +168,14 @@ class FireExecutor: FireExecuting {
         let shouldBurnData = request.options.contains(.data)
         async let dataTask: Void = shouldBurnData ? Task { @MainActor in
             delegate?.willStartBurningData(fireRequest: request)
-            await burnData(applicationState: applicationState)
+            await burnData(scope: request.scope, applicationState: applicationState)
             delegate?.didFinishBurningData(fireRequest: request)
         }.value : ()
         
         let shouldBurnAIChats = shouldBurnAIHistory(request)
         async let aiTask: Void = shouldBurnAIChats ? Task { @MainActor in
             delegate?.willStartBurningAIHistory(fireRequest: request)
-            await burnAIHistory()
+            await burnAIHistory(scope: request.scope)
             delegate?.didFinishBurningAIHistory(fireRequest: request)
         }.value : ()
 
@@ -239,7 +239,7 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnData(applicationState: DataStoreWarmup.ApplicationState) async {
+    private func burnData(scope: FireRequest.Scope, applicationState: DataStoreWarmup.ApplicationState) async {
         guard !burnInProgress else {
             assertionFailure("Shouldn't get called multiple times")
             return
@@ -252,6 +252,18 @@ class FireExecutor: FireExecuting {
             self.dataStoreWarmup = nil
         }
 
+        switch scope {
+        case .tab(let viewModel):
+            await burnTabData(tab: viewModel)
+        case .all:
+            await burnAllData()
+        }
+
+        self.burnInProgress = false
+    }
+    
+    @MainActor
+    private func burnAllData() async {
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
 
         let pixel = TimedPixel(.forgetAllDataCleared)
@@ -272,8 +284,11 @@ class FireExecutor: FireExecuting {
         self.forgetTextZoom()
         await historyManager.removeAllHistory()
         await privacyStats?.clearPrivacyStats()
-
-        self.burnInProgress = false
+    }
+    
+    @MainActor
+    private func burnTabData(tab: TabViewModel) async {
+        // TODO: - Implement tab specific data burning
     }
     
     // MARK: - Clear AI History
@@ -289,7 +304,16 @@ class FireExecutor: FireExecuting {
         return request.options.contains(.aiChats) && shouldAllowAIChatsBurn
     }
     
-    private func burnAIHistory() async {
+    private func burnAIHistory(scope: FireRequest.Scope) async {
+        switch scope {
+        case .tab(let viewModel):
+            await burnTabAIHistory(tab: viewModel)
+        case .all:
+            await burnAllAIHistory()
+        }
+    }
+    
+    private func burnAllAIHistory() async {
         // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
         let result = await aiChatHistoryCleaner.cleanAIChatHistory()
         switch result {
@@ -303,5 +327,9 @@ class FireExecutor: FireExecuting {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
             }
         }
+    }
+    
+    private func burnTabAIHistory(tab: TabViewModel) async {
+        // TODO: - Implement tab specific AI chats burning
     }
 }

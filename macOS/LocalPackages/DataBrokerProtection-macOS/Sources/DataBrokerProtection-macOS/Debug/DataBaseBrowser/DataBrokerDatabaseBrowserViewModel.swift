@@ -31,7 +31,7 @@ struct DataBrokerDatabaseSearchToken: Hashable {
 }
 
 final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
-    enum SearchMatchMode: Int, CaseIterable {
+    enum SearchMatchMode: Int {
         case and = 0
         case or = 1
     }
@@ -152,14 +152,13 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
     func filteredRows(for table: DataBrokerDatabaseBrowserData.Table) -> [DataBrokerDatabaseBrowserData.Row] {
         let tokens = tableSearchTokens[table.name] ?? []
         let matchMode = tableSearchMatchMode[table.name] ?? .and
-        let normalizedTokens = tokens.filter { !$0.normalizedValue.isEmpty }
 
-        guard !normalizedTokens.isEmpty else {
+        guard !tokens.isEmpty else {
             return table.rows
         }
 
         return table.rows.filter { row in
-            let matches = normalizedTokens.map { token in
+            let matches = tokens.map { token in
                 if let column = token.column {
                     return rowMatchesColumn(row, column: column, value: token.normalizedValue)
                 }

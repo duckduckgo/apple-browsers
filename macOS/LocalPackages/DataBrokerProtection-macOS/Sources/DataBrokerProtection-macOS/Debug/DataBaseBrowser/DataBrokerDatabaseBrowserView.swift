@@ -192,8 +192,7 @@ struct SearchBarView: NSViewRepresentable {
 
         @objc func tokensChanged() {
             guard let tokenField = tokenField else { return }
-            let tokens = tokens(from: tokenField.objectValue)
-            parent.tokens = tokens.filter { !$0.normalizedValue.isEmpty }
+            parent.tokens = tokens(from: tokenField.objectValue)
         }
 
         func controlTextDidChange(_ obj: Notification) {

@@ -50,10 +50,6 @@ struct UITestOverridesDebugView: View {
                 experimentRow
             }
 
-            Section("Environment") {
-                isRunningUITestsRow
-            }
-
             Section("Usage") {
                 usageInfoRow
             }
@@ -115,21 +111,6 @@ struct UITestOverridesDebugView: View {
 
     private var experimentCohortStatus: String {
         experimentCohort?.rawValue ?? "NOT SET"
-    }
-
-    // MARK: - Is Running UI Tests Row
-
-    private var isRunningUITestsRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Is Running UI Tests:")
-                Spacer()
-                Text(ProcessInfo.isRunningUITests ? "YES" : "NO")
-                    .fontWeight(.bold)
-                    .foregroundColor(ProcessInfo.isRunningUITests ? .green : .red)
-                    .accessibilityIdentifier("ui-test-override-is-running")
-            }
-        }
     }
 
     // MARK: - Usage Info Row

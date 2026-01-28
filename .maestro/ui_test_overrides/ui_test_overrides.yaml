@@ -17,7 +17,6 @@ tags:
     arguments:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
-        isRunningUITests: true
         "ff.uiTestFeatureFlag": true
         "experiment.uiTestExperiment": "treatment"
 
@@ -44,8 +43,3 @@ tags:
 - assertVisible:
     id: "ui-test-override-experiment-value"
     text: "treatment"
-
-# Verify is running UI tests
-- assertVisible:
-    id: "ui-test-override-is-running"
-    text: "YES"

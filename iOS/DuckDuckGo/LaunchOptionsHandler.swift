@@ -228,18 +228,3 @@ private extension String {
     }
 }
 
-// MARK: - ProcessInfo Extension
-
-extension ProcessInfo {
-    static var isRunningUITests: Bool {
-        // Maestro can pass arguments as either type depending on YAML formatting
-        if let stringValue = UserDefaults.standard.string(forKey: "isRunningUITests") {
-            return stringValue.lowercased() == "true"
-        }
-        if UserDefaults.standard.object(forKey: "isRunningUITests") != nil {
-            return UserDefaults.standard.bool(forKey: "isRunningUITests")
-        }
-        // Fallback to checking process arguments (for XCUITest or direct argument passing)
-        return processInfo.arguments.contains("isRunningUITests")
-    }
-}

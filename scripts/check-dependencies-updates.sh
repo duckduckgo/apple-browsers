@@ -271,6 +271,8 @@ find_resolved_files() {
     done
 
     if [[ ${#existing_roots[@]} -eq 0 ]]; then
+        echo -e "${YELLOW}Warning: None of the expected search roots exist under ${path}.${NC}" >&2
+        echo -e "${YELLOW}Checked: ${search_roots[*]}${NC}" >&2
         return
     fi
 
@@ -326,7 +328,11 @@ detect_workspace() {
     if [[ -d "${cwd%/}/../DuckDuckGo.xcworkspace" ]]; then
         WORKSPACE_PATH="${cwd%/}/../DuckDuckGo.xcworkspace"
         SEARCH_PATH="${cwd%/}/.."
+        return
     fi
+
+    echo -e "${RED}DuckDuckGo.xcworkspace not found in ${cwd} or ${cwd%/}/..${NC}" >&2
+    echo -e "${YELLOW}Run this script from the repo root or the scripts directory.${NC}" >&2
 }
 
 # Parse Package.resolved and output packages (url|version per line)
@@ -362,7 +368,6 @@ main() {
 
     detect_workspace
     if [[ -z "$WORKSPACE_PATH" ]] || [[ -z "$SEARCH_PATH" ]]; then
-        echo -e "${RED}DuckDuckGo.xcworkspace not found in . or ..${NC}" >&2
         exit 1
     fi
 

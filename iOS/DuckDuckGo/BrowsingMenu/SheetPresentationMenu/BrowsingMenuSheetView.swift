@@ -35,7 +35,6 @@ struct BrowsingMenuSheetView: View {
         static let headerButtonHorizontalPadding: CGFloat = 8
         static let headerButtonIconSize: CGFloat = 26
         static let headerButtonIconTextSpacing: CGFloat = 4
-        static let footerButtonVerticalPadding: CGFloat = 8
 
         /// Approximate row size for `.insetGrouped` style.
         /// This is an estimate used for height calculation and may not exactly match

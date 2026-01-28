@@ -347,6 +347,18 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.first, [tabViewModel.tab.uid])
     }
     
+    func testWhenBurningDataAndAIChatsWithTabScopeThenTabHistoryIsNotRemoved() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        
+        // When - Burn data and AI chats (but not tabs) for a specific tab
+        await executor.burn(request: makeFireRequest(options: [.data, .aiChats], scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Tab history should NOT be removed because the tab itself was not burned
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 0)
+    }
+    
     // MARK: - burn Data Tests
     
     func testBurnDataCallsDelegateAndClearsData() async {

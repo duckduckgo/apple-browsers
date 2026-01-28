@@ -2903,7 +2903,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
     ) -> NSEvent {
         NSEvent.mouseEvent(
             with: type,
-            location: NSPoint(x: 0, y: 100), // away from menu bar
+            location: NSPoint(x: 100, y: 0), // away from menu bar
             modifierFlags: modifierFlags,
             timestamp: 0,
             windowNumber: 0,

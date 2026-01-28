@@ -50,7 +50,11 @@ UniquePixel.fire(pixel: .subscriptionActivated)
 
 ### iOS Pixels
 
-iOS defines pixels in `iOS/Core/PixelEvent.swift` as enum cases:
+iOS pixels are defined as cases on `Pixel.Event` in `iOS/Core/PixelEvent.swift`. To add a new pixel:
+
+1. Add a new enum case with a clear, descriptive name.
+2. Use that case when firing pixels via `Pixel.fire`, `DailyPixel.fireDailyAndCount`, or `UniquePixel.fire`.
+3. Add the matching pixel definition in `iOS/PixelDefinitions/pixels/definitions/*.json5` - see the `Pixel Validation` section below for more.
 
 ```swift
 extension Pixel {
@@ -146,6 +150,49 @@ public protocol PixelFiring {
 3. **Include error context**: When firing error pixels, include the error object as part of its error parameters.
 4. **Considing using EventMapping**: When sending pixels from inside a shared Swift package, define pixels as new enum and emit them using `EventMapping`, then implement the event mapper on the client side.
 4. **Consider using instrumentation facades**: For features with multiple related pixels, consider defining an instrumentation protocol to centralize pixel firing logic. See `instrumentation-facade.mdc`.
+
+## Pixel Validation
+
+Pixel definitions are validated from the `PixelDefinitions` folders in each platform:
+
+- `iOS/PixelDefinitions/`
+- `macOS/PixelDefinitions/`
+
+Validation runs via `npm run validate-pixel-defs` from the platform folder. JSON5 formatting is enforced with Prettier.
+
+### Directory Layout
+
+- `pixels/definitions/*.json5`: The actual pixel definitions. Each file contains multiple pixel entries.
+- `pixels/params_dictionary.json5`: Shared parameter definitions referenced by key.
+- `pixels/suffixes_dictionary.json5`: Shared suffix definitions referenced by key.
+- `product.json`: Product metadata.
+
+### Defining a Pixel in JSON5
+
+Each JSON5 file defines a map of `pixel_name` to metadata. Use `TEMPLATE.json5` from each platform folder as a starting point. Example:
+
+```json5
+{
+    "m_feature_action": {
+        "description": "Describe when the pixel fires and its purpose",
+        "owners": ["github-username"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform"],
+        "parameters": ["appVersion"],
+        "expires": "2025-01-30"
+    }
+}
+```
+
+Key fields:
+- `description`: Clear explanation of the pixel’s purpose and timing.
+- `owners`: GitHub usernames responsible for the pixel.
+- `triggers`: One or more trigger categories used by validation.
+- `suffixes`: Either shared suffix keys from `suffixes_dictionary.json5` or inline suffix definitions.
+- `parameters`: Either shared parameter keys from `params_dictionary.json5` or inline parameter definitions.
+- `expires` (optional): Date for temporary pixels; omit for permanent pixels.
+
+Prefer referencing shared suffix/parameter keys where possible to keep definitions consistent and validatable.
 
 ## Related Files
 

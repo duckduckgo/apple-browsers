@@ -155,34 +155,32 @@ class FireExecutor: FireExecuting {
         }
         
         delegate?.willStartBurning(fireRequest: request)
-        if request.options.contains(.tabs) {
+        
+        cancelOngoingDownloadsIfNeeded(request)
+        
+        let shouldBurnTabs = request.options.contains(.tabs)
+        async let tabsTask: Void = shouldBurnTabs ? Task { @MainActor in
             delegate?.willStartBurningTabs(fireRequest: request)
             await burnTabs(scope: request.scope)
             delegate?.didFinishBurningTabs(fireRequest: request)
-        }
+        }.value : ()
         
-        cancelOngoingDownloadsIfNeeded(request)
-
         let shouldBurnData = request.options.contains(.data)
+        async let dataTask: Void = shouldBurnData ? Task { @MainActor in
+            delegate?.willStartBurningData(fireRequest: request)
+            await burnData(applicationState: applicationState)
+            delegate?.didFinishBurningData(fireRequest: request)
+        }.value : ()
         
-        // For auto-clear with enhancedDataClearingSettings FF ON:
-        // - User configures what to clear via the enhanced settings UI
-        // For manual fire OR auto-clear with FF OFF (legacy):
-        // - AI chats clear only if autoClearAIChatHistory setting is enabled
-        let chosenThroughNewAutoClearUI = featureFlagger.isFeatureOn(.enhancedDataClearingSettings) && request.trigger != .manualFire
-        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI || appSettings.autoClearAIChatHistory
+        let shouldBurnAIChats = shouldBurnAIHistory(request)
+        async let aiTask: Void = shouldBurnAIChats ? Task { @MainActor in
+            delegate?.willStartBurningAIHistory(fireRequest: request)
+            await burnAIHistory()
+            delegate?.didFinishBurningAIHistory(fireRequest: request)
+        }.value : ()
+
+        _ = await (tabsTask, dataTask, aiTask)
         
-        let shouldBurnAIChats = request.options.contains(.aiChats) && shouldAllowAIChatsBurn
-
-        if shouldBurnData { delegate?.willStartBurningData(fireRequest: request) }
-        if shouldBurnAIChats { delegate?.willStartBurningAIHistory(fireRequest: request) }
-
-        async let dataTask: Void = shouldBurnData ? burnData(applicationState: applicationState) : ()
-        async let aiTask: Void = shouldBurnAIChats ? burnAIHistory() : ()
-        _ = await (dataTask, aiTask)
-
-        if shouldBurnData { delegate?.didFinishBurningData(fireRequest: request) }
-        if shouldBurnAIChats { delegate?.didFinishBurningAIHistory(fireRequest: request) }
         delegate?.didFinishBurning(fireRequest: request)
         
         // Reset prepared state for next burn cycle
@@ -279,6 +277,17 @@ class FireExecutor: FireExecuting {
     }
     
     // MARK: - Clear AI History
+    
+    /// For auto-clear with enhancedDataClearingSettings FF ON:
+    /// - User configures what to clear via the enhanced settings UI
+    /// For manual fire OR auto-clear with FF OFF (legacy):
+    /// - AI chats clear only if autoClearAIChatHistory setting is enabled
+    /// - Returns: A boolean inidicating if we should run the ai chats burn flow
+    private func shouldBurnAIHistory(_ request: FireRequest) -> Bool {
+        let chosenThroughNewAutoClearUI = featureFlagger.isFeatureOn(.enhancedDataClearingSettings) && request.trigger != .manualFire
+        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI || appSettings.autoClearAIChatHistory
+        return request.options.contains(.aiChats) && shouldAllowAIChatsBurn
+    }
     
     private func burnAIHistory() async {
         // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.

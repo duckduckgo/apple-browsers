@@ -36,6 +36,7 @@ class MockTabManager: TabManaging {
     private(set) var closeTabCalled = false
     private(set) var closeTabCalledWith: Tab?
     private(set) var closeTabShouldCreateEmptyTab: Bool?
+    private(set) var closeTabClearTabHistory: Bool?
     
     func prepareAllTabsExceptCurrentForDataClearing() {
         prepareAllTabsExceptCurrentCalled = true
@@ -63,9 +64,10 @@ class MockTabManager: TabManaging {
         return isCurrentTabReturnValue
     }
     
-    func closeTab(_ tab: Tab, shouldCreateEmptyTabAtSamePosition: Bool) {
+    func closeTab(_ tab: Tab, shouldCreateEmptyTabAtSamePosition: Bool, clearTabHistory: Bool) {
         closeTabCalled = true
         closeTabCalledWith = tab
         closeTabShouldCreateEmptyTab = shouldCreateEmptyTabAtSamePosition
+        closeTabClearTabHistory = clearTabHistory
     }
 }

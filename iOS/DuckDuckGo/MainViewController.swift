@@ -3264,8 +3264,12 @@ extension MainViewController: TabDelegate {
         return newTab.webView
     }
 
-    func tabDidRequestClose(_ tab: TabViewController, shouldCreateEmptyTabAtSamePosition: Bool) {
-        closeTab(tab.tabModel, andOpenEmptyOneAtSamePosition: shouldCreateEmptyTabAtSamePosition)
+    func tabDidRequestClose(_ tab: TabViewController,
+                            shouldCreateEmptyTabAtSamePosition: Bool,
+                            clearTabHistory: Bool) {
+        closeTab(tab.tabModel,
+                 andOpenEmptyOneAtSamePosition: shouldCreateEmptyTabAtSamePosition,
+                 clearTabHistory: clearTabHistory)
     }
 
     func tabLoadingStateDidChange(tab: TabViewController) {
@@ -3595,7 +3599,9 @@ extension MainViewController: TabSwitcherDelegate {
         }
     }
 
-    func closeTab(_ tab: Tab, andOpenEmptyOneAtSamePosition shouldOpen: Bool = false) {
+    func closeTab(_ tab: Tab,
+                  andOpenEmptyOneAtSamePosition shouldOpen: Bool = false,
+                  clearTabHistory: Bool = true) {
         guard let index = tabManager.model.indexOf(tab: tab) else { return }
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
@@ -3603,11 +3609,11 @@ extension MainViewController: TabSwitcherDelegate {
 
         if shouldOpen {
             let newTab = Tab()
-            tabManager.replaceTab(at: index, withNewTab: newTab)
+            tabManager.replaceTab(at: index, withNewTab: newTab, clearTabHistory: clearTabHistory)
             tabManager.selectTab(newTab)
             showBars() // In case the browser chrome bars are hidden when calling this method
         } else {
-            tabManager.remove(at: index)
+            tabManager.remove(at: index, clearTabHistory: clearTabHistory)
         }
 
         updateCurrentTab()

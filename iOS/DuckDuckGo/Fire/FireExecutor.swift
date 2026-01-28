@@ -181,19 +181,27 @@ class FireExecutor: FireExecuting {
 
         _ = await (tabsTask, dataTask, aiTask)
         
-        delegate?.didFinishBurning(fireRequest: request)
+        await didFinishBurning(fireRequest: request)
         
         // Reset prepared state for next burn cycle
         preparedOptions = []
     }
     
-    // MARK: - Clearing Downloads
+    // MARK: - General Helpers
     
     private func cancelOngoingDownloadsIfNeeded(_ request: FireRequest) {
         guard request.options.contains(.tabs), request.options.contains(.data) else {
             return
         }
         downloadManager.cancelAllDownloads()
+    }
+
+    @MainActor
+    private func didFinishBurning(fireRequest: FireRequest) async {
+        if case .tab(let viewModel) = fireRequest.scope {
+            await historyManager.removeTabHistory(for: [viewModel.tab.uid])
+        }
+        delegate?.didFinishBurning(fireRequest: fireRequest)
     }
     
     // MARK: Burn Tabs Helpers
@@ -224,7 +232,13 @@ class FireExecutor: FireExecuting {
                 tabManager.prepareTab(viewModel.tab)
             }
             let isLastOpenTab = tabManager.count == 1
-            tabManager.closeTab(viewModel.tab, shouldCreateEmptyTabAtSamePosition: isLastOpenTab)
+
+            // Pass false to clearTabHistory to preserve tab history while burning
+            // As tab history is needed by other processes running in parallel
+            // didFinishBurning(fireRequest:) manually clears data after burn is complete
+            tabManager.closeTab(viewModel.tab,
+                                shouldCreateEmptyTabAtSamePosition: isLastOpenTab,
+                                clearTabHistory: false)
             
             let domainsToClear = await Array(viewModel.visitedDomains())
             Favicons.shared.removeTabFavicons(forDomains: domainsToClear)

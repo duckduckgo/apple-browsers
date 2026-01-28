@@ -315,6 +315,7 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockTabManager.closeTabCalled)
         XCTAssertEqual(mockTabManager.closeTabCalledWith, tabViewModel.tab)
         XCTAssertEqual(mockTabManager.closeTabShouldCreateEmptyTab, true)
+        XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
     }
     
     func testBurnTabsWithTabScopeWhenNotLastTabDoesNotCreateEmptyTab() async {
@@ -330,6 +331,7 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockTabManager.closeTabCalled)
         XCTAssertEqual(mockTabManager.closeTabCalledWith, tabViewModel.tab)
         XCTAssertEqual(mockTabManager.closeTabShouldCreateEmptyTab, false)
+        XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
     }
     
     // MARK: - burn Data Tests

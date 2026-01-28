@@ -20,6 +20,13 @@ import Cocoa
 import Common
 import DesignResourcesKitIcons
 
+/// A text field that doesn't intercept mouse events, allowing clicks to pass through to views underneath
+private final class ClickThroughTextField: NSTextField {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil
+    }
+}
+
 protocol FirePopoverViewControllerDelegate: AnyObject {
     func firePopoverViewControllerDidClear(_ firePopoverViewController: FirePopoverViewController)
     func firePopoverViewControllerDidCancel(_ firePopoverViewController: FirePopoverViewController)
@@ -34,6 +41,12 @@ final class FirePopoverViewController: NSViewController {
     private let fireViewModel: FireViewModel
     private weak var tabCollectionViewModel: TabCollectionViewModel?
     private let themeManager: ThemeManaging
+
+#if DEBUG
+    // Preview action handlers (optional, for testing/previewing without side effects)
+    var onOpenNewBurnerWindow: (() -> Void)?
+    var onCloseBurnerWindow: (() -> Void)?
+#endif
 
     private lazy var backgroundView: ColorView = {
         let view = ColorView(frame: .zero, backgroundColor: NSColor(designSystemColor: .surfacePrimary))
@@ -64,7 +77,7 @@ final class FirePopoverViewController: NSViewController {
     }()
 
     private lazy var titleLabel: NSTextField = {
-        let label = NSTextField(labelWithString: UserText.fireDialogFireWindowTitle)
+        let label = ClickThroughTextField(labelWithString: UserText.fireDialogFireWindowTitle)
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: NSFont.systemFontSize)
         label.textColor = .labelColor
@@ -78,7 +91,7 @@ final class FirePopoverViewController: NSViewController {
     }()
 
     private lazy var descriptionLabel: NSTextField = {
-        let label = NSTextField(labelWithString: UserText.fireDialogFireWindowDescription)
+        let label = ClickThroughTextField(labelWithString: UserText.fireDialogFireWindowDescription)
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         label.textColor = .secondaryLabelColor
@@ -193,11 +206,24 @@ final class FirePopoverViewController: NSViewController {
         ])
     }
 
-    @objc private func openNewBurnerWindowAction(_ sender: Any) {
+    @objc func openNewBurnerWindowAction(_ sender: Any) {
+#if DEBUG
+        if let handler = onOpenNewBurnerWindow {
+            handler()
+            return
+        }
+#endif
+        self.dismiss()
         Application.appDelegate.newBurnerWindow(self)
     }
 
-    @objc private func closeBurnerWindowButtonAction(_ sender: Any) {
+    @objc func closeBurnerWindowButtonAction(_ sender: Any) {
+#if DEBUG
+        if let handler = onCloseBurnerWindow {
+            handler()
+            return
+        }
+#endif
         let windowControllersManager = Application.appDelegate.windowControllersManager
         guard let tabCollectionViewModel = tabCollectionViewModel,
               let windowController = windowControllersManager.windowController(for: tabCollectionViewModel) else {
@@ -207,3 +233,40 @@ final class FirePopoverViewController: NSViewController {
         windowController.window?.close()
     }
 }
+
+// MARK: - #Preview
+#if DEBUG
+import SwiftUI
+import os.log
+
+@available(macOS 14.0, *)
+#Preview(traits: .fixedLayout(width: 344, height: 144)) {
+    let logger = Logger(subsystem: "Preview", category: "FirePopoverViewController")
+
+    // Mock dependencies
+    let fireViewModel = FireViewModel(
+        tld: TLD(),
+        visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider
+    )
+
+    let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
+    let themeManager = NSApp.delegateTyped.themeManager
+
+    let controller = FirePopoverViewController(
+        fireViewModel: fireViewModel,
+        tabCollectionViewModel: tabCollectionViewModel,
+        themeManager: themeManager
+    )
+
+    // Pass action handlers that log instead of performing actual burns
+    controller.onOpenNewBurnerWindow = {
+        print("🔥 Preview: Would open new burner window")
+    }
+
+    controller.onCloseBurnerWindow = {
+        print("🔥 Preview: Would close burner window (burn)")
+    }
+
+    return controller._preview_hidingWindowControlsOnAppear()
+}
+#endif

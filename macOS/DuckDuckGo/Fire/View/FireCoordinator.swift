@@ -151,10 +151,12 @@ final class FireCoordinator {
             return
         }
 
-        guard !(firePopover?.isShown ?? false) else {
+        // Close any existing popover before creating a new one
+        if firePopover?.isShown ?? false {
             firePopover?.close()
             return
         }
+
         firePopover = FirePopover(fireViewModel: fireViewModel, tabCollectionViewModel: tabCollectionViewModel)
         firePopover?.show(positionedBelow: positioningView.bounds.insetBy(dx: 0, dy: 3), in: positioningView)
     }

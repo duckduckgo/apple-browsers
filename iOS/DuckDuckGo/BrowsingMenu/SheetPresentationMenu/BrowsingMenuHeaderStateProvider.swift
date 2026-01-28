@@ -42,6 +42,7 @@ final class BrowsingMenuHeaderStateProvider {
         let isAIHeaderVisible = isFeatureEnabled && isAITab
 
         if isAIHeaderVisible {
+            currentFaviconRequestID = nil
             dataSource.reset()
             dataSource.update(forAITab: UserText.duckAiFeatureName)
         } else if isHeaderVisible {
@@ -49,6 +50,8 @@ final class BrowsingMenuHeaderStateProvider {
             dataSource.update(title: isError ? nil : title, url: url, easterEggLogoURL: logoURL)
             if logoURL == nil {
                 loadFavicon(for: url, into: dataSource)
+            } else {
+                currentFaviconRequestID = nil
             }
         } else {
             currentFaviconRequestID = nil

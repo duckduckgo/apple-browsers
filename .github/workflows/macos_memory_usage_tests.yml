@@ -186,7 +186,7 @@ jobs:
 
         START_TIME=$(date -u -r "${{ steps.start-duration.outputs.start-timestamp }}" '+%Y-%m-%d %H:%M:%S')
 
-        ../scripts/build-memory-metrics-sql.sh \
+        ./scripts/build-memory-metrics-sql.sh \
           --runner "${{ matrix.runner }}" \
           --xcresult-path "$XCRESULT_PATH" \
           --run-id "${{ github.run_id }}" \

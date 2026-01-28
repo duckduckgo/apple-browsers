@@ -469,4 +469,3 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(true)
     }
 }
-

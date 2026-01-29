@@ -169,7 +169,7 @@ private extension UserDefaults {
     static let showAIChatShortcutInAddressBarDefaultValue = true
     static let showAIChatShortcutInAddressBarWhenTypingDefaultValue = true
     static let openAIChatInSidebarDefaultValue = true
-    static let shouldAutomaticallySendPageContextDefaultValue = true
+    static let shouldAutomaticallySendPageContextDefaultValue = false
     static let showSearchAndDuckAIToggleDefaultValue = true
 
     @objc dynamic var isAIFeaturesEnabled: Bool {

@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "İptal";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Senkronizasyon ve Yedekleme'yi açın";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Bu, DuckDuckGo'nun güvenli sunucusunda yer işaretlerinizin ve otomatik doldurma verilerinizin diğer cihazlarınızla senkronize edilebilen şifrelenmiş bir yedeğini oluşturur.";
 

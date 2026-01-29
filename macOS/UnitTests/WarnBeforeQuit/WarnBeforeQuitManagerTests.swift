@@ -161,7 +161,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: nil, timeAdvance: totalDuration + Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, animationDelay: 0))
 
         // When
         let expectations = setupExpectationsForStateChanges(2, manager: manager)
@@ -172,11 +172,13 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Wait for both states
         await fulfillment(of: expectations, timeout: Constants.expectationTimeout)
 
-        // Then - should return sync decision to proceed with quit
-        guard case .sync(let decision) = query else {
-            XCTFail("Expected sync decision")
+        // Then - quit action returns async decision to fire pixel before quitting
+        guard case .async(let task) = query else {
+            XCTFail("Expected async decision for quit action (fires pixel), got: \(query)")
             return
         }
+
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         XCTAssertEqual(decision, .next)
         XCTAssertEqual(collectedStates, [
             .holding(startTime: startTime, targetTime: targetTime),
@@ -196,7 +198,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory, animationDelay: 0))
 
         let expectations = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -208,7 +210,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Then - should return async query for waiting phase
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
         XCTAssertEqual(collectedStates, [
@@ -216,14 +218,11 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             .waitingForSecondPress(hideUntil: hideUntilAfterEarlyRelease)
         ])
 
-        // Clean up task
-        try await cancelTaskAndWaitForCompletion(task, manager: manager, expectedDecision: .cancel)
-
-        XCTAssertEqual(collectedStates, [
-            .holding(startTime: startTime, targetTime: targetTime),
-            .waitingForSecondPress(hideUntil: hideUntilAfterEarlyRelease),
-            .completed(shouldQuit: false)
-        ])
+        // Clean up task by triggering timer callback
+        let expectations2 = setupExpectationsForStateChanges(1, manager: manager)
+        timerCallback?()
+        _ = try? await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
     }
 
     func testStateStreamEmitsCompletedWhenSecondPressReceived() async throws {
@@ -240,7 +239,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory, animationDelay: 0))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -248,7 +247,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let query = manager.shouldTerminate(isAsync: false)
 
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
 
@@ -264,7 +263,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         NSApp.postEvent(secondPress, atStart: true)
 
         // Wait for async task and completion state
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
         // Then
@@ -290,7 +289,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory, animationDelay: 0))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -298,7 +297,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let query = manager.shouldTerminate(isAsync: false)
 
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
 
@@ -325,7 +324,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         NSApp.postEvent(escapeEvent, atStart: false)
 
         // Wait for async task and completion state
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
         // Verify Escape was NOT passed through
@@ -361,7 +360,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory, animationDelay: 0))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -369,7 +368,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let query = manager.shouldTerminate(isAsync: false)
 
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
 
@@ -385,7 +384,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         timerCallback?()
 
         // Wait for completion state and task
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
         // Then
@@ -402,14 +401,14 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
     func testShouldTerminateReturnsNextWhenAsync() throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, animationDelay: 0))
 
         // When
         let query = manager.shouldTerminate(isAsync: true)
 
         // Then
         guard case .sync(let decision) = query else {
-            XCTFail("Expected sync decision")
+            XCTFail("Expected sync decision, got: \(query)")
             return
         }
         XCTAssertEqual(decision, .next)
@@ -420,7 +419,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
     func testShouldTerminateReturnsNextWhenWarningDisabled() throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, animationDelay: 0))
 
         // Verify initial state
         XCTAssertTrue(warnBeforeQuittingDefaults.wrappedValue)
@@ -431,7 +430,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Then - subsequent calls return .sync(.next) immediately
         let query = manager.shouldTerminate(isAsync: false)
         guard case .sync(let decision) = query else {
-            XCTFail("Expected sync decision")
+            XCTFail("Expected sync decision, got: \(query)")
             return
         }
         XCTAssertEqual(decision, .next)
@@ -460,8 +459,8 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             }
         }
 
-        manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
-        // Receive .holding state
+        manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, animationDelay: 0))
+        // Receive .keyDown state
         expectations = setupExpectationsForStateChanges(1, manager: manager)
 
         // Verify initial state
@@ -477,16 +476,18 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Wait for completion
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
-        let query = try await withTimeout(Constants.expectationTimeout) { await queryTask.value }
+        let query = try await queryTask.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
 
         // Then - UserDefaults should be updated
         XCTAssertFalse(warnBeforeQuittingDefaults.wrappedValue)
 
-        // And should complete with .sync(.next) - loop broke due to preference disabled
-        guard case .sync(let decision) = query else {
-            XCTFail("Expected sync decision")
+        // And quit action returns async to fire pixel (hold completed successfully)
+        guard case .async(let task) = query else {
+            XCTFail("Expected async decision for quit action (fires pixel), got: \(query)")
             return
         }
+
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         XCTAssertEqual(decision, .next)
 
         // Verify both states were collected
@@ -559,7 +560,8 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue },
             now: { self.now },
             eventReceiver: eventReceiver,
-            timerFactory: timerFactory
+            timerFactory: timerFactory,
+            animationDelay: 0
         ))
 
         // Verify initial state
@@ -570,7 +572,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // When - start async wait
         let query = manager.shouldTerminate(isAsync: false)
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
 
@@ -585,12 +587,11 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Post a mouse click to trigger the async check in the event handler
         // The DispatchQueue.main.async will check isWarningEnabled() and resume with true
         let mouseClick = createMouseEvent(type: .leftMouseDown)
-        TestRunHelper.allowAppSendUserEvents = true
         NSApp.postEvent(mouseClick, atStart: true)
 
         // Wait for completion
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
-        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations2 + [eventPassedThroughExpectation], timeout: Constants.expectationTimeout)
 
         // Clicking after disabling preference makes resume() return true (quit allowed)
         XCTAssertEqual(decision, .next)
@@ -599,12 +600,16 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             .waitingForSecondPress(hideUntil: hideUntilAfterEarlyRelease),
             .completed(shouldQuit: true)
         ])
+
+        // Verify event was passed through (not consumed by manager)
+        XCTAssertNotNil(passedThroughEvent, "Mouse event should be passed through when warning is disabled")
+        XCTAssertEqual(passedThroughEvent?.type, .leftMouseDown)
     }
 
     func testShouldTerminateAfterDisabled() async throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, animationDelay: 0))
 
         // Start state collection to verify no states are emitted
         _ = setupExpectationsForStateChanges(0, manager: manager)
@@ -618,7 +623,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Then - subsequent calls return .sync(.next) immediately
         let query = manager.shouldTerminate(isAsync: false)
         guard case .sync(let decision) = query else {
-            XCTFail("Expected sync decision after disabling")
+            XCTFail("Expected sync decision after disabling, got: \(query)")
             return
         }
         XCTAssertEqual(decision, .next)
@@ -637,14 +642,14 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         ])
 
         // Use REAL timer to verify cancellation behavior
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, animationDelay: 0))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
         // When - start async wait (real timer created with 1.5s duration)
         let query = manager.shouldTerminate(isAsync: false)
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
 
@@ -657,7 +662,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         task.cancel()
 
         // Wait for the task to complete after cancellation
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
         // Then - verify decision is cancel
@@ -679,7 +684,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
     func testHoverBeforeWaitPhaseStoresStateInternally() throws {
         // Given
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, animationDelay: 0))
 
         // When - hover called before entering wait phase (no callback set)
         // Then - should store state internally without crashing
@@ -712,7 +717,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             return Timer() // Don't fire, we'll cancel the Task manually
         }
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory, animationDelay: 0))
 
         // Receive .holding state
         expectations = setupExpectationsForStateChanges(1, manager: manager)
@@ -723,7 +728,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // When - start wait phase (timer starts with normal duration)
         let query = manager.shouldTerminate(isAsync: false)
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
 
@@ -751,6 +756,10 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Cancel and wait for completion
         try await cancelTaskAndWaitForCompletion(task, manager: manager, expectedDecision: .cancel)
 
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations3, timeout: Constants.expectationTimeout)
+
+        XCTAssertEqual(decision, .cancel)
         XCTAssertEqual(collectedStates, [
             .holding(startTime: startTime, targetTime: targetTime),
             .waitingForSecondPress(hideUntil: hideUntilAfterEarlyRelease),
@@ -769,7 +778,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory, animationDelay: 0))
 
         // Set up state collection for first call's states (only expecting 2 states, not 3)
         let expectations = setupExpectationsForStateChanges(2, manager: manager)
@@ -777,7 +786,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // When - first call returns async
         let query1 = manager.shouldTerminate(isAsync: false)
         guard case .async(let task1) = query1 else {
-            XCTFail("Expected first call to return async query")
+            XCTFail("Expected first call to return async query, got: \(query1)")
             return
         }
 
@@ -795,7 +804,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Then - second call should return .sync(.next) because first is already in progress
         guard case .sync(let decision) = query2 else {
-            XCTFail("Expected second call to return sync decision")
+            XCTFail("Expected second call to return sync decision, got: \(query2)")
             task1.cancel()
             return
         }
@@ -813,8 +822,11 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             .waitingForSecondPress(hideUntil: hideUntilAfterEarlyRelease)
         ])
 
-        // Cancel first task and wait for completion
-        try await cancelTaskAndWaitForCompletion(task1, manager: manager, expectedDecision: .cancel)
+        // Clean up task by triggering timer callback
+        let expectations2 = setupExpectationsForStateChanges(1, manager: manager)
+        timerCallback?()
+        _ = try? await task1.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
     }
 
     func testShouldTerminateAfterCompletionWithCancel() async throws {
@@ -834,14 +846,14 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory, animationDelay: 0))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
         // When - first flow completes with cancel (timer expires)
         let query1 = manager.shouldTerminate(isAsync: false)
         guard case .async(let task1) = query1 else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query1)")
             return
         }
 
@@ -854,7 +866,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         timerCallback?()
 
         Logger.tests.debug("\(self.name): Waiting for first flow to complete")
-        let decision1 = try await withTimeout(Constants.expectationTimeout) { await task1.value }
+        let decision1 = try await task1.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
         // Then - first flow cancels
@@ -883,7 +895,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Then - should return .sync(.next) because currentState is .completed, not .idle
         guard case .sync(let decision2) = query2 else {
-            XCTFail("Expected second call to return sync decision")
+            XCTFail("Expected second call to return sync decision, got: \(query2)")
             return
         }
         XCTAssertEqual(decision2, .next)
@@ -912,7 +924,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: qKeyUpEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, action: .quit, isWarningEnabled: { self.isWarningEnabled }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory, animationDelay: 0))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -920,7 +932,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let query = manager.shouldTerminate(isAsync: false)
 
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
 
@@ -935,7 +947,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         NSApp.postEvent(secondPress, atStart: true)
 
         // Wait for completion
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
 
         // Then - should complete with quit allowed
@@ -963,14 +975,23 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            timerFactory: timerFactory,
+            animationDelay: 0
+        ))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
         // When - start async wait
         let query = manager.shouldTerminate(isAsync: false)
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
 
@@ -985,8 +1006,8 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         NSApp.postEvent(mouseClick, atStart: true)
 
         // Wait for completion
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
-        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations2 + [eventRepostedExpectation], timeout: Constants.expectationTimeout)
 
         // Then - should cancel
         XCTAssertEqual(decision, .cancel)
@@ -1011,14 +1032,23 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: releaseEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            timerFactory: timerFactory,
+            animationDelay: 0
+        ))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
         // When - start async wait
         let query = manager.shouldTerminate(isAsync: false)
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
 
@@ -1033,8 +1063,8 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         NSApp.postEvent(mouseClick, atStart: true)
 
         // Wait for completion
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
-        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations2 + [eventRepostedExpectation], timeout: Constants.expectationTimeout)
 
         // Then - should cancel
         XCTAssertEqual(decision, .cancel)
@@ -1059,7 +1089,16 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: qKeyUpEvent, timeAdvance: Constants.earlyReleaseTimeAdvance)
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver, timerFactory: timerFactory))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            timerFactory: timerFactory,
+            animationDelay: 0
+        ))
 
         let expectations1 = setupExpectationsForStateChanges(2, manager: manager)
 
@@ -1067,7 +1106,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let query = manager.shouldTerminate(isAsync: false)
 
         guard case .async(let task) = query else {
-            XCTFail("Expected async query")
+            XCTFail("Expected async query, got: \(query)")
             return
         }
 
@@ -1093,7 +1132,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         NSApp.postEvent(otherKey, atStart: true)
 
         // Wait for completion and pass-through
-        let decision = try await withTimeout(Constants.expectationTimeout) { await task.value }
+        let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
         await fulfillment(of: expectations2 + [eventPassedThroughExpectation], timeout: Constants.expectationTimeout)
 
         // Then - should cancel (not quit) and event was passed through
@@ -1117,7 +1156,15 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             (event: otherKeyEvent, timeAdvance: 0) // First call returns 'a' key - should cancel
         ])
 
-        let manager = try XCTUnwrap(WarnBeforeQuitManager(currentEvent: event, isWarningEnabled: { self.warnBeforeQuittingDefaults.wrappedValue }, now: { self.now }, eventReceiver: eventReceiver))
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            pixelFiring: pixelFiring,
+            now: { self.now },
+            eventReceiver: eventReceiver,
+            animationDelay: 0
+        ))
 
         // When
         let expectations = setupExpectationsForStateChanges(2, manager: manager)
@@ -1126,7 +1173,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Then - should cancel (other key pressed during hold)
         guard case .sync(let decision) = query else {
-            XCTFail("Expected sync decision")
+            XCTFail("Expected sync decision with .cancel, got: \(query)")
             return
         }
         XCTAssertEqual(decision, .cancel)
@@ -1137,6 +1184,36 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             .holding(startTime: startTime, targetTime: targetTime),
             .completed(shouldQuit: false)
         ])
+    }
+
+    func testPixelFiringTimeout() async throws {
+        // Given - pixel that never completes (simulates network timeout)
+        final class SlowPixelFiring: PixelFiring, Sendable {
+            let fireExpectation: XCTestExpectation
+            let completionExpectation: XCTestExpectation
+            init(fireExpectation: XCTestExpectation, completionExpectation: XCTestExpectation) {
+                self.fireExpectation = fireExpectation
+                self.completionExpectation = completionExpectation
+            }
+            public func fire(_ event: PixelKitEvent,
+                             frequency: PixelKit.Frequency,
+                             withAdditionalParameters: [String: String]?,
+                             onComplete: @escaping PixelKit.CompletionBlock) {
+                fireExpectation.fulfill()
+                // Never call completion handler - simulates timeout
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    self.completionExpectation.fulfill()
+                    onComplete(true, nil)
+                }
+            }
+        }
+        let fireExpectation = expectation(description: "Pixel fired")
+        let completionExpectation = expectation(description: "Completion called")
+        completionExpectation.isInverted = true
+        let pixelFiring = SlowPixelFiring(fireExpectation: fireExpectation, completionExpectation: completionExpectation)
+        await pixelFiring.fireAndWait(GeneralPixel.warnBeforeQuitQuit, frequency: .standard, timeout: 0.1)
+
+        await fulfillment(of: [fireExpectation, completionExpectation], timeout: 0.2)
     }
 
     // MARK: - Helpers

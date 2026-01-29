@@ -192,8 +192,8 @@ final class PasswordManagementIdentityModel: ObservableObject, PasswordManagemen
         }
     }
 
-    func save() {
-        guard var identity = identity else { return }
+    func save() -> Bool {
+        guard var identity = identity else { return false }
 
         identity.title = title
         identity.firstName = firstName
@@ -215,6 +215,7 @@ final class PasswordManagementIdentityModel: ObservableObject, PasswordManagemen
         identity.emailAddress = emailAddress
 
         onSaveRequested(identity)
+        return true
     }
 
     func clearSecureVaultModel() {

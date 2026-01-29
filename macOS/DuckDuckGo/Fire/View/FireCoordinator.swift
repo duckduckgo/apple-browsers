@@ -135,13 +135,13 @@ final class FireCoordinator {
         burningWindow.makeKeyAndOrderFront(nil)
         let mainViewController = lastKeyMainWindowController.mainViewController
 
-        // Present dialog gated by feature flag; fallback to legacy popover
-        // Special popover variant for Fire window
-        if !mainViewController.isBurner, featureFlagger.isFeatureOn(.fireDialog) {
+        // Use Fire dialog for regular windows, popover for Fire windows
+        if !mainViewController.isBurner {
             Task { @MainActor in
                 _=await self.presentFireDialog(mode: .fireButton, in: burningWindow)
             }
         } else {
+            // Fire windows continue to use the legacy popover
             showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
                             tabCollectionViewModel: mainViewController.tabCollectionViewModel)
         }
@@ -153,10 +153,12 @@ final class FireCoordinator {
             return
         }
 
-        guard !(firePopover?.isShown ?? false) else {
+        // Close any existing popover before creating a new one
+        if firePopover?.isShown ?? false {
             firePopover?.close()
             return
         }
+
         firePopover = FirePopover(fireViewModel: fireViewModel, tabCollectionViewModel: tabCollectionViewModel)
         firePopover?.show(positionedBelow: positioningView.bounds.insetBy(dx: 0, dy: 3), in: positioningView)
     }
@@ -235,7 +237,7 @@ extension FireCoordinator {
             let presenter = self.fireDialogViewFactory(
                 FireDialogViewConfig(
                     viewModel: vm,
-                    showIndividualSitesLink: [.fireButton, .mainMenuAll].contains(mode) && featureFlagger.isFeatureOn(.fireDialogIndividualSitesLink),
+                    showIndividualSitesLink: [.fireButton, .mainMenuAll].contains(mode),
                     onConfirm: { response in
                         resumeOnce(returning: response)
                     }

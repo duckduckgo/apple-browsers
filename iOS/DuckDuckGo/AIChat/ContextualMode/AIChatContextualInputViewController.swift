@@ -120,10 +120,12 @@ final class AIChatContextualInputViewController: UIViewController {
 
     func showContextChip(_ chipView: UIView, animated: Bool = true) {
         nativeInputViewController.showContextChip(chipView, animated: animated)
+        updateQuickActions()
     }
 
     func hideContextChip(animated: Bool = true) {
         nativeInputViewController.hideContextChip(animated: animated)
+        updateQuickActions()
     }
 
     func updateContextChip(title: String, favicon: UIImage?) {
@@ -182,7 +184,16 @@ private extension AIChatContextualInputViewController {
             guard let self else { return }
             delegate?.contextualInputViewController(self, didSelectQuickAction: action)
         }
-        quickActionsView.configure(with: [.summarize])
+        updateQuickActions()
+    }
+
+    internal func updateQuickActions() {
+        let actions: [AIChatContextualQuickAction] = if isContextChipVisible {
+            [.summarize]
+        } else {
+            [.summarize, .attachPageContent]
+        }
+        quickActionsView.configure(with: actions)
     }
 
     func scrollQuickActionsToBottom() {

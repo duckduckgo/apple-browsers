@@ -151,11 +151,6 @@ public enum StorePurchaseManagerError: DDGError {
 public protocol StorePurchaseManager {
     typealias TransactionJWS = String
 
-    /// Returns the available subscription options that DON'T include Free Trial periods.
-    /// - Returns: A `SubscriptionOptions` object containing the available subscription plans and pricing,
-    ///           or `nil` if no options are available or cannot be fetched.
-    func subscriptionOptions() async -> SubscriptionOptions?
-
     /// Returns the available subscription tier options.
     /// - Returns: A `Result<SubscriptionTierOptions, StoreError>` where `.success` contains the available subscription tier plans and pricing,
     ///           and `.failure` contains a `StoreError` if no options are available or cannot be fetched.
@@ -265,13 +260,6 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
         Logger.subscriptionStorePurchaseManager.debug("[Store Purchase Manager] All filtered available products: \(nonProTierProducts.map(\.id))")
 
         return nonProTierProducts
-    }
-
-    public func subscriptionOptions() async -> SubscriptionOptions? {
-        let products = await getAvailableProducts(includeProTier: false)
-        let ids = products.map(\.self.id)
-        Logger.subscriptionStorePurchaseManager.debug("Returning SubscriptionOptions for products: \(ids)")
-        return await subscriptionOptions(for: products)
     }
 
     public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StoreError> {
@@ -550,31 +538,6 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
             Logger.subscriptionStorePurchaseManager.log("purchaseSubscription result: unknown")
             return .failure(StorePurchaseManagerError.unknownError)
         }
-    }
-
-    private func subscriptionOptions(for products: [any SubscriptionProduct]) async -> SubscriptionOptions? {
-        Logger.subscription.info("[AppStorePurchaseFlow] subscriptionOptions")
-        let monthly = products.first(where: { $0.isMonthly })
-        let yearly = products.first(where: { $0.isYearly })
-        guard let monthly, let yearly else {
-            Logger.subscription.error("[AppStorePurchaseFlow] No products found")
-            return nil
-        }
-
-        let platform: SubscriptionPlatformName = {
-#if os(iOS)
-           .ios
-#else
-           .macos
-#endif
-        }()
-
-        let options: [SubscriptionOption] = await [.init(from: monthly, withRecurrence: "monthly"),
-                                                   .init(from: yearly, withRecurrence: "yearly")]
-        let features: [SubscriptionEntitlement] = await subscriptionFeatureMappingCache.subscriptionFeatures(for: monthly.id)
-        return SubscriptionOptions(platform: platform,
-                                   options: options,
-                                   availableEntitlements: features)
     }
 
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {

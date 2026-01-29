@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Potrdi";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontekstualno uvajanje";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Preskoči";
 
@@ -2974,6 +2977,9 @@
 /* about tagline */
 "settings.about.tagline" = "Zaščita. Zasebnost. Zaupanje.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo je neodvisno podjetje za spletno zaščito za vse, ki želijo znova prevzeti nadzor nad svojimi osebnimi podatki.\n\nVerjamemo, da je najboljši način za zaščito vaših osebnih podatkov pred hekerji, prevaranti in podjetji, ki posegajo v zasebnost, da preprečimo njihovo zbiranje. Zato na milijone ljudi za iskanje in brskanje po spletu [namesto brskalnika Chrome in drugih brskalnikov izbere DuckDuckGo](ddgQuickLink://duckduckgo.com/compare-privacy). Naš vgrajeni iskalnik je kot Google, vendar nikoli ne sledi vašim iskanjem. Naše zaščite pri brskanju, kot sta blokiranje sledilnikov oglasov in piškotkov, pomagajo drugim podjetjem preprečevati zbiranje vaših podatkov. In še to, naš brskalnik je brezplačen – zaslužimo z [oglasi v iskanju, ki spoštujejo zasebnost](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), ne z izkoriščanjem vaših podatkov. \n\n%@ \n\nPrevzemite nadzor nad svojimi osebnimi podatki z brskalnikom, ki je zasnovan za varstvo podatkov, ne za zbiranje podatkov.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Dostopnost";
 
@@ -2992,8 +2998,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Prikaži polni naslov spletnega mesta";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Prikaži animacijo blokiranih sledilnikov";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Prikaži v naslovni vrstici";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Iskanje in Duck.ai";
@@ -3370,6 +3376,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sinhronizacija in varnostno kopiranje";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Prikaži v upravitelju zavihkov";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Zavihki";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Privzeta povečava besedila";
 
@@ -3378,6 +3390,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Nastavitve";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animacija blokiranih sledilnikov";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Pomaga blokirati sledilnike tretjih oseb, ki se poskušajo prikriti znotraj spletnega mesta z uporabo DNS.";
@@ -3619,11 +3634,11 @@
 /* Help and support Section header */
 "subscription.help" = "Pomoč in podpora";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Upravljanje načrta";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Upravljanje plačila ali preklic";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Upravljanje načrta";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Naročnina";
@@ -3787,6 +3802,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nastavitev sinhronizacije";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Sinhronizirajte in varnostno kopirajte svoje kreditne kartice";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Sinhronizirajte in varnostno kopirajte svoje podatke";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, hvala";
 
@@ -3876,6 +3897,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Dodaj vse zavihke med zaznamke";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Skrij se";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "To lahko znova vklopite, če greste na Nastavitve > Videz.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Želite skriti število sledilnikov?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Možnosti pri številu sledilnikov";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Za prikaz možnosti skrivanja te pasice se dvakrat dotaknite";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Obdrži";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "v zadnjih 7 dneh";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Povečajte ali zmanjšajte velikost besedila na vseh spletnih mestih.";
@@ -4261,15 +4306,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Zavihki";
-"settings.tab.switcher.show.tracker.count" = "Število sledilnikov v zadnjih 7 dneh";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "v zadnjih 7 dneh";
-"tab.switcher.tracker.count.hide.title" = "Skriti število sledilnikov?";
-"tab.switcher.tracker.count.hide.message" = "To lahko znova vklopite v Nastavitve > Videz.";
-"tab.switcher.tracker.count.hide.action" = "Skrij";
-"tab.switcher.tracker.count.keep.action" = "Obdrži";
-"tab.switcher.tracker.count.info.a11y" = "Možnosti števila sledilnikov";
-"tab.switcher.tracker.count.info.hint.a11y" = "Dvakrat tapnite, da prikažete možnosti za skritje tega pasu";

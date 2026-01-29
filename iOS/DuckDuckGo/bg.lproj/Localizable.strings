@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Потвърдете";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Контекстуално въведение";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Пропускане";
 
@@ -2974,6 +2977,9 @@
 /* about tagline */
 "settings.about.tagline" = "Защита. Поверителност. Спокойствие.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo е независима компания за онлайн защита за всеки, който иска да си върне контрола върху личната информация.Ние вярваме, че най-добрият начин за защита на личната информация от хакери, измамници и компании, които не зачитат поверителността, е тя изобщо да не бъде събирана. Ето защо милиони хора [избират DuckDuckGo пред Chrome и други браузъри](ddgQuickLink://duckduckgo.com/compare-privacy) за търсене и сърфиране онлайн. Нашата вградена търсачка е като Google, но никога не следи какво търсите. А нашите защити при сърфиране, като блокиране на рекламни тракери и блокиране на бисквитки, помагат да спрем събирането на Вашите данни от други компании. Освен това нашият браузър е безплатен – ние печелим пари от [реклами при търсене, които зачитат поверителността](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), а не като използваме Вашите данни. \n\n%@ \n\nВърнете си контрола върху личната информация с браузъра, предназначен за защита на данните, а не за събиране на данните.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Достъпност";
 
@@ -2992,8 +2998,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Показване на пълния адрес на сайта";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Показване на анимация за блокирани тракери";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Показване в адресната лента";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Търсене и Duck.ai";
@@ -3370,6 +3376,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Синхронизиране и архивиране";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Показване в мениджъра на разделите";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Раздели";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Мащабиране на текста по подразбиране";
 
@@ -3378,6 +3390,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Настройки";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Анимация за блокирани тракери";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Блокира тракерите на трети страни, които се опитват да се представят като част от уебсайт с помощта на DNS.";
@@ -3619,11 +3634,11 @@
 /* Help and support Section header */
 "subscription.help" = "Помощ и поддръжка";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Управление на плана";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Управлявай плащането или отмени";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Управление на плана";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Абонамент";
@@ -3787,6 +3802,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Настройка на синхронизиране";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Синхронизирай и архивирай кредитните си карти";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Синхронизирай и архивирай данните си";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Не, благодаря";
 
@@ -3876,6 +3897,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Поставяне на всички раздели в отметки";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Скрий";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Можете да го включите отново в Настройки > Външен вид.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Искате ли да скриете брояча на тракери?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Опции за брояч на тракери";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Чукни два пъти, за да покажеш опции за скриване на този банер";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Запазване";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "през последните 7 дни";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Увеличете или намалете размера на текста във всички сайтове.";
@@ -4261,15 +4306,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Какво искате да импортирате?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Раздели";
-"settings.tab.switcher.show.tracker.count" = "Брой тракери за 7 дни";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "през последните 7 дни";
-"tab.switcher.tracker.count.hide.title" = "Да се скрие броят на тракерите?";
-"tab.switcher.tracker.count.hide.message" = "Можете да включите това отново в Настройки > Външен вид.";
-"tab.switcher.tracker.count.hide.action" = "Скрий";
-"tab.switcher.tracker.count.keep.action" = "Запази";
-"tab.switcher.tracker.count.info.a11y" = "Опции за броя на тракерите";
-"tab.switcher.tracker.count.info.hint.a11y" = "Докоснете два пъти, за да покажете опциите за скриване на този банер";

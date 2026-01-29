@@ -3,7 +3,7 @@
 String Extraction Verification Script
 
 Verifies that NSLocalizedString calls in source code have been extracted to
-.xcstrings files.
+string files (.xcstrings, .strings).
 
 Usage:
     python3 verify_string_extraction.py --platform iOS
@@ -24,7 +24,9 @@ from typing import Dict, List, Optional, Set, Tuple
 from localization_utils import (
     get_base_branch,
     get_changed_files,
+    get_files_content_at_base,
     get_search_paths,
+    parse_strings_file,
     parse_xcstrings,
 )
 
@@ -162,13 +164,17 @@ def extract_string_value_for_key(content: str, key: str) -> Optional[str]:
 
 def find_string_files(paths: List[str]) -> Dict[str, List[str]]:
     """
-    Find .xcstrings files in the specified paths.
+    Find English string files in the specified paths.
+
+    For .xcstrings files: includes all (keys are language-agnostic)
+    For .strings files: only includes files in en.lproj directories
 
     Returns:
-        Dict with 'xcstrings' key mapping to list of file paths
+        Dict mapping file type (xcstrings, strings) to list of file paths
     """
     files = {
-        'xcstrings': []
+        'xcstrings': [],
+        'strings': []
     }
 
     for search_path in paths:
@@ -177,9 +183,15 @@ def find_string_files(paths: List[str]) -> Dict[str, List[str]]:
 
         for root, _, filenames in os.walk(search_path):
             for filename in filenames:
+                file_path = os.path.join(root, filename)
                 if filename.endswith('.xcstrings'):
-                    file_path = os.path.join(root, filename)
+                    # .xcstrings files contain all locales, keys are language-agnostic
                     files['xcstrings'].append(file_path)
+                elif filename.endswith('.strings'):
+                    # Only check English .strings files
+                    parent_dir = os.path.basename(root)
+                    if parent_dir == 'en.lproj':
+                        files['strings'].append(file_path)
 
     return files
 
@@ -195,15 +207,32 @@ def check_key_in_xcstrings(key: str, file_path: str) -> bool:
     strings = data.get("strings", {})
     return key in strings
 
+def check_key_in_strings(key: str, file_path: str) -> bool:
+    """Check if a key exists in a .strings file."""
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except UnicodeDecodeError:
+        return False
+    except FileNotFoundError:
+        return False
+
+    strings = parse_strings_file(content)
+    return key in strings
+
 def find_key_in_string_files(key: str, string_files: Dict[str, List[str]]) -> Optional[str]:
     """
-    Find which .xcstrings file contains the given key.
+    Find which string file contains the given key.
 
     Returns:
         Path to the file containing the key, or None if not found
     """
     for file_path in string_files.get('xcstrings', []):
         if check_key_in_xcstrings(key, file_path):
+            return file_path
+
+    for file_path in string_files.get('strings', []):
+        if check_key_in_strings(key, file_path):
             return file_path
 
     return None
@@ -327,14 +356,14 @@ def main():
     missing_new_keys, missing_modified_keys = verify_string_changes(args.platform)
 
     if not missing_new_keys and not missing_modified_keys:
-        print("\n✅ All NSLocalizedString calls have been extracted to .xcstrings files")
+        print("\n✅ All NSLocalizedString calls have been extracted to string files")
         sys.exit(0)
 
     # Report issues
     lines = []
 
     if missing_new_keys:
-        lines.append("\n❌ New strings missing from .xcstrings files:")
+        lines.append("\n❌ New strings missing from string files:")
         # Group keys by file_path
         keys_by_file: Dict[str, List[str]] = {}
         for item in missing_new_keys:
@@ -350,7 +379,7 @@ def main():
                 lines.append(f"     Key: {key}")
 
     if missing_modified_keys:
-        lines.append("\n❌ Modified strings not updated in .xcstrings files:")
+        lines.append("\n❌ Modified strings not updated in string files:")
         # Group keys by file_path
         keys_by_file: Dict[str, List[str]] = {}
         for item in missing_modified_keys:
@@ -365,7 +394,7 @@ def main():
             for key in sorted(keys_by_file[file_path]):
                 lines.append(f"     Key: {key}")
 
-    lines.append("\n💡 Please build the app and commit the corresponding .xcstrings files.")
+    lines.append("\n💡 Please build the app and commit the corresponding string files.")
 
     print("\n".join(lines))
     sys.exit(1)

@@ -343,7 +343,9 @@ jobs:
       id: changed-strings-files
       run: |
         changed_files=$(git diff --name-only HEAD -- ':(glob)**/*.strings' || true)
-        echo "changed_files=$changed_files" >> $GITHUB_OUTPUT
+        echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+        echo "$changed_files" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
   translation-check:
     name: Translated Strings

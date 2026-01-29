@@ -2830,8 +2830,8 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Show Full Site Address";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Show Trackers Blocked Animation";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Show in Address Bar";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";
@@ -3208,8 +3208,8 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sync & Backup";
 
-/* Settings screen cell title for toggling tracker count banner in tab switcher */
-"settings.tab.switcher.show.tracker.count" = "7-Day Tracker Count";
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Show in Tabs Manager";
 
 /* Settings screen section title for tab-related appearance options */
 "settings.tabs" = "Tabs";
@@ -3222,6 +3222,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Title for the Settings View */
 "settings.title" = "Settings";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Trackers Blocked Animation";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.";

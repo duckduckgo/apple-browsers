@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Zrušit";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Zapnout synchronizaci a zálohování";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Na zabezpečeném serveru DuckDuckGo se vytvoří šifrovaná záloha záložek a dat automatického vyplňování, kterou můžeš synchronizovat s ostatními zařízeními.";
 

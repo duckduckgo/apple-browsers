@@ -22,7 +22,7 @@ import Foundation
 struct UserText {
 
     static let favoritesWidgetGalleryDisplayName = NSLocalizedString("widget.gallery.search.and.favorites.display.name",
-                                                                     value: "Search and Favorites",
+                                                                     value: "Search and Favorites TEST",
                                                                      comment: "Display name for search and favorites widget in widget gallery")
 
     static let favoritesWidgetGalleryDescription = NSLocalizedString("widget.gallery.search.and.favorites.description",

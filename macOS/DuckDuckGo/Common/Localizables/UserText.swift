@@ -22,7 +22,7 @@ import BrowserServicesKit
 
 struct UserText {
 
-    static let duckDuckGo = NSLocalizedString("about.app_name", value: "DuckDuckGo", comment: "Application name to be displayed in the About dialog")
+    static let duckDuckGo = NSLocalizedString("about.app_name", value: "DuckDuckGo TEST", comment: "Application name to be displayed in the About dialog")
     static let duckDuckGoForMacAppStore = NSLocalizedString("about.app_name_app_store", value: "DuckDuckGo for Mac App Store", comment: "Application name to be displayed in the About dialog in App Store app")
 
     // MARK: - Generic

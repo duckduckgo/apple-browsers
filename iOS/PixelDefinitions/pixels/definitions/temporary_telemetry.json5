@@ -5,7 +5,7 @@
         "description": "Fires daily when user has Fire Rising selected as their clear data animation",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -13,7 +13,7 @@
         "description": "Fires daily when user has Water Swirl selected as their clear data animation",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -21,7 +21,7 @@
         "description": "Fires daily when user has Airstream selected as their clear data animation",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -29,7 +29,7 @@
         "description": "Fires daily when user has no animation selected as their clear data animation",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -37,7 +37,7 @@
         "description": "Fires daily when user has Share customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -45,7 +45,7 @@
         "description": "Fires daily when user has Bookmark customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -53,7 +53,7 @@
         "description": "Fires daily when user has Favorite customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -61,7 +61,7 @@
         "description": "Fires daily when user has Voice Search customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -69,7 +69,7 @@
         "description": "Fires daily when user has Zoom customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -77,7 +77,7 @@
         "description": "Fires daily when user has no button customized for their address bar",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -85,7 +85,7 @@
         "description": "Fires daily when user has Home customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -93,7 +93,7 @@
         "description": "Fires daily when user has New Tab customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -101,7 +101,7 @@
         "description": "Fires daily when user has Bookmarks customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -109,7 +109,7 @@
         "description": "Fires daily when user has Downloads customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -117,7 +117,7 @@
         "description": "Fires daily when user has Fire customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -125,7 +125,7 @@
         "description": "Fires daily when user has VPN customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -133,7 +133,7 @@
         "description": "Fires daily when user has Passwords customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -141,7 +141,7 @@
         "description": "Fires daily when user has Share customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -149,7 +149,7 @@
         "description": "Fires daily when user has Bookmark customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -157,7 +157,7 @@
         "description": "Fires daily when user has Favorite customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -165,7 +165,7 @@
         "description": "Fires daily when user has Voice Search customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -173,7 +173,7 @@
         "description": "Fires daily when user has Zoom customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -181,7 +181,7 @@
         "description": "Fires daily when user has no button customized for their toolbar",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -189,7 +189,7 @@
         "description": "Fires daily when user has Home customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -197,7 +197,7 @@
         "description": "Fires daily when user has New Tab customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -205,7 +205,7 @@
         "description": "Fires daily when user has Bookmarks customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -213,7 +213,7 @@
         "description": "Fires daily when user has Downloads customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -221,7 +221,7 @@
         "description": "Fires daily when user has Fire customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -229,7 +229,7 @@
         "description": "Fires daily when user has VPN customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
@@ -237,7 +237,7 @@
         "description": "Fires daily when user has Passwords customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     }

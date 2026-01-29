@@ -29,7 +29,7 @@ struct ContextualDaxDialogsProviderTests {
         "Check Rebranding Factory is Used When Onboarding Rebranding Feature Flag is On",
         arguments: [DaxDialogs.BrowsingSpec.afterSearch, .visitWebsite, .withoutTrackers, .siteIsMajorTracker, .siteOwnedByMajorTracker, .withOneTracker, .withMultipleTrackers, .fire, .final]
     )
-    func checkLegacyFactoryIsUsedWhenOnboardingRebrandingFlagIsOn(browsingSpec: DaxDialogs.BrowsingSpec) throws {
+    func checkRebrandingFactoryIsUsedWhenOnboardingRebrandingFlagIsOn(browsingSpec: DaxDialogs.BrowsingSpec) throws {
         // GIVEN
         let featureFlaggerMock = MockFeatureFlagger(enabledFeatureFlags: [.onboardingRebranding])
         let legacyDaxDialogFactoryMock = MockContextualDaxDialogsFactory()

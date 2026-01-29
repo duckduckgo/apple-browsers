@@ -478,9 +478,9 @@ platform :ios do
     UI.message("Generated metadata:")
     UI.message(JSON.pretty_generate(updated_metadata))
     
-    # Upload to S3
+    # Upload to S3 with retry capability
     UI.message("Uploading ios_release_metadata.json to S3...")
-    sh("aws s3 cp ios_release_metadata.json '#{s3_path}ios_release_metadata.json' --acl public-read")
+    sh("AWS_MAX_ATTEMPTS=5 aws s3 cp ios_release_metadata.json '#{s3_path}ios_release_metadata.json' --acl public-read")
     
     UI.success("✅ Successfully updated iOS release metadata")
     UI.message("Version: #{version}")

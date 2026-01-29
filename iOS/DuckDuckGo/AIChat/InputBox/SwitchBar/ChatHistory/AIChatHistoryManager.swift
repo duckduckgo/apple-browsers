@@ -117,9 +117,10 @@ final class AIChatHistoryManager {
         let reader = suggestionsReader
         let viewModel = viewModel
         let effectiveQuery = query.isEmpty ? nil : query
+        let maxChats = viewModel.maxSuggestions
 
         currentFetchTask = Task {
-            let suggestions = await reader.fetchSuggestions(query: effectiveQuery)
+            let suggestions = await reader.fetchSuggestions(query: effectiveQuery, maxChats: maxChats)
             guard !Task.isCancelled else { return }
             viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
         }

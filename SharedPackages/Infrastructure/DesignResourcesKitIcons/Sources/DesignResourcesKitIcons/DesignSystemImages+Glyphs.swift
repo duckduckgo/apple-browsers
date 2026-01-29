@@ -446,6 +446,7 @@ public extension DesignSystemImages {
             public static var note: DesignSystemImage { .init(resource: .note24) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn24) }
             public static var paste: DesignSystemImage { .init(resource: .paste24) }
+            public static var pin: DesignSystemImage { .init(resource: .pin24) }
             public static var phone: DesignSystemImage { .init(resource: .phone24) }
             public static var platformPlayStore: DesignSystemImage { .init(resource: .platformPlayStore24) }
             public static var pointUp: DesignSystemImage { .init(resource: .pointUp24) }

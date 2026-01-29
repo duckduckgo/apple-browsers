@@ -48,7 +48,7 @@ class WarnBeforeQuitUITests: UITestCase {
             app.menuItems["Close Tab"].click()
         }
         app.enforceSingleWindow()
-        XCTAssertEqual(app.pinnedTabs.count, 0, "Should have no regular tabs open")
+        XCTAssertEqual(app.pinnedTabs.count, 0, "Should have no pinned tabs open")
         XCTAssertEqual(app.tabs.count, 1)
     }
 

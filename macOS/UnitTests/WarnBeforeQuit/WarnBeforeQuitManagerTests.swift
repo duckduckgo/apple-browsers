@@ -1046,6 +1046,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let eventRepostedExpectation = expectation(description: "Event reposted")
         var repostedEvent: NSEvent?
         let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
+            Logger.tests.warning("Event received \(String(describing: event))")
             repostedEvent = event
             eventRepostedExpectation.fulfill()
             return event
@@ -1090,6 +1091,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Simulate left mouse click
         let mouseClick = createMouseEvent(type: .leftMouseDown)
+        Logger.tests.warning("Sending event \(String(describing: event)); Screens: \(NSScreen.screens.map { NSStringFromRect($0.frame) }.joined(separator: ", ")))")
         NSApp.sendEvent(mouseClick)
 
         // Wait for completion

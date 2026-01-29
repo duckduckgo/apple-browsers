@@ -86,6 +86,9 @@ class WarnBeforeQuitUITests: UITestCase {
         // Given - window is open
         app.openNewWindow()
 
+        // Hover over tab bar to prevent hover-pause of timer
+        app.tabs.firstMatch.hover()
+
         // When - press Cmd+Q once and let it timeout
         app.typeKey("q", modifierFlags: [.command])
         XCTAssertTrue(
@@ -186,6 +189,9 @@ class WarnBeforeQuitUITests: UITestCase {
 
         // Test 1: Early key release (Q released before threshold while holding Cmd)
         app.openNewWindow()
+
+        // Hover over tab bar to ensure overlay is not paused
+        app.tabs.firstMatch.hover()
 
         XCUIElement.perform(withKeyModifiers: [.command]) {
             app.keyDown(keyCode: kVK_ANSI_Q)
@@ -293,6 +299,9 @@ class WarnBeforeQuitUITests: UITestCase {
             "Should have 1 pinned tab"
         )
 
+        // Hover over pinned tab to ensure overlay is not paused
+        app.pinnedTabs.firstMatch.hover()
+
         XCUIElement.perform(withKeyModifiers: [.command]) {
             app.keyDown(keyCode: kVK_ANSI_W)
             RunLoop.current.run(until: Date().addingTimeInterval(0.1))
@@ -339,10 +348,8 @@ class WarnBeforeQuitUITests: UITestCase {
         // When - close first tab with double-press
         app.typeKey("w", modifierFlags: [.command])
 
-        XCTAssertTrue(
-            closeOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Overlay should appear"
-        )
+        closeOverlay.hover()
+        XCTAssertTrue(closeOverlay.exists)
 
         // Then immediately press and hold Cmd+W to close first tab
         XCUIElement.perform(withKeyModifiers: [.command]) {
@@ -398,15 +405,8 @@ class WarnBeforeQuitUITests: UITestCase {
         app.openNewWindow()
         app.typeKey("q", modifierFlags: [.command])
 
-        XCTAssertTrue(
-            quitOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Overlay should appear"
-        )
-
-        // When - hover over "Don't Show Again" button
-        XCTAssertTrue(dontShowAgainButton.exists, "Don't Show Again button should be visible")
-
-        dontShowAgainButton.hover()
+        // When - hover over the dialog
+        quitOverlay.hover()
 
         RunLoop.current.run(until: Date().addingTimeInterval(5))
         // Then - overlay should remain visible while hovering
@@ -466,7 +466,8 @@ class WarnBeforeQuitUITests: UITestCase {
         // When - in active window, show overlay and click "Don't Show Again"
         app.typeKey("q", modifierFlags: [.command])
 
-        XCTAssertTrue(quitOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        quitOverlay.hover()
+        XCTAssertTrue(quitOverlay.exists)
 
         dontShowAgainButton.click()
 
@@ -507,7 +508,8 @@ class WarnBeforeQuitUITests: UITestCase {
         // When - in active window, show overlay and click "Don't Show Again"
         app.typeKey("w", modifierFlags: [.command])
 
-        XCTAssertTrue(closeOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        closeOverlay.hover()
+        XCTAssertTrue(closeOverlay.exists)
 
         dontShowAgainButton.click()
 

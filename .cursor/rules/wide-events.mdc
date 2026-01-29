@@ -115,7 +115,7 @@ public enum WideEventStatus: Codable, Equatable {
 ```
 
 - Success and failure cases are used when a user journey definitively ends with one of these two conclusions.
-- Cancelled events are sent when a user explicitly chooses to abandon a journey, like cancelling  out of a subscription purchase.
+- Cancelled events are sent when a user explicitly chooses to abandon a journey, like cancelling out of a subscription purchase.
 - Unknown events are when something happened during the journey to cause it to stop or time out unexpectedly.
 
 ### WideEvent.MeasuredInterval

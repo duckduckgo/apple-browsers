@@ -172,7 +172,7 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
 
         let chat = chats[indexPath.row]
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
-        Pixel.fire(pixel: pixel)
+        DailyPixel.fireDailyAndCount(pixel: pixel)
         onChatSelected(chat)
     }
 

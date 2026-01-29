@@ -122,8 +122,6 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
     var shouldResetClickCountForNextEventOfTypes: Set<NSEvent.EventType>?
 
     public func installEventInterceptor(token: UUID, interceptor: @escaping (NSEvent) -> NSEvent?) {
-        // Only install if no existing interceptor or token matches
-        guard eventInterceptor == nil || eventInterceptor?.token == token else { return }
         eventInterceptor = (token: token, interceptor: interceptor)
     }
 

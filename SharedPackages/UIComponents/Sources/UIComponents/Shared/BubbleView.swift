@@ -32,6 +32,7 @@ struct Bubble: InsettableShape {
     let finTipRadius: CGFloat
     let finTipRoundness: CGFloat
 
+    // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
 
         let radius = max(0, cornerRadius)
@@ -97,18 +98,18 @@ struct Bubble: InsettableShape {
         let halfArrowWidth = arrowWidth / 2
         var p1, p2: CGPoint
         switch arrowEdge {
-            case .top:
-                p1 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY)
-                p2 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY)
-            case .right:
-                p1 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth)
-                p2 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth)
-            case .bottom:
-                p1 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY)
-                p2 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY)
-            case .left:
-                p1 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth)
-                p2 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth)
+        case .top:
+            p1 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY)
+            p2 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY)
+        case .right:
+            p1 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth)
+            p2 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth)
+        case .bottom:
+            p1 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY)
+            p2 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY)
+        case .left:
+            p1 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth)
+            p2 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth)
         }
 
         let outwardNormal = Bubble.outwardNormal(for: arrowEdge)
@@ -164,22 +165,21 @@ struct Bubble: InsettableShape {
 
     private static func outwardNormal(for edge: Edge) -> CGPoint {
         switch edge {
-            case .top: return CGPoint(x: 0, y: -1)
-            case .right: return CGPoint(x: 1, y: 0)
-            case .bottom: return CGPoint(x: 0, y: 1)
-            case .left: return CGPoint(x: -1, y: 0)
+        case .top: return CGPoint(x: 0, y: -1)
+        case .right: return CGPoint(x: 1, y: 0)
+        case .bottom: return CGPoint(x: 0, y: 1)
+        case .left: return CGPoint(x: -1, y: 0)
         }
     }
 
     private static func edgeTangent(for edge: Edge) -> CGPoint {
         switch edge {
-            case .top: return CGPoint(x: 1, y: 0)
-            case .right: return CGPoint(x: 0, y: 1)
-            case .bottom: return CGPoint(x: -1, y: 0)
-            case .left: return CGPoint(x: 0, y: -1)
+        case .top: return CGPoint(x: 1, y: 0)
+        case .right: return CGPoint(x: 0, y: 1)
+        case .bottom: return CGPoint(x: -1, y: 0)
+        case .left: return CGPoint(x: 0, y: -1)
         }
     }
-
 
     private static func addFin(
         to path: inout Path,
@@ -310,7 +310,6 @@ struct Bubble: InsettableShape {
 
 }
 
-
 // MARK: - Bubble View Definition
 
 /// A view that displays content within a bubble shape, automatically sizing to the content.
@@ -380,10 +379,15 @@ public struct BubbleView<Content: View>: View {
         let effectivePercent = min(99.9, max(0.1, adjustedPercent)) / 100.0
         let targetFlatDistance = flatPerimeter * effectivePercent
 
-        if targetFlatDistance <= flatWidth { return .top }
-        else if targetFlatDistance <= flatWidth + flatHeight { return .right }
-        else if targetFlatDistance <= 2 * flatWidth + flatHeight { return .bottom }
-        else { return .left }
+        if targetFlatDistance <= flatWidth {
+            return .top
+        } else if targetFlatDistance <= flatWidth + flatHeight {
+            return .right
+        } else if targetFlatDistance <= 2 * flatWidth + flatHeight {
+            return .bottom
+        } else {
+            return .left
+        }
     }
 
     private var finDepth: CGFloat {
@@ -436,7 +440,6 @@ public struct BubbleView<Content: View>: View {
          self.content = content()
      }
 }
-
 
 // MARK: - Preview
 

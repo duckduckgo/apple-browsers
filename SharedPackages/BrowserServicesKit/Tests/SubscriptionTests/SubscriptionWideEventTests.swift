@@ -339,7 +339,7 @@ final class SubscriptionWideEventTests: XCTestCase {
         XCTAssert(firedPixels.count >= 1 && firedPixels.count <= 2)
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.status"], "UNKNOWN")
-        XCTAssertEqual(params["feature.status_reason"], "activation_timeout")
+        XCTAssertEqual(params["feature.data.ext.status_reason"], "activation_timeout")
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "300000") // Max bucket
     }
 

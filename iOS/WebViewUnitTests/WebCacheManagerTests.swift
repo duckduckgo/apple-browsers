@@ -236,7 +236,7 @@ class WebCacheManagerTests: XCTestCase {
         await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "sub.test.com"])
 
         // Verify cookies for exact domain and dot-prefixed domain were removed
-        // Note: sub.example.com is a distinct host and not matched when clearing example.com
+        // Note: .test.com cookie is matched when clearing sub.test.com because dot-prefixed cookies apply to subdomains
         XCTAssertEqual(3, mockCookieStore.cookiesThatWereDeleted.count)
         XCTAssertTrue(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "Cookie1" })
         XCTAssertTrue(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "Cookie2" })

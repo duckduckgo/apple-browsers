@@ -26,6 +26,7 @@ protocol TextZoomStoring {
     func set(textZoomLevel: TextZoomLevel, forDomain domain: String)
     func removeTextZoomLevel(forDomain domain: String)
     func resetTextZoomLevels(excludingDomains: [String])
+    func resetTextZoomLevels(forDomains: [String])
 }
 
 class TextZoomStorage: TextZoomStoring {
@@ -54,6 +55,14 @@ class TextZoomStorage: TextZoomStoring {
             excludingDomains.contains(where: {
                 tld.eTLDplus1($0) == level.key
             })
+        }
+    }
+    
+    func resetTextZoomLevels(forDomains domains: [String]) {
+        let tld = TLD()
+        let domainsToRemove = Set(domains.compactMap { tld.eTLDplus1($0) })
+        textZoomLevels = textZoomLevels.filter { level in
+            !domainsToRemove.contains(level.key)
         }
     }
 

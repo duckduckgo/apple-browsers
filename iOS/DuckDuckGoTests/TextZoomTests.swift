@@ -127,6 +127,36 @@ final class TextZoomTests: XCTestCase {
         XCTAssertEqual(coordinator.textZoomLevel(forHost: host2), AppSettingsMock().defaultTextZoomLevel)
     }
 
+    func testResetTextZoomLevelsForDomains_ClearsSpecifiedDomains() {
+        let host1 = "example.com"
+        let host2 = "another.org"
+
+        let storage = TextZoomStorage()
+        storage.textZoomLevels = [:]
+
+        let coordinator: TextZoomCoordinating = makeTextZoomCoordinator(storage: storage)
+        coordinator.set(textZoomLevel: .percent120, forHost: host1)
+        coordinator.set(textZoomLevel: .percent140, forHost: host2)
+
+        coordinator.resetTextZoomLevels(forDomains: [host1])
+
+        XCTAssertEqual(coordinator.textZoomLevel(forHost: host1), AppSettingsMock().defaultTextZoomLevel)
+        XCTAssertEqual(coordinator.textZoomLevel(forHost: host2), .percent140)
+    }
+
+    func testResetTextZoomLevelsForDomains_SubdomainClearsETLDplus1() {
+        let storage = TextZoomStorage()
+        storage.textZoomLevels = [:]
+
+        let coordinator: TextZoomCoordinating = makeTextZoomCoordinator(storage: storage)
+        coordinator.set(textZoomLevel: .percent120, forHost: "example.com")
+
+        // Passing a subdomain should clear the eTLD+1 stored value
+        coordinator.resetTextZoomLevels(forDomains: ["www.example.com"])
+
+        XCTAssertEqual(coordinator.textZoomLevel(forHost: "example.com"), AppSettingsMock().defaultTextZoomLevel)
+    }
+
     private func makeTextZoomCoordinator(
         appSettings: AppSettings = AppSettingsMock(),
         storage: TextZoomStoring = MockTextZoomStorage()
@@ -155,6 +185,9 @@ private class MockTextZoomStorage: TextZoomStoring {
     }
     
     func resetTextZoomLevels(excludingDomains: [String]) {
+    }
+
+    func resetTextZoomLevels(forDomains: [String]) {
     }
 
 }

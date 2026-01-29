@@ -266,6 +266,11 @@ class FireExecutor: FireExecuting {
         textZoomCoordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
     }
     
+    private func forgetTextZoom(forDomains domains: [String]) {
+        let domainsToReset = domains.filter { !fireproofing.isAllowed(fireproofDomain: $0) }
+        textZoomCoordinator.resetTextZoomLevels(forDomains: domainsToReset)
+    }
+    
     @MainActor
     private func burnData(scope: FireRequest.Scope, applicationState: DataStoreWarmup.ApplicationState) async {
         guard !burnInProgress else {
@@ -323,6 +328,8 @@ class FireExecutor: FireExecuting {
         await websiteDataManager.clear(dataStore: storeToUse, forDomains: domainsToClear)
         
         AutoconsentManagement.shared.clearCache(forDomains: domainsToClear)
+        
+        forgetTextZoom(forDomains: domainsToClear)
     }
     
     // MARK: - Clear AI History

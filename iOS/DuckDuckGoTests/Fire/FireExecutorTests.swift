@@ -453,6 +453,10 @@ final class FireExecutorTests: XCTestCase {
         // Then - Verify website data is cleared
         XCTAssertEqual(mockWebsiteDataManager.clearWithDomainsCallCount, 1)
         XCTAssertEqual(mockWebsiteDataManager.clearCalledWithDomains, ["test.com"])
+
+        // Then - Verify text zoom is reset for the visited domains
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForDomainsCallCount, 1)
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForDomains, ["test.com"])
     }
     
     

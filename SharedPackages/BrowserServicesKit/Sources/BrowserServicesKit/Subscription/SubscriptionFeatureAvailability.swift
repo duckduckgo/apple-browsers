@@ -22,7 +22,6 @@ import Subscription
 
 public enum SubscriptionPageFeatureFlag {
     case paidAIChat
-    case tierMessaging
     case proTierPurchase
     case supportsAlternateStripePaymentFlow
 }
@@ -34,7 +33,6 @@ public protocol SubscriptionPageFeatureFlagProviding {
 public protocol SubscriptionFeatureAvailability {
     var isSubscriptionPurchaseAllowed: Bool { get }
     var isPaidAIChatEnabled: Bool { get }
-    var isTierMessagingEnabled: Bool { get }
     var isProTierPurchaseEnabled: Bool { get }
     /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.
     var isSupportsAlternateStripePaymentFlowEnabled: Bool { get }
@@ -75,10 +73,6 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
 
     public var isPaidAIChatEnabled: Bool {
         return featureFlagProvider.isEnabled(.paidAIChat)
-    }
-
-    public var isTierMessagingEnabled: Bool {
-        return featureFlagProvider.isEnabled(.tierMessaging)
     }
 
     public var isProTierPurchaseEnabled: Bool {

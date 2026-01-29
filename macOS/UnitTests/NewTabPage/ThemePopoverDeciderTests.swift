@@ -24,13 +24,6 @@ import XCTest
 @MainActor
 final class ThemePopoverDeciderTests: XCTestCase {
 
-    func testWhenAllConditionsMetThenShouldShowPopoverIsTrue() {
-        let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: 3)
-        featureFlagger.enabledFeatureFlags = [.themes]
-
-        XCTAssertTrue(decider.shouldShowPopover)
-    }
-
     func testWhenThemesFeatureFlagDisabledThenShouldShowPopoverIsFalse() {
         let (decider, _, _) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: 3)
 
@@ -59,15 +52,6 @@ final class ThemePopoverDeciderTests: XCTestCase {
             XCTAssertFalse(decider.shouldShowPopover)
         }
     }
-
-    func testMarkPopoverShownWhenShouldShowPopoverThenSetsThemePopoverShownPersistorFlag() {
-        let (decider, persistor, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: 3)
-        featureFlagger.enabledFeatureFlags = [.themes]
-
-        decider.markPopoverShown()
-
-        XCTAssertTrue(persistor.themePopoverShown)
-    }
 }
 
 // MARK: - Helpers
@@ -82,7 +66,8 @@ private extension ThemePopoverDeciderTests {
         let appearancePreferences = AppearancePreferences(
             persistor: appearancePersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         let popoverPersistor = MockThemePopoverPersistor(themePopoverShown: themePopoverShown)

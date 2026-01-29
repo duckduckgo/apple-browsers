@@ -103,6 +103,8 @@ public struct PixelParameters {
 
     public static let isInternalUser = "is_internal_user"
 
+    public static let enabled = "enabled"
+
     // Email manager
     public static let emailKeychainAccessType = "access_type"
     public static let emailKeychainError = "error"

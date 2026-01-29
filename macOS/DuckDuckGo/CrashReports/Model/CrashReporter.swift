@@ -64,7 +64,8 @@ final class CrashReporter {
                 let parameters = [PixelKit.Parameters.appVersion: appVersion]
                 PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard, withAdditionalParameters: parameters, includeAppVersionParameter: false)
             } else {
-                PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard)
+                let parameters = ["failedToReadCrashVersion": "true"]
+                PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard, withAdditionalParameters: parameters)
             }
         }
 
@@ -80,6 +81,7 @@ final class CrashReporter {
         for crashReport in crashReports {
             guard let contentData = crashReport.contentData else {
                 assertionFailure("CrashReporter: Can't get the content of the crash report")
+                PixelKit.fire(GeneralPixel.crashReportingFailedToReadContents, frequency: .dailyAndStandard)
                 continue
             }
             let result = await sender.send(contentData, crcid: crcidManager.crcid)

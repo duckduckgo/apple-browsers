@@ -83,7 +83,6 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .paidAIChat,
                 .supportsAlternateStripePaymentFlow,
                 .blackFridayCampaign,
-                .tierMessagingEnabled,
                 .allowProTierPurchase:
             return .subscription
         case .popupBlocking,

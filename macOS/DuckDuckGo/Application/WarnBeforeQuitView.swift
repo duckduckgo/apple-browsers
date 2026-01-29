@@ -218,16 +218,9 @@ final class PreviewStartupPreferencesPersistor: StartupPreferencesPersistor {
 
 /// Helper to create StartupPreferences for previews
 func makePreviewStartupPreferences(restorePreviousSession: Bool) -> StartupPreferences {
-    let appearancePersistor = AppearancePreferencesPersistorMock()
-    let appearancePrefs = AppearancePreferences(
-        persistor: appearancePersistor,
-        privacyConfigurationManager: nil,
-        featureFlagger: nil
-    )
-
-    return StartupPreferences(
+    StartupPreferences(
         persistor: PreviewStartupPreferencesPersistor(restorePreviousSession: restorePreviousSession),
-        appearancePreferences: appearancePrefs
+        appearancePreferences: .mock
     )
 }
 

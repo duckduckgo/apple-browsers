@@ -22,6 +22,7 @@ import UIKit
 import PixelKit
 import os.log
 
+@MainActor
 final class AutoconsentManagement {
     static let shared = AutoconsentManagement()
 
@@ -117,11 +118,21 @@ final class AutoconsentManagement {
     }
 
     func clearCache() {
-        dispatchPrecondition(condition: .onQueue(.main))
         sitesNotifiedCache.removeAll()
         detectedByPatternsCache.removeAll()
         detectedByBothCache.removeAll()
         detectedOnlyRulesCache.removeAll()
+    }
+    
+    func clearCache(forDomains domains: [String]) {
+        let domainSet = Set(domains)
+
+        // sitesNotifiedCache stores hosts directly
+        sitesNotifiedCache = sitesNotifiedCache.filter { host in
+            !domainSet.contains(where: { domain in
+                host == domain || host.hasSuffix(".\(domain)")
+            })
+        }
     }
 
 }

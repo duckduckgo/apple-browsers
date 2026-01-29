@@ -321,6 +321,8 @@ class FireExecutor: FireExecuting {
         //  this is the same as `WKWebsiteDataStore.default()`
         let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
         await websiteDataManager.clear(dataStore: storeToUse, forDomains: domainsToClear)
+        
+        AutoconsentManagement.shared.clearCache(forDomains: domainsToClear)
     }
     
     // MARK: - Clear AI History

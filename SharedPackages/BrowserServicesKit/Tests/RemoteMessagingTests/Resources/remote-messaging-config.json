@@ -181,7 +181,7 @@
             "primaryActionText": "PIR Action",
             "primaryAction": {
                 "type": "navigation",
-                "value": "personalInformationRemoval"
+                "value": "pir.main"
             }
         }
     }

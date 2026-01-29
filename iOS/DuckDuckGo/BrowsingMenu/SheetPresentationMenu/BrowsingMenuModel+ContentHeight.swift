@@ -25,9 +25,9 @@ extension BrowsingMenuModel {
     func estimatedContentHeight(includesWebsiteHeader: Bool) -> CGFloat {
         typealias Metrics = BrowsingMenuSheetView.Metrics
 
-        let headerFont = UIFont.daxFootnoteRegular()
+        let headerFont = UIFont.daxCaption()
         let rowFont = UIFont.daxBodyRegular()
-        let iconHeight: CGFloat = 24
+        let iconHeight = Metrics.headerButtonIconSize
 
         let headerContentHeight = iconHeight + Metrics.headerButtonIconTextSpacing + headerFont.lineHeight
         let headerButtonsHeight = headerItems.isEmpty ? 0 : headerContentHeight + (Metrics.headerButtonVerticalPadding * 2)

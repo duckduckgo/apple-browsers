@@ -827,3 +827,114 @@ extension URLExtensionTests {
         }
     }
 }
+
+// MARK: - DuckDuckGo URL Tests
+
+extension URLExtensionTests {
+
+    // MARK: - Base URL Configuration Tests
+
+    /// These tests verify that the DuckDuckGo static URL properties return the expected
+    /// default URLs. In unit test mode, environment variable overrides are not allowed
+    /// (security gating ensures only internal users, CI, or UI tests can override URLs),
+    /// so these tests verify the production-safe default behavior.
+    ///
+    /// For testing URL overrides, use UI tests with `launchEnvironment`:
+    /// ```swift
+    /// app.launchEnvironment = ["BASE_URL": "http://localhost:8080"]
+    /// app.launch()
+    /// ```
+
+    @Test("DuckDuckGo base URLs return production defaults in unit tests")
+    func duckDuckGoBaseURLsReturnProductionDefaults() {
+        // Base DuckDuckGo URL
+        #expect(URL.duckDuckGo.absoluteString == "https://duckduckgo.com/")
+
+        // Duck.ai URL
+        #expect(URL.duckAi.absoluteString == "https://duck.ai/")
+    }
+
+    @Test("DuckDuckGo derived URLs use correct base")
+    func duckDuckGoDerivedURLsUseCorrectBase() {
+        // URLs that should derive from the base DuckDuckGo URL
+        #expect(URL.aboutDuckDuckGo.absoluteString == "https://duckduckgo.com/about")
+        #expect(URL.updates.absoluteString == "https://duckduckgo.com/updates")
+        #expect(URL.searchSettings.absoluteString == "https://duckduckgo.com/settings/")
+        #expect(URL.privacyPolicy.absoluteString == "https://duckduckgo.com/privacy")
+        #expect(URL.termsOfService.absoluteString == "https://duckduckgo.com/terms")
+        #expect(URL.subscription.absoluteString == "https://duckduckgo.com/pro")
+    }
+
+    @Test("DuckDuckGo autocomplete URL derives from base")
+    func duckDuckGoAutocompleteURLDerivesFromBase() {
+        #expect(URL.duckDuckGoAutocomplete.absoluteString == "https://duckduckgo.com/ac/")
+    }
+
+    @Test("DuckDuckGo email URLs use correct base")
+    func duckDuckGoEmailURLsUseCorrectBase() {
+        #expect(URL.duckDuckGoEmail.absoluteString == "https://duckduckgo.com/email-protection")
+        #expect(URL.duckDuckGoEmailLogin.absoluteString == "https://duckduckgo.com/email")
+        #expect(URL.duckDuckGoEmailInfo.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/")
+    }
+
+    @Test("DuckDuckGo help pages use correct base")
+    func duckDuckGoHelpPagesUseCorrectBase() {
+        // Help pages that use duckduckgo.com base
+        #expect(URL.cookieConsentPopUpManagement.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management")
+        #expect(URL.privateSearchLearnMore.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/search-privacy/")
+        #expect(URL.passwordManagerLearnMore.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/")
+        #expect(URL.maliciousSiteProtectionLearnMore.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker")
+        #expect(URL.smarterEncryptionLearnMore.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/")
+        #expect(URL.threatProtectionLearnMore.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/threat-protection/")
+        #expect(URL.dnsBlocklistLearnMore.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists")
+        #expect(URL.ddgLearnMore.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/get-duckduckgo/get-duckduckgo-browser-on-mac/")
+
+        // Help pages that use help.duckduckgo.com base
+        #expect(URL.webTrackingProtection.absoluteString == "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/")
+        #expect(URL.gpcLearnMore.absoluteString == "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/gpc/")
+        #expect(URL.theFireButton.absoluteString == "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#the-fire-button")
+        #expect(URL.duckDuckGoMorePrivacyInfo.absoluteString == "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/atb/")
+    }
+
+    @Test("Internal feedback form URL remains unchanged")
+    func internalFeedbackFormURLRemainsUnchanged() {
+        // This URL uses go.duckduckgo.com subdomain which is not configurable
+        #expect(URL.internalFeedbackForm.absoluteString == "https://go.duckduckgo.com/feedback")
+    }
+
+    @Test("DuckDuckGo URL detection works correctly")
+    func duckDuckGoURLDetectionWorksCorrectly() {
+        // URLs that should be detected as DuckDuckGo
+        #expect(URL.duckDuckGo.isDuckDuckGo == true)
+        #expect(URL.aboutDuckDuckGo.isDuckDuckGo == true)
+        #expect(URL.searchSettings.isDuckDuckGo == true)
+
+        // URLs that should not be detected as DuckDuckGo
+        let externalURL = URL(string: "https://example.com")!
+        #expect(externalURL.isDuckDuckGo == false)
+
+        let helpURL = URL(string: "https://help.duckduckgo.com/test")!
+        #expect(helpURL.isDuckDuckGo == false) // Different subdomain
+    }
+
+    @Test("DuckDuckGo search URL detection works correctly")
+    func duckDuckGoSearchURLDetectionWorksCorrectly() {
+        // Search URL with query parameter
+        let searchURL = URL(string: "https://duckduckgo.com/?q=test")!
+        #expect(searchURL.isDuckDuckGoSearch == true)
+
+        // Non-search URLs
+        #expect(URL.duckDuckGo.isDuckDuckGoSearch == false) // No query parameter
+        #expect(URL.aboutDuckDuckGo.isDuckDuckGoSearch == false) // Has path
+    }
+
+    @Test("Email protection URL detection works correctly")
+    func emailProtectionURLDetectionWorksCorrectly() {
+        #expect(URL.duckDuckGoEmail.isEmailProtection == true)
+        #expect(URL.duckDuckGoEmailLogin.isEmailProtection == true)
+
+        // Non-email URLs
+        #expect(URL.duckDuckGo.isEmailProtection == false)
+        #expect(URL.aboutDuckDuckGo.isEmailProtection == false)
+    }
+}

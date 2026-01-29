@@ -40,7 +40,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
          syncService: DDGSyncing?) {
 
         func getActiveProvider() -> NewTabPageNextStepsCardsProviding {
-            if featureFlagger.isFeatureOn(.nextStepsSingleCardIteration) {
+            if featureFlagger.isFeatureOn(.nextStepsListWidget) {
                 return NewTabPageNextStepsSingleCardProvider(
                     cardActionHandler: cardActionsHandler,
                     pixelHandler: pixelHandler,

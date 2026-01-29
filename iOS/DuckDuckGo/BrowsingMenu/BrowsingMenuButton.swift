@@ -41,7 +41,7 @@ class BrowsingMenuButton: UIView {
     }
 
     func configure(with entry: BrowsingMenuEntry, willPerformAction: ((@escaping () -> Void) -> Void)?) {
-        guard case .regular(let name, let accessibilityLabel, let image, _, _, let action) = entry else {
+        guard case .regular(let name, let accessibilityLabel, let image, _, _, _, let action) = entry else {
             fatalError("Regular entry not found")
         }
 

@@ -171,29 +171,9 @@ extension AppDelegate {
 
             let presenter = DefaultHistoryViewDialogPresenter()
             switch await presenter.showDeleteDialog(for: .rangeFilter(.all), visits: visits, in: window, fromMainMenu: true) {
-            case .burn(let includeChats):
+            case .burn, .delete:
                 // FireCoordinator handles burning for Fire Dialog View
-                if featureFlagger.isFeatureOn(.fireDialog) {
-                    reloadHistoryTabs()
-                } else {
-                    let entity = Fire.BurningEntity.allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
-                                                               selectedDomains: [],
-                                                               customURLToOpen: nil,
-                                                               close: true)
-                    await fireCoordinator.fireViewModel.fire.burnEntity(entity, includingHistory: true, includeChatHistory: includeChats)
-                }
-            case .delete(let burnChats):
-                // FireCoordinator handles burning for Fire Dialog View
-                if featureFlagger.isFeatureOn(.fireDialog) {
-                    reloadHistoryTabs()
-                } else {
-                    historyCoordinator.burnAll {
-                        self.reloadHistoryTabs()
-                    }
-                    if burnChats {
-                        await fireCoordinator.fireViewModel.fire.burnChatHistory()
-                    }
-                }
+                reloadHistoryTabs()
             case .noAction:
                 break
             }
@@ -550,6 +530,16 @@ extension AppDelegate {
         Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
     }
 
+    @MainActor
+    @objc func exportMemoryAllocationStats(_ sender: Any?) {
+        do {
+            let exporter = MemoryAllocationStatsExporter()
+            try exporter.exportSnapshotToTemporaryURL()
+        } catch {
+            Logger.general.error("Failed to export Memory Allocation Stats: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @objc func resetRemoteMessages(_ sender: Any?) {
         Task {
             await remoteMessagingClient.store?.resetRemoteMessages()
@@ -561,13 +551,13 @@ extension AppDelegate {
     }
 
     @objc func debugResetContinueSetup(_ sender: Any?) {
-        var persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
         persistor.continueSetUpCardsLastDemonstrated = nil
         persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
-        persistor.didOpenCustomizationSettings = false
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         appearancePreferences.continueSetUpCardsClosed = false
         appearancePreferences.isContinueSetUpVisible = true
+        appearancePreferences.didOpenCustomizationSettings = false
         duckPlayer.preferences.youtubeOverlayAnyButtonPressed = false
         duckPlayer.preferences.duckPlayerMode = .alwaysAsk
         UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()

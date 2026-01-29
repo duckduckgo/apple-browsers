@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Cancelar";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Ativar a sincronização e cópia de segurança";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Cria uma cópia de segurança encriptada dos teus marcadores e dados de preenchimento automático no servidor seguro do DuckDuckGo, que pode ser sincronizada com os teus restantes dispositivos.";
 

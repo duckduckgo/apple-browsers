@@ -42,62 +42,110 @@ final class FireViewController: NSViewController {
     private let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
     private var cancellables = Set<AnyCancellable>()
 
-    private lazy var fireDialogViewController: FirePopoverViewController = {
-        let storyboard = NSStoryboard(name: "Fire", bundle: nil)
-        return storyboard.instantiateController(identifier: "FirePopoverViewController")
+    // UI Elements
+    private lazy var transparentBackgroundView: ColorView = {
+        let view = ColorView(frame: .zero, backgroundColor: .fireBackground)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
 
-    @IBOutlet weak var fakeFireButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var fakeFireButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var deletingDataLabel: NSTextField!
-    @IBOutlet weak var fakeFireButton: NSButton!
-    @IBOutlet weak var progressIndicatorWrapper: NSView!
-    @IBOutlet weak var progressIndicator: NSProgressIndicator!
-    @IBOutlet weak var progressIndicatorWrapperBG: NSView!
+    private lazy var progressIndicatorWrapperBG: NSView = {
+        let view = NSView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.wantsLayer = true
+        view.isHidden = true
+        return view
+    }()
+
+    private lazy var progressIndicatorWrapper: NSView = {
+        let view = NSView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isHidden = true
+        return view
+    }()
+
+    private lazy var progressIndicatorBackgroundView: ColorView = {
+        let view = ColorView(frame: .zero, backgroundColor: .newTabPageBackground)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.cornerRadius = 8
+        return view
+    }()
+
+    private lazy var fakeFireButton: NSButton = {
+        let button = NSButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.image = theme.iconsProvider.fireButtonStyleProvider.icon
+        button.isEnabled = false
+        button.isHidden = true
+        return button
+    }()
+
+    private lazy var progressIndicator: NSProgressIndicator = {
+        let indicator = NSProgressIndicator()
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.style = .bar
+        indicator.isIndeterminate = true
+        return indicator
+    }()
+
+    private lazy var deletingDataLabel: NSTextField = {
+        let label = NSTextField(labelWithString: UserText.fireDialogDelitingData)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        label.alignment = .center
+        return label
+    }()
+
+    private lazy var fakeFireButtonIconView: NSImageView = {
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = .burnAlert
+        return imageView
+    }()
+
     private var fireAnimationView: LottieAnimationView?
     private var fireAnimationViewLoadingTask: Task<(), Never>?
     private(set) lazy var fireIndicatorVisibilityManager = FireIndicatorVisibilityManager { [weak self] in self?.view.superview }
 
     static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) -> FireViewController {
-        NSStoryboard(name: "Fire", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
-        }!
+        return FireViewController(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+    }
+
+    @MainActor
+    init(tabCollectionViewModel: TabCollectionViewModel,
+         fireViewModel: FireViewModel,
+         themeManager: ThemeManaging? = nil,
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
+        self.tabCollectionViewModel = tabCollectionViewModel
+        self.fireViewModel = fireViewModel
+        self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
+        self.visualizeFireAnimationDecider = visualizeFireAnimationDecider
+
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
-        fatalError("TabBarViewController: Bad initializer")
-    }
-
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
-          fireViewModel: FireViewModel,
-          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-          visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
-        self.tabCollectionViewModel = tabCollectionViewModel
-        self.fireViewModel = fireViewModel
-        self.themeManager = themeManager
-        self.visualizeFireAnimationDecider = visualizeFireAnimationDecider
-
-        super.init(coder: coder)
+        fatalError("FireViewController: Bad initializer")
     }
 
     deinit {
         fireAnimationViewLoadingTask?.cancel()
 #if DEBUG
         MainActor.assumeMainThread {
-            if isLazyVar(named: "fireDialogViewController", initializedIn: self) {
-                fireDialogViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-            }
             fireAnimationView?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         }
 #endif
     }
 
+    override func loadView() {
+        view = NSView(frame: NSRect(x: 0, y: 0, width: 721, height: 479))
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        fakeFireButton.image = theme.iconsProvider.fireButtonStyleProvider.icon
-        fakeFireButtonWidthConstraint.constant = theme.tabBarButtonSize
-        fakeFireButtonHeightConstraint.constant = theme.tabBarButtonSize
-        deletingDataLabel.stringValue = UserText.fireDialogDelitingData
+
+        setupUI()
+
         if case .normal = AppVersion.runType {
             fireAnimationViewLoadingTask = Task.detached(priority: .userInitiated) {
                 await self.setupFireAnimationView()
@@ -115,6 +163,68 @@ final class FireViewController: NSViewController {
 
     override func viewDidDisappear() {
         progressIndicator.stopAnimation(self)
+    }
+
+    private func setupUI() {
+        // Add all subviews
+        view.addSubview(transparentBackgroundView)
+        view.addSubview(progressIndicatorWrapperBG)
+        progressIndicatorWrapperBG.addSubview(progressIndicatorBackgroundView)
+        view.addSubview(progressIndicatorWrapper)
+        progressIndicatorWrapper.addSubview(fakeFireButtonIconView)
+        progressIndicatorWrapper.addSubview(progressIndicator)
+        progressIndicatorWrapper.addSubview(deletingDataLabel)
+        progressIndicatorWrapper.addSubview(fakeFireButton)
+
+        let buttonSize = theme.tabBarButtonSize
+
+        NSLayoutConstraint.activate([
+            // Background fills entire view
+            transparentBackgroundView.topAnchor.constraint(equalTo: view.topAnchor),
+            transparentBackgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            transparentBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            transparentBackgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            // Progress wrapper background (with shadow)
+            progressIndicatorWrapperBG.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            progressIndicatorWrapperBG.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            progressIndicatorWrapperBG.widthAnchor.constraint(equalToConstant: 320),
+            progressIndicatorWrapperBG.heightAnchor.constraint(equalToConstant: 220),
+
+            // Inner background
+            progressIndicatorBackgroundView.topAnchor.constraint(equalTo: progressIndicatorWrapperBG.topAnchor, constant: 10),
+            progressIndicatorBackgroundView.leadingAnchor.constraint(equalTo: progressIndicatorWrapperBG.leadingAnchor, constant: 10),
+            progressIndicatorBackgroundView.trailingAnchor.constraint(equalTo: progressIndicatorWrapperBG.trailingAnchor, constant: -10),
+            progressIndicatorBackgroundView.bottomAnchor.constraint(equalTo: progressIndicatorWrapperBG.bottomAnchor, constant: -10),
+
+            // Progress indicator wrapper (centered content)
+            progressIndicatorWrapper.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            progressIndicatorWrapper.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            progressIndicatorWrapper.widthAnchor.constraint(equalToConstant: 320),
+            progressIndicatorWrapper.heightAnchor.constraint(equalToConstant: 220),
+
+            // Fire icon
+            fakeFireButtonIconView.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
+            fakeFireButtonIconView.centerYAnchor.constraint(equalTo: progressIndicatorWrapper.centerYAnchor, constant: -40),
+            fakeFireButtonIconView.widthAnchor.constraint(equalToConstant: 48),
+            fakeFireButtonIconView.heightAnchor.constraint(equalToConstant: 48),
+
+            // Progress indicator
+            progressIndicator.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
+            progressIndicator.centerYAnchor.constraint(equalTo: progressIndicatorWrapper.centerYAnchor, constant: 13),
+            progressIndicator.widthAnchor.constraint(equalToConstant: 210),
+            progressIndicator.heightAnchor.constraint(equalToConstant: 18),
+
+            // Label
+            deletingDataLabel.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
+            deletingDataLabel.centerYAnchor.constraint(equalTo: progressIndicatorWrapper.centerYAnchor, constant: 34),
+
+            // Fake fire button (top right)
+            fakeFireButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
+            fakeFireButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 5),
+            fakeFireButton.widthAnchor.constraint(equalToConstant: buttonSize),
+            fakeFireButton.heightAnchor.constraint(equalToConstant: buttonSize)
+        ])
     }
 
     private var fireAnimationEventsCancellable: AnyCancellable?
@@ -171,10 +281,6 @@ final class FireViewController: NSViewController {
             .store(in: &cancellables)
     }
 
-    func showDialog() {
-        presentAsModalWindow(fireDialogViewController)
-    }
-
     private let fireAnimationSpeed = 1.2
     private let fireAnimationBeginning = 0.1
     private let fireAnimationEnd = 0.63
@@ -187,10 +293,12 @@ final class FireViewController: NSViewController {
 
         await waitForFireAnimationViewIfNeeded()
         await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in
+            progressIndicatorWrapperBG.isHidden = true
             progressIndicatorWrapper.isHidden = true
             fakeFireButton.isHidden = true
             fireViewModel.setAnimationPlaying(true, isFireWindow: true)
 
+            fireAnimationView?.isHidden = false
             fireAnimationView?.currentProgress = 0
             let completion = { [fireViewModel] in
                 fireViewModel.setAnimationPlaying(false, isFireWindow: true)
@@ -200,6 +308,10 @@ final class FireViewController: NSViewController {
                 defer { completion() }
                 guard let self = self else { return }
 
+                // Hide the fire animation view before showing progress indicator
+                self.fireAnimationView?.isHidden = true
+
+                self.progressIndicatorWrapperBG.isHidden = false
                 self.progressIndicatorWrapper.isHidden = false
                 self.fakeFireButton.isHidden = false
 
@@ -222,9 +334,11 @@ final class FireViewController: NSViewController {
 
             await waitForFireAnimationViewIfNeeded()
 
+            progressIndicatorWrapperBG.isHidden = true
             progressIndicatorWrapper.isHidden = true
             fireViewModel.setAnimationPlaying(true, isFireWindow: false)
 
+            fireAnimationView?.isHidden = false
             fireAnimationView?.currentProgress = 0
 
             fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self, fireViewModel] _ in
@@ -238,8 +352,13 @@ final class FireViewController: NSViewController {
 
                     // Waits until windows are closed in Fire.swift
                     DispatchQueue.main.async {
+                        // Hide the fire animation view before showing progress indicator
+                        self.fireAnimationView?.isHidden = true
+
+                        self.progressIndicatorWrapperBG.isHidden = false
                         self.progressIndicatorWrapper.isHidden = false
-                        Logger.general.debug("Fire animation progress indicator hidden")
+                        self.fakeFireButton.isHidden = false
+                        Logger.general.debug("Fire animation progress indicator shown")
                     }
                 } else {
                     Logger.general.debug("Fire animation did finish but is not burning")

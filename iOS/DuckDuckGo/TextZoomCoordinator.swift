@@ -53,7 +53,11 @@ protocol TextZoomCoordinating {
     func showTextZoomEditor(inController controller: UIViewController, forWebView webView: WKWebView) async
 
     /// Creates a browsing menu entry for the given link.  Returns nil if the feature is disabled.
-    func makeBrowsingMenuEntry(forLink: Link, inController controller: UIViewController, forWebView webView: WKWebView, useSmallIcon: Bool) -> BrowsingMenuEntry?
+    func makeBrowsingMenuEntry(forLink: Link,
+                               inController controller: UIViewController,
+                               forWebView webView: WKWebView,
+                               useSmallIcon: Bool,
+                               percentageInDetail: Bool) -> BrowsingMenuEntry?
 
 }
 
@@ -136,20 +140,31 @@ final class TextZoomCoordinator: TextZoomCoordinating {
     func makeBrowsingMenuEntry(forLink link: Link,
                                inController controller: UIViewController,
                                forWebView webView: WKWebView,
-                               useSmallIcon: Bool) -> BrowsingMenuEntry? {
+                               useSmallIcon: Bool,
+                               percentageInDetail: Bool) -> BrowsingMenuEntry? {
 
         let label: String
+        var detail: String?
+        var accessibilityLabel: String?
         if let domain = tld.eTLDplus1(link.url.host),
            let level = storage.textZoomLevelForDomain(domain) {
-            label = UserText.textZoomWithPercentForMenuItem(level.rawValue)
+            if percentageInDetail {
+                label = UserText.textZoomMenuItem
+                detail = "\(level.rawValue)%"
+                accessibilityLabel = UserText.textZoomWithPercentForMenuItem(level.rawValue)
+            } else {
+                label = UserText.textZoomWithPercentForMenuItem(level.rawValue)
+            }
         } else {
             label = UserText.textZoomMenuItem
         }
 
         let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.typeSize : DesignSystemImages.Glyphs.Size24.typeSize
         return BrowsingMenuEntry.regular(name: label,
+                                         accessibilityLabel: accessibilityLabel,
                                          image: image,
-                                         showNotificationDot: false) { [weak self, weak controller, weak webView] in
+                                         showNotificationDot: false,
+                                         detailText: detail) { [weak self, weak controller, weak webView] in
             guard let self = self, let controller = controller, let webView = webView else { return }
             Task { @MainActor in
                 self.showTextZoomEditor(inController: controller, forWebView: webView)

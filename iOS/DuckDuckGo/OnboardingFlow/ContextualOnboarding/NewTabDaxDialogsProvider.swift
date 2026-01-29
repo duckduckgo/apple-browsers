@@ -26,41 +26,50 @@ import Common
 
 final class NewTabDaxDialogsProvider: NewTabDaxDialogProviding {
     private let featureFlagger: FeatureFlagger
-    private let delegate: OnboardingNavigationDelegate?
-    private let daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
-    private let onboardingPixelReporter: OnboardingPixelReporting
-    private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
+    private let legacyDaxDialogsFactory: NewTabDaxDialogFactory
+    private let rebrandedDaxDialogsFactory: RebrandedNewTabDaxDialogFactory
 
-    init(
+    convenience init(
         featureFlagger: FeatureFlagger,
         delegate: OnboardingNavigationDelegate?,
         daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
         onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper()
     ) {
+
+        let legacyDaxDialogsFactory = NewTabDaxDialogFactory(
+            delegate: delegate,
+            daxDialogsFlowCoordinator: daxDialogsFlowCoordinator,
+            onboardingPixelReporter: onboardingPixelReporter,
+            onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper
+        )
+
+        let rebrandedDaxDialogsFactory = RebrandedNewTabDaxDialogFactory(
+            delegate: delegate,
+            daxDialogsFlowCoordinator: daxDialogsFlowCoordinator,
+            onboardingPixelReporter: onboardingPixelReporter,
+            onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper
+        )
+
+        self.init(featureFlagger: featureFlagger, legacyDaxDialogsFactory: legacyDaxDialogsFactory, rebrandedDaxDialogsFactory: rebrandedDaxDialogsFactory)
+    }
+
+    init(
+        featureFlagger: FeatureFlagger,
+        legacyDaxDialogsFactory: NewTabDaxDialogFactory,
+        rebrandedDaxDialogsFactory: RebrandedNewTabDaxDialogFactory
+    ) {
         self.featureFlagger = featureFlagger
-        self.delegate = delegate
-        self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
-        self.onboardingPixelReporter = onboardingPixelReporter
-        self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
+        self.legacyDaxDialogsFactory = legacyDaxDialogsFactory
+        self.rebrandedDaxDialogsFactory = rebrandedDaxDialogsFactory
     }
 
     @ViewBuilder
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         if featureFlagger.isFeatureOn(.onboardingRebranding) {
-            RebrandedNewTabDaxDialogFactory(
-                delegate: delegate,
-                daxDialogsFlowCoordinator: daxDialogsFlowCoordinator,
-                onboardingPixelReporter: onboardingPixelReporter,
-                onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper
-            ).createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss)
+            rebrandedDaxDialogsFactory.createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss)
         } else {
-            NewTabDaxDialogFactory(
-                delegate: delegate,
-                daxDialogsFlowCoordinator: daxDialogsFlowCoordinator,
-                onboardingPixelReporter: onboardingPixelReporter,
-                onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper
-            ).createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss)
+            legacyDaxDialogsFactory.createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss)
         }
     }
 

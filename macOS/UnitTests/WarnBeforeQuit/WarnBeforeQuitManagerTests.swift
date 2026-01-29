@@ -646,7 +646,6 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Post a mouse click to trigger the async check in the event handler
         // The DispatchQueue.main.async will check isWarningEnabled() and resume with true
         let mouseClick = createMouseEvent(type: .leftMouseDown)
-        Logger.tests.debug("Sending event \(String(describing: event)); windows: \(NSApp.windows.map { String(describing: $0) }.joined(separator: ", ")))")
         NSApp.sendEvent(mouseClick)
 
         // Wait for completion
@@ -1093,7 +1092,6 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Simulate left mouse click
         let mouseClick = createMouseEvent(type: .leftMouseDown)
-        Logger.tests.debug("Sending event \(String(describing: event)); windows: \(NSApp.windows.map { String(describing: $0) }.joined(separator: ", ")))")
         NSApp.sendEvent(mouseClick)
 
         // Wait for completion
@@ -1173,7 +1171,6 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Simulate right mouse click
         let mouseClick = createMouseEvent(type: .rightMouseDown)
-        Logger.tests.debug("Sending event \(String(describing: event)); windows: \(NSApp.windows.map { String(describing: $0) }.joined(separator: ", ")))")
         NSApp.sendEvent(mouseClick)
 
         // Wait for completion
@@ -1330,7 +1327,6 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
         // Simulate other mouse button click
         let mouseClick = createMouseEvent(type: .otherMouseDown)
-        Logger.tests.debug("Sending event \(String(describing: event)); windows: \(NSApp.windows.map { String(describing: $0) }.joined(separator: ", ")))")
         NSApp.sendEvent(mouseClick)
 
         // Wait for completion
@@ -1678,17 +1674,19 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 
     func testOtherEventsRepostedDuringHold() async throws {
         // Given
+        Logger.tests.debug("testOtherEventsRepostedDuringHold making kb event")
         let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
 
         // Mouse events are reposted and cancel the flow
+        Logger.tests.debug("testOtherEventsRepostedDuringHold making mouse event")
         let mouseEvent = createMouseEvent(type: .leftMouseDown)
 
+        Logger.tests.debug("testOtherEventsRepostedDuringHold making PixelFiring")
         let pixelFiring = PixelKitMock(expecting: [
             .init(pixel: GeneralPixel.warnBeforeQuitShown, frequency: .dailyAndCount),
             .init(pixel: GeneralPixel.warnBeforeQuitCancelled, frequency: .standard)
         ])
 
-        Logger.tests.debug("windows: \(NSApp.windows.map { String(describing: $0) }.joined(separator: ", ")))")
         let eventRepostedExpectation = expectation(description: "Event reposted")
         var repostedEvent: NSEvent?
         let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
@@ -1701,11 +1699,13 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         // Allow app to post events during tests
         TestRunHelper.allowAppSendUserEvents = true
 
+        Logger.tests.debug("testOtherEventsRepostedDuringHold setting up event receiver")
         let eventReceiver = makeEventReceiver(events: [
             (event: nil, timeAdvance: Constants.earlyReleaseTimeAdvance),  // First, advance to enter .holding state
             (event: mouseEvent, timeAdvance: 0)  // Then return mouse event - should repost and cancel
         ])
 
+        Logger.tests.debug("testOtherEventsRepostedDuringHold setting up manager")
         let manager = try XCTUnwrap(WarnBeforeQuitManager(
             currentEvent: event,
             action: .quit,
@@ -1716,6 +1716,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             animationDelay: 0
         ))
 
+        Logger.tests.debug("testOtherEventsRepostedDuringHold setting up expectations")
         // When - mouse event received during .holding state
         let stateExpectations = setupExpectationsForStateChanges(3, manager: manager)
 

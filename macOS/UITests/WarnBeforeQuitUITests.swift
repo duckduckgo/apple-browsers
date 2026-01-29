@@ -224,7 +224,7 @@ class WarnBeforeQuitUITests: UITestCase {
 
     /// Verifies warning appears when trying to close a pinned tab with Cmd+W
     func testClosePinnedTabWarningAppears() {
-        app.enableWarnBeforeQuitting()
+        app.enableWarnBeforeClosingPinnedTabs()
 
         // Given - a pinned tab
         app.openNewTab()
@@ -245,7 +245,7 @@ class WarnBeforeQuitUITests: UITestCase {
 
     /// Verifies pressing Cmd+W twice closes a pinned tab
     func testPressingCmdWTwiceClosesPinnedTab() {
-        app.enableWarnBeforeQuitting()
+        app.enableWarnBeforeClosingPinnedTabs()
 
         // Given - a pinned tab
         app.pinCurrentTab()
@@ -265,7 +265,7 @@ class WarnBeforeQuitUITests: UITestCase {
 
     /// Verifies holding Cmd+W closes pinned tab
     func testHoldingCmdWClosesPinnedTab() {
-        app.enableWarnBeforeQuitting()
+        app.enableWarnBeforeClosingPinnedTabs()
 
         // Given - a pinned tab
         app.pinCurrentTab()
@@ -288,7 +288,7 @@ class WarnBeforeQuitUITests: UITestCase {
 
     /// Verifies early release (key or modifier) doesn't close pinned tab
     func testEarlyReleaseDoesNotClosePinnedTab() {
-        app.enableWarnBeforeQuitting()
+        app.enableWarnBeforeClosingPinnedTabs()
 
         // Test 1: Early key release (W released before threshold while holding Cmd)
         app.pinCurrentTab()
@@ -332,7 +332,7 @@ class WarnBeforeQuitUITests: UITestCase {
 
     /// Verifies dialog doesn't appear for next pinned tab after holding to close first tab
     func testDialogDoesNotAppearForNextPinnedTabAfterHolding() throws {
-        app.enableWarnBeforeQuitting()
+        app.enableWarnBeforeClosingPinnedTabs()
 
         // Given - 2 pinned tabs and no regular tabs
         app.pinCurrentTab()

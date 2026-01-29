@@ -80,20 +80,10 @@ struct SettingsAppearanceView: View {
 
                 showFullSiteAddressSetting()
 
-                showTrackersBlockedAnimationSetting()
-
                 showReloadButtonSetting()
 
             } header: {
                 Text(UserText.addressBar)
-            }
-
-            if viewModel.isTabSwitcherTrackerCountEnabled {
-                Section {
-                    showTrackerCountSetting()
-                } header: {
-                    Text(UserText.settingsTabsSection)
-                }
             }
 
             // Customizable buttons specific settings.
@@ -114,6 +104,16 @@ struct SettingsAppearanceView: View {
                     SettingsCellView(label: UserText.settingsExperimentalMenu,
                                      accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
                 }
+            }
+
+            Section {
+                showTrackersBlockedAnimationSetting()
+
+                if viewModel.isTabSwitcherTrackerCountEnabled {
+                    showTrackerCountSetting()
+                }
+            } header: {
+                Text(UserText.settingsTrackerBlockingAnimationSection)
             }
 
         }

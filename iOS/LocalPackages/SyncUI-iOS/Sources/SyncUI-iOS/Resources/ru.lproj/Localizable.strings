@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Отменить";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Включить синхронизацию и копирование";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "DuckDuckGo создаст зашифрованную резервную копию ваших закладок и данных автозаполнения на надежном сервере. Копию можно синхронизировать с другими устройствами.";
 

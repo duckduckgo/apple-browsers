@@ -36,15 +36,6 @@ struct SubscriptionRequest {
         return SubscriptionRequest(apiRequest: request)
     }
 
-    static func getProducts(baseURL: URL) -> SubscriptionRequest? {
-        let path = "/products"
-        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
-                                         method: .get) else {
-            return nil
-        }
-        return SubscriptionRequest(apiRequest: request)
-    }
-
     static func getTierProducts(baseURL: URL, region: String?, platform: String?) -> SubscriptionRequest? {
         let path = "/v2/products"
         var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true)
@@ -95,15 +86,6 @@ struct SubscriptionRequest {
                                          headers: APIRequestV2.HeadersV2(authToken: accessToken),
                                          body: bodyData,
                                          retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: .fixed(.seconds(2)))) else {
-            return nil
-        }
-        return SubscriptionRequest(apiRequest: request)
-    }
-
-    static func subscriptionFeatures(baseURL: URL, subscriptionID: String) -> SubscriptionRequest? {
-        let path = "/products/\(subscriptionID)/features"
-        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
-                                         cachePolicy: .returnCacheDataElseLoad) else { // Cached on purpose, the response never changes
             return nil
         }
         return SubscriptionRequest(apiRequest: request)

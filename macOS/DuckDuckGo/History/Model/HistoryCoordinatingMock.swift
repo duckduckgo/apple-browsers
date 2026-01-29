@@ -89,6 +89,13 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
         }
     }
 
+    public var burnVisitsForTabIDCalled = false
+    public var burnVisitsForTabIDTabID: String?
+    public func burnVisits(for tabID: String) async throws {
+        burnVisitsForTabIDCalled = true
+        burnVisitsForTabIDTabID = tabID
+    }
+
     public var markFailedToLoadUrlCalled = false
     public func markFailedToLoadUrl(_ url: URL) {
         markFailedToLoadUrlCalled = true

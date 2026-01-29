@@ -36,6 +36,7 @@ public protocol HistoryManaging {
     @MainActor func commitChanges(url: URL)
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
     @MainActor func removeTabHistory(for tabIDs: [String]) async
+    @MainActor func removeBrowsingHistory(tabID: String) async
 }
 
 public class HistoryManager: HistoryManaging {
@@ -130,6 +131,15 @@ public class HistoryManager: HistoryManaging {
             Logger.history.error("Failed to remove tab history: \(error.localizedDescription)")
         }
     }
+    
+    @MainActor
+    public func removeBrowsingHistory(tabID: String) async {
+        do {
+            try await dbCoordinator.burnVisits(for: tabID)
+        } catch {
+            Logger.history.error("Failed to remove global history for tab: \(error.localizedDescription)")
+        }
+    }
 
 }
 
@@ -189,6 +199,9 @@ class NullHistoryCoordinator: HistoryCoordinating {
         DispatchQueue.main.asyncOrNow {
             completion()
         }
+    }
+    
+    func burnVisits(for tabID: String) async throws {
     }
 
     func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {

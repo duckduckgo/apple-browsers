@@ -335,7 +335,7 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnTabData(tab: TabViewModel, domains: [String]?) async {
         guard let domains else {
-            Logger.general.error("Expected domains to be present when buring tab scoped data")
+            Logger.general.error("Expected domains to be present when burning tab scoped data")
             return
         }
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
@@ -346,6 +346,7 @@ class FireExecutor: FireExecuting {
         AutoconsentManagement.shared.clearCache(forDomains: domains)
         
         forgetTextZoom(forDomains: domains)
+        await historyManager.removeBrowsingHistory(tabID: tab.tab.uid)
     }
     
     // MARK: - Clear AI History

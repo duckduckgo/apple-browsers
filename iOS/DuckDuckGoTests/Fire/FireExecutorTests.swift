@@ -455,6 +455,10 @@ final class FireExecutorTests: XCTestCase {
         // Then - Verify text zoom is reset for the visited domains
         XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForDomainsCallCount, 1)
         XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForDomains, ["test.com"])
+
+        // Then - Verify browsing history is removed for the tab
+        XCTAssertEqual(mockHistoryManager.removeBrowsingHistoryCalls.count, 1)
+        XCTAssertEqual(mockHistoryManager.removeBrowsingHistoryCalls.first, tabViewModel.tab.uid)
     }
     
     

@@ -56,6 +56,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor func burnAll(completion: @escaping @MainActor () -> Void)
     @MainActor func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Set<URL>) -> Void)
     @MainActor func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void)
+    @MainActor func burnVisits(for tabID: String) async throws
 
     @MainActor func resetCookiePopupBlocked(for domains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void)
 
@@ -244,6 +245,28 @@ final public class HistoryCoordinator: HistoryCoordinating {
     public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void) {
         removeVisits(visits) { _ in
             completion()
+        }
+    }
+
+    @MainActor
+    public func burnVisits(for tabID: String) async throws {
+        guard let allVisits = allHistoryVisits else {
+            Logger.history.error("burnVisits(for:) called but history not yet loaded")
+            throw EntryRemovalError.notAvailable
+        }
+
+        let visitIDs = try await historyStoring.pageVisitIDs(in: tabID)
+        let visits = visitIDs.compactMap { id in
+            allVisits.first { $0.identifier == id }
+        }
+
+        assert(visits.count == visitIDs.count,
+               "burnVisits(for:) found \(visitIDs.count) visit IDs but matched only \(visits.count) in memory")
+
+        return await withCheckedContinuation { continuation in
+            burnVisits(visits) {
+                continuation.resume()
+            }
         }
     }
 

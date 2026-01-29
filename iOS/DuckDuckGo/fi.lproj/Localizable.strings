@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Vahvista";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontekstuaalinen perehdytys";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Ohita";
 
@@ -2974,6 +2977,9 @@
 /* about tagline */
 "settings.about.tagline" = "Suojausta. Tietosuojaa. Mielenrauhaa.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo on riippumaton verkkosuojausta tarjoava yritys kaikille, jotka haluavat saada henkilökohtaiset tietonsa takaisin hallintaansa.\n\nUskomme, että paras tapa suojata henkilötietojasi hakkereilta, huijareilta ja tietosuojaa loukkaavilta yrityksiltä on estää niiden kerääminen kokonaan. Siksi miljoonat ihmiset [valitsevat Chromen ja muiden selainten sijaan DuckDuckGon hakeakseen ja selatakseen verkossa](ddgQuickLink://duckduckgo.com/compare-privacy). Selaimeemme sisältyvä hakukoneemme on kuin Google, mutta se ei koskaan seuraa hakujasi. Selaussuojauksemme, kuten mainosten seurannan esto ja evästeiden esto, auttavat estämään muita yrityksiä keräämästä tietojasi. Lisäksi selaimemme on ilmainen – ansaitsemme rahaa [tietosuojaa kunnioittavilla hakumainoksilla](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), ei hyödyntämällä tietojasi. \n\n%@ \n\nOta henkilökohtaiset tietosi takaisin hallintaasi selaimella, joka on suunniteltu tietojen suojaamiseen, ei tietojen keräämiseen.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Käytettävyys";
 
@@ -2992,8 +2998,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Näytä sivuston osoite kokonaan";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Näytä estettyjen seurantakomentosarjojen animaatio";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Näytä osoitekentässä";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Haku ja Duck.ai";
@@ -3370,6 +3376,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synkronoi ja varmuuskopioi";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Näytä välilehtien hallinnassa";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Välilehdet";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Tekstin oletuszoomaus";
 
@@ -3378,6 +3390,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Asetukset";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Seurantaohjelmien estetty animaatio";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Auttaa estämään kolmannen osapuolen seurantalaitteet, jotka yrittävät naamioida itsensä verkkosivustolla DNS:n avulla.";
@@ -3619,11 +3634,11 @@
 /* Help and support Section header */
 "subscription.help" = "Apu ja tuki";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Hallinnoi suunnitelmaa";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Hallitse maksua tai peruuta";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Hallinnoi suunnitelmaa";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Tilaus";
@@ -3787,6 +3802,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Määritä synkronointi";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synkronoi ja varmuuskopioi luottokorttisi";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synkronoi ja varmuuskopioi tietosi";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ei kiitos";
 
@@ -3876,6 +3897,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Lisää kaikki välilehdet kirjanmerkkeihin";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Piilota";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Voit ottaa tämän takaisin käyttöön kohdassa Asetukset > Ulkoasu.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Piilotetaanko seurantalaskuri?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Seurantalaskurin asetukset";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Näytä tämän bannerin piilotusvaihtoehdot kaksoisnapauttamalla";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Säilytä";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "viimeisten 7 päivän aikana";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Suurenna tai pienennä tekstin kokoa kaikilla sivustoilla.";
@@ -4261,15 +4306,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Välilehdet";
-"settings.tab.switcher.show.tracker.count" = "Viimeisten 7 päivän seurantamäärä";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "viimeisten 7 päivän aikana";
-"tab.switcher.tracker.count.hide.title" = "Piilotetaanko seurantamäärä?";
-"tab.switcher.tracker.count.hide.message" = "Voit ottaa tämän uudelleen käyttöön kohdassa Asetukset > Ulkoasu.";
-"tab.switcher.tracker.count.hide.action" = "Piilota";
-"tab.switcher.tracker.count.keep.action" = "Pidä";
-"tab.switcher.tracker.count.info.a11y" = "Seurantamäärän valinnat";
-"tab.switcher.tracker.count.info.hint.a11y" = "Näytä tämän bannerin piilotusvaihtoehdot kaksoisnapauttamalla";

@@ -95,8 +95,8 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
 
         let parameters = pixel.parameters
         XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "true")
-        XCTAssertEqual(parameters?["authVersion"], "v2")
+        XCTAssertEqual(parameters?["vpnSubscriptionActive"], "true")
+        XCTAssertEqual(parameters?["vpnAuthVersion"], "v2")
         XCTAssertEqual(parameters?["notificationObjectClass"], "TestSourceObject")
     }
 
@@ -109,8 +109,8 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
 
         let parameters = pixel.parameters
         XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "false")
-        XCTAssertEqual(parameters?["authVersion"], "v2")
+        XCTAssertEqual(parameters?["vpnSubscriptionActive"], "false")
+        XCTAssertEqual(parameters?["vpnAuthVersion"], "v2")
         XCTAssertEqual(parameters?["notificationObjectClass"], "AnotherTestObject")
     }
 
@@ -122,8 +122,8 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
 
         let parameters = pixel.parameters
         XCTAssertNotNil(parameters)
-        XCTAssertEqual(parameters?["isSubscriptionActive"], "no_subscription")
-        XCTAssertEqual(parameters?["authVersion"], "v2")
+        XCTAssertEqual(parameters?["vpnSubscriptionActive"], "no_subscription")
+        XCTAssertEqual(parameters?["vpnAuthVersion"], "v2")
         // NSString implementation can vary between OS versions (__NSCFConstantString vs NSTaggedPointerString)
         let objectClass = parameters?["notificationObjectClass"]
         XCTAssertTrue(objectClass?.contains("String") == true, "Expected string class name, got: \(objectClass ?? "nil")")
@@ -249,14 +249,14 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
                     // Verify parameters are always present
                     let parameters = pixel.parameters
                     XCTAssertNotNil(parameters, "Parameters should never be nil")
-                    XCTAssertNotNil(parameters?["isSubscriptionActive"], "isSubscriptionActive should always be present")
-                    XCTAssertNotNil(parameters?["authVersion"], "authVersion should always be present")
+                    XCTAssertNotNil(parameters?["vpnSubscriptionActive"], "vpnSubscriptionActive should always be present")
+                    XCTAssertNotNil(parameters?["vpnAuthVersion"], "vpnAuthVersion should always be present")
                     XCTAssertNotNil(parameters?["notificationObjectClass"], "notificationObjectClass should always be present")
 
                     // Verify specific values
                     let expectedSubscriptionValue = subscriptionState != nil ? String(subscriptionState!) : "no_subscription"
-                    XCTAssertEqual(parameters?["isSubscriptionActive"], expectedSubscriptionValue)
-                    XCTAssertEqual(parameters?["authVersion"], "v2")
+                    XCTAssertEqual(parameters?["vpnSubscriptionActive"], expectedSubscriptionValue)
+                    XCTAssertEqual(parameters?["vpnAuthVersion"], "v2")
 
                     // Verify source object class
                     if sourceObject == nil {
@@ -294,8 +294,8 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
         let firstPixelParams = pixels[0].parameters!
         for pixel in pixels.dropFirst() {
             let params = pixel.parameters!
-            XCTAssertEqual(params["isSubscriptionActive"], firstPixelParams["isSubscriptionActive"])
-            XCTAssertEqual(params["authVersion"], firstPixelParams["authVersion"])
+            XCTAssertEqual(params["vpnSubscriptionActive"], firstPixelParams["vpnSubscriptionActive"])
+            XCTAssertEqual(params["vpnAuthVersion"], firstPixelParams["vpnAuthVersion"])
             XCTAssertEqual(params["notificationObjectClass"], firstPixelParams["notificationObjectClass"])
         }
     }

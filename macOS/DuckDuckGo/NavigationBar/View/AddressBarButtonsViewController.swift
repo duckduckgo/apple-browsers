@@ -271,9 +271,16 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionsCancellables = Set<AnyCancellable>()
     private var trackerAnimationTriggerCancellable: AnyCancellable?
     private var privacyEntryPointIconUpdateCancellable: AnyCancellable?
+    private var tabRemovalCancellables = Set<AnyCancellable>()
+
+    private struct TrackerAnimationDomainState {
+        var lastVisitedDomain: String?
+        var lastNotifiedDomain: String?
+    }
 
     private var lastNotificationType: NavigationBarBadgeAnimationView.AnimationType?
-    private var lastNotifiedURL: URL?
+    private var trackerAnimationDomainStateByTabID: [String: TrackerAnimationDomainState] = [:]
+    private let tld: TLD = NSApp.delegateTyped.tld
 
     private lazy var buttonsBadgeAnimator = {
         let animator = NavigationBarBadgeAnimator()
@@ -366,6 +373,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToAIChatPreferences()
         subscribeToAIChatSidebarPresenter()
         subscribeToThemeChanges()
+        subscribeToTabRemovals()
 
         applyThemeStyle()
 
@@ -585,6 +593,24 @@ final class AddressBarButtonsViewController: NSViewController {
         }.store(in: &cancellables)
     }
 
+    private func subscribeToTabRemovals() {
+        tabRemovalCancellables.removeAll()
+
+        tabCollectionViewModel.tabCollection.didRemoveTabPublisher
+            .sink { [weak self] tab, _ in
+                self?.trackerAnimationDomainStateByTabID[tab.uuid] = nil
+            }
+            .store(in: &tabRemovalCancellables)
+
+        if let pinnedTabsCollection = tabCollectionViewModel.pinnedTabsCollection {
+            pinnedTabsCollection.didRemoveTabPublisher
+                .sink { [weak self] tab, _ in
+                    self?.trackerAnimationDomainStateByTabID[tab.uuid] = nil
+                }
+                .store(in: &tabRemovalCancellables)
+        }
+    }
+
     private func subscribeToUrl() {
         guard let tabViewModel else {
             urlCancellable = nil
@@ -597,9 +623,9 @@ final class AddressBarButtonsViewController: NSViewController {
 
                 // Cancel all animations and reset state on navigation
                 stopAnimations()
-                lastNotifiedURL = nil
                 lastNotificationType = nil
                 hasShieldAnimationCompleted = false
+                updateTrackerAnimationDomainState(for: self.urlForTrackerAnimation(), tabID: self.tabViewModel?.tab.uuid)
                 updateBookmarkButtonImage()
                 updateButtons()
                 updatePrivacyEntryPointIcon()
@@ -2304,14 +2330,17 @@ final class AddressBarButtonsViewController: NSViewController {
     private func animateTrackers() {
         guard privacyDashboardButton.isShown, let tabViewModel else { return }
 
-        // Show tracker notification only once per URL
+        // Show tracker notification only once per eTLD+1 per domain visit
         if let trackerInfo = tabViewModel.tab.privacyInfo?.trackerInfo,
            case .url(let url, _, _) = tabViewModel.tab.content {
             let trackerCount = trackerInfo.trackersBlocked.count
+            let currentDomain = trackerAnimationDomain(for: url)
+            var trackerState = trackerAnimationDomainStateByTabID[tabViewModel.tab.uuid, default: TrackerAnimationDomainState()]
 
-            // Only show notification if we haven't shown it for this URL yet
-            if trackerCount > 0 && lastNotifiedURL != url {
-                lastNotifiedURL = url
+            // Only show notification if we haven't shown it for this domain visit yet
+            if trackerCount > 0, let currentDomain, currentDomain != trackerState.lastNotifiedDomain {
+                trackerState.lastNotifiedDomain = currentDomain
+                trackerAnimationDomainStateByTabID[tabViewModel.tab.uuid] = trackerState
                 // Reset shield animation flag for new page
                 hasShieldAnimationCompleted = false
                 showTrackerNotification(count: trackerCount)
@@ -2340,6 +2369,32 @@ final class AddressBarButtonsViewController: NSViewController {
         buttonsBadgeAnimator.cancelPendingAnimations()
         // Re-enable hover animation since animations were cancelled
         privacyDashboardButton.isAnimationEnabled = true
+    }
+
+    private func trackerAnimationDomain(for url: URL?) -> String? {
+        guard let host = url?.host?.lowercased() else { return nil }
+        return tld.eTLDplus1(host) ?? host
+    }
+
+    private func updateTrackerAnimationDomainState(for url: URL?, tabID: String?) {
+        guard let tabID else { return }
+        let currentDomain = trackerAnimationDomain(for: url)
+        var trackerState = trackerAnimationDomainStateByTabID[tabID, default: TrackerAnimationDomainState()]
+        guard currentDomain != trackerState.lastVisitedDomain else { return }
+        trackerState.lastVisitedDomain = currentDomain
+        trackerState.lastNotifiedDomain = nil
+        trackerAnimationDomainStateByTabID[tabID] = trackerState
+    }
+
+    private func urlForTrackerAnimation() -> URL? {
+        switch tabViewModel?.tab.content {
+        case .url(let url, _, _):
+            return url
+        case .webExtensionUrl(let url):
+            return url
+        default:
+            return nil
+        }
     }
 
     private var isAnyShieldAnimationPlaying: Bool {

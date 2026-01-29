@@ -96,28 +96,6 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
-    // MARK: - Tests for Tier Messaging
-
-    func testTierMessagingDisabledWhenFeatureFlagDisabled() {
-        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
-        featureFlagProvider.flags = [.tierMessaging: false]
-
-        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                     purchasePlatform: .appStore,
-                                                                                     featureFlagProvider: featureFlagProvider)
-        XCTAssertFalse(subscriptionFeatureAvailability.isTierMessagingEnabled)
-    }
-
-    func testTierMessagingEnabledWhenFeatureFlagEnabled() {
-        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
-        featureFlagProvider.flags = [.tierMessaging: true]
-
-        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                     purchasePlatform: .appStore,
-                                                                                     featureFlagProvider: featureFlagProvider)
-        XCTAssertTrue(subscriptionFeatureAvailability.isTierMessagingEnabled)
-    }
-
     // MARK: - Tests for Pro Tier Purchase
 
     func testProTierPurchaseDisabledWhenFeatureFlagDisabled() {

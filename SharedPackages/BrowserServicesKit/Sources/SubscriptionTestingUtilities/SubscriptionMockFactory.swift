@@ -58,12 +58,6 @@ public struct SubscriptionMockFactory {
                                                          availableChanges: nil,
                                                          pendingPlans: nil)
 
-    public static let productsItems: [GetProductsItem] = [GetProductsItem(productId: appleSubscription.productId,
-                                                                          productLabel: appleSubscription.name,
-                                                                          billingPeriod: appleSubscription.billingPeriod.rawValue,
-                                                                          price: "0.99",
-                                                                          currency: "USD")]
-
     public static let tierProductsResponse = GetTierProductsResponse(products: [
         TierProduct(
             productName: "Plus Subscription",

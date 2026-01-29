@@ -93,7 +93,10 @@ final class SyncPreferencesTests: XCTestCase {
     override func setUp() {
         cancellables = []
         setUpDatabase()
-        appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        appearancePreferences = AppearancePreferences(persistor: appearancePersistor,
+                                                      privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                      featureFlagger: MockFeatureFlagger(),
+                                                      aiChatMenuConfig: MockAIChatConfig())
         ddgSyncing = MockDDGSyncing(authState: .inactive, scheduler: scheduler, isSyncInProgress: false)
         pausedStateManager = MockSyncPausedStateManaging()
 

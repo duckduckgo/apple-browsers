@@ -30,18 +30,18 @@ public final class AIChatContextChipView: UIView {
     // MARK: - Constants
 
     private enum Constants {
-        static let chipWidth: CGFloat = 280
-        static let cornerRadius: CGFloat = 12
+        static let chipWidth: CGFloat = 240
+        static let cornerRadius: CGFloat = 15
         static let borderWidth: CGFloat = 1
 
-        static let faviconSize: CGFloat = 36
+        static let faviconSize: CGFloat = 24
         static let faviconCornerRadius: CGFloat = 4
         static let faviconLeading: CGFloat = 10
         static let faviconVerticalPadding: CGFloat = 10
 
-        static let removeButtonSize: CGFloat = 44
+        static let removeButtonSize: CGFloat = 24
         static let removeButtonTrailing: CGFloat = 10
-        static let removeButtonVerticalPadding: CGFloat = 6
+        static let removeButtonVerticalPadding: CGFloat = 10
 
         static let contentSpacing: CGFloat = 8
         static let labelSpacing: CGFloat = 2
@@ -51,11 +51,6 @@ public final class AIChatContextChipView: UIView {
 
     /// Callback invoked when the remove button is tapped.
     public var onRemove: (() -> Void)?
-
-    /// The subtitle text displayed below the title.
-    public var subtitle: String = "" {
-        didSet { subtitleLabel.text = subtitle }
-    }
 
     // MARK: - UI Components
 
@@ -85,32 +80,13 @@ public final class AIChatContextChipView: UIView {
         return imageView
     }()
 
-    private lazy var labelsStackView: UIStackView = {
-        let stackView = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
-        stackView.axis = .vertical
-        stackView.spacing = Constants.labelSpacing
-        stackView.alignment = .leading
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        return stackView
-    }()
-
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.daxBodyBold()
+        label.font = UIFont.daxButton()
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.numberOfLines = 1
         label.lineBreakMode = .byTruncatingTail
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-
-    private lazy var subtitleLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.daxBodyRegular()
-        label.adjustsFontForContentSizeCategory = true
-        label.textColor = UIColor(designSystemColor: .textSecondary)
-        label.numberOfLines = 1
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -175,7 +151,7 @@ private extension AIChatContextChipView {
         addSubview(mainStackView)
 
         chipContentView.addSubview(faviconView)
-        chipContentView.addSubview(labelsStackView)
+        chipContentView.addSubview(titleLabel)
         chipContentView.addSubview(removeButton)
         mainStackView.addArrangedSubview(chipContentView)
 
@@ -198,9 +174,9 @@ private extension AIChatContextChipView {
             faviconView.widthAnchor.constraint(equalToConstant: Constants.faviconSize),
             faviconView.heightAnchor.constraint(equalToConstant: Constants.faviconSize),
 
-            labelsStackView.leadingAnchor.constraint(equalTo: faviconView.trailingAnchor, constant: Constants.contentSpacing),
-            labelsStackView.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
-            labelsStackView.trailingAnchor.constraint(lessThanOrEqualTo: removeButton.leadingAnchor, constant: -Constants.contentSpacing),
+            titleLabel.leadingAnchor.constraint(equalTo: faviconView.trailingAnchor, constant: Constants.contentSpacing),
+            titleLabel.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: removeButton.leadingAnchor, constant: -Constants.contentSpacing),
 
             removeButton.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor, constant: -Constants.removeButtonTrailing),
             removeButton.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.removeButtonVerticalPadding),

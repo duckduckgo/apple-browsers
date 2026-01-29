@@ -82,7 +82,8 @@ private extension ThemeManagerTests {
         let preferences = AppearancePreferences(
             persistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         let manager = ThemeManager(appearancePreferences: preferences, featureFlagger: featureFlagger)

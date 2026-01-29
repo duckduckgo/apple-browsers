@@ -91,7 +91,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         customizationModel = NewTabPageCustomizationModel(

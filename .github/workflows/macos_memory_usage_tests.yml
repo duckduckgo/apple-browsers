@@ -175,6 +175,39 @@ jobs:
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
+    - name: Build Memory Metrics Report
+      working-directory: macOS
+      run: |
+        XCRESULT_PATH=$(find DerivedData/Logs/Test -name "*.xcresult" | head -1)
+        if [[ -z "$XCRESULT_PATH" ]]; then
+          echo "No .xcresult bundle found"
+          exit 1
+        fi
+
+        START_TIME=$(date -u -r "${{ steps.start-duration.outputs.start-timestamp }}" '+%Y-%m-%d %H:%M:%S')
+
+        ./scripts/build-memory-metrics-sql.sh \
+          --runner "${{ matrix.runner }}" \
+          --xcresult-path "$XCRESULT_PATH" \
+          --run-id "${{ github.run_id }}" \
+          --branch "${{ github.ref_name }}" \
+          --commit-hash "${{ github.sha }}" \
+          --start-time "$START_TIME" \
+          > insert-statements.sql
+
+    - name: Debug Insert SQL SQL
+      working-directory: macOS
+      run: |
+        echo "Generated insert-statements.sql:"
+        cat insert-statements.sql
+
+    - name: Upload memory metrics
+      uses: actions/upload-artifact@v4
+      with:
+        name: memory-metrics
+        path: macOS/insert-statements.sql
+        retention-days: 1
+
     - name: Stop log stream
       if: always()
       working-directory: macOS
@@ -266,6 +299,27 @@ jobs:
         name: "${{ env.ARCHIVE_NAME }}"
         path: "macOS/${{ env.ARCHIVE_NAME }}"
         retention-days: 7
+
+  report-memory-metrics-to-clickhouse:
+    name: Report Memory Metrics to ClickHouse
+    needs: memory-usage-tests
+    runs-on: [ self-hosted, apple ]
+
+    steps:
+      - name: Download memory metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: memory-metrics
+
+      - name: Report Memory Metrics to ClickHouse
+        working-directory: .
+        run: |
+          echo "🏁🏁🏁 Reporting Memory Metrics 🏁"
+          cat insert-statements.sql
+
+          clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements.sql
+
+          echo "🏁🏁🏁 Report complete 🏁🏁🏁"
 
   notify-failure:
     name: Notify on failure

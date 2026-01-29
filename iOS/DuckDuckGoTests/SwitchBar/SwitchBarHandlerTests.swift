@@ -417,4 +417,50 @@ final class SwitchBarHandlerTests: XCTestCase {
         XCTAssertEqual(submissions.last?.mode, .aiChat)
     }
      */
+
+    // MARK: - Voice Button with .fadeOutOnToggle Tests
+
+    private func createSUTWithFadeOutEnabled() {
+        let mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.fadeOutOnToggle])
+        sut = SwitchBarHandler(
+            voiceSearchHelper: mockVoiceSearchHelper,
+            storage: mockStorage,
+            aiChatSettings: MockAIChatSettingsProvider(),
+            sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
+            featureFlagger: mockFeatureFlagger
+        )
+    }
+
+    func testVoiceButtonVisible_WhenFadeOutEnabledAndTopBarAndNoText() {
+        // Given: FadeOut enabled, top bar position, voice search enabled, no text
+        createSUTWithFadeOutEnabled()
+        sut.updateBarPosition(isTop: true)
+        mockVoiceSearchHelper.isVoiceSearchEnabled = true
+        sut.clearText()
+
+        // Then: Voice button should be visible (new behavior with fadeOut)
+        XCTAssertTrue(sut.buttonState.showsVoiceButton)
+    }
+
+    func testVoiceButtonNotVisible_WhenFadeOutEnabledAndTopBarAndHasText() {
+        // Given: FadeOut enabled, top bar position, voice search enabled, has text
+        createSUTWithFadeOutEnabled()
+        sut.updateBarPosition(isTop: true)
+        mockVoiceSearchHelper.isVoiceSearchEnabled = true
+        sut.updateCurrentText("some text")
+
+        // Then: Voice button should be hidden (clear button shown instead)
+        XCTAssertFalse(sut.buttonState.showsVoiceButton)
+    }
+
+    func testVoiceButtonVisible_WhenFadeOutEnabledAndBottomBarAndNoText() {
+        // Given: FadeOut enabled, bottom bar position, voice search enabled, no text
+        createSUTWithFadeOutEnabled()
+        sut.updateBarPosition(isTop: false)
+        mockVoiceSearchHelper.isVoiceSearchEnabled = true
+        sut.clearText()
+
+        // Then: Voice button should be visible
+        XCTAssertTrue(sut.buttonState.showsVoiceButton)
+    }
 }

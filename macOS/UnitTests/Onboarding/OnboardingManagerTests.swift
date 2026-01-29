@@ -45,7 +45,10 @@ class OnboardingManagerTests: XCTestCase {
         dockCustomization = CapturingDockCustomizer()
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
         appearancePersistor = MockAppearancePreferencesPersistor()
-        appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        appearancePreferences = AppearancePreferences(persistor: appearancePersistor,
+                                                      privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                      featureFlagger: MockFeatureFlagger(),
+                                                      aiChatMenuConfig: MockAIChatConfig())
         startupPersistor = StartupPreferencesUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
         fireButtonPreferencesPersistor = MockFireButtonPreferencesPersistor()
         dataClearingPreferences = DataClearingPreferences(

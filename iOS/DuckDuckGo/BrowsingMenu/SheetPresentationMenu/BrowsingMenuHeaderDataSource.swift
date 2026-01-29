@@ -20,34 +20,59 @@
 import Foundation
 import UIKit
 
+enum HeaderIconType: Equatable {
+    case aiChat
+    case easterEgg(URL)
+    case favicon(UIImage)
+    case globe
+}
+
 final class BrowsingMenuHeaderDataSource: ObservableObject {
     @Published private(set) var isHeaderVisible: Bool = false
     @Published private(set) var title: String?
-    @Published private(set) var url: URL?
-    @Published private(set) var favicon: UIImage?
-    @Published private(set) var easterEggLogoURL: URL?
+    @Published private(set) var displayURL: String?
+    @Published private(set) var iconType: HeaderIconType = .globe
 
-    func update(isHeaderVisible: Bool, title: String?, url: URL?, easterEggLogoURL: URL?) {
-        self.isHeaderVisible = isHeaderVisible
+    /// Tracks the current URL to detect changes for favicon clearing
+    private var currentURL: URL?
+
+    func update(forAITab title: String) {
+        self.isHeaderVisible = true
         self.title = title
-        self.easterEggLogoURL = easterEggLogoURL
+        self.displayURL = nil
+        self.iconType = .aiChat
+        self.currentURL = nil
+    }
 
-        // Clear favicon when URL changes to avoid stale favicon during async load
-        if self.url != url {
-            self.favicon = nil
+    func update(title: String?, url: URL?, easterEggLogoURL: URL?) {
+        self.isHeaderVisible = true
+        self.displayURL = url?.host
+        self.title = title
+
+        // Clear favicon when host changes to avoid stale favicon during async load
+        if self.currentURL?.host != url?.host {
+            self.iconType = .globe
         }
-        self.url = url
+        self.currentURL = url
+
+        if let easterEggLogoURL {
+            self.iconType = .easterEgg(easterEggLogoURL)
+        }
     }
 
     func update(favicon: UIImage?) {
-        self.favicon = favicon
+        if let favicon {
+            iconType = .favicon(favicon)
+        } else {
+            iconType = .globe
+        }
     }
 
     func reset() {
         isHeaderVisible = false
         title = nil
-        url = nil
-        favicon = nil
-        easterEggLogoURL = nil
+        displayURL = nil
+        iconType = .globe
+        currentURL = nil
     }
 }

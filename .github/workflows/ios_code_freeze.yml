@@ -32,8 +32,6 @@ jobs:
 
     name: Create Release Branch
 
-    needs: upload_current_metadata
-
     runs-on: macos-15-xlarge
     timeout-minutes: 10
 

@@ -489,6 +489,7 @@
 		6F9857342CD27FA2001BE9A0 /* BoolFileMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9857332CD27F98001BE9A0 /* BoolFileMarker.swift */; };
 		6FA3438F2C3D3BC300470677 /* Favorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FA3438E2C3D3BC300470677 /* Favorite.swift */; };
 		6FA343922C3D3C3B00470677 /* FavoriteIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FA343912C3D3C3B00470677 /* FavoriteIconView.swift */; };
+		6FAA75CA2F27B2D500789A7D /* BrowsingMenuCloseButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FAA75C92F27B2D500789A7D /* BrowsingMenuCloseButtonStyle.swift */; };
 		6FACA67F2D8AFF7800019C87 /* OmniBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FACA67E2D8AFF7800019C87 /* OmniBar.swift */; };
 		6FACA6812D8B02DF00019C87 /* OmniBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FACA6802D8B02DF00019C87 /* OmniBarView.swift */; };
 		6FB16A262E3A2682006E361C /* SwipeContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FB16A252E3A267E006E361C /* SwipeContainerViewController.swift */; };
@@ -1615,7 +1616,6 @@
 		C13EBC4F2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */; };
 		C13EBC512EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */; };
 		C13EBC532EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */; };
-		C13EBC552EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC542EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift */; };
 		C13EEA1E2D64CFCA001D5DC3 /* DataImportViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */; };
 		C13EEA202D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */; };
 		C13EEA222D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA212D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift */; };
@@ -2697,6 +2697,7 @@
 		6F9857332CD27F98001BE9A0 /* BoolFileMarker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoolFileMarker.swift; sourceTree = "<group>"; };
 		6FA3438E2C3D3BC300470677 /* Favorite.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Favorite.swift; sourceTree = "<group>"; };
 		6FA343912C3D3C3B00470677 /* FavoriteIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteIconView.swift; sourceTree = "<group>"; };
+		6FAA75C92F27B2D500789A7D /* BrowsingMenuCloseButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingMenuCloseButtonStyle.swift; sourceTree = "<group>"; };
 		6FACA67E2D8AFF7800019C87 /* OmniBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBar.swift; sourceTree = "<group>"; };
 		6FACA6802D8B02DF00019C87 /* OmniBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarView.swift; sourceTree = "<group>"; };
 		6FB030C7234331B400A10DB9 /* Configuration.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Configuration.xcconfig; path = Configuration/Configuration.xcconfig; sourceTree = "<group>"; };
@@ -3990,7 +3991,6 @@
 		C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualModeFeature.swift; sourceTree = "<group>"; };
 		C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualModeFeatureTests.swift; sourceTree = "<group>"; };
 		C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetCoordinatorTests.swift; sourceTree = "<group>"; };
-		C13EBC542EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualQuickActionTests.swift; sourceTree = "<group>"; };
 		C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportViewModelTests.swift; sourceTree = "<group>"; };
 		C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipContentSelectionViewModelTests.swift; sourceTree = "<group>"; };
 		C13EEA212D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewModelTests.swift; sourceTree = "<group>"; };
@@ -5150,7 +5150,6 @@
 				C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */,
 				C1AICSVMT2F0E000300E35AD5 /* AIChatContextualSheetViewModelTests.swift */,
 				C1AITEST2F2E000400E35AD5 /* AIChatPageContextHandlerTests.swift */,
-				C13EBC542EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift */,
 			);
 			path = AIChat;
 			sourceTree = "<group>";
@@ -6083,6 +6082,7 @@
 		6F55BCF72ECE299A009E50C1 /* SheetPresentationMenu */ = {
 			isa = PBXGroup;
 			children = (
+				6FAA75C92F27B2D500789A7D /* BrowsingMenuCloseButtonStyle.swift */,
 				6F45B70C2F1E60AA00883A86 /* BrowsingMenuHeaderDataSource.swift */,
 				6F45B7102F1E65AC00883A86 /* BrowsingMenuHeaderStateProvider.swift */,
 				6F55AE592ED8E2E8005D1F5B /* BrowsingMenuBuilding.swift */,
@@ -11097,6 +11097,7 @@
 				7B1604EC2CB68BDA00A44EC6 /* TipKitController+ConvenienceInitializers.swift in Sources */,
 				851672D12BED1FC900592F24 /* AutocompleteView.swift in Sources */,
 				7B1681022D106CCC005EAE24 /* UserTextShared.swift in Sources */,
+				6FAA75CA2F27B2D500789A7D /* BrowsingMenuCloseButtonStyle.swift in Sources */,
 				3161D13227AC161B00285CF6 /* DownloadMetadata.swift in Sources */,
 				D664C7C72B289AA200CBFA76 /* PurchaseInProgressView.swift in Sources */,
 				9F465E1E2D3F5C2E00490109 /* Logger+MaliciousSiteProtection.swift in Sources */,
@@ -12253,7 +12254,6 @@
 				C13EBC512EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift in Sources */,
 				C13EBC532EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift in Sources */,
 				C1AICSVMT2F0E000200E35AD5 /* AIChatContextualSheetViewModelTests.swift in Sources */,
-				C13EBC552EF62A0100CE5A4B /* AIChatContextualQuickActionTests.swift in Sources */,
 				BBFF18B12C76448100C48D7D /* QuerySubmittedTests.swift in Sources */,
 				9FFDA8392DFA8DC2007923F7 /* VideoPlayerCoordinatorTests.swift in Sources */,
 				CB18A3662E2790C700BE9D8D /* UserAgentConfigurationTests.swift in Sources */,

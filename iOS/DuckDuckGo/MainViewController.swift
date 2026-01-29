@@ -2861,7 +2861,6 @@ extension MainViewController: OmniBarDelegate {
             highlightTag = .favorite
         }
 
-
         let view = BrowsingMenuSheetView(model: model,
                                          headerDataSource: browsingMenuHeaderDataSource,
                                          highlightRowWithTag: highlightTag,
@@ -2872,11 +2871,11 @@ extension MainViewController: OmniBarDelegate {
                                              }
                                          })
 
-        let controller = BrowsingMenuSheetViewController(
-            rootView: view
+        let controller = BrowsingMenuSheetViewController(rootView: view)
+        let contentHeight = model.estimatedContentHeight(
+            headerDataSource: browsingMenuHeaderDataSource,
+            verticalSizeClass: traitCollection.verticalSizeClass
         )
-
-        let contentHeight = model.estimatedContentHeight(includesWebsiteHeader: browsingMenuHeaderDataSource.isHeaderVisible)
 
         func configureSheetPresentationController(_ sheet: UISheetPresentationController) {
             if context == .newTabPage {

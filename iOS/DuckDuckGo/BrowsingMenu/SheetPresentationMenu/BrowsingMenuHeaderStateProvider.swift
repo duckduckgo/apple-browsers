@@ -25,52 +25,84 @@ import Core
 /// Reads already-computed values from OmniBar and Tab, then updates the data source.
 final class BrowsingMenuHeaderStateProvider {
 
-    private var currentFaviconRequestID: UUID?
+    private var currentFaviconTaskDomain: String?
+    private var currentFaviconTask: Task<Void, Error>?
 
     func update(
         dataSource: BrowsingMenuHeaderDataSource,
         isFeatureEnabled: Bool,
         isNewTabPage: Bool = false,
         isAITab: Bool = false,
-        isError: Bool = false,
+        isError: Bool,
         hasLink: Bool,
         url: URL? = nil,
         title: String? = nil,
         easterEggLogoURL: String? = nil
     ) {
-        let isHeaderVisible = isFeatureEnabled && !isNewTabPage && !isAITab && !isError && hasLink
+        let isHeaderVisible = isFeatureEnabled && !isNewTabPage && !isAITab && hasLink
+        let isAIHeaderVisible = isFeatureEnabled && isAITab
 
-        if isHeaderVisible {
-            let logoURL = easterEggLogoURL.flatMap { URL(string: $0) }
-            dataSource.update(isHeaderVisible: true, title: title, url: url, easterEggLogoURL: logoURL)
-            if logoURL == nil {
+        if isAIHeaderVisible {
+            cancelRunningFaviconTask()
+            dataSource.update(forAITab: UserText.duckAiFeatureName)
+        } else if isHeaderVisible {
+
+            let serpLogoURL = easterEggLogoURL.flatMap { URL(string: $0) }
+            dataSource.update(title: isError ? nil : title, url: url, easterEggLogoURL: serpLogoURL)
+
+            if serpLogoURL == nil {
+                // No custom SERP logo - load regular favicon
                 loadFavicon(for: url, into: dataSource)
+            } else {
+                cancelRunningFaviconTask()
             }
         } else {
+            cancelRunningFaviconTask()
             dataSource.reset()
         }
     }
 
+    private func cancelRunningFaviconTask() {
+        currentFaviconTask?.cancel()
+        currentFaviconTask = nil
+
+        currentFaviconTaskDomain = nil
+    }
+
+
     private func loadFavicon(for url: URL?, into dataSource: BrowsingMenuHeaderDataSource) {
-        let requestID = UUID()
-        currentFaviconRequestID = requestID
 
         guard let domain = url?.host else {
-            dataSource.update(favicon: nil)
+            cancelRunningFaviconTask()
             return
         }
 
-        Task.detached(priority: .userInitiated) { [weak self] in
+        // If there's already a running task for this same domain, let it continue.
+        if let existingTask = currentFaviconTask, !existingTask.isCancelled, domain == currentFaviconTaskDomain {
+            return
+        }
+
+        cancelRunningFaviconTask()
+        currentFaviconTaskDomain = domain
+
+        currentFaviconTask = Task.detached(priority: .userInitiated) {
+            try Task.checkCancellation()
+
             let result = FaviconsHelper.loadFaviconSync(
                 forDomain: domain,
                 usingCache: .tabs,
                 useFakeFavicon: false
             )
-            let favicon = result.isFake ? nil : result.image
 
-            await MainActor.run {
-                guard self?.currentFaviconRequestID == requestID else { return }
-                dataSource.update(favicon: favicon)
+            try Task.checkCancellation()
+
+            await MainActor.run { [weak self] in
+                if let favicon = result.image, !result.isFake {
+                    dataSource.update(favicon: favicon)
+                }
+
+                self?.currentFaviconTask = nil
+                self?.currentFaviconTaskDomain = nil
             }
         }
     }

@@ -22,16 +22,26 @@ import Combine
 import DesignResourcesKitIcons
 import UIKit
 
+// MARK: - Snapshot DTO
+
+/// Lightweight snapshot of page context for UI display.
+/// UI components receive this snapshot rather than accessing AIChatPageContextHandling directly.
+struct AIChatPageContextSnapshot {
+    let title: String
+    let favicon: UIImage?
+    let context: AIChatPageContextData
+
+    init(context: AIChatPageContextData, favicon: UIImage?) {
+        self.title = context.title
+        self.favicon = favicon
+        self.context = context
+    }
+}
+
+// MARK: - ViewModel
+
 /// ViewModel for the contextual AI chat sheet, managing state and business logic.
 final class AIChatContextualSheetViewModel {
-
-    // MARK: - Types
-
-    /// Page context data for the "Attach Page" feature
-    struct PageContext {
-        let title: String
-        let favicon: UIImage?
-    }
 
     // MARK: - Published State
 
@@ -40,6 +50,9 @@ final class AIChatContextualSheetViewModel {
 
     /// Whether the new chat button should be visible
     @Published private(set) var isNewChatButtonVisible: Bool = false
+
+    /// Whether page context is available
+    @Published private(set) var hasContext: Bool
 
     // MARK: - Properties
 
@@ -51,17 +64,13 @@ final class AIChatContextualSheetViewModel {
     /// The URL containing chat ID for session restoration when expanding to full mode
     private(set) var contextualChatURL: URL?
 
-    /// The page context to attach (when available from the parent tab)
-    var pageContext: PageContext?
-
-    /// Full page context data for submission to duck.ai
-    /// Contains the complete content extracted from the page
-    var fullPageContext: AIChatPageContextData?
-
     // MARK: - Initialization
 
-    init(settings: AIChatSettingsProvider, hasExistingChat: Bool = false) {
+    init(settings: AIChatSettingsProvider,
+         hasContext: Bool,
+         hasExistingChat: Bool = false) {
         self.settings = settings
+        self.hasContext = hasContext
         if hasExistingChat {
             hasSubmittedPrompt = true
             isNewChatButtonVisible = true
@@ -88,21 +97,25 @@ final class AIChatContextualSheetViewModel {
         return [attachPageAction]
     }
 
-    /// Creates and configures a context chip view with the current page context
-    func createContextChipView(onRemove: @escaping () -> Void) -> AIChatContextChipView? {
-        guard let context = pageContext else { return nil }
-
-        let chipView = AIChatContextChipView()
-        chipView.configure(title: context.title, favicon: context.favicon)
-        chipView.subtitle = UserText.aiChatContextChipSubtitle
-        chipView.infoText = UserText.aiChatContextChipInfoFooter
-        chipView.onRemove = onRemove
-        return chipView
+    /// Updates the context availability state.
+    /// Called by coordinator when context changes.
+    func updateContextAvailability(_ hasContext: Bool) {
+        self.hasContext = hasContext
     }
 
     /// Whether automatic context attachment is enabled
     var isAutomaticContextAttachmentEnabled: Bool {
         settings.isAutomaticContextAttachmentEnabled
+    }
+
+    /// Whether the contextual onboarding has been seen
+    var hasSeenContextualOnboarding: Bool {
+        settings.hasSeenContextualOnboarding
+    }
+
+    /// Marks the contextual onboarding as seen
+    func markContextualOnboardingSeen() {
+        settings.markContextualOnboardingSeen()
     }
 
     /// Called when a prompt is submitted
@@ -122,6 +135,7 @@ final class AIChatContextualSheetViewModel {
     func didStartNewChat() {
         hasSubmittedPrompt = false
         contextualChatURL = nil
+        isNewChatButtonVisible = false
         updateExpandButtonState()
     }
 
@@ -129,12 +143,6 @@ final class AIChatContextualSheetViewModel {
     func setInitialContextualChatURL(_ url: URL?) {
         contextualChatURL = url
         updateExpandButtonState()
-    }
-
-    /// Clears the page context (called when user removes the context chip)
-    func clearPageContext() {
-        pageContext = nil
-        fullPageContext = nil
     }
 
     // MARK: - Private Methods

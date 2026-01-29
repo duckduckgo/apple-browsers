@@ -30,7 +30,6 @@ class SwitchBarTextEntryView: UIView {
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
         static let minHeight: CGFloat = 44
         static let minHeightAIChat: CGFloat = 68
-        static let minHeightAIChatBottomBar: CGFloat = 96
         static let fontSize: CGFloat = 16
 
         // Text container insets
@@ -70,7 +69,7 @@ class SwitchBarTextEntryView: UIView {
         }
 
         if currentMode == .aiChat {
-            return handler.isTopBarPosition ? Constants.minHeightAIChat : Constants.minHeightAIChatBottomBar
+            return handler.isTopBarPosition ? Constants.minHeightAIChat : Constants.minHeight
         }
 
         return Constants.minHeight
@@ -268,8 +267,8 @@ class SwitchBarTextEntryView: UIView {
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
             if handler.isUsingFadeOutAnimation {
-                textView.keyboardType = .default
-                textView.returnKeyType = .default
+                textView.keyboardType = .webSearch
+                textView.returnKeyType = .go
                 if textView.text.isEmpty {
                     disableAutoCorrectionAndSpellChecking()
                 } else {
@@ -465,7 +464,9 @@ class SwitchBarTextEntryView: UIView {
                     // interfere with iOS autocomplete.
                     // Note: Clear button updates textView directly to avoid race conditions.
                     let isUserActivelyTyping = self.textView.isFirstResponder && self.hasBeenInteractedWith
-                    guard !isUserActivelyTyping else { return }
+                    let isNewLineInsertion = text == (self.textView.text ?? "") + "\n"
+                    
+                    guard !isUserActivelyTyping || isNewLineInsertion else { return }
                     
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
@@ -497,8 +498,8 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = .default
-            textView.returnKeyType = .default
+            textView.keyboardType = .webSearch
+            textView.returnKeyType = .go
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -564,10 +565,6 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            if handler.isUsingFadeOutAnimation && currentMode == .aiChat {
-                return true
-            }
-
             fireKeyboardGoPressedPixel()
             /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
             let currentText = textView.text ?? ""

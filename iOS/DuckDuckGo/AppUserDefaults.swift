@@ -169,11 +169,11 @@ public class AppUserDefaults: AppSettings {
         
     }
 
-    var autoClearAction: FireOptions {
+    var autoClearAction: FireRequest.Options {
         
         get {
             let value = userDefaults?.integer(forKey: Keys.autoClearActionKey) ?? 0
-            return FireOptions(rawValue: value)
+            return FireRequest.Options(rawValue: value)
         }
         
         set {

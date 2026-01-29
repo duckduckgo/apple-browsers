@@ -48,6 +48,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         var isShowingLearnMoreView: Bool = false
         var isShowingPlansView: Bool = false
         var isShowingUpgradeView: Bool = false
+        var pendingUpgradeTier: String?
         var subscriptionInfo: DuckDuckGoSubscription?
         var isLoadingSubscriptionInfo: Bool = false
 
@@ -134,13 +135,21 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     /// Handles navigation to plans page based on subscription platform
     /// - Parameters:
-    ///   - goToUpgrade: If true, navigates to /plans?goToUpgrade=true for direct upgrade flow
-    func navigateToPlans(goToUpgrade: Bool = false) {
+    ///   - tier: The tier to upgrade to
+    func navigateToPlans(tier: String? = nil) {
         guard let platform = state.subscriptionInfo?.platform else { return }
+
+        // Fire appropriate pixel
+        if tier != nil {
+            Pixel.fire(pixel: .subscriptionUpgradeClick)
+        } else {
+            Pixel.fire(pixel: .subscriptionViewAllPlansClick)
+        }
 
         switch platform {
         case .apple:
-            if goToUpgrade {
+            if tier != nil {
+                state.pendingUpgradeTier = tier
                 state.isShowingUpgradeView = true
             } else {
                 state.isShowingPlansView = true
@@ -303,8 +312,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         if let pendingPlan = subscription.firstPendingPlan {
             let effectiveDate = dateFormatter.string(from: pendingPlan.effectiveAt)
             let tierName = pendingPlan.tier.rawValue.capitalized
-            let billingPeriodName = pendingPlan.billingPeriod.rawValue
-            state.subscriptionDetails = UserText.pendingDowngradeInfo(tierName: tierName, billingPeriod: billingPeriodName, effectiveDate: effectiveDate)
+            state.subscriptionDetails = UserText.pendingDowngradeInfo(tierName: tierName, billingPeriod: pendingPlan.billingPeriod, effectiveDate: effectiveDate)
             return
         }
 

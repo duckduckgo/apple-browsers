@@ -41,7 +41,8 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
     }
 
@@ -126,7 +127,7 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
 
     @MainActor
     func testWhenFeatureFlagIsOn_ThenForwardsToSingleCardProvider() throws {
-        featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
         let facade = createFacade(featureFlagger: featureFlagger)
 
         let provider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsSingleCardProvider)
@@ -155,7 +156,7 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
 
     @MainActor
     func testWhenFeatureFlagIsOn_ThenCardsPublisher_EmitsChangesFromSingleCardProvider() throws {
-        featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
         let facade = createFacade(featureFlagger: featureFlagger)
 
         let provider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsSingleCardProvider)
@@ -173,7 +174,7 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
     }
 
     func testWhenFeatureFlagIsOn_ThenIsViewExpandedPublisher_EmitsChangesFromSingleCardProvider() throws {
-        featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
         let facade = createFacade(featureFlagger: featureFlagger)
 
         let provider = try XCTUnwrap(facade.activeProvider as? NewTabPageNextStepsSingleCardProvider)
@@ -210,7 +211,7 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         XCTAssertEqual(receivedCards.last, legacyProvider.cards)
 
         // Switch flag on
-        featureFlagger.enabledFeatureFlags = [.nextStepsSingleCardIteration]
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
         featureFlagger.triggerUpdate()
 
         // Now uses single card provider

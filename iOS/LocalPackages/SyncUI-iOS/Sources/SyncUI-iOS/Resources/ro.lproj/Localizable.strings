@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Renunță";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Activează Sincronizare și backup";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Aceasta creează o copie de rezervă criptată a marcajelor și a datelor de completare automată pe serverul securizat DuckDuckGo, care poate fi sincronizată cu celelalte dispozitive ale tale.";
 

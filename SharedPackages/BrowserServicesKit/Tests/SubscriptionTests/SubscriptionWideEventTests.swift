@@ -468,7 +468,7 @@ final class SubscriptionWideEventTests: XCTestCase {
 
 }
 
-private struct MockWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+struct MockWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     let isPostEndpointEnabled: Bool
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {

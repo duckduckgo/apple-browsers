@@ -638,6 +638,47 @@ class HistoryCoordinatorTests: XCTestCase {
         XCTAssertFalse(results[4], "test.org should be reset")
     }
 
+    // MARK: - Tab ID Tests
+
+    @MainActor
+    func testWhenAddVisitIsCalledWithTabID_ThenTabIDIsStoredInVisit() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        let url = URL(string: "https://duckduckgo.com")!
+        let tabID = "test-tab-789"
+
+        historyCoordinator.addVisit(of: url, tabID: tabID)
+
+        let expectation = expectation(description: "Changes committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        let savedTabID = historyStoringMock.savedVisitsWithTabIDs.last?.tabID
+        XCTAssertEqual(savedTabID, tabID)
+    }
+
+    @MainActor
+    func testWhenAddVisitIsCalledWithNilTabID_ThenVisitHasNoTabID() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        let url = URL(string: "https://duckduckgo.com")!
+
+        historyCoordinator.addVisit(of: url, tabID: nil)
+
+        let expectation = expectation(description: "Changes committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        let savedTabID = historyStoringMock.savedVisitsWithTabIDs.last?.tabID
+        XCTAssertNil(savedTabID)
+    }
+
 }
 
 fileprivate extension HistoryCoordinator {
@@ -728,6 +769,7 @@ actor HistoryStoringMock: HistoryStoring {
 
     @MainActor var saveCalled = false
     @MainActor var savedHistoryEntries = [HistoryEntry]()
+    @MainActor var savedVisitsWithTabIDs: [(visit: Visit, tabID: String?)] = []
     @MainActor var saveCompletion: (() -> Void)?
 
     func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
@@ -739,6 +781,9 @@ actor HistoryStoringMock: HistoryStoring {
         await MainActor.run {
             saveCalled = true
             savedHistoryEntries.append(entry)
+            for visit in entry.visits {
+                savedVisitsWithTabIDs.append((visit, visit.tabID))
+            }
             saveCompletion?()
         }
 
@@ -747,14 +792,14 @@ actor HistoryStoringMock: HistoryStoring {
 
 }
 
-class MockHistoryStoreEventMapper: EventMapping<HistoryStore.HistoryStoreEvents> {
+class MockHistoryStoreEventMapper: EventMapping<HistoryDatabaseError> {
     public init() {
         super.init { _, _, _, _ in
             // no-op
         }
     }
 
-    override init(mapping: @escaping EventMapping<HistoryStore.HistoryStoreEvents>.Mapping) {
+    override init(mapping: @escaping EventMapping<HistoryDatabaseError>.Mapping) {
         fatalError("Use init()")
     }
 }

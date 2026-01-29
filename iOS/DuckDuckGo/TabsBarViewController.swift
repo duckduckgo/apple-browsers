@@ -31,7 +31,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int)
     func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int)
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController)
-    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireOptions: FireOptions)
+    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest)
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController)
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
 
@@ -61,6 +61,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }()
 
     weak var delegate: TabsBarDelegate?
+    var tabManager: TabManaging?
     var historyManager: HistoryManaging?
     var fireproofing: Fireproofing?
     var aiChatSettings: AIChatSettingsProvider?
@@ -150,9 +151,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: fireButton,
-                onConfirm: { [weak self] fireOptions in
+                onConfirm: { [weak self] fireRequest in
                     guard let self = self else { return }
-                    self.delegate?.tabsBarDidRequestForgetAll(self, fireOptions: fireOptions)
+                    self.delegate?.tabsBarDidRequestForgetAll(self, fireRequest: fireRequest)
                 },
                 onCancel: {
                     // TODO: - Maybe add pixel
@@ -370,6 +371,12 @@ extension MainViewController: TabsBarDelegate {
   
     func tabsBar(_ controller: TabsBarViewController, didSelectTabAtIndex index: Int) {
         dismissOmniBar()
+
+        // Tabs bar is iPad only and this is to work around on a problem iOS 26 which will be fixed later with Xcode 26.
+        if index != self.tabManager.model.currentIndex {
+            chromeManager.preventNextScrollToTop()
+        }
+        
         select(tabAt: index)
     }
     
@@ -387,8 +394,8 @@ extension MainViewController: TabsBarDelegate {
         newTab()
     }
     
-    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireOptions: FireOptions) {
-        forgetAllWithAnimation(options: fireOptions)
+    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest) {
+        forgetAllWithAnimation(request: fireRequest)
     }
     
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController) {
@@ -399,5 +406,5 @@ extension MainViewController: TabsBarDelegate {
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController) {
         showTabSwitcher()
     }
-    
+
 }

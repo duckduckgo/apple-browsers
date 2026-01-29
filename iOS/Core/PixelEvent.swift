@@ -1111,6 +1111,10 @@ extension Pixel {
         case historySaveFailed
         case historyInsertVisitFailed
         case historyRemoveVisitsFailed
+        case historyLoadTabHistoryFailed
+        case historyInsertTabHistoryFailed
+        case historyRemoveTabHistoryFailed
+        case historyCleanOrphanedTabHistoryFailed
 
         // MARK: Subscription
         case subscriptionActive
@@ -1235,6 +1239,9 @@ extension Pixel {
         case settingsAddressBarBottomSelected
         case settingsShowFullURLOn
         case settingsShowFullURLOff
+        case settingsTrackerCountInAddressBarToggled
+        case settingsTrackerCountInTabSwitcherToggled
+        case tabSwitcherTrackerCountHidden
         case settingsDataClearingOpen
         case settingsFireButtonSelectorPressed
         case settingsDataClearingClearDataOpen
@@ -1265,6 +1272,10 @@ extension Pixel {
         case subscriptionTierOptionsSuccess
         case subscriptionTierOptionsFailure
         case subscriptionTierOptionsUnexpectedProTier
+
+        // Plan Change
+        case subscriptionViewAllPlansClick
+        case subscriptionUpgradeClick
 
         // MARK: Apple Ad Attribution
         case appleAdAttribution
@@ -1384,6 +1395,8 @@ extension Pixel {
         case aiChatSettingsDisplayed
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
+        case aiChatSettingsAutoContextEnabled
+        case aiChatSettingsAutoContextDisabled
 
         case aiChatOpen
         case aiChatMetricStartNewConversation
@@ -1451,6 +1464,26 @@ extension Pixel {
         case aiChatContextualOnboardingDisplayed
         case aiChatContextualOnboardingConfirmPressed
         case aiChatContextualOnboardingSettingsPressed
+
+        // MARK: AI Chat Recent Chats
+        case aiChatRecentChatSelectedPinned
+        case aiChatRecentChatSelected
+
+        // MARK: AI Chat Contextual Mode
+        case aiChatContextualSheetOpened
+        case aiChatContextualSheetDismissed
+        case aiChatContextualExpandButtonTapped
+        case aiChatContextualNewChatButtonTapped
+        case aiChatContextualQuickActionSummarizeSelected
+        case aiChatContextualPageContextAutoAttached
+        case aiChatContextualPageContextUpdatedOnNavigation
+        case aiChatContextualPageContextManuallyAttachedNative
+        case aiChatContextualPageContextManuallyAttachedFrontend
+        case aiChatContextualPageContextRemovedNative
+        case aiChatContextualPageContextRemovedFrontend
+        case aiChatContextualPromptSubmittedWithContextNative
+        case aiChatContextualPromptSubmittedWithoutContextNative
+        case aiChatContextualSessionRestored
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -1645,6 +1678,9 @@ extension Pixel.Event {
         case .settingsAddressBarBottomSelected: return "m_settings_address_bar_bottom_selected"
         case .settingsShowFullURLOn: return "m_settings_show_full_url_on"
         case .settingsShowFullURLOff: return "m_settings_show_full_url_off"
+        case .settingsTrackerCountInAddressBarToggled: return "m_appearance_settings_tracker_count_in_address_bar_toggled"
+        case .settingsTrackerCountInTabSwitcherToggled: return "m_appearance_settings_tracker_count_in_tab_switcher_toggled"
+        case .tabSwitcherTrackerCountHidden: return "m_tab_switcher_tracker_count_hidden"
         case .settingsDataClearingOpen: return "m_settings_data_clearing_open"
         case .settingsFireButtonSelectorPressed: return "m_settings_fire_button_selector_pressed"
         case .settingsDataClearingClearDataOpen: return "m_settings_data_clearing_clear_data_open"
@@ -2565,6 +2601,11 @@ extension Pixel.Event {
         case .historySaveFailed: return "m_debug_history-save-failed"
         case .historyInsertVisitFailed: return "m_debug_history-insert-visit-failed"
         case .historyRemoveVisitsFailed: return "m_debug_history-remove-visits-failed"
+        case .historyLoadTabHistoryFailed: return "m_debug_history-load-tab-history-failed"
+        case .historyInsertTabHistoryFailed: return "m_debug_history-insert-tab-history-failed"
+        case .historyRemoveTabHistoryFailed: return "m_debug_history-remove-tab-history-failed"
+        case .historyCleanOrphanedTabHistoryFailed: return "m_debug_history-clean-orphaned-tab-history-failed"
+
 
         // MARK: Subscription
         case .subscriptionActive: return "m_privacy-pro_app_subscription_active"
@@ -2672,6 +2713,11 @@ extension Pixel.Event {
         case .subscriptionTierOptionsSuccess: return "m_subscription_tier-options_success"
         case .subscriptionTierOptionsFailure: return "m_subscription_tier-options_failure"
         case .subscriptionTierOptionsUnexpectedProTier: return "m_subscription_tier-options_unexpected-pro-tier"
+
+        // Plan Change
+        case .subscriptionViewAllPlansClick: return "m_subscription_settings_view-all-plans_click"
+        case .subscriptionUpgradeClick: return "m_subscription_settings_upgrade_click"
+
         case .networkProtectionFailureRecoveryStarted: return "m_netp_ev_failure_recovery_started"
         case .networkProtectionFailureRecoveryFailed: return "m_netp_ev_failure_recovery_failed"
         case .networkProtectionFailureRecoveryCompletedHealthy: return "m_netp_ev_failure_recovery_completed_server_healthy"
@@ -2821,6 +2867,8 @@ extension Pixel.Event {
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
+        case .aiChatSettingsAutoContextEnabled: return "m_aichat_settings_auto_context_enabled"
+        case .aiChatSettingsAutoContextDisabled: return "m_aichat_settings_auto_context_disabled"
         case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
         case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 
@@ -2883,6 +2931,26 @@ extension Pixel.Event {
         case .aiChatContextualOnboardingDisplayed: return "m_aichat_contextual_onboarding_displayed"
         case .aiChatContextualOnboardingConfirmPressed: return "m_aichat_contextual_onboarding_confirm_pressed"
         case .aiChatContextualOnboardingSettingsPressed: return "m_aichat_contextual_onboarding_settings_pressed"
+
+        // MARK: AI Chat Recent Chats
+        case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"
+        case .aiChatRecentChatSelected: return "m_aichat_recent_chat_selected"
+
+        // MARK: AI Chat Contextual Mode
+        case .aiChatContextualSheetOpened: return "m_aichat_contextual_sheet_opened"
+        case .aiChatContextualSheetDismissed: return "m_aichat_contextual_sheet_dismissed"
+        case .aiChatContextualExpandButtonTapped: return "m_aichat_contextual_expand_button_tapped"
+        case .aiChatContextualNewChatButtonTapped: return "m_aichat_contextual_new_chat_button_tapped"
+        case .aiChatContextualQuickActionSummarizeSelected: return "m_aichat_contextual_quick_action_summarize_selected"
+        case .aiChatContextualPageContextAutoAttached: return "m_aichat_contextual_page_context_auto_attached"
+        case .aiChatContextualPageContextUpdatedOnNavigation: return "m_aichat_contextual_page_context_updated_on_navigation"
+        case .aiChatContextualPageContextManuallyAttachedNative: return "m_aichat_contextual_page_context_manually_attached_native"
+        case .aiChatContextualPageContextManuallyAttachedFrontend: return "m_aichat_contextual_page_context_manually_attached_frontend"
+        case .aiChatContextualPageContextRemovedNative: return "m_aichat_contextual_page_context_removed_native"
+        case .aiChatContextualPageContextRemovedFrontend: return "m_aichat_contextual_page_context_removed_frontend"
+        case .aiChatContextualPromptSubmittedWithContextNative: return "m_aichat_contextual_prompt_submitted_with_context_native"
+        case .aiChatContextualPromptSubmittedWithoutContextNative: return "m_aichat_contextual_prompt_submitted_without_context_native"
+        case .aiChatContextualSessionRestored: return "m_aichat_contextual_session_restored"
 
         // MARK: AI Chat Sync
 

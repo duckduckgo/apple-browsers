@@ -249,6 +249,9 @@ jobs:
     env:
       RUNS_ON: macos-15 # keep this in sync with runs-on above
 
+    outputs:
+      changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}
+
     steps:
 
     - name: Register SSH keys for access to certificates
@@ -336,12 +339,21 @@ jobs:
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
+    - name: Check for changed strings files
+      id: changed-strings-files
+      run: |
+        changed_files=$(git diff --name-only HEAD -- ':(glob)**/*.strings' || true)
+        # Preserve newlines in the changed_files output
+        echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+        echo "$changed_files" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
   translation-check:
     name: Translated Strings
 
     runs-on: ubuntu-latest
 
-    needs: should-run-checks
+    needs: [should-run-checks, release-build]
     # Only run for PRs targeting main, release/*, or hotfix/* branches
     if: >
       github.event_name == 'pull_request' &&
@@ -365,7 +377,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Verify string extraction
+      - name: Verify string extraction to strings files
+        env:
+          CHANGED_FILES: ${{ needs.release-build.outputs.changed_files }}
+        run: |
+          # Check if any .strings files were modified during build
+          if [[ -n "$CHANGED_FILES" ]]; then
+            echo "⚠️ Uncommitted changes to .strings files detected after build. Please commit these files:"
+            echo "$CHANGED_FILES"
+            exit 1
+          else
+            echo "✅ No uncommitted changes to .strings files detected after build"
+            exit 0
+          fi
+
+      - name: Verify string extraction to xcstrings files
         run: python3 scripts/translation-pr-checks/verify_string_extraction.py --platform iOS
 
       - name: Check translations

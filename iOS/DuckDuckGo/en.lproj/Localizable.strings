@@ -1357,9 +1357,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sent with your message to Duck.ai";
 
-/* Subtitle shown on the context chip indicating page content is attached */
-"duckai.context.chip.subtitle" = "Page Content";
-
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
 "duckai.contextual.onboarding.body" = "Duck.ai can now help answer questions about the page you're viewing.\n\nPage content is only included when you attach it. You can change this anytime in Settings.";
 
@@ -1374,6 +1371,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Attach Page Content";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Summarize this Page";
@@ -2830,8 +2830,8 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Show Full Site Address";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Show Trackers Blocked Animation";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Show in Address Bar";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";
@@ -3208,8 +3208,8 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sync & Backup";
 
-/* Settings screen cell title for toggling tracker count banner in tab switcher */
-"settings.tab.switcher.show.tracker.count" = "7-Day Tracker Count";
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Show in Tabs Manager";
 
 /* Settings screen section title for tab-related appearance options */
 "settings.tabs" = "Tabs";
@@ -3222,6 +3222,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Title for the Settings View */
 "settings.title" = "Settings";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Trackers Blocked Animation";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.";
@@ -3448,6 +3451,9 @@ Take back control of your personal information with the browser designed for dat
 /* Help and support Section header */
 "subscription.help" = "Help and support";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Manage Payment or Cancel";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Manage Plan";
 
@@ -3547,6 +3553,15 @@ Take back control of your personal information with the browser designed for dat
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Your annual subscription expires on %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Your plan will downgrade to %1$@ Monthly on %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Your plan will downgrade to %1$@ on %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Your plan will downgrade to %1$@ Yearly on %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Your monthly subscription renews on %@.";
 
@@ -3567,6 +3582,15 @@ Take back control of your personal information with the browser designed for dat
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Free Trial Active";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Upgrade to %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Unlock smarter, more powerful AI";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Upgrade";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "View All Plans";
@@ -3707,7 +3731,7 @@ Take back control of your personal information with the browser designed for dat
 "tab.switcher.tracker.count.keep.action" = "Keep";
 
 /* Subtitle for tracker count banner indicating time window */
-"tab.switcher.tracker.count.subtitle" = "in the last 7 days";
+"tab.switcher.tracker.count.subtitle" = "in last 7 days";
 
 /* Do not translate - stringsdict entry */
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";

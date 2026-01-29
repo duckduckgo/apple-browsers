@@ -133,7 +133,7 @@ final class AIChatSettings: AIChatSettingsProvider {
     }
 
     var isAutomaticContextAttachmentEnabled: Bool {
-        keyValueStore.bool(.isAIChatAutomaticContextAttachmentEnabledKey, defaultValue: .isAIChatAutomaticContextAttachmentDefaultValue)
+        keyValueStore.bool(.isAIChatAutomaticContextAttachmentEnabledKey, defaultValue: featureFlagger.isFeatureOn(.aiChatAutoAttachContextByDefault))
     }
 
     var hasSeenContextualOnboarding: Bool {
@@ -223,6 +223,12 @@ final class AIChatSettings: AIChatSettingsProvider {
     func enableAutomaticContextAttachment(enable: Bool) {
         keyValueStore.set(enable, forKey: .isAIChatAutomaticContextAttachmentEnabledKey)
         triggerSettingsChangedNotification()
+
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAutoContextEnabled)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAutoContextDisabled)
+        }
     }
     
     /// Process the settings view funnels step
@@ -287,7 +293,6 @@ private extension Bool {
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
     static let showAIChatExperimentalSearchInputDefaultValue = false
-    static let isAIChatAutomaticContextAttachmentDefaultValue = true
     static let hasSeenContextualOnboardingDefaultValue = false
 
 }

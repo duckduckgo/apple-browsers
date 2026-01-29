@@ -142,6 +142,8 @@ struct Foreground: ForegroundHandling {
         appDependencies.launchSourceManager.handleAppAction(launchAction)
         appDependencies.mainCoordinator.onForeground()
 
+        appDependencies.backgroundTaskManager.endBackgroundTask()
+
         let switchBarRetentionMetrics = SwitchBarRetentionMetrics(aiChatSettings: appDependencies.aiChatSettings)
         switchBarRetentionMetrics.checkDailyAndSendPixelIfApplicable()
     }

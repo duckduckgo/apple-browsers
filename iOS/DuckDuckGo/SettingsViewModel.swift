@@ -115,7 +115,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
-    var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireOptions) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
+    var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
     @Published private(set) var state: SettingsState
@@ -307,6 +307,8 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.state.showTrackersBlockedAnimation = $0
                 self.appSettings.showTrackersBlockedAnimation = $0
+                Pixel.fire(pixel: .settingsTrackerCountInAddressBarToggled,
+                          withAdditionalParameters: [PixelParameters.enabled: String($0)])
             }
         )
     }
@@ -1302,8 +1304,8 @@ extension SettingsViewModel {
         }
     }
 
-    func forgetAll(with options: FireOptions) {
-        autoClearActionDelegate?.performDataClearing(with: options)
+    func forgetAll(fireRequest: FireRequest) {
+        autoClearActionDelegate?.performDataClearing(for: fireRequest)
     }
 
     func restoreAccountPurchase() async {
@@ -1450,6 +1452,8 @@ extension SettingsViewModel {
             get: { self.tabSwitcherSettings.showTrackerCountInTabSwitcher },
             set: { newValue in
                 self.tabSwitcherSettings.showTrackerCountInTabSwitcher = newValue
+                Pixel.fire(pixel: .settingsTrackerCountInTabSwitcherToggled,
+                          withAdditionalParameters: [PixelParameters.enabled: String(newValue)])
             }
         )
     }
@@ -1483,8 +1487,8 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
     }
 
     func presentFireConfirmation(from sourceRect: CGRect) {
-        onRequestPresentFireConfirmation?(sourceRect, { [weak self] options in
-            self?.forgetAll(with: options)
+        onRequestPresentFireConfirmation?(sourceRect, { [weak self] fireRequest in
+            self?.forgetAll(fireRequest: fireRequest)
         }, {
             // Cancelled - no action needed
         })

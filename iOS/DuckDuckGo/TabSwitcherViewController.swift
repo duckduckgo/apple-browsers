@@ -351,6 +351,7 @@ class TabSwitcherViewController: UIViewController {
                                       preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountKeepAction, style: .cancel))
         alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountHideAction, style: .default) { [weak self] _ in
+            Pixel.fire(pixel: .tabSwitcherTrackerCountHidden)
             self?.trackerCountViewModel?.hide()
         })
         present(alert, animated: true)
@@ -502,8 +503,8 @@ class TabSwitcherViewController: UIViewController {
         burn(sender: sender)
     }
 
-    func forgetAll(_ options: FireOptions) {
-        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self, fireOptions: options)
+    func forgetAll(_ fireRequest: FireRequest) {
+        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self, fireRequest: fireRequest)
     }
 
     func dismiss() {

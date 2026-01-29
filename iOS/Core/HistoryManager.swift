@@ -26,20 +26,25 @@ import Persistence
 import os.log
 
 public protocol HistoryManaging {
-    
-    var historyCoordinator: HistoryCoordinating { get }
+
     var isEnabledByUser: Bool { get }
+    var history: BrowsingHistory? { get }
     @MainActor func removeAllHistory() async
     @MainActor func deleteHistoryForURL(_ url: URL) async
-
+    @MainActor func addVisit(of url: URL, tabID: String?)
+    @MainActor func updateTitleIfNeeded(title: String, url: URL)
+    @MainActor func commitChanges(url: URL)
+    @MainActor func tabHistory(tabID: String) async throws -> [URL]
+    @MainActor func removeTabHistory(for tabIDs: [String]) async
 }
 
 public class HistoryManager: HistoryManaging {
 
-    let dbCoordinator: HistoryCoordinator
+    let dbCoordinator: HistoryCoordinating
     let tld: TLD
+    let tabHistoryCoordinator: TabHistoryCoordinating
 
-    public var historyCoordinator: HistoryCoordinating {
+    private var historyCoordinator: HistoryCoordinating {
         guard isEnabledByUser else {
             return NullHistoryCoordinator()
         }
@@ -54,15 +59,22 @@ public class HistoryManager: HistoryManaging {
     }
 
     /// Use `make()`
-    init(dbCoordinator: HistoryCoordinator,
+    init(dbCoordinator: HistoryCoordinating,
          tld: TLD,
+         tabHistoryCoordinator: TabHistoryCoordinating,
          isAutocompleteEnabledByUser: @autoclosure @escaping () -> Bool,
          isRecentlyVisitedSitesEnabledByUser: @autoclosure @escaping () -> Bool) {
 
         self.dbCoordinator = dbCoordinator
         self.tld = tld
+        self.tabHistoryCoordinator = tabHistoryCoordinator
         self.isAutocompleteEnabledByUser = isAutocompleteEnabledByUser
         self.isRecentlyVisitedSitesEnabledByUser = isRecentlyVisitedSitesEnabledByUser
+    }
+    
+    @MainActor
+    public var history: BrowsingHistory? {
+        historyCoordinator.history
     }
 
     @MainActor
@@ -85,6 +97,39 @@ public class HistoryManager: HistoryManaging {
             }
         }
     }
+    
+    @MainActor
+    public func addVisit(of url: URL, tabID: String?) {
+        if isEnabledByUser {
+            historyCoordinator.addVisit(of: url, tabID: tabID)
+        } else {
+            tabHistoryCoordinator.addVisit(of: url, tabID: tabID)
+        }
+    }
+    
+    @MainActor
+    public func updateTitleIfNeeded(title: String, url: URL) {
+        historyCoordinator.updateTitleIfNeeded(title: title, url: url)
+    }
+    
+    @MainActor
+    public func commitChanges(url: URL) {
+        historyCoordinator.commitChanges(url: url)
+    }
+    
+    @MainActor
+    public func tabHistory(tabID: String) async throws -> [URL] {
+        return try await tabHistoryCoordinator.tabHistory(tabID: tabID)
+    }
+
+    @MainActor
+    public func removeTabHistory(for tabIDs: [String]) async {
+        do {
+            try await tabHistoryCoordinator.removeVisits(for: tabIDs)
+        } catch {
+            Logger.history.error("Failed to remove tab history: \(error.localizedDescription)")
+        }
+    }
 
 }
 
@@ -102,11 +147,7 @@ class NullHistoryCoordinator: HistoryCoordinating {
         $historyDictionary
     }
 
-    func addVisit(of url: URL) -> History.Visit? {
-        return nil
-    }
-
-    func addVisit(of url: URL, at date: Date) -> History.Visit? {
+    func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
         return nil
     }
 
@@ -195,7 +236,7 @@ public class HistoryDatabase {
     }
 }
 
-class HistoryStoreEventMapper: EventMapping<HistoryStore.HistoryStoreEvents> {
+class HistoryStoreEventMapper: EventMapping<History.HistoryDatabaseError> {
     public init() {
         super.init { event, error, _, _ in
             switch event {
@@ -219,12 +260,24 @@ class HistoryStoreEventMapper: EventMapping<HistoryStore.HistoryStoreEvents> {
 
             case .removeVisitsFailed:
                 Pixel.fire(pixel: .historyRemoveVisitsFailed, error: error)
+
+            case .loadTabHistoryFailed:
+                Pixel.fire(pixel: .historyLoadTabHistoryFailed, error: error)
+
+            case .insertTabHistoryFailed:
+                Pixel.fire(pixel: .historyInsertTabHistoryFailed, error: error)
+                
+            case .removeTabHistoryFailed:
+                Pixel.fire(pixel: .historyRemoveTabHistoryFailed, error: error)
+
+            case .cleanOrphanedTabHistoryFailed:
+                Pixel.fire(pixel: .historyCleanOrphanedTabHistoryFailed, error: error)
             }
 
         }
     }
 
-    override init(mapping: @escaping EventMapping<HistoryStore.HistoryStoreEvents>.Mapping) {
+    override init(mapping: @escaping EventMapping<History.HistoryDatabaseError>.Mapping) {
         fatalError("Use init()")
     }
 }
@@ -234,6 +287,7 @@ extension HistoryManager {
     /// Should only be called once in the app
     public static func make(isAutocompleteEnabledByUser: @autoclosure @escaping () -> Bool,
                             isRecentlyVisitedSitesEnabledByUser: @autoclosure @escaping () -> Bool,
+                            openTabIDsProvider: @escaping () -> [String],
                             tld: TLD) -> Result<HistoryManager, Error> {
 
         let database = HistoryDatabase.make()
@@ -248,9 +302,12 @@ extension HistoryManager {
 
         let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
         let dbCoordinator = HistoryCoordinator(historyStoring: HistoryStore(context: context, eventMapper: HistoryStoreEventMapper()))
-
+        let tabHistoryStore = TabHistoryStore(context: context, eventMapper: HistoryStoreEventMapper())
+        let tabHistoryCoordinator = TabHistoryCoordinator(tabHistoryStoring: tabHistoryStore,
+                                                          openTabIDsProvider: openTabIDsProvider)
         let historyManager = HistoryManager(dbCoordinator: dbCoordinator,
                                             tld: tld,
+                                            tabHistoryCoordinator: tabHistoryCoordinator,
                                             isAutocompleteEnabledByUser: isAutocompleteEnabledByUser(),
                                             isRecentlyVisitedSitesEnabledByUser: isRecentlyVisitedSitesEnabledByUser())
 

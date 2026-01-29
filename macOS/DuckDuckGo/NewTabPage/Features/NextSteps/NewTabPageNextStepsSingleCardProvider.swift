@@ -154,7 +154,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.syncService = syncService
 
         refreshCardList()
-        observeSubscriptionCardVisibilityChanges()
+        observeCardVisibilityChanges()
         observeKeyWindowChanges()
         observeNewTabPageWebViewDidAppear()
     }
@@ -266,7 +266,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .subscription:
             return subscriptionCardVisibilityManager.shouldShowSubscriptionCard
         case .personalizeBrowser:
-            return !appearancePreferences.didOpenCustomizationSettings
+            return !appearancePreferences.didChangeAnyNewTabPageCustomizationSetting
         case .sync:
             return syncService?.featureFlags.contains(.all) == true && syncService?.authState == .inactive
         }
@@ -300,9 +300,9 @@ private extension NewTabPageNextStepsSingleCardProvider {
         }
     }
 
-    func observeSubscriptionCardVisibilityChanges() {
-        subscriptionCardVisibilityManager.shouldShowSubscriptionCardPublisher
-            .removeDuplicates()
+    func observeCardVisibilityChanges() {
+        subscriptionCardVisibilityManager.shouldShowSubscriptionCardPublisher.removeDuplicates()
+            .combineLatest(appearancePreferences.$didChangeAnyNewTabPageCustomizationSetting.removeDuplicates())
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshCardList()

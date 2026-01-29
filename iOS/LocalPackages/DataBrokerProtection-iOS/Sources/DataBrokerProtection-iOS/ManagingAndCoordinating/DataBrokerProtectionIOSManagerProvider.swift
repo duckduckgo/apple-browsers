@@ -116,7 +116,8 @@ public class DataBrokerProtectionIOSManagerProvider {
         let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
                                             settings: dbpSettings,
                                             servicePixel: backendServicePixels)
-        let emailConfirmationDataService = EmailConfirmationDataService(database: database,
+        let emailConfirmationDataService = EmailConfirmationDataService(emailConfirmationStore: database,
+                                                                        database: database,
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
                                                                         featureFlagger: featureFlagger,
@@ -137,7 +138,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             featureFlagger: featureFlagger,
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
-            wideEvent: wideEvent
+            wideEvent: wideEvent,
+            isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated }
         )
 
         return DataBrokerProtectionIOSManager(

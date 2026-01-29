@@ -62,7 +62,8 @@ class AutoClearHandlerTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
         startupPreferences = StartupPreferences(
             persistor: persistor2,
@@ -86,7 +87,7 @@ class AutoClearHandlerTests: XCTestCase {
                                    startupPreferences: startupPreferences,
                                    fireViewModel: fireViewModel,
                                    stateRestorationManager: appStateRestorationManager,
-                                   syncAIChatsCleaner: nil,
+                                   aiChatSyncCleaner: nil,
                                    alertPresenter: mockAlertPresenter)
     }
 

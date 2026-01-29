@@ -113,7 +113,7 @@ struct SubscriptionSettingsViewV2: View {
                         .foregroundColor(Color(designSystemColor: .accent))
                         .padding(.leading, 36) // 24 (icon) + 12 (spacing) to align with text
                 },
-                action: { viewModel.navigateToPlans(goToUpgrade: true) },
+                action: { viewModel.navigateToPlans(tier: tierName) },
                 disclosureIndicator: true,
                 isButton: true)
             }
@@ -415,10 +415,10 @@ struct SubscriptionSettingsViewV2: View {
         ) { EmptyView() }
             .hidden()
 
-        // Upgrade navigation
+        // Upgrade navigation - uses pendingUpgradeTier captured at button click to avoid race conditions
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makePlansFlowV2(
-                redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue, goToUpgrade: true),
+                redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue, tier: viewModel.state.pendingUpgradeTier),
                 navigationCoordinator: subscriptionNavigationCoordinator,
                 subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,

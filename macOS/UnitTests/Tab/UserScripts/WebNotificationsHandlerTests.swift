@@ -141,11 +141,11 @@ private class WebNotificationMockScriptMessage: WKScriptMessage {
         self.mockedName = name
         self.mockedBody = body
         self.mockedWebView = effectiveWebView
-        self.mockedFrameInfo = frameInfo ?? WKFrameInfoMock(
-            webView: effectiveWebView,
+        self.mockedFrameInfo = frameInfo ?? WKFrameInfo.mock(
+            for: effectiveWebView,
+            isMain: isMainFrame,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
-            request: URLRequest(url: URL(string: "https://example.com")!),
-            isMainFrame: isMainFrame
+            request: URLRequest(url: URL(string: "https://example.com")!)
         )
         super.init()
     }

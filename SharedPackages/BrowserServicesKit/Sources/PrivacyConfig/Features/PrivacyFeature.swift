@@ -20,7 +20,6 @@ import Foundation
 
 /// Features whose `rawValue` should be the key to access their corresponding `PrivacyConfigurationData.PrivacyFeature` object
 public enum PrivacyFeature: String {
-    case breakageReporting
     case contentBlocking
     case duckPlayer
     case fingerprintingTemporaryStorage
@@ -48,7 +47,6 @@ public enum PrivacyFeature: String {
     case privacyDashboard
     case updates
     case updatesWontAutomaticallyRestartApp
-    case performanceMetrics
     case privacyPro
     case sslCertificates
     case toggleReports
@@ -84,6 +82,7 @@ public enum PrivacyFeature: String {
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport
+    case duckAiChatHistory
     case serp
     case popupBlocking
     case combinedPermissionView
@@ -205,6 +204,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1212238464901412?focus=true
     case showWhatsNewPromptOnDemand
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
+    case genericBackgroundTask
 
     // https://app.asana.com/1/137249556945/project/392891325557410/task/1211597475706631?focus=true
     case webViewFlashPrevention
@@ -341,6 +343,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables ATB measurement for Duck.ai usage on iOS
     case aiChatAtb
+
+    /// Controls whether automatic page context attachment defaults to enabled
+    case autoAttachContextByDefault
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -435,7 +440,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
-    case tierMessagingEnabled
     case allowProTierPurchase
 }
 

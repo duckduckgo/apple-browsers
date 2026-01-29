@@ -130,7 +130,8 @@ public class DataBrokerProtectionAgentManagerProvider {
         let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
                                             settings: dbpSettings,
                                             servicePixel: backendServicePixels)
-        let emailConfirmationDataService = EmailConfirmationDataService(database: dataManager.database,
+        let emailConfirmationDataService = EmailConfirmationDataService(emailConfirmationStore: dataManager.database,
+                                                                        database: dataManager.database,
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
                                                                         featureFlagger: featureFlagger,
@@ -157,7 +158,8 @@ public class DataBrokerProtectionAgentManagerProvider {
             captchaService: captchaService,
             featureFlagger: featureFlagger,
             vpnBypassService: vpnBypassService,
-            wideEvent: wideEvent)
+            wideEvent: wideEvent,
+            isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated })
 
         return DataBrokerProtectionAgentManager(
             eventsHandler: eventsHandler,

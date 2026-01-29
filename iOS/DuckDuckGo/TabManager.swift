@@ -220,6 +220,15 @@ class TabManager: TabManaging {
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
     }
+    
+    @MainActor
+    func viewModel(for tab: Tab) -> TabViewModel {
+        if let controller = controller(for: tab) {
+            return controller.viewModel
+        } else {
+            return TabViewModel(tab: tab, historyManager: historyManager)
+        }
+    }
 
     var isEmpty: Bool {
         return tabControllerCache.isEmpty
@@ -369,26 +378,16 @@ class TabManager: TabManaging {
     ///  Tab Switcher's UICollectionView 'delete items' function doesn't complain about mis-matching
     ///   number of items.
     func bulkRemoveTabs(_ indexPaths: [IndexPath]) {
-        indexPaths.forEach {
-            let tab = model.get(tabAt: $0.row)
-            previewsSource.removePreview(forTab: tab)
-            if let controller = controller(for: tab) {
-                removeFromCache(controller)
-            }
-            interactionStateSource?.removeStateForTab(tab)
-        }
+        let tabs = indexPaths.map { model.get(tabAt: $0.row) }
         model.remove(indexPaths)
+        clean(tabs: tabs)
         save()
     }
 
     func remove(at index: Int) {
         let tab = model.get(tabAt: index)
-        previewsSource.removePreview(forTab: tab)
         model.remove(tab: tab)
-        if let controller = controller(for: tab) {
-            removeFromCache(controller)
-        }
-        interactionStateSource?.removeStateForTab(tab)
+        clean(tabs: [tab])
         save()
     }
 
@@ -399,7 +398,9 @@ class TabManager: TabManaging {
             //  things are cleaned up properly.
             remove(at: index)
         } else {
+            let oldTab = model.get(tabAt: index)
             model.remove(at: index)
+            clean(tabs: [oldTab])
             model.insert(tab: newTab, at: index)
         }
         save()
@@ -413,12 +414,14 @@ class TabManager: TabManaging {
     }
 
     func removeAll() {
+        let tabIDs = model.tabs.map { $0.uid }
         previewsSource.removeAllPreviews()
         model.clearAll()
         for controller in tabControllerCache {
             removeFromCache(controller)
         }
         interactionStateSource?.removeAll(excluding: [])
+        removeTabHistory(for: tabIDs)
         save()
     }
 
@@ -480,6 +483,27 @@ class TabManager: TabManaging {
             }
 
             self.tabsCacheNeedsCleanup = false
+        }
+    }
+
+    // MARK: - Tab Cleanup
+    
+    private func clean(tabs: [Tab]) {
+        let tabIDs = tabs.map { $0.uid }
+        tabs.forEach { tab in
+            previewsSource.removePreview(forTab: tab)
+            if let controller = controller(for: tab) {
+                removeFromCache(controller)
+            }
+            interactionStateSource?.removeStateForTab(tab)
+        }
+        removeTabHistory(for: tabIDs)
+    }
+
+    private func removeTabHistory(for tabIDs: [String]) {
+        guard !tabIDs.isEmpty else { return }
+        Task {
+            await historyManager.removeTabHistory(for: tabIDs)
         }
     }
 }

@@ -94,8 +94,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         APIMockResponseFactory.mockRefreshAccessTokenResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockGetJWKS(destinationMockAPIService: apiService, success: true)
         SubscriptionAPIMockResponseFactory.mockConfirmPurchase(destinationMockAPIService: apiService, success: true)
-        SubscriptionAPIMockResponseFactory.mockGetProducts(destinationMockAPIService: apiService, success: true)
-        SubscriptionAPIMockResponseFactory.mockGetFeatures(destinationMockAPIService: apiService, success: true, subscriptionID: "ios.subscription.1month")
+        SubscriptionAPIMockResponseFactory.mockGetTierFeatures(destinationMockAPIService: apiService, success: true, subscriptionIDs: ["ios.subscription.1month"])
 
         await (subscriptionManager.oAuthClient as! DefaultOAuthClient).setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainerWithEntitlements())
 
@@ -223,7 +222,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         }
     }
 
-    func testAppStorePurchaseFailure_get_features() async throws {
+    func testAppStorePurchaseFailure_get_tier_features() async throws {
         APIMockResponseFactory.mockAuthoriseResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockCreateAccountResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockGetAccessTokenResponse(destinationMockAPIService: apiService, success: true)
@@ -233,9 +232,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         storePurchaseManager.purchaseSubscriptionResult = .success("purchaseTransactionJWS")
 
         SubscriptionAPIMockResponseFactory.mockConfirmPurchase(destinationMockAPIService: apiService, success: true)
-        SubscriptionAPIMockResponseFactory.mockGetFeatures(destinationMockAPIService: apiService, success: false, subscriptionID: "ios.subscription.1month")
-
-        await (subscriptionManager.oAuthClient as! DefaultOAuthClient).setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainerWithEntitlements())
+        SubscriptionAPIMockResponseFactory.mockGetTierFeatures(destinationMockAPIService: apiService, success: false, subscriptionIDs: ["ios.subscription.1month"])
 
         var purchaseTransactionJWS: String?
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID, includeProTier: true) {
@@ -265,8 +262,6 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
 
         // Configure mock API responses for completing the purchase
         SubscriptionAPIMockResponseFactory.mockConfirmPurchase(destinationMockAPIService: apiService, success: true)
-        SubscriptionAPIMockResponseFactory.mockGetProducts(destinationMockAPIService: apiService, success: true)
-        SubscriptionAPIMockResponseFactory.mockGetFeatures(destinationMockAPIService: apiService, success: true, subscriptionID: "ios.subscription.1month")
         APIMockResponseFactory.mockRefreshAccessTokenResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockGetJWKS(destinationMockAPIService: apiService, success: true)
 

@@ -123,6 +123,10 @@ public class HistoryManager: HistoryManaging {
         return try await tabHistoryCoordinator.tabHistory(tabID: tabID)
     }
 
+    /// Removes tab history records for the specified tabs without affecting global browsing history.
+    ///
+    /// Tab history tracks which URLs were visited in each tab (used to determine what to burn),
+    /// but is not surfaced to the user. Call this when closing tabs to clean up stale records.
     @MainActor
     public func removeTabHistory(for tabIDs: [String]) async {
         do {
@@ -131,7 +135,11 @@ public class HistoryManager: HistoryManaging {
             Logger.history.error("Failed to remove tab history: \(error.localizedDescription)")
         }
     }
-    
+
+    /// Burns all browsing history entries associated with a specific tab.
+    ///
+    /// This removes the tab's history records from the global browsing history,
+    /// used when burning a single tab to clear its footprint from history.
     @MainActor
     public func removeBrowsingHistory(tabID: String) async {
         do {

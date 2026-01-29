@@ -97,6 +97,7 @@ public struct TabHistoryStore: TabHistoryStoring {
         }
     }
 
+    /// Retrieves all visit IDs associated with a specific tab.
     public func pageVisitIDs(in tabID: String) async throws -> [Visit.ID] {
         return try await fetchTabHistory(for: tabID) { tabHistoryMO in
             tabHistoryMO.visit?.objectID.uriRepresentation()
@@ -104,6 +105,12 @@ public struct TabHistoryStore: TabHistoryStoring {
     }
 
     typealias TabHistoryTransformingBlock<T> = (TabHistoryManagedObject) -> T?
+
+    /// Fetches tab history records and transforms them using the provided closure.
+    /// - Parameters:
+    ///   - tabID: The unique identifier of the tab.
+    ///   - transform: A closure that extracts the desired value from each `TabHistoryManagedObject`.
+    /// - Returns: An array of transformed values
     private func fetchTabHistory<T>(for tabID: String, transform: @escaping TabHistoryTransformingBlock<T>) async throws -> [T] {
         return try await withCheckedThrowingContinuation { continuation in
             context.perform { [context, eventMapper] in

@@ -248,6 +248,13 @@ final public class HistoryCoordinator: HistoryCoordinating {
         }
     }
 
+    /// Burns all history visits associated with a specific tab.
+    ///
+    /// This method retrieves visit IDs from the tab history store, maps them to in-memory `Visit` objects,
+    /// and removes them from history. Used when burning a single tab to clear its browsing history.
+    ///
+    /// - Parameter tabID: The unique identifier of the tab whose visits should be removed.
+    /// - Throws: `EntryRemovalError.notAvailable` if history has not yet been loaded.
     @MainActor
     public func burnVisits(for tabID: String) async throws {
         guard let allVisits = allHistoryVisits else {

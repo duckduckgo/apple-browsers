@@ -42,6 +42,8 @@ struct ContextualDaxDialogsProviderTests {
         // THEN
         #expect(rebrandedDaxDialogFactoryMock.didCallMakeView)
         #expect(rebrandedDaxDialogFactoryMock.capturedSpec == browsingSpec)
+        #expect(!legacyDaxDialogFactoryMock.didCallMakeView)
+        #expect(legacyDaxDialogFactoryMock.capturedSpec == nil)
     }
 
     @Test(
@@ -58,8 +60,9 @@ struct ContextualDaxDialogsProviderTests {
         // WHEN
         _ = sut.makeView(for: browsingSpec, delegate: ContextualOnboardingDelegateMock(), onSizeUpdate: {})
 
-
         // THEN
+        #expect(legacyDaxDialogFactoryMock.didCallMakeView)
+        #expect(legacyDaxDialogFactoryMock.capturedSpec == browsingSpec)
         #expect(!rebrandedDaxDialogFactoryMock.didCallMakeView)
         #expect(rebrandedDaxDialogFactoryMock.capturedSpec == nil)
     }

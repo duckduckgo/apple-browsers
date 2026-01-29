@@ -111,7 +111,7 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         let request = SubscriptionRequest.getSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
 
         // mock features
-        SubscriptionAPIMockResponseFactory.mockGetFeatures(destinationMockAPIService: apiService, success: true, subscriptionID: "prod123")
+        SubscriptionAPIMockResponseFactory.mockGetTierFeatures(destinationMockAPIService: apiService, success: true, subscriptionIDs: ["prod123"])
 
         apiService.set(response: apiResponse, forRequest: request)
 
@@ -121,49 +121,6 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         XCTAssertEqual(subscription.billingPeriod, .yearly)
         XCTAssertEqual(subscription.platform, .apple)
         XCTAssertEqual(subscription.status, .autoRenewable)
-    }
-
-    // MARK: - getProducts Tests
-
-    func testGetProductsReturnsListOfProducts() async throws {
-        let productItems = [
-            GetProductsItem(
-                productId: "prod1",
-                productLabel: "Product 1",
-                billingPeriod: "Monthly",
-                price: "9.99",
-                currency: "USD"
-            ),
-            GetProductsItem(
-                productId: "prod2",
-                productLabel: "Product 2",
-                billingPeriod: "Yearly",
-                price: "99.99",
-                currency: "USD"
-            )
-        ]
-        let productData = try encoder.encode(productItems)
-        let apiResponse = createAPIResponse(statusCode: 200, data: productData)
-        let request = SubscriptionRequest.getProducts(baseURL: baseURL)!.apiRequest
-
-        apiService.set(response: apiResponse, forRequest: request)
-
-        let products = try await endpointService.getProducts()
-        XCTAssertEqual(products, productItems)
-    }
-
-    func testGetProductsThrowsInvalidResponse() async {
-        let request = SubscriptionRequest.getProducts(baseURL: baseURL)!.apiRequest
-        let apiResponse = createAPIResponse(statusCode: 200, data: nil)
-        apiService.set(response: apiResponse, forRequest: request)
-        do {
-            _ = try await endpointService.getProducts()
-            XCTFail("Expected invalidResponse error")
-        } catch Networking.APIRequestV2Error.emptyResponseBody {
-            // Success
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
     }
 
     // MARK: - getCustomerPortalURL Tests
@@ -241,7 +198,7 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         let request = SubscriptionRequest.getSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
 
         // mock features
-        SubscriptionAPIMockResponseFactory.mockGetFeatures(destinationMockAPIService: apiService, success: true, subscriptionID: "prod123")
+        SubscriptionAPIMockResponseFactory.mockGetTierFeatures(destinationMockAPIService: apiService, success: true, subscriptionIDs: ["prod123"])
 
         apiService.set(response: apiResponse, forRequest: request)
 

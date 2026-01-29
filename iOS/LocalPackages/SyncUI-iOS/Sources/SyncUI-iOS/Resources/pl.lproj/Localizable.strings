@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Anuluj";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Włącz synchronizację i kopię zapasową";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Tworzy na bezpiecznym serwerze DuckDuckGo zaszyfrowaną kopię zapasową zakładek i danych autouzupełniania, którą można zsynchronizować z innymi urządzeniami.";
 

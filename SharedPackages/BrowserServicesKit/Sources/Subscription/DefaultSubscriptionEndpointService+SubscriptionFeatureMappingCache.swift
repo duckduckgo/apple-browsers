@@ -22,16 +22,6 @@ import os.log
 
 extension DefaultSubscriptionEndpointService: SubscriptionFeatureMappingCache {
 
-    public func subscriptionFeatures(for subscriptionIdentifier: String) async -> [Networking.SubscriptionEntitlement] {
-        do {
-            let response = try await getSubscriptionFeatures(for: subscriptionIdentifier)
-            return response.features
-        } catch {
-            Logger.subscription.error("Failed to get subscription features: \(error)")
-            return [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
-        }
-    }
-
     public func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async throws -> [String: [TierFeature]] {
         let response = try await getSubscriptionTierFeatures(for: subscriptionIdentifiers)
         return response.features

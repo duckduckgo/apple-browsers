@@ -3731,7 +3731,7 @@ Take back control of your personal information with the browser designed for dat
 "tab.switcher.tracker.count.keep.action" = "Keep";
 
 /* Subtitle for tracker count banner indicating time window */
-"tab.switcher.tracker.count.subtitle" = "in the last 7 days";
+"tab.switcher.tracker.count.subtitle" = "in last 7 days";
 
 /* Do not translate - stringsdict entry */
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";

@@ -21,6 +21,5 @@ import os.log
 import Networking
 
 public protocol SubscriptionFeatureMappingCache {
-    func subscriptionFeatures(for subscriptionIdentifier: String) async -> [SubscriptionEntitlement]
     func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async throws -> [String: [TierFeature]]
 }

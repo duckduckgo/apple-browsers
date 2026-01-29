@@ -2300,7 +2300,12 @@ class MainViewController: UIViewController {
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
-                if await networkProtectionTunnelController.isInstalled && !userInitiatedSignOut {
+                // Suppress entitlement messaging before stopping the VPN during user-initiated sign-out.
+                // This prevents the extension from showing the "subscription expired" alert when it
+                // detects the missing token. The suppress flag is checked in enableEntitlementMessaging().
+                if userInitiatedSignOut {
+                    tunnelDefaults.suppressEntitlementMessaging = true
+                } else if await networkProtectionTunnelController.isInstalled {
                     tunnelDefaults.enableEntitlementMessaging()
                 }
 
@@ -2308,6 +2313,7 @@ class MainViewController: UIViewController {
 
                 if userInitiatedSignOut {
                     await networkProtectionTunnelController.removeVPN(reason: .signedOut)
+                    tunnelDefaults.suppressEntitlementMessaging = false
                 } else {
                     await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
                 }
@@ -2329,8 +2335,14 @@ class MainViewController: UIViewController {
                     sourceObject: notification.object),
                 frequency: .dailyAndCount)
 
+            // Suppress entitlement messaging to prevent the "subscription expired" alert
+            // from appearing during user-initiated sign-out.
+            tunnelDefaults.suppressEntitlementMessaging = true
+
             await networkProtectionTunnelController.stop()
             await networkProtectionTunnelController.removeVPN(reason: .signedOut)
+
+            tunnelDefaults.suppressEntitlementMessaging = false
         }
     }
 

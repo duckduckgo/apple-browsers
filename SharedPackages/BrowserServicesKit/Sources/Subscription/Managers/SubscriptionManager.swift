@@ -65,7 +65,6 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
     var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
-    func getProducts() async throws -> [GetProductsItem]
     func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
 
     @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
@@ -337,10 +336,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         } catch {
             throw error
         }
-    }
-
-    public func getProducts() async throws -> [GetProductsItem] {
-        try await subscriptionEndpointService.getProducts()
     }
 
     public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {

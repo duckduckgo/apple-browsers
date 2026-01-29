@@ -43,7 +43,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
+        let handshake = try await handler.handshake(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(handshake.platform, .ios)
     }
 
@@ -52,7 +52,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
+        let handshake = try await handler.handshake(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(handshake.platform, .macos)
     }
 
@@ -61,7 +61,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
+        let handshake = try await handler.handshake(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .openSubscriptionUpgrade, .authUpdate])
     }
 
@@ -72,7 +72,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(subscriptionDetails, .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil))
     }
 
@@ -98,7 +98,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(subscriptionDetails, .init(
             isSubscribed: true,
             billingPeriod: subscription.billingPeriod.rawValue,
@@ -117,7 +117,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: MockUserScriptMessage())
         XCTAssertTrue(subscriptionDetails.isSubscribed)
     }
 
@@ -129,7 +129,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        subscriptionManager: subscriptionManager,
                        featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: MockUserScriptMessage())
         XCTAssertTrue(subscriptionDetails.isSubscribed)
     }
 
@@ -137,7 +137,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         let tokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         subscriptionManager.resultTokenContainer = tokenContainer
 
-        let response = try await handler.getAuthAccessToken(params: [], message: WKScriptMessage())
+        let response = try await handler.getAuthAccessToken(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(response.accessToken, tokenContainer.accessToken)
     }
 
@@ -145,7 +145,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         struct SampleError: Error {}
         subscriptionManager.resultTokenContainer = nil
 
-        let response = try await handler.getAuthAccessToken(params: [], message: WKScriptMessage())
+        let response = try await handler.getAuthAccessToken(params: [], message: MockUserScriptMessage())
         XCTAssertEqual(response.accessToken, "")
     }
 
@@ -155,7 +155,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: true),
                        navigationDelegate: mockNavigationDelegate)
 
-        let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
+        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
         XCTAssertTrue(response.usePaidDuckAi)
     }
 
@@ -165,7 +165,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                     featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: false),
                        navigationDelegate: mockNavigationDelegate)
 
-        let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
+        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
         XCTAssertFalse(response.usePaidDuckAi)
     }
 
@@ -175,7 +175,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        featureFlagProvider: MockFeatureFlagProvider(useProTier: true),
                        navigationDelegate: mockNavigationDelegate)
 
-        let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
+        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
         XCTAssertTrue(response.useProTier)
     }
 
@@ -185,20 +185,20 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        featureFlagProvider: MockFeatureFlagProvider(useProTier: false),
                        navigationDelegate: mockNavigationDelegate)
 
-        let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
+        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
         XCTAssertFalse(response.useProTier)
     }
 
     @MainActor
     func testBackToSettingsCallsNavigationDelegate() async throws {
-        let response = try await handler.backToSettings(params: [], message: WKScriptMessage())
+        let response = try await handler.backToSettings(params: [], message: MockUserScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSettingsCalled)
     }
 
     @MainActor
     func testOpenSubscriptionActivationCallsNavigationDelegate() async throws {
-        let response = try await handler.openSubscriptionActivation(params: [], message: WKScriptMessage())
+        let response = try await handler.openSubscriptionActivation(params: [], message: MockUserScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionActivationCalled)
     }
@@ -207,7 +207,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testOpenSubscriptionPurchaseCallsNavigationDelegate() async throws {
         let origin = "some_origin"
         let params = ["origin": origin]
-        let response = try await handler.openSubscriptionPurchase(params: params, message: WKScriptMessage())
+        let response = try await handler.openSubscriptionPurchase(params: params, message: MockUserScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
         XCTAssertEqual(mockNavigationDelegate.purchaseOrigin, origin)
@@ -216,7 +216,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
     @MainActor
     func testOpenSubscriptionPurchaseWithoutOriginCallsNavigationDelegate() async throws {
-        let response = try await handler.openSubscriptionPurchase(params: [:], message: WKScriptMessage())
+        let response = try await handler.openSubscriptionPurchase(params: [:], message: MockUserScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
         XCTAssertNil(mockNavigationDelegate.purchaseOrigin)
@@ -227,7 +227,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testOpenSubscriptionUpgradeCallsNavigationDelegate() async throws {
         let origin = "some_origin"
         let params = ["origin": origin]
-        let response = try await handler.openSubscriptionUpgrade(params: params, message: WKScriptMessage())
+        let response = try await handler.openSubscriptionUpgrade(params: params, message: MockUserScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionUpgradeCalled)
         XCTAssertEqual(mockNavigationDelegate.purchaseOrigin, origin)
@@ -236,7 +236,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
     @MainActor
     func testOpenSubscriptionUpgradeWithoutOriginCallsNavigationDelegate() async throws {
-        let response = try await handler.openSubscriptionUpgrade(params: [:], message: WKScriptMessage())
+        let response = try await handler.openSubscriptionUpgrade(params: [:], message: MockUserScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionUpgradeCalled)
         XCTAssertNil(mockNavigationDelegate.purchaseOrigin)

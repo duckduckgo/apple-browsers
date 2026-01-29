@@ -245,11 +245,6 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Start log stream in background
-      run: |
-        log stream --debug --info --predicate 'process == "DuckDuckGo"' --style syslog > ${{ matrix.flavor }}-xctest.log 2>&1 &
-        echo $! > log_stream.pid
-
     - name: Build and run unit tests
       id: run-unit-tests
       run: |
@@ -284,13 +279,6 @@ jobs:
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-integrationtests.xml \
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-integrationtests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-integrationtests.xcresult && exit 1; }
 
-    - name: Stop log stream
-      if: always()
-      run: |
-        if [ -f log_stream.pid ]; then
-          kill $(cat log_stream.pid) || true
-        fi
-
     - name: Check private API usage
       id: private-api
       run: |
@@ -316,15 +304,6 @@ jobs:
             exit 1
           fi
         fi
-
-    - name: Upload XCTest log stream output
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.flavor }}-xctest-log-stream.log
-        path: |
-          macOS/${{ matrix.flavor }}-xctest.log
-        retention-days: 7
 
     - name: Upload JUnit XML as artifact
       uses: actions/upload-artifact@v4

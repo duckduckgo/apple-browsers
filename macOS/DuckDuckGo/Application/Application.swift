@@ -24,7 +24,7 @@ import Foundation
 import PrivacyConfig
 
 @objc(Application)
-final class Application: NSApplication {
+final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
 
     public static var appDelegate: AppDelegate! // swiftlint:disable:this weak_delegate
     private var fireWindowPreferenceCancellable: AnyCancellable?
@@ -122,6 +122,8 @@ final class Application: NSApplication {
     var shouldResetClickCountForNextEventOfTypes: Set<NSEvent.EventType>?
 
     public func installEventInterceptor(token: UUID, interceptor: @escaping (NSEvent) -> NSEvent?) {
+        // Only install if no existing interceptor or token matches
+        guard eventInterceptor == nil || eventInterceptor?.token == token else { return }
         eventInterceptor = (token: token, interceptor: interceptor)
     }
 

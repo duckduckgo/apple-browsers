@@ -125,6 +125,9 @@ class WarnBeforeQuitUITests: UITestCase {
         // Given - window is open
         app.openNewWindow()
 
+        // Hover over tab bar to ensure overlay is not paused
+        app.tabs.firstMatch.hoverCoordinate()
+
         // When - press Cmd+Q to show overlay
         app.typeKey("q", modifierFlags: [.command])
 
@@ -213,6 +216,10 @@ class WarnBeforeQuitUITests: UITestCase {
         }
         RunLoop.current.run(until: Date().addingTimeInterval(0.7))
         app.keyUp(keyCode: kVK_ANSI_Q)
+
+        // Hover over tab bar to ensure overlay is not paused
+        app.tabs.firstMatch.hoverCoordinate()
+
         XCTAssertTrue(
             quitOverlay.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "Overlay should disappear after early modifier release"

@@ -555,7 +555,7 @@ platform :ios do
       api_key: get_api_key,
       username: get_username(options),
       platform: 'ios',
-      live: options[:live] || true
+      live: true
     )
   end
 

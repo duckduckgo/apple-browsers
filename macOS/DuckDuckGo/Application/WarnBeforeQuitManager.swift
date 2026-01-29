@@ -67,7 +67,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     private let eventReceiver: (NSEvent.EventTypeMask, Date, RunLoop.Mode, Bool) -> NSEvent?
 
     /// Creates timers (injectable for testing)
-    private let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer
+    private let timerFactory: (TimeInterval, @escaping @MainActor () -> Void) -> Timer
 
     /// Delay to wait for UI animation to complete before proceeding with quit (injectable for testing)
     private let animationDelay: TimeInterval
@@ -118,7 +118,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
           pixelFiring: PixelFiring? = PixelKit.shared,
           now: @escaping () -> Date = Date.init,
           eventReceiver: ((NSEvent.EventTypeMask, Date, RunLoop.Mode, Bool) -> NSEvent?)? = nil,
-          timerFactory: ((TimeInterval, @escaping () -> Void) -> Timer)? = nil,
+          timerFactory: ((TimeInterval, @escaping @MainActor () -> Void) -> Timer)? = nil,
           animationDelay: TimeInterval = Constants.defaultAnimationDelay,
           isModifierHeld: ((NSEvent.ModifierFlags) -> Bool)? = nil) {
         // Validate this is a keyDown event with modifier and valid character
@@ -131,8 +131,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         self.isWarningEnabled = isWarningEnabled
         self.now = now
         self.eventReceiver = eventReceiver ?? MainActor.assumeMainThread { NSApp.nextEvent }
-        self.timerFactory = timerFactory ?? { interval, block in
-            let timer = Timer(timeInterval: interval, repeats: false) { _ in block() }
+        self.timerFactory = timerFactory ?? { @MainActor interval, block in
+            dispatchPrecondition(condition: .onQueue(.main))
+            let timer = Timer(timeInterval: interval, repeats: false) { _ in MainActor.assumeMainThread(block) }
             RunLoop.current.add(timer, forMode: .common)
             return timer
         }
@@ -164,6 +165,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     // MARK: - ApplicationTerminationDecider
 
     func shouldTerminate(isAsync: Bool) -> TerminationQuery {
+        dispatchPrecondition(condition: .onQueue(.main))
+
         let warningEnabled = isWarningEnabled()
         Logger.general.debug("WarnBeforeQuitManager: shouldTerminate(isAsync: \(isAsync), enabled: \(warningEnabled))")
 
@@ -248,6 +251,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     /// Waits synchronously for user to either hold Cmd+[Q|W] long enough or release it early.
     /// - Returns: Result indicating completion or early release
     private func trackEventsForHoldingPhase() -> HoldingPhaseResult {
+        dispatchPrecondition(condition: .onQueue(.main))
+
         let keyEquivalent = shortcutKeyEquivalent
 
         // Start in keyDown state - UI shows overlay but no progress yet
@@ -317,6 +322,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     }
 
     private func waitForSecondPress() async -> Bool {
+        dispatchPrecondition(condition: .onQueue(.main))
+
         // Emit waiting state - UI can show "press again" or start fadeout
         currentState = .waitingForSecondPress
 
@@ -489,6 +496,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     /// Wait for the shortcut key to be released (to prevent sending it to the next active app)
     private func waitForKeyRelease(keyEquivalent: NSEvent.KeyEquivalent) {
+        dispatchPrecondition(condition: .onQueue(.main))
+
         // Safety check: If the key is already released, don't wait
         guard isModifierHeld(keyEquivalent.modifierMask) else {
             Logger.general.debug("WarnBeforeQuitManager: Key already released, no need to wait")
@@ -547,7 +556,9 @@ extension PixelFiring {
         try? await withTimeout(timeout) {
             await withCancellableContinuation { resume, _ in
                 fire(event, frequency: frequency) { _, _ in
-                    resume(())
+                    DispatchQueue.main.asyncOrNow {
+                        resume(())
+                    }
                 }
             } onCancel: {
                 // Timeout - continue with termination anyway
@@ -562,37 +573,31 @@ extension PixelFiring {
 /// - Parameter operation: The operation to execute. Receives:
 ///   - resume: Callback to resume the continuation with a value
 ///   - wasResumed: Callback to check if continuation was already resumed (returns true if already resumed)
-func withCancellableContinuation<T>(
-    _ operation: (@escaping (T) -> Void, @escaping () -> Bool) -> Void,
-    onCancel cancellationValue: @escaping () -> T
+@MainActor
+private func withCancellableContinuation<T>(
+    _ operation: (/*resume:*/ @escaping @MainActor (T) -> Void, /*isResumed:*/ @escaping @MainActor () -> Bool) -> Void,
+    onCancel cancellationValue: @escaping @MainActor () -> T
 ) async -> T {
-    let lock = NSLock()
     var isResumed = false
     var cancellationHandler: (() -> Void)?
 
-    return await withTaskCancellationHandler {
-        await withCheckedContinuation { continuation in
+    return await withTaskCancellationHandler { @MainActor in
+        await withCheckedContinuation { @MainActor continuation in
             let checkIfResumed = { () -> Bool in
-                lock.lock()
-                defer { lock.unlock() }
                 return isResumed
             }
 
-            let resume = { (value: T) in
-                lock.lock()
+            let resume: @MainActor (T) -> Void = { (value: T) in
                 guard !isResumed else { return }
                 isResumed = true
                 cancellationHandler = nil
-                lock.unlock()
                 continuation.resume(returning: value)
             }
 
             // Store cancellation handler for when task is cancelled
-            lock.lock()
             cancellationHandler = {
                 resume(cancellationValue())
             }
-            lock.unlock()
             guard !Task.isCancelled else {
                 resume(cancellationValue())
                 return
@@ -601,7 +606,8 @@ func withCancellableContinuation<T>(
             operation(resume, checkIfResumed)
         }
     } onCancel: {
-        let cancellationHandler = lock.withLock { cancellationHandler }
-        cancellationHandler?()
+        DispatchQueue.main.asyncOrNow {
+            cancellationHandler?()
+        }
     }
 }

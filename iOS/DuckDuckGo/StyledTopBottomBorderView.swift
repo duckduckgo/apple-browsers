@@ -55,6 +55,15 @@ final class StyledTopBottomBorderView: UIView {
         }
     }
 
+    var bottomAlpha: CGFloat {
+        get {
+            bottomEdge.alpha
+        }
+        set {
+            bottomEdge.alpha = newValue
+        }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -127,7 +136,6 @@ extension StyledTopBottomBorderView {
 
     func updateForAddressBarPosition(_ addressBarPosition: AddressBarPosition) {
         isTopVisible = addressBarPosition == .top
-        isBottomVisible = addressBarPosition == .bottom
     }
 
 }

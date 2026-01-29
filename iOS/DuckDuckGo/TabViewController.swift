@@ -706,6 +706,7 @@ class TabViewController: UIViewController {
             /// The container already follows the toolbar position
             webViewBottomAnchorConstraint?.constant = 0
         }
+        borderView.bottomAlpha = barsVisibilityPercent
     }
 
     private func observeNetPConnectionStatusChanges() {

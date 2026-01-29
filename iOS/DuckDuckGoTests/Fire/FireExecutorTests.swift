@@ -436,9 +436,7 @@ final class FireExecutorTests: XCTestCase {
     
     func testBurnDataForTabScopePerformsAllCleanupActions() async {
         // Given
-        let fireproofedDomains = ["example.com", "test.org"]
-        let fireproofing = MockFireproofing(domains: fireproofedDomains)
-        let executor = makeFireExecutor(fireproofing: fireproofing)
+        let executor = makeFireExecutor()
         let tabViewModel = makeTabViewModel()
         
         mockHistoryManager.tabHistoryResult = [URL(string: "https://test.com")!]

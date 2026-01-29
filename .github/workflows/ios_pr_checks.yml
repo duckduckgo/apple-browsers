@@ -250,7 +250,7 @@ jobs:
       RUNS_ON: macos-15 # keep this in sync with runs-on above
 
     outputs:
-      changed-files: ${{ steps.changed-strings-files.outputs.changed_files }}
+      changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}
 
     steps:
 

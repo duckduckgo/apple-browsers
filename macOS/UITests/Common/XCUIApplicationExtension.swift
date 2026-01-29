@@ -197,10 +197,12 @@ extension XCUIApplication {
     }
 
     /// Disables the "Warn Before Quitting" setting in General preferences
-    func disableWarnBeforeQuitting() {
+    func disableWarnBeforeQuitting(closeSettings: Bool = true) {
         openGeneralPreferences()
         warnBeforeQuittingCheckbox.toggleCheckboxIfNeeded(to: false, ensureHittable: ensureHittable)
-        typeKey("w", modifierFlags: [.command])
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
     }
 
     /// Enables the "Warn Before Closing Pinned Tabs" setting in General preferences
@@ -213,10 +215,12 @@ extension XCUIApplication {
     }
 
     /// Disables the "Warn Before Closing Pinned Tabs" setting in General preferences
-    func disableWarnBeforeClosingPinnedTabs() {
+    func disableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
         openGeneralPreferences()
         warnBeforeClosingPinnedTabsCheckbox.toggleCheckboxIfNeeded(to: false, ensureHittable: ensureHittable)
-        typeKey("w", modifierFlags: [.command])
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
     }
 
     /// Returns the "Warn Before Quitting" checkbox in General preferences

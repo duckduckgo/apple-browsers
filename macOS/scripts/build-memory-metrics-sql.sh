@@ -16,8 +16,6 @@
 #   --start-time    - Job start time (format: "YYYY-MM-DD HH:MM:SS")
 #
 # Output:
-#   - raw-metrics.json       - Raw metrics extracted from xcresult (file)
-#   - processed-metrics.json - Calculated memory metrics (file)
 #   - stdout                 - SQL INSERT statements for ClickHouse
 #
 

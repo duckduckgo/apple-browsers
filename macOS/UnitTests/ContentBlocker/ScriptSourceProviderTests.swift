@@ -57,7 +57,8 @@ final class ScriptSourceProviderTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
             privacyConfigurationManager: privacyConfigurationManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
         let windowControllersManager = WindowControllersManagerMock()
         let startupPreferences = StartupPreferences(

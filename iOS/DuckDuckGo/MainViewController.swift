@@ -1473,6 +1473,7 @@ class MainViewController: UIViewController {
         chromeManager.attach(to: tab.webView.scrollView)
         themeColorManager.attach(to: tab)
         tab.chromeDelegate = self
+        tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
 
         refreshControls()
     }
@@ -2478,6 +2479,7 @@ extension MainViewController: BrowserChromeDelegate {
         let updateBlock = {
             self.updateToolbarConstant(percent)
             self.updateNavBarConstant(percent)
+            self.currentTab?.updateWebViewBottomAnchor(for: percent)
 
             self.viewCoordinator.navigationBarContainer.alpha = percent
             self.viewCoordinator.tabBarContainer.alpha = percent
@@ -2845,7 +2847,6 @@ extension MainViewController: OmniBarDelegate {
             highlightTag = .favorite
         }
 
-
         let view = BrowsingMenuSheetView(model: model,
                                          headerDataSource: browsingMenuHeaderDataSource,
                                          highlightRowWithTag: highlightTag,
@@ -2856,11 +2857,11 @@ extension MainViewController: OmniBarDelegate {
                                              }
                                          })
 
-        let controller = BrowsingMenuSheetViewController(
-            rootView: view
+        let controller = BrowsingMenuSheetViewController(rootView: view)
+        let contentHeight = model.estimatedContentHeight(
+            headerDataSource: browsingMenuHeaderDataSource,
+            verticalSizeClass: traitCollection.verticalSizeClass
         )
-
-        let contentHeight = model.estimatedContentHeight(includesWebsiteHeader: browsingMenuHeaderDataSource.isHeaderVisible)
 
         func configureSheetPresentationController(_ sheet: UISheetPresentationController) {
             if context == .newTabPage {

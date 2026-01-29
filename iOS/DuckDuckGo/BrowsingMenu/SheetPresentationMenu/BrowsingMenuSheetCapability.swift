@@ -60,7 +60,6 @@ struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
     }
 }
 
-@available(iOS 17.0, *)
 struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
     let featureFlagger: FeatureFlagger
     private let keyValueStore: ThrowingKeyValueStoring

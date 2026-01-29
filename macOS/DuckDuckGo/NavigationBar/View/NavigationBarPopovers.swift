@@ -198,7 +198,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         } else if isSaveIdentityPopoverShown && button.window == saveIdentityPopover?.mainWindow {
             saveIdentityPopover?.viewController.onNotNowClicked(sender: button)
         } else if isSavePaymentMethodPopoverShown && button.window == savePaymentMethodPopover?.mainWindow {
-            savePaymentMethodPopover?.viewController.onNotNowClicked(sender: button)
+            savePaymentMethodPopover?.viewController.onDontSaveClicked(sender: button)
         } else {
             showPasswordManagementPopover(selectedCategory: nil, from: button, withDelegate: delegate, source: .shortcut)
         }

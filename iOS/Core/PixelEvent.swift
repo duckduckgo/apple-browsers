@@ -1395,6 +1395,8 @@ extension Pixel {
         case aiChatSettingsDisplayed
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
+        case aiChatSettingsAutoContextEnabled
+        case aiChatSettingsAutoContextDisabled
 
         case aiChatOpen
         case aiChatMetricStartNewConversation
@@ -1462,6 +1464,22 @@ extension Pixel {
         case aiChatContextualOnboardingDisplayed
         case aiChatContextualOnboardingConfirmPressed
         case aiChatContextualOnboardingSettingsPressed
+
+        // MARK: AI Chat Contextual Mode
+        case aiChatContextualSheetOpened
+        case aiChatContextualSheetDismissed
+        case aiChatContextualExpandButtonTapped
+        case aiChatContextualNewChatButtonTapped
+        case aiChatContextualQuickActionSummarizeSelected
+        case aiChatContextualPageContextAutoAttached
+        case aiChatContextualPageContextUpdatedOnNavigation
+        case aiChatContextualPageContextManuallyAttachedNative
+        case aiChatContextualPageContextManuallyAttachedFrontend
+        case aiChatContextualPageContextRemovedNative
+        case aiChatContextualPageContextRemovedFrontend
+        case aiChatContextualPromptSubmittedWithContextNative
+        case aiChatContextualPromptSubmittedWithoutContextNative
+        case aiChatContextualSessionRestored
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -2845,6 +2863,8 @@ extension Pixel.Event {
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
+        case .aiChatSettingsAutoContextEnabled: return "m_aichat_settings_auto_context_enabled"
+        case .aiChatSettingsAutoContextDisabled: return "m_aichat_settings_auto_context_disabled"
         case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
         case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 
@@ -2907,6 +2927,22 @@ extension Pixel.Event {
         case .aiChatContextualOnboardingDisplayed: return "m_aichat_contextual_onboarding_displayed"
         case .aiChatContextualOnboardingConfirmPressed: return "m_aichat_contextual_onboarding_confirm_pressed"
         case .aiChatContextualOnboardingSettingsPressed: return "m_aichat_contextual_onboarding_settings_pressed"
+
+        // MARK: AI Chat Contextual Mode
+        case .aiChatContextualSheetOpened: return "m_aichat_contextual_sheet_opened"
+        case .aiChatContextualSheetDismissed: return "m_aichat_contextual_sheet_dismissed"
+        case .aiChatContextualExpandButtonTapped: return "m_aichat_contextual_expand_button_tapped"
+        case .aiChatContextualNewChatButtonTapped: return "m_aichat_contextual_new_chat_button_tapped"
+        case .aiChatContextualQuickActionSummarizeSelected: return "m_aichat_contextual_quick_action_summarize_selected"
+        case .aiChatContextualPageContextAutoAttached: return "m_aichat_contextual_page_context_auto_attached"
+        case .aiChatContextualPageContextUpdatedOnNavigation: return "m_aichat_contextual_page_context_updated_on_navigation"
+        case .aiChatContextualPageContextManuallyAttachedNative: return "m_aichat_contextual_page_context_manually_attached_native"
+        case .aiChatContextualPageContextManuallyAttachedFrontend: return "m_aichat_contextual_page_context_manually_attached_frontend"
+        case .aiChatContextualPageContextRemovedNative: return "m_aichat_contextual_page_context_removed_native"
+        case .aiChatContextualPageContextRemovedFrontend: return "m_aichat_contextual_page_context_removed_frontend"
+        case .aiChatContextualPromptSubmittedWithContextNative: return "m_aichat_contextual_prompt_submitted_with_context_native"
+        case .aiChatContextualPromptSubmittedWithoutContextNative: return "m_aichat_contextual_prompt_submitted_without_context_native"
+        case .aiChatContextualSessionRestored: return "m_aichat_contextual_session_restored"
 
         // MARK: AI Chat Sync
 

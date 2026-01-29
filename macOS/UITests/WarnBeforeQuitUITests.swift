@@ -87,7 +87,7 @@ class WarnBeforeQuitUITests: UITestCase {
         app.openNewWindow()
 
         // Hover over tab bar to prevent hover-pause of timer
-        app.tabs.firstMatch.hover()
+        app.tabs.firstMatch.hoverCoordinate()
 
         // When - press Cmd+Q once and let it timeout
         app.typeKey("q", modifierFlags: [.command])
@@ -191,7 +191,7 @@ class WarnBeforeQuitUITests: UITestCase {
         app.openNewWindow()
 
         // Hover over tab bar to ensure overlay is not paused
-        app.tabs.firstMatch.hover()
+        app.tabs.firstMatch.hoverCoordinate()
 
         XCUIElement.perform(withKeyModifiers: [.command]) {
             app.keyDown(keyCode: kVK_ANSI_Q)
@@ -300,7 +300,7 @@ class WarnBeforeQuitUITests: UITestCase {
         )
 
         // Hover over pinned tab to ensure overlay is not paused
-        app.pinnedTabs.firstMatch.hover()
+        app.pinnedTabs.firstMatch.hoverCoordinate()
 
         XCUIElement.perform(withKeyModifiers: [.command]) {
             app.keyDown(keyCode: kVK_ANSI_W)
@@ -348,7 +348,7 @@ class WarnBeforeQuitUITests: UITestCase {
         // When - close first tab with double-press
         app.typeKey("w", modifierFlags: [.command])
 
-        closeOverlay.hover()
+        closeOverlay.hoverCoordinate()
         XCTAssertTrue(closeOverlay.exists)
 
         // Then immediately press and hold Cmd+W to close first tab
@@ -406,7 +406,7 @@ class WarnBeforeQuitUITests: UITestCase {
         app.typeKey("q", modifierFlags: [.command])
 
         // When - hover over the dialog
-        quitOverlay.hover()
+        quitOverlay.hoverCoordinate()
 
         RunLoop.current.run(until: Date().addingTimeInterval(5))
         // Then - overlay should remain visible while hovering
@@ -466,10 +466,10 @@ class WarnBeforeQuitUITests: UITestCase {
         // When - in active window, show overlay and click "Don't Show Again"
         app.typeKey("q", modifierFlags: [.command])
 
-        quitOverlay.hover()
+        quitOverlay.hoverCoordinate()
         XCTAssertTrue(quitOverlay.exists)
 
-        dontShowAgainButton.click()
+        dontShowAgainButton.clickCoordinate()
 
         // Then - app should quit immediately
         XCTAssertTrue(
@@ -508,10 +508,10 @@ class WarnBeforeQuitUITests: UITestCase {
         // When - in active window, show overlay and click "Don't Show Again"
         app.typeKey("w", modifierFlags: [.command])
 
-        closeOverlay.hover()
+        closeOverlay.hoverCoordinate()
         XCTAssertTrue(closeOverlay.exists)
 
-        dontShowAgainButton.click()
+        dontShowAgainButton.clickCoordinate()
 
         // Then - switch to settings window and verify checkbox is now off
         app.typeKey("`", modifierFlags: [.command])  // Cycle to settings window
@@ -537,4 +537,15 @@ class WarnBeforeQuitUITests: UITestCase {
         )
     }
 
+}
+
+private extension XCUIElement {
+    func hoverCoordinate() {
+        let coordinate = self.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        coordinate.hover()
+    }
+    func clickCoordinate() {
+        let coordinate = self.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        coordinate.click()
+    }
 }

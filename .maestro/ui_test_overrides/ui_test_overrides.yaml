@@ -17,7 +17,7 @@ tags:
     arguments:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
-        "ff.uiTestFeatureFlag": true
+        "ff.uiTestFeatureFlag": "true"
         "experiment.uiTestExperiment": "treatment"
 
 # Open Debug Menu

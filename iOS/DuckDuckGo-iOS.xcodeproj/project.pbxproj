@@ -352,7 +352,6 @@
 		4BEEEA992E24670800B0BE00 /* DBPDebugWebViewWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BEEEA982E24670700B0BE00 /* DBPDebugWebViewWindowManager.swift */; };
 		4BF557F02DF79393008E16A8 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BF557EF2DF79393008E16A8 /* WebKit.framework */; };
 		56038D5F2E0E97B20001419D /* SubscriptionURLNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56038D5E2E0E97B20001419D /* SubscriptionURLNavigationHandler.swift */; };
-		5608B50E2F210E8600ABC3F4 /* PrivacyStats in Frameworks */ = {isa = PBXBuildFile; productRef = AA3000060000000000000006 /* PrivacyStats */; };
 		5608B5132F2125CC00ABC3F4 /* UITestOverridesDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5608B5122F2125CC00ABC3F4 /* UITestOverridesDebugView.swift */; };
 		560E84852EE0FA53008F6B74 /* TierBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560E84842EE0FA53008F6B74 /* TierBadgeView.swift */; };
 		560E990F2BEE2CB800507CE0 /* SyncErrorMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560E990E2BEE2CB800507CE0 /* SyncErrorMessage.swift */; };

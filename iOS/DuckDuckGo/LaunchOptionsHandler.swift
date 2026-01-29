@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import Core
 import Foundation
+import Persistence
 import PrivacyConfig
 import enum Common.DevicePlatform
 
@@ -168,46 +170,48 @@ extension LaunchOptionsHandler {
     /// Internal user is only enabled if at least one override is applied.
     ///
     /// - Parameters:
-    ///   - featureFlagOverrideStore: UserDefaults store for feature flag overrides
+    ///   - featureFlagOverrideStore: Store for feature flag and experiment overrides
     ///   - configRolloutStore: UserDefaults store for config rollout state
     public func applyUITestOverrides(
-        featureFlagOverrideStore: UserDefaults,
+        featureFlagOverrideStore: KeyValueStoring,
         configRolloutStore: UserDefaults
     ) {
+        let featureFlagPersistor = FeatureFlagLocalOverridesUserDefaultsPersistor(keyValueStore: featureFlagOverrideStore)
         var didApplyOverride = false
 
         for arg in arguments {
             guard arg.hasPrefix("-") else { continue }
             let key = String(arg.dropFirst()) // Remove leading "-"
 
-            // Feature flag: ff.<flagName> -> localOverride<FlagName>
+            // Feature flag: ff.<flagName>
+            // Read as string (same approach as experiment which works)
             if key.hasPrefix(UITestOverrides.featureFlagPrefix) {
                 let flagName = String(key.dropFirst(UITestOverrides.featureFlagPrefix.count))
-                if let value = userDefaults.string(forKey: key) {
-                    let enabled = value.lowercased() == "true"
-                    let targetKey = "localOverride\(flagName.capitalizedFirstLetter)"
-                    featureFlagOverrideStore.set(enabled, forKey: targetKey)
+                if let flag = FeatureFlag(rawValue: flagName),
+                   let stringValue = userDefaults.string(forKey: key) {
+                    let enabled = stringValue.lowercased() == "true"
+                    featureFlagPersistor.set(enabled, for: flag)
                     didApplyOverride = true
                 }
             }
-            
+
             // Config rollout: config.rollout.<path> -> config.<path>.enabled
             if key.hasPrefix(UITestOverrides.configRolloutPrefix) {
                 let featurePath = String(key.dropFirst(UITestOverrides.configRolloutPrefix.count))
-                if let value = userDefaults.string(forKey: key) {
-                    let enabled = value.lowercased() == "true"
+                if let stringValue = userDefaults.string(forKey: key) {
+                    let enabled = stringValue.lowercased() == "true"
                     let targetKey = "config.\(featurePath).enabled"
                     configRolloutStore.set(enabled, forKey: targetKey)
                     didApplyOverride = true
                 }
             }
-            
-            // Experiment: experiment.<flagName> -> localOverride<FlagName>_cohort
+
+            // Experiment: experiment.<flagName>
             if key.hasPrefix(UITestOverrides.experimentCohortPrefix) {
                 let flagName = String(key.dropFirst(UITestOverrides.experimentCohortPrefix.count))
-                if let cohortID = userDefaults.string(forKey: key), !cohortID.isEmpty {
-                    let targetKey = "localOverride\(flagName.capitalizedFirstLetter)_cohort"
-                    featureFlagOverrideStore.set(cohortID, forKey: targetKey)
+                if let flag = FeatureFlag(rawValue: flagName),
+                   let cohortID = userDefaults.string(forKey: key), !cohortID.isEmpty {
+                    featureFlagPersistor.setExperiment(cohortID, for: flag)
                     didApplyOverride = true
                 }
             }
@@ -219,12 +223,3 @@ extension LaunchOptionsHandler {
         }
     }
 }
-
-// MARK: - String Extension
-
-private extension String {
-    var capitalizedFirstLetter: String {
-        return prefix(1).capitalized + dropFirst()
-    }
-}
-

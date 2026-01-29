@@ -202,14 +202,14 @@ final class LaunchOptionsHandlerTests: XCTestCase {
 
     func testWhenFeatureFlagOverrideIsPassedThenItIsAppliedAndInternalUserEnabled() {
         // GIVEN
-        userDefaults.set("true", forKey: "ff.testFeatureFlag")
+        userDefaults.set("true", forKey: "ff.uiTestFeatureFlag")
         let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
         let configStore = UserDefaults(suiteName: "testing_configRollout")!
         let mockInternalUserStore = MockInternalUserStore()
         let sut = LaunchOptionsHandler(
             environment: [:],
             userDefaults: userDefaults,
-            arguments: ["-ff.testFeatureFlag", "true"],
+            arguments: ["-ff.uiTestFeatureFlag", "true"],
             internalUserStore: mockInternalUserStore
         )
 
@@ -217,7 +217,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
 
         // THEN
-        XCTAssertTrue(featureFlagStore.bool(forKey: "localOverrideTestFeatureFlag"))
+        XCTAssertTrue(featureFlagStore.bool(forKey: "localOverrideUiTestFeatureFlag"))
         XCTAssertTrue(mockInternalUserStore.isInternalUser)
 
         // Cleanup
@@ -227,14 +227,14 @@ final class LaunchOptionsHandlerTests: XCTestCase {
 
     func testWhenExperimentCohortOverrideIsPassedThenItIsAppliedAndInternalUserEnabled() {
         // GIVEN
-        userDefaults.set("treatment", forKey: "experiment.testExperiment")
+        userDefaults.set("treatment", forKey: "experiment.uiTestExperiment")
         let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
         let configStore = UserDefaults(suiteName: "testing_configRollout")!
         let mockInternalUserStore = MockInternalUserStore()
         let sut = LaunchOptionsHandler(
             environment: [:],
             userDefaults: userDefaults,
-            arguments: ["-experiment.testExperiment", "treatment"],
+            arguments: ["-experiment.uiTestExperiment", "treatment"],
             internalUserStore: mockInternalUserStore
         )
 
@@ -242,7 +242,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
 
         // THEN
-        XCTAssertEqual(featureFlagStore.string(forKey: "localOverrideTestExperiment_cohort"), "treatment")
+        XCTAssertEqual(featureFlagStore.string(forKey: "localOverrideUiTestExperiment_cohort"), "treatment")
         XCTAssertTrue(mockInternalUserStore.isInternalUser)
 
         // Cleanup

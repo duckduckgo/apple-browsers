@@ -203,11 +203,11 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         whatsNewRepository: whatsNewRepository)
+        setupWebExtensions()
     }
 
     func start() {
         controller.loadViewIfNeeded()
-        setupWebExtensions()
     }
 
     private func setupWebExtensions() {
@@ -218,15 +218,17 @@ final class MainCoordinator {
             self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(webExtensionManager: webExtensionManager,
                                                                                mainViewController: controller)
 
+            tabManager.setWebExtensionManager(webExtensionManager)
             controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
             controller.setWebExtensionManager(webExtensionManager)
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
-//                await webExtensionManager.uninstallAllExtensions()
             }
         } else {
             self.webExtensionManager = nil
             self.webExtensionEventsCoordinator = nil
+            tabManager.setWebExtensionManager(nil)
+            controller.setWebExtensionEventsCoordinator(nil)
             controller.setWebExtensionManager(nil)
         }
     }

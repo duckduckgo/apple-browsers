@@ -37,6 +37,9 @@
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Aceasta creează o copie de rezervă criptată a marcajelor și a datelor de completare automată pe serverul securizat DuckDuckGo, care poate fi sincronizată cu celelalte dispozitive ale tale.";
 
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Aceasta creează o copie de rezervă criptată a marcajelor, parolelor, cardurilor de credit și chaturilor Duck.ai salvate pe serverul securizat DuckDuckGo, care poate fi sincronizată cu celelalte dispozitive ale tale.";
+
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Cheia de criptare este stocată doar pe dispozitivul tău, DuckDuckGo nu o poate accesa.";
 
@@ -141,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Marcajele și datele de completare automată sunt pregătite pentru sincronizare. Acest lucru ar trebui să dureze doar un moment.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Marcajele, parolele și chaturile Duck.ai sunt pregătite pentru sincronizare. Acest lucru ar trebui să dureze doar un moment.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Se conectează…";
@@ -289,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Sincronizează în siguranță marcajele și parolele între dispozitivele tale.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Sincronizează în siguranță marcajele, datele de completare automată și chaturile Duck.ai pe dispozitivele tale.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Începe sincronizarea";
 
@@ -303,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Oprește sincronizarea și backupul...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Marcajele, datele de completare automată și chaturile Duck.ai sunt sincronizate în prezent pe toate dispozitivele tale.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Sincronizare activată";

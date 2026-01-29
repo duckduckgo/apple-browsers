@@ -48,4 +48,7 @@ extension Color {
     static let x1C1C1E = Color(0x1C1C1E)
 
     static let xF7F7F7 = Color(0xF7F7F7)
+
+    // Duck.ai contextual sheet background color
+    static let x161616 = Color(0x161616)
 }

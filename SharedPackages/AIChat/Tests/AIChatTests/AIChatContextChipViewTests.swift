@@ -34,18 +34,6 @@ final class AIChatContextChipViewTests: XCTestCase {
         XCTAssertEqual(sut.accessibilityLabel, expectedTitle)
     }
 
-    func testSubtitleSetsCorrectly() {
-        // Given
-        let sut = AIChatContextChipView()
-        let expectedSubtitle = "Page Content"
-
-        // When
-        sut.subtitle = expectedSubtitle
-
-        // Then
-        XCTAssertEqual(sut.subtitle, expectedSubtitle)
-    }
-
     func testOnRemoveCallbackIsSettable() {
         // Given
         let sut = AIChatContextChipView()

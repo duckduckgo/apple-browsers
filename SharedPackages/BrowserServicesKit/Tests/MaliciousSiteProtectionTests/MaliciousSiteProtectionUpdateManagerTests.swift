@@ -64,9 +64,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         mockEventMapping = nil
         updateTask?.cancel()
         do {
-            try await withTimeout(1) { [updateTask] in
-                try await updateTask?.value
-            }
+            try await updateTask?.value(cancellingTaskOnTimeout: 1)
         } catch is CancellationError {
         }
         updateTask = nil
@@ -492,9 +490,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         // Cancel the update task
         updateTask!.cancel()
         do {
-            try await withTimeout(1) { [updateTask=updateTask!] in
-                try await updateTask.value
-            }
+            try await updateTask?.value(cancellingTaskOnTimeout: 1)
         } catch is CancellationError {
         }
 

@@ -34,22 +34,11 @@ public final class PixelKitMock: PixelFiring {
         self.expectedFireCalls = expectedFireCalls
     }
 
-    public func fire(_ event: PixelKitEvent) {
-        fire(event, frequency: .standard)
-    }
-
-    public func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
-        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, additionalParameters: nil)
-        actualFireCalls.append(fireCall)
-    }
-
-    public func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, withAdditionalParameters: [String: String]) {
-        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, additionalParameters: withAdditionalParameters)
-        actualFireCalls.append(fireCall)
-    }
-
-    public func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, onComplete: @escaping PixelKit.CompletionBlock) {
-        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, additionalParameters: nil)
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency,
+                     withAdditionalParameters parameters: [String: String]?,
+                     onComplete: @escaping PixelKit.CompletionBlock) {
+        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, additionalParameters: parameters)
         actualFireCalls.append(fireCall)
         onComplete(true, nil)
     }
@@ -60,9 +49,9 @@ public final class PixelKitMock: PixelFiring {
 }
 
 public struct ExpectedFireCall: Equatable {
-    let pixel: PixelKitEvent
-    let frequency: PixelKit.Frequency
-    let additionalParameters: [String: String]?
+    public let pixel: PixelKitEvent
+    public let frequency: PixelKit.Frequency
+    public let additionalParameters: [String: String]?
 
     public init(pixel: PixelKitEvent, frequency: PixelKit.Frequency, additionalParameters: [String: String]? = nil) {
         self.pixel = pixel

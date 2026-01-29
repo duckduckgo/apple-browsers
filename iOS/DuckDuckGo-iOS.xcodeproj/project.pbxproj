@@ -7230,8 +7230,6 @@
 			children = (
 				9F0369F32F23098900A00DCA /* RebrandedContextualDaxDialogFactory.swift */,
 				9F0369ED2F2307A000A00DCA /* RebrandedNewTabDaxDialogFactory.swift */,
-				9F0369EB2F22FD2000A00DCA /* NewTabDaxDialogProvider.swift */,
-				9F0369F12F23094100A00DCA /* ContextualDaxDialogProvider.swift */,
 			);
 			path = Rebranding;
 			sourceTree = "<group>";
@@ -7496,6 +7494,8 @@
 				9F5E5AAB2C3D0FCD00165F54 /* ContextualDaxDialogsFactory.swift */,
 				56D060252C359D2E003BAEB5 /* ContextualOnboardingDialogs.swift */,
 				9F5E5AAF2C3E4C6000165F54 /* ContextualOnboardingPresenter.swift */,
+				9F0369EB2F22FD2000A00DCA /* NewTabDaxDialogProvider.swift */,
+				9F0369F12F23094100A00DCA /* ContextualDaxDialogProvider.swift */,
 			);
 			path = ContextualOnboarding;
 			sourceTree = "<group>";

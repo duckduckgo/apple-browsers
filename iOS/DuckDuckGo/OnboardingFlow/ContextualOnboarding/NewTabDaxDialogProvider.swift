@@ -1,5 +1,5 @@
 //
-//  NewTabDaxDialogAbstractFactory.swift
+//  NewTabDaxDialogProvider.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -45,26 +45,23 @@ final class NewTabDaxDialogProvider: NewTabDaxDialogProviding {
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
     }
 
-    private var factory: any NewTabDaxDialogProviding {
-        if featureFlagger.isFeatureOn(.onboardingRebranding) {
-            return RebrandedNewTabDaxDialogFactory(
-                delegate: delegate,
-                daxDialogsFlowCoordinator: daxDialogsFlowCoordinator,
-                onboardingPixelReporter: onboardingPixelReporter,
-                onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper
-            )
-        } else {
-            return NewTabDaxDialogFactory(
-                delegate: delegate,
-                daxDialogsFlowCoordinator: daxDialogsFlowCoordinator,
-                onboardingPixelReporter: onboardingPixelReporter,
-                onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper
-            )
-        }
-    }
-
+    @ViewBuilder
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        AnyView(factory.createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss))
+        if featureFlagger.isFeatureOn(.onboardingRebranding) {
+            RebrandedNewTabDaxDialogFactory(
+                delegate: delegate,
+                daxDialogsFlowCoordinator: daxDialogsFlowCoordinator,
+                onboardingPixelReporter: onboardingPixelReporter,
+                onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper
+            ).createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss)
+        } else {
+            NewTabDaxDialogFactory(
+                delegate: delegate,
+                daxDialogsFlowCoordinator: daxDialogsFlowCoordinator,
+                onboardingPixelReporter: onboardingPixelReporter,
+                onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper
+            ).createDaxDialog(for: homeDialog, onCompletion: onCompletion, onManualDismiss: onManualDismiss)
+        }
     }
 
 }

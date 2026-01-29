@@ -1281,6 +1281,15 @@
 		9F254B082CF9FC270063B308 /* SpecialErrorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F254B072CF9FC270063B308 /* SpecialErrorModel.swift */; };
 		9F2D99E42EA9F9EE003950CC /* DefaultBrowserModalPromptProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2D99E32EA9F9EE003950CC /* DefaultBrowserModalPromptProviderTests.swift */; };
 		9F2E797E2E0B9F6500E2BEF3 /* DefaultBrowserPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2E797D2E0B9F6500E2BEF3 /* DefaultBrowserPromptService.swift */; };
+		9F3361BA2F2B24B800E0C21A /* ContextualDaxDialogProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3361B92F2B24B000E0C21A /* ContextualDaxDialogProviderTests.swift */; };
+		9F3361BC2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3361BB2F2B394500E0C21A /* ContextualOnboardingDelegateMock.swift */; };
+		9F3361BD2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3361BB2F2B394500E0C21A /* ContextualOnboardingDelegateMock.swift */; };
+		9F3361BE2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3361BB2F2B394500E0C21A /* ContextualOnboardingDelegateMock.swift */; };
+		9F3361BF2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3361BB2F2B394500E0C21A /* ContextualOnboardingDelegateMock.swift */; };
+		9F3361C12F2B3A0900E0C21A /* MockContextualDaxDialogsFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3361C02F2B3A0500E0C21A /* MockContextualDaxDialogsFactory.swift */; };
+		9F3361C22F2B3A0900E0C21A /* MockContextualDaxDialogsFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3361C02F2B3A0500E0C21A /* MockContextualDaxDialogsFactory.swift */; };
+		9F3361C32F2B3A0900E0C21A /* MockContextualDaxDialogsFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3361C02F2B3A0500E0C21A /* MockContextualDaxDialogsFactory.swift */; };
+		9F3361C42F2B3A0900E0C21A /* MockContextualDaxDialogsFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3361C02F2B3A0500E0C21A /* MockContextualDaxDialogsFactory.swift */; };
 		9F3668752EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
 		9F3668762EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
 		9F3668772EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
@@ -3725,6 +3734,9 @@
 		9F254B072CF9FC270063B308 /* SpecialErrorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorModel.swift; sourceTree = "<group>"; };
 		9F2D99E32EA9F9EE003950CC /* DefaultBrowserModalPromptProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserModalPromptProviderTests.swift; sourceTree = "<group>"; };
 		9F2E797D2E0B9F6500E2BEF3 /* DefaultBrowserPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptService.swift; sourceTree = "<group>"; };
+		9F3361B92F2B24B000E0C21A /* ContextualDaxDialogProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualDaxDialogProviderTests.swift; sourceTree = "<group>"; };
+		9F3361BB2F2B394500E0C21A /* ContextualOnboardingDelegateMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingDelegateMock.swift; sourceTree = "<group>"; };
+		9F3361C02F2B3A0500E0C21A /* MockContextualDaxDialogsFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockContextualDaxDialogsFactory.swift; sourceTree = "<group>"; };
 		9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockContextualOnboardingStatusProvider.swift; sourceTree = "<group>"; };
 		9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStoreTests.swift; sourceTree = "<group>"; };
 		9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownManagerTests.swift; sourceTree = "<group>"; };
@@ -5657,6 +5669,8 @@
 		362E3EC72E7185A200E4C762 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				9F3361C02F2B3A0500E0C21A /* MockContextualDaxDialogsFactory.swift */,
+				9F3361BB2F2B394500E0C21A /* ContextualOnboardingDelegateMock.swift */,
 				97770B742EC1ED7D00CACA68 /* MockOnboardingSearchExperienceProvider.swift */,
 				97770B752EC1ED7D00CACA68 /* OnboardingStepsHelper.swift */,
 				9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */,
@@ -7333,6 +7347,7 @@
 				9F1798562CD2443F0073018B /* AddToDockPromoViewModelTests.swift */,
 				9F5179D92D545D4300E40B40 /* DaxDialogsOnboardingMigratorTests.swift */,
 				9FD1BDEB2D8C183C002F4EFE /* OnboardingManagerTests.swift */,
+				9F3361B92F2B24B000E0C21A /* ContextualDaxDialogProviderTests.swift */,
 			);
 			name = Onboarding;
 			sourceTree = "<group>";
@@ -12111,6 +12126,7 @@
 				98E563162DE8AF3100E6E75F /* TestDataLoader.swift in Sources */,
 				9F387DE62EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift in Sources */,
 				98E5631D2DE8AF3100E6E75F /* CoreDataTestUtilities.swift in Sources */,
+				9F3361BC2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */,
 				98E563242DE8AF3100E6E75F /* SwiftUITestUtilities.swift in Sources */,
 				98E5632A2DE8AF3100E6E75F /* CoreDataDatabaseTestUtilities.swift in Sources */,
 				9F60CBC32E98BCCB004D2367 /* MockMessageNavigator.swift in Sources */,
@@ -12337,6 +12353,7 @@
 				9F387E092EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */,
 				9F5BEA7E2D4382430045E484 /* MaliciousSiteProtectionDatasetsFetcherTests.swift in Sources */,
 				9F5BEA7F2D4382430045E484 /* MaliciousSiteProtectionManagerTests.swift in Sources */,
+				9F3361C12F2B3A0900E0C21A /* MockContextualDaxDialogsFactory.swift in Sources */,
 				4B27FBB12C9252F4007E21A7 /* DefaultPersistentPixelStorageTests.swift in Sources */,
 				C14C7EB22EF3B77400ABCDC0 /* AIChatContextualQuickActionTests.swift in Sources */,
 				564DE45A2C450BE600D23241 /* DaxDialogsNewTabTests.swift in Sources */,
@@ -12350,6 +12367,7 @@
 				56A0FE0D2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 				9F254ACB2CF5CDC60063B308 /* SpecialErrorPageNavigationHandlerTests.swift in Sources */,
 				98E564372DE8B6BF00E6E75F /* PrivacyConfigurationManagerMock.swift in Sources */,
+				9F3361BA2F2B24B800E0C21A /* ContextualDaxDialogProviderTests.swift in Sources */,
 				CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */,
 				56D0602D2C383FD2003BAEB5 /* OnboardingSuggestedSearchesProviderTests.swift in Sources */,
 				9F5179DA2D545D4300E40B40 /* DaxDialogsOnboardingMigratorTests.swift in Sources */,
@@ -12515,6 +12533,7 @@
 				98E564252DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */,
 				986CD5512DE913EE00AFA98A /* MockFavoritesListInteracting.swift in Sources */,
 				98E564BF2DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift in Sources */,
+				9F3361C32F2B3A0900E0C21A /* MockContextualDaxDialogsFactory.swift in Sources */,
 				98E564C02DE8F34E00E6E75F /* TimeTraveller.swift in Sources */,
 				9FA0AF1C2EB4855000713387 /* MockRemoteMessagingPixelReporter.swift in Sources */,
 				98E564C12DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift in Sources */,
@@ -12565,6 +12584,7 @@
 				98E563412DE8B04D00E6E75F /* HtmlTestDataLoader.swift in Sources */,
 				BBF1BDF02EA6333000358243 /* MockWinBackOfferService.swift in Sources */,
 				98E563422DE8B04D00E6E75F /* CoreDataTestUtilities.swift in Sources */,
+				9F3361BD2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */,
 				563A3CFE2D37B8FA001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
 				1E1D8B6129950FD200C96994 /* AutoconsentBackgroundTests.swift in Sources */,
 				989F0DA52ECB4C1D00781641 /* MockContentScopeExperimentManager.swift in Sources */,
@@ -12621,6 +12641,7 @@
 				9F60CBBF2E98A13D004D2367 /* MockBrowserTabURLOpener.swift in Sources */,
 				F1A83D882E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
 				98E5634D2DE8B04D00E6E75F /* CoreDataTestUtilities.swift in Sources */,
+				9F3361C22F2B3A0900E0C21A /* MockContextualDaxDialogsFactory.swift in Sources */,
 				98424AAB2CED4FF10071C7DB /* CookieStorageTests.swift in Sources */,
 				9F60CBB52E989EA4004D2367 /* MockRemoteMessagingPresenter.swift in Sources */,
 				98E563BA2DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift in Sources */,
@@ -12630,6 +12651,7 @@
 				CB596FF22ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */,
 				9F387E0B2EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */,
 				98E563BE2DE8B32D00E6E75F /* MockBundle.swift in Sources */,
+				9F3361BF2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */,
 				98E563BF2DE8B32D00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
 				98E563C02DE8B32D00E6E75F /* MockUserAgent.swift in Sources */,
 				98E563C12DE8B32D00E6E75F /* MockVoiceSearchHelper.swift in Sources */,
@@ -12733,6 +12755,7 @@
 				98E564572DE8DDDC00E6E75F /* PrivacyConfigurationManagerMock.swift in Sources */,
 				98E5649C2DE8ED1400E6E75F /* SyncMocks.swift in Sources */,
 				98E564582DE8DDDC00E6E75F /* OnboardingPixelReporterMock.swift in Sources */,
+				9F3361C42F2B3A0900E0C21A /* MockContextualDaxDialogsFactory.swift in Sources */,
 				9F60CBB62E989EA4004D2367 /* MockRemoteMessagingPresenter.swift in Sources */,
 				98E564592DE8DDDC00E6E75F /* MockDDGSyncing.swift in Sources */,
 				98E5645A2DE8DDDC00E6E75F /* MockPixelFiring.swift in Sources */,
@@ -12742,6 +12765,7 @@
 				CB596FF32ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */,
 				9F387E0A2EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */,
 				986CD5492DE9134700AFA98A /* NewTabPageControllerDaxDialogTests.swift in Sources */,
+				9F3361BE2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */,
 				986CD54A2DE9134700AFA98A /* ContextualOnboardingNewTabDialogFactoryTests.swift in Sources */,
 				98E5645C2DE8DDDC00E6E75F /* MockTextZoomCoordinator.swift in Sources */,
 				98E5645D2DE8DDDC00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */,

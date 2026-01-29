@@ -24,30 +24,43 @@ import PrivacyConfig
 
 final class ContextualDaxDialogProvider: ContextualDaxDialogsFactory {
     private let featureFlagger: FeatureFlagger
-    private let contextualOnboardingLogic: ContextualOnboardingLogic
-    private let contextualOnboardingPixelReporter: OnboardingPixelReporting
+    private let legacyDaxDialogsFactory: ContextualDaxDialogsFactory
+    private let rebrandedDaxDialogsFactory: ContextualDaxDialogsFactory
 
-    init(
+    convenience init(
         featureFlagger: FeatureFlagger,
         contextualOnboardingLogic: ContextualOnboardingLogic,
         contextualOnboardingPixelReporter: OnboardingPixelReporting
     ) {
+
+        let legacyDaxDialogsFactory = DefaultContextualDaxDialogsFactory(
+            contextualOnboardingLogic: contextualOnboardingLogic,
+            contextualOnboardingPixelReporter: contextualOnboardingPixelReporter
+        )
+
+        let rebrandedDaxDialogsFactory = RebrandedContextualDaxDialogFactory(
+            contextualOnboardingLogic: contextualOnboardingLogic,
+            contextualOnboardingPixelReporter: contextualOnboardingPixelReporter
+        )
+
+        self.init(featureFlagger: featureFlagger, legacyDaxDialogsFactory: legacyDaxDialogsFactory, rebrandedDaxDialogsFactory: rebrandedDaxDialogsFactory)
+    }
+
+    init(
+        featureFlagger: FeatureFlagger,
+        legacyDaxDialogsFactory: ContextualDaxDialogsFactory,
+        rebrandedDaxDialogsFactory: ContextualDaxDialogsFactory
+    ) {
         self.featureFlagger = featureFlagger
-        self.contextualOnboardingLogic = contextualOnboardingLogic
-        self.contextualOnboardingPixelReporter = contextualOnboardingPixelReporter
+        self.legacyDaxDialogsFactory = legacyDaxDialogsFactory
+        self.rebrandedDaxDialogsFactory = rebrandedDaxDialogsFactory
     }
 
     private var factory: ContextualDaxDialogsFactory {
         if featureFlagger.isFeatureOn(.onboardingRebranding) {
-            return RebrandedContextualDaxDialogFactory(
-                contextualOnboardingLogic: contextualOnboardingLogic,
-                contextualOnboardingPixelReporter: contextualOnboardingPixelReporter
-            )
+            rebrandedDaxDialogsFactory
         } else {
-            return DefaultContextualDaxDialogsFactory(
-                contextualOnboardingLogic: contextualOnboardingLogic,
-                contextualOnboardingPixelReporter: contextualOnboardingPixelReporter
-            )
+            legacyDaxDialogsFactory
         }
     }
 

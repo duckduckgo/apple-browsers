@@ -1460,6 +1460,10 @@ extension Pixel {
         case aiChatContextualOnboardingConfirmPressed
         case aiChatContextualOnboardingSettingsPressed
 
+        // MARK: AI Chat Recent Chats
+        case aiChatRecentChatSelectedPinned
+        case aiChatRecentChatSelected
+
         // MARK: Customization
         case customizationAddressBarStarted
         case customizationAddressBarSelected
@@ -2901,6 +2905,10 @@ extension Pixel.Event {
         case .aiChatContextualOnboardingDisplayed: return "m_aichat_contextual_onboarding_displayed"
         case .aiChatContextualOnboardingConfirmPressed: return "m_aichat_contextual_onboarding_confirm_pressed"
         case .aiChatContextualOnboardingSettingsPressed: return "m_aichat_contextual_onboarding_settings_pressed"
+
+        // MARK: AI Chat Recent Chats
+        case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"
+        case .aiChatRecentChatSelected: return "m_aichat_recent_chat_selected"
 
         // MARK: AI Chat Sync
 

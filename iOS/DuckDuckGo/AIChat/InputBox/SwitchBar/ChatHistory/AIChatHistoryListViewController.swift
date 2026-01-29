@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
@@ -170,6 +171,8 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
         guard indexPath.row < chats.count else { return }
 
         let chat = chats[indexPath.row]
+        let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
+        Pixel.fire(pixel: pixel)
         onChatSelected(chat)
     }
 

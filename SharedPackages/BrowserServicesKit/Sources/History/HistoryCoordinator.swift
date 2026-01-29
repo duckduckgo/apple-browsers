@@ -256,9 +256,11 @@ final public class HistoryCoordinator: HistoryCoordinating {
         }
 
         let visitIDs = try await historyStoring.pageVisitIDs(in: tabID)
-        let visits = visitIDs.compactMap { id in
-            allVisits.first { $0.identifier == id }
+        let visistAndIDsArray = allVisits.map { ($0.identifier, $0) }
+        let visitByIDsDictionary = Dictionary(visistAndIDsArray) { existing, _ in
+            existing // Keep the first instance found.
         }
+        let visits = visitIDs.compactMap { visitByIDsDictionary[$0] }
 
         assert(visits.count == visitIDs.count,
                "burnVisits(for:) found \(visitIDs.count) visit IDs but matched only \(visits.count) in memory")

@@ -50,8 +50,8 @@ extension PixelFiring {
 extension PixelKit: PixelFiring {
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
-                     withAdditionalParameters: [String: String]?,
+                     withAdditionalParameters parameters: [String: String]?,
                      onComplete: @escaping PixelKit.CompletionBlock) {
-        fire(event, frequency: frequency, withHeaders: nil, withAdditionalParameters: nil, onComplete: onComplete)
+        fire(event, frequency: frequency, withHeaders: nil, withAdditionalParameters: parameters, onComplete: onComplete)
     }
 }

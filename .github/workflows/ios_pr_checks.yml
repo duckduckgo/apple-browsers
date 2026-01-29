@@ -343,6 +343,7 @@ jobs:
       id: changed-strings-files
       run: |
         changed_files=$(git diff --name-only HEAD -- ':(glob)**/*.strings' || true)
+        # Preserve newlines in the changed_files output
         echo "changed_files<<EOF" >> $GITHUB_OUTPUT
         echo "$changed_files" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT

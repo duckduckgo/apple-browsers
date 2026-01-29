@@ -41,7 +41,8 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
     }
 

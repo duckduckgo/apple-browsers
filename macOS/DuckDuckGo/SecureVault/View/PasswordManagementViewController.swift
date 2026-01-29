@@ -225,11 +225,16 @@ final class PasswordManagementViewController: NSViewController {
     private func setUpEmptyStateMessageView() {
         guard let listModel else { return }
 
-        let message = " \(listModel.emptyStateMessageDescription) [\(listModel.emptyStateMessageLinkText)](\(listModel.emptyStateMessageLinkURL))"
+        let message: String
+        if listModel.emptyStateHideLearnMoreLink {
+            message = listModel.emptyStateMessageDescription
+        } else {
+            message = " \(listModel.emptyStateMessageDescription) [\(listModel.emptyStateMessageLinkText)](\(listModel.emptyStateMessageLinkURL))"
+        }
 
         let hostingView = NSHostingView(rootView: PasswordManagementEmptyStateMessage(
             message: message,
-            image: .lockSolid16
+            image: listModel.emptyStateHideLockIcon ? nil : .lockSolid16
         ).fixedSize())
 
         hostingView.frame = CGRect(origin: .zero, size: hostingView.intrinsicContentSize)
@@ -885,15 +890,21 @@ final class PasswordManagementViewController: NSViewController {
 
                     switch response {
                     case .alertFirstButtonReturn: // Save
-                        self?.itemModel?.save()
-                        loadNewItemWithID()
+                        if self?.itemModel?.save() == true {
+                            loadNewItemWithID()
+                        } else {
+                            // Validation failed, revert selection
+                            if let previousValue {
+                                self?.listModel?.select(item: previousValue, notify: false)
+                            }
+                        }
 
                     case .alertSecondButtonReturn: // Discard
                         self?.itemModel?.cancel()
                         loadNewItemWithID()
 
                     default: // Cancel
-                        if let previousValue = previousValue {
+                        if let previousValue {
                             self?.listModel?.select(item: previousValue, notify: false)
                         }
                     }
@@ -1048,8 +1059,9 @@ final class PasswordManagementViewController: NSViewController {
 
                 switch response {
                 case .alertFirstButtonReturn: // Save
-                    self.itemModel?.save()
-                    createNew()
+                    if self.itemModel?.save() == true {
+                        createNew()
+                    }
 
                 case .alertSecondButtonReturn: // Discard
                     self.itemModel?.cancel()
@@ -1082,8 +1094,9 @@ final class PasswordManagementViewController: NSViewController {
 
                 switch response {
                 case .alertFirstButtonReturn: // Save
-                    self.itemModel?.save()
-                    createNew()
+                    if self.itemModel?.save() == true {
+                        createNew()
+                    }
 
                 case .alertSecondButtonReturn: // Discard
                     self.itemModel?.cancel()
@@ -1116,8 +1129,9 @@ final class PasswordManagementViewController: NSViewController {
 
                 switch response {
                 case .alertFirstButtonReturn: // Save
-                    self.itemModel?.save()
-                    createNew()
+                    if self.itemModel?.save() == true {
+                        createNew()
+                    }
 
                 case .alertSecondButtonReturn: // Discard
                     self.itemModel?.cancel()
@@ -1152,7 +1166,7 @@ final class PasswordManagementViewController: NSViewController {
         case .allItems: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateDefaultTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
         case .logins: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateLoginsTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
         case .identities: showEmptyState(image: .identityAdd128, title: UserText.pmEmptyStateIdentitiesTitle, hideMessage: true, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities))
-        case .cards: showEmptyState(image: .creditCardsAdd128, title: UserText.pmEmptyStateCardsTitle, hideMessage: true, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
+        case .cards: showEmptyState(image: .creditCardsAdd128, title: UserText.pmEmptyStateCardsTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
         }
     }
 
@@ -1269,18 +1283,26 @@ extension PasswordManagementViewController: NSMenuItemValidation {
 
 struct PasswordManagementEmptyStateMessage: View {
     let message: String
-    let image: ImageResource
+    let image: ImageResource?
 
     var body: some View {
-        (
-            Text(Image(image))
-                .baselineOffset(-1.0)
-                .foregroundColor(.textSecondary)
-            +
-            Text(.init(message))
-                .foregroundColor(.textSecondary)
-        )
-        .multilineTextAlignment(.center)
-        .frame(width: 280)
+        let text = Text(.init(message))
+            .foregroundColor(.textSecondary)
+
+        if let image = image {
+            (
+                Text(Image(image))
+                    .baselineOffset(-1.0)
+                    .foregroundColor(.textSecondary)
+                +
+                text
+            )
+            .multilineTextAlignment(.center)
+            .frame(width: 280)
+        } else {
+            text
+                .multilineTextAlignment(.center)
+                .frame(width: 280)
+        }
     }
 }

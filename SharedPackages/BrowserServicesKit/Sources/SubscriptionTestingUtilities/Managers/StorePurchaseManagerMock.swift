@@ -31,7 +31,6 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     }
     public var currentStorefrontRegion: SubscriptionRegion = .usa
 
-    public var subscriptionOptionsResult: SubscriptionOptions?
     public var subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StoreError>?
     public var subscriptionTierOptionsIncludeProTierCalled: Bool?
 
@@ -50,10 +49,6 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     public var isEligibleForFreeTrialResult: Bool = false
 
     public init() { }
-
-    public func subscriptionOptions() async -> SubscriptionOptions? {
-        subscriptionOptionsResult
-    }
 
     public func syncAppleIDAccount() async throws {
         if let syncAppleIDAccountResultError {

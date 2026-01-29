@@ -80,6 +80,9 @@ extension DebugScreensViewModel {
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
             }),
+            .view(title: "UI Test Overrides", { _ in
+                UITestOverridesDebugView()
+            }),
             .view(title: "ContentScope Experiments", { _ in
                 ContentScopeExperimentsDebugView()
             }),
@@ -92,8 +95,8 @@ extension DebugScreensViewModel {
             .view(title: "WebView State Restoration", { _ in
                 WebViewStateRestorationDebugView()
             }),
-            .view(title: "History", { _ in
-                HistoryDebugRootView()
+            .view(title: "History", { d in
+                HistoryDebugRootView(tabManager: d.tabManager)
             }),
             .view(title: "Bookmarks", { _ in
                 BookmarksDebugRootView()

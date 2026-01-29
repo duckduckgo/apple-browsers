@@ -104,7 +104,7 @@ struct UserText {
     static let uninstall = NSLocalizedString("uninstall", value: "Uninstall", comment: "Uninstall button")
     static let dontQuit = NSLocalizedString("dont.quit", value: "Don’t Quit", comment: "Don’t Quit button")
 
-    // Warn Before Quit/Close/Exit Fullscreen
+    // Warn Before Quit/Close
     static let confirmQuitAction = NSLocalizedString("confirm.quit.action", value: "Hold or press again to quit", comment: "Action text shown in the quit confirmation overlay")
     static let confirmQuitSubtitle = NSLocalizedString("confirm.quit.subtitle", value: "Tabs will be saved for next time.", comment: "Subtitle shown in the quit confirmation overlay explaining that tabs will be restored")
     
@@ -704,14 +704,15 @@ struct UserText {
     static let restartBitwarden = NSLocalizedString("restart.bitwarden", value: "Restart Bitwarden", comment: "Button to restart Bitwarden application")
     static let restartBitwardenInfo = NSLocalizedString("restart.bitwarden.info", value: "Bitwarden is not responding. Please restart it to initiate the communication again", comment: "This string represents a message informing the user that Bitwarden is not responding and prompts them to restart the application to initiate communication again.")
 
-    static let autofillViewContentButtonPasswords = NSLocalizedString("autofill.view-autofill-content.passwords", value: "Open Passwords…", comment: "View Password Content Button title in the autofill Settings")
-    static let autofillViewContentButtonPaymentMethods = NSLocalizedString("autofill.view-autofill-content.payment-methods", value: "Open Payment Methods…", comment: "View Payment Methods Content Button title in the autofill Settings")
-    static let autofillViewContentButtonIdentities = NSLocalizedString("autofill.view-autofill-content.identities", value: "Open Identities…", comment: "View Identities Content Button title in the autofill Settings")
+    static let autofillViewContentButtonPasswords = NSLocalizedString("autofill.view-autofill-content.passwords", value: "View Passwords…", comment: "View Password Content Button title in the autofill Settings")
+    static let autofillViewContentButtonCreditCards = NSLocalizedString("autofill.view-autofill-content.credit-cards", value: "View Credit Cards…", comment: "View Credit Cards Content Button title in the autofill Settings")
+    static let autofillViewContentButtonIdentities = NSLocalizedString("autofill.view-autofill-content.identities", value: "View Identities…", comment: "View Identities Content Button title in the autofill Settings")
+    static let autofillContentStoredSecurelyInfo = NSLocalizedString("autofill.content-stored-securely.identities", value: "Autofill content is stored securely on your device", comment: "Explanatory text about the secure storage of autofill information")
     static let autofillAskToSave = NSLocalizedString("autofill.ask-to-save", value: "Ask to Save and Autofill", comment: "Autofill settings section title")
     static let autofillAskToSaveExplanation = NSLocalizedString("autofill.ask-to-save.explanation", value: "Receive prompts to save new information and autofill online forms.", comment: "Description of Autofill autosaving feature - used in settings")
     static let autofillPasswords = NSLocalizedString("autofill.passwords", value: "Passwords", comment: "Autofill autosaved data type")
     static let autofillAddresses = NSLocalizedString("autofill.addresses", value: "Addresses", comment: "Autofill autosaved data type")
-    static let autofillPaymentMethods = NSLocalizedString("autofill.payment-methods", value: "Payment methods", comment: "Autofill autosaved data type")
+    static let autofillCreditCards = NSLocalizedString("autofill.credit-cards", value: "Credit cards", comment: "Autofill autosaved data type")
     static let autofillExcludedSites = NSLocalizedString("autofill.excluded-sites", value: "Excluded Sites", comment: "Autofill settings section title")
     static let autofillExcludedSitesExplanation = NSLocalizedString("autofill.excluded-sites.explanation", value: "Websites you selected to never ask to save your password.", comment: "Subtitle providing additional information about the excluded sites section")
     static let autofillExcludedSitesReset = NSLocalizedString("autofill.excluded-sites.reset", value: "Reset", comment: "Button title allowing users to reset their list of excluded sites")
@@ -743,7 +744,7 @@ struct UserText {
     static let passwordManagementNotes = NSLocalizedString("passsword.management.notes", value: "Notes", comment: "Used as title for the Autofill Notes option")
     static let passwordManagementLock = NSLocalizedString("passsword.management.lock", value: "Lock", comment: "Lock Logins Vault menu")
     static let passwordManagementUnlock = NSLocalizedString("passsword.management.unlock", value: "Unlock", comment: "Unlock Logins Vault menu")
-    static let passwordManagementSavePayment = NSLocalizedString("passsword.management.save.payment", value: "Save Payment Method?", comment: "Title of dialog that allows the user to save a payment method")
+    static let passwordManagementSaveCard = NSLocalizedString("password.management.save.card", value: "Save Card?", comment: "Title of dialog that allows the user to save a credit card")
     static let passwordManagementSaveAddress = NSLocalizedString("passsword.management.save.address", value: "Save Address?", comment: "Title of dialog that allows the user to save an address method")
     static let passwordManagementSaveCredentialsPasswordManagerTitle = NSLocalizedString("passsword.management.save.credentials.password.manager.title", value: "Save password to Bitwarden?", comment: "Title of the passwored manager section of dialog that allows the user to save credentials")
     static let passwordManagementSaveCredentialsUnlockPasswordManager = NSLocalizedString("passsword.management.save.credentials.unlock.password.manager", value: "Unlock Bitwarden to Save", comment: "In the password manager dialog, alerts the user that they need to unlock Bitworden before being able to save the credential")

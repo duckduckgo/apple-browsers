@@ -60,12 +60,12 @@ public final class AIChatNativeInputView: UIView {
         static let placeholderHorizontalOffset: CGFloat = 16
         static let placeholderTrailingSpacing: CGFloat = 8
         static let buttonSize: CGFloat = 40
-        static let bottomBarHeight: CGFloat = 40
+        static let bottomBarHeight: CGFloat = 56
         static let bottomBarHorizontalPadding: CGFloat = 8
-        static let cornerRadius: CGFloat = 12
-        static let textViewMinHeight: CGFloat = 48
+        static let cornerRadius: CGFloat = 16
+        static let textViewMinHeight: CGFloat = 44
         static let textViewMaxHeight: CGFloat = 200
-        static let chipContainerPadding: CGFloat = 12
+        static let chipContainerPadding: CGFloat = 8
         static let chipFadeDuration: TimeInterval = 0.05
         static let chipHeightDuration: TimeInterval = 0.12
     }
@@ -270,16 +270,14 @@ public final class AIChatNativeInputView: UIView {
         chipContainer.addSubview(chipView)
 
         NSLayoutConstraint.activate([
-            chipView.topAnchor.constraint(equalTo: chipContainer.topAnchor, constant: Constants.chipContainerPadding),
-            chipView.leadingAnchor.constraint(equalTo: chipContainer.leadingAnchor, constant: Constants.chipContainerPadding),
-            chipView.bottomAnchor.constraint(equalTo: chipContainer.bottomAnchor, constant: -Constants.chipContainerPadding),
+            chipView.leadingAnchor.constraint(equalTo: chipContainer.leadingAnchor, constant: Constants.chipContainerPadding)
         ])
 
         isContextChipVisible = true
         updateAttachButtonVisibility()
 
         chipContainer.layoutIfNeeded()
-        let targetHeight = chipView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height + (Constants.chipContainerPadding * 2)
+        let targetHeight = chipView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height
 
         if animated {
             chipView.alpha = 0
@@ -496,8 +494,11 @@ private extension AIChatNativeInputView {
     }
 
     func updateAttachButtonVisibility() {
-        let shouldHide = isAttachButtonHidden || attachActions.isEmpty || isContextChipVisible
+        let shouldHide = isAttachButtonHidden || attachActions.isEmpty
         attachButtonContainer.isHidden = shouldHide
+
+        attachButton.isEnabled = !isContextChipVisible
+        attachButtonContainer.alpha = isContextChipVisible ? 0.5 : 1.0
     }
 
     @objc func submitButtonTapped() {

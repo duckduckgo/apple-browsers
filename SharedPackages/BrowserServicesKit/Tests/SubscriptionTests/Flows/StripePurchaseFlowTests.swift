@@ -41,32 +41,6 @@ final class StripePurchaseFlowTests: XCTestCase {
         stripePurchaseFlow = nil
     }
 
-    // MARK: - Tests for subscriptionOptions
-
-    func testSubscriptionOptionsSuccess() async throws {
-        // Given
-        subscriptionManager.productsResponse = .success(SubscriptionMockFactory.productsItems)
-
-        // When
-        let result = await stripePurchaseFlow.subscriptionOptions()
-
-        // Then
-        switch result {
-        case .success(let success):
-            XCTAssertEqual(success.platform, SubscriptionPlatformName.stripe)
-            XCTAssertEqual(success.options.count, SubscriptionMockFactory.productsItems.count)
-            XCTAssertEqual(success.features.count, 4)
-            let allFeatures: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
-            let allNames = success.features.compactMap({ feature in feature.name })
-
-            for feature in allFeatures {
-                XCTAssertTrue(allNames.contains(feature))
-            }
-        case .failure(let error):
-            XCTFail("Unexpected failure: \(error)")
-        }
-    }
-
     // MARK: - Tests for subscriptionTierOptions
 
     func testSubscriptionTierOptionsSuccess() async throws {

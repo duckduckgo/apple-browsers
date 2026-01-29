@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Kinnita";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontekstuaalne juhendamine";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Jäta vahele";
 
@@ -2974,6 +2977,9 @@
 /* about tagline */
 "settings.about.tagline" = "Kaitse Privaatsus Meelerahu.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo on sõltumatu veebikaitseettevõte kõikidele, kes tahavad oma isikliku teabe üle kontrolli tagasi saada.\n\nUsume, et parim viis sinu isikuandmete kaitsmiseks häkkerite, petturite ja eraelu puutumatust rikkuvate ettevõtete eest on nende kogumise täielik vältimine. Seetõttu miljonid inimesed [valivad DuckDuckGo Chrome'i ja teiste brauserite asemel](ddgQuickLink://duckduckgo.com/compare-privacy) veebis otsimiseks ja sirvimiseks. Meie sisseehitatud otsingumootor on nagu Google, kuid ei jälgi kunagi sinu otsinguid. Ja meie sirvimiskaitsed, nagu reklaamijälgijate ja küpsiste blokeerimine, aitavad takistada teistel ettevõtetel sinu andmeid kogumast. Ja muideks, meie brauser on tasuta — teenime raha [privaatsust austavate otsingureklaamidega](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), mitte sinu andmeid ära kasutades. \n\n%@ \n\nVõta tagasi kontroll oma isikuandmete üle brauseriga, mis on loodud andmete kaitsmiseks ja mitte nende kogumiseks.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Hõlpsus";
 
@@ -2992,8 +2998,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Näita kogu saidi aadressi";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Kuva blokeeritud jälgijate animatsiooni";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Näita aadressiribal";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Otsi ja Duck.ai";
@@ -3370,6 +3376,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sünkroonimine ja varundamine";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Näita vahelehtede halduris";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Vahelehed";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Vaikimisi teksti suumimine";
 
@@ -3378,6 +3390,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Seaded";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Blokeeritud jälgurite animatsioon";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Aitab blokeerida kolmanda poole jälgureid, mis üritavad end DNS-i abil veebisaidil maskeerida.";
@@ -3619,11 +3634,11 @@
 /* Help and support Section header */
 "subscription.help" = "Abi ja tugi";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Halda plaani";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Makse haldamine või tühistamine";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Halda plaani";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Püsitellimus";
@@ -3787,6 +3802,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Sünkroonimise seadistamine";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Oma krediitkaartide sünkroonimine ja varundamine";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Andmete sünkroonimine ja varundamine";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ei aitäh";
 
@@ -3876,6 +3897,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Lisa kõigile vahekaartidele järjehoidja";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Peida";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Saad selle uuesti sisse lülitada suvandis Seaded > Välimus.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Kas peita jälgurite arv?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Jälgijate arvu valikud";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Topeltpuudutage, et kuvada selle bänneri peitmise suvandid";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Jäta alles";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "viimase 7 päeva jooksul";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Suurendage või vähendage teksti suurust kõigil saitidel.";
@@ -4261,15 +4306,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Vahekaardid";
-"settings.tab.switcher.show.tracker.count" = "Viimase 7 päeva jälgijate arv";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "viimase 7 päeva jooksul";
-"tab.switcher.tracker.count.hide.title" = "Peita jälgijate arv?";
-"tab.switcher.tracker.count.hide.message" = "Saate selle uuesti sisse lülitada jaotises Seaded > Välimus.";
-"tab.switcher.tracker.count.hide.action" = "Peida";
-"tab.switcher.tracker.count.keep.action" = "Jäta";
-"tab.switcher.tracker.count.info.a11y" = "Jälgijate arvu valikud";
-"tab.switcher.tracker.count.info.hint.a11y" = "Banneri peitmise valikute kuvamiseks topeltpuuduta";

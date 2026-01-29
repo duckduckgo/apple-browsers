@@ -28,7 +28,8 @@ extension AppearancePreferences {
         // swiftlint:disable:next force_try
         persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: try! MockKeyValueFileStore()),
         privacyConfigurationManager: MockPrivacyConfigurationManager(),
-        featureFlagger: MockFeatureFlagger()
+        featureFlagger: MockFeatureFlagger(),
+        aiChatMenuConfig: MockAIChatConfig()
     )
 }
 #endif

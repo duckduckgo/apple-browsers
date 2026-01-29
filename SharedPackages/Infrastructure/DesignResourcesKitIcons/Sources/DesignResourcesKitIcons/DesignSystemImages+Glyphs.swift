@@ -201,6 +201,7 @@ public extension DesignSystemImages {
             public static var microphoneBlocked: DesignSystemImage { .init(resource: .microphoneBlocked16) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn16) }
             public static var options: DesignSystemImage { .init(resource: .options16) }
+            public static var pageContentAttach: DesignSystemImage { .init(resource: .pageContentAttach16) }
             public static var paste: DesignSystemImage { .init(resource: .paste16) }
             public static var permissions: DesignSystemImage { .init(resource: .permissions16) }
             public static var permissionsLocation: DesignSystemImage { .init(resource: .permissionsLocation16) }

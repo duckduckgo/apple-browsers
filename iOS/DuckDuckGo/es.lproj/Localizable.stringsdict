@@ -2,6 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d pestaña y sus datos eliminados</string>
+			<key>other</key>
+			<string>%1$d pestañas y sus datos eliminados</string>
+		</dict>
+	</dict>
 	<key>fire.confirmation.data.subtitle.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

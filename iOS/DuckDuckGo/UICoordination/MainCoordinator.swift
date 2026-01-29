@@ -219,12 +219,15 @@ final class MainCoordinator {
                                                                                mainViewController: controller)
 
             controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
+            controller.setWebExtensionManager(webExtensionManager)
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
+//                await webExtensionManager.uninstallAllExtensions()
             }
         } else {
             self.webExtensionManager = nil
             self.webExtensionEventsCoordinator = nil
+            controller.setWebExtensionManager(nil)
         }
     }
 

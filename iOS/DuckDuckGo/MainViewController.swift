@@ -49,6 +49,7 @@ import DataBrokerProtection_iOS
 import UserScript
 import PrivacyConfig
 import WebExtensions
+import WebExtensions
 
 class MainViewController: UIViewController {
 
@@ -267,6 +268,11 @@ class MainViewController: UIViewController {
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     func setWebExtensionEventsCoordinator(_ coordinator: WebExtensionEventsCoordinator?) {
         self.webExtensionEventsCoordinator = coordinator
+    }
+
+    private(set) var webExtensionManager: WebExtensionManaging?
+    func setWebExtensionManager(_ manager: WebExtensionManaging?) {
+        self.webExtensionManager = manager
     }
 
     init(

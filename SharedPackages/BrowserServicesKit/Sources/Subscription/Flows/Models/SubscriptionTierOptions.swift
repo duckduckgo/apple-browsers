@@ -76,3 +76,39 @@ public enum TierName: String, Codable {
         self = TierName(rawValue: rawValue) ?? .plus
     }
 }
+
+public enum SubscriptionPlatformName: String, Encodable {
+    case ios
+    case macos
+    case stripe
+}
+
+public struct SubscriptionOption: Encodable, Equatable {
+    let id: String
+    let cost: SubscriptionOptionCost
+    let offer: SubscriptionOptionOffer?
+
+    init(id: String, cost: SubscriptionOptionCost, offer: SubscriptionOptionOffer? = nil) {
+        self.id = id
+        self.cost = cost
+        self.offer = offer
+    }
+}
+
+struct SubscriptionOptionCost: Encodable, Equatable {
+    let displayPrice: String
+    let recurrence: String
+}
+
+/// A `SubscriptionOptionOffer` represents an offer (e.g Free Trials) associated with a Subscription
+public struct SubscriptionOptionOffer: Encodable, Equatable {
+
+    public enum OfferType: String, Codable, CaseIterable {
+        case freeTrial
+    }
+
+    let type: OfferType
+    let id: String
+    let durationInDays: Int?
+    let isUserEligible: Bool
+}

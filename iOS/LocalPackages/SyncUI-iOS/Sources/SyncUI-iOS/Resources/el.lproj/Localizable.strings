@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Ακύρωση";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Ενεργοποίηση συγχρονισμού και δημιουργίας αντιγράφων ασφαλείας";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Αυτό δημιουργεί ένα κρυπτογραφημένο αντίγραφο ασφάλειας των σελιδοδεικτών και των δεδομένων αυτόματης συμπλήρωσης στον ασφαλή διακομιστή του DuckDuckGo, το οποίο μπορεί να συγχρονιστεί με τις άλλες συσκευές σας.";
 

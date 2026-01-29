@@ -178,6 +178,8 @@ class TabViewController: UIViewController {
     private var fireproofingWorker: FireproofingWorking?
 
     private var trackersInfoWorkItem: DispatchWorkItem?
+    private var lastVisitedTrackerAnimationDomain: String?
+    private var lastNotifiedTrackerAnimationDomain: String?
     
     private var tabURLInterceptor: TabURLInterceptor
     private var currentlyLoadedURL: URL?
@@ -280,6 +282,7 @@ class TabViewController: UIViewController {
             updateTabModel()
             delegate?.tabLoadingStateDidChange(tab: self)
             checkLoginDetectionAfterNavigation()
+            updateTrackerAnimationDomainState(for: url)
         }
     }
     
@@ -1932,6 +1935,7 @@ extension TabViewController: WKNavigationDelegate {
     private func scheduleTrackerNetworksAnimation(collapsing: Bool) {
         let trackersWorkItem = DispatchWorkItem {
             guard let privacyInfo = self.privacyInfo else { return }
+            guard self.shouldShowTrackersAnimation(for: privacyInfo) else { return }
             self.delegate?.tab(self, didRequestPresentingTrackerAnimation: privacyInfo, isCollapsing: collapsing)
         }
         trackersInfoWorkItem = trackersWorkItem
@@ -1942,6 +1946,32 @@ extension TabViewController: WKNavigationDelegate {
     private func cancelTrackerNetworksAnimation() {
         trackersInfoWorkItem?.cancel()
         trackersInfoWorkItem = nil
+    }
+
+    private func trackerAnimationDomain(for url: URL?) -> String? {
+        guard let host = url?.host?.lowercased() else { return nil }
+        return storageCache.tld.eTLDplus1(host) ?? host
+    }
+
+    private func updateTrackerAnimationDomainState(for url: URL?) {
+        let currentDomain = trackerAnimationDomain(for: url)
+        guard currentDomain != lastVisitedTrackerAnimationDomain else { return }
+        lastVisitedTrackerAnimationDomain = currentDomain
+        lastNotifiedTrackerAnimationDomain = nil
+    }
+
+    private func shouldShowTrackersAnimation(for privacyInfo: PrivacyInfo) -> Bool {
+        guard appSettings.showTrackersBlockedAnimation else { return false }
+        guard !privacyInfo.url.isDuckDuckGoSearch else { return false }
+        guard !privacyInfo.trackerInfo.trackersBlocked.isEmpty else { return false }
+
+        guard let currentDomain = trackerAnimationDomain(for: privacyInfo.url),
+              currentDomain != lastNotifiedTrackerAnimationDomain else {
+            return false
+        }
+
+        lastNotifiedTrackerAnimationDomain = currentDomain
+        return true
     }
     
     private func checkLoginDetectionAfterNavigation() {

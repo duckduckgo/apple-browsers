@@ -171,29 +171,9 @@ extension AppDelegate {
 
             let presenter = DefaultHistoryViewDialogPresenter()
             switch await presenter.showDeleteDialog(for: .rangeFilter(.all), visits: visits, in: window, fromMainMenu: true) {
-            case .burn(let includeChats):
+            case .burn, .delete:
                 // FireCoordinator handles burning for Fire Dialog View
-                if featureFlagger.isFeatureOn(.fireDialog) {
-                    reloadHistoryTabs()
-                } else {
-                    let entity = Fire.BurningEntity.allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
-                                                               selectedDomains: [],
-                                                               customURLToOpen: nil,
-                                                               close: true)
-                    await fireCoordinator.fireViewModel.fire.burnEntity(entity, includingHistory: true, includeChatHistory: includeChats)
-                }
-            case .delete(let burnChats):
-                // FireCoordinator handles burning for Fire Dialog View
-                if featureFlagger.isFeatureOn(.fireDialog) {
-                    reloadHistoryTabs()
-                } else {
-                    historyCoordinator.burnAll {
-                        self.reloadHistoryTabs()
-                    }
-                    if burnChats {
-                        await fireCoordinator.fireViewModel.fire.burnChatHistory()
-                    }
-                }
+                reloadHistoryTabs()
             case .noAction:
                 break
             }

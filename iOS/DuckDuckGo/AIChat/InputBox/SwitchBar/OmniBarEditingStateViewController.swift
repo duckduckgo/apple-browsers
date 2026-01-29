@@ -147,7 +147,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if aiChatHistoryManager == nil && featureFlagger.isFeatureOn(.aiChatSuggestions) {
+        if aiChatHistoryManager == nil && featureFlagger.isFeatureOn(.aiChatSuggestions) && appSettings.autocomplete {
             installChatHistoryList()
         }
 

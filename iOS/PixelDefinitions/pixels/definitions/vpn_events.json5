@@ -34,6 +34,7 @@
             "wideEventType",
             "wideEventFormFactor",
             "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",

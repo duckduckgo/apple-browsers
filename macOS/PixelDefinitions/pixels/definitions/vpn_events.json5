@@ -33,6 +33,7 @@
             "wideEventPlatform",
             "wideEventType",
             "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",

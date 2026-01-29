@@ -19,10 +19,15 @@
 
 import XCTest
 @testable import Core
+import PrivacyConfig
 
 final class LaunchOptionsHandlerTests: XCTestCase {
     private static let suiteName = "testing_launchOptionsHandler"
     private var userDefaults: UserDefaults!
+
+    private class MockInternalUserStore: InternalUserStoring {
+        var isInternalUser: Bool = false
+    }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -168,6 +173,106 @@ final class LaunchOptionsHandlerTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(result, .notOverridden)
+    }
+
+    // MARK: - UI Test Overrides
+
+    func testWhenNoOverridesPassedThenInternalUserNotEnabled() {
+        // GIVEN
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        let configStore = UserDefaults(suiteName: "testing_configRollout")!
+        let mockInternalUserStore = MockInternalUserStore()
+        let sut = LaunchOptionsHandler(
+            environment: [:],
+            userDefaults: userDefaults,
+            arguments: [],
+            internalUserStore: mockInternalUserStore
+        )
+
+        // WHEN
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
+
+        // THEN - No overrides applied, internal user should NOT be enabled
+        XCTAssertFalse(mockInternalUserStore.isInternalUser)
+
+        // Cleanup
+        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
+        configStore.removePersistentDomain(forName: "testing_configRollout")
+    }
+
+    func testWhenFeatureFlagOverrideIsPassedThenItIsAppliedAndInternalUserEnabled() {
+        // GIVEN
+        userDefaults.set("true", forKey: "ff.uiTestFeatureFlag")
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        let configStore = UserDefaults(suiteName: "testing_configRollout")!
+        let mockInternalUserStore = MockInternalUserStore()
+        let sut = LaunchOptionsHandler(
+            environment: [:],
+            userDefaults: userDefaults,
+            arguments: ["-ff.uiTestFeatureFlag", "true"],
+            internalUserStore: mockInternalUserStore
+        )
+
+        // WHEN
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
+
+        // THEN
+        XCTAssertTrue(featureFlagStore.bool(forKey: "localOverrideUiTestFeatureFlag"))
+        XCTAssertTrue(mockInternalUserStore.isInternalUser)
+
+        // Cleanup
+        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
+        configStore.removePersistentDomain(forName: "testing_configRollout")
+    }
+
+    func testWhenExperimentCohortOverrideIsPassedThenItIsAppliedAndInternalUserEnabled() {
+        // GIVEN
+        userDefaults.set("treatment", forKey: "experiment.uiTestExperiment")
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        let configStore = UserDefaults(suiteName: "testing_configRollout")!
+        let mockInternalUserStore = MockInternalUserStore()
+        let sut = LaunchOptionsHandler(
+            environment: [:],
+            userDefaults: userDefaults,
+            arguments: ["-experiment.uiTestExperiment", "treatment"],
+            internalUserStore: mockInternalUserStore
+        )
+
+        // WHEN
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
+
+        // THEN
+        XCTAssertEqual(featureFlagStore.string(forKey: "localOverrideUiTestExperiment_cohort"), "treatment")
+        XCTAssertTrue(mockInternalUserStore.isInternalUser)
+
+        // Cleanup
+        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
+        configStore.removePersistentDomain(forName: "testing_configRollout")
+    }
+
+    func testWhenConfigRolloutOverrideIsPassedThenItIsAppliedAndInternalUserEnabled() {
+        // GIVEN
+        userDefaults.set("true", forKey: "config.rollout.duckPlayer.enableDuckPlayer")
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        let configStore = UserDefaults(suiteName: "testing_configRollout")!
+        let mockInternalUserStore = MockInternalUserStore()
+        let sut = LaunchOptionsHandler(
+            environment: [:],
+            userDefaults: userDefaults,
+            arguments: ["-config.rollout.duckPlayer.enableDuckPlayer", "true"],
+            internalUserStore: mockInternalUserStore
+        )
+
+        // WHEN
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
+
+        // THEN
+        XCTAssertTrue(configStore.bool(forKey: "config.duckPlayer.enableDuckPlayer.enabled"))
+        XCTAssertTrue(mockInternalUserStore.isInternalUser)
+
+        // Cleanup
+        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
+        configStore.removePersistentDomain(forName: "testing_configRollout")
     }
 
 }

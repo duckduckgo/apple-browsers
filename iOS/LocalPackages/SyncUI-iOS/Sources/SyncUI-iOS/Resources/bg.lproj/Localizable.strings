@@ -31,6 +31,9 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Отмени";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Включване на Синхронизиране и архивиране";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Създава криптирано резервно копие на Вашите отметки и данни за автоматично попълване на защитения сървър на DuckDuckGo, което може да бъде синхронизирано с други Ваши устройства.";
 

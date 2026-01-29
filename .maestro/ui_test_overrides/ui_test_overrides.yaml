@@ -1,0 +1,45 @@
+# ui_test_overrides.yaml
+# Tests that UI test overrides (feature flag, experiment) are correctly applied
+# Note: Config rollout overrides only support enabling (not disabling), so not tested here
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+
+---
+
+# Custom setup with override arguments
+# If you need more arguments, copy these commands directly into your test
+# See release_tests/autoclear.yaml for an example
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        "ff.uiTestFeatureFlag": "true"
+        "experiment.uiTestExperiment": "treatment"
+
+# Open Debug Menu
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/open_debug_menu.yaml
+
+# Navigate to UI Test Overrides
+# (internal user is enabled when overrides are applied)
+- scrollUntilVisible:
+    element:
+        text: "UI Test Overrides"
+    direction: DOWN
+- tapOn: "UI Test Overrides"
+
+# Verify feature flag is ENABLED (was disabled by default, now enabled via override)
+- assertVisible:
+    id: "ui-test-override-ff-value"
+    text: "ENABLED"
+
+# Verify experiment cohort is "treatment"
+- assertVisible:
+    id: "ui-test-override-experiment-value"
+    text: "treatment"

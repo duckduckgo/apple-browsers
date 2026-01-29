@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Bekräfta";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontextuell onboarding";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Hoppa över";
 
@@ -2974,6 +2977,9 @@
 /* about tagline */
 "settings.about.tagline" = "Skydd. Integritet. Sinnesro.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo är ett oberoende företag för onlineskydd för alla som vill återta kontrollen över sin personliga information.\n\nVi vill skydda din personliga information från hackare, bedragare och integritetskränkande företag – och den bästa metoden är att förhindra att den samlas in överhuvudtaget. Det är därför som miljontals människor [väljer DuckDuckGo framför Chrome och andra webbläsare](ddgQuickLink://duckduckgo.com/compare-privacy) för att söka och surfa online. Vår inbyggda sökmotor är som Google men spårar aldrig dina sökningar. Och våra surfskydd, som spårningsblockering och blockering av cookies, hjälper till att stoppa andra företag från att samla in dina data. Vår webbläsare är dessutom gratis – vi tjänar pengar på [sökannonser som respekterar din integritet](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), inte genom att utnyttja dina data. \n\n%@ \n\nTa tillbaka kontrollen över din personliga information med webbläsaren som är utformad för dataskydd, inte datainsamling.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Tillgänglighet";
 
@@ -2992,8 +2998,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Visa hela webbplatsadressen";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Visa animation för blockerad spårare";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Visa i adressfältet";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Sök & Duck.ai";
@@ -3370,6 +3376,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synkronisering och säkerhetskopiering";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Visa i flikhanteraren";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Flikar";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Standardzoom för text";
 
@@ -3378,6 +3390,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Inställningar";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animation för blockerade spårare";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Hjälper till att blockera spårare från tredje part som använder DNS för att försöka gömma sig på en webbplats.";
@@ -3619,11 +3634,11 @@
 /* Help and support Section header */
 "subscription.help" = "Hjälp och support";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Hantera abonnemang";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Hantera betalning eller avbryt";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Hantera abonnemang";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonnemang";
@@ -3787,6 +3802,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Ställ in synk";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synkronisera och säkerhetskopiera dina kreditkort";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synkronisera och säkerhetskopiera dina data";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nej tack";
 
@@ -3876,6 +3897,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Bokmärk alla flikar";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Dölj";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Du kan slå på detta igen i Inställningar > Utseende.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Dölj spårarräknaren?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Alternativ för antal spårare";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Dubbeltryck för att visa alternativ för att dölja den här bannern";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Behåll";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "under de senaste 7 dagarna";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Öka eller minska textstorleken på alla webbplatser.";
@@ -4261,15 +4306,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Flikar";
-"settings.tab.switcher.show.tracker.count" = "Spårarantal de senaste 7 dagarna";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "de senaste 7 dagarna";
-"tab.switcher.tracker.count.hide.title" = "Dölj spårarantal?";
-"tab.switcher.tracker.count.hide.message" = "Du kan slå på detta igen i Inställningar > Utseende.";
-"tab.switcher.tracker.count.hide.action" = "Dölj";
-"tab.switcher.tracker.count.keep.action" = "Behåll";
-"tab.switcher.tracker.count.info.a11y" = "Alternativ för spårarantal";
-"tab.switcher.tracker.count.info.hint.a11y" = "Dubbeltryck för att visa alternativ för att dölja den här bannern";

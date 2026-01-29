@@ -30,6 +30,7 @@ enum GeneralPixel: PixelKitEvent {
     case crashOnCrashHandlersSetUp
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
+    case crashReportingFailedToReadContents
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser
@@ -585,10 +586,13 @@ enum GeneralPixel: PixelKitEvent {
     var name: String {
         switch self {
         case .crash(let appIdentifier):
-            if let appIdentifier {
-                return "m_mac_crash_\(appIdentifier.rawValue)"
-            } else {
+            switch appIdentifier {
+            case .app:
                 return "m_mac_crash"
+            case .some(let identifier):
+                return "m_mac_crash_\(identifier.rawValue)"
+            case .none:
+                return "m_mac_crash_unknown"
             }
 
         case .crashOnCrashHandlersSetUp:
@@ -596,6 +600,9 @@ enum GeneralPixel: PixelKitEvent {
 
         case .crashReportCRCIDMissing:
             return "m_mac_crashreporting_crcid-missing"
+
+        case .crashReportingFailedToReadContents:
+            return "m_mac_crashreporting_failed_to_read_crash_contents"
 
         case .crashReportingSubmissionFailed:
             return "m_mac_crashreporting_submission-failed"
@@ -1525,6 +1532,7 @@ enum GeneralPixel: PixelKitEvent {
                 .crashOnCrashHandlersSetUp,
                 .crashReportingSubmissionFailed,
                 .crashReportCRCIDMissing,
+                .crashReportingFailedToReadContents,
                 .compileRulesWait,
                 .launch,
                 .dailyActiveUser,

@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import WebExtensions
 
 protocol AutofillPreferencesPersistor {
     var isAutoLockEnabled: Bool { get set }

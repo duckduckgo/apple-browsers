@@ -27,7 +27,17 @@ final class MemoryUsageTests: XCTestCase {
         try super.setUpWithError()
         continueAfterFailure = false
 
+        /// Avoids First-Run State
+        UITests.firstRun()
+
+        /// Launch + Open a single New Window
         application = XCUIApplication.setUp(featureFlags: ["memoryUsageMonitor": true])
+        application.openNewWindow()
+
+        /// # Workaround
+        ///     Wait 10s for memory usage to settle, before running the actual measurements.
+        ///     Ref. https://app.asana.com/1/137249556945/project/1211150618152277/task/1212891845324300?focus=true
+        sleep(10)
     }
 
     override func tearDown() {
@@ -43,7 +53,6 @@ final class MemoryUsageTests: XCTestCase {
             application.openNewTab()
         }
 
-        application.openNewWindow()
         measure(metrics: [metric], options: options, block: work)
     }
 

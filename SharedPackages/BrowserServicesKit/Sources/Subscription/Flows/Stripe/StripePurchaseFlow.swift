@@ -86,7 +86,6 @@ public enum StripePurchaseFlowError: DDGError {
 public protocol StripePurchaseFlow {
     typealias PrepareResult = (purchaseUpdate: PurchaseUpdate, accountCreationDuration: WideEvent.MeasuredInterval?)
 
-    func subscriptionOptions() async -> Result<SubscriptionOptions, StripePurchaseFlowError>
     func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StripePurchaseFlowError>
     func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError>
     func completeSubscriptionPurchase() async
@@ -97,40 +96,6 @@ public final class DefaultStripePurchaseFlow: StripePurchaseFlow {
 
     public init(subscriptionManager: any SubscriptionManager) {
         self.subscriptionManager = subscriptionManager
-    }
-
-    public func subscriptionOptions() async -> Result<SubscriptionOptions, StripePurchaseFlowError> {
-        Logger.subscriptionStripePurchaseFlow.log("Getting subscription options for Stripe")
-
-        guard let products = try? await subscriptionManager.getProducts(),
-              !products.isEmpty else {
-            Logger.subscriptionStripePurchaseFlow.error("Failed to obtain products")
-            return .failure(.noProductsFound)
-        }
-
-        let currency = products.first?.currency ?? "USD"
-
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "en_US@currency=\(currency)")
-
-        let options: [SubscriptionOption] = products.map {
-
-            var displayPrice = "\($0.price) \($0.currency)"
-            if let price = Float($0.price), let formattedPrice = formatter.string(from: price as NSNumber) {
-                 displayPrice = formattedPrice
-            }
-            let cost = SubscriptionOptionCost(displayPrice: displayPrice, recurrence: $0.billingPeriod.lowercased())
-            return SubscriptionOption(id: $0.productId, cost: cost)
-        }
-
-        let features: [SubscriptionEntitlement] = [.networkProtection,
-                                                   .dataBrokerProtection,
-                                                   .identityTheftRestoration,
-                                                   .paidAIChat]
-        return .success(SubscriptionOptions(platform: SubscriptionPlatformName.stripe,
-                                              options: options,
-                                              availableEntitlements: features))
     }
 
     public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StripePurchaseFlowError> {

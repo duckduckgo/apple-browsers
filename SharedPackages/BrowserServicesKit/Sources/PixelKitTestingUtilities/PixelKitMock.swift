@@ -36,9 +36,9 @@ public final class PixelKitMock: PixelFiring {
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
-                     withAdditionalParameters: [String: String]?,
+                     withAdditionalParameters parameters: [String: String]?,
                      onComplete: @escaping PixelKit.CompletionBlock) {
-        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, additionalParameters: nil)
+        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, additionalParameters: parameters)
         actualFireCalls.append(fireCall)
         onComplete(true, nil)
     }

@@ -640,7 +640,7 @@ class TabViewController: UIViewController {
         }
 
         observeNetPConnectionStatusChanges()
-        
+
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
     }
@@ -693,8 +693,19 @@ class TabViewController: UIViewController {
     }
 
     private func updateWebViewBottomAnchor() {
-        let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
-        webViewBottomAnchorConstraint?.constant = appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
+        updateWebViewBottomAnchor(for: 1.0)
+    }
+
+    func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
+        if appSettings.currentAddressBarPosition == .bottom {
+            /// When address bar is at bottom, offset webview to make room for the bars
+            let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
+            webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
+        } else {
+            /// When address bar is at top, webview fills the container
+            /// The container already follows the toolbar position
+            webViewBottomAnchorConstraint?.constant = 0
+        }
     }
 
     private func observeNetPConnectionStatusChanges() {

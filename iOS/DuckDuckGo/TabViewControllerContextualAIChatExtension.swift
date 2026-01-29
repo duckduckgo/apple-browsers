@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Core
 import UIKit
 
 // MARK: - Contextual AI Chat
@@ -37,6 +38,13 @@ extension TabViewController {
 
             if needsColdRestore, let urlString = tabModel.contextualChatURL {
                 restoreURL = URL(string: urlString)
+            }
+
+            // Prime navigation URL to prevent immediate "updated on navigation" pixel
+            if let pageContext = aiChatContextualSheetCoordinator.pageContextHandler.latestContext {
+                aiChatContextualSheetCoordinator.pixelHandler.primeNavigationURL(pageContext.url)
+            } else if let restoreURL = restoreURL {
+                aiChatContextualSheetCoordinator.pixelHandler.primeNavigationURL(restoreURL.absoluteString)
             }
 
             await aiChatContextualSheetCoordinator.presentSheet(
@@ -92,5 +100,9 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
         tabModel.contextualChatURL = url?.absoluteString
         delegate?.tabLoadingStateDidChange(tab: self)
+    }
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestOpenDownloadWithFileName fileName: String) {
+        delegate?.tabDidRequestDownloads(tab: self)
     }
 }

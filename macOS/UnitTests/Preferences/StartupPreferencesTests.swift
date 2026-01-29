@@ -282,7 +282,8 @@ fileprivate extension StartupPreferences {
             appearancePreferences: AppearancePreferences(
                 persistor: AppearancePreferencesPersistorMock(),
                 privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
             )
         )
     }

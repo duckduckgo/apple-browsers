@@ -32,7 +32,7 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
 
     /// Event interceptor hook for WarnBeforeQuitManager
     /// Returns nil to consume event, or the event to pass through
-    private(set) var eventInterceptor: (token: UUID, interceptor: ((NSEvent) -> NSEvent?))?
+    private var eventInterceptor: (token: UUID, interceptor: ((NSEvent) -> NSEvent?))?
 
     public var eventInterceptorToken: UUID? {
         eventInterceptor?.token

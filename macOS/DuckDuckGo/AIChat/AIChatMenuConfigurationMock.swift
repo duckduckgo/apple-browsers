@@ -1,7 +1,7 @@
 //
 //  AIChatMenuConfigurationMock.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
+#if DEBUG
 import Combine
-@testable import DuckDuckGo_Privacy_Browser
 
 final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayNewTabPageShortcut = false
@@ -31,9 +31,8 @@ final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayAddressBarShortcutWhenTyping: Bool = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?
 
-    var valuesChangedPublisher: PassthroughSubject<Void, Never> {
-        return PassthroughSubject<Void, Never>()
-    }
+    let valuesChangedPublisher = PassthroughSubject<Void, Never>()
 
     func markToolbarOnboardingPopoverAsShown() { }
 }
+#endif

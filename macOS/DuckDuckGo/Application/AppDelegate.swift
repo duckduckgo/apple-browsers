@@ -548,7 +548,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyConfigurationManager,
             pixelFiring: PixelKit.shared,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: aiChatMenuConfiguration
         )
 
 #if DEBUG

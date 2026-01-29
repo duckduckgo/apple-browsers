@@ -237,9 +237,15 @@ extension WebCacheManager {
 
     @MainActor
     private func clearDataRecords(fromStore dataStore: some DDGWebsiteDataStore, forDomains domains: [String]) async {
+        // WKWebsiteDataRecord.displayName typically returns the registrable domain (eTLD+1),
+        // so we need to normalize visited domains for proper matching.
+        // e.g., visiting "docs.example.com" should match record with displayName "example.com"
+        let tld = TLD()
+        let normalizedDomains = Set(domains.compactMap { tld.eTLDplus1($0) ?? $0 })
+
         let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
         let recordsToRemove = allRecords.filter { record in
-            domains.contains(record.displayName)
+            normalizedDomains.contains(record.displayName)
         }
 
         guard !recordsToRemove.isEmpty else { return }

@@ -3899,7 +3899,7 @@ extension WKWebView {
 extension TabViewController: SpecialErrorPageNavigationDelegate {
 
     func closeSpecialErrorPageTab(shouldCreateNewEmptyTab: Bool) {
-        delegate?.tabDidRequestClose(self, shouldCreateEmptyTabAtSamePosition: shouldCreateNewEmptyTab, clearTabHistory: true)
+        delegate?.tabDidRequestClose(tabModel, shouldCreateEmptyTabAtSamePosition: shouldCreateNewEmptyTab, clearTabHistory: true)
     }
 
 }

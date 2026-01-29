@@ -477,8 +477,7 @@ class TabManager: TabManaging {
     
     @MainActor
     func closeTab(_ tab: Tab, shouldCreateEmptyTabAtSamePosition: Bool, clearTabHistory: Bool) {
-        guard let controller = controller(for: tab) else { return }
-        delegate?.tabDidRequestClose(controller,
+        delegate?.tabDidRequestClose(tab,
                                      shouldCreateEmptyTabAtSamePosition: shouldCreateEmptyTabAtSamePosition,
                                      clearTabHistory: clearTabHistory)
     }

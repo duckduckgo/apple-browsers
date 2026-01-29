@@ -3264,10 +3264,10 @@ extension MainViewController: TabDelegate {
         return newTab.webView
     }
 
-    func tabDidRequestClose(_ tab: TabViewController,
+    func tabDidRequestClose(_ tab: Tab,
                             shouldCreateEmptyTabAtSamePosition: Bool,
                             clearTabHistory: Bool) {
-        closeTab(tab.tabModel,
+        closeTab(tab,
                  andOpenEmptyOneAtSamePosition: shouldCreateEmptyTabAtSamePosition,
                  clearTabHistory: clearTabHistory)
     }

@@ -1,5 +1,5 @@
 //
-//  NewTabDaxDialogProvider.swift
+//  NewTabDaxDialogsProvider.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -24,7 +24,7 @@ import Onboarding
 import Subscription
 import Common
 
-final class NewTabDaxDialogProvider: NewTabDaxDialogProviding {
+final class NewTabDaxDialogsProvider: NewTabDaxDialogProviding {
     private let featureFlagger: FeatureFlagger
     private let delegate: OnboardingNavigationDelegate?
     private let daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator

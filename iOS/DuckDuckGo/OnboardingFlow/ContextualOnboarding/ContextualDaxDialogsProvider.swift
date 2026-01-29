@@ -1,5 +1,5 @@
 //
-//  ContextualDaxDialogProvider.swift
+//  ContextualDaxDialogsProvider.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,7 +22,7 @@ import Onboarding
 import Core
 import PrivacyConfig
 
-final class ContextualDaxDialogProvider: ContextualDaxDialogsFactory {
+final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {
     private let featureFlagger: FeatureFlagger
     private let legacyDaxDialogsFactory: ContextualDaxDialogsFactory
     private let rebrandedDaxDialogsFactory: ContextualDaxDialogsFactory

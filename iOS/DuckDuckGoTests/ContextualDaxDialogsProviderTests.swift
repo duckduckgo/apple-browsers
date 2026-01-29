@@ -1,5 +1,5 @@
 //
-//  ContextualDaxDialogProviderTests.swift
+//  ContextualDaxDialogsProviderTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,8 +22,8 @@ import Core
 @testable import DuckDuckGo
 
 @MainActor
-@Suite("Onboarding Tests - ContextualDaxDialogProvider")
-struct ContextualDaxDialogProviderTests {
+@Suite("Onboarding Tests - ContextualDaxDialogsProvider")
+struct ContextualDaxDialogsProviderTests {
 
     @Test(
         "Check Rebranding Factory is Used When Onboarding Rebranding Feature Flag is On",
@@ -34,7 +34,7 @@ struct ContextualDaxDialogProviderTests {
         let featureFlaggerMock = MockFeatureFlagger(enabledFeatureFlags: [.onboardingRebranding])
         let legacyDaxDialogFactoryMock = MockContextualDaxDialogsFactory()
         let rebrandedDaxDialogFactoryMock = MockContextualDaxDialogsFactory()
-        let sut = ContextualDaxDialogProvider(featureFlagger: featureFlaggerMock, legacyDaxDialogsFactory: legacyDaxDialogFactoryMock, rebrandedDaxDialogsFactory: rebrandedDaxDialogFactoryMock)
+        let sut = ContextualDaxDialogsProvider(featureFlagger: featureFlaggerMock, legacyDaxDialogsFactory: legacyDaxDialogFactoryMock, rebrandedDaxDialogsFactory: rebrandedDaxDialogFactoryMock)
 
         // WHEN
         _ = sut.makeView(for: browsingSpec, delegate: ContextualOnboardingDelegateMock(), onSizeUpdate: {})
@@ -53,7 +53,7 @@ struct ContextualDaxDialogProviderTests {
         let featureFlaggerMock = MockFeatureFlagger(enabledFeatureFlags: [])
         let legacyDaxDialogFactoryMock = MockContextualDaxDialogsFactory()
         let rebrandedDaxDialogFactoryMock = MockContextualDaxDialogsFactory()
-        let sut = ContextualDaxDialogProvider(featureFlagger: featureFlaggerMock, legacyDaxDialogsFactory: legacyDaxDialogFactoryMock, rebrandedDaxDialogsFactory: rebrandedDaxDialogFactoryMock)
+        let sut = ContextualDaxDialogsProvider(featureFlagger: featureFlaggerMock, legacyDaxDialogsFactory: legacyDaxDialogFactoryMock, rebrandedDaxDialogsFactory: rebrandedDaxDialogFactoryMock)
 
         // WHEN
         _ = sut.makeView(for: browsingSpec, delegate: ContextualOnboardingDelegateMock(), onSizeUpdate: {})

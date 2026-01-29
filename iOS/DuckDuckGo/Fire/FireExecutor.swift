@@ -154,28 +154,37 @@ class FireExecutor: FireExecuting {
             prepare(for: newRequest)
         }
         
+        // Notify delegate that we're starting
         delegate?.willStartBurning(fireRequest: request)
         
-        cancelOngoingDownloadsIfNeeded(request)
-        
-        // Pre-fetch domains once for tab scope when tabs or data burning is needed
+        // Compute flags
         let shouldBurnTabs = request.options.contains(.tabs)
         let shouldBurnData = request.options.contains(.data)
+        let shouldBurnAIChats = shouldBurnAIHistory(request)
+        
+        // Pre-fetch domains once for tab scope when tabs or data burning is needed
         let domains: [String]?
         if case .tab(let viewModel) = request.scope, shouldBurnTabs || shouldBurnData {
             domains = await Array(viewModel.visitedDomains())
         } else {
             domains = nil
         }
-
-        async let tabsTask: Void = shouldBurnTabs ? burnTabsWithDelegateCallbacks(request: request, domains: domains) : ()
+        
+        // Start async tasks
         async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(request: request, applicationState: applicationState, domains: domains) : ()
         
-        let shouldBurnAIChats = shouldBurnAIHistory(request)
         async let aiTask: Void = shouldBurnAIChats ? burnAIHistoryWithDelegateCallbacks(request: request) : ()
 
-        _ = await (tabsTask, dataTask, aiTask)
+        // Execute sync tasks
+        cancelOngoingDownloadsIfNeeded(request)
+        if shouldBurnTabs {
+            burnTabsWithDelegateCallbacks(request: request, domains: domains)
+        }
         
+        // Await async tasks
+        _ = await (dataTask, aiTask)
+        
+        // Notify delegate that we finished
         await didFinishBurning(fireRequest: request)
         
         // Reset prepared state for next burn cycle
@@ -203,9 +212,9 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnTabsWithDelegateCallbacks(request: FireRequest, domains: [String]?) async {
+    private func burnTabsWithDelegateCallbacks(request: FireRequest, domains: [String]?) {
         delegate?.willStartBurningTabs(fireRequest: request)
-        await burnTabs(scope: request.scope, domains: domains)
+        burnTabs(scope: request.scope, domains: domains)
         delegate?.didFinishBurningTabs(fireRequest: request)
     }
     
@@ -242,7 +251,7 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnTabs(scope: FireRequest.Scope, domains: [String]?) async {
+    private func burnTabs(scope: FireRequest.Scope, domains: [String]?) {
         switch scope {
         case .all:
             tabManager.prepareCurrentTabForDataClearing()
@@ -271,16 +280,6 @@ class FireExecutor: FireExecuting {
     }
     
     // MARK: - Clear Data Helpers
-    
-    private func forgetTextZoom() {
-        let allowedDomains = fireproofing.allowedDomains
-        textZoomCoordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
-    }
-    
-    private func forgetTextZoom(forDomains domains: [String]) {
-        let domainsToReset = domains.filter { !fireproofing.isAllowed(fireproofDomain: $0) }
-        textZoomCoordinator.resetTextZoomLevels(forDomains: domainsToReset)
-    }
     
     @MainActor
     private func burnData(scope: FireRequest.Scope,
@@ -347,6 +346,16 @@ class FireExecutor: FireExecuting {
         
         forgetTextZoom(forDomains: domains)
         await historyManager.removeBrowsingHistory(tabID: tab.tab.uid)
+    }
+    
+    private func forgetTextZoom() {
+        let allowedDomains = fireproofing.allowedDomains
+        textZoomCoordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
+    }
+    
+    private func forgetTextZoom(forDomains domains: [String]) {
+        let domainsToReset = domains.filter { !fireproofing.isAllowed(fireproofDomain: $0) }
+        textZoomCoordinator.resetTextZoomLevels(forDomains: domainsToReset)
     }
     
     // MARK: - Clear AI History

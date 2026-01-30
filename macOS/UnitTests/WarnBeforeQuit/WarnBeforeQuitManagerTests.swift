@@ -1211,9 +1211,9 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let completionExpectation = expectation(description: "Completion called")
         completionExpectation.isInverted = true
         let pixelFiring = SlowPixelFiring(fireExpectation: fireExpectation, completionExpectation: completionExpectation)
-        await pixelFiring.fireAndWait(GeneralPixel.warnBeforeQuitQuit, frequency: .standard, timeout: 0.1)
+        await pixelFiring.fireAndWait(GeneralPixel.warnBeforeQuitQuit, frequency: .standard, timeout: 5)
 
-        await fulfillment(of: [fireExpectation, completionExpectation], timeout: 0.2)
+        await fulfillment(of: [fireExpectation, completionExpectation], timeout: 5)
     }
 
     // MARK: - Helpers

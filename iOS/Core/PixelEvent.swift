@@ -147,6 +147,13 @@ extension Pixel {
         case experimentalBrowsingMenuDisplayedError
         case experimentalBrowsingMenuDismissed
 
+        // Used to compare engagement vs old menu
+        case sheetBrowsingMenuSettings
+        case sheetBrowsingMenuAIChat
+        case sheetBrowsingMenuVPN
+        case sheetBrowsingMenuPasswords
+        case sheetBrowsingMenuNewDuckAddress
+
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuOpenedError
@@ -992,6 +999,10 @@ extension Pixel {
         case swipeTabsUsedDaily
         case swipeToOpenNewTab
 
+        case temporaryTelemetrySettingsClearDataAnimation(animation: String)
+        case temporaryTelemetrySettingsCustomizedAddressBarButton(button: String)
+        case temporaryTelemetrySettingsCustomizedToolbarButton(button: String)
+
         case bookmarksCleanupFailed
         case bookmarksCleanupAttemptedWhileSyncWasEnabled
         case favoritesCleanupFailed
@@ -1703,6 +1714,13 @@ extension Pixel.Event {
         case .experimentalBrowsingMenuDisplayedAIChat: return "m_experimental-browsing-menu_displayed_aichat"
         case .experimentalBrowsingMenuDisplayedError: return "m_experimental-browsing-menu_displayed_error"
         case .experimentalBrowsingMenuDismissed: return "m_experimental-browsing-menu_dismissed"
+
+        case .sheetBrowsingMenuSettings: return "m_sheet-menu_settings"
+        case .sheetBrowsingMenuAIChat: return "m_sheet-menu_aichat"
+        case .sheetBrowsingMenuVPN: return "m_sheet-menu_vpn"
+        case .sheetBrowsingMenuPasswords: return "m_sheet-menu_passwords"
+        case .sheetBrowsingMenuNewDuckAddress: return "m_sheet-menu_new-duck-address"
+
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
         case .browsingMenuOpenedError: return "m_nav_menu_error"
@@ -2547,6 +2565,10 @@ extension Pixel.Event {
 
         case .swipeTabsUsedDaily: return "m_swipe-tabs-used-daily"
         case .swipeToOpenNewTab: return "m_addressbar_swipe_new_tab"
+
+        case .temporaryTelemetrySettingsClearDataAnimation(let value): return "m_temporary-telemetry_settings_clear-data-animation_\(value)"
+        case .temporaryTelemetrySettingsCustomizedAddressBarButton(let value): return "m_temporary-telemetry_settings_customized-address-bar-button_\(value)"
+        case .temporaryTelemetrySettingsCustomizedToolbarButton(let value): return "m_temporary-telemetry_settings_customized-toolbar-button_\(value)"
 
         case .bookmarksCleanupFailed: return "m_d_bookmarks_cleanup_failed"
         case .bookmarksCleanupAttemptedWhileSyncWasEnabled: return "m_d_bookmarks_cleanup_attempted_while_sync_was_enabled"

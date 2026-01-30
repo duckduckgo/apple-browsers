@@ -181,6 +181,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
     @Published var isAccountCreationAvailable: Bool = true
     @Published var isAccountRecoveryAvailable: Bool = true
     @Published var isAppVersionNotSupported: Bool = true
+    @Published var isAIChatSyncEnabled: Bool = false
 
     private let syncPausedStateManager: any SyncPausedStateManaging
 
@@ -281,6 +282,17 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .assign(to: \.syncFeatureFlags, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
+        featureFlagger.updatesPublisher
+            .prepend(())
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                let isEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
+                self.isAIChatSyncEnabled = isEnabled
+                self.managementDialogModel.isAIChatSyncEnabled = isEnabled
+            }
             .store(in: &cancellables)
 
         syncService.authStatePublisher

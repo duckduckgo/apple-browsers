@@ -269,6 +269,26 @@ extension MainViewController {
         }, deepLinkTarget: .dbp)
     }
 
+    func segueToPIRWithSubscriptionCheck() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+
+        Task { @MainActor in
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+            let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
+
+            if hasEntitlement {
+                launchSettings(completion: {
+                    $0.triggerDeepLinkNavigation(to: .dbp)
+                }, deepLinkTarget: .dbp)
+            } else {
+                launchSettings(completion: {
+                    $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
+                }, deepLinkTarget: .subscriptionFlow())
+            }
+        }
+    }
+
     func segueToDebugSettings() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()

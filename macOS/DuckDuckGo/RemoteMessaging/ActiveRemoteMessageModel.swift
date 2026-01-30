@@ -59,14 +59,21 @@ final class ActiveRemoteMessageModel: ObservableObject {
      */
     let navigateToFeedbackHandler: () async -> Void
 
+    /**
+     * Handler for navigating to PIR (Personal Information Removal) with subscription check.
+     */
+    let navigateToPIRHandler: () async -> Void
+
     convenience init(remoteMessagingClient: RemoteMessagingClient,
                      openURLHandler: @escaping (URL) async -> Void,
-                     navigateToFeedbackHandler: @escaping () async -> Void) {
+                     navigateToFeedbackHandler: @escaping () async -> Void,
+                     navigateToPIRHandler: @escaping () async -> Void) {
         self.init(
             remoteMessagingStore: remoteMessagingClient.store,
             remoteMessagingAvailabilityProvider: remoteMessagingClient.remoteMessagingAvailabilityProvider,
             openURLHandler: openURLHandler,
-            navigateToFeedbackHandler: navigateToFeedbackHandler
+            navigateToFeedbackHandler: navigateToFeedbackHandler,
+            navigateToPIRHandler: navigateToPIRHandler
         )
     }
 
@@ -77,11 +84,13 @@ final class ActiveRemoteMessageModel: ObservableObject {
         remoteMessagingStore: @escaping @autoclosure () -> RemoteMessagingStoring?,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding?,
         openURLHandler: @escaping (URL) async -> Void,
-        navigateToFeedbackHandler: @escaping () async -> Void
+        navigateToFeedbackHandler: @escaping () async -> Void,
+        navigateToPIRHandler: @escaping () async -> Void
     ) {
         self.store = remoteMessagingStore
         self.openURLHandler = openURLHandler
         self.navigateToFeedbackHandler = navigateToFeedbackHandler
+        self.navigateToPIRHandler = navigateToPIRHandler
 
         let messagesDidChangePublisher = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .asVoid()

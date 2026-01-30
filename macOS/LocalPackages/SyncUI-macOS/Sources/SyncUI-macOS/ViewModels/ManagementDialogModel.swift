@@ -47,6 +47,7 @@ public final class ManagementDialogModel: ObservableObject {
     @Published public var shouldShowErrorMessage: Bool = false
     @Published public var syncErrorMessage: SyncErrorMessage?
     @Published public var shouldShowSwitchAccountsMessage: Bool = false
+    @Published public var isAIChatSyncEnabled: Bool = false
 
     public weak var delegate: ManagementDialogModelDelegate?
 

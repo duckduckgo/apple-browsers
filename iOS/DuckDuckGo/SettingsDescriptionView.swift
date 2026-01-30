@@ -19,12 +19,27 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsDescription {
-    let imageName: String
+    let image: Image
     let title: String
     let status: StatusIndicator
     let explanation: String?
+
+    init(imageName: String, title: String, status: StatusIndicator, explanation: String?) {
+        self.image = Image(imageName)
+        self.title = title
+        self.status = status
+        self.explanation = explanation
+    }
+
+    init(image: DesignSystemImage, title: String, status: StatusIndicator, explanation: String?) {
+        self.image = Image(uiImage: image)
+        self.title = title
+        self.status = status
+        self.explanation = explanation
+    }
 }
 
 // Universal Settings description view
@@ -35,7 +50,7 @@ struct SettingsDescriptionView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(content.imageName)
+            content.image
                 .resizable()
                 .frame(width: 128, height: 96)
 

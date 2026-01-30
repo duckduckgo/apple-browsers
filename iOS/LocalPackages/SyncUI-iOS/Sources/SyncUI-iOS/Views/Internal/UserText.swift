@@ -28,6 +28,7 @@ public struct UserText {
     // Sync With Another Device Card
     static let syncWithAnotherDeviceTitle = NSLocalizedString("sync.with.another.device.title", bundle: Bundle.module, value: "Begin Syncing", comment: "Title for syncing with another device")
     static let syncWithAnotherDeviceMessage = NSLocalizedString("sync.with.another.device.message", bundle: Bundle.module, value: "Securely sync bookmarks and passwords between your devices.", comment: "Message for syncing with another device")
+    static let syncWithAnotherDeviceMessageUpdated = NSLocalizedString("sync.with.another.device.message-updated", bundle: Bundle.module, value: "Securely sync bookmarks, autofill data, and Duck.ai chats between your devices.", comment: "Message for syncing with another device")
     static let syncWithAnotherDeviceButton = NSLocalizedString("sync.with.another.device.button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button label for syncing with another device")
     static let syncWithAnotherDeviceFooter = NSLocalizedString("sync.with.another.device.footer", bundle: Bundle.module, value: "Your data is end-to-end encrypted, and DuckDuckGo does not have access to the encryption key.", comment: "Footer message for syncing with another device")
     // Other Options
@@ -41,6 +42,7 @@ public struct UserText {
     // Turn Sync Off
     static let turnSyncOff = NSLocalizedString("turn.sync.off", bundle: Bundle.module, value: "Turn Off Sync & Backup...", comment: "Turn Sync Off - Button")
     static let turnSyncOffSectionHeader = NSLocalizedString("turn.sync.off.section.header", bundle: Bundle.module, value: "Sync Enabled", comment: "Turn Sync Off - Section Header")
+    static let turnSyncOffSectionFooter = NSLocalizedString("turn.sync.off.section.footer", bundle: Bundle.module, value: "Bookmarks, autofill data, and Duck.ai chats are currently in sync across your devices.", comment: "Sync enabled - footer description of data that is syncing")
     // Sync Filtered Items Errors
     static let invalidBookmarksPresentTitle = NSLocalizedString("bookmarks.invalid.objects.present.title", bundle: Bundle.module, value: "Some bookmarks are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid bookmarks being filtered out of synced data")
     static let invalidCredentialsPresentTitle = NSLocalizedString("credentials.invalid.objects.present.title", bundle: Bundle.module, value: "Some passwords are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid logins being filtered out of synced data")
@@ -83,6 +85,7 @@ public struct UserText {
     // Connect With Server Sheet
     static let connectWithServerSheetTitle = NSLocalizedString("connect.with.server.sheet.title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Connect With Server Sheet - Title")
     static let connectWithServerSheetDescriptionPart1 = NSLocalizedString("connect.with.server.sheet.description.part1", bundle: Bundle.module, value: "This creates an encrypted backup of your bookmarks and autofill data on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Connect With Server Sheet - Description Part 1")
+    static let connectWithServerSheetDescriptionPart1Updated = NSLocalizedString("connect.with.server.sheet.description.part1-updated", bundle: Bundle.module, value: "This creates an encrypted backup of your saved bookmarks, passwords, credit cards, and Duck.ai chats on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Connect With Server Sheet - Description Part 1")
     static let connectWithServerSheetDescriptionPart2 = NSLocalizedString("connect.with.server.sheet.description.part2", bundle: Bundle.module, value: "The encryption key is only stored on your device, DuckDuckGo cannot access it.", comment: "Connect With Server Sheet - Description Part 2")
     static let connectWithServerSheetButton = NSLocalizedString("connect.with.server.sheet.button", bundle: Bundle.module, value: "Turn On Sync & Backup", comment: "Connect With Server Sheet - Button")
     static let connectWithServerSheetFooter = NSLocalizedString("connect.with.server.sheet.footer", bundle: Bundle.module, value: "You can sync with your other devices later.", comment: "Connect With Server Sheet - Footer")
@@ -90,6 +93,7 @@ public struct UserText {
     // Preparing To Sync Sheet
     static let preparingToSyncSheetTitle = NSLocalizedString("preparing.to.sync.sheet.title", bundle: Bundle.module, value: "Setting Up Sync and Backup", comment: "Preparing To Sync Sheet - Title")
     static let preparingToSyncSheetDescription = NSLocalizedString("preparing.to.sync.sheet.description", bundle: Bundle.module, value: "Your bookmarks and autofill data are being prepared to sync. This should only take a moment.", comment: "Preparing To Sync Sheet - Description")
+    static let preparingToSyncSheetDescriptionUpdated = NSLocalizedString("preparing.to.sync.sheet.description-updated", bundle: Bundle.module, value: "Your bookmarks, passwords, and Duck.ai chats are being prepared to sync. This should only take a moment.", comment: "Preparing To Sync Sheet - Description")
     static let preparingToSyncSheetFooter = NSLocalizedString("preparing.to.sync.sheet.footer", bundle: Bundle.module, value: "Connecting…", comment: "Preparing To Sync Sheet - Footer")
 
     // Save Recovery Code Sheet

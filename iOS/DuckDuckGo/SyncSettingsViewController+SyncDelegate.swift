@@ -337,7 +337,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showPreparingSync(_ completion: (() -> Void)?) {
-        let controller = UIHostingController(rootView: PreparingToSyncView())
+        let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: rootView.model.isAIChatSyncEnabled))
         navigationController?.present(controller, animated: true, completion: completion)
     }
 

@@ -635,11 +635,11 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
     }
 
     private func waitForSubscriptionUpdate() async {
-        let expectation = expectation(description: "Subscription details updated")
+        let expectation = expectation(description: "Subscription info updated")
 
         sut.$state
-            .map { $0.subscriptionDetails }
-            .filter { !$0.isEmpty }  // Wait for subscriptionDetails to be non-empty
+            .map { $0.subscriptionInfo }
+            .filter { $0 != nil }  // Wait for subscriptionInfo to be set
             .first()
             .sink { _ in expectation.fulfill() }
             .store(in: &cancellables)

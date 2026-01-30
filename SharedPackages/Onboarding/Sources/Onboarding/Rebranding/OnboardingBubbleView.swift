@@ -204,3 +204,143 @@ private extension OnboardingBubbleView.TailPosition {
     }
 
 }
+
+// MARK: - Preview
+
+#Preview("Onboarding Speech Bubble") {
+    ZStack {
+        Color(red: 43/255, green: 85/255, blue: 202/255).ignoresSafeArea()
+
+        OnboardingBubbleView(tailPosition: .bottom(offset: 0.4, direction: .leading)) {
+            VStack(alignment: .center, spacing: 20) {
+                VStack(alignment: .center, spacing: 28) {
+                    Text(verbatim: "Hi there.")
+                        .font(.system(size: 24, weight: .bold))
+
+                    Text(verbatim: "Ready for a better, more private internet?")
+                        .font(.system(size: 18))
+                }
+                .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+
+                Button(action: { }) {
+                    Text(verbatim: "Let's do it!")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Color.black)
+                        .padding()
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44.0)
+                .background(Color(red: 255/255, green: 216/255, blue: 133/255))
+                .cornerRadius(64)
+            }
+        }
+        .padding()
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Onboarding Speech Bubble + Progress Indicator") {
+    ZStack {
+        Color(red: 43/255, green: 85/255, blue: 202/255).ignoresSafeArea()
+
+        OnboardingBubbleView.withStepProgressIndicator(
+            tailPosition: .bottom(offset: 0, direction: .leading),
+            currentStep: 1, totalSteps: 5
+        ) {
+                VStack(alignment: .center, spacing: 20) {
+                    VStack(alignment: .center, spacing: 28) {
+                        Text(verbatim: "Hi there.")
+                            .font(.system(size: 24, weight: .bold))
+
+                        Text(verbatim: "Ready for a better, more private internet?")
+                            .font(.system(size: 18))
+                    }
+                    .foregroundStyle(Color.white)
+                    .multilineTextAlignment(.center)
+
+                    Button(action: { }) {
+                        Text(verbatim: "Let's do it!")
+                            .font(.system(size: 18))
+                            .foregroundStyle(Color.black)
+                            .padding()
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44.0)
+                    .background(Color(red: 255/255, green: 216/255, blue: 133/255))
+                    .cornerRadius(64)
+                }
+            }
+            .padding()
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Onboarding Speech Bubble + Dismiss Button") {
+    ZStack {
+        Color(red: 43/255, green: 85/255, blue: 202/255).ignoresSafeArea()
+
+        OnboardingBubbleView.withDismissButton(
+            tailPosition: .bottom(offset: 0, direction: .leading),
+            onDismiss: {}
+        ) {
+            VStack(alignment: .center, spacing: 20) {
+                VStack(alignment: .center, spacing: 28) {
+                    Text(verbatim: "Hi there.")
+                        .font(.system(size: 24, weight: .bold))
+
+                    Text(verbatim: "Ready for a better, more private internet?")
+                        .font(.system(size: 18))
+                }
+                .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+
+                Button(action: { }) {
+                    Text(verbatim: "Let's do it!")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Color.black)
+                        .padding()
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44.0)
+                .background(Color(red: 255/255, green: 216/255, blue: 133/255))
+                .cornerRadius(64)
+            }
+        }
+        .padding()
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Onboarding Speech Bubble No Tail") {
+    ZStack {
+        Color(red: 43/255, green: 85/255, blue: 202/255).ignoresSafeArea()
+
+        OnboardingBubbleView(tailPosition: nil) {
+            VStack(alignment: .center, spacing: 20) {
+                VStack(alignment: .center, spacing: 28) {
+                    Text(verbatim: "Hi there.")
+                        .font(.system(size: 24, weight: .bold))
+
+                    Text(verbatim: "Ready for a better, more private internet?")
+                        .font(.system(size: 18))
+                }
+                .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+
+                Button(action: { }) {
+                    Text(verbatim: "Let's do it!")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Color.black)
+                        .padding()
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44.0)
+                .background(Color(red: 255/255, green: 216/255, blue: 133/255))
+                .cornerRadius(64)
+            }
+        }
+        .padding()
+    }
+    .preferredColorScheme(.dark)
+}

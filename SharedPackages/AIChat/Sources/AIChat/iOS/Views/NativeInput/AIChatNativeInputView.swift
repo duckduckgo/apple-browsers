@@ -23,19 +23,6 @@ import UIKit
 
 // MARK: - Delegate Protocol
 
-/// Represents an action available in the attach menu.
-public struct AIChatAttachAction {
-    public let title: String
-    public let icon: UIImage?
-    public let handler: () -> Void
-
-    public init(title: String, icon: UIImage?, handler: @escaping () -> Void) {
-        self.title = title
-        self.icon = icon
-        self.handler = handler
-    }
-}
-
 /// Delegate protocol for handling user interactions with the native input view.
 public protocol AIChatNativeInputViewDelegate: AnyObject {
     func nativeInputViewDidChangeText(_ view: AIChatNativeInputView, text: String)
@@ -99,23 +86,10 @@ public final class AIChatNativeInputView: UIView {
         didSet { updateButtonStates() }
     }
 
-    public var isAttachButtonHidden = false {
-        didSet { updateAttachButtonVisibility() }
-    }
-
     /// Whether a context chip is currently visible.
     public private(set) var isContextChipVisible = false
 
-    /// The actions available in the attach menu. Set this to configure the menu.
-    /// When empty, the attach button is hidden.
-    public var attachActions: [AIChatAttachAction] = [] {
-        didSet {
-            updateAttachMenu()
-            updateAttachButtonVisibility()
-        }
-    }
-
-    // MARK: - UI Components
+        // MARK: - UI Components
 
     private lazy var mainContainer: UIView = {
         let view = UIView()
@@ -152,7 +126,7 @@ public final class AIChatNativeInputView: UIView {
         let fontMetrics = UIFontMetrics(forTextStyle: .body)
         label.font = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
         label.adjustsFontForContentSizeCategory = true
-        label.textColor = UIColor(designSystemColor: .textSecondary)
+        label.textColor = UIColor(designSystemColor: .textTertiary)
         label.numberOfLines = 1
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -179,22 +153,6 @@ public final class AIChatNativeInputView: UIView {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
-    }()
-
-    private lazy var attachButtonContainer: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-        view.layer.cornerRadius = Constants.buttonSize / 2
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-
-    private lazy var attachButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size16.attach, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .textSecondary)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
     }()
 
     private lazy var submitButtonContainer: UIView = {
@@ -274,7 +232,6 @@ public final class AIChatNativeInputView: UIView {
         ])
 
         isContextChipVisible = true
-        updateAttachButtonVisibility()
 
         chipContainer.layoutIfNeeded()
         let targetHeight = chipView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height
@@ -309,7 +266,6 @@ public final class AIChatNativeInputView: UIView {
             guard self.currentChipView === chipToRemove else { return }
             chipToRemove?.removeFromSuperview()
             self.currentChipView = nil
-            self.updateAttachButtonVisibility()
             self.delegate?.nativeInputViewDidRemoveContextChip(self)
         }
 
@@ -337,9 +293,18 @@ public final class AIChatNativeInputView: UIView {
     /// - Parameters:
     ///   - title: The new title to display.
     ///   - favicon: The new favicon image.
-    public func updateContextChip(title: String, favicon: UIImage?) {
+    /// Updates the current context chip to a new state (attached or placeholder).
+    ///
+    /// - Parameter state: The new state to display.
+    public func updateContextChipState(_ state: AIChatContextChipView.State) {
         guard let chipView = currentChipView as? AIChatContextChipView else { return }
-        chipView.update(title: title, favicon: favicon)
+        chipView.configure(state: state)
+    }
+
+    /// Sets the tap-to-attach callback on the current chip view (for placeholder taps).
+    public func setChipTapCallback(_ callback: @escaping () -> Void) {
+        guard let chipView = currentChipView as? AIChatContextChipView else { return }
+        chipView.onTapToAttach = callback
     }
 }
 
@@ -354,15 +319,11 @@ private extension AIChatNativeInputView {
         mainContainer.addSubview(topRightButton)
         mainContainer.addSubview(chipContainer)
         mainContainer.addSubview(bottomBar)
-        bottomBar.addSubview(attachButtonContainer)
-        attachButtonContainer.addSubview(attachButton)
         bottomBar.addSubview(submitButtonContainer)
         submitButtonContainer.addSubview(submitButton)
 
         setupConstraints()
-        setupAttachMenu()
         updateButtonStates()
-        updateAttachButtonVisibility()
     }
 
     func setupConstraints() {
@@ -400,14 +361,6 @@ private extension AIChatNativeInputView {
             bottomBar.trailingAnchor.constraint(equalTo: mainContainer.trailingAnchor),
             bottomBar.bottomAnchor.constraint(equalTo: mainContainer.bottomAnchor, constant: -Constants.bottomBarHorizontalPadding),
             bottomBar.heightAnchor.constraint(equalToConstant: Constants.bottomBarHeight),
-
-            attachButtonContainer.leadingAnchor.constraint(equalTo: bottomBar.leadingAnchor, constant: Constants.bottomBarHorizontalPadding),
-            attachButtonContainer.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
-            attachButtonContainer.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            attachButtonContainer.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-
-            attachButton.centerXAnchor.constraint(equalTo: attachButtonContainer.centerXAnchor),
-            attachButton.centerYAnchor.constraint(equalTo: attachButtonContainer.centerYAnchor),
 
             submitButtonContainer.trailingAnchor.constraint(equalTo: bottomBar.trailingAnchor, constant: -Constants.bottomBarHorizontalPadding),
             submitButtonContainer.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
@@ -476,29 +429,6 @@ private extension AIChatNativeInputView {
         } else {
             delegate?.nativeInputViewDidTapVoice(self)
         }
-    }
-
-    func setupAttachMenu() {
-        updateAttachMenu()
-    }
-
-    func updateAttachMenu() {
-        let menuActions = attachActions.map { action in
-            UIAction(title: action.title, image: action.icon) { _ in
-                action.handler()
-            }
-        }
-
-        attachButton.menu = UIMenu(children: menuActions)
-        attachButton.showsMenuAsPrimaryAction = true
-    }
-
-    func updateAttachButtonVisibility() {
-        let shouldHide = isAttachButtonHidden || attachActions.isEmpty
-        attachButtonContainer.isHidden = shouldHide
-
-        attachButton.isEnabled = !isContextChipVisible
-        attachButtonContainer.alpha = isContextChipVisible ? 0.5 : 1.0
     }
 
     @objc func submitButtonTapped() {

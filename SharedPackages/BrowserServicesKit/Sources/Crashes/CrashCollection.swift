@@ -242,13 +242,14 @@ public final class CrashCollection {
 
             for (key, value) in source {
                 if let nestedDict = value as? [AnyHashable: Any] {
+                    // If depth + 1 >= maxDepth, skip nested dictionaries
                     if depth + 1 < maxDepth {
                         let nestedTarget = NSMutableDictionary()
                         target[key] = nestedTarget
                         stack.append((nestedDict, nestedTarget, depth + 1))
                     }
-                    // If depth + 1 >= maxDepth, skip nested dictionaries
                 } else if let array = value as? [[AnyHashable: Any]] {
+                    // If depth + 1 >= maxDepth, skip arrays of dictionaries
                     if depth + 1 < maxDepth {
                         let processedArray = NSMutableArray()
                         for item in array {
@@ -258,7 +259,6 @@ public final class CrashCollection {
                         }
                         target[key] = processedArray
                     }
-                    // If depth + 1 >= maxDepth, skip arrays of dictionaries
                 } else {
                     // Primitive values and other arrays are copied as-is
                     target[key] = value

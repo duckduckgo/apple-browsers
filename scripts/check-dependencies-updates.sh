@@ -337,7 +337,7 @@ resolve_workspace_packages() {
 # Detect DuckDuckGo.xcworkspace in . or ..
 detect_workspace() {
     local cwd
-    cwd=$(pwd)
+    cwd="$(dirname "${BASH_SOURCE[0]}")"
 
     if [[ -d "${cwd}/DuckDuckGo.xcworkspace" ]]; then
         WORKSPACE_PATH="${cwd}/DuckDuckGo.xcworkspace"

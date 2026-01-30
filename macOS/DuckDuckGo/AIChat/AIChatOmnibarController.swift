@@ -50,7 +50,7 @@ final class AIChatOmnibarController {
     private var hasBeenActivated = false
 
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
-    let suggestionsViewModel = AIChatSuggestionsViewModel()
+    let suggestionsViewModel: AIChatSuggestionsViewModel
 
     /// Whether the suggestions feature is enabled.
     /// Requires both the feature flag and the autocomplete setting to be on.
@@ -79,6 +79,9 @@ final class AIChatOmnibarController {
         self.featureFlagger = featureFlagger
         self.searchPreferencesPersistor = searchPreferencesPersistor
         self.suggestionsReader = suggestionsReader
+        self.suggestionsViewModel = AIChatSuggestionsViewModel(
+            maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
+        )
 
         subscribeToSelectedTabViewModel()
         subscribeToTextChangesForSuggestions()

@@ -399,8 +399,9 @@ class MainViewController: UIViewController {
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
 
-    lazy var newTabDaxDialogFactory: NewTabDaxDialogFactory = {
-        NewTabDaxDialogFactory(
+    lazy var newTabDaxDialogFactory: NewTabDaxDialogsProvider = {
+        NewTabDaxDialogsProvider(
+            featureFlagger: featureFlagger,
             delegate: self,
             daxDialogsFlowCoordinator: daxDialogsManager,
             onboardingPixelReporter: contextualOnboardingPixelReporter)
@@ -1131,7 +1132,7 @@ class MainViewController: UIViewController {
         // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
         tabModel.viewed = true
 
-        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let newTabDaxDialogFactory = NewTabDaxDialogsProvider(featureFlagger: featureFlagger, delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
         let controller = NewTabPageViewController(isFocussedState: false,
@@ -1205,6 +1206,7 @@ class MainViewController: UIViewController {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: source,
+                tabViewModel: tabManager.viewModelForCurrentTab(),
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAllWithAnimation(request: fireRequest) {}
                 },
@@ -3242,7 +3244,15 @@ extension MainViewController: NewTabPageControllerDelegate {
 }
 
 extension MainViewController: TabDelegate {
+
+    var isEmailProtectionSignedIn: Bool {
+        emailManager.isSignedIn
+    }
     
+    func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {
+        newEmailAddress()
+    }
+
     var isAIChatEnabled: Bool {
         return aiChatSettings.isAIChatEnabled
     }
@@ -3823,7 +3833,14 @@ extension MainViewController: FireExecutorDelegate {
     
     func didFinishBurningTabs(fireRequest: FireRequest) {
         guard fireRequest.trigger == .manualFire else { return }
-        refreshUIAfterClear()
+                
+        switch fireRequest.scope {
+        case .all:
+            refreshUIAfterClear()
+        case .tab:
+            // TODO: - Custom logic if needed
+            return
+        }
     }
     
     func willStartBurningData(fireRequest: FireRequest) {
@@ -3837,22 +3854,34 @@ extension MainViewController: FireExecutorDelegate {
     }
 
     func willStartBurningAIHistory(fireRequest: FireRequest) {
-        Task {
-            if autoClearInProgress {
-                await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
-            } else {
-                await aiChatSyncCleaner.recordLocalClear(date: Date())
+        switch fireRequest.scope {
+        case .all:
+            Task {
+                if autoClearInProgress {
+                    await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+                } else {
+                    await aiChatSyncCleaner.recordLocalClear(date: Date())
+                }
             }
+        case .tab:
+            // TODO: - Custom logic if needed
+            return
         }
     }
     
     func didFinishBurningAIHistory(fireRequest: FireRequest) {
-        Task {
-            await aiChatViewControllerManager.killSessionAndResetTimer()
-        }
+        switch fireRequest.scope {
+        case .all:
+            Task {
+                await aiChatViewControllerManager.killSessionAndResetTimer()
+            }
 
-        if syncService.authState != .inactive {
-            syncService.scheduler.requestSyncImmediately()
+            if syncService.authState != .inactive {
+                syncService.scheduler.requestSyncImmediately()
+            }
+        case .tab:
+            // TODO: - Custom logic if needed
+            return
         }
     }
     

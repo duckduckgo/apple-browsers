@@ -92,7 +92,7 @@
         "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
     },
     "wideEventFeatureStatusReason": {
-        "key": "feature.status_reason",
+        "key": "feature.data.ext.status_reason",
         "type": "string",
         "description": "Optional reason accompanying the feature status"
     },

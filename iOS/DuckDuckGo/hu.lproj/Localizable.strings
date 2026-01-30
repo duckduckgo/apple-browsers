@@ -2932,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Törlöd a lapokat és a webhelyadatokat?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Törlöd a lapokat, a webhelyadatokat és a csevegéseket?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Összes törlése";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Lap törlése";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "A „Lap törlése” művelet törli ezt a Duck.ai csevegést, valamint az ezen a lapon meglátogatott webhelyek minden webhelyadatát.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Ez megszakítja a folyamatban lévő letöltéseket.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "A létrehozott új lapok egyenként is törölhetők.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "A webhelyadatok törlése kijelentkeztethet a fiókjaidból.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Keresés vagy cím megadása";
 
@@ -3124,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ha az ujjlenyomat- vagy az arcfelismerés, illetve rendszerjelszó engedélyezve van, az alkalmazást annak megnyitásakor fel kell oldanod.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Törlés";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatikus adattörlés";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Adatok automatikus törlése";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Böngésző-visszajelzés";
@@ -3154,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Felugró sütiablakok kezelése";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Lapok és adatok törlése";
+
 /* Settings title for the customize section */
 "settings.customize" = "Testreszabás";
 
@@ -3171,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Alapértelmezett böngésző";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Duck.ai csevegések törlése";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Lapok és adatok törlése";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Email Protection automatikus kitöltésének letiltása";

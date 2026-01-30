@@ -417,7 +417,7 @@ private struct BrowsingMenuHeaderView: View {
         .frame(width: MenuHeaderConstant.faviconSize, height: MenuHeaderConstant.faviconSize)
         .menuHeaderEntryShape()
         .padding(MenuHeaderConstant.faviconPadding)
-        .background(Color(designSystemColor: .controlsFillPrimary))
+        .background(Color.rowBackgroundColor)
         .menuHeaderEntryShape()
     }
 

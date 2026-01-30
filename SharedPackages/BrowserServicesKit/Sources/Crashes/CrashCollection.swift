@@ -111,6 +111,8 @@ public final class CrashCollection {
     /// Start `MXDiagnostic` (App Store) crash processing with `didFindCrashReports` callback called when crash data is found and processed.
     /// This method collects additional NSException/C++ exception data (message and stack trace) saved by `CrashLogMessageExtractor` and attaches it to payloads.
     /// - Parameters:
+    ///   - callStackDepthLimit: Nesting limit of the call stack in the report. Used to prevent excessive recursion during JSON write. Pass `nil` to disable limiting.
+    ///   - sortKeys: Defines if JSON keys are sorted during write.
     ///   - didFindCrashReports: callback called after payload preprocessing is finished.
     ///     Provides processed JSON data to be presented to the user and Pixel parameters to fire a crash Pixel.
     ///     `uploadReports` callback is used when the user accepts uploading the crash report and starts crash upload to the server.

@@ -2932,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "¿Eliminar pestañas y datos del sitio?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "¿Eliminar pestañas, datos del sitio y chats?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Eliminar todo";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Eliminar esta pestaña";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "«Eliminar esta pestaña» borra este chat de Duck.ai y todos los datos de los sitios visitados en esta pestaña.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Esta acción cancelará las descargas en curso.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Las nuevas pestañas que crees también pueden eliminarse individualmente.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Eliminar datos del sitio puede hacer que cierres sesión en tus cuentas.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Buscar o introducir dirección";
 
@@ -3124,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Si se habilita Touch ID, Face ID o un código de acceso del sistema, se te pedirá que desbloquees la aplicación al abrirla.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Eliminar";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Borrado automático de datos";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Eliminar automáticamente los datos";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Comentarios sobre el navegador";
@@ -3154,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Administrar ventanas emergentes de cookies";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Eliminar pestañas y datos";
+
 /* Settings title for the customize section */
 "settings.customize" = "Personalizar";
 
@@ -3171,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Navegador predeterminado";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Elimina los chats de Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Eliminar pestañas y datos";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Desactivar Autocompletar Email Protection";

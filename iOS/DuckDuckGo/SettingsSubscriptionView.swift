@@ -180,7 +180,7 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
             SettingsCellView(
                 label: UserText.settingsSubscriptionAiChatTitle,
-                image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
+                image: Image(uiImage: DesignSystemImages.Color.Size24.paidAiChat),
                 statusIndicator: StatusIndicatorView(status: .off),
                 isGreyedOut: true
             )
@@ -321,7 +321,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: LazyView(SubscriptionAIChatView(viewModel: settingsViewModel)), isActive: $isShowingPaidAIChat) {
                 SettingsCellView(
                     label: UserText.settingsSubscriptionAiChatTitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.paidAiChat),
                     statusIndicator: StatusIndicatorView(status: (hasAIChatEntitlement && settingsViewModel.isAIChatEnabled) ? .on : .off),
                     isGreyedOut: !hasAIChatEntitlement
                 )

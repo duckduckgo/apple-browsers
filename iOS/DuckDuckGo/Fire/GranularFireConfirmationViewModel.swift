@@ -1,5 +1,5 @@
 //
-//  FireConfirmationViewModel.swift
+//  GranularFireConfirmationViewModel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -26,7 +26,7 @@ import AIChat
 import Persistence
 
 @MainActor
-class FireConfirmationViewModel: ObservableObject {
+class GranularFireConfirmationViewModel: ObservableObject {
     
     // MARK: - Published Variables
     

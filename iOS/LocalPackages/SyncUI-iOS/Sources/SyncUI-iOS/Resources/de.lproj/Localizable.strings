@@ -37,6 +37,9 @@
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Dadurch wird ein verschlüsseltes Backup deiner Lesezeichen und Autofill-Daten auf dem sicheren Server von DuckDuckGo erstellt, das mit deinen anderen Geräten synchronisiert werden kann.";
 
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Dadurch wird ein verschlüsseltes Backup deiner gespeicherten Lesezeichen, Passwörter, Kreditkarten und Duck.ai-Chats auf dem sicheren Server von DuckDuckGo erstellt, der mit deinen anderen Geräten synchronisiert werden kann.";
+
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Der Verschlüsselungsschlüssel wird nur auf deinem Gerät gespeichert, DuckDuckGo kann nicht darauf zugreifen.";
 
@@ -141,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Deine Lesezeichen und Autofill-Daten werden für die Synchronisation vorbereitet. Das sollte nur einen Moment dauern.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Deine Lesezeichen, Passwörter und Duck.ai-Chats werden für die Synchronisation vorbereitet. Das sollte nur einen Moment dauern.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Verbinden ...";
@@ -289,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Lesezeichen und Passwörter sicher zwischen deinen Geräten synchronisieren.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Synchronisiere Lesezeichen, Daten für das automatische Ausfüllen und Duck.ai-Chats sicher zwischen deinen Geräten.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Synchronisierung beginnen";
 
@@ -303,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "„Synchronisieren und sichern“ deaktivieren ...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Lesezeichen, Autofill-Daten und Duck.ai-Chats sind derzeit zwischen deinen Geräten synchronisiert.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Synchronisierung aktiviert";

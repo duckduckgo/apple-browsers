@@ -147,6 +147,13 @@ extension Pixel {
         case experimentalBrowsingMenuDisplayedError
         case experimentalBrowsingMenuDismissed
 
+        // Used to compare engagement vs old menu
+        case sheetBrowsingMenuSettings
+        case sheetBrowsingMenuAIChat
+        case sheetBrowsingMenuVPN
+        case sheetBrowsingMenuPasswords
+        case sheetBrowsingMenuNewDuckAddress
+
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuOpenedError
@@ -992,6 +999,10 @@ extension Pixel {
         case swipeTabsUsedDaily
         case swipeToOpenNewTab
 
+        case temporaryTelemetrySettingsClearDataAnimation(animation: String)
+        case temporaryTelemetrySettingsCustomizedAddressBarButton(button: String)
+        case temporaryTelemetrySettingsCustomizedToolbarButton(button: String)
+
         case bookmarksCleanupFailed
         case bookmarksCleanupAttemptedWhileSyncWasEnabled
         case favoritesCleanupFailed
@@ -1465,6 +1476,10 @@ extension Pixel {
         case aiChatContextualOnboardingConfirmPressed
         case aiChatContextualOnboardingSettingsPressed
 
+        // MARK: AI Chat Recent Chats
+        case aiChatRecentChatSelectedPinned
+        case aiChatRecentChatSelected
+
         // MARK: AI Chat Contextual Mode
         case aiChatContextualSheetOpened
         case aiChatContextualSheetDismissed
@@ -1699,6 +1714,13 @@ extension Pixel.Event {
         case .experimentalBrowsingMenuDisplayedAIChat: return "m_experimental-browsing-menu_displayed_aichat"
         case .experimentalBrowsingMenuDisplayedError: return "m_experimental-browsing-menu_displayed_error"
         case .experimentalBrowsingMenuDismissed: return "m_experimental-browsing-menu_dismissed"
+
+        case .sheetBrowsingMenuSettings: return "m_sheet-menu_settings"
+        case .sheetBrowsingMenuAIChat: return "m_sheet-menu_aichat"
+        case .sheetBrowsingMenuVPN: return "m_sheet-menu_vpn"
+        case .sheetBrowsingMenuPasswords: return "m_sheet-menu_passwords"
+        case .sheetBrowsingMenuNewDuckAddress: return "m_sheet-menu_new-duck-address"
+
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
         case .browsingMenuOpenedError: return "m_nav_menu_error"
@@ -2544,6 +2566,10 @@ extension Pixel.Event {
         case .swipeTabsUsedDaily: return "m_swipe-tabs-used-daily"
         case .swipeToOpenNewTab: return "m_addressbar_swipe_new_tab"
 
+        case .temporaryTelemetrySettingsClearDataAnimation(let value): return "m_temporary-telemetry_settings_clear-data-animation_\(value)"
+        case .temporaryTelemetrySettingsCustomizedAddressBarButton(let value): return "m_temporary-telemetry_settings_customized-address-bar-button_\(value)"
+        case .temporaryTelemetrySettingsCustomizedToolbarButton(let value): return "m_temporary-telemetry_settings_customized-toolbar-button_\(value)"
+
         case .bookmarksCleanupFailed: return "m_d_bookmarks_cleanup_failed"
         case .bookmarksCleanupAttemptedWhileSyncWasEnabled: return "m_d_bookmarks_cleanup_attempted_while_sync_was_enabled"
         case .favoritesCleanupFailed: return "m_d_favorites_cleanup_failed"
@@ -2927,6 +2953,10 @@ extension Pixel.Event {
         case .aiChatContextualOnboardingDisplayed: return "m_aichat_contextual_onboarding_displayed"
         case .aiChatContextualOnboardingConfirmPressed: return "m_aichat_contextual_onboarding_confirm_pressed"
         case .aiChatContextualOnboardingSettingsPressed: return "m_aichat_contextual_onboarding_settings_pressed"
+
+        // MARK: AI Chat Recent Chats
+        case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"
+        case .aiChatRecentChatSelected: return "m_aichat_recent_chat_selected"
 
         // MARK: AI Chat Contextual Mode
         case .aiChatContextualSheetOpened: return "m_aichat_contextual_sheet_opened"

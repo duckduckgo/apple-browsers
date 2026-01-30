@@ -2932,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Želiš izbrisati zavihke in podatke spletnega mesta?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Izbrisati zavihke, podatke spletnega mesta in klepete?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Izbriši vse";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Izbriši ta zavihek";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "»Izbriši ta zavihek« počisti ta klepet Duck.ai in vse podatke o spletnih mestih, obiskanih na tem zavihku.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "S tem boste preklicali prenose v teku.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Nove zavihke, ki jih ustvarite, lahko tudi posamično izbrišete.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Brisanje podatkov o spletnem mestu vas lahko odjavi iz računov.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Poišči ali vnesi naslov";
 
@@ -3124,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Če je omogočena identifikacija s prepoznavanjem prstnega odtisa ali obraza ali s sistemsko kodo za dostop, boste pri odpiranju aplikacije pozvani, da jo odklenete.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Izbriši";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Samodejno čiščenje podatkov";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Samodejno brisanje podatkov";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Povratne informacije o brskalniku";
@@ -3154,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Upravljanje pojavnih oken za piškotke";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Izbriši zavihke in podatke";
+
 /* Settings title for the customize section */
 "settings.customize" = "Prilagodi";
 
@@ -3171,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Privzet brskalnik";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Izbriši klepete Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Izbriši zavihke in podatke";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Onemogoči samodejno izpolnjevanje pri funkciji Email Protection";

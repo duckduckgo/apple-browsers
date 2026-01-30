@@ -97,33 +97,34 @@ private extension DefaultBrowserAndDockPromptsUITests {
 // MARK: - Helper Identifiers
 
 private extension XCUIApplication {
+    private typealias Identifiers = Utilities.AccessibilityIdentifiers
 
     var promptsDebugMenu: XCUIElement {
-        debugMenu.menuItems[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.promptsDebugMenu]
+        debugMenu.menuItems[Identifiers.DefaultBrowserAndDockPrompts.promptsDebugMenu]
     }
 
     var simulateFreshAppInstallMenuItem: XCUIElement {
-        promptsDebugMenu.menuItems[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.simulateFreshAppInstallMenuItem]
+        promptsDebugMenu.menuItems[Identifiers.DefaultBrowserAndDockPrompts.simulateFreshAppInstallMenuItem]
     }
 
     var advanceBy14DaysMenuItem: XCUIElement {
-        promptsDebugMenu.menuItems[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.advanceBy14DaysMenuItem]
+        promptsDebugMenu.menuItems[Identifiers.DefaultBrowserAndDockPrompts.advanceBy14DaysMenuItem]
     }
 
     var inactiveUserPrompt: XCUIElement {
-        sheets[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.inactiveUserPrompt]
+        sheets[Identifiers.DefaultBrowserAndDockPrompts.inactiveUserPrompt]
     }
 
     var confirmButton: XCUIElement {
-        inactiveUserPrompt.buttons[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.confirmButton]
+        inactiveUserPrompt.buttons[Identifiers.DefaultBrowserAndDockPrompts.confirmButton]
     }
 
     var dismissButton: XCUIElement {
-        inactiveUserPrompt.buttons[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.dismissButton]
+        inactiveUserPrompt.buttons[Identifiers.DefaultBrowserAndDockPrompts.dismissButton]
     }
 
     var reportAProblemForm: XCUIElement {
-        sheets[AccessibilityIdentifiers.Feedback.reportAProblem]
+        sheets[Identifiers.Feedback.reportAProblem]
     }
 }
 

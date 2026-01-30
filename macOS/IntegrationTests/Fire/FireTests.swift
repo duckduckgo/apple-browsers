@@ -496,11 +496,11 @@ final class FireTests: XCTestCase {
         let burningExpectation = expectation(description: "Burning")
 
         fire.burnAll {
-            XCTAssertTrue(chatHistoryCleaner.didCleanAIChatHistory)
             burningExpectation.fulfill()
         }
 
         await fulfillment(of: [burningExpectation], timeout: 5)
+        XCTAssertTrue(chatHistoryCleaner.didCleanAIChatHistory)
     }
 
     @MainActor
@@ -525,11 +525,11 @@ final class FireTests: XCTestCase {
                         clearSiteData: true,
                         clearChatHistory: true,
         ) {
-            XCTAssertTrue(chatHistoryCleaner.didCleanAIChatHistory)
             burningExpectation.fulfill()
         }
 
         await fulfillment(of: [burningExpectation], timeout: 5)
+        XCTAssertTrue(chatHistoryCleaner.didCleanAIChatHistory)
     }
 
     @MainActor
@@ -554,11 +554,11 @@ final class FireTests: XCTestCase {
                         clearSiteData: true,
                         clearChatHistory: false,
         ) {
-            XCTAssertFalse(chatHistoryCleaner.didCleanAIChatHistory)
             burningExpectation.fulfill()
         }
 
         await fulfillment(of: [burningExpectation], timeout: 5)
+        XCTAssertFalse(chatHistoryCleaner.didCleanAIChatHistory)
     }
 
     // MARK: - Helpers

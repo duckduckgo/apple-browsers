@@ -22,7 +22,7 @@ import SwiftUI
 // MARK: - Step Progress
 
 private struct OnboardingStepProgressViewModifier: ViewModifier {
-    //Replace values with @Environment(\.onboardingTheme) var onboardingTheme
+    // Replace values with @Environment(\.onboardingTheme) var onboardingTheme
     private let cornerRadius = 36.0
     private let stepProgressTrailingPadding = 4.0
 
@@ -56,7 +56,7 @@ public extension View {
 // MARK: - Dismiss Button
 
 private struct OnboardingDismissButtonViewModifier: ViewModifier {
-    //Replace values with @Environment(\.onboardingTheme) var onboardingTheme
+    // Replace values with @Environment(\.onboardingTheme) var onboardingTheme
     private let onboardingDismissButtonInternalPadding = 8.0
     private let onboardingDismissButtonPadding = 4.0
 

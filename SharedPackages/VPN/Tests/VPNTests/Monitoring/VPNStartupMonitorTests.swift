@@ -65,7 +65,7 @@ final class VPNStartupMonitorTests: XCTestCase {
         mockStatus = .connecting
 
         do {
-            try await monitor.waitForStartSuccess(tunnelManager, timeout: 5)
+            try await monitor.waitForStartSuccess(tunnelManager, timeout: 0.1)
             XCTFail("Expected timeout error")
         } catch let error as VPNStartupMonitor.StartupError {
             if case .startTunnelTimedOut = error {

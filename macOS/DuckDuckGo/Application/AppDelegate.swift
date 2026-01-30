@@ -605,7 +605,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager, userDefaults: .subs) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                                  accessError: error,
-                                                                                 source: KeychainErrorSource.shared,
+                                                                                 source: KeychainErrorSource.browser,
                                                                                  authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }

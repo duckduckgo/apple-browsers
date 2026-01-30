@@ -58,9 +58,10 @@ final class DuckDuckGoVPNApplication: NSApplication {
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
         subscriptionManager = DefaultSubscriptionManager(keychainType: keychainType,
-                                                             environment: subscriptionEnvironment,
-                                                             userDefaults: subscriptionUserDefaults,
-                                                             pixelHandlingSource: .vpnApp)
+                                                         environment: subscriptionEnvironment,
+                                                         userDefaults: subscriptionUserDefaults,
+                                                         pixelHandlingSource: .vpnApp,
+                                                         source: .vpn)
 
         _delegate = DuckDuckGoVPNAppDelegate(subscriptionManager: subscriptionManager,
                                              subscriptionEnvironment: subscriptionEnvironment)

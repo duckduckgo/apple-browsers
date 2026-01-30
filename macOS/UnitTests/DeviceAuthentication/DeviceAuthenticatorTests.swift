@@ -23,7 +23,7 @@ import XCTest
 class DeviceAuthenticatorTests: XCTestCase {
 
     private func waitResult(for expectations: [XCTestExpectation], timeout: TimeInterval) -> XCTWaiter.Result {
-        XCTWaiter.wait(for: expectations, timeout: 5)
+        XCTWaiter.wait(for: expectations, timeout: timeout)
     }
 
     // MARK: - Tests

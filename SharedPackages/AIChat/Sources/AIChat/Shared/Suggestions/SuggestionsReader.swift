@@ -26,10 +26,12 @@ import WebKit
 
 public protocol SuggestionsReading {
     /// Fetches AI chat suggestions from duck.ai storage.
-    /// - Parameter query: Optional search query to filter results
+    /// - Parameters:
+    ///   - query: Optional search query to filter results
+    ///   - maxChats: Maximum number of recent (non-pinned) chats to return
     /// - Returns: Result containing pinned and recent suggestions, or an error
     @MainActor
-    func fetchSuggestions(query: String?) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error>
+    func fetchSuggestions(query: String?, maxChats: Int) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error>
 
     /// Tears down the WebView and releases resources.
     /// Should be called when the AI chat mode is deactivated.
@@ -86,7 +88,7 @@ public final class SuggestionsReader: SuggestionsReading {
     // MARK: - Public API
 
     @MainActor
-    public func fetchSuggestions(query: String?) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
+    public func fetchSuggestions(query: String?, maxChats: Int) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
         // Prevent re-entrant setup
         if isSettingUp {
             return .failure(ReaderError.webViewNotInitialized)
@@ -112,7 +114,7 @@ public final class SuggestionsReader: SuggestionsReading {
         }
 
         // Fetch from all domains and return the result with the most recent chat
-        return await fetchFromAllDomains(query: query, script: script)
+        return await fetchFromAllDomains(query: query, maxChats: maxChats, script: script)
     }
 
     /// One week in seconds
@@ -121,6 +123,7 @@ public final class SuggestionsReader: SuggestionsReading {
     @MainActor
     private func fetchFromAllDomains(
         query: String?,
+        maxChats: Int,
         script: AIChatSuggestionsUserScript
     ) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
         var results: [(pinned: [AIChatSuggestion], recent: [AIChatSuggestion])] = []
@@ -147,7 +150,7 @@ public final class SuggestionsReader: SuggestionsReading {
             // Fetch suggestions from this domain
             let fetchResult = await withCheckedContinuation { continuation in
                 self.fetchContinuation = continuation
-                script.fetchChats(query: query, maxChats: AIChatSuggestionsUserScript.defaultMaxChats, since: since)
+                script.fetchChats(query: query, maxChats: maxChats, since: since)
             }
 
             switch fetchResult {

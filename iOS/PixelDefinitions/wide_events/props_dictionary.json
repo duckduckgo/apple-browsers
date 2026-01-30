@@ -1,0 +1,7 @@
+{
+    "foregroundBackgroundState": {
+        "type": "string",
+        "description": "Whether the app is in the foreground or background at the time of the refresh.",
+        "enum": ["foreground", "background"]
+    }
+}

@@ -25,9 +25,11 @@ struct OnboardingDebugView: View {
     @StateObject private var viewModel = OnboardingDebugViewModel()
     @State private var isShowingResetDaxDialogsAlert = false
 
+    private let isRebrandingFlow: Bool
     private let newOnboardingIntroStartAction: () -> Void
 
-    init(onNewOnboardingIntroStartAction: @escaping () -> Void) {
+    init(isRebrandingFlow: Bool, onNewOnboardingIntroStartAction: @escaping () -> Void) {
+        self.isRebrandingFlow = isRebrandingFlow
         newOnboardingIntroStartAction = onNewOnboardingIntroStartAction
     }
 
@@ -63,7 +65,8 @@ struct OnboardingDebugView: View {
 
             Section {
                 Button(action: newOnboardingIntroStartAction, label: {
-                    Text(verbatim: "Preview Onboarding Intro - \(viewModel.onboardingUserType.description)")
+                    let onboardingType = isRebrandingFlow ? "Rebranding" : "Legacy"
+                    Text(verbatim: "Preview Onboarding \(onboardingType) Intro - \(viewModel.onboardingUserType.description)")
                 })
             }
         }
@@ -111,7 +114,7 @@ final class OnboardingDebugViewModel: ObservableObject {
 }
 
 #Preview {
-    OnboardingDebugView(onNewOnboardingIntroStartAction: {})
+    OnboardingDebugView(isRebrandingFlow: false, onNewOnboardingIntroStartAction: {})
 }
 
 extension OnboardingUserType: Identifiable {

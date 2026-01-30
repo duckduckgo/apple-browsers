@@ -2932,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Διαγραφή καρτελών και δεδομένων ιστότοπου;";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Διαγραφή καρτελών, δεδομένων ιστότοπου και συνομιλιών;";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Διαγραφή όλων";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Διαγραφή αυτής της καρτέλας";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "Η επιλογή «Διαγραφή αυτής της καρτέλας» διαγράφει αυτήν τη συνομιλία του Duck.ai και τυχόν δεδομένα ιστότοπου από τους ιστότοπους που επισκέπτεστε σε αυτήν την καρτέλα.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Αυτό θα ακυρώσει λήψεις που βρίσκονται σε εξέλιξη.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Οι νέες καρτέλες που δημιουργείτε μπορούν επίσης να διαγραφούν μεμονωμένα.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Η διαγραφή δεδομένων ιστότοπου μπορεί να σας αποσυνδέσει από τους λογαριασμούς.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Αναζήτηση ή εισαγωγή διεύθυνσης";
 
@@ -3124,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Εάν έχει ενεργοποιηθεί το Touch ID, το Face ID ή ο κωδικός πρόσβασης συστήματος, θα σας ζητηθεί να ξεκλειδώσετε την εφαρμογή κατά το άνοιγμά της.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Διαγραφή";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Αυτόματη εκκαθάριση δεδομένων";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Αυτόματη διαγραφή δεδομένων";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Σχόλια για το πρόγραμμα περιήγησης";
@@ -3154,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Διαχείριση αναδυόμενων παραθύρων cookies";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Διαγραφή καρτελών και δεδομένων";
+
 /* Settings title for the customize section */
 "settings.customize" = "Προσαρμογή";
 
@@ -3171,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Προεπιλεγμένο πρόγραμμα περιήγησης";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Διαγραφή συνομιλιών Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Διαγραφή καρτελών και δεδομένων";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Απενεργοποίηση αυτόματης συμπλήρωσης Email Protection";

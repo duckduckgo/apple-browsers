@@ -111,6 +111,42 @@ public struct PrimaryDestructiveButtonStyle: ButtonStyle {
     }
 }
 
+public struct SecondaryDestructiveButtonStyle: ButtonStyle {
+    let disabled: Bool
+    let compact: Bool
+    let fullWidth: Bool
+
+    public init(disabled: Bool = false, compact: Bool = false, fullWidth: Bool = true) {
+        self.disabled = disabled
+        self.compact = compact
+        self.fullWidth = fullWidth
+    }
+
+    public func makeBody(configuration: Configuration) -> some View {
+        let destructiveColor = Color(designSystemColor: .destructivePrimary)
+        let disabledColor = destructiveColor.opacity(0.36)
+        let borderColor = disabled ? disabledColor : destructiveColor
+        let foregroundColor = disabled ? disabledColor : destructiveColor
+        let pressedBackgroundColor = destructiveColor.opacity(0.1)
+
+        configuration.label
+            .fixedSize(horizontal: false, vertical: true)
+            .multilineTextAlignment(.center)
+            .lineLimit(nil)
+            .font(Font(UIFont.boldAppFont(ofSize: Consts.fontSize)))
+            .foregroundColor(foregroundColor)
+            .padding(.vertical)
+            .padding(.horizontal, fullWidth ? nil : 24)
+            .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, maxHeight: compact ? Consts.height - 10 : Consts.height)
+            .background(configuration.isPressed ? pressedBackgroundColor : Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: Consts.cornerRadius)
+                    .stroke(borderColor, lineWidth: 1)
+            )
+            .cornerRadius(Consts.cornerRadius)
+    }
+}
+
 // This style seems to be deprecated - you probably want to use SecondaryWireButtonStyle.
 // Reach out to designers.
 public struct SecondaryButtonStyle: ButtonStyle {

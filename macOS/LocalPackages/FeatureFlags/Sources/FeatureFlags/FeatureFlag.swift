@@ -304,6 +304,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarOnboarding,
                 .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
+                .warnBeforeQuit,
                 .wideEventPostEndpoint,
                 .memoryPressureReporting,
                 .themes:

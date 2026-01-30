@@ -22,7 +22,18 @@ import DesignResourcesKit
 
 extension BrowsingMenuModel {
 
-    func estimatedContentHeight(includesWebsiteHeader: Bool) -> CGFloat {
+    func estimatedContentHeight(
+        headerDataSource: BrowsingMenuHeaderDataSource,
+        verticalSizeClass: UIUserInterfaceSizeClass?
+    ) -> CGFloat {
+        let isCompact = verticalSizeClass == .compact
+        return estimatedContentHeight(
+            includesWebsiteInfo: headerDataSource.isHeaderVisible,
+            includesCloseButtonHeader: isCompact && !headerDataSource.isHeaderVisible
+        )
+    }
+
+    private func estimatedContentHeight(includesWebsiteInfo: Bool, includesCloseButtonHeader: Bool) -> CGFloat {
         typealias Metrics = BrowsingMenuSheetView.Metrics
 
         let headerFont = UIFont.daxCaption()
@@ -31,35 +42,32 @@ extension BrowsingMenuModel {
 
         let headerContentHeight = iconHeight + Metrics.headerButtonIconTextSpacing + headerFont.lineHeight
         let headerButtonsHeight = headerItems.isEmpty ? 0 : headerContentHeight + (Metrics.headerButtonVerticalPadding * 2)
-        let websiteHeaderHeight = includesWebsiteHeader ? Metrics.websiteHeaderHeight : 0
 
-        // Spacing between website header and header buttons when both are present
-        let headerSectionSpacing = (includesWebsiteHeader && !headerItems.isEmpty) ? Metrics.headerHorizontalSpacing : 0
+        // Header height depends on whether website info is shown or just the close button
+        let websiteHeaderHeight: CGFloat
+        if includesWebsiteInfo {
+            websiteHeaderHeight = Metrics.websiteHeaderHeight
+        } else if includesCloseButtonHeader {
+            websiteHeaderHeight = Metrics.closeButtonHeaderHeight
+        } else {
+            websiteHeaderHeight = 0
+        }
 
         let minTotalVerticalPadding: CGFloat = 16
         let rowHeight = max(Metrics.defaultListRowHeight, rowFont.lineHeight + minTotalVerticalPadding)
 
-        // Footer text labels are only shown when there's fewer than 2 footer items
-        let footerShowsLabels = footerItems.count < 2
-
-        // `max` is used here because labels and icons are in HStack
-        let footerContentHeight = max(iconHeight, (footerShowsLabels ? rowFont.lineHeight : 0))
-        let footerHeight = footerContentHeight + (Metrics.footerButtonVerticalPadding * 2)
-
         let itemCount = sections.reduce(0) { $0 + $1.items.count }
         let menuSectionCount = sections.count
 
-        // When header section has content (website header or header buttons),
-        // there's an additional gap between it and the first menu section
-        let hasHeaderSectionContent = includesWebsiteHeader || !headerItems.isEmpty
+        // When header section has content (header buttons), there's an additional gap
+        // between it and the first menu section
+        let hasHeaderSectionContent = !headerItems.isEmpty
         let sectionGapsCount = hasHeaderSectionContent ? menuSectionCount : max(0, menuSectionCount - 1)
 
         return websiteHeaderHeight
-            + headerSectionSpacing
             + headerButtonsHeight
             + (CGFloat(itemCount) * rowHeight)
             + (CGFloat(sectionGapsCount) * Metrics.listSectionSpacing)
-            + (footerItems.isEmpty ? 0 : footerHeight)
             + Metrics.listTopPadding
             + Metrics.grabberHeight
     }

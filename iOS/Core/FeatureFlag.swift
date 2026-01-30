@@ -298,9 +298,20 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
     case burnSingleTab
+
+    /// Test-only feature flag for verifying UI test override mechanism.
+    /// Used in Debug > UI Test Overrides screen.
+    case uiTestFeatureFlag
+
+    /// Test-only experiment for verifying UI test experiment override mechanism.
+    /// Used in Debug > UI Test Overrides screen.
+    case uiTestExperiment
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
+
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
+    case onboardingRebranding
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -336,9 +347,17 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
+        case .uiTestExperiment:
+            UITestExperimentCohort.self
         default:
             nil
         }
+    }
+
+    /// Test-only cohort for verifying UI test experiment override mechanism.
+    public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
     }
 
     public static var localOverrideStoreName: String = "com.duckduckgo.app.featureFlag.localOverrides"
@@ -402,7 +421,10 @@ extension FeatureFlag: FeatureFlagDescribing {
              .genericBackgroundTask,
              .webViewFlashPrevention,
              .tabSwitcherTrackerCount,
-             .burnSingleTab:
+             .burnSingleTab,
+             .uiTestFeatureFlag,
+             .uiTestExperiment,
+             .onboardingRebranding:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -624,12 +646,18 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint))
+        case .uiTestFeatureFlag:
+            return .disabled
+        case .uiTestExperiment:
+            return .disabled
         case .tabSwitcherTrackerCount:
             return .internalOnly()
         case .burnSingleTab:
             return .disabled
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
+        case .onboardingRebranding:
+            return .disabled
         }
     }
 }

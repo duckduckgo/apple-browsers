@@ -367,7 +367,7 @@ private struct BrowsingMenuHeaderView: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(alignment: .top) {
             if isWebsiteInfoVisible {
                 HStack(spacing: MenuHeaderConstant.contentSpacing) {
                     faviconView

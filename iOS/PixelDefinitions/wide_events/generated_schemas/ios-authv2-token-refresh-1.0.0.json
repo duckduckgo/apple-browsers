@@ -86,6 +86,11 @@
                             "type": "object",
                             "additionalProperties": false,
                             "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "The reason provided when the status is UNKNOWN",
+                                    "enum": ["partial_data"]
+                                },
                                 "application_state": {
                                     "type": "string",
                                     "description": "Whether the app is in the foreground or background at the time of the refresh.",

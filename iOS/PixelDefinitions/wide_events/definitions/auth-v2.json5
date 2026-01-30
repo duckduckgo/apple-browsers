@@ -9,9 +9,13 @@
         "feature": {
             "name": "authv2-token-refresh",
             "status": ["SUCCESS", "FAILURE", "UNKNOWN"],
-            "status_reason": ["partial_data"],
             "data": {
                 "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "The reason provided when the status is UNKNOWN",
+                        "enum": ["partial_data"]
+                    },
                     "application_state": {
                         "type": "string",
                         "description": "Whether the app is in the foreground or background at the time of the refresh.",

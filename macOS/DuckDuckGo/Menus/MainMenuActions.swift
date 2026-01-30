@@ -557,7 +557,7 @@ extension AppDelegate {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         appearancePreferences.continueSetUpCardsClosed = false
         appearancePreferences.isContinueSetUpVisible = true
-        appearancePreferences.didOpenCustomizationSettings = false
+        appearancePreferences.didChangeAnyNewTabPageCustomizationSetting = false
         duckPlayer.preferences.youtubeOverlayAnyButtonPressed = false
         duckPlayer.preferences.duckPlayerMode = .alwaysAsk
         UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
@@ -878,8 +878,6 @@ extension AppDelegate {
 
 extension MainViewController {
 
-    private static var shouldIgnoreRepeatedCloseTabShortcuts = false
-
     /// Finds currently active Tab even if it's playing a Full Screen video
     private func getActiveTabAndIndex() -> (tab: Tab, index: TabIndex)? {
         var tab: Tab? {
@@ -945,10 +943,6 @@ extension MainViewController {
         guard let (tab, index) = getActiveTabAndIndex() else { return }
         makeKeyIfNeeded()
         let currentEvent = NSApp.currentEvent
-        guard !Self.shouldIgnoreRepeatedCloseTabShortcuts || currentEvent?.isARepeat != true || currentEvent?.keyEquivalent != [.command, "w"] else {
-            return // auto-repeated ⌘W keyDown event received after the tab was closed with long pressing ⌘W should be ignored
-        }
-        Self.shouldIgnoreRepeatedCloseTabShortcuts = false
 
         // Handle Cmd+W on pinned tabs
         if case .pinned(let pinnedIndex) = index,
@@ -956,11 +950,16 @@ extension MainViewController {
            let currentEvent, currentEvent.keyEquivalent == [.command, "w"] {
             // Show confirmation warning if enabled
             if featureFlagger.isFeatureOn(.warnBeforeQuit) {
-                let shouldClose = !tabsPreferences.warnBeforeClosingPinnedTabs || showPinnedTabCloseConfirmation(for: tab, atPinnedIndex: pinnedIndex, currentEvent: currentEvent)
-                if shouldClose {
-                    // ignore repeated incoming ⌘W keyDown events after the tab was closed with long pressing ⌘W
-                    Self.shouldIgnoreRepeatedCloseTabShortcuts = tabsPreferences.warnBeforeClosingPinnedTabs
+                // If warning is disabled in preferences, close immediately
+                if !tabsPreferences.warnBeforeClosingPinnedTabs {
                     tabCollectionViewModel.remove(at: index)
+                    return
+                }
+
+                // Show confirmation overlay
+                showPinnedTabCloseConfirmation(for: tab, atPinnedIndex: pinnedIndex, currentEvent: currentEvent) { [weak self] shouldProceed in
+                    guard let self, shouldProceed else { return }
+                    self.tabCollectionViewModel.remove(at: .pinned(pinnedIndex))
                 }
                 return
             }
@@ -978,14 +977,27 @@ extension MainViewController {
         tabCollectionViewModel.remove(at: index)
     }
 
-    /// Shows the pinned tab close confirmation overlay and returns true if the tab should be closed, false otherwise
+    /// Shows the pinned tab close confirmation overlay
+    /// - Parameters:
+    ///   - tab: The tab to close
+    ///   - pinnedIndex: The index of the pinned tab
+    ///   - currentEvent: The current keyboard event
+    ///   - completion: Callback invoked when a decision is made (async or sync). Called with whether to proceed.
     @MainActor
-    private func showPinnedTabCloseConfirmation(for tab: Tab, atPinnedIndex pinnedIndex: Int, currentEvent: NSEvent) -> Bool {
+    private func showPinnedTabCloseConfirmation(
+        for tab: Tab,
+        atPinnedIndex pinnedIndex: Int,
+        currentEvent: NSEvent,
+        completion: @escaping (Bool) -> Void
+    ) {
         guard let manager = WarnBeforeQuitManager(
             currentEvent: currentEvent,
             action: .close,
             isWarningEnabled: { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs }
-        ) else { return false }
+        ) else {
+            completion(false)
+            return
+        }
 
         let presenter = WarnBeforeQuitOverlayPresenter(
             action: .close,
@@ -1006,15 +1018,21 @@ extension MainViewController {
         let query = manager.shouldTerminate(isAsync: false)
         switch query {
         case .sync(let decision):
-            return decision == .next
+            let shouldProceed = decision == .next
+            // Close the Tab
+            completion(shouldProceed)
+            manager.deciderSequenceCompleted(shouldProceed: shouldProceed)
         case .async(let task):
             // Wait for the shortcut to be repeated, "Don't Show Again" button clicked, or the warning is dismissed.
             Task { @MainActor in
                 let decision = await task.value
-                guard decision == .next else { return }
-                tabCollectionViewModel.remove(at: .pinned(pinnedIndex))
+                let shouldProceed = decision == .next
+                // Close the Tab
+                completion(shouldProceed)
+                // Let the event loop process the UI update
+                await Task.yield()
+                manager.deciderSequenceCompleted(shouldProceed: shouldProceed)
             }
-            return false
         }
     }
 

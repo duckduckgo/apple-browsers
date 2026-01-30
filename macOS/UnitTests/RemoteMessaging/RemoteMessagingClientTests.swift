@@ -126,7 +126,8 @@ final class RemoteMessagingClientTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
         client = RemoteMessagingClient(
             remoteMessagingDatabase: remoteMessagingDatabase,

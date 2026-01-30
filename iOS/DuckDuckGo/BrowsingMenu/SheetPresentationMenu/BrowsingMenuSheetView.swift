@@ -26,7 +26,6 @@ import Kingfisher
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
     var sections: [BrowsingMenuModel.Section]
-    var footerItems: [BrowsingMenuModel.Entry]
 }
 
 struct BrowsingMenuSheetView: View {
@@ -36,7 +35,6 @@ struct BrowsingMenuSheetView: View {
         static let headerButtonHorizontalPadding: CGFloat = 8
         static let headerButtonIconSize: CGFloat = 26
         static let headerButtonIconTextSpacing: CGFloat = 4
-        static let footerButtonVerticalPadding: CGFloat = 8
 
         /// Approximate row size for `.insetGrouped` style.
         /// This is an estimate used for height calculation and may not exactly match
@@ -48,7 +46,7 @@ struct BrowsingMenuSheetView: View {
         /// `.compact` section spacing on iOS 17+. This value is an approximation and
         /// the actual spacing may differ slightly on earlier versions.
         static let listSectionSpacing: CGFloat = 20
-        static let listTopPadding: CGFloat = 20 - listTopPaddingAdjustment
+        static let listTopPadding: CGFloat = 20
         static let grabberHeight: CGFloat = 20
 
         static let headerHorizontalSpacing: CGFloat = 10
@@ -56,9 +54,11 @@ struct BrowsingMenuSheetView: View {
         static let listTopPaddingAdjustment: CGFloat = 4
 
         static let websiteHeaderHeight: CGFloat = 56
+        /// Height of header when only close button is shown (compact mode without website info)
+        static let closeButtonHeaderHeight: CGFloat = 40
     }
 
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     @Environment(\.verticalSizeClass) var verticalSizeClass
 
     private let model: BrowsingMenuModel
@@ -66,6 +66,12 @@ struct BrowsingMenuSheetView: View {
 
     @State private var highlightTag: BrowsingMenuModel.Entry.Tag?
     @State private var actionToPerform: (() -> Void)?
+    @State private var isScrolledBelowHeader: Bool = false
+    @State private var headerBottomY: CGFloat = 0
+
+    private var isHeaderVisible: Bool {
+        headerDataSource.isHeaderVisible || verticalSizeClass == .compact
+    }
 
     @ObservedObject private(set) var headerDataSource: BrowsingMenuHeaderDataSource
 
@@ -95,52 +101,72 @@ struct BrowsingMenuSheetView: View {
             actionToPerform?()
             onDismiss(actionToPerform != nil)
         })
-        .floatingToolbar(
-            footerItems: model.footerItems,
-            actionToPerform: $actionToPerform,
-            presentationMode: presentationMode,
-            showsLabels: model.footerItems.count < 2
-        )
-        .safeAreaInset(edge: .top, content: {
-            if verticalSizeClass == .compact {
-                HStack {
-                    Spacer()
-                    Button(UserText.navigationTitleDone, role: .cancel) {
-                        presentationMode.wrappedValue.dismiss()
+        .safeAreaInset(edge: .top, spacing: isHeaderVisible ? -Metrics.listTopPadding : 0, content: {
+            if isHeaderVisible {
+                websiteHeader
+                    .background(headerPositionTracker)
+                    .background {
+                        if isScrolledBelowHeader && headerDataSource.isHeaderVisible {
+                            Rectangle().fill(.thickMaterial)
+                                .ignoresSafeArea()
+                        }
                     }
-                    .padding(.top, 16)
-                    .padding(.bottom, 16)
-                    .padding(.horizontal, 24)
-                }
-                .background(.thickMaterial)
-                .padding(.bottom, -24)
+                    .padding(.vertical, headerDataSource.isHeaderVisible ? 0 : -4)
             }
         })
         .tint(Color(designSystemColor: .textPrimary))
     }
 
     @ViewBuilder
+    private var websiteHeader: some View {
+        BrowsingMenuHeaderView(
+            title: headerDataSource.title,
+            displayURL: headerDataSource.displayURL,
+            iconType: headerDataSource.iconType,
+            isWebsiteInfoVisible: headerDataSource.isHeaderVisible,
+            onDismiss: { dismiss() }
+        )
+        .padding(.horizontal, 20)
+        .padding(.top, verticalSizeClass == .compact ? 8 : 16)
+    }
+
+    /// Tracks the header's bottom Y position in global coordinates
+    private var headerPositionTracker: some View {
+        GeometryReader { geo in
+            Color.clear
+                .onAppear {
+                    headerBottomY = geo.frame(in: .global).maxY
+                }
+                .onChangeUniversal(of: geo.frame(in: .global).maxY) { newValue in
+                    headerBottomY = newValue
+                }
+        }
+    }
+
+    /// Invisible tracker that detects when content scrolls under the header
+    private var scrollPositionTracker: some View {
+        Color.clear
+            .frame(height: 1)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.onChangeUniversal(of: geo.frame(in: .global).minY) { newValue in
+                        isScrolledBelowHeader = newValue < headerBottomY
+                    }
+                }
+            )
+    }
+
+    @ViewBuilder
     private var headerSection: some View {
         Section {
-            VStack(spacing: Metrics.headerHorizontalSpacing) {
-                if headerDataSource.isHeaderVisible {
-                    BrowsingMenuHeaderView(
-                        title: headerDataSource.title,
-                        url: headerDataSource.url,
-                        favicon: headerDataSource.favicon,
-                        easterEggLogoURL: headerDataSource.easterEggLogoURL
-                    )
-                }
-
-                if !model.headerItems.isEmpty {
-                    HStack(spacing: Metrics.headerHorizontalSpacing) {
-                        ForEach(model.headerItems) { headerItem in
-                            MenuHeaderButton(entryData: headerItem) {
-                                actionToPerform = { headerItem.action() }
-                                presentationMode.wrappedValue.dismiss()
-                            }
-                            .frame(maxWidth: .infinity)
+            if !model.headerItems.isEmpty {
+                HStack(spacing: Metrics.headerHorizontalSpacing) {
+                    ForEach(model.headerItems) { headerItem in
+                        MenuHeaderButton(entryData: headerItem) {
+                            actionToPerform = { headerItem.action() }
+                            dismiss()
                         }
+                        .frame(maxWidth: .infinity)
                     }
                 }
             }
@@ -148,6 +174,11 @@ struct BrowsingMenuSheetView: View {
         .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
         .listRowSeparatorTint(Color(designSystemColor: .lines))
         .listRowBackground(Color.clear)
+        .overlay(alignment: .top) {
+            if isHeaderVisible {
+                scrollPositionTracker
+            }
+        }
     }
 
     @ViewBuilder
@@ -159,7 +190,7 @@ struct BrowsingMenuSheetView: View {
 
                     MenuRowButton(entryData: item, isHighlighted: isHighlighted) {
                         actionToPerform = { item.action() }
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                     .listRowBackground(Color.rowBackgroundColor)
                 }
@@ -330,37 +361,55 @@ private struct MenuHeaderButton: View {
 private struct BrowsingMenuHeaderView: View {
 
     let title: String?
-    let url: URL?
-    let favicon: UIImage?
-    let easterEggLogoURL: URL?
-
-    private var displayURL: String? {
-        url?.host
-    }
+    let displayURL: String?
+    let iconType: HeaderIconType
+    let isWebsiteInfoVisible: Bool
+    let onDismiss: () -> Void
 
     var body: some View {
-        HStack(spacing: MenuHeaderConstant.contentSpacing) {
-            faviconView
+        HStack(spacing: 4) {
+            if isWebsiteInfoVisible {
+                HStack(spacing: MenuHeaderConstant.contentSpacing) {
+                    faviconView
 
-            textContent
-                .frame(maxWidth: .infinity, alignment: .leading)
+                    textContent
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+
+            Spacer()
+
+            closeButton
         }
-        .padding(.bottom, MenuHeaderConstant.bottomPadding)
+        .padding(.vertical, MenuHeaderConstant.bottomPadding)
         .frame(maxWidth: .infinity)
+    }
+
+    private var closeButton: some View {
+        Button(action: onDismiss) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+        }
+        .buttonStyle(BrowsingMenuCloseButtonStyle())
+        .accessibilityLabel(UserText.keyCommandClose)
     }
 
     @ViewBuilder
     private var faviconView: some View {
         Group {
-            if let easterEggLogoURL {
-                KFImage(easterEggLogoURL)
+            switch iconType {
+            case .aiChat:
+                Image(uiImage: DesignSystemImages.Color.Size24.aiChatGradient)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-            } else if let favicon {
-                Image(uiImage: favicon)
+            case .easterEgg(let url):
+                KFImage(url)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-            } else {
+            case .favicon(let image):
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            case .globe:
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
                     .foregroundStyle(Color(designSystemColor: .icons))
             }
@@ -374,25 +423,20 @@ private struct BrowsingMenuHeaderView: View {
 
     @ViewBuilder
     private var textContent: some View {
-        if let title, !title.isEmpty {
-            VStack(alignment: .leading, spacing: MenuHeaderConstant.textSpacing) {
+        VStack(alignment: .leading, spacing: MenuHeaderConstant.textSpacing) {
+            if let title, !title.isEmpty {
                 Text(title)
                     .daxHeadline()
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
                     .lineLimit(1)
-
-                if let displayURL {
-                    Text(displayURL)
-                        .daxCaption()
-                        .foregroundStyle(Color(designSystemColor: .textSecondary))
-                        .lineLimit(1)
-                }
             }
-        } else if let displayURL {
-            Text(displayURL)
-                .daxHeadline()
-                .foregroundStyle(Color(designSystemColor: .textPrimary))
-                .lineLimit(1)
+
+            if let displayURL {
+                Text(displayURL)
+                    .daxCaption1()
+                    .foregroundStyle(Color(designSystemColor: .textSecondary))
+                    .lineLimit(1)
+            }
         }
     }
 }
@@ -428,86 +472,18 @@ private extension View {
             self
         }
     }
-}
-
-private extension View {
-    func floatingToolbar(
-        footerItems: [BrowsingMenuModel.Entry],
-        actionToPerform: Binding<(() -> Void)?>,
-        presentationMode: Binding<PresentationMode>,
-        showsLabels: Bool
-    ) -> some View {
-        modifier(FloatingToolbarModifier(
-            footerItems: footerItems,
-            actionToPerform: actionToPerform,
-            presentationMode: presentationMode,
-            showsLabels: showsLabels
-        ))
-    }
-}
-
-private struct FloatingToolbarModifier: ViewModifier {
-
-    private typealias Metrics = BrowsingMenuSheetView.Metrics
-
-    let footerItems: [BrowsingMenuModel.Entry]
-    @Binding var actionToPerform: (() -> Void)?
-    let presentationMode: Binding<PresentationMode>
-    let showsLabels: Bool
-
-    func body(content: Content) -> some View {
-        if footerItems.isEmpty {
-            content
-        } else {
-            content
-                .overlay(alignment: .bottom, content: {
-                    let colors = [
-                        .clear,
-                        Color(designSystemColor: .background).opacity(0.9),
-                        Color(designSystemColor: .background)
-                    ]
-                    LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
-                    // This makes the gradient extend to the full width and into the bottom safe area.
-                        .ignoresSafeArea(edges: [.horizontal, .bottom])
-                    // Together with previous modifier, this guarantees 8pt above the content of `safeAreaInset` below.
-                        .frame(height: 8, alignment: .bottom)
-                        .frame(maxWidth: .infinity)
-                })
-                .safeAreaInset(edge: .bottom, content: {
-                    createBottomToolbar(labels: showsLabels)
-                })
-        }
-    }
 
     @ViewBuilder
-    private func createBottomToolbar(labels: Bool = false) -> some View {
-        HStack(spacing: 4) {
-            ForEach(footerItems) { footerItem in
-                Button(action: {
-                    actionToPerform = { footerItem.action() }
-                    presentationMode.wrappedValue.dismiss()
-                }) {
-                    HStack(spacing: 4) {
-                        Image(uiImage: footerItem.image)
-                            .tint(Color(designSystemColor: .icons))
-                        if labels {
-                            Text(footerItem.name)
-                                .daxBodyRegular()
-                                .foregroundStyle(Color(designSystemColor: .textPrimary))
-                        }
-                    }
-                    .padding(.vertical, Metrics.footerButtonVerticalPadding)
-                    .padding(.horizontal, 16)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(footerItem.accessibilityLabel ?? footerItem.name)
+    func onChangeUniversal<V: Equatable>(of value: V, perform action: @escaping (V) -> Void) -> some View {
+        if #available(iOS 17.0, *) {
+            self.onChange(of: value) { _, newValue in
+                action(newValue)
+            }
+        } else {
+            self.onChange(of: value) { newValue in
+                action(newValue)
             }
         }
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, x: 0, y: 4)
-        .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 2, x: 0, y: 1)
-        .fixedSize(horizontal: true, vertical: true)
     }
 }
 

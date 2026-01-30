@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Bekreft";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontekstuell introduksjon";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Hopp over";
 
@@ -2929,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Vil du slette faner og nettstedsdata?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Vil du slette faner, nettstedsdata og chatter?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Slett alt";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Slett denne fanen";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "«Slett denne fanen» fjerner denne Duck.ai-chatten og alle data fra nettstedene som ble besøkt i denne fanen.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Dette avbryter pågående nedlastinger.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Nye faner du oppretter, kan også slettes individuelt.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Hvis du sletter nettstedsdata, kan du bli logget ut av kontoer.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Søk eller skriv inn adresse";
 
@@ -2974,6 +3001,9 @@
 /* about tagline */
 "settings.about.tagline" = "Beskyttelse. Personvern. Ro i sjelen.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo er et uavhengig selskap som gir bedre personvern til alle som ønsker å ta tilbake kontrollen over personopplysninger på nettet.\n\nVi mener at den beste måten å beskytte personopplysninger mot hackere, svindlere og selskaper som krenker personvernet på, er å hindre at de samles inn i det hele tatt. Det er derfor millioner av mennesker [velger DuckDuckGo over Chrome og andre nettlesere](ddgQuickLink://duckduckgo.com/compare-privacy) til å søke og surfe på nettet. Vår innebygde søkemotor er som Google, men sporer aldri søkene dine. Og surfebeskyttelsene våre, som blokkering av annonsesporing og informasjonskapsler, hindrer andre selskaper i å samle inn opplysningene dine. Og – ikke minst – nettleseren vår er gratis. Vi tjener penger på [søkeannonser som respekterer personvernet](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), ikke ved å utnytte dataene dine. \n\n%@ \n\nTa tilbake kontrollen over personopplysningene dine med en nettleser som er utviklet for databeskyttelse, ikke datainnsamling.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Tilgjengelighet";
 
@@ -2992,8 +3022,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Vis fullstendig nettstedsadresse";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Vis animasjon av blokkerte sporere";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Vis i adressefeltet";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Søk og Duck.ai";
@@ -3118,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Hvis Touch ID, Face ID eller et systempassord er aktivert, blir du bedt om å låse opp appen når du åpner den.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Slett";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatisk fjerning av data";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Slett data automatisk";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Nettlesertilbakemelding";
@@ -3148,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Administrer vinduer om informasjonskapsler";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Slett faner og data";
+
 /* Settings title for the customize section */
 "settings.customize" = "Tilpass";
 
@@ -3165,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardnettleser";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Slett Duck.ai-chatter";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Slett faner og data";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Deaktiver automatisk utfylling for Email Protection";
@@ -3370,6 +3415,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synkronisering og sikkerhetskopiering";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Vis i fanebehandleren";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Faner";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Standard tekstzoom";
 
@@ -3378,6 +3429,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Innstillinger";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animasjon av blokkerte sporere";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Hjelper med å blokkere tredjepartssporere som prøver å skjule seg på et nettsted ved hjelp av DNS.";
@@ -3619,11 +3673,11 @@
 /* Help and support Section header */
 "subscription.help" = "Hjelp og kundestøtte";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Administrer abonnement";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Administrer betaling eller si opp";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Administrer abonnement";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonnement";
@@ -3787,6 +3841,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Sett opp synkronisering";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synkroniser og sikkerhetskopier kredittkortene dine";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synkroniser og sikkerhetskopier dataene dine";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nei takk";
 
@@ -3876,6 +3936,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Bokmerk alle fanene";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Skjul";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Du kan slå på dette igjen i Innstillinger > Utseende.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Vil du skjule antall sporere?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Alternativer for visning av antall sporere";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Dobbelttrykk for å vise alternativer for skjuling av dette banneret";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Behold";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "de siste 7 dagene";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Øk eller reduser tekststørrelsen på alle nettsteder.";
@@ -4261,15 +4345,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Faner";
-"settings.tab.switcher.show.tracker.count" = "Trackerantall de siste 7 dagene";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "de siste 7 dagene";
-"tab.switcher.tracker.count.hide.title" = "Skjul trackerantall?";
-"tab.switcher.tracker.count.hide.message" = "Du kan slå dette på igjen i Innstillinger > Utseende.";
-"tab.switcher.tracker.count.hide.action" = "Skjul";
-"tab.switcher.tracker.count.keep.action" = "Behold";
-"tab.switcher.tracker.count.info.a11y" = "Alternativer for trackerantall";
-"tab.switcher.tracker.count.info.hint.a11y" = "Dobbelttrykk for å vise alternativer for å skjule dette banneret";

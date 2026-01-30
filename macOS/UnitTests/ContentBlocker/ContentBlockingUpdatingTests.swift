@@ -45,7 +45,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
         let windowControllersManager = WindowControllersManagerMock()
         let startupPreferences = StartupPreferences(

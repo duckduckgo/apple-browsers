@@ -103,7 +103,15 @@ final class AppDependencyProvider: DependencyProvider {
     let wideEvent: WideEventManaging
 
     private init() {
-        let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!,
+        let featureFlagOverrideStore = UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!
+
+        // Apply UI test overrides
+        LaunchOptionsHandler().applyUITestOverrides(
+            featureFlagOverrideStore: featureFlagOverrideStore,
+            configRolloutStore: .standard
+        )
+
+        let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: featureFlagOverrideStore,
                                                                 actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
         )
         let experimentManager = ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:))

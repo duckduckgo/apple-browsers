@@ -143,7 +143,7 @@ class CapturingVariantManager: VariantManager {
     }
 }
 
-class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProvider {
+class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
     var homeDialog: DaxDialogs.HomeScreenSpec?
     var onDismiss: ((_ activateSearch: Bool) -> Void)?
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {

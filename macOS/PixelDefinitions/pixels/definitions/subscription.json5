@@ -304,7 +304,7 @@
                 "enum": ["subscription-purchase"]
             },
             {
-                "key": "feature.status_reason",
+                "key": "feature.data.ext.status_reason",
                 "type": "string",
                 "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels",
                 "enum": ["partial_data", "missing_entitlements", "missing_entitlements_delayed_activation"]
@@ -397,7 +397,7 @@
                 "enum": ["subscription-restore"]
             },
             {
-                "key": "feature.status_reason",
+                "key": "feature.data.ext.status_reason",
                 "type": "string",
                 "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels",
                 "enum": ["partial_data", "timeout"]
@@ -476,7 +476,7 @@
                 "enum": ["authv2-token-refresh"]
             },
             {
-                "key": "feature.status_reason",
+                "key": "feature.data.ext.status_reason",
                 "type": "string",
                 "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status events",
                 "enum": ["partial_data"]
@@ -537,7 +537,7 @@
                 "enum": ["subscription-plan-change"]
             },
             {
-                "key": "feature.status_reason",
+                "key": "feature.data.ext.status_reason",
                 "type": "string",
                 "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN and SUCCESS status pixels",
                 "enum": ["partial_data", "missing_entitlements", "missing_entitlements_delayed_activation"]
@@ -626,7 +626,7 @@
                 "enum": ["authv2-token-adoption"]
             },
             {
-                "key": "feature.status_reason",
+                "key": "feature.data.ext.status_reason",
                 "type": "string",
                 "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status events",
                 "enum": ["partial_data"]

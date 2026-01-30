@@ -266,7 +266,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .subscription:
             return subscriptionCardVisibilityManager.shouldShowSubscriptionCard
         case .personalizeBrowser:
-            return !appearancePreferences.didOpenCustomizationSettings
+            return !appearancePreferences.didChangeAnyNewTabPageCustomizationSetting
         case .sync:
             return syncService?.featureFlags.contains(.all) == true && syncService?.authState == .inactive
         }
@@ -301,16 +301,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
     }
 
     func observeCardVisibilityChanges() {
-        subscriptionCardVisibilityManager.shouldShowSubscriptionCardPublisher
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshCardList()
-            }
-            .store(in: &cancellables)
-
-        appearancePreferences.$didOpenCustomizationSettings
-            .removeDuplicates()
+        subscriptionCardVisibilityManager.shouldShowSubscriptionCardPublisher.removeDuplicates()
+            .combineLatest(appearancePreferences.$didChangeAnyNewTabPageCustomizationSetting.removeDuplicates())
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshCardList()

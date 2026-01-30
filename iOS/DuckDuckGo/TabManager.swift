@@ -35,6 +35,7 @@ protocol TabManaging {
     @MainActor func prepareAllTabsExceptCurrentForDataClearing()
     @MainActor func prepareCurrentTabForDataClearing()
     func removeAll()
+    @MainActor func viewModelForCurrentTab() -> TabViewModel?
 }
 
 class TabManager: TabManaging {
@@ -228,6 +229,12 @@ class TabManager: TabManaging {
         } else {
             return TabViewModel(tab: tab, historyManager: historyManager)
         }
+    }
+
+    @MainActor
+    func viewModelForCurrentTab() -> TabViewModel? {
+        guard let tab = model.currentTab else { return nil }
+        return viewModel(for: tab)
     }
 
     var isEmpty: Bool {

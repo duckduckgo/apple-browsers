@@ -42,7 +42,7 @@ final class AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
     var didDismissHomePagePromotion: Bool
     var showTabsAndBookmarksBarOnFullScreen: Bool
     var syncAppIconWithTheme: Bool
-    var didOpenCustomizationSettings: Bool
+    var didChangeAnyNewTabPageCustomizationSetting: Bool
 
     init(
         showFullURL: Bool = false,
@@ -65,7 +65,7 @@ final class AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
         didDismissHomePagePromotion: Bool = true,
         showTabsAndBookmarksBarOnFullScreen: Bool = false,
         syncAppIconWithTheme: Bool = false,
-        didOpenCustomizationSettings: Bool = false
+        didChangeAnyNewTabPageCustomizationSetting: Bool = false
     ) {
         self.showFullURL = showFullURL
         self.themeAppearance = themeAppearance
@@ -87,7 +87,7 @@ final class AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
         self.didDismissHomePagePromotion = didDismissHomePagePromotion
         self.showTabsAndBookmarksBarOnFullScreen = showTabsAndBookmarksBarOnFullScreen
         self.syncAppIconWithTheme = syncAppIconWithTheme
-        self.didOpenCustomizationSettings = didOpenCustomizationSettings
+        self.didChangeAnyNewTabPageCustomizationSetting = didChangeAnyNewTabPageCustomizationSetting
     }
 }
 #endif

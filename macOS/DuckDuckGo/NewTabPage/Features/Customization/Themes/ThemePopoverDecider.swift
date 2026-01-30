@@ -43,10 +43,7 @@ final class ThemePopoverDecider: ThemePopoverDeciding {
     private var persistor: ThemePopoverPersistor
 
     var shouldShowPopover: Bool {
-        featureFlagger.isFeatureOn(.themes)
-            && appearancePreferences.themeName == .default
-            && persistor.themePopoverShown == false
-            && firstLaunchDate.daysSinceNow() >= 2
+        false
     }
 
     init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, firstLaunchDate: Date, persistor: ThemePopoverPersistor) {

@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Onayla";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Bağlamsal İlk Katılım";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Atla";
 
@@ -2929,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Sekmeleri ve site verilerini silmek mi istiyorsunuz?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Sekmeleri, site verilerini ve sohbetleri silmek mi istiyorsunuz?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Tümünü Sil";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Bu Sekmeyi Sil";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "\"Bu sekmeyi sil\" seçeneği, bu Duck.ai sohbetini ve bu sekmede ziyaret edilen sitelere ait tüm site verilerini siler.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Bu işlem devam eden indirmeleri iptal edecektir.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Oluşturduğunuz yeni sekmeleri tek tek silebilirsiniz.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Site verilerini silmek, hesaplarınızdan çıkış yapmanıza neden olabilir.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Adres ara veya gir";
 
@@ -2974,6 +3001,9 @@
 /* about tagline */
 "settings.about.tagline" = "Koruma. Gizlilik. İçiniz rahat olsun.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo, kişisel bilgilerinin kontrolünü geri almak isteyen herkes için bağımsız bir online koruma şirketidir.\n\nKişisel bilgilerinizi bilgisayar korsanlarından, dolandırıcılardan ve gizliliğinizi ihlal eden şirketlerden korumanın en iyi yolunun, bu bilgilerin toplanmasını tamamen durdurmak olduğuna inanıyoruz. Bu yüzden milyonlarca insan internette arama yapmak ve gezinmek için [Chrome ve diğer tarayıcılar yerine DuckDuckGo'yu tercih ediyor](ddgQuickLink://duckduckgo.com/compare-privacy). Yerleşik arama motorumuz Google gibidir ancak aramalarınızı asla izlemez. Reklam izleyici ve çerezleri engelleme gibi tarama korumalarımız, diğer şirketlerin verilerinizi toplamasını önlemeye de yardımcı olur. Ayrıca, tarayıcımız ücretsizdir. Verilerinizi kullanarak değil, [gizliliğe saygılı arama reklamlarından](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/) para kazanıyoruz. \n\n%@ \n\nVeri koruma için tasarlanmış, veri toplama amacı gütmeyen tarayıcıyla kişisel bilgilerinizin kontrolünü geri alın.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Erişilebilirlik";
 
@@ -2992,8 +3022,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Tam Site Adresini Göster";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Engellenen İzleyiciler Animasyonunu Göster";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Adres Çubuğunda Göster";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Arama ve Duck.ai";
@@ -3118,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Touch ID, Face ID veya sistem parolası etkinleştirilmişse, uygulamayı açtığınızda kilidi açmanız istenir.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Sil";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Otomatik Veri Temizleme";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Verileri Otomatik Olarak Sil";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Tarayıcı Geri Bildirimi";
@@ -3148,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Çerez Açılır Pencerelerini Yönetin";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Sekmeleri ve Verileri Sil";
+
 /* Settings title for the customize section */
 "settings.customize" = "Özelleştir";
 
@@ -3165,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Varsayılan Tarayıcı";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Duck.ai Sohbetlerini Sil";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Sekmeleri ve Verileri Sil";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Email Protection Otomatik Doldurmayı Devre Dışı Bırak";
@@ -3370,6 +3415,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Senkronizasyon ve Yedekleme";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Sekme Yöneticisinde Göster";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Sekmeler";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Varsayılan Metin Yakınlaştırma";
 
@@ -3378,6 +3429,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Ayarlar";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Engellenen İzleyiciler Animasyonu";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "DNS kullanarak bir web sitesinde kendilerini gizlemeye çalışan üçüncü taraf izleyicileri engellemeye yardımcı olur.";
@@ -3619,11 +3673,11 @@
 /* Help and support Section header */
 "subscription.help" = "Yardım ve Destek";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Planı Yönetin";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Ödemeyi Yönetin veya İptal Edin";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Planı Yönetin";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonelik";
@@ -3722,13 +3776,13 @@
 "subscription.subscription.expiring.yearly.caption" = "Yıllık aboneliğiniz %@ tarihinde sona erecek.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
-"subscription.subscription.pending.downgrade.monthly.caption" = "Planınız %2$@  tarihinde %1$@ Aylık plana düşürülecek.";
+"subscription.subscription.pending.downgrade.monthly.caption" = "Planınız %2$@ tarihinde %1$@ Aylık plana düşürülecek.";
 
 /* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
-"subscription.subscription.pending.downgrade.unknown.caption" = "Planınız %2$@  tarihinde %1$@ planına düşürülecek.";
+"subscription.subscription.pending.downgrade.unknown.caption" = "Planınız %2$@ tarihinde %1$@ planına düşürülecek.";
 
 /* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
-"subscription.subscription.pending.downgrade.yearly.caption" = "Planınız %2$@  tarihinde %1$@ Yıllık planına düşürülecek.";
+"subscription.subscription.pending.downgrade.yearly.caption" = "Planınız %2$@ tarihinde %1$@ Yıllık planına düşürülecek.";
 
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Aylık aboneliğiniz %@ tarihinde yenilenecek.";
@@ -3786,6 +3840,12 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Senkronizasyonu Ayarla";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Kredi Kartlarınızı Senkronize Edin ve Yedekleyin";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Verilerinizi Senkronize Edin ve Yedekleyin";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Hayır Teşekkürler";
@@ -3876,6 +3936,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Tüm Sekmelere Yer İşareti Ekle";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Gizle";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Bunu Ayarlar > Görünüm'den tekrar açabilirsiniz.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "İzleyici Sayısı Gizlensin mi?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "İzleyici sayım seçenekleri";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Bu banner'ı saklamak için seçenekleri göstermek için iki kez dokunun";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Gizleme";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "son 7 günde";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Tüm sitelerde metin boyutunu artırın veya azaltın.";
@@ -4261,15 +4345,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Sekmeler";
-"settings.tab.switcher.show.tracker.count" = "7 Günlük İzleyici Sayısı";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "son 7 günde";
-"tab.switcher.tracker.count.hide.title" = "İzleyici sayısı gizlensin mi?";
-"tab.switcher.tracker.count.hide.message" = "Bunu Ayarlar > Görünüm bölümünden tekrar açabilirsiniz.";
-"tab.switcher.tracker.count.hide.action" = "Gizle";
-"tab.switcher.tracker.count.keep.action" = "Koru";
-"tab.switcher.tracker.count.info.a11y" = "İzleyici sayısı seçenekleri";
-"tab.switcher.tracker.count.info.hint.a11y" = "Bu başlığı gizleme seçeneklerini göstermek için iki kez dokunun";

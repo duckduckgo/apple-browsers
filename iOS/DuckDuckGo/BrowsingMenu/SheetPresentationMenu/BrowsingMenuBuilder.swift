@@ -90,6 +90,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         // MARK: Privacy group
         let privacyItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeVPNEntry()),
+            .init(entryBuilder.makeUseNewDuckAddressEntry()),
             .init(entryBuilder.makeClearDataEntry(mobileCustomization: mobileCustomization, clearTabsAndData: clearTabsAndData))
         ].compactMap { $0 }
 
@@ -100,8 +101,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         return BrowsingMenuModel(
             headerItems: headerItems,
-            sections: sections,
-            footerItems: []
+            sections: sections
         )
     }
 
@@ -196,8 +196,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         return BrowsingMenuModel(
             headerItems: headerItems,
-            sections: sections,
-            footerItems: []
+            sections: sections
         )
     }
 }

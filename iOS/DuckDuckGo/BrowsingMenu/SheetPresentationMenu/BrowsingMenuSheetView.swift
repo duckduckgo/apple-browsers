@@ -381,7 +381,7 @@ private struct BrowsingMenuHeaderView: View {
 
             closeButton
         }
-        .padding(.vertical, MenuHeaderConstant.bottomPadding)
+        .padding(.bottom, MenuHeaderConstant.bottomPadding)
         .frame(maxWidth: .infinity)
     }
 

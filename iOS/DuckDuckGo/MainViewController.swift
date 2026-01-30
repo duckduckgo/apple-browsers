@@ -1271,12 +1271,26 @@ class MainViewController: UIViewController {
     func onForeground() {
         fireExperimentalAddressBarPixel()
         fireKeyboardSettingsPixels()
+        fireTemporaryTelemetryPixels()
         skipSERPFlow = true
         
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.
         if daxDialogsManager.shouldShowFireButtonPulse && !daxDialogsManager.shouldShowPrivacyButtonPulse {
             showFireButtonPulse()
         }
+    }
+
+    private func fireTemporaryTelemetryPixels() {
+        // Sent as individual pixels to avoid creating parameter combinations that can identify users
+        let fireButtonAnim = appSettings.currentFireButtonAnimation.rawValue
+        DailyPixel.fireDaily(.temporaryTelemetrySettingsClearDataAnimation(animation: fireButtonAnim))
+
+        let customizationState = mobileCustomization.state
+        let addressBarButton = customizationState.currentAddressBarButton.rawValue
+        DailyPixel.fireDaily(.temporaryTelemetrySettingsCustomizedAddressBarButton(button: addressBarButton))
+
+        let toolbarButton = customizationState.currentToolbarButton.rawValue
+        DailyPixel.fireDaily(.temporaryTelemetrySettingsCustomizedToolbarButton(button: toolbarButton))
     }
 
     /// Represents the policy for reusing existing tabs for a query or URL being opened.
@@ -4232,6 +4246,15 @@ extension MainViewController: MessageNavigationDelegate {
                 return
             }
             viewController.show(dataImportVC, sender: nil)
+        }
+    }
+
+    func segueToPIR(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToPIRWithSubscriptionCheck()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
         }
     }
 

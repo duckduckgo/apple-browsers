@@ -24,6 +24,7 @@ import WebKit
 
 public protocol HistoryCleaning {
     @MainActor func cleanAIChatHistory() async -> Result<Void, Error>
+    @MainActor func deleteAIChat(chatID: String) async -> Result<Void, Error>
 }
 
 public final class HistoryCleaner: HistoryCleaning {
@@ -50,13 +51,26 @@ public final class HistoryCleaner: HistoryCleaning {
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
             Task { @MainActor in
-                await self.processAllDomains()
+                await self.processAllDomains(chatID: nil)
+            }
+        }
+    }
+
+    /// Launches a headless web view to clear a single Duck.ai chat with a C-S-S feature.
+    @MainActor
+    public func deleteAIChat(chatID: String) async -> Result<Void, Error> {
+        guard webView == nil else { return .success(()) }
+
+        return await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            Task { @MainActor in
+                await self.processAllDomains(chatID: chatID)
             }
         }
     }
 
     @MainActor
-    private func processAllDomains() async {
+    private func processAllDomains(chatID: String?) async {
         do {
             try setupWebView()
             for domain in URL.aiChatDomains {
@@ -67,7 +81,7 @@ public final class HistoryCleaner: HistoryCleaning {
                     return
                 }
 
-                let clearingResult = await executeClearingScript()
+                let clearingResult = await executeClearingScript(chatID: chatID)
 
                 guard case .success = clearingResult else {
                     finish(result: clearingResult)
@@ -168,12 +182,12 @@ public final class HistoryCleaner: HistoryCleaning {
     // MARK: - Script Execution
 
     @MainActor
-    private func executeClearingScript() async -> Result<Void, Error> {
+    private func executeClearingScript(chatID: String?) async -> Result<Void, Error> {
         guard let script = aiChatDataClearingUserScript else {
             return .failure(HistoryCleanerError.scriptNotInitialized)
         }
 
-        return await script.clearAIChatDataAsync(timeout: 5)
+        return await script.clearAIChatDataAsync(chatID: chatID, timeout: 5)
     }
 
     // MARK: - Cleanup

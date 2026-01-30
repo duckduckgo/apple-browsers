@@ -223,8 +223,7 @@ build_direct_deps_map() {
     local path="$1"
     local roots=()
 
-    # Clear file
-    > "$DIRECT_DEPS_FILE"
+    rm -rf "$DIRECT_DEPS_FILE"
 
     while IFS= read -r root; do
         [[ -n "$root" ]] && roots+=("$root")
@@ -361,7 +360,7 @@ parse_resolved_files() {
     local files="$1"
     local output_file="$2"
 
-    > "$output_file"
+    rm -rf "$output_file"
 
     echo "$files" | while IFS= read -r file; do
         [[ -z "$file" ]] && continue
@@ -416,7 +415,7 @@ main() {
     parse_resolved_files "$resolved_files" "$RESOLVED_PKGS_FILE"
 
     # Filter to direct dependencies only
-    > "$FILTERED_PKGS_FILE"
+    rm -rf "$FILTERED_PKGS_FILE"
     if [[ "$SHOW_ALL" == true ]]; then
         cp "$RESOLVED_PKGS_FILE" "$FILTERED_PKGS_FILE"
     else
@@ -456,7 +455,7 @@ main() {
     fi
 
     local json_first=true
-    > "$UPDATE_TYPES_FILE"
+    rm -rf "$UPDATE_TYPES_FILE"
 
     if [[ "$JSON_OUTPUT" == true ]]; then
         echo "{"
@@ -492,7 +491,7 @@ main() {
                 comma=","
             fi
             local projects_json
-            projects_json=$(echo "$projects" | sed 's/,/","/g')
+            projects_json=${projects//,/\",\"}
             echo "    ${comma}{\"name\":\"$name\",\"url\":\"$url\",\"current\":\"$current\",\"latest\":\"$latest_display\",\"update_type\":\"$update_type\",\"projects\":[\"$projects_json\"]}"
             json_first=false
         else

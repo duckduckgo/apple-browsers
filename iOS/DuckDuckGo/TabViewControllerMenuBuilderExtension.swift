@@ -286,7 +286,7 @@ extension TabViewController {
             entries.append(entry)
         }
 
-        if let entry = self.buildUseNewDuckAddressEntry(forLink: link) {
+        if let entry = self.buildUseNewDuckAddressEntry() {
             entries.append(entry)
         }
 
@@ -294,7 +294,7 @@ extension TabViewController {
             entries.append(buildReloadEntry())
         }
 
-        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: true) {
+        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: true, percentageInDetail: false) {
             entries.append(entry)
         }
 
@@ -310,7 +310,7 @@ extension TabViewController {
 
         var entries = [BrowsingMenuEntry]()
 
-        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon) {
+        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon, percentageInDetail: false) {
             entries.append(entry)
         }
 
@@ -396,8 +396,8 @@ extension TabViewController {
         })
     }
     
-    private func buildZoomEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
-        return textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon)
+    private func buildZoomEntry(forLink link: Link, useSmallIcon: Bool = true, useDetailText: Bool = false) -> BrowsingMenuEntry? {
+        return textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon, percentageInDetail: useDetailText)
     }
     
     private func buildReloadEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
@@ -574,13 +574,16 @@ extension TabViewController {
         })
     }
     
-    private func buildUseNewDuckAddressEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
-        guard emailManager?.isSignedIn == true else { return nil }
+    private func buildUseNewDuckAddressEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
+        guard delegate?.isEmailProtectionSignedIn == true else { return nil }
+
         let title = UserText.emailBrowsingMenuUseNewDuckAddress
-        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.email : DesignSystemImages.Glyphs.Size24.email
+        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.email : DesignSystemImages.Glyphs.Size24.emailProtection
 
         return BrowsingMenuEntry.regular(name: title, image: image) { [weak self] in
-            (self?.parent as? MainViewController)?.newEmailAddress()
+            guard let self, let delegate = self.delegate else { return }
+
+            delegate.tabDidRequestNewPrivateEmailAddress(tab: self)
             Pixel.fire(pixel: .browsingMenuNewDuckAddress)
         }
     }
@@ -759,12 +762,13 @@ extension TabViewController {
         })
     }
 
-    private func buildVPNEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+    private func buildVPNEntry(useSmallIcon: Bool = true, showStatusStringInDetail: Bool = false) -> BrowsingMenuEntry {
         let vpnPromoHelper = VPNSubscriptionPromotionHelper()
         var image: UIImage = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOff : DesignSystemImages.Glyphs.Size24.vpnUnlocked
         var showNotificationDot: Bool = true
         var customDotColor: UIColor?
         var accessibilityLabel: String?
+        var detailText: String?
 
         switch vpnPromoHelper.subscriptionPromoStatus {
         case .promo:
@@ -776,9 +780,11 @@ extension TabViewController {
                 image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOn : DesignSystemImages.Glyphs.Size24.vpn
                 accessibilityLabel = "\(UserText.actionVPN), \(UserText.settingsOn)"
                 customDotColor = UIColor(designSystemColor: .alertGreen)
+                detailText = UserText.settingsOn
             } else {
                 accessibilityLabel = "\(UserText.actionVPN), \(UserText.settingsOff)"
                 customDotColor = UIColor(designSystemColor: .textSecondary).withAlphaComponent(0.33)
+                detailText = UserText.settingsOff
             }
         }
 
@@ -786,7 +792,8 @@ extension TabViewController {
                                          accessibilityLabel: accessibilityLabel,
                                          image: image,
                                          showNotificationDot: showNotificationDot,
-                                         customDotColor: customDotColor) { [weak self] in
+                                         customDotColor: customDotColor,
+                                         detailText: showStatusStringInDetail ? detailText : nil) { [weak self] in
             self?.onOpenVPNAction(with: vpnPromoHelper)
             Pixel.fire(pixel: .browsingMenuVPN)
         }
@@ -897,7 +904,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
               AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable else {
             return nil
         }
-        return buildVPNEntry(useSmallIcon: false)
+        return buildVPNEntry(useSmallIcon: false, showStatusStringInDetail: true)
     }
     
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? {
@@ -917,7 +924,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     
     func makeZoomEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
-        return buildZoomEntry(forLink: link, useSmallIcon: false)
+        return buildZoomEntry(forLink: link, useSmallIcon: false, useDetailText: true)
     }
     
     func makeReloadEntry() -> BrowsingMenuEntry? {
@@ -936,8 +943,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry? {
-        guard let link = validLink else { return nil }
-        return buildUseNewDuckAddressEntry(forLink: link, useSmallIcon: false)
+        return buildUseNewDuckAddressEntry(useSmallIcon: false)
     }
     
     func makeKeepSignInEntry() -> BrowsingMenuEntry? {

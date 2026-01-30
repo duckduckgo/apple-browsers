@@ -37,7 +37,10 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     @MainActor
     override func setUp() async throws {
         featureFlagger = MockFeatureFlagger()
-        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: featureFlagger)
+        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(),
+                                                      privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                      featureFlagger: featureFlagger,
+                                                      aiChatMenuConfig: MockAIChatConfig())
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
         openFilePanelCalls = 0
@@ -191,7 +194,10 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     func testThatThemeVariantGetterReturnsSelectedThemeNameDuringInitialization() {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.themes]
-        let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: featureFlagger)
+        let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(),
+                                                          privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                          featureFlagger: featureFlagger,
+                                                          aiChatMenuConfig: MockAIChatConfig())
         appearancePreferences.themeName = .violet
 
         let customizationModel = NewTabPageCustomizationModel(

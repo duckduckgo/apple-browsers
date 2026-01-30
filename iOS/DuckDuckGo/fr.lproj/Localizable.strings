@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Confirmer";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Processus d'intégration contextuel";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Ignorer";
 
@@ -2929,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Supprimer les onglets et les données du site ?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Supprimer les onglets, les données du site et les discussions ?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Tout supprimer";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Supprimer cet onglet";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "« Supprimer cet onglet » efface ce chat Duck.ai ainsi que toutes les données des sites visités dans cet onglet.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Cela annulera les téléchargements en cours.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Les nouveaux onglets que vous créez peuvent aussi être supprimés individuellement.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "La suppression des données de site peut vous déconnecter des comptes.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Rechercher ou saisir une adresse";
 
@@ -2974,6 +3001,9 @@
 /* about tagline */
 "settings.about.tagline" = "Protection. Confidentialité. Tranquillité d'esprit.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo est l'entreprise indépendante de protection en ligne pour tous ceux qui veulent reprendre le contrôle de leurs informations personnelles.\n\nNous croyons que la meilleure façon de protéger vos informations personnelles contre les pirates, les escrocs et les entreprises qui portent atteinte à la vie privée est d'empêcher purement et simplement leur collecte. C'est pour cette raison que des millions de personnes [choisissent DuckDuckGo plutôt que Chrome ou d'autres navigateurs](ddgQuickLink://duckduckgo.com/compare-privacy) pour effectuer leurs recherches et naviguer en ligne. Notre moteur de recherche intégré est similaire à Google, sauf qu'il ne suit jamais vos recherches. Et nos protections de navigation, telles que le blocage des traqueurs publicitaires et le blocage des cookies, permettent d'empêcher que d'autres entreprises ne recueillent vos données. Et surtout, notre navigateur est gratuit : nous gagnons de l'argent grâce aux [publicités de recherche respectueuses de la confidentialité](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), et non grâce à l'exploitation de vos données. \n\n%@ \n\nReprenez le contrôle de vos informations personnelles avec le navigateur conçu pour la protection des données, pas pour leur collecte.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Accessibilité";
 
@@ -2992,8 +3022,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Afficher l'adresse complète du site";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Afficher l'animation des traqueurs bloqués";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Afficher dans la barre d'adresse";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Recherche et Duck.ai";
@@ -3118,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Si Touch ID, Face ID ou un code d'accès au système est activé, il vous sera demandé de déverrouiller l'application lors de son ouverture.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Supprimer";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Effacement automatique des données";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Supprimer automatiquement les données";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Commentaires sur le navigateur";
@@ -3148,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Gérer les fenêtres contextuelles (cookies)";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Supprimer les onglets et les données";
+
 /* Settings title for the customize section */
 "settings.customize" = "Personnaliser";
 
@@ -3165,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Navigateur par défaut";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Supprimer les chats Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Supprimer les onglets et les données";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Désactiver la saisie automatique Email Protection";
@@ -3370,6 +3415,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synchronisation et sauvegarde";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Afficher dans le Gestionnaire d'onglets";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Onglets";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Zoom par défaut du texte";
 
@@ -3378,6 +3429,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Paramètres";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animation des traqueurs bloqués";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Permet de bloquer les traqueurs tiers qui tentent de se dissimuler sur un site Web à l'aide du DNS.";
@@ -3619,11 +3673,11 @@
 /* Help and support Section header */
 "subscription.help" = "Aide et assistance";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Gérer le forfait";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Gérer le paiement ou annuler";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Gérer le forfait";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonnement";
@@ -3787,6 +3841,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Configurer la synchronisation";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synchronisez et sauvegardez vos cartes bancaires";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synchronisez et sauvegardez vos données";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Non merci";
 
@@ -3876,6 +3936,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Ajouter tous les onglets aux signets";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Masquer";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Vous pouvez réactiver cette option dans Paramètres > Apparence.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Masquer le nombre de traqueurs ?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Options de comptage des traqueurs";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Tapez deux fois pour afficher les options permettant de masquer cette bannière";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Conserver";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "au cours des 7 derniers jours";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Augmentez ou diminuez la taille du texte sur tous les sites.";
@@ -4261,15 +4345,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Que voulez-vous importer ?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Onglets";
-"settings.tab.switcher.show.tracker.count" = "Nombre de traqueurs sur 7 jours";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "au cours des 7 derniers jours";
-"tab.switcher.tracker.count.hide.title" = "Masquer le nombre de traqueurs ?";
-"tab.switcher.tracker.count.hide.message" = "Vous pouvez le réactiver dans Réglages > Apparence.";
-"tab.switcher.tracker.count.hide.action" = "Masquer";
-"tab.switcher.tracker.count.keep.action" = "Conserver";
-"tab.switcher.tracker.count.info.a11y" = "Options du nombre de traqueurs";
-"tab.switcher.tracker.count.info.hint.a11y" = "Touchez deux fois pour afficher les options de masquage de cette bannière";

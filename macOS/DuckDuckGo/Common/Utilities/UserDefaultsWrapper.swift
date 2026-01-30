@@ -258,9 +258,6 @@ extension UserDefaults {
         case lastBrokenSiteToastShownDate = "brokenSitePrompt.last-broken-site-toast-shown-date"
         case toastDismissStreakCounter = "brokenSitePrompt.toast-dismiss-streak-counter"
 
-        // Web Extensions
-        case webExtensionStoredPaths = "com.duckduckgo.web.extension.stored-paths"
-
         // SAD/ATT Debug
         case debugSetDefaultAndAddToDockPromptCurrentDateKey = "com.duckduckgo.ios.debug.setDefaultAndAddToDockPromptCurrentDate"
         case debugSetDefaultAndAddToDockPromptInstallDateKey = "com.duckduckgo.debug.setDefaultAndAddToDockPromptInstallDate"

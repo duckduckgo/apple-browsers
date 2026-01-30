@@ -147,7 +147,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if aiChatHistoryManager == nil && featureFlagger.isFeatureOn(.aiChatSuggestions) {
+        if aiChatHistoryManager == nil && featureFlagger.isFeatureOn(.aiChatSuggestions) && appSettings.autocomplete {
             installChatHistoryList()
         }
 
@@ -310,11 +310,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func installChatHistoryList() {
         guard let swipeContainerManager else { return }
 
-        let suggestionsReader = AIChatSuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+        let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+        let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+        let suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
 
         let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                            aiChatSettings: aiChatSettings,
-                                           viewModel: AIChatSuggestionsViewModel())
+                                           viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
         manager.delegate = self
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)

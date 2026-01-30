@@ -80,6 +80,9 @@ extension DebugScreensViewModel {
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
             }),
+            .view(title: "UI Test Overrides", { _ in
+                UITestOverridesDebugView()
+            }),
             .view(title: "ContentScope Experiments", { _ in
                 ContentScopeExperimentsDebugView()
             }),
@@ -222,10 +225,25 @@ extension DebugScreensViewModel {
                     }
                 }
 
+                let isOnboardingRebranding = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.onboardingRebranding)
+
                 weak var capturedController: OnboardingDebugViewController?
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView {
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(isRebrandingFlow: isOnboardingRebranding) {
                     guard let capturedController else { return }
-                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter(), systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager, daxDialogsManager: d.daxDialogManager)
+
+                    let controller: Onboarding = if isOnboardingRebranding {
+                        OnboardingIntroViewController.rebranded(
+                            onboardingPixelReporter: OnboardingPixelReporter(),
+                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                            daxDialogsManager: d.daxDialogManager
+                        )
+                    } else {
+                        OnboardingIntroViewController.legacy(
+                            onboardingPixelReporter: OnboardingPixelReporter(),
+                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                            daxDialogsManager: d.daxDialogManager
+                        )
+                    }
                     controller.delegate = capturedController
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)

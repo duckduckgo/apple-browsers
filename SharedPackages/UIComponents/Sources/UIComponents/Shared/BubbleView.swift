@@ -329,7 +329,7 @@ public struct BubbleView<Content: View>: View {
     let fillColor: Color
     let borderColor: Color
     let borderWidth: CGFloat
-    let paddingAmount: CGFloat // Padding around the content
+    let contentPadding: EdgeInsets // Padding around the content
 
     // Internal bubble shape instance
     private var bubbleShape: Bubble {
@@ -346,7 +346,7 @@ public struct BubbleView<Content: View>: View {
     public var body: some View {
         content
             // Add padding around the content BEFORE applying background/overlay
-            .padding(paddingAmount)
+            .padding(contentPadding)
             // Apply the bubble shape as the background (fill)
             .background(
                 bubbleShape.fill(fillColor)
@@ -408,7 +408,7 @@ public struct BubbleView<Content: View>: View {
      ///   - fillColor: Background color of the bubble.
      ///   - borderColor: Color of the bubble's border.
      ///   - borderWidth: Width of the bubble's border.
-     ///   - paddingAmount: Padding between the content and the bubble edge. Defaults to 10.
+     ///   - contentPadding: Padding between the content and the bubble edge. Defaults to 10 on all edges.
      ///   - content: A closure returning the View to display inside the bubble.
      public init(
          arrowLength: CGFloat = 15,
@@ -422,7 +422,7 @@ public struct BubbleView<Content: View>: View {
          fillColor: Color = .blue,
          borderColor: Color = .clear,
          borderWidth: CGFloat = 0,
-         paddingAmount: CGFloat = 10,
+         contentPadding: EdgeInsets = EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10),
          @ViewBuilder content: () -> Content
      ) {
          self.arrowLength = arrowLength
@@ -436,7 +436,7 @@ public struct BubbleView<Content: View>: View {
          self.fillColor = fillColor
          self.borderColor = borderColor
          self.borderWidth = borderWidth
-         self.paddingAmount = paddingAmount
+         self.contentPadding = contentPadding
          self.content = content()
      }
 }
@@ -452,7 +452,7 @@ struct BubbleView_Previews: PreviewProvider {
                 fillColor: .green,
                 borderColor: .black,
                 borderWidth: 1,
-                paddingAmount: 15
+                contentPadding: EdgeInsets(top: 15, leading: 15, bottom: 15, trailing: 15)
             ) {
                 Text("Hello, auto-sizing bubble!")
                     .foregroundColor(.white)

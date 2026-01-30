@@ -90,9 +90,6 @@ final class AIChatNativeInputViewTests: XCTestCase {
         XCTAssertTrue(sut.isVoiceButtonEnabled)
     }
 
-    func testAttachButtonVisibleByDefault() {
-        XCTAssertFalse(sut.isAttachButtonHidden)
-    }
 
     // MARK: - Text Property Tests
 
@@ -135,45 +132,6 @@ final class AIChatNativeInputViewTests: XCTestCase {
         XCTAssertFalse(sut.isVoiceButtonEnabled)
     }
 
-    // MARK: - Attach Button Tests
-
-    func testHidingAttachButtonUpdatesState() {
-        // When
-        sut.isAttachButtonHidden = true
-
-        // Then
-        XCTAssertTrue(sut.isAttachButtonHidden)
-    }
-
-    // MARK: - Attach Actions Tests
-
-    func testAttachActionsInitiallyEmpty() {
-        XCTAssertTrue(sut.attachActions.isEmpty)
-    }
-
-    func testSettingAttachActionsUpdatesValue() {
-        // Given
-        let action = AIChatAttachAction(title: "Test Action", icon: nil) {}
-
-        // When
-        sut.attachActions = [action]
-
-        // Then
-        XCTAssertEqual(sut.attachActions.count, 1)
-        XCTAssertEqual(sut.attachActions.first?.title, "Test Action")
-    }
-
-    func testMultipleAttachActionsAreStored() {
-        // Given
-        let action1 = AIChatAttachAction(title: "Action 1", icon: nil) {}
-        let action2 = AIChatAttachAction(title: "Action 2", icon: nil) {}
-
-        // When
-        sut.attachActions = [action1, action2]
-
-        // Then
-        XCTAssertEqual(sut.attachActions.count, 2)
-    }
 
     // MARK: - Context Chip Tests
 

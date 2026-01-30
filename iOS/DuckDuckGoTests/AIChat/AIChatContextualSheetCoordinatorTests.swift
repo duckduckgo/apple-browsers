@@ -80,9 +80,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             openSyncSettingsCallCount += 1
         }
 
+        var contextualChatURLUpdates: [URL?] = []
+
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
+            contextualChatURLUpdates.append(url)
         }
-        
+
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestOpenDownloadWithFileName fileName: String) {
         }
     }
@@ -332,7 +335,32 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
     }
 
+    // MARK: - Session Timer Tests
+
+
     // MARK: - Helpers
+
+    private func createMockWebViewController() async {
+        await sut.presentSheet(from: mockPresentingVC)
+        guard let sheetVC = mockPresentingVC.presentedVC as? AIChatContextualSheetViewController else {
+            XCTFail("Expected sheet to be presented")
+            return
+        }
+
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let mockWebVC = AIChatContextualWebViewController(
+            aiChatSettings: mockSettings,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: MockFeatureFlagger(),
+            downloadHandler: makeDownloadHandler(downloadsPath: tempDir),
+            getPageContext: { _ in nil },
+            pixelHandler: AIChatContextualModePixelHandler()
+        )
+
+        await sheetVC.delegate?.aiChatContextualSheetViewController(sheetVC, didCreateWebViewController: mockWebVC)
+    }
 
     private func makeTestContext(url: String = "https://example.com") -> AIChatPageContextData {
         AIChatPageContextData(

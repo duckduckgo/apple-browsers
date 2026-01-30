@@ -1283,9 +1283,14 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         XCTAssertNotNil(mockDelegate.eventInterceptor, "Event interceptor should be installed")
         _ = mockDelegate.eventInterceptor?.interceptor(mouseClick)
 
+        let interceptorResetExpectation = expectation(description: "Event interceptor reset")
+        mockDelegate.didResetInterceptor = {
+            interceptorResetExpectation.fulfill()
+        }
+
         // Wait for completion
         let decision = try await task.value(cancellingTaskOnTimeout: Constants.expectationTimeout)
-        await fulfillment(of: expectations2, timeout: Constants.expectationTimeout)
+        await fulfillment(of: expectations2 + [interceptorResetExpectation], timeout: Constants.expectationTimeout)
 
         // Then - should cancel
         XCTAssertEqual(decision, .cancel)
@@ -1296,7 +1301,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         ])
 
         // Verify event was reposted
-        XCTAssertNotNil(mockDelegate.eventInterceptor, "Event interceptor should be installed during waitingForSecondPress")
+        XCTAssertNil(mockDelegate.eventInterceptor, "Event interceptor should be reset after completion")
         XCTAssertEqual(mockDelegate.repostedEvents, [mouseClick], "Mouse event should be reposted exactly once")
 
         // Verify pixels were fired
@@ -2851,6 +2856,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
 @MainActor
 final class MockWarnBeforeQuitManagerDelegate: WarnBeforeQuitManagerDelegate {
     var eventInterceptor: (token: UUID, interceptor: ((NSEvent) -> NSEvent?))?
+    var didResetInterceptor: (() -> Void)?
 
     // Events that were passed through (reposted) by the interceptor
     var repostedEvents: [NSEvent] = []
@@ -2879,6 +2885,7 @@ final class MockWarnBeforeQuitManagerDelegate: WarnBeforeQuitManagerDelegate {
     func resetEventInterceptor(token: UUID?) {
         guard eventInterceptor?.token == token else { return }
         eventInterceptor = nil
+        didResetInterceptor?()
     }
 
     func nextEvent(matching mask: NSEvent.EventTypeMask, until expiration: Date?, inMode mode: RunLoop.Mode, dequeue: Bool) -> NSEvent? {

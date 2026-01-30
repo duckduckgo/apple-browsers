@@ -1178,7 +1178,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         applyPreferredTheme()
 
 #if APPSTORE
-        crashCollection.startAttachingCrashLogMessages { [weak self] pixelParameters, payloads, completion in
+        let sortKeys = !featureFlagger.isFeatureOn(.crashCollectionDisableKeysSorting)
+        let isCallStackLimitingEnabled = featureFlagger.isFeatureOn(.crashCollectionLimitCallStackTreeDepth)
+        let callStackDepthLimit: Int? = isCallStackLimitingEnabled ? 250 : nil
+
+        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: callStackDepthLimit, sortKeys: sortKeys) { [weak self] pixelParameters, payloads, completion in
 
             pixelParameters.forEach { parameters in
                 var params = parameters

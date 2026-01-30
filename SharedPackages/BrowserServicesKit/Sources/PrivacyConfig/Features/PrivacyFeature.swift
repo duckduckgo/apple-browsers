@@ -171,6 +171,14 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
     case memoryPressureReporting
+
+    /// Failsafe flag to bring back keys sorting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
+
+    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
+    case crashCollectionLimitCallStackTreeDepth
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

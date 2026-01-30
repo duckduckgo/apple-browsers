@@ -275,6 +275,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
+
+    /// Failsafe flag to bring back keys sorting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
+
+    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
+    case crashCollectionLimitCallStackTreeDepth
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -307,7 +315,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .warnBeforeQuit,
                 .wideEventPostEndpoint,
                 .memoryPressureReporting,
-                .themes:
+                .themes,
+                .crashCollectionDisableKeysSorting,
+                .crashCollectionLimitCallStackTreeDepth:
             true
         default:
             false
@@ -404,7 +414,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledDefaultBrowserAndDockPromptsInactiveUser,
                 .tabClosingEventRecreation,
-                .terminationDeciderSequence:
+                .terminationDeciderSequence,
+                .crashCollectionDisableKeysSorting,
+                .crashCollectionLimitCallStackTreeDepth:
             return false
         }
     }
@@ -569,6 +581,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
+        case .crashCollectionDisableKeysSorting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.disableKeysSorting))
+        case .crashCollectionLimitCallStackTreeDepth:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.limitCallStackTreeDepth))
         }
     }
 }

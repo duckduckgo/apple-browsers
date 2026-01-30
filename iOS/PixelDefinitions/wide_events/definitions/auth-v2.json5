@@ -16,11 +16,7 @@
                         "description": "The reason provided when the status is UNKNOWN",
                         "enum": ["partial_data"]
                     },
-                    "application_state": {
-                        "type": "string",
-                        "description": "Whether the app is in the foreground or background at the time of the refresh.",
-                        "enum": ["foreground", "background"]
-                    },
+                    "application_state": "foreground_background_state",
                     "refresh_trigger": {
                         "type": "string",
                         "description": "The reason for the refresh.",

@@ -60,7 +60,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.finishNavigation()
         detector.appDidEnterBackground()
 
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 0.5)
     }
 
     func test_invalidSequence_startThenLeaveApp_doesNotTriggerMitigation() {
@@ -74,7 +74,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.startNavigation()
         detector.appDidEnterBackground()
 
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 0.5)
     }
 
     func test_timeout_preventsMitigation() {
@@ -93,10 +93,10 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             timeoutExpectation.fulfill()
         }
-        wait(for: [timeoutExpectation], timeout: 5)
+        wait(for: [timeoutExpectation], timeout: 0.1)
         detector.appDidEnterBackground()
 
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func test_stateResetsAfterMitigation() {
@@ -138,7 +138,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "NSURLErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_wrongErrorCode_doesNotTriggerMitigation() {
@@ -153,7 +153,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 101))
         detector.appDidEnterBackground()
         
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_correctWebKitError102_triggersMitigation() {
@@ -185,9 +185,9 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
             detector.appDidEnterBackground()
         }
         
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: 1.0)
     }
-    
+
     // MARK: - User Interaction Invalidation Tests
     
     func test_userInteractionInvalidation_preventsDetection() {
@@ -203,7 +203,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_userInteractionAfterStart_preventsDetection() {
@@ -219,7 +219,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_userInteractionResetsState() {
@@ -250,7 +250,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.invalidateForUserInitiated() // User interacts after failure but before background
         detector.appDidEnterBackground()
 
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 0.5)
     }
     
     // MARK: - Edge Case Tests
@@ -268,7 +268,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_backgroundNotificationWithoutSequence_doesNotTriggerMitigation() {
@@ -281,7 +281,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         
         detector.appDidEnterBackground()
         
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_finishNavigationAfterStart_resetsState() {
@@ -315,7 +315,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.finishNavigation() // This should reset the state
         detector.appDidEnterBackground()
         
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 0.5)
     }
     
     // MARK: - Timeout Edge Cases

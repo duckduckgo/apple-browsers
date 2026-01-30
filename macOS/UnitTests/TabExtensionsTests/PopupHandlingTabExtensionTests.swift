@@ -527,7 +527,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait to ensure createChildTab is NOT called
-        wait(for: [permissionGrantedExpectation], timeout: 5)
+        wait(for: [permissionGrantedExpectation], timeout: 0.1)
     }
 
     @MainActor
@@ -605,7 +605,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
-        wait(for: [permissionCallbackExpectation], timeout: 5)
+        wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Second empty URL popup should be allowed without permission
         let secondAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
@@ -656,7 +656,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
-        wait(for: [permissionCallbackExpectation], timeout: 5)
+        wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Second popup with about: URL should be allowed without permission
         let secondAction = WKNavigationAction.mock(url: URL(string: "about:blank")!, webView: self.webView, isUserInitiated: false)
@@ -707,7 +707,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
-        wait(for: [permissionCallbackExpectation], timeout: 5)
+        wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Cross-origin popup should be allowed when feature is enabled
         let crossOriginAction = WKNavigationAction.mock(url: URL(string: "https://other-domain.com")!, webView: self.webView, isUserInitiated: false)
@@ -758,7 +758,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
-        wait(for: [permissionCallbackExpectation], timeout: 5)
+        wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // Verify allowance is set
         let secondAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
@@ -819,7 +819,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
-        wait(for: [permissionCallbackExpectation], timeout: 5)
+        wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Empty/about URLs still allowed, but cross-origin requires permission when feature disabled
         let emptyAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
@@ -915,7 +915,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: aboutBlankAction, windowFeatures: windowFeatures)
 
         wait(for: [queryAddedExpectation, permissionGrantedExpectation], timeout: 5.0)
-        wait(for: [permissionCallbackExpectation], timeout: 5)
+        wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Subsequent about:blank allowed
         let secondAboutBlank = WKNavigationAction.mock(url: URL(string: "about:blank")!, webView: webView, isUserInitiated: false)
@@ -1098,7 +1098,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         // THEN - Popup should be created without prompting
         wait(for: [popupCreatedExpectation], timeout: 5.0)
-        wait(for: [queryExpectation], timeout: 5)
+        wait(for: [queryExpectation], timeout: 0.1)
     }
 
     @MainActor
@@ -1120,7 +1120,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup should be blocked (permission denied automatically)
-        wait(for: [popupCreatedExpectation], timeout: 5)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
     }
 
     @MainActor
@@ -1503,7 +1503,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         // THEN - Publisher should NOT send event
         wait(for: [popupCreatedExpectation], timeout: 5.0)
-        wait(for: [publisherExpectation], timeout: 5)
+        wait(for: [publisherExpectation], timeout: 0.1)
     }
 
     // MARK: - onNewWindow Callback Mechanism Tests
@@ -1811,7 +1811,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup blocked (requires permission)
-        wait(for: [popupCreatedExpectation], timeout: 5)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
     }
 
     @MainActor
@@ -1991,7 +1991,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup blocked (parent not in allowlist)
-        wait(for: [popupCreatedExpectation], timeout: 5)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
     }
 
     @MainActor
@@ -2024,7 +2024,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup blocked (sibling domain not in allowlist)
-        wait(for: [popupCreatedExpectation], timeout: 5)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
     }
 
     @MainActor
@@ -2057,7 +2057,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup blocked
-        wait(for: [popupCreatedExpectation], timeout: 5)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
     }
 
     @MainActor

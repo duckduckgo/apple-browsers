@@ -1403,6 +1403,8 @@ extension Pixel {
         case aiChatSettingsBrowserMenuTurnedOn
         case aiChatSettingsTabManagerTurnedOff
         case aiChatSettingsTabManagerTurnedOn
+        case aiChatSettingsChatSuggestionsTurnedOff
+        case aiChatSettingsChatSuggestionsTurnedOn
         case aiChatSettingsDisplayed
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
@@ -2888,6 +2890,8 @@ extension Pixel.Event {
         case .aiChatSettingsBrowserMenuTurnedOn: return "m_aichat_settings_browser_menu_turned_on"
         case .aiChatSettingsTabManagerTurnedOff: return "m_aichat_settings_tab_manager_turned_off"
         case .aiChatSettingsTabManagerTurnedOn: return "m_aichat_settings_tab_manager_turned_on"
+        case .aiChatSettingsChatSuggestionsTurnedOff: return "m_aichat_settings_chat_suggestions_turned_off"
+        case .aiChatSettingsChatSuggestionsTurnedOn: return "m_aichat_settings_chat_suggestions_turned_on"
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"

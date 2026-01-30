@@ -1,5 +1,5 @@
 //
-//  FireConfirmationView.swift
+//  GranularFireConfirmationView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -23,9 +23,9 @@ import DesignResourcesKitIcons
 import Core
 import DuckUI
 
-struct FireConfirmationView: View {
+struct GranularFireConfirmationView: View {
     
-    @ObservedObject var viewModel: FireConfirmationViewModel
+    @ObservedObject var viewModel: GranularFireConfirmationViewModel
     
     var body: some View {
         ScrollView {
@@ -126,7 +126,7 @@ struct FireConfirmationView: View {
     }
 }
 
-private extension FireConfirmationView {
+private extension GranularFireConfirmationView {
     enum Constants {
         // Main View
         static let mainSectionSpacing: CGFloat = 24

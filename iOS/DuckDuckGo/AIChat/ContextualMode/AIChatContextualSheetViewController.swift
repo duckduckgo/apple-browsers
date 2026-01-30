@@ -56,6 +56,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
 
     /// Called when the contextual chat URL changes (e.g., user gets a chatID after prompt submission)
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?)
+
+    /// Called when the user requests to open a downloaded file
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestOpenDownloadWithFileName fileName: String)
 }
 
 /// Contextual sheet view controller. Configures UX and actions.
@@ -67,7 +70,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let headerTopPadding: CGFloat = 16
         static let headerHeight: CGFloat = 44
         static let headerButtonSize: CGFloat = 44
-        static let headerHorizontalPadding: CGFloat = 8
+        static let headerHorizontalPadding: CGFloat = 16
         static let daxIconSize: CGFloat = 24
         static let titleSpacing: CGFloat = 8
         static let sheetCornerRadius: CGFloat = 24
@@ -214,6 +217,13 @@ final class AIChatContextualSheetViewController: UIViewController {
         return view
     }()
 
+    private lazy var topSeparator: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(designSystemColor: .lines)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     // MARK: - Initialization
 
     init(viewModel: AIChatContextualSheetViewModel,
@@ -266,6 +276,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateButtonContainerCornerRadii()
+        updateShadowPath()
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
@@ -399,6 +410,7 @@ private extension AIChatContextualSheetViewController {
         // If no snapshot available, request fresh context from delegate
         // If this fails, the coordinator won't call applyContextSnapshot, so reset the flag
         delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
+        contextualInputViewController.updateQuickActions()
     }
 
     func embedChildViewController(_ childVC: UIViewController) {
@@ -473,7 +485,6 @@ private extension AIChatContextualSheetViewController {
     func createContextChipView(snapshot: AIChatPageContextSnapshot, onRemove: @escaping () -> Void) -> AIChatContextChipView {
         let chipView = AIChatContextChipView()
         chipView.configure(title: snapshot.title, favicon: snapshot.favicon)
-        chipView.subtitle = UserText.aiChatContextChipSubtitle
         chipView.onRemove = onRemove
         return chipView
     }
@@ -492,8 +503,12 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         case .summarize:
             pixelHandler.fireQuickActionSummarizeSelected()
             attachPageContext()
+        case .attachPageContent:
+            attachPageContext()
         }
-        contextualInputViewController.setText(action.prompt)
+        if !action.prompt.isEmpty {
+            contextualInputViewController.setText(action.prompt)
+        }
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
@@ -534,6 +549,10 @@ extension AIChatContextualSheetViewController: AIChatContextualWebViewController
         Logger.aiChat.debug("[AIChatContextual] Received contextual chat URL update: \(String(describing: url?.absoluteString))")
         viewModel.didUpdateContextualChatURL(url)
         delegate?.aiChatContextualSheetViewController(self, didUpdateContextualChatURL: url)
+    }
+
+    func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestOpenDownloadWithFileName fileName: String) {
+        delegate?.aiChatContextualSheetViewController(self, didRequestOpenDownloadWithFileName: fileName)
     }
 }
 
@@ -584,7 +603,18 @@ private extension AIChatContextualSheetViewController {
 private extension AIChatContextualSheetViewController {
     
     func setupUI() {
-        view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        view.backgroundColor = UIColor(Color(singleUseColor: .duckAIContextualSheetBackground))
+
+        view.layer.cornerRadius = Constants.sheetCornerRadius
+        view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner] // Top corners only
+
+        view.layer.shadowColor = UIColor(designSystemColor: .shadowPrimary).cgColor
+        view.layer.shadowOpacity = 0.08
+        view.layer.shadowOffset = CGSize(width: 0, height: -3)
+        view.layer.shadowRadius = 10
+        view.layer.masksToBounds = false
+
+        view.addSubview(topSeparator)
 
         view.addSubview(headerView)
 
@@ -607,6 +637,12 @@ private extension AIChatContextualSheetViewController {
 
     func setupConstraints() {
         NSLayoutConstraint.activate([
+
+            topSeparator.topAnchor.constraint(equalTo: view.topAnchor),
+            topSeparator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            topSeparator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            topSeparator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+
             headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Constants.headerTopPadding),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -656,7 +692,17 @@ private extension AIChatContextualSheetViewController {
         let rightHeight = rightButtonContainer.bounds.height
         rightButtonContainer.layer.cornerRadius = rightHeight / 2
     }
-    
+
+    func updateShadowPath() {
+        // Update shadow path to match rounded corners
+        let shadowPath = UIBezierPath(
+            roundedRect: view.bounds,
+            byRoundingCorners: [.topLeft, .topRight],
+            cornerRadii: CGSize(width: Constants.sheetCornerRadius, height: Constants.sheetCornerRadius)
+        )
+        view.layer.shadowPath = shadowPath.cgPath
+    }
+
     func configureModalPresentation() {
         modalPresentationStyle = .pageSheet
     }

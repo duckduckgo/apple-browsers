@@ -295,7 +295,7 @@ extension TabViewController {
             entries.append(entry)
         }
 
-        if let entry = self.buildUseNewDuckAddressEntry(forLink: link) {
+        if let entry = self.buildUseNewDuckAddressEntry() {
             entries.append(entry)
         }
 
@@ -585,14 +585,17 @@ extension TabViewController {
             self.performAddFavoriteAction(for: link, with: bookmarksInterface)
         })
     }
-    
-    private func buildUseNewDuckAddressEntry(forLink link: Link, useSmallIcon: Bool = true, isSheetMenu: Bool = false) -> BrowsingMenuEntry? {
-        guard emailManager?.isSignedIn == true else { return nil }
+
+    private func buildUseNewDuckAddressEntry(useSmallIcon: Bool = true, isSheetMenu: Bool = false) -> BrowsingMenuEntry? {
+        guard delegate?.isEmailProtectionSignedIn == true else { return nil }
+
         let title = UserText.emailBrowsingMenuUseNewDuckAddress
-        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.email : DesignSystemImages.Glyphs.Size24.email
+        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.email : DesignSystemImages.Glyphs.Size24.emailProtection
 
         return BrowsingMenuEntry.regular(name: title, image: image) { [weak self] in
-            (self?.parent as? MainViewController)?.newEmailAddress()
+            guard let self, let delegate = self.delegate else { return }
+
+            delegate.tabDidRequestNewPrivateEmailAddress(tab: self)
             Pixel.fire(pixel: .browsingMenuNewDuckAddress)
             if isSheetMenu {
                 Pixel.fire(pixel: .sheetBrowsingMenuNewDuckAddress)
@@ -958,8 +961,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry? {
-        guard let link = validLink else { return nil }
-        return buildUseNewDuckAddressEntry(forLink: link, useSmallIcon: false, isSheetMenu: true)
+        return buildUseNewDuckAddressEntry(useSmallIcon: false, isSheetMenu: true)
     }
     
     func makeKeepSignInEntry() -> BrowsingMenuEntry? {

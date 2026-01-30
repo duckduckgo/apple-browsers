@@ -61,6 +61,37 @@ protocol ApplicationTerminationDecider {
     ///   - `.sync(decision)`: An immediate decision
     ///   - `.async(task)`: A deferred decision that will be resolved asynchronously
     func shouldTerminate(isAsync: Bool) -> TerminationQuery
+
+    /// Called when the application termination decider sequence is completed.
+    ///
+    /// - Parameter shouldProceed: `true` if the action should proceed (terminate or close), `false` if the action was cancelled.
+    func deciderSequenceCompleted(shouldProceed: Bool)
+}
+extension ApplicationTerminationDecider {
+    func deciderSequenceCompleted(shouldProceed: Bool) {}
+}
+/// A decider that executes a closure to determine whether the application should terminate.
+final class ClosureApplicationTerminationDecider: ApplicationTerminationDecider {
+    private let shouldTerminate: (/*isAsync:*/ Bool) -> TerminationQuery
+    init(_ shouldTerminate: @escaping (/*isAsync:*/ Bool) -> TerminationQuery) {
+        self.shouldTerminate = shouldTerminate
+    }
+    func shouldTerminate(isAsync: Bool) -> TerminationQuery {
+        return shouldTerminate(isAsync)
+    }
+}
+extension ApplicationTerminationDecider where Self == ClosureApplicationTerminationDecider {
+    /// Creates a decider that executes a closure to determine whether the application should terminate.
+    static func terminationDecider(_ shouldTerminate: @escaping (/*isAsync:*/ Bool) -> TerminationQuery) -> Self {
+        return Self(shouldTerminate)
+    }
+    /// Creates a decider that executes a closure without deferring the decision.
+    static func perform(_ action: @escaping () -> Void) -> Self {
+        return Self { _ in
+            action()
+            return .sync(.next)
+        }
+    }
 }
 
 // MARK: - Termination Decider Handler
@@ -68,16 +99,21 @@ protocol ApplicationTerminationDecider {
 /// Handles the execution of termination deciders in sequence.
 @MainActor
 final class TerminationDeciderHandler {
+    private let replyToApplicationShouldTerminate: (@MainActor (Bool) -> Void)?
     private var terminationTask: Task<Void, Never>?
+    private let deciders: [ApplicationTerminationDecider]
 
-    nonisolated init() {}
-
-    /// Check if termination is currently in progress
-    var isTerminating: Bool {
-        terminationTask != nil
+    @MainActor
+    init(deciders: [ApplicationTerminationDecider], replyToApplicationShouldTerminate: (@MainActor (Bool) -> Void)? = nil) {
+        self.replyToApplicationShouldTerminate = replyToApplicationShouldTerminate ?? NSApp.reply(toApplicationShouldTerminate:)
+        self.deciders = deciders
     }
 
-    func executeTerminationDeciders(_ deciders: [ApplicationTerminationDecider], isAsync: Bool) -> NSApplication.TerminateReply {
+    func executeTerminationDeciders() -> NSApplication.TerminateReply {
+        return executeTerminationDeciders(deciders, isAsync: false)
+    }
+
+    private func executeTerminationDeciders(_ deciders: [ApplicationTerminationDecider], isAsync: Bool) -> NSApplication.TerminateReply {
         // Prevent reentry if already processing termination
         if !isAsync && terminationTask != nil {
             return .terminateLater
@@ -99,7 +135,7 @@ final class TerminationDeciderHandler {
                 case .cancel:
                     Logger.general.debug("TerminationDeciderHandler: \(deciderType) returned .sync(.cancel)")
                     if isAsync {
-                        NSApp.reply(toApplicationShouldTerminate: false)
+                        deciderSequenceCompleted(async: true, shouldProceed: false, invokedDeciders: self.deciders.count - remainingDeciders.count)
                     }
                     return .terminateCancel
                 }
@@ -118,7 +154,7 @@ final class TerminationDeciderHandler {
                         _ = self.executeTerminationDeciders(remainingDeciders, isAsync: true)
                     case .cancel:
                         Logger.general.debug("TerminationDeciderHandler: \(deciderType) async task completed with .cancel")
-                        NSApp.reply(toApplicationShouldTerminate: false)
+                        deciderSequenceCompleted(async: true, shouldProceed: false, invokedDeciders: self.deciders.count - remainingDeciders.count)
                     }
                 }
 
@@ -128,9 +164,26 @@ final class TerminationDeciderHandler {
 
         // All deciders returned .next
         Logger.general.debug("TerminationDeciderHandler: All deciders completed, terminating")
-        if isAsync {
-            NSApp.reply(toApplicationShouldTerminate: true)
-        }
+        deciderSequenceCompleted(async: isAsync, shouldProceed: true, invokedDeciders: self.deciders.count)
         return .terminateNow
     }
+
+    private func deciderSequenceCompleted(async: Bool, shouldProceed: Bool, invokedDeciders: Int) {
+        /// If the decision is asynchronous and the action should not proceed, cancel the termination.
+        if async && !shouldProceed {
+            replyToApplicationShouldTerminate?(false)
+        }
+
+        /// Notify all deciders up to the one that was invoked that the sequence has completed.
+        for decider in deciders[..<invokedDeciders] {
+            decider.deciderSequenceCompleted(shouldProceed: shouldProceed)
+        }
+
+        /// If the decision is asynchronous and the action should proceed, allow the termination.
+        if async && shouldProceed {
+            replyToApplicationShouldTerminate?(true)
+        }
+        // For synchronous responses, the decision is defined by the returned NSApplication.TerminateReply.
+    }
+
 }

@@ -70,7 +70,8 @@ let package = Package(
             name: "AIChatTests",
             dependencies: [
                 "AIChat",
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit")
+                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
             ]
         )
     ]

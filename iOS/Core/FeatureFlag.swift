@@ -337,8 +337,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .webViewFlashPrevention,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
-             .tabSwitcherTrackerCount,
-             .aiChatAutoAttachContextByDefault:
+             .tabSwitcherTrackerCount:
             true
         default:
             false

@@ -3021,6 +3021,11 @@ extension MainViewController: OmniBarDelegate {
         // We don't want any action here if we're still in autocomplete context
         guard !isShowingAutocompleteSuggestions else { return }
 
+        // Dismiss contextual AI chat sheet when omni bar becomes active
+        if let currentTab, tapped {
+            currentTab.aiChatContextualSheetCoordinator.dismissSheet()
+        }
+
         if let currentTab {
             viewCoordinator.omniBar.refreshText(forUrl: currentTab.url, forceFullURL: true)
         }

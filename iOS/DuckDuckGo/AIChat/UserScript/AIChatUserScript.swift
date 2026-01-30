@@ -165,6 +165,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.showChatInput
         case .reportMetric:
             return handler.reportMetric
+        case .togglePageContextTelemetry:
+            return handler.togglePageContextTelemetry
         case .openKeyboard:
             return { [weak self] params, message in
                 await self?.handler.openKeyboard(params: params, message: message, webView: self?.webView)
@@ -206,6 +208,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
         self.handler.setPageContextProvider(provider)
+    }
+
+    func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {
+        self.handler.setContextualModePixelHandler(pixelHandler)
     }
 
     // MARK: - Input Box Event Subscription

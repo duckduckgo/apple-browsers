@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Potvrdi";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontekstualno uvođenje korisnika";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Preskoči";
 
@@ -2929,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Izbrisati kartice i podatke mrežne lokacije?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Izbrisati kartice, podatke mrežne lokacije i čavrljanja?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Izbriši sve";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Izbriši ovu karticu";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "\"Izbriši ovu karticu\" briše ovo Duck.ai čavrljanje i sve podatke s mrežnih lokacija posjećenih u ovoj kartici.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Ovo će otkazati preuzimanja u tijeku.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Nove kartice koje kreiraš također se mogu pojedinačno izbrisati.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Brisanje podataka mrežnih lokacija može te odjaviti s računa.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Pretraži ili unesi adresu";
 
@@ -2974,6 +3001,9 @@
 /* about tagline */
 "settings.about.tagline" = "Zaštita. Privatnost. Bezbrižnost.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo je neovisna tvrtka za zaštitu privatnosti na internetu za svakoga tko želi preuzeti kontrolu nad svojim osobnim podacima.Mi vjerujemo da je najbolji način zaštite tvojih osobnih podataka od hakera, prevaranata i tvrtki koje narušavaju privatnost spriječiti prikupljanje takvih podataka. Zato milijuni ljudi [biraju DuckDuckGo umjesto Chromea i drugih preglednika](ddgQuickLink://duckduckgo.com/compare-privacy) za pretraživanje i pregledavanje interneta. Naša ugrađena tražilica je poput Googlea, ali nikad ne prati tvoja pretraživanja. Uz to, naša zaštita pri pregledavanju, poput blokiranja praćenja oglasa i blokiranja kolačića, pomaže spriječiti druge tvrtke da prikupljaju tvoje podatke. Napominjemo i da je naš preglednik besplatan — mi zarađujemo od [oglasa koji poštuju privatnost](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), a ne iskorištavanjem tvojih podataka. \n\n%@ \n\nPreuzmi kontrolu nad svojim osobnim podacima uz preglednik dizajniran za zaštitu, a ne za prikupljanje podataka.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Pristupačnost";
 
@@ -2992,8 +3022,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Pokaži cijelu adresu web-mjesta";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Prikaži animaciju blokiranih alata za praćenje";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Prikaži u adresnoj traci";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Pretraživanje i Duck.ai";
@@ -3118,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ako su omogućeni Touch ID, Face ID ili pristupna šifra sustava, od tebe će se tražiti da otključaš aplikaciju prilikom otvaranja.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Izbriši";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatsko brisanje podataka";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Automatski izbrisati podatke";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Povratne informacije preglednika";
@@ -3148,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Upravljanje skočnim prozorima kolačića";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Izbriši kartice i podatke";
+
 /* Settings title for the customize section */
 "settings.customize" = "Prilagodba";
 
@@ -3165,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Zadani preglednik";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Izbriši Duck.ai čavrljanja";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Izbriši kartice i podatke";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Onemogući automatsko popunjavanje podataka za zaštitu e-pošte Email protection";
@@ -3370,6 +3415,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sinkronizacija i sigurnosno kopiranje";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Prikaži u upravitelju kartica";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Kartice";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Zadano zumiranje teksta";
 
@@ -3378,6 +3429,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Postavke";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animacija blokiranih alata za praćenje";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Pomaže u blokiranju trećih strana koje se pokušavaju prikriti unutar web-mjesta pomoću DNS-a.";
@@ -3619,11 +3673,11 @@
 /* Help and support Section header */
 "subscription.help" = "Pomoć i podrška";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Upravljanje planom";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Upravljanje plaćanjem ili otkazivanje";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Upravljanje planom";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Pretplata";
@@ -3787,6 +3841,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Postavljanje sinkronizacije";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Sinkronizacija i sigurnosno kopiranje tvojih kreditnih kartica";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Sinkronizacija i sigurnosno kopiranje tvojih podataka";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, hvala";
 
@@ -3876,6 +3936,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Označi sve kartice";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Sakrij";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Ovo možeš ponovno uključiti kroz Postavke > Izgled.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Sakrij broj tragača?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Opcije brojanja elementa za praćenje";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Dvaput dodirni za prikaz opcija za skrivanje ovog banera";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Zadrži";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "u posljednjih 7 dana";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Povećajte ili smanjite veličinu teksta na svim web-mjestima.";
@@ -4261,15 +4345,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Što želiš uvesti?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Kartice";
-"settings.tab.switcher.show.tracker.count" = "Broj pratitelja u 7 dana";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "u posljednjih 7 dana";
-"tab.switcher.tracker.count.hide.title" = "Sakriti broj pratitelja?";
-"tab.switcher.tracker.count.hide.message" = "Ovo možeš ponovno uključiti u Postavke > Izgled.";
-"tab.switcher.tracker.count.hide.action" = "Sakrij";
-"tab.switcher.tracker.count.keep.action" = "Zadrži";
-"tab.switcher.tracker.count.info.a11y" = "Mogućnosti broja pratitelja";
-"tab.switcher.tracker.count.info.hint.a11y" = "Dvaput dodirni za prikaz mogućnosti skrivanja ovog natpisa";

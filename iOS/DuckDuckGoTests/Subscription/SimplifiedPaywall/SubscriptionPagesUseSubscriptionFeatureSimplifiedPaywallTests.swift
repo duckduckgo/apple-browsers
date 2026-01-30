@@ -29,110 +29,110 @@ import PrivacyConfig
 import PixelKitTestingUtilities
 import NetworkingTestingUtils
 
-// For Diego to refactor or remove
+final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTestCase {
 
-// final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTestCase {
-//
-//    private var sut: (any SubscriptionPagesUseSubscriptionFeature)!
-//
-//    private var mockSubscriptionManager: SubscriptionManagerMock!
-//
-//    private var mockStorePurchaseManager: StorePurchaseManagerMock!
-//    private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
-//    private var mockAppStoreRestoreFlow: AppStoreRestoreFlowMock!
-//    private var mockInternalUserDecider: MockInternalUserDecider!
-//    private var mockWideEvent: WideEventMock!
-//
-//    override func setUp() async throws {
-//        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(), eventTracker: ExperimentEventTracker(), fire: { _, _, _ in })
-//
-//        mockStorePurchaseManager = StorePurchaseManagerMock()
-//        mockSubscriptionManager = SubscriptionManagerMock()
-//        mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
-//        mockAppStoreRestoreFlow = AppStoreRestoreFlowMock()
-//        mockInternalUserDecider = MockInternalUserDecider()
-//        mockWideEvent = WideEventMock()
-//
-//        sut = DefaultSubscriptionPagesUseSubscriptionFeature(
-//            subscriptionManager: mockSubscriptionManager,
-//            subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
-//            subscriptionAttributionOrigin: nil,
-//            appStorePurchaseFlow: mockAppStorePurchaseFlow,
-//            appStoreRestoreFlow: mockAppStoreRestoreFlow,
-//            internalUserDecider: mockInternalUserDecider,
-//            wideEvent: mockWideEvent)
-//    }
-//
-//    func testWhenSubscriptionSelectedIncludesExperimentParameters_thenSubscriptionPurchasedReceivesExperimentParameters() async throws {
-//
-//        // Given
-//        //        mockAccountManager.accessToken = nil
-//        mockSubscriptionManager.hasAppStoreProductsAvailable = true
-//        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
-//        mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
-////        mockAppStorePurchaseFlow.purchaseSubscriptionBlock = { self.mockAccountManager.accessToken = "token" }
-//
-//        let experimentNameKey = "experimentName"
-//        let experimentNameValue = "simplifiedPaywall"
-//        let experimentTreatmentKey = "experimentCohort"
-//        let experimentTreatmentValue = "treatment"
-//
-//        let params: [String: Any] = [
-//            "id": "monthly-free-trial",
-//            "experiment": [
-//                "name": "simplifiedPaywall",
-//                "cohort": "treatment"
-//            ]
-//        ]
-//
-//        // When
-//        _ = await sut.subscriptionSelected(params: params, original: MockWKScriptMessage(name: "", body: ""))
-//
-//        // Then
-////        guard let additionalParams = mockAppStorePurchaseFlow.completeSubscriptionAdditionalParams else {
-////            XCTFail("Additional params not found")
-////            return
-////        }
-//
-//        XCTAssertEqual(
-//            additionalParams[experimentNameKey],
-//            experimentNameValue)
-//        XCTAssertEqual(
-//            additionalParams[experimentTreatmentKey],
-//            experimentTreatmentValue)
-//    }
-//
-//    func testWhenSubscriptionSelectedDoesntIncludeExperimentParameters_thenSubscriptionPurchasedDoesntReceiveExperimentParameters() async throws {
-//
-//        // Given
-////        mockAccountManager.accessToken = nil
-//        mockSubscriptionManager.hasAppStoreProductsAvailable = true
-//        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
-//        mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
-//        mockAppStorePurchaseFlow.purchaseSubscriptionBlock = { self.mockAccountManager.accessToken = "token" }
-//
-//        let experimentNameKey = "experimentName"
-//        let experimentTreatmentKey = "experimentCohort"
-//
-//        let params: [String: Any] = [
-//            "id": "monthly-free-trial"
-//        ]
-//
-//        // When
-//        _ = await sut.subscriptionSelected(params: params, original: MockWKScriptMessage(name: "", body: ""))
-//
-//        // Then
-//        guard let additionalParams = mockAppStorePurchaseFlow.completeSubscriptionAdditionalParams else {
-//
-//            // This is fine and acceptable.
-//            return
-//        }
-//
-//        // Even though the above guard exiting is acceptable, we also check
-//        // that the parameters that should be missing are missing, because
-//        // other code changes could cause additional params to be added in
-//        // the future, which should not make this test fail on its own.
-//        XCTAssertNil(additionalParams[experimentNameKey])
-//        XCTAssertNil(additionalParams[experimentTreatmentKey])
-//    }
-// }
+    private var sut: (any SubscriptionPagesUseSubscriptionFeature)!
+
+    private var mockSubscriptionManager: SubscriptionManagerMock!
+    private var mockStorePurchaseManager: StorePurchaseManagerMock!
+    private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
+    private var mockAppStoreRestoreFlow: AppStoreRestoreFlowMock!
+    private var mockInternalUserDecider: MockInternalUserDecider!
+    private var mockWideEvent: WideEventMock!
+    private var mockPendingTransactionHandler: MockPendingTransactionHandler!
+
+    override func setUp() async throws {
+        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(), eventTracker: ExperimentEventTracker(), fire: { _, _, _ in })
+
+        mockStorePurchaseManager = StorePurchaseManagerMock()
+        mockStorePurchaseManager.hasActiveSubscriptionResult = false
+
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
+        mockAppStoreRestoreFlow = AppStoreRestoreFlowMock()
+        mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
+        mockWideEvent = WideEventMock()
+        mockPendingTransactionHandler = MockPendingTransactionHandler()
+
+        sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: mockAppStorePurchaseFlow,
+            appStoreRestoreFlow: mockAppStoreRestoreFlow,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: mockPendingTransactionHandler)
+    }
+
+    func testWhenSubscriptionSelectedIncludesExperimentParameters_thenSubscriptionPurchasedReceivesExperimentParameters() async throws {
+
+        // Given
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let experimentNameKey = "experimentName"
+        let experimentNameValue = "simplifiedPaywall"
+        let experimentTreatmentKey = "experimentCohort"
+        let experimentTreatmentValue = "treatment"
+
+        let params: [String: Any] = [
+            "id": "monthly-free-trial",
+            "experiment": [
+                "name": "simplifiedPaywall",
+                "cohort": "treatment"
+            ]
+        ]
+
+        // When
+        _ = await sut.subscriptionSelected(params: params, original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let additionalParams = mockAppStorePurchaseFlow.completeSubscriptionAdditionalParams else {
+            XCTFail("Additional params not found")
+            return
+        }
+
+        XCTAssertEqual(
+            additionalParams[experimentNameKey],
+            experimentNameValue)
+        XCTAssertEqual(
+            additionalParams[experimentTreatmentKey],
+            experimentTreatmentValue)
+    }
+
+    func testWhenSubscriptionSelectedDoesntIncludeExperimentParameters_thenSubscriptionPurchasedDoesntReceiveExperimentParameters() async throws {
+
+        // Given
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let experimentNameKey = "experimentName"
+        let experimentTreatmentKey = "experimentCohort"
+
+        let params: [String: Any] = [
+            "id": "monthly-free-trial"
+        ]
+
+        // When
+        _ = await sut.subscriptionSelected(params: params, original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let additionalParams = mockAppStorePurchaseFlow.completeSubscriptionAdditionalParams else {
+
+            // This is fine and acceptable.
+            return
+        }
+
+        // Even though the above guard exiting is acceptable, we also check
+        // that the parameters that should be missing are missing, because
+        // other code changes could cause additional params to be added in
+        // the future, which should not make this test fail on its own.
+        XCTAssertNil(additionalParams[experimentNameKey])
+        XCTAssertNil(additionalParams[experimentTreatmentKey])
+    }
+}

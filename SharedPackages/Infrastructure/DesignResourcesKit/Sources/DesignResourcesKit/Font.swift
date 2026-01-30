@@ -88,6 +88,10 @@ public extension UIFont {
         return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
     }
 
+    static func daxCaption1() -> UIFont {
+        return UIFont.preferredFont(forTextStyle: .caption1)
+    }
+
     static func daxCaption() -> UIFont {
         return UIFont.preferredFont(forTextStyle: .caption2)
     }

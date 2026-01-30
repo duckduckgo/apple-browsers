@@ -84,10 +84,11 @@ final class TextZoomTests: XCTestCase {
             forLink: makeLink(url: URL(string: "https://other.org")!),
             inController: controller,
             forWebView: webView,
-            useSmallIcon: true)
+            useSmallIcon: true,
+            percentageInDetail: false)
 
         // Expecting the 'default' value
-        if case .regular(let name, _, _, _, _, _) = item1 {
+        if case .regular(let name, _, _, _, _, _, _) = item1 {
             XCTAssertEqual(UserText.textZoomMenuItem, name)
         } else {
             XCTFail("Unexpected menu item type")
@@ -97,10 +98,11 @@ final class TextZoomTests: XCTestCase {
             forLink: makeLink(url: URL(string: "https://\(host)")!),
             inController: controller,
             forWebView: webView,
-            useSmallIcon: true)
+            useSmallIcon: true,
+            percentageInDetail: false)
 
         // Expecting the menu item to include the percent
-        if case .regular(let name, _, _, _, _, _) = item2 {
+        if case .regular(let name, _, _, _, _, _, _) = item2 {
             XCTAssertEqual(UserText.textZoomWithPercentForMenuItem(120), name)
         } else {
             XCTFail("Unexpected menu item type")

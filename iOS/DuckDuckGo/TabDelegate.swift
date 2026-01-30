@@ -33,7 +33,7 @@ protocol TabDelegate: AnyObject {
              for navigationAction: WKNavigationAction,
              inheritingAttribution: AdClickAttributionLogic.State?) -> WKWebView?
 
-    func tabDidRequestClose(_ tab: TabViewController,
+    func tabDidRequestClose(_ tab: Tab,
                             shouldCreateEmptyTabAtSamePosition: Bool,
                             clearTabHistory: Bool)
 
@@ -130,12 +130,15 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestNavigationToDifferentSite(tab: TabViewController)
     
     var isAIChatEnabled: Bool { get }
+
+    var isEmailProtectionSignedIn: Bool { get }
+    func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
 }
 
 extension TabDelegate {
 
     func tabDidRequestClose(_ tab: TabViewController) {
-        tabDidRequestClose(tab, shouldCreateEmptyTabAtSamePosition: false, clearTabHistory: true)
+        tabDidRequestClose(tab.tabModel, shouldCreateEmptyTabAtSamePosition: false, clearTabHistory: true)
     }
     
 }

@@ -233,7 +233,7 @@ final class UpdateWideEventDataTests: XCTestCase {
 
     func test_pixelParameters_durationFormatting_convertsToIntegerMilliseconds() {
         // Given - durations with fractional milliseconds
-        var data = UpdateWideEventData(
+        let data = UpdateWideEventData(
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,

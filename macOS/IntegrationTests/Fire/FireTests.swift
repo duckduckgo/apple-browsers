@@ -316,7 +316,15 @@ final class FireTests: XCTestCase {
                                                                     pixelFiring: nil)
         appStateRestorationManager.applicationDidFinishLaunching()
 
-        let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
+        let historyCoordinator = HistoryCoordinatingMock()
+        let cacheManager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: cacheManager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        faviconManagement: faviconManager,
                         stateRestorationManager: appStateRestorationManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld)
@@ -340,7 +348,15 @@ final class FireTests: XCTestCase {
                                                                     pixelFiring: nil)
         appStateRestorationManager.applicationDidFinishLaunching()
 
-        let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
+        let historyCoordinator = HistoryCoordinatingMock()
+        let cacheManager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: cacheManager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        faviconManagement: faviconManager,
                         stateRestorationManager: appStateRestorationManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld)
@@ -353,8 +369,16 @@ final class FireTests: XCTestCase {
     @MainActor
     func testWhenBurnDomainsIsCalledThenSelectedDomainsZoomLevelsAreBurned() {
         let domainsToBurn: Set<String> = ["test.com", "provola.co.uk"]
+        let historyCoordinator = HistoryCoordinatingMock()
+        let cacheManager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
         let zoomLevelsCoordinator = MockSavedZoomCoordinator()
-        let fire = Fire(savedZoomLevelsCoordinating: zoomLevelsCoordinator,
+        let fire = Fire(cacheManager: cacheManager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        savedZoomLevelsCoordinating: zoomLevelsCoordinator,
+                        faviconManagement: faviconManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld)
 

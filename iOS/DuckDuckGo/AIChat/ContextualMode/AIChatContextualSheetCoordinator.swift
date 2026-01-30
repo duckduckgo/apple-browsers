@@ -136,7 +136,7 @@ final class AIChatContextualSheetCoordinator {
         if let existingSheet = sheetViewController {
             sheetVC = existingSheet
             isNewSheet = false
-            await restoreExistingSheet(existingSheet, restoreURL: restoreURL)
+            // Restore logic moved to after presentation to ensure view is loaded
         } else {
             if restoreURL == nil {
                 await pageContextHandler.triggerContextCollection()
@@ -178,7 +178,17 @@ final class AIChatContextualSheetCoordinator {
 
         startObservingContextUpdates()
         stopSessionTimer()
-        presentingViewController.present(sheetVC, animated: true)
+
+        presentingViewController.present(sheetVC, animated: true) { [weak self] in
+            guard let self else { return }
+
+            // Restore existing sheet after presentation to ensure view is loaded
+            if !isNewSheet {
+                Task {
+                    await self.restoreExistingSheet(sheetVC, restoreURL: restoreURL)
+                }
+            }
+        }
 
         pixelHandler.fireSheetOpened()
         if isNewSheet && restoreURL != nil {

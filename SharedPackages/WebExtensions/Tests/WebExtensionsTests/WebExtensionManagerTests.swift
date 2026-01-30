@@ -56,15 +56,14 @@ final class WebExtensionManagerTests: XCTestCase {
 
     @MainActor
     private func makeManager() -> WebExtensionManager {
-        let manager = WebExtensionManager(
+        WebExtensionManager(
             configuration: configurationMock,
             windowTabProvider: windowTabProviderMock,
             installationStore: pathsStoringMock,
             loader: webExtensionLoadingMock,
-            eventsListener: eventsListenerMock
+            eventsListener: eventsListenerMock,
+            lifecycleDelegate: lifecycleDelegateMock
         )
-        manager.lifecycleDelegate = lifecycleDelegateMock
-        return manager
     }
 
     // MARK: - Install Extension Tests

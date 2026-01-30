@@ -24,6 +24,7 @@ import UIKit
 /// Predefined quick actions for the contextual AI chat sheet.
 enum AIChatContextualQuickAction: String, CaseIterable, AIChatQuickActionType {
     case summarize
+    case attachPageContent
 
     var id: String { rawValue }
 
@@ -31,13 +32,17 @@ enum AIChatContextualQuickAction: String, CaseIterable, AIChatQuickActionType {
         switch self {
         case .summarize:
             return UserText.aiChatQuickActionSummarize
+        case .attachPageContent:
+            return UserText.aiChatQuickActionAttach
         }
     }
 
     var prompt: String {
         switch self {
         case .summarize:
-            return "summarize this page"
+            return "Summarize this page"
+        case .attachPageContent:
+            return ""
         }
     }
 
@@ -45,6 +50,8 @@ enum AIChatContextualQuickAction: String, CaseIterable, AIChatQuickActionType {
         switch self {
         case .summarize:
             return DesignSystemImages.Glyphs.Size16.arrowDownRight
+        case .attachPageContent:
+            return DesignSystemImages.Glyphs.Size16.pageContentAttach
         }
     }
 }

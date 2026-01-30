@@ -18,40 +18,40 @@
 
 /// Protocol to support mocking pixel firing.
 public protocol PixelFiring {
-    func fire(_ event: PixelKitEvent)
-
-    func fire(_ event: PixelKitEvent,
-              frequency: PixelKit.Frequency)
-
     func fire(_ event: PixelKitEvent,
               frequency: PixelKit.Frequency,
-              withAdditionalParameters: [String: String])
-
-    func fire(_ event: PixelKitEvent,
-              frequency: PixelKit.Frequency,
+              withAdditionalParameters: [String: String]?,
               onComplete: @escaping PixelKit.CompletionBlock)
 }
 
-extension PixelKit: PixelFiring {
-
+extension PixelFiring {
     public func fire(_ event: PixelKitEvent) {
         fire(event, frequency: .standard)
     }
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency) {
-        fire(event, frequency: frequency, onComplete: { _, _ in })
-    }
-
-    public func fire(_ event: PixelKitEvent,
-                     frequency: PixelKit.Frequency,
-                     withAdditionalParameters parameters: [String: String]) {
-        fire(event, frequency: frequency, withAdditionalParameters: parameters, onComplete: { _, _ in })
+        fire(event, frequency: frequency, withAdditionalParameters: nil, onComplete: { _, _ in })
     }
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
                      onComplete: @escaping PixelKit.CompletionBlock) {
         fire(event, frequency: frequency, withAdditionalParameters: nil, onComplete: onComplete)
+    }
+
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency,
+                     withAdditionalParameters parameters: [String: String]?) {
+        fire(event, frequency: frequency, withAdditionalParameters: parameters, onComplete: { _, _ in })
+    }
+}
+
+extension PixelKit: PixelFiring {
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency,
+                     withAdditionalParameters parameters: [String: String]?,
+                     onComplete: @escaping PixelKit.CompletionBlock) {
+        fire(event, frequency: frequency, withHeaders: nil, withAdditionalParameters: parameters, onComplete: onComplete)
     }
 }

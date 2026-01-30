@@ -2932,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Ištrinti skirtukus ir svetainės duomenis?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Ištrinti skirtukus, svetainės duomenis ir pokalbius?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Ištrinti viską";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Ištrink šį skirtuką";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "„Ištrinti šią kortelę“ išvalo šį „Duck.ai“ pokalbį ir visus šioje kortelėje aplankytų svetainių duomenis.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Tai atšauks vykdomus atsisiuntimus.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Naujai sukurtus skirtukus taip pat galima ištrinti po vieną.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Ištrynus svetainės duomenis, galite būti atjungti nuo paskyrų.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Ieškoti arba įvesti adresą";
 
@@ -3124,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Jei įjungtas „Touch ID“, „Face ID“ arba sistemos slaptažodis, prieš atidarydami programą būsite paprašyti ją atrakinti.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Trinti";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatinis duomenų išvalymas";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Automatiškai ištrinti duomenis";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Naršyklės atsiliepimai";
@@ -3154,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Valdyti slapukų iššokančiuosius langus";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Ištrinti skirtukus ir duomenis";
+
 /* Settings title for the customize section */
 "settings.customize" = "Tinkinti";
 
@@ -3171,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Numatytoji naršyklė";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Ištrinti „Duck.ai“ pokalbius";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Ištrinti korteles ir duomenis";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Išjungti „Email Protection“ automatinį užpildymą";

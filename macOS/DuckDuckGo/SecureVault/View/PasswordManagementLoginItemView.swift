@@ -21,13 +21,14 @@ import Foundation
 import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
-import Combine
+import DesignResourcesKit
 
 private let interItemSpacing: CGFloat = 20
 private let itemSpacing: CGFloat = 6
 
 struct PasswordManagementLoginItemView: View {
 
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     @EnvironmentObject var model: PasswordManagementLoginModel
 
     var body: some View {
@@ -42,7 +43,7 @@ struct PasswordManagementLoginItemView: View {
                 if editMode {
 
                     RoundedRectangle(cornerRadius: 8)
-                        .foregroundColor(Color(.editingPanel))
+                        .foregroundColor(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
                         .shadow(radius: 6)
 
                 }
@@ -90,6 +91,7 @@ struct PasswordManagementLoginItemView: View {
                 }
             }
             .padding(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 10))
+            .environmentObject(themeManager)
             .alert(isPresented: $model.isShowingAddressUpdateConfirmAlert) {
                 let btnLabel = Text(model.toggleConfirmationAlert.button)
                 let btnAction = model.togglePrivateEmailStatus
@@ -123,7 +125,6 @@ private struct Buttons: View {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
             }
 
             Spacer()
@@ -132,7 +133,7 @@ private struct Buttons: View {
                 Button(UserText.pmCancel) {
                     model.cancel()
                 }
-                .buttonStyle(StandardButtonStyle())
+
                 Button(UserText.pmSave) {
                     model.save()
                 }
@@ -143,12 +144,10 @@ private struct Buttons: View {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
 
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-                .buttonStyle(StandardButtonStyle())
 
             }
 
@@ -278,6 +277,7 @@ private struct PrivateEmailImage: View {
 }
 
 private struct PrivateEmailMessage: View {
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementLoginModel
 
     @State private var hover: Bool = false
@@ -287,7 +287,7 @@ private struct PrivateEmailMessage: View {
         let text = String(format: UserText.pmSignInToManageEmail, UserText.pmEnableEmailProtection)
         var attributedString = AttributedString(text)
         if let range = attributedString.range(of: UserText.pmEnableEmailProtection) {
-            attributedString[range].foregroundColor = Color(.linkBlue)
+            attributedString[range].foregroundColor = Color(designSystemColor: .textLink, palette: themeManager.designColorPalette)
         }
         return attributedString
     }
@@ -434,6 +434,7 @@ private struct WebsiteView: View {
 
 private struct NotesView: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementLoginModel
     let cornerRadius: CGFloat = 8.0
     let borderWidth: CGFloat = 0.4
@@ -464,9 +465,9 @@ private struct NotesView: View {
                     .background(
                         ZStack {
                             RoundedRectangle(cornerRadius: cornerRadius)
-                                .stroke(Color(.textEditorBorder), lineWidth: borderWidth)
+                                .stroke(Color(designSystemColor: .controlsBorderPrimary, palette: themeManager.designColorPalette), lineWidth: borderWidth)
                             RoundedRectangle(cornerRadius: cornerRadius)
-                                .fill(Color(.textEditorBackground))
+                                .fill(Color(designSystemColor: .controlsFillPrimary, palette: themeManager.designColorPalette))
                         }
                     )
             }
@@ -547,9 +548,11 @@ private struct HeaderView: View {
                .padding(.trailing, 10)
 
             if model.isNew || model.isEditing {
-
-                TextField(model.domain, text: $model.title)
-                    .font(.title)
+                let placeholder = model.domain.isEmpty ? UserText.pmLoginTitlePlaceholder : model.domain
+                TextField(placeholder, text: $model.title)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(height: 32)
+                    .controlSize(.large)
                     .accessibility(identifier: "Title TextField")
 
             } else {

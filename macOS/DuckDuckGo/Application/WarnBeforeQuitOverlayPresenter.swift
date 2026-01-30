@@ -28,10 +28,9 @@ final class WarnBeforeQuitOverlayPresenter {
 
     // MARK: - Properties
 
-    private(set) var overlayWindow: NSWindow?
+    var overlayWindow: NSWindow?
     private let viewModel: WarnBeforeQuitViewModel
     private var observationTask: Task<Void, Never>?
-    private var progressTask: Task<Void, Never>?
 
     let windowProvider: @MainActor () -> NSWindow?
     let anchorViewProvider: (@MainActor () -> NSView?)?
@@ -40,15 +39,22 @@ final class WarnBeforeQuitOverlayPresenter {
 
     init(action: ConfirmationAction = .quit,
          startupPreferences: StartupPreferences? = nil,
-         onDontAskAgain: @escaping () -> Void,
-         onHoverChange: @escaping (Bool) -> Void,
+         onDontAskAgain: (() -> Void)? = nil,
+         onHoverChange: ((Bool) -> Void)? = nil,
          windowProvider: @MainActor @escaping () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow },
          anchorViewProvider: (@MainActor () -> NSView?)? = nil) {
-        self.viewModel = WarnBeforeQuitViewModel(action: action, startupPreferences: startupPreferences)
+        self.viewModel = WarnBeforeQuitViewModel(
+            action: action,
+            startupPreferences: startupPreferences,
+            onDontAskAgain: onDontAskAgain
+        )
         self.windowProvider = windowProvider
         self.anchorViewProvider = anchorViewProvider
-        self.viewModel.onDontAskAgain = onDontAskAgain
-        self.viewModel.onHoverChange = onHoverChange
+        self.viewModel.onHoverChange = { [weak self] isHovering in
+            onHoverChange?(isHovering)
+            // Enable/disable mouse events passing through the window to allow clicking the underlying content view
+            self?.overlayWindow?.ignoresMouseEvents = !isHovering
+        }
     }
 
     /// Subscribes to the manager's state stream. Keeps the presenter alive as long as the stream is active.
@@ -60,11 +66,6 @@ final class WarnBeforeQuitOverlayPresenter {
         }
     }
 
-    deinit {
-        observationTask?.cancel()
-        progressTask?.cancel()
-    }
-
     // MARK: - Private
 
     private func handle(state: WarnBeforeQuitManager.State) {
@@ -72,19 +73,21 @@ final class WarnBeforeQuitOverlayPresenter {
         case .idle:
             break
 
-        case .holding(let startTime, let targetTime):
+        case .keyDown:
+            // Show overlay but don't start progress yet (waiting to confirm it's a hold)
             show()
-            startProgressAnimation(startTime: startTime, targetTime: targetTime)
+
+        case .holding:
+            // Key held past threshold - start progress animation to 100%
+            let duration = WarnBeforeQuitManager.Constants.requiredHoldDuration - WarnBeforeQuitManager.Constants.progressThreshold
+            viewModel.startProgress(duration: duration)
 
         case .waitingForSecondPress:
-            // Show overlay if not already shown (in case key was released immediately)
-            show()
-            // Stop progress animation and reset
-            progressTask?.cancel()
+            // Reset progress with quick spring animation (0.3 seconds)
             viewModel.resetProgress()
 
         case .completed:
-            hide()
+            self.hide()
             // Just hide - don't call terminate, the decider framework handles that
         }
     }
@@ -98,57 +101,87 @@ final class WarnBeforeQuitOverlayPresenter {
 
         guard let overlayWindow else { return }
 
-        // Get window size from view
-        let contentSize = WarnBeforeQuitView.contentSize(for: viewModel.action)
-        let overlaySize = WarnBeforeQuitView.windowSize(for: viewModel.action)
-        let overlayOrigin: CGPoint
+        // Make window fill the parent window
+        let windowFrame = keyWindow.frame
+        overlayWindow.setFrame(windowFrame, display: true)
 
-        // Position overlay relative to anchor view (tab) or window center
+        // Calculate balloon position and pass to view
+        let balloonPosition: CGPoint
         if let anchorView = anchorViewProvider?(), let window = anchorView.window {
             // Get anchor view's frame in screen coordinates
             let anchorFrameInWindow = anchorView.convert(anchorView.bounds, to: nil)
             let anchorFrameInScreen = window.convertToScreen(anchorFrameInWindow)
 
-            // Position notification so arrow points to tab center
-            let shadowPadding = WarnBeforeQuitView.Constants.shadowPadding / 2
-            let arrowOffset = WarnBeforeQuitView.Constants.arrowOffset
-            let halfArrowWidth = WarnBeforeQuitView.Constants.arrowWidth / 2
-            let tabGapOffset = WarnBeforeQuitView.Constants.tabGapOffset
-            let x = anchorFrameInScreen.midX - arrowOffset - halfArrowWidth - shadowPadding
-            overlayOrigin = CGPoint(
-                x: x,
-                y: anchorFrameInScreen.minY - contentSize.height - tabGapOffset - shadowPadding
+            // Convert to overlay window coordinates (AppKit coordinates, bottom-left origin)
+            let anchorFrameInOverlay = overlayWindow.convertFromScreen(anchorFrameInScreen)
+
+            // Convert to SwiftUI coordinates (top-left origin)
+            // In AppKit: y increases upward, in SwiftUI: y increases downward
+            balloonPosition = CGPoint(
+                x: anchorFrameInOverlay.midX,
+                y: overlayWindow.frame.height - anchorFrameInOverlay.minY
             )
         } else {
-            // Default: Position at top center of the key window
-            let windowFrame = keyWindow.frame
-            let shadowPadding = WarnBeforeQuitView.Constants.shadowPadding / 2
-            let quitPanelTopOffset = WarnBeforeQuitView.Constants.quitPanelTopOffset
-            overlayOrigin = CGPoint(
-                x: windowFrame.midX - overlaySize.width / 2,
-                y: windowFrame.maxY - overlaySize.height - quitPanelTopOffset + shadowPadding
+            // Default: Position at top center (already in SwiftUI coordinates)
+            balloonPosition = CGPoint(
+                x: overlayWindow.frame.width / 2,
+                y: WarnBeforeQuitView.Constants.quitPanelTopOffset
             )
         }
 
-        overlayWindow.setFrame(CGRect(origin: overlayOrigin, size: overlaySize), display: true)
+        viewModel.balloonAnchorPosition = balloonPosition
 
         // Add as child window to ensure it stays on top
         keyWindow.addChildWindow(overlayWindow, ordered: .above)
-        overlayWindow.makeKeyAndOrderFront(nil)
+
+        // Always animate in (reset alpha to 0 first)
+        overlayWindow.alphaValue = 0
+        animateIn(window: overlayWindow)
     }
 
     private func hide() {
         guard let overlayWindow else { return }
-        progressTask?.cancel()
-        viewModel.resetProgress()
-        self.overlayWindow = nil
 
-        // hide the window contents and give it some time to redraw
-        // otherwise the shadow dirt keeps shown on the main window
-        overlayWindow.contentView = NSView(frame: .zero)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            overlayWindow.parent?.removeChildWindow(overlayWindow)
-            overlayWindow.orderOut(nil)
+        // Trigger view animation
+        viewModel.shouldHide = true
+
+        // Animate out with spring animation
+        animateOut(window: overlayWindow) { [weak self] in
+            // Clear content view to prevent shadow artifacts
+            overlayWindow.contentView = nil
+
+            // Order out asynchronously to allow content view cleanup
+            DispatchQueue.main.async {
+                self?.overlayWindow = nil
+                overlayWindow.parent?.removeChildWindow(overlayWindow)
+                overlayWindow.orderOut(nil)
+                // Reset progress and shouldHide after window is hidden
+                self?.viewModel.resetProgress()
+                self?.viewModel.shouldHide = false
+            }
+        }
+    }
+
+    // MARK: - Animations
+
+    /// Shows the window immediately (view handles animation)
+    /// - Parameters:
+    ///   - window: The window to show
+    private func animateIn(window: NSWindow) {
+        // Window is fully opaque - the balloon view handles opacity/scale/offset animation
+        window.alphaValue = 1.0
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    /// Hides the window after animation delay (view handles animation)
+    /// - Parameters:
+    ///   - window: The window to hide
+    ///   - completion: Called when animation completes
+    private func animateOut(window: NSWindow, completion: @escaping () -> Void) {
+        // Wait for view animation to complete
+        Task { @MainActor in
+            try? await Task.sleep(interval: WarnBeforeQuitView.Constants.animationSettlingTime)
+            completion()
         }
     }
 
@@ -161,42 +194,20 @@ final class WarnBeforeQuitOverlayPresenter {
         )
 
         window.isOpaque = false
-        window.backgroundColor = .clear
         window.level = .floating
         window.hasShadow = false
         window.isReleasedWhenClosed = false
         window.isMovable = false
+        window.alphaValue = 0 // Start invisible for animation
+        // Set barely-visible background to prevent shadow clipping when scrolling content below
+        window.backgroundColor = NSColor(white: 0, alpha: 0.01)
+        // Start ignoring mouse events to allow click-through; toggled on hover (see `viewModel.onHoverChange` in `init`)
+        window.ignoresMouseEvents = true
 
         let hostingView = NSHostingView(rootView: WarnBeforeQuitView(viewModel: viewModel))
-        hostingView.wantsLayer = true
-        hostingView.layer?.masksToBounds = true
-
         window.contentView = hostingView
 
         return window
     }
 
-    private func startProgressAnimation(startTime: TimeInterval, targetTime: TimeInterval) {
-        progressTask?.cancel()
-
-        let duration = targetTime - startTime
-
-        progressTask = Task {
-            while !Task.isCancelled {
-                let now = Date().timeIntervalSinceReferenceDate
-                let elapsed = now - startTime
-                let progress = CGFloat(max(0, min(1, elapsed / duration)))
-
-                // Check cancellation before updating
-                guard !Task.isCancelled else { break }
-                viewModel.updateProgress(progress)
-
-                if progress >= 1.0 {
-                    break
-                }
-
-                try? await Task.sleep(nanoseconds: 16_000_000) // ~60fps
-            }
-        }
-    }
 }

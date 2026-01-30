@@ -2932,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Dorești să ștergi filele și datele site-ului?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Dorești să ștergi filele, datele site-ului și chaturile?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Șterge toate";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Șterge această filă";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "„Șterge această filă” va șterge acest chat Duck.ai și toate datele de pe site-urile vizitate în această filă.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Aceasta va anula descărcările în desfășurare.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Filele noi pe care le creezi pot fi, de asemenea, șterse individual.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Ștergerea datelor de pe site te poate deconecta de la conturi.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Caută sau introdu adresa";
 
@@ -3124,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Dacă identificatorul tactil, identificatorul facial sau parola de sistem sunt activate, ți se va solicita să deblochezi aplicația la deschidere.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Ștergere";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Ștergerea automată a datelor";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Șterge automat datele";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Feedback browser";
@@ -3154,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Gestionare pop-up-uri pentru module cookie";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Șterge filele și datele";
+
 /* Settings title for the customize section */
 "settings.customize" = "Personalizare";
 
@@ -3171,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Browser implicit";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Șterge chaturile Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Șterge filele și datele";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Dezactivează completarea automată în Email Protection";

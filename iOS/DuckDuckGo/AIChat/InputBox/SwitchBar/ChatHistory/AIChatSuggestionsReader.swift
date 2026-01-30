@@ -26,39 +26,41 @@ import PrivacyConfig
 
 // MARK: - Protocol
 
+@MainActor
 protocol AIChatSuggestionsReading {
+    /// Maximum number of chat history items to display, from privacy config settings.
+    var maxHistoryCount: Int { get }
+
     /// Fetches AI chat suggestions from duck.ai.
-    /// - Parameter query: Optional search query to filter results
+    /// - Parameters:
+    ///   - query: Optional search query to filter results
+    ///   - maxChats: Maximum number of recent chats to return
     /// - Returns: Tuple of pinned and recent suggestions. Returns empty arrays on failure.
-    @MainActor
-    func fetchSuggestions(query: String?) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])
+    func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])
 
     /// Tears down the WebView and releases resources.
     /// Should be called when the AI chat mode is deactivated.
-    @MainActor
     func tearDown()
 }
 
 // MARK: - AIChatSuggestionsReader
 
-/// Wrapper around SuggestionsReader that provides a simpler API for iOS.
-/// Feature flag checks should be done by the caller.
 @MainActor
 final class AIChatSuggestionsReader: AIChatSuggestionsReading {
-
     private let suggestionsReader: SuggestionsReading
+    private let historySettings: AIChatHistorySettings
 
-    init(featureFlagger: FeatureFlagger, privacyConfig: PrivacyConfigurationManaging) {
-        self.suggestionsReader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
+    var maxHistoryCount: Int {
+        historySettings.maxHistoryCount
     }
 
-    /// For testing - allows injecting a mock reader
-    init(suggestionsReader: SuggestionsReading) {
+    init(suggestionsReader: SuggestionsReading, historySettings: AIChatHistorySettings) {
         self.suggestionsReader = suggestionsReader
+        self.historySettings = historySettings
     }
 
-    func fetchSuggestions(query: String?) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
-        let result = await suggestionsReader.fetchSuggestions(query: query)
+    func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
+        let result = await suggestionsReader.fetchSuggestions(query: query, maxChats: maxChats)
 
         switch result {
         case .success(let suggestions):

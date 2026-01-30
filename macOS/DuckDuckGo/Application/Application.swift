@@ -32,7 +32,11 @@ final class Application: NSApplication {
 
     /// Event interceptor hook for WarnBeforeQuitManager
     /// Returns nil to consume event, or the event to pass through
-    var eventInterceptor: ((NSEvent) -> NSEvent?)?
+    private var eventInterceptor: (token: UUID, interceptor: ((NSEvent) -> NSEvent?))?
+
+    public var eventInterceptorToken: UUID? {
+        eventInterceptor?.token
+    }
 
     override init() {
         super.init()
@@ -117,6 +121,15 @@ final class Application: NSApplication {
     @MainActor
     var shouldResetClickCountForNextEventOfTypes: Set<NSEvent.EventType>?
 
+    public func installEventInterceptor(token: UUID, interceptor: @escaping (NSEvent) -> NSEvent?) {
+        eventInterceptor = (token: token, interceptor: interceptor)
+    }
+
+    public func resetEventInterceptor(token: UUID) {
+        guard eventInterceptor?.token == token else { return }
+        eventInterceptor = nil
+    }
+
     override func sendEvent(_ event: NSEvent) {
 #if DEBUG
         // Ignore user events when running Tests
@@ -129,7 +142,7 @@ final class Application: NSApplication {
 
         // Check event interceptor hook (for WarnBeforeQuitManager)
         var event = event
-        if let interceptor = eventInterceptor {
+        if let interceptor = eventInterceptor?.interceptor {
             guard let interceptedEvent = interceptor(event) else { return } // Event consumed
             // Event passed through, continue processing
             event = interceptedEvent

@@ -2932,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Да изтрием ли разделите и данните от сайта?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Да изтрием ли раздели, данни от сайтове и чатове?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Изтриване на всички";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Изтриване на този раздел";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "„Изтрий този раздел“ изчиства този Duck.ai чат и всички данни от сайтовете, посетени в този раздел.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Това ще отмени текущите изтегляния.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Новите раздели, които създаваш, също могат да бъдат изтрити поотделно.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Изтриването на данни от сайта може да те отпише от акаунтите.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Търсене или въвеждане на адрес";
 
@@ -3124,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ако сте активирали пръстов отпечатък, лицево разпознаване или системна парола, ще бъдете приканени да отключите приложението при отваряне.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Изтриване";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Автоматично изчистване на данни";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Автоматично изтриване на данни";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Отзив за браузъра";
@@ -3154,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Управление на прозорци за бисквитки";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Изтриване на раздели и данни";
+
 /* Settings title for the customize section */
 "settings.customize" = "Персонализиране";
 
@@ -3171,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузър по подразбиране";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Изтриване на чатове с Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Изтриване на раздели и данни";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Деактивиране на автоматично попълване с Email Protection";

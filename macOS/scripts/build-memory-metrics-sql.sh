@@ -78,8 +78,8 @@ raw_metrics="$(xcrun xcresulttool get test-results metrics \
 
 # Step 2: Extract and calculate memory metrics
 processed_metrics="$(jq '
-def avg: add / length | floor;
-def metric(name): .testRuns[0].metrics | map(select(.identifier | contains(name))) | .[0].measurements | avg;
+def avg: if length > 0 then add / length | floor else null end;
+def metric(name): (((.testRuns // [])[0].metrics // []) | map(select((.identifier // "") | contains(name))) | (.[0].measurements // []) | avg) // 0;
 
 [.[] | {
     test_id: .testIdentifier,

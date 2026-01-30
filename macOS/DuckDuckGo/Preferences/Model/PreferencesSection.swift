@@ -255,7 +255,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .personalInformationRemoval:
             return settingsIconProvider.personalInformationRemovalIcon
         case .paidAIChat:
-            return settingsIconProvider.duckAIIcon
+            return settingsIconProvider.paidAIChatIcon
         case .identityTheftRestoration:
             return settingsIconProvider.identityTheftRestorationIcon
         case .subscriptionSettings:

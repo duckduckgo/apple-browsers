@@ -24,6 +24,7 @@ public struct UserText {
     public static let downloadComplete = NSLocalizedString("aichat.download.complete", bundle: Bundle.module, value: "Download complete for %@", comment: "Download complete for duck.ai")
     public static let downloadToastShow = NSLocalizedString("aichat.download.show", bundle: Bundle.module, value: "Show", comment: "Show button for downloads")
     public static let downloadFailed = NSLocalizedString("aichat.download.failed", bundle: Bundle.module, value: "Download failed", comment: "Download failed message")
+    public static let attachPageContent = NSLocalizedString("duckai.contextual.attach.content", value: "Attach Page Content", comment: "Title for the attach placeholder chip in Duck.ai contextual sheet")
 
 }
 #endif

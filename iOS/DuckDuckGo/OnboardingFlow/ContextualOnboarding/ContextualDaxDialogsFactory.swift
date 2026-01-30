@@ -43,7 +43,7 @@ protocol ContextualDaxDialogsFactory {
     func makeView(for spec: DaxDialogs.BrowsingSpec, delegate: ContextualOnboardingDelegate, onSizeUpdate: @escaping () -> Void) -> UIHostingController<AnyView>
 }
 
-final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
+final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let contextualOnboardingSettings: ContextualOnboardingSettings
     private let contextualOnboardingPixelReporter: OnboardingPixelReporting

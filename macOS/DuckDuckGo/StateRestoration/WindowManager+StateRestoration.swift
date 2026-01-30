@@ -34,8 +34,10 @@ extension WindowsManager {
         }
 
         if let aiChatSidebarsByTab = state.aiChatSidebarsByTab {
-            let presentedSidebars = aiChatSidebarsByTab.filter { (_, value) in value.isPresented }
-            Application.appDelegate.aiChatSidebarProvider.restoreState(presentedSidebars)
+            let sidebarsToRestore = aiChatSidebarsByTab.filter { (_, value) in
+                value.isPresented || !value.isSessionExpired
+            }
+            Application.appDelegate.aiChatSidebarProvider.restoreState(sidebarsToRestore)
         }
 
         if includeWindows {

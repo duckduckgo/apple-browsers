@@ -78,6 +78,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Text
     private static let textPrimary = DynamicColor(lightColor: x1F1F1F, darkColor: .tint(0.9))
     private static let textSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.72), darkColor: .tint(0.6))
+    private static let textTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.36))
     private static let textPlaceholder = DynamicColor(lightColor: x1F1F1F.opacity(0.4), darkColor: .tint(0.4))
 
     // System
@@ -195,6 +196,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .textLink: return textLink
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
+        case .textTertiary: return textTertiary
         case .textSelectionFill: return textSelectionFill
 
         // Destructive

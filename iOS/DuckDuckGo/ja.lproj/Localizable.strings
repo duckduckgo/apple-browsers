@@ -2932,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "タブとサイトデータを削除しますか？";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "タブ、サイトデータ、チャットを削除しますか？";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "すべて削除";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "このタブを削除";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "[このタブを削除] を押すと、このDuck.aiチャット、このタブ内で訪問したサイトのすべてのサイトデータが消去されます。";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "これにより、進行中のダウンロードがキャンセルされます。";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "新しく作成したタブは、個別に削除することもできます。";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "サイトデータを削除すると、アカウントからサインアウトされる場合があります。";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "検索またはアドレスを入力";
 
@@ -3124,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Touch ID、Face ID、またはシステムパスコードが有効になっている場合、アプリを開く際にロック解除を求められます。";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "削除";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "自動データ消去";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "データを自動的に削除";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "ブラウザのフィードバック";
@@ -3154,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Cookieポップアップを管理";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "タブとデータを削除";
+
 /* Settings title for the customize section */
 "settings.customize" = "カスタマイズ";
 
@@ -3171,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "デフォルトのブラウザ";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Duck.aiのチャットを削除";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "タブとデータを削除";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Email Protectionの自動入力を無効にする";

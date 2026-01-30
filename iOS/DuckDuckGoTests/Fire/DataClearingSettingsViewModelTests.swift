@@ -50,7 +50,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
     private var mockAppSettings: AppSettingsMock!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockAIChatSettings: MockAIChatSettingsProvider!
-    private var mockFireproofing: FireConfirmationViewModelTests.TestFireproofing!
+    private var mockFireproofing: GranularFireConfirmationViewModelTests.TestFireproofing!
     private var mockDelegate: MockDelegate!
 
     // MARK: - Setup / Teardown
@@ -60,7 +60,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockFeatureFlagger = MockFeatureFlagger()
         mockAIChatSettings = MockAIChatSettingsProvider()
-        mockFireproofing = FireConfirmationViewModelTests.TestFireproofing()
+        mockFireproofing = GranularFireConfirmationViewModelTests.TestFireproofing()
         mockDelegate = MockDelegate()
     }
 

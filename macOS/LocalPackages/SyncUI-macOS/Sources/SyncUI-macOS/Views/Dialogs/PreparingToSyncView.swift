@@ -20,15 +20,17 @@ import SwiftUI
 import SwiftUIExtensions
 
 struct PreparingToSyncView: View {
+    @EnvironmentObject var model: ManagementDialogModel
 
     var body: some View {
+        let preparingToSyncDialogSubtitle = model.isAIChatSyncEnabled ? UserText.preparingToSyncDialogSubTitleUpdated : UserText.preparingToSyncDialogSubTitle
         SyncDialog(spacing: 20.0, bottomText: UserText.preparingToSyncDialogAction) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.sync96)
                 SyncUIViews.TextHeader(text: UserText.preparingToSyncDialogTitle)
                     .fixedSize(horizontal: false, vertical: /*@START_MENU_TOKEN@*/true/*@END_MENU_TOKEN@*/)
                     .multilineTextAlignment(.center)
-                SyncUIViews.TextDetailMultiline(text: UserText.preparingToSyncDialogSubTitle)
+                SyncUIViews.TextDetailMultiline(text: preparingToSyncDialogSubtitle)
             }
             .frame(width: 320)
         } buttons: {

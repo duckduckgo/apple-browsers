@@ -1,0 +1,62 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f
+{
+    "m_aichat_sync_internal_scoped-sync-token-error": {
+        "description": "Fired when AI Chat sync fails to obtain a scoped sync token",
+        "owners": ["amddg44", "bwaresiak"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "description": "The reason for the error",
+                "type": "string",
+                "enum": ["sync off", "token unavailable", "invalid response", "unexpected status code", "empty response", "internal error"]
+            }
+        ]
+    },
+    "m_aichat_sync_internal_encryption-error": {
+        "description": "Fired when AI Chat sync encounters an encryption error",
+        "owners": ["amddg44", "bwaresiak"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "description": "The reason for the error",
+                "type": "string",
+                "enum": ["invalid parameters", "encryption failed", "internal error"]
+            }
+        ]
+    },
+    "m_aichat_sync_internal_decryption-error": {
+        "description": "Fired when AI Chat sync encounters a decryption error",
+        "owners": ["amddg44", "bwaresiak"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "description": "The reason for the error, either 'invalid parameters' or the error's localizedDescription",
+                "type": "string"
+            }
+        ]
+    },
+    "m_aichat_sync_internal_history_enabled-error": {
+        "description": "Fired when AI Chat sync fails to check if history is enabled",
+        "owners": ["amddg44", "bwaresiak"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "description": "The reason for the error",
+                "type": "string",
+                "enum": ["invalid parameters"]
+            }
+        ]
+    }
+}

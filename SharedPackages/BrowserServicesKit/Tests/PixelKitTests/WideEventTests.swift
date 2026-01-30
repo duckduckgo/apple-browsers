@@ -528,7 +528,7 @@ final class WideEventTests: XCTestCase {
         XCTAssert(capturedPixels.count >= 1 && capturedPixels.count <= 2)
         let params = capturedPixels[0].parameters
         XCTAssertEqual(params["feature.status"], "SUCCESS")
-        XCTAssertEqual(params["feature.status_reason"], "test_success_reason")
+        XCTAssertEqual(params["feature.data.ext.status_reason"], "test_success_reason")
     }
 
     func testFlowRestartWithSameContextID() throws {
@@ -987,6 +987,6 @@ final class DefaultWideEventSendingTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.test_identifier"], "test-id")
         XCTAssertEqual(parameters["feature.data.ext.test_eligible"], "true")
         XCTAssertEqual(parameters["feature.status"], "SUCCESS")
-        XCTAssertEqual(parameters["feature.status_reason"], "test_reason")
+        XCTAssertEqual(parameters["feature.data.ext.status_reason"], "test_reason")
     }
 }

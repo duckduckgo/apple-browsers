@@ -100,7 +100,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let onOpenSettings: () -> Void
     private let pixelHandler: AIChatContextualModePixelFiring
 
-    /// Cached snapshot for use during prompt submission
+    /// Context that's currently attached - sent with the next prompt
+    private var attachedSnapshot: AIChatPageContextSnapshot?
+
+    /// Latest available context - cache for manual attachment
     private var latestSnapshot: AIChatPageContextSnapshot?
 
     /// Tracks whether the pending context attach request is automatic (vs manual)
@@ -352,6 +355,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     func applyContextSnapshot(_ snapshot: AIChatPageContextSnapshot) {
         Logger.aiChat.debug("[PageContext] applyContextSnapshot called, title: \(snapshot.context.title)")
         latestSnapshot = snapshot
+        attachedSnapshot = snapshot  // This is now the attached context that will be sent
 
         if contextualInputViewController.isContextChipVisible {
             let wasPlaceholder = sessionState.chipState == .placeholder
@@ -447,6 +451,7 @@ final class AIChatContextualSheetViewController: UIViewController {
             let chipExists = contextualInputViewController.isContextChipVisible
 
             if sessionState.chipState == .attached {
+                attachedSnapshot = snapshot  // This is now the attached context that will be sent
                 if chipExists {
                     contextualInputViewController.updateContextChipState(.attached(title: snapshot.title, favicon: snapshot.favicon))
                 } else {
@@ -510,6 +515,7 @@ private extension AIChatContextualSheetViewController {
     func attachPageContext() {
         if let snapshot = snapshotProvider() {
             latestSnapshot = snapshot
+            attachedSnapshot = snapshot  // This is now the attached context that will be sent
 
             if contextualInputViewController.isContextChipVisible {
                 contextualInputViewController.updateContextChipState(.attached(title: snapshot.title, favicon: snapshot.favicon))
@@ -575,7 +581,7 @@ private extension AIChatContextualSheetViewController {
 
         viewModel.didSubmitPrompt()
 
-        let pageContext = sessionState.chipState == .attached ? latestSnapshot?.context : nil
+        let pageContext = attachedSnapshot?.context
 
         sessionState.startChat(withContext: pageContext != nil)
 
@@ -609,6 +615,7 @@ private extension AIChatContextualSheetViewController {
         Logger.aiChat.debug("[PageContext] handleChipRemoved (user tapped X), chipState: \(String(describing: self.sessionState.chipState))")
 
         let shouldShowPlaceholder = sessionState.handleChipRemoval(hasSnapshot: latestSnapshot != nil)
+        attachedSnapshot = nil  // Nothing is attached anymore
 
         if shouldShowPlaceholder {
             Logger.aiChat.debug("[PageContext] Downgrading attached chip to placeholder")

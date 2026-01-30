@@ -390,7 +390,6 @@ class FireExecutor: FireExecuting {
     }
     
     private func burnAllAIHistory() async {
-        // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
         let result = await aiChatHistoryCleaner.cleanAIChatHistory()
         switch result {
         case .success:
@@ -406,6 +405,19 @@ class FireExecutor: FireExecuting {
     }
     
     private func burnTabAIHistory(tab: TabViewModel) async {
-        // TODO: - Implement tab specific AI chats burning
+        guard let chatID = await tab.currentAIChatId else {
+            Logger.aiChat.debug("No chatID found for tab, skipping single chat deletion")
+            return
+        }
+        let result = await aiChatHistoryCleaner.deleteAIChat(chatID: chatID)
+        switch result {
+        case .success:
+            return
+        case .failure(let error):
+            Logger.aiChat.debug("Failed to delete AI Chat: \(error.localizedDescription)")
+            if let userScriptError = error as? UserScriptError {
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
+            }
+        }
     }
 }

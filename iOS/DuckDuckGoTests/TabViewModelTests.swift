@@ -146,13 +146,13 @@ final class TabViewModelTests: XCTestCase {
         XCTAssertEqual(sut.currentAIChatId, chatID)
     }
 
-    func testWhenTabIsAITabWithEmptyChatIDParam_ThenCurrentAIChatIdReturnsEmptyString() {
+    func testWhenTabIsAITabWithEmptyChatIDParam_ThenCurrentAIChatIdReturnsNil() {
         // Given - AI tab URL with empty chatID parameter
         let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&chatID=")!
         tab.link = Link(title: nil, url: aiURL)
         sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
 
         // Then
-        XCTAssertNil(sut.currentAIChatId, "")
+        XCTAssertNil(sut.currentAIChatId)
     }
 }

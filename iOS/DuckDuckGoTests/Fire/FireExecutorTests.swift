@@ -85,9 +85,17 @@ final class FireExecutorTests: XCTestCase {
         var cleanAIChatHistoryResult: Result<Void, Error> = .success(())
         private(set) var cleanAIChatHistoryCallCount = 0
         
+        var deleteAIChatResult: Result<Void, Error> = .success(())
+        private(set) var deleteAIChatCalls: [String] = []
+        
         func cleanAIChatHistory() async -> Result<Void, Error> {
             cleanAIChatHistoryCallCount += 1
             return cleanAIChatHistoryResult
+        }
+        
+        func deleteAIChat(chatID: String) async -> Result<Void, Error> {
+            deleteAIChatCalls.append(chatID)
+            return deleteAIChatResult
         }
     }
 
@@ -191,6 +199,13 @@ final class FireExecutorTests: XCTestCase {
     
     private func makeTabViewModel() -> TabViewModel {
         let tab = Tab(uid: "test-tab-uid")
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+    
+    private func makeAITabViewModel(chatID: String) -> TabViewModel {
+        let tab = Tab(uid: "test-ai-tab-uid")
+        let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
+        tab.link = Link(title: nil, url: aiURL)
         return TabViewModel(tab: tab, historyManager: mockHistoryManager)
     }
     
@@ -582,7 +597,8 @@ final class FireExecutorTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [] // enhancedDataClearingSettings disabled
         mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
         let executor = makeFireExecutor()
-        let tabViewModel = makeTabViewModel()
+        let chatID = "test-chat-id-123"
+        let tabViewModel = makeAITabViewModel(chatID: chatID)
         
         // When - Burn AI chats for a specific tab
         await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
@@ -590,6 +606,23 @@ final class FireExecutorTests: XCTestCase {
         // Then - AI history should be cleared because scope is .tab (single chat burn)
         XCTAssertTrue(mockDelegate.willStartBurningAIHistoryCalled)
         XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
-        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
+        // Verify deleteAIChat was called with the correct chatID (not cleanAIChatHistory)
+        XCTAssertEqual(mockHistoryCleaner.deleteAIChatCalls, [chatID])
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
+    }
+    
+    func testWhenScopeIsTabWithoutChatIDThenDeleteAIChatIsNotCalled() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel() // Regular tab without chatID
+        
+        // When - Burn AI chats for a tab without chatID
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Delegate callbacks should still happen, but deleteAIChat should not be called
+        XCTAssertTrue(mockDelegate.willStartBurningAIHistoryCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
+        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
     }
 }

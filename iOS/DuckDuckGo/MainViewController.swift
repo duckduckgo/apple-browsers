@@ -3884,7 +3884,7 @@ extension MainViewController: FireExecutorDelegate {
                 }
             }
         case .tab:
-            // TODO: - Custom logic if needed
+            // TODO: - record chat ID to be deleted
             return
         }
     }
@@ -3895,13 +3895,12 @@ extension MainViewController: FireExecutorDelegate {
             Task {
                 await aiChatViewControllerManager.killSessionAndResetTimer()
             }
-
-            if syncService.authState != .inactive {
-                syncService.scheduler.requestSyncImmediately()
-            }
         case .tab:
-            // TODO: - Custom logic if needed
+            // No custom logic for tab scope
             return
+        }
+        if syncService.authState != .inactive {
+            syncService.scheduler.requestSyncImmediately()
         }
     }
     

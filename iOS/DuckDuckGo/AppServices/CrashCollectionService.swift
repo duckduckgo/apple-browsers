@@ -40,8 +40,11 @@ final class CrashCollectionService {
         self.application = application
         self.featureFlagger = featureFlagger
 
-        let isKeysSortingDisabled = featureFlagger.isFeatureOn(.crashCollectionDisableKeysSorting)
-        crashCollection.startAttachingCrashLogMessages(sortKeys: !isKeysSortingDisabled) { [weak self] pixelParameters, payloads, sendReport in
+        let sortKeys = !featureFlagger.isFeatureOn(.crashCollectionDisableKeysSorting)
+        let isCallStackLimitingEnabled = featureFlagger.isFeatureOn(.crashCollectionLimitCallStackTreeDepth)
+        let callStackDepthLimit: Int? = isCallStackLimitingEnabled ? 250 : nil
+
+        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: callStackDepthLimit, sortKeys: sortKeys) { [weak self] pixelParameters, payloads, sendReport in
             pixelParameters.forEach { params in
 
                 // Calculate appIdentifier for what crashed - nil for main bundle, otherwise the app identifier is the bundle identifier minus the main bundle identifier.

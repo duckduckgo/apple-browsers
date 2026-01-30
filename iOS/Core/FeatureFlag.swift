@@ -305,6 +305,10 @@ public enum FeatureFlag: String {
     /// Failsafe flag to bring back keys sorting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
     case crashCollectionDisableKeysSorting
+
+    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
+    case crashCollectionLimitCallStackTreeDepth
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -331,7 +335,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
              .aiChatAutoAttachContextByDefault,
-             .crashCollectionDisableKeysSorting:
+             .crashCollectionDisableKeysSorting,
+             .crashCollectionLimitCallStackTreeDepth:
             true
         default:
             false
@@ -446,6 +451,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                .newDeviceSyncPrompt,
                .migrateKeychainAccessibility,
                .productTelemeterySurfaceUsage,
+               .crashCollectionLimitCallStackTreeDepth,
                .crashCollectionDisableKeysSorting:
             return false
         }
@@ -636,6 +642,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionDisableKeysSorting:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashCollectionDisableKeysSorting))
+        case .crashCollectionLimitCallStackTreeDepth:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
         }
     }
 }

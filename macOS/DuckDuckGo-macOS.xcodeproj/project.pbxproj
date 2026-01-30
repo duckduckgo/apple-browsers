@@ -4061,6 +4061,14 @@
 		F118EA7E2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F118EA7C2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift */; };
 		F118EA852BEACC7000F77634 /* NonStandardPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F118EA842BEACC7000F77634 /* NonStandardPixel.swift */; };
 		F118EA862BEACC7000F77634 /* NonStandardPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F118EA842BEACC7000F77634 /* NonStandardPixel.swift */; };
+		F124B9512F2CC15600B29447 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9502F2CC15600B29447 /* BuildFlags.swift */; };
+		F124B9522F2CC15600B29447 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9502F2CC15600B29447 /* BuildFlags.swift */; };
+		F124B9532F2CC15600B29447 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9502F2CC15600B29447 /* BuildFlags.swift */; };
+		F124B9542F2CC15600B29447 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9502F2CC15600B29447 /* BuildFlags.swift */; };
+		F124B9552F2CC15600B29447 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9502F2CC15600B29447 /* BuildFlags.swift */; };
+		F124B9562F2CC15600B29447 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9502F2CC15600B29447 /* BuildFlags.swift */; };
+		F124B9572F2CC15600B29447 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9502F2CC15600B29447 /* BuildFlags.swift */; };
+		F124B9582F2CC15600B29447 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9502F2CC15600B29447 /* BuildFlags.swift */; };
 		F124E0DD2D6E12190035C7BA /* NetworkingTestingUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0DC2D6E12190035C7BA /* NetworkingTestingUtils */; };
 		F124E0DF2D6E12190035C7BA /* PersistenceTestingUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0DE2D6E12190035C7BA /* PersistenceTestingUtils */; };
 		F124E0E12D6E12260035C7BA /* NetworkingTestingUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0E02D6E12260035C7BA /* NetworkingTestingUtils */; };
@@ -4158,6 +4166,8 @@
 		F1D4472A2D9EAA950085809A /* SubscriptionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* SubscriptionPixelHandler.swift */; };
 		F1D4472B2D9EAA950085809A /* SubscriptionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* SubscriptionPixelHandler.swift */; };
 		F1D4472F2D9ECEE90085809A /* SubscriptionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* SubscriptionPixelHandler.swift */; };
+		F1D583E52F2CCA0B00492992 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9502F2CC15600B29447 /* BuildFlags.swift */; };
+		F1D583E62F2CCA0B00492992 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9502F2CC15600B29447 /* BuildFlags.swift */; };
 		F1DA51862BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DA51842BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift */; };
 		F1DA51872BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DA51842BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift */; };
 		F1DA51882BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DA51842BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift */; };
@@ -6445,6 +6455,7 @@
 		EEF7091B2DDE2C2000BA3C36 /* SyncExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncExtensions.swift; sourceTree = "<group>"; };
 		F118EA7C2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift"; sourceTree = "<group>"; };
 		F118EA842BEACC7000F77634 /* NonStandardPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonStandardPixel.swift; sourceTree = "<group>"; };
+		F124B9502F2CC15600B29447 /* BuildFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildFlags.swift; sourceTree = "<group>"; };
 		F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionUIHandler.swift; sourceTree = "<group>"; };
 		F14890842ECCCAA800B5239E /* AttributedMetricUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedMetricUtils.swift; sourceTree = "<group>"; };
 		F14890962ECDD24400B5239E /* AttributedMetricDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedMetricDebugMenu.swift; sourceTree = "<group>"; };
@@ -8685,6 +8696,7 @@
 		4BB88B4E25B7BA20006F6B06 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				F124B9502F2CC15600B29447 /* BuildFlags.swift */,
 				37534CA62811988E002621E7 /* AdjacentItemEnumerator.swift */,
 				BB80DDD12D75EEA100ED1FFF /* ApplicationBuildType.swift */,
 				B6E319372953446000DD3BCF /* Assertions.swift */,
@@ -14768,6 +14780,7 @@
 				3706FBDA293F65D500E42796 /* PermissionManager.swift in Sources */,
 				3706FBDB293F65D500E42796 /* DefaultBrowserPreferences.swift in Sources */,
 				9FEE98662B846870002E44E8 /* AddEditBookmarkView.swift in Sources */,
+				F124B9532F2CC15600B29447 /* BuildFlags.swift in Sources */,
 				84658D3A2EAA09680018D992 /* WindowControllersManagerMock.swift in Sources */,
 				3706FBDC293F65D500E42796 /* Permissions.xcdatamodeld in Sources */,
 				4B41EDB52B168C55001EEDF4 /* UnifiedFeedbackFormViewModel.swift in Sources */,
@@ -15792,6 +15805,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F124B9562F2CC15600B29447 /* BuildFlags.swift in Sources */,
 				F1D447272D9EAA950085809A /* SubscriptionPixelHandler.swift in Sources */,
 				4B52354D2C854CB600AFAF64 /* DuckDuckGoUserAgent.swift in Sources */,
 				EEBCA0C72BD7CE2C004DF19C /* VPNFailureRecoveryPixel.swift in Sources */,
@@ -15818,6 +15832,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F124B9512F2CC15600B29447 /* BuildFlags.swift in Sources */,
 				02FDA6632C765D0F0024CD8B /* VPNAgentConfigurationURLProvider.swift in Sources */,
 				F1D447292D9EAA950085809A /* SubscriptionPixelHandler.swift in Sources */,
 				B6F92BA22A691580002ABA6B /* UserDefaultsWrapper.swift in Sources */,
@@ -15870,6 +15885,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F124B9542F2CC15600B29447 /* BuildFlags.swift in Sources */,
 				02FDA6642C765D0F0024CD8B /* VPNAgentConfigurationURLProvider.swift in Sources */,
 				F1D4472F2D9ECEE90085809A /* SubscriptionPixelHandler.swift in Sources */,
 				7B2DDCFB2A93B25F0039D884 /* KeychainType+ClientDefault.swift in Sources */,
@@ -15930,6 +15946,7 @@
 				B602E8182A1E2570006D261F /* URL+NetworkProtection.swift in Sources */,
 				4B52354E2C854CB700AFAF64 /* DuckDuckGoUserAgent.swift in Sources */,
 				F1C70D7E2BFF510000599292 /* SubscriptionEnvironment+Default.swift in Sources */,
+				F1D583E52F2CCA0B00492992 /* BuildFlags.swift in Sources */,
 				4B4D60A02A0B2D5B00BCD287 /* Bundle+VPN.swift in Sources */,
 				F1DA51922BF6081C00CF29FA /* AttributionPixelHandler.swift in Sources */,
 				4BF0E50C2AD2552300FFEC9E /* NetworkProtectionPixelEvent.swift in Sources */,
@@ -15968,6 +15985,7 @@
 				7BC3E43A2D6DF50B009787CD /* VPNFailureRecoveryPixel.swift in Sources */,
 				7BC3E4332D6DF487009787CD /* VPNProxyNotificationsPresenter.swift in Sources */,
 				7BC3E4372D6DF4BD009787CD /* URL+NetworkProtection.swift in Sources */,
+				F124B9572F2CC15600B29447 /* BuildFlags.swift in Sources */,
 				7BC3E4432D6DF5CD009787CD /* SubscriptionEnvironment+Default.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -16042,6 +16060,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B97CD5C2B7E0BBB004FEF43 /* UserDefaultsWrapper.swift in Sources */,
+				F1D583E62F2CCA0B00492992 /* BuildFlags.swift in Sources */,
 				7BDA36F52B7E055800AD5388 /* MacTransparentProxyProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -16068,6 +16087,7 @@
 				BDD30ACE2D8A2A8A00457A89 /* VPNBypassServiceExtensions.swift in Sources */,
 				9D9AE9212AAA3B450026E7DC /* UserText.swift in Sources */,
 				1E5FA8A62DD394EB0082FA72 /* DuckDuckGoUserAgent.swift in Sources */,
+				F124B9582F2CC15600B29447 /* BuildFlags.swift in Sources */,
 				31ECDA132BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift in Sources */,
 				F1D4472A2D9EAA950085809A /* SubscriptionPixelHandler.swift in Sources */,
 				BDBBE72E2DCD2E7500858BF9 /* DBPFeatureFlagger.swift in Sources */,
@@ -16089,6 +16109,7 @@
 				BDD30ACD2D8A2A8A00457A89 /* VPNBypassServiceExtensions.swift in Sources */,
 				9D9AE9222AAA3B450026E7DC /* UserText.swift in Sources */,
 				1E5FA8A72DD394EB0082FA72 /* DuckDuckGoUserAgent.swift in Sources */,
+				F124B9522F2CC15600B29447 /* BuildFlags.swift in Sources */,
 				31ECDA142BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift in Sources */,
 				F1D4472B2D9EAA950085809A /* SubscriptionPixelHandler.swift in Sources */,
 				BDBBE72F2DCD2E7500858BF9 /* DBPFeatureFlagger.swift in Sources */,
@@ -16740,6 +16761,7 @@
 				BBFB727F2C48047C0088884C /* SortBookmarksViewModel.swift in Sources */,
 				EECA36B92E869885005A42EE /* ImportArchiveReader.swift in Sources */,
 				37E3E8032DAE58660056DEED /* TabCrashRecoveryExtension.swift in Sources */,
+				F124B9552F2CC15600B29447 /* BuildFlags.swift in Sources */,
 				4BA1A6A5258B07DF00F6F690 /* EncryptedValueTransformer.swift in Sources */,
 				8400DC4B2C6E26AE006509D2 /* BookmarksBarCollectionView.swift in Sources */,
 				B634DBE1293C8FD500C3C99E /* Tab+Dialogs.swift in Sources */,

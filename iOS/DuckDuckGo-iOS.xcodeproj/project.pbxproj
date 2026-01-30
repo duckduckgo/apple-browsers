@@ -2033,6 +2033,7 @@
 		F11595D12E854C7400CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D02E854C7400CC0481 /* AttributedMetric */; };
 		F11595D72E8570AF00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D62E8570AF00CC0481 /* AttributedMetric */; };
 		F11595D92E8570B500CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D82E8570B500CC0481 /* AttributedMetric */; };
+		F124B95A2F2CC20C00B29447 /* BuildFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F124B9592F2CC20C00B29447 /* BuildFlags.swift */; };
 		F130D73A1E5776C500C45811 /* OmniBarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F130D7391E5776C500C45811 /* OmniBarDelegate.swift */; };
 		F132D6A52C62239B00D85426 /* SubscriptionSettingsHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F132D6A42C62239B00D85426 /* SubscriptionSettingsHeaderView.swift */; };
 		F1386BA41E6846C40062FC3C /* TabDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1386BA31E6846C40062FC3C /* TabDelegate.swift */; };
@@ -4508,6 +4509,7 @@
 		F1134ECC1F40EA2000B73467 /* AtbParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AtbParserTests.swift; sourceTree = "<group>"; };
 		F1134ED41F40F15800B73467 /* StatisticsUserDefaultsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatisticsUserDefaultsTests.swift; sourceTree = "<group>"; };
 		F114C55A1E66EB020018F95F /* NibLoading.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NibLoading.swift; sourceTree = "<group>"; };
+		F124B9592F2CC20C00B29447 /* BuildFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildFlags.swift; sourceTree = "<group>"; };
 		F130D7391E5776C500C45811 /* OmniBarDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmniBarDelegate.swift; sourceTree = "<group>"; };
 		F132D6A42C62239B00D85426 /* SubscriptionSettingsHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionSettingsHeaderView.swift; sourceTree = "<group>"; };
 		F1386BA31E6846C40062FC3C /* TabDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabDelegate.swift; sourceTree = "<group>"; };
@@ -9513,12 +9515,11 @@
 		F143C2E51E4A4CD400CFDE3A /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				85A5FEE42ED9D87B001B5605 /* Telemetry */,
 				85DDB83D2E4CDDEB00C6FA9F /* AppConfigurationKeyNames.swift */,
 				C1CAAAA12CFCBBAC00C37EE6 /* Authenticator */,
 				C1CAAA962CFCAB8000C37EE6 /* Autofill */,
-				31B2F10D2C92FEB000CD30E3 /* MarketplaceAdPostback */,
 				F1CE42A71ECA0A520074A8DF /* Bookmarks */,
+				F124B9592F2CC20C00B29447 /* BuildFlags.swift */,
 				837774491F8E1ECE00E17A29 /* ContentBlocker */,
 				F143C2E61E4A4CD400CFDE3A /* Core.h */,
 				C1C23C0E2D490ADB00B6BDF6 /* DataImport */,
@@ -9530,11 +9531,13 @@
 				F143C2E71E4A4CD400CFDE3A /* Info.plist */,
 				98B001AE251EABB40090EC07 /* InfoPlist.strings */,
 				F18608DE1E5E648100361C30 /* Javascript */,
+				31B2F10D2C92FEB000CD30E3 /* MarketplaceAdPostback */,
 				EE7A92852AC6DE2500832A36 /* NetworkProtection */,
 				CBAA195B27C3982A00A4BD49 /* PrivacyFeatures.swift */,
 				CBAA195627BFDD9800A4BD49 /* SmarterEncryption */,
 				F1134EA71F3E2B3500B73467 /* Statistics */,
 				37DF000829F9C3F0002B7D3E /* Sync */,
+				85A5FEE42ED9D87B001B5605 /* Telemetry */,
 				F143C3191E4A99DD00CFDE3A /* Utilities */,
 				F143C3311E4A9A6A00CFDE3A /* Web */,
 			);
@@ -12927,6 +12930,7 @@
 				C14882DC27F2011C00D59F0C /* BookmarksImporter.swift in Sources */,
 				CBAA195A27BFE15600A4BD49 /* NSManagedObjectContextExtension.swift in Sources */,
 				C13C54A12E74728C003451F5 /* SyncCreditCardsAdapter.swift in Sources */,
+				F124B95A2F2CC20C00B29447 /* BuildFlags.swift in Sources */,
 				37CBCA9E2A8A659C0050218F /* SyncSettingsAdapter.swift in Sources */,
 				37E615752A5F533E00ACD63D /* SyncCredentialsAdapter.swift in Sources */,
 				85BDC3192436161C0053DB07 /* LoginFormDetectionUserScript.swift in Sources */,

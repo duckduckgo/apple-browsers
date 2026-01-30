@@ -146,7 +146,7 @@ public final class PixelKit {
     /// - `dryRun`: if `true`, simulate requests and "send" them at an accelerated rate (once every 2 minutes instead of once a day)
     /// - `source`: if set, adds a `pixelSource` parameter to the pixel call; this can be used to specify which target is sending the pixel
     /// - `fireRequest`: this is not triggered when `dryRun` is `true`
-    public static func setUp(dryRun: Bool = false,
+    public static func setUp(dryRun: Bool,
                              appVersion: String,
                              source: String? = nil,
                              defaultHeaders: [String: String],

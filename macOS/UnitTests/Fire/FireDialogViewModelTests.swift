@@ -152,7 +152,7 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning")
 
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
     @MainActor func testOnBurn_WhenAppIsNotActive_DoesNotOpenNewWindow() {
@@ -220,7 +220,7 @@ final class FireDialogViewModelTests: XCTestCase {
         wait(for: [presentExpectation], timeout: 5.0)
 
         // Validate openNewWindow was NOT called
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
     @MainActor func testBurn_WithIncludeHistoryFalse_DoesNotCallBurnHistory() {
@@ -291,7 +291,7 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning")
 
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
     @MainActor func testClearingOption_UpdatesSelectableAndFireproofed() {
@@ -382,7 +382,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r1)
         wait(for: [exp], timeout: 5)
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists and old tab was removed, new tab was inserted
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
@@ -442,7 +442,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r2)
         wait(for: [exp], timeout: 5)
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists and all old tabs were removed, new tab was inserted
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
@@ -504,7 +504,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r3)
         wait(for: [exp], timeout: 5)
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
     @MainActor func testBurn_CurrentWindow_WithIncludeHistoryTrue_AndDoNotCloseTabs_BurnVisitsCalled() {
@@ -552,7 +552,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r4)
         wait(for: [exp], timeout: 5)
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
     @MainActor func testBurn_AllData_WithIncludeHistoryTrue_AndDoNotCloseWindows_BurnAllCalled() {
@@ -600,7 +600,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r5)
         wait(for: [exp], timeout: 5)
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
     @MainActor func testBurn_AllData_WithIncludeHistoryTrue_BurnAllCalled() {
@@ -655,7 +655,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r6)
         wait(for: [exp], timeout: 5)
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists with new tab
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
@@ -711,7 +711,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r7)
         wait(for: [exp], timeout: 5)
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists with new tab
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
@@ -770,7 +770,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r8)
         wait(for: [exp], timeout: 5)
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists with new tab
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
@@ -831,7 +831,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r9)
         wait(for: [exp], timeout: 5)
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists with new tab
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
@@ -898,7 +898,7 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning")
 
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
     @MainActor func testBurn_CurrentWindow_WithIncludeHistoryFalse_DoesNotBurnHistory() {
@@ -963,7 +963,7 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning")
 
-        wait(for: [openNewWindowExp], timeout: 5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
     @MainActor func testUpdateItems_InitialAndOnChange_UpdatesHistoryVisitsAndSelection() {

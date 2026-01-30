@@ -260,7 +260,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         // Wait for expectations
         wait(for: [week1Expectation, week4Expectation, month2Expectation, month6Expectation], timeout: 5.0)
-        wait(for: [noDuplicateExpectation], timeout: 5)
+        wait(for: [noDuplicateExpectation], timeout: 0.1)
 
         // Verify correct number of pixels fired
         XCTAssertEqual(pixelFireCount, 4, "Should fire exactly 4 retention pixels")

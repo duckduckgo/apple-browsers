@@ -114,7 +114,7 @@ public final class CrashCollection {
     ///   - didFindCrashReports: callback called after payload preprocessing is finished.
     ///     Provides processed JSON data to be presented to the user and Pixel parameters to fire a crash Pixel.
     ///     `uploadReports` callback is used when the user accepts uploading the crash report and starts crash upload to the server.
-    public func startAttachingCrashLogMessages(sortKeys: Bool = false, didFindCrashReports: @escaping (_ pixelParameters: [[String: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
+    public func startAttachingCrashLogMessages(callStackDepthLimit: Int? = nil, sortKeys: Bool = false, didFindCrashReports: @escaping (_ pixelParameters: [[String: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
         start(process: { payloads in
             payloads.compactMap { payload in
                 var dict = payload.dictionaryRepresentation()
@@ -128,6 +128,11 @@ public final class CrashCollection {
                 // For now, we are ignoring these.
                 if var crashDiagnostics = dict["crashDiagnostics"] as? [[AnyHashable: Any]], !crashDiagnostics.isEmpty {
                     var crashDiagnosticsDict = crashDiagnostics[0]
+
+                    if let depthLimit = callStackDepthLimit,
+                       let callStackTree = crashDiagnosticsDict["callStackTree"] as? [AnyHashable: Any] {
+                        crashDiagnosticsDict["callStackTree"] = Self.limitCallStackTreeDepth(callStackTree, maxDepth: depthLimit)
+                    }
                     var diagnosticMetaDataDict = crashDiagnosticsDict["diagnosticMetaData"] as? [AnyHashable: Any] ?? [:]
                     var objCexceptionReason = diagnosticMetaDataDict["objectiveCexceptionReason"] as? [AnyHashable: Any] ?? [:]
 
@@ -211,6 +216,56 @@ public final class CrashCollection {
     let crashSender: CrashReportSending
     let crashCollectionStorage: KeyValueStoring
     let crcidManager: CRCIDManager
+
+    // MARK: - Call Stack Tree Depth Limiting
+
+    /// Limits the depth of a call stack tree structure using an iterative approach.
+    /// This prevents stack overflow when processing deeply nested call stack trees.
+    ///
+    /// - Parameters:
+    ///   - tree: The call stack tree dictionary to process
+    ///   - maxDepth: Maximum depth to preserve (nodes deeper than this will be truncated)
+    /// - Returns: A new dictionary with depth limited to maxDepth
+    static func limitCallStackTreeDepth(_ tree: [AnyHashable: Any], maxDepth: Int) -> [AnyHashable: Any] {
+        guard maxDepth > 0 else { return [:] }
+
+        // Work item: (source dictionary, target mutable dictionary, current depth)
+        typealias WorkItem = (source: [AnyHashable: Any], target: NSMutableDictionary, depth: Int)
+
+        let result = NSMutableDictionary()
+        var stack: [WorkItem] = [(tree, result, 0)]
+
+        while let workItem = stack.popLast() {
+            let (source, target, depth) = workItem
+
+            for (key, value) in source {
+                if let nestedDict = value as? [AnyHashable: Any] {
+                    if depth < maxDepth {
+                        let nestedTarget = NSMutableDictionary()
+                        target[key] = nestedTarget
+                        stack.append((nestedDict, nestedTarget, depth + 1))
+                    }
+                    // If depth >= maxDepth, skip nested dictionaries
+                } else if let array = value as? [[AnyHashable: Any]] {
+                    if depth < maxDepth {
+                        let processedArray = NSMutableArray()
+                        for item in array {
+                            let itemTarget = NSMutableDictionary()
+                            processedArray.add(itemTarget)
+                            stack.append((item, itemTarget, depth + 1))
+                        }
+                        target[key] = processedArray
+                    }
+                    // If depth >= maxDepth, skip arrays of dictionaries
+                } else {
+                    // Primitive values and other arrays are copied as-is
+                    target[key] = value
+                }
+            }
+        }
+
+        return result as! [AnyHashable: Any]
+    }
 
     enum Const {
         static let firstCrashKey = "CrashCollection.first"

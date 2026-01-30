@@ -364,10 +364,19 @@ class FireExecutor: FireExecuting {
     /// - User configures what to clear via the enhanced settings UI
     /// For manual fire OR auto-clear with FF OFF (legacy):
     /// - AI chats clear only if autoClearAIChatHistory setting is enabled
+    /// For single chat burning:
+    /// - The user setting autoClearAIChatHistory should be ignored
     /// - Returns: A boolean indicating if we should run the ai chats burn flow
     private func shouldBurnAIHistory(_ request: FireRequest) -> Bool {
         let chosenThroughNewAutoClearUI = featureFlagger.isFeatureOn(.enhancedDataClearingSettings) && request.trigger != .manualFire
-        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI || appSettings.autoClearAIChatHistory
+
+        var singleChatBurn: Bool = false
+        if case .tab = request.scope { singleChatBurn = true }
+
+        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI
+        || appSettings.autoClearAIChatHistory
+        || singleChatBurn
+
         return request.options.contains(.aiChats) && shouldAllowAIChatsBurn
     }
     

@@ -576,4 +576,20 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertFalse(mockDelegate.didFinishBurningAIHistoryCalled)
         XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
     }
+    
+    func testWhenScopeIsTabThenAIChatsAreClearedRegardlessOfUserSetting() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [] // enhancedDataClearingSettings disabled
+        mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        
+        // When - Burn AI chats for a specific tab
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - AI history should be cleared because scope is .tab (single chat burn)
+        XCTAssertTrue(mockDelegate.willStartBurningAIHistoryCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
+    }
 }

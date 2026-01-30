@@ -1,5 +1,5 @@
 //
-//  WKWebExtensionWindow+iOS.swift
+//  MainViewController+WKWebExtensionWindow.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.

@@ -1,5 +1,5 @@
 //
-//  WKWebExtensionWindow.swift
+//  MainWindowController+WKWebExtensionWindow.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //

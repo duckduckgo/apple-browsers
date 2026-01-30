@@ -301,6 +301,10 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
+
+    /// Failsafe flag to bring back keys sorting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -326,7 +330,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .webViewFlashPrevention,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
-             .aiChatAutoAttachContextByDefault:
+             .aiChatAutoAttachContextByDefault,
+             .crashCollectionDisableKeysSorting:
             true
         default:
             false
@@ -440,7 +445,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                .canPromoteImportPasswordsInPasswordManagement,
                .newDeviceSyncPrompt,
                .migrateKeychainAccessibility,
-               .productTelemeterySurfaceUsage:
+               .productTelemeterySurfaceUsage,
+               .crashCollectionDisableKeysSorting:
             return false
         }
     }
@@ -628,6 +634,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
+        case .crashCollectionDisableKeysSorting:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashCollectionDisableKeysSorting))
         }
     }
 }

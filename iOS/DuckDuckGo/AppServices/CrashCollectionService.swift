@@ -20,11 +20,13 @@
 import Common
 import Core
 import Crashes
+import PrivacyConfig
 
 final class CrashCollectionService {
 
     private let appSettings: AppSettings
     private let application: UIApplication
+    private let featureFlagger: FeatureFlagger
 
     private lazy var crashCollection = CrashCollection(crashReportSender: CrashReportSender(platform: .iOS,
                                                                                             pixelEvents: CrashReportSender.pixelEvents),
@@ -32,11 +34,14 @@ final class CrashCollectionService {
     private lazy var crashReportUploaderOnboarding = CrashCollectionOnboarding(appSettings: appSettings)
 
     init(appSettings: AppSettings = AppUserDefaults(),
-         application: UIApplication = UIApplication.shared) {
+         application: UIApplication = UIApplication.shared,
+         featureFlagger: FeatureFlagger) {
         self.appSettings = appSettings
         self.application = application
+        self.featureFlagger = featureFlagger
 
-        crashCollection.startAttachingCrashLogMessages { [weak self] pixelParameters, payloads, sendReport in
+        let isKeysSortingDisabled = featureFlagger.isFeatureOn(.crashCollectionDisableKeysSorting)
+        crashCollection.startAttachingCrashLogMessages(sortKeys: !isKeysSortingDisabled) { [weak self] pixelParameters, payloads, sendReport in
             pixelParameters.forEach { params in
 
                 // Calculate appIdentifier for what crashed - nil for main bundle, otherwise the app identifier is the bundle identifier minus the main bundle identifier.

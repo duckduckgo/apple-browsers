@@ -114,7 +114,7 @@ public final class CrashCollection {
     ///   - didFindCrashReports: callback called after payload preprocessing is finished.
     ///     Provides processed JSON data to be presented to the user and Pixel parameters to fire a crash Pixel.
     ///     `uploadReports` callback is used when the user accepts uploading the crash report and starts crash upload to the server.
-    public func startAttachingCrashLogMessages(didFindCrashReports: @escaping (_ pixelParameters: [[String: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
+    public func startAttachingCrashLogMessages(sortKeys: Bool = false, didFindCrashReports: @escaping (_ pixelParameters: [[String: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
         start(process: { payloads in
             payloads.compactMap { payload in
                 var dict = payload.dictionaryRepresentation()
@@ -184,7 +184,10 @@ public final class CrashCollection {
                     assertionFailure("Invalid JSON object: \(dict)")
                     return nil
                 }
-                return try? JSONSerialization.data(withJSONObject: dict, options: [.prettyPrinted, .sortedKeys])
+
+                let writeOptions: JSONSerialization.WritingOptions = sortKeys ? [.prettyPrinted, .sortedKeys] : [.prettyPrinted]
+
+                return try? JSONSerialization.data(withJSONObject: dict, options: writeOptions)
             }
 
         }, didFindCrashReports: didFindCrashReports)

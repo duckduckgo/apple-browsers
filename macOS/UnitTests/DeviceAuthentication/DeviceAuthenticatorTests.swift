@@ -115,7 +115,7 @@ class DeviceAuthenticatorTests: XCTestCase {
         XCTAssertFalse(deviceAuthenticator.requiresAuthentication)
 
         let expectation = expectation(description: "Wait for the authenticator to become locked")
-        let result = waitResult(for: [expectation], timeout: 5)
+        let result = waitResult(for: [expectation], timeout: 0.2)
 
         if result == .timedOut {
             XCTAssertTrue(deviceAuthenticator.requiresAuthentication)

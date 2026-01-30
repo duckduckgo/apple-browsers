@@ -126,7 +126,7 @@ final class NewTabPageNextStepsCardsClientTests: XCTestCase {
     func testThatWillDisplayCardsPublisherIsNotSentBeforeGetConfigIsCalled() async throws {
         model.cards = [.addAppToDockMac, .duckplayer]
 
-        try await performAndWaitForWillDisplayCards(count: 0, timeout: 5) {
+        try await performAndWaitForWillDisplayCards(count: 0, timeout: 0.1) {
             try await messageHelper.handleMessageIgnoringResponse(named: .getData)
             try await messageHelper.handleMessageIgnoringResponse(named: .getData)
             try await messageHelper.handleMessageIgnoringResponse(named: .getData)
@@ -146,7 +146,7 @@ final class NewTabPageNextStepsCardsClientTests: XCTestCase {
     func testThatWillDisplayCardsPublisherIsNotSentBeforeGetDataIsCalled() async throws {
         model.cards = [.addAppToDockMac, .duckplayer]
 
-        try await performAndWaitForWillDisplayCards(count: 0, timeout: 5) {
+        try await performAndWaitForWillDisplayCards(count: 0, timeout: 0.1) {
             try await messageHelper.handleMessageIgnoringResponse(named: .getConfig)
             try await messageHelper.handleMessageIgnoringResponse(named: .getConfig)
             try await messageHelper.handleMessageIgnoringResponse(named: .getConfig)
@@ -227,7 +227,7 @@ final class NewTabPageNextStepsCardsClientTests: XCTestCase {
         model.isViewExpanded = false
         try await triggerInitialCardsEventAndResetMockState()
 
-        try await performAndWaitForWillDisplayCards(count: 0, timeout: 5) {
+        try await performAndWaitForWillDisplayCards(count: 0, timeout: 0.1) {
             model.isViewExpanded = true
         }
 
@@ -239,7 +239,7 @@ final class NewTabPageNextStepsCardsClientTests: XCTestCase {
         model.isViewExpanded = true
         try await triggerInitialCardsEventAndResetMockState()
 
-        try await performAndWaitForWillDisplayCards(count: 0, timeout: 5) {
+        try await performAndWaitForWillDisplayCards(count: 0, timeout: 0.1) {
             model.isViewExpanded = false
         }
 

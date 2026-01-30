@@ -79,7 +79,7 @@ struct AIChatDebugView: View {
                     }
                 }
 
-                Button("Reset to Default (60 minutes)") {
+                Button("Reset to Default") {
                     viewModel.resetSessionTimer()
                 }
                 .foregroundColor(.red)

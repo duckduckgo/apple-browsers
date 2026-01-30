@@ -21,7 +21,7 @@ import Combine
 import Foundation
 import os.log
 
-/// Tracks the lifecycle state of the frontend chat
+/// Manages the lifecycle state of the frontend chat
 enum FrontendChatState: CustomStringConvertible {
     case noChat
     case chatWithoutInitialContext
@@ -36,7 +36,7 @@ enum FrontendChatState: CustomStringConvertible {
     }
 }
 
-/// Tracks the current state of the context chip
+/// Manages the current state of the context chip
 enum ChipState: CustomStringConvertible {
     case none
     case placeholder
@@ -60,7 +60,7 @@ final class AIChatContextualChatSessionState {
     @Published private(set) var frontendState: FrontendChatState = .noChat
     @Published private(set) var chipState: ChipState = .none
 
-    /// Tracks whether the user explicitly downgraded from attached to placeholder
+    /// Manages whether the user explicitly downgraded from attached to placeholder
     private(set) var userDowngradedToPlaceholder = false
 
     // MARK: - Frontend Chat State Transitions
@@ -168,25 +168,6 @@ final class AIChatContextualChatSessionState {
         if userDowngradedToPlaceholder {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[PageContext] Cleared user downgrade flag on navigation")
-        }
-    }
-
-    /// Resets chip state on navigation when collection is skipped (e.g. auto-attach OFF)
-    func resetChipOnNavigation(autoAttachEnabled: Bool) {
-        // If we have an active chat with context, we might want to keep the chip? 
-        // But assuming we want to clear "stale" page context if we aren't tracking the new page.
-        // For now, if we are not collecting, and we are in noChat or chatWithoutInitialContext, we should probably clear.
-        
-        if frontendState == .chatWithInitialContext {
-            // Chat is locked to a context. Do not clear the chip as it represents the active chat context.
-            return
-        }
-        
-        // If we are here, we are NOT collecting context for the new page.
-        // So any existing attached chip is stale (belongs to previous page).
-        if chipState != .none {
-            chipState = .none
-            Logger.aiChat.debug("[PageContext] Chip reset to none on navigation (stale context)")
         }
     }
 

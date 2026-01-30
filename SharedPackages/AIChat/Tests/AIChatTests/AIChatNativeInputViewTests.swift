@@ -90,7 +90,6 @@ final class AIChatNativeInputViewTests: XCTestCase {
         XCTAssertTrue(sut.isVoiceButtonEnabled)
     }
 
-
     // MARK: - Text Property Tests
 
     func testSettingTextUpdatesValue() {
@@ -131,7 +130,6 @@ final class AIChatNativeInputViewTests: XCTestCase {
         // Then
         XCTAssertFalse(sut.isVoiceButtonEnabled)
     }
-
 
     // MARK: - Context Chip Tests
 

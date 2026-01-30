@@ -264,7 +264,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertFalse(shouldCollect)
     }
 
-    func testShouldCollectContextWhenNoChattAndAutoAttachEnabledReturnsTrue() {
+    func testShouldCollectContextWhenNoChatAndAutoAttachEnabledReturnsTrue() {
         // Given
         XCTAssertEqual(sessionState.frontendState, .noChat)
 
@@ -275,7 +275,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(shouldCollect)
     }
 
-    func testShouldCollectContextWhenNoChattAndAutoAttachDisabledReturnsFalse() {
+    func testShouldCollectContextWhenNoChatAndAutoAttachDisabledReturnsFalse() {
         // Given
         XCTAssertEqual(sessionState.frontendState, .noChat)
 
@@ -379,56 +379,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
-    }
-
-    // MARK: - Business Logic Tests: resetChipOnNavigation
-
-    func testResetChipOnNavigationWhenChatWithInitialContextDoesNothing() {
-        // Given
-        sessionState.startChat(withContext: true)
-        sessionState.attachChip()
-
-        // When
-        sessionState.resetChipOnNavigation(autoAttachEnabled: false)
-
-        // Then
-        XCTAssertEqual(sessionState.chipState, .attached)
-    }
-
-    func testResetChipOnNavigationWhenNoChatResetsChip() {
-        // Given
-        sessionState.attachChip()
-        XCTAssertEqual(sessionState.chipState, .attached)
-
-        // When
-        sessionState.resetChipOnNavigation(autoAttachEnabled: false)
-
-        // Then
-        XCTAssertEqual(sessionState.chipState, .none)
-    }
-
-    func testResetChipOnNavigationWhenChatWithoutInitialContextResetsChip() {
-        // Given
-        sessionState.startChat(withContext: false)
-        sessionState.showPlaceholder()
-        XCTAssertEqual(sessionState.chipState, .placeholder)
-
-        // When
-        sessionState.resetChipOnNavigation(autoAttachEnabled: false)
-
-        // Then
-        XCTAssertEqual(sessionState.chipState, .none)
-    }
-
-    func testResetChipOnNavigationWhenChipAlreadyNoneDoesNothing() {
-        // Given
-        XCTAssertEqual(sessionState.chipState, .none)
-
-        // When
-        sessionState.resetChipOnNavigation(autoAttachEnabled: false)
-
-        // Then
-        XCTAssertEqual(sessionState.chipState, .none)
     }
 
     // MARK: - Business Logic Tests: isShowingNativeInput
@@ -578,31 +528,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.chipState, .placeholder)
         XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
         XCTAssertTrue(sessionState.isShowingNativeInput)
-    }
-
-    func testNavigationWithAutoAttachOffDoesNotClearAttachment() {
-        // Given
-        sessionState.startChat(withContext: true)
-        sessionState.attachChip()
-
-        // When
-        sessionState.clearUserDowngradeOnNavigation()
-        sessionState.resetChipOnNavigation(autoAttachEnabled: false)
-
-        // Then
-        XCTAssertEqual(sessionState.chipState, .attached)
-    }
-
-    func testNavigationWithAutoAttachOffClearsStaleChip() {
-        // Given
-        sessionState.showPlaceholder()
-
-        // When
-        sessionState.clearUserDowngradeOnNavigation()
-        sessionState.resetChipOnNavigation(autoAttachEnabled: false)
-
-        // Then
-        XCTAssertEqual(sessionState.chipState, .none)
     }
 
     func testContextCollectionGateWhenChatHasInitialContext() {

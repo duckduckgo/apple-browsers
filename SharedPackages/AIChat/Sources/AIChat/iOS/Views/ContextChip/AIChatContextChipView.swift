@@ -201,7 +201,7 @@ private extension AIChatContextChipView {
             faviconView.layer.borderColor = nil
             backgroundColor = .clear
             removeButton.isHidden = true
-            accessibilityLabel = "Attach Page Content"
+            accessibilityLabel = UserText.attachPageContent
             updateBorder(dashed: true)
             isUserInteractionEnabled = true
             tapGesture?.isEnabled = true

@@ -264,7 +264,8 @@ public final class CrashCollection {
             }
         }
 
-        return result as! [AnyHashable: Any]
+        // Cast should always succeed here
+        return result as? [AnyHashable: Any] ?? [:]
     }
 
     enum Const {

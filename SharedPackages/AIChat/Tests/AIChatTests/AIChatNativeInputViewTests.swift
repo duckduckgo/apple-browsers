@@ -142,7 +142,7 @@ final class AIChatNativeInputViewTests: XCTestCase {
         let chipView = UIView()
 
         // When
-        sut.showContextChip(chipView, animated: false)
+        sut.showContextChip(chipView)
 
         // Then
         XCTAssertTrue(sut.isContextChipVisible)
@@ -151,10 +151,10 @@ final class AIChatNativeInputViewTests: XCTestCase {
     func testHideContextChipClearsVisibility() {
         // Given
         let chipView = UIView()
-        sut.showContextChip(chipView, animated: false)
+        sut.showContextChip(chipView)
 
         // When
-        sut.hideContextChip(animated: false)
+        sut.hideContextChip()
 
         // Then
         XCTAssertFalse(sut.isContextChipVisible)
@@ -163,10 +163,10 @@ final class AIChatNativeInputViewTests: XCTestCase {
     func testHideContextChipNotifiesDelegate() {
         // Given
         let chipView = UIView()
-        sut.showContextChip(chipView, animated: false)
+        sut.showContextChip(chipView)
 
         // When
-        sut.hideContextChip(animated: false)
+        sut.hideContextChip()
 
         // Then
         XCTAssertEqual(mockDelegate.didRemoveContextChipCount, 1)
@@ -176,10 +176,10 @@ final class AIChatNativeInputViewTests: XCTestCase {
         // Given
         let chipView1 = UIView()
         let chipView2 = UIView()
-        sut.showContextChip(chipView1, animated: false)
+        sut.showContextChip(chipView1)
 
         // When
-        sut.showContextChip(chipView2, animated: false)
+        sut.showContextChip(chipView2)
 
         // Then - second show is ignored while first is visible
         XCTAssertTrue(sut.isContextChipVisible)

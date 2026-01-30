@@ -196,7 +196,7 @@ private extension AIChatContextChipView {
             titleLabel.textColor = UIColor(designSystemColor: .textPlaceholder)
             faviconView.image = DesignSystemImages.Glyphs.Size24.pageContentAttach.withRenderingMode(.alwaysTemplate)
             faviconView.tintColor = UIColor(designSystemColor: .textTertiary)
-            faviconView.backgroundColor = UIColor(designSystemColor: .surface)
+            faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
             backgroundColor = .clear
@@ -211,7 +211,7 @@ private extension AIChatContextChipView {
             titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
             removeButton.isHidden = false
             faviconView.image = favicon ?? placeholderFavicon()
-            faviconView.backgroundColor = UIColor(designSystemColor: .surface)
+            faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
             backgroundColor = .clear

@@ -105,12 +105,12 @@ final class AIChatNativeInputViewController: UIViewController {
         return nativeInputView.resignFirstResponder()
     }
 
-    func showContextChip(_ chipView: UIView, animated: Bool = true) {
-        nativeInputView.showContextChip(chipView, animated: animated)
+    func showContextChip(_ chipView: UIView) {
+        nativeInputView.showContextChip(chipView)
     }
 
-    func hideContextChip(animated: Bool = true) {
-        nativeInputView.hideContextChip(animated: animated)
+    func hideContextChip() {
+        nativeInputView.hideContextChip()
     }
 
     func updateContextChipState(_ state: AIChatContextChipView.State) {

@@ -52,9 +52,8 @@ public final class AIChatNativeInputView: UIView {
         static let cornerRadius: CGFloat = 16
         static let textViewMinHeight: CGFloat = 44
         static let textViewMaxHeight: CGFloat = 200
+        static let chipHeight: CGFloat = 44
         static let chipContainerPadding: CGFloat = 8
-        static let chipFadeDuration: TimeInterval = 0.05
-        static let chipHeightDuration: TimeInterval = 0.12
     }
 
     // MARK: - Properties
@@ -67,7 +66,7 @@ public final class AIChatNativeInputView: UIView {
             textView.text = newValue
             updatePlaceholderVisibility()
             updateButtonStates()
-            updateTextViewHeight()
+            updateTextViewScrolling()
         }
     }
 
@@ -116,7 +115,6 @@ public final class AIChatNativeInputView: UIView {
         textView.textContainerInset = Constants.textContainerInset
         textView.isScrollEnabled = false
         textView.delegate = self
-        textView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         textView.translatesAutoresizingMaskIntoConstraints = false
         return textView
     }()
@@ -176,7 +174,6 @@ public final class AIChatNativeInputView: UIView {
     // MARK: - State
 
     private var isShowingClearButton = false
-    private var textViewHeightConstraint: NSLayoutConstraint?
     private var chipHeightConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
@@ -208,19 +205,16 @@ public final class AIChatNativeInputView: UIView {
 
     public override func layoutSubviews() {
         super.layoutSubviews()
-        updateTextViewHeight()
+        updateTextViewScrolling()
     }
 
     /// Shows the context chip with the given view.
     ///
     /// - Parameters:
     ///   - chipView: The chip view to display.
-    ///   - animated: Whether to animate the appearance.
-    public func showContextChip(_ chipView: UIView, animated: Bool = true) {
+    public func showContextChip(_ chipView: UIView) {
         guard !isContextChipVisible else { return }
 
-        chipContainer.layer.removeAllAnimations()
-        currentChipView?.layer.removeAllAnimations()
         currentChipView?.removeFromSuperview()
         currentChipView = chipView
 
@@ -228,64 +222,28 @@ public final class AIChatNativeInputView: UIView {
         chipContainer.addSubview(chipView)
 
         NSLayoutConstraint.activate([
-            chipView.leadingAnchor.constraint(equalTo: chipContainer.leadingAnchor, constant: Constants.chipContainerPadding)
+            chipView.leadingAnchor.constraint(equalTo: chipContainer.leadingAnchor, constant: Constants.chipContainerPadding),
+            chipView.widthAnchor.constraint(equalToConstant: 240),
+            chipView.heightAnchor.constraint(equalToConstant: Constants.chipHeight),
+            chipView.topAnchor.constraint(equalTo: chipContainer.topAnchor)
         ])
 
         isContextChipVisible = true
-
-        chipContainer.layoutIfNeeded()
-        let targetHeight = chipView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height
-
-        if animated {
-            chipView.alpha = 0
-            UIView.animate(withDuration: Constants.chipHeightDuration, delay: 0, options: .curveEaseOut) {
-                self.chipHeightConstraint?.constant = targetHeight
-                self.delegate?.nativeInputViewNeedsLayout(self)
-            } completion: { _ in
-                guard self.isContextChipVisible else { return }
-                UIView.animate(withDuration: Constants.chipFadeDuration) {
-                    chipView.alpha = 1
-                }
-            }
-        } else {
-            chipHeightConstraint?.constant = targetHeight
-            delegate?.nativeInputViewNeedsLayout(self)
-        }
+        chipHeightConstraint?.constant = Constants.chipHeight
+        delegate?.nativeInputViewNeedsLayout(self)
     }
 
     /// Hides the context chip.
-    ///
-    /// - Parameter animated: Whether to animate the disappearance.
-    public func hideContextChip(animated: Bool = true) {
+    public func hideContextChip() {
         guard isContextChipVisible else { return }
 
         isContextChipVisible = false
-        let chipToRemove = currentChipView
+        chipHeightConstraint?.constant = 0
+        delegate?.nativeInputViewNeedsLayout(self)
 
-        let cleanup = {
-            guard self.currentChipView === chipToRemove else { return }
-            chipToRemove?.removeFromSuperview()
-            self.currentChipView = nil
-            self.delegate?.nativeInputViewDidRemoveContextChip(self)
-        }
-
-        if animated {
-            UIView.animate(withDuration: Constants.chipFadeDuration) {
-                chipToRemove?.alpha = 0
-            } completion: { _ in
-                guard self.currentChipView === chipToRemove else { return }
-                UIView.animate(withDuration: Constants.chipHeightDuration, delay: 0, options: .curveEaseIn) {
-                    self.chipHeightConstraint?.constant = 0
-                    self.delegate?.nativeInputViewNeedsLayout(self)
-                } completion: { _ in
-                    cleanup()
-                }
-            }
-        } else {
-            chipHeightConstraint?.constant = 0
-            delegate?.nativeInputViewNeedsLayout(self)
-            cleanup()
-        }
+        currentChipView?.removeFromSuperview()
+        currentChipView = nil
+        delegate?.nativeInputViewDidRemoveContextChip(self)
     }
 
     /// Updates the current context chip with new content.
@@ -327,10 +285,12 @@ private extension AIChatNativeInputView {
     }
 
     func setupConstraints() {
-        textViewHeightConstraint = textView.heightAnchor.constraint(equalToConstant: Constants.textViewMinHeight)
-        textViewHeightConstraint?.priority = .defaultHigh
         chipHeightConstraint = chipContainer.heightAnchor.constraint(equalToConstant: 0)
 
+        // Vertical layout chain: textView → chipContainer → bottomBar
+        // Using inequality constraints allows textView to flex between min/max height
+        // while still pushing chipContainer and bottomBar down as content grows.
+        // chipContainer.top is constrained to textView.bottom, so they move together.
         NSLayoutConstraint.activate([
             mainContainer.topAnchor.constraint(equalTo: topAnchor),
             mainContainer.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -340,7 +300,8 @@ private extension AIChatNativeInputView {
             textView.topAnchor.constraint(equalTo: mainContainer.topAnchor),
             textView.leadingAnchor.constraint(equalTo: mainContainer.leadingAnchor),
             textView.trailingAnchor.constraint(equalTo: mainContainer.trailingAnchor),
-            textViewHeightConstraint!,
+            textView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.textViewMinHeight),
+            textView.heightAnchor.constraint(lessThanOrEqualToConstant: Constants.textViewMaxHeight),
 
             placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset),
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
@@ -376,17 +337,11 @@ private extension AIChatNativeInputView {
         placeholderLabel.isHidden = !text.isEmpty
     }
 
-    func updateTextViewHeight() {
+    func updateTextViewScrolling() {
         guard textView.bounds.width > 0 else { return }
 
         let size = textView.sizeThatFits(CGSize(width: textView.bounds.width, height: .greatestFiniteMagnitude))
-        let newHeight = min(max(size.height, Constants.textViewMinHeight), Constants.textViewMaxHeight)
-
         textView.isScrollEnabled = size.height > Constants.textViewMaxHeight
-
-        if textViewHeightConstraint?.constant != newHeight {
-            textViewHeightConstraint?.constant = newHeight
-        }
     }
 
     func updateButtonStates() {
@@ -445,7 +400,7 @@ extension AIChatNativeInputView: UITextViewDelegate {
     public func textViewDidChange(_ textView: UITextView) {
         updatePlaceholderVisibility()
         updateButtonStates()
-        updateTextViewHeight()
+        updateTextViewScrolling()
         delegate?.nativeInputViewDidChangeText(self, text: text)
     }
 }

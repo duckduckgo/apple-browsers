@@ -113,13 +113,13 @@ final class AIChatContextualInputViewController: UIViewController {
         nativeInputViewController.setText(text)
     }
 
-    func showContextChip(_ chipView: UIView, animated: Bool = true) {
-        nativeInputViewController.showContextChip(chipView, animated: animated)
+    func showContextChip(_ chipView: UIView) {
+        nativeInputViewController.showContextChip(chipView)
         updateQuickActions()
     }
 
-    func hideContextChip(animated: Bool = true) {
-        nativeInputViewController.hideContextChip(animated: animated)
+    func hideContextChip() {
+        nativeInputViewController.hideContextChip()
         updateQuickActions()
     }
 

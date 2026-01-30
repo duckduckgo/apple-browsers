@@ -484,7 +484,7 @@ final class AIChatContextualSheetViewController: UIViewController {
                 }
             }
         } else {
-            contextualInputViewController.hideContextChip(animated: false)
+            contextualInputViewController.hideContextChip()
         }
 
         preloadWebViewController()

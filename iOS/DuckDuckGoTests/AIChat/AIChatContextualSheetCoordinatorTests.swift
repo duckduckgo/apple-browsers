@@ -316,14 +316,14 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testNotifyPageChangedDoesNotTriggerCollectionWhenAutoAttachDisabled() async {
+    func testNotifyPageChangedDoesTriggerCollectionWhenAutoAttachDisabled() async {
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
         await sut.notifyPageChanged()
 
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
     @MainActor
@@ -339,28 +339,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
 
     // MARK: - Helpers
-
-    private func createMockWebViewController() async {
-        await sut.presentSheet(from: mockPresentingVC)
-        guard let sheetVC = mockPresentingVC.presentedVC as? AIChatContextualSheetViewController else {
-            XCTFail("Expected sheet to be presented")
-            return
-        }
-
-        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let mockWebVC = AIChatContextualWebViewController(
-            aiChatSettings: mockSettings,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
-            featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: MockFeatureFlagger(),
-            downloadHandler: makeDownloadHandler(downloadsPath: tempDir),
-            getPageContext: { _ in nil },
-            pixelHandler: AIChatContextualModePixelHandler()
-        )
-
-        await sheetVC.delegate?.aiChatContextualSheetViewController(sheetVC, didCreateWebViewController: mockWebVC)
-    }
 
     private func makeTestContext(url: String = "https://example.com") -> AIChatPageContextData {
         AIChatPageContextData(

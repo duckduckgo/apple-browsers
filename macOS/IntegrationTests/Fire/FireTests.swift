@@ -481,7 +481,15 @@ final class FireTests: XCTestCase {
     @MainActor
     func testWhenBurnAllIsCalled_ChatHistoryIsCleared() async {
         let chatHistoryCleaner = MockAIChatHistoryCleaner()
-        let fire = Fire(pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+        let historyCoordinator = HistoryCoordinatingMock()
+        let cacheManager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+        let fire = Fire(cacheManager: cacheManager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        faviconManagement: faviconManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
                         aIChatHistoryCleaner: chatHistoryCleaner)
 
@@ -498,7 +506,13 @@ final class FireTests: XCTestCase {
     @MainActor
     func testWhenBurnVisitsIsCalled_IncludingChatHistory_ChatHistoryIsCleared() async {
         let chatHistoryCleaner = MockAIChatHistoryCleaner()
-        let fire = Fire(pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+        let historyCoordinator = HistoryCoordinatingMock()
+        let cacheManager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let fire = Fire(cacheManager: cacheManager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
                         aIChatHistoryCleaner: chatHistoryCleaner)
 
@@ -521,7 +535,13 @@ final class FireTests: XCTestCase {
     @MainActor
     func testWhenBurnVisitsIsCalled_NotIncludingChatHistory_ChatHistoryIsNotCleared() async {
         let chatHistoryCleaner = MockAIChatHistoryCleaner()
-        let fire = Fire(pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+        let historyCoordinator = HistoryCoordinatingMock()
+        let cacheManager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let fire = Fire(cacheManager: cacheManager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
                         aIChatHistoryCleaner: chatHistoryCleaner)
 
@@ -546,13 +566,21 @@ final class FireTests: XCTestCase {
     @MainActor
     func testWhenBurnAllIsCalled_AutoconsentStatsAreCleared() async {
         let autoconsentStats = AutoconsentStatsMock()
+        let historyCoordinator = HistoryCoordinatingMock()
+        let cacheManager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
 
         // Simulate some recorded stats
         await autoconsentStats.recordAutoconsentAction(clicksMade: 5, timeSpent: 10.0)
         let initialPopUpsBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
         XCTAssertEqual(initialPopUpsBlocked, 1)
 
-        let fire = Fire(autoconsentStats: autoconsentStats,
+        let fire = Fire(cacheManager: cacheManager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        faviconManagement: faviconManager,
+                        autoconsentStats: autoconsentStats,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld)
 
@@ -575,13 +603,19 @@ final class FireTests: XCTestCase {
     @MainActor
     func testWhenBurnEntityIsCalled_WithCookiesAndSiteData_AutoconsentStatsAreNotCleared() async {
         let autoconsentStats = AutoconsentStatsMock()
+        let historyCoordinator = HistoryCoordinatingMock()
+        let cacheManager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
 
         // Simulate some recorded stats
         await autoconsentStats.recordAutoconsentAction(clicksMade: 10, timeSpent: 25.5)
         let initialPopUpsBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
         XCTAssertEqual(initialPopUpsBlocked, 1)
 
-        let fire = Fire(autoconsentStats: autoconsentStats,
+        let fire = Fire(cacheManager: cacheManager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        autoconsentStats: autoconsentStats,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld)
 

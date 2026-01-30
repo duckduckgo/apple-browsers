@@ -26,7 +26,6 @@ final class CrashCollectionService {
 
     private let appSettings: AppSettings
     private let application: UIApplication
-    private let featureFlagger: FeatureFlagger
 
     private lazy var crashCollection = CrashCollection(crashReportSender: CrashReportSender(platform: .iOS,
                                                                                             pixelEvents: CrashReportSender.pixelEvents),
@@ -38,7 +37,6 @@ final class CrashCollectionService {
          featureFlagger: FeatureFlagger) {
         self.appSettings = appSettings
         self.application = application
-        self.featureFlagger = featureFlagger
 
         let sortKeys = !featureFlagger.isFeatureOn(.crashCollectionDisableKeysSorting)
         let isCallStackLimitingEnabled = featureFlagger.isFeatureOn(.crashCollectionLimitCallStackTreeDepth)

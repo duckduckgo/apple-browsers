@@ -56,14 +56,7 @@ final class MacTransparentProxyProvider: TransparentProxyProvider {
             loadSettingsFromProviderConfiguration: loadSettingsFromStartupOptions)
 
 #if !NETP_SYSTEM_EXTENSION
-        let dryRun: Bool
-#if DEBUG
-        dryRun = true
-#else
-        dryRun = false
-#endif
-
-        PixelKit.setUp(dryRun: dryRun,
+        PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: "vpnProxyExtension",
                        defaultHeaders: [:],

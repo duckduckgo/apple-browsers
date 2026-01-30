@@ -1213,7 +1213,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         let pixelFiring = SlowPixelFiring(fireExpectation: fireExpectation, completionExpectation: completionExpectation)
         await pixelFiring.fireAndWait(GeneralPixel.warnBeforeQuitQuit, frequency: .standard, timeout: 5)
 
-        await fulfillment(of: [fireExpectation, completionExpectation], timeout: 5)
+        await fulfillment(of: [fireExpectation, completionExpectation], timeout: 0.2)
     }
 
     // MARK: - Helpers

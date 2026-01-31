@@ -158,7 +158,8 @@ final class MainCoordinator {
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: privacyConfigurationManager,
                                         appSettings: AppDependencyProvider.shared.appSettings,
-                                        privacyStats: privacyStats)
+                                        privacyStats: privacyStats,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -198,7 +199,6 @@ final class MainCoordinator {
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
-                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         whatsNewRepository: whatsNewRepository)
     }
 

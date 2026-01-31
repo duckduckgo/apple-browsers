@@ -155,4 +155,71 @@ final class TabViewModelTests: XCTestCase {
         // Then
         XCTAssertNil(sut.currentAIChatId)
     }
+
+    // MARK: - Current Contextual Chat ID Tests
+
+    func testWhenContextualChatURLIsNil_ThenCurrentContextualChatIdReturnsNil() {
+        // Given - Tab without contextual chat URL
+        tab.contextualChatURL = nil
+        sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
+
+        // Then
+        XCTAssertNil(sut.currentContextualChatId)
+    }
+
+    func testWhenContextualChatURLIsInvalid_ThenCurrentContextualChatIdReturnsNil() {
+        // Given - Tab with invalid contextual chat URL string
+        tab.contextualChatURL = "not a valid url"
+        sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
+
+        // Then
+        XCTAssertNil(sut.currentContextualChatId)
+    }
+
+    func testWhenContextualChatURLHasNoChatIDParam_ThenCurrentContextualChatIdReturnsNil() {
+        // Given - Valid Duck AI URL without chatID parameter
+        tab.contextualChatURL = "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4"
+        sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
+
+        // Then
+        XCTAssertNil(sut.currentContextualChatId)
+    }
+
+    func testWhenContextualChatURLHasEmptyChatIDParam_ThenCurrentContextualChatIdReturnsNil() {
+        // Given - Duck AI URL with empty chatID parameter
+        tab.contextualChatURL = "https://duckduckgo.com/?ia=chat&chatID="
+        sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
+
+        // Then
+        XCTAssertNil(sut.currentContextualChatId)
+    }
+
+    func testWhenContextualChatURLHasValidChatIDParam_ThenCurrentContextualChatIdReturnsValue() {
+        // Given - Duck AI URL with valid chatID parameter
+        let chatID = "eb5e9bce-9d58-4ff1-8c81-c88f52120933"
+        tab.contextualChatURL = "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)"
+        sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
+
+        // Then
+        XCTAssertEqual(sut.currentContextualChatId, chatID)
+    }
+
+    func testWhenContextualChatURLIsDuckAiDomain_ThenCurrentContextualChatIdReturnsValue() {
+        // Given - duck.ai URL with valid chatID parameter
+        let chatID = "abc123"
+        tab.contextualChatURL = "https://duck.ai/?chatID=\(chatID)"
+        sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
+
+        // Then
+        XCTAssertEqual(sut.currentContextualChatId, chatID)
+    }
+
+    func testWhenContextualChatURLIsNonAIDomain_ThenCurrentContextualChatIdReturnsNil() {
+        // Given - Non-AI domain URL with chatID parameter (should not extract chatID)
+        tab.contextualChatURL = "https://example.com/?chatID=abc123"
+        sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
+
+        // Then
+        XCTAssertNil(sut.currentContextualChatId)
+    }
 }

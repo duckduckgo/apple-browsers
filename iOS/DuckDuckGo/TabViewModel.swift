@@ -76,4 +76,14 @@ struct TabViewModel {
         guard tab.isAITab else { return nil }
         return tab.link?.url.duckAIChatID
     }
+    
+    /// Returns the current Chat ID for the contextual AI chat session for this tab
+    ///
+    /// The chatID is extracted from the `chatID` query parameter in the URL.
+    /// Example URL: `https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=eb5e9bce-9d58-4ff1-8c81-c88f52120933`
+    var currentContextualChatId: String? {
+        guard let urlString = tab.contextualChatURL,
+              let url = URL(string: urlString) else { return nil }
+        return url.duckAIChatID
+    }
 }

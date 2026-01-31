@@ -21,6 +21,7 @@ import XCTest
 @testable import DuckDuckGo
 @testable import Core
 import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKit
 import Bookmarks
 import Persistence
@@ -125,6 +126,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockBookmarkDatabaseCleaner: MockBookmarkDatabaseCleaner!
     private var mockDelegate: MockFireExecutorDelegate!
     private var mockAppSettings: AppSettingsMock!
+    private var mockAIChatSyncCleaner: MockAIChatSyncCleaning!
     
     override func setUp() {
         super.setUp()
@@ -144,6 +146,7 @@ final class FireExecutorTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockAppSettings.autoClearAIChatHistory = true
         mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockAIChatSyncCleaner = MockAIChatSyncCleaning()
     }
     
     override func tearDown() {
@@ -161,6 +164,7 @@ final class FireExecutorTests: XCTestCase {
         mockBookmarkDatabaseCleaner = nil
         mockDelegate = nil
         mockAppSettings = nil
+        mockAIChatSyncCleaner = nil
         super.tearDown()
     }
     
@@ -183,7 +187,8 @@ final class FireExecutorTests: XCTestCase {
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             dataStore: MockWebsiteDataStore(),
             aiChatHistoryCleaner: mockHistoryCleaner,
-            appSettings: mockAppSettings
+            appSettings: mockAppSettings,
+            aiChatSyncCleaner: mockAIChatSyncCleaner
         )
         executor.delegate = mockDelegate
         return executor
@@ -206,6 +211,12 @@ final class FireExecutorTests: XCTestCase {
         let tab = Tab(uid: "test-ai-tab-uid")
         let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
         tab.link = Link(title: nil, url: aiURL)
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+    
+    private func makeTabViewModelWithContextualChat(contextualChatID: String) -> TabViewModel {
+        let tab = Tab(uid: "test-tab-with-contextual-chat")
+        tab.contextualChatURL = "https://duckduckgo.com/?ia=chat&duckai=4&chatID=\(contextualChatID)"
         return TabViewModel(tab: tab, historyManager: mockHistoryManager)
     }
     
@@ -624,5 +635,48 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
         XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
         XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
+    }
+    
+    // MARK: - Contextual Chat Deletion Tests (Data Burn)
+    
+    func testWhenBurningDataForTabWithContextualChat_ThenContextualChatIsDeleted() async {
+        // Given
+        let contextualChatID = "contextual-chat-id-456"
+        let tabViewModel = makeTabViewModelWithContextualChat(contextualChatID: contextualChatID)
+        mockAppSettings.autoClearAIChatHistory = true
+        let executor = makeFireExecutor()
+        
+        // When - Burn data for a tab with contextual chat
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Contextual chat should be deleted
+        XCTAssertEqual(mockHistoryCleaner.deleteAIChatCalls, [contextualChatID])
+    }
+    
+    func testWhenBurningDataForTabWithoutContextualChat_ThenNoContextualChatDeleted() async {
+        // Given
+        let tabViewModel = makeTabViewModel() // Regular tab without contextual chat
+        mockAppSettings.autoClearAIChatHistory = true
+        let executor = makeFireExecutor()
+        
+        // When - Burn data for a tab without contextual chat
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - No contextual chat should be deleted
+        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+    }
+    
+    func testWhenAutoClearAIChatHistoryDisabled_ThenContextualChatNotDeleted() async {
+        // Given
+        let contextualChatID = "contextual-chat-id-789"
+        let tabViewModel = makeTabViewModelWithContextualChat(contextualChatID: contextualChatID)
+        mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
+        let executor = makeFireExecutor()
+        
+        // When - Burn data for a tab with contextual chat but auto-clear disabled
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Contextual chat should NOT be deleted because user setting is disabled
+        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
     }
 }

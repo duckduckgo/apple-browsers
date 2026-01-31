@@ -38,6 +38,11 @@ class MockTabManager: TabManaging {
     private(set) var closeTabShouldCreateEmptyTab: Bool?
     private(set) var closeTabClearTabHistory: Bool?
     
+    /// Configurable return value for controller(for:)
+    var controllerForTabReturnValue: TabViewController?
+    private(set) var controllerForTabCalled = false
+    private(set) var controllerForTabCalledWith: Tab?
+    
     func prepareAllTabsExceptCurrentForDataClearing() {
         prepareAllTabsExceptCurrentCalled = true
     }
@@ -69,5 +74,11 @@ class MockTabManager: TabManaging {
         closeTabCalledWith = tab
         closeTabShouldCreateEmptyTab = shouldCreateEmptyTabAtSamePosition
         closeTabClearTabHistory = clearTabHistory
+    }
+    
+    func controller(for tab: Tab) -> TabViewController? {
+        controllerForTabCalled = true
+        controllerForTabCalledWith = tab
+        return controllerForTabReturnValue
     }
 }

@@ -41,6 +41,8 @@ protocol TabManaging {
     @MainActor func closeTab(_ tab: Tab,
                              shouldCreateEmptyTabAtSamePosition: Bool,
                              clearTabHistory: Bool)
+    func controller(for tab: Tab) -> TabViewController?
+
 }
 
 class TabManager: TabManaging {

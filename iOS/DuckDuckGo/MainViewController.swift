@@ -245,8 +245,6 @@ class MainViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
-    private let aiChatSyncCleaner: AIChatSyncCleaning
-
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
     
@@ -311,7 +309,6 @@ class MainViewController: UIViewController {
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
-        aiChatSyncCleaner: AIChatSyncCleaning,
         whatsNewRepository: WhatsNewMessageRepository
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -363,7 +360,6 @@ class MainViewController: UIViewController {
         self.privacyStats = privacyStats
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
-        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.whatsNewRepository = whatsNewRepository
 
         super.init(nibName: nil, bundle: nil)
@@ -3874,19 +3870,7 @@ extension MainViewController: FireExecutorDelegate {
     }
 
     func willStartBurningAIHistory(fireRequest: FireRequest) {
-        switch fireRequest.scope {
-        case .all:
-            Task {
-                if autoClearInProgress {
-                    await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
-                } else {
-                    await aiChatSyncCleaner.recordLocalClear(date: Date())
-                }
-            }
-        case .tab:
-            // TODO: - record chat ID to be deleted
-            return
-        }
+        // No operation
     }
     
     func didFinishBurningAIHistory(fireRequest: FireRequest) {
@@ -3899,12 +3883,14 @@ extension MainViewController: FireExecutorDelegate {
             // No custom logic for tab scope
             return
         }
-        if syncService.authState != .inactive {
-            syncService.scheduler.requestSyncImmediately()
-        }
     }
     
     func didFinishBurning(fireRequest: FireRequest) {
+        // Trigger sync if needed after data and aichats finish
+        // because data could potentially delete a contextual chat that needs syncing
+        if syncService.authState != .inactive {
+            syncService.scheduler.requestSyncImmediately()
+        }
         switch fireRequest.trigger {
         case .manualFire:
             return

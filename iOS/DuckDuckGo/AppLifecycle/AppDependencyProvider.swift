@@ -142,7 +142,6 @@ final class AppDependencyProvider: DependencyProvider {
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var tokenHandler: any SubscriptionTokenHandling
-        var accessTokenProvider: () async -> String?
         var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
@@ -226,10 +225,6 @@ final class AppDependencyProvider: DependencyProvider {
         }
 
         self.subscriptionManager = subscriptionManager
-
-        accessTokenProvider = {
-            { return try? await subscriptionManager.getTokenContainer(policy: .localValid).accessToken }
-        }()
         tokenHandler = subscriptionManager
         authenticationStateProvider = subscriptionManager
 

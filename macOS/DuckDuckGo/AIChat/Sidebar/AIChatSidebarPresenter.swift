@@ -144,6 +144,9 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         sidebarPresenceWillChangeSubject.send(.init(tabID: tabID, isShown: isShowingSidebar))
 
         if isShowingSidebar {
+            // Clear sidebar if session has expired (hidden for more than 60 minutes)
+            sidebarProvider.clearSidebarIfSessionExpired(for: tabID)
+
             let sidebarViewController: AIChatSidebarViewController = {
                 if let existingViewController = sidebarProvider.getSidebarViewController(for: tabID) {
                     return existingViewController

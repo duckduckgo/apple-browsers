@@ -605,7 +605,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager, userDefaults: .subs) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                                  accessError: error,
-                                                                                 source: KeychainErrorSource.shared,
+                                                                                 source: KeychainErrorSource.browser,
                                                                                  authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
@@ -893,10 +893,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 themeManager: themeManager,
                 dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager }
             )
+            let subscriptionManagerForPIR = subscriptionManager
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
             }, navigateToFeedbackHandler: {
                 windowControllersManager.showFeedbackModal(preselectedFormOption: .feedback(feedbackCategory: .other))
+            }, navigateToPIRHandler: {
+                let hasEntitlement = (try? await subscriptionManagerForPIR.isFeatureEnabled(.dataBrokerProtection)) ?? false
+                await MainActor.run {
+                    if hasEntitlement {
+                        windowControllersManager.showTab(with: .dataBrokerProtection)
+                    } else {
+                        let url = subscriptionManagerForPIR.url(for: .purchase)
+                        windowControllersManager.showTab(with: .subscription(url))
+                    }
+                }
             })
         } else {
             // As long as remoteMessagingClient is private to App Delegate and activeRemoteMessageModel
@@ -907,7 +918,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 remoteMessagingStore: nil,
                 remoteMessagingAvailabilityProvider: nil,
                 openURLHandler: { _ in },
-                navigateToFeedbackHandler: { }
+                navigateToFeedbackHandler: { },
+                navigateToPIRHandler: { }
             )
         }
 
@@ -1554,11 +1566,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - PixelKit
 
     static func configurePixelKit() {
-#if DEBUG || REVIEW
-            Self.setUpPixelKit(dryRun: true)
-#else
-            Self.setUpPixelKit(dryRun: false)
-#endif
+        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild))
     }
 
     private static func setUpPixelKit(dryRun: Bool) {

@@ -1271,12 +1271,26 @@ class MainViewController: UIViewController {
     func onForeground() {
         fireExperimentalAddressBarPixel()
         fireKeyboardSettingsPixels()
+        fireTemporaryTelemetryPixels()
         skipSERPFlow = true
         
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.
         if daxDialogsManager.shouldShowFireButtonPulse && !daxDialogsManager.shouldShowPrivacyButtonPulse {
             showFireButtonPulse()
         }
+    }
+
+    private func fireTemporaryTelemetryPixels() {
+        // Sent as individual pixels to avoid creating parameter combinations that can identify users
+        let fireButtonAnim = appSettings.currentFireButtonAnimation.rawValue
+        DailyPixel.fireDaily(.temporaryTelemetrySettingsClearDataAnimation(animation: fireButtonAnim))
+
+        let customizationState = mobileCustomization.state
+        let addressBarButton = customizationState.currentAddressBarButton.rawValue
+        DailyPixel.fireDaily(.temporaryTelemetrySettingsCustomizedAddressBarButton(button: addressBarButton))
+
+        let toolbarButton = customizationState.currentToolbarButton.rawValue
+        DailyPixel.fireDaily(.temporaryTelemetrySettingsCustomizedToolbarButton(button: toolbarButton))
     }
 
     /// Represents the policy for reusing existing tabs for a query or URL being opened.
@@ -3007,6 +3021,11 @@ extension MainViewController: OmniBarDelegate {
         // We don't want any action here if we're still in autocomplete context
         guard !isShowingAutocompleteSuggestions else { return }
 
+        // Dismiss contextual AI chat sheet when omni bar becomes active
+        if let currentTab, tapped {
+            currentTab.aiChatContextualSheetCoordinator.dismissSheet()
+        }
+
         if let currentTab {
             viewCoordinator.omniBar.refreshText(forUrl: currentTab.url, forceFullURL: true)
         }
@@ -3286,8 +3305,12 @@ extension MainViewController: TabDelegate {
         return newTab.webView
     }
 
-    func tabDidRequestClose(_ tab: TabViewController, shouldCreateEmptyTabAtSamePosition: Bool) {
-        closeTab(tab.tabModel, andOpenEmptyOneAtSamePosition: shouldCreateEmptyTabAtSamePosition)
+    func tabDidRequestClose(_ tab: Tab,
+                            shouldCreateEmptyTabAtSamePosition: Bool,
+                            clearTabHistory: Bool) {
+        closeTab(tab,
+                 andOpenEmptyOneAtSamePosition: shouldCreateEmptyTabAtSamePosition,
+                 clearTabHistory: clearTabHistory)
     }
 
     func tabLoadingStateDidChange(tab: TabViewController) {
@@ -3617,7 +3640,9 @@ extension MainViewController: TabSwitcherDelegate {
         }
     }
 
-    func closeTab(_ tab: Tab, andOpenEmptyOneAtSamePosition shouldOpen: Bool = false) {
+    func closeTab(_ tab: Tab,
+                  andOpenEmptyOneAtSamePosition shouldOpen: Bool = false,
+                  clearTabHistory: Bool = true) {
         guard let index = tabManager.model.indexOf(tab: tab) else { return }
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
@@ -3625,11 +3650,11 @@ extension MainViewController: TabSwitcherDelegate {
 
         if shouldOpen {
             let newTab = Tab()
-            tabManager.replaceTab(at: index, withNewTab: newTab)
+            tabManager.replaceTab(at: index, withNewTab: newTab, clearTabHistory: clearTabHistory)
             tabManager.selectTab(newTab)
             showBars() // In case the browser chrome bars are hidden when calling this method
         } else {
-            tabManager.remove(at: index)
+            tabManager.remove(at: index, clearTabHistory: clearTabHistory)
         }
 
         updateCurrentTab()
@@ -3838,7 +3863,7 @@ extension MainViewController: FireExecutorDelegate {
         case .all:
             refreshUIAfterClear()
         case .tab:
-            // TODO: - Custom logic if needed
+            // For single tab, the UI was already updated in closeTab() → updateCurrentTab()
             return
         }
     }
@@ -4226,6 +4251,15 @@ extension MainViewController: MessageNavigationDelegate {
                 return
             }
             viewController.show(dataImportVC, sender: nil)
+        }
+    }
+
+    func segueToPIR(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToPIRWithSubscriptionCheck()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
         }
     }
 

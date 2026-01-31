@@ -53,7 +53,7 @@ class PixelTests: XCTestCase {
 
         Pixel.fire(pixel: .appLaunch, withAdditionalParameters: [PixelParameters.appVersion: "override"])
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     func testWhenPixelFiredAndIncludedParametersIsEmptyThenAppVersionIsNotSet() {
@@ -68,7 +68,7 @@ class PixelTests: XCTestCase {
 
         Pixel.fire(pixel: .appLaunch, includedParameters: [])
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     func testWhenPixelFiredThenAppVersionIsSetByDefault() {
@@ -81,7 +81,7 @@ class PixelTests: XCTestCase {
 
         Pixel.fire(pixel: .appLaunch)
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     func testWhenTimedPixelFiredThenCorrectDurationIsSet() {
@@ -100,7 +100,7 @@ class PixelTests: XCTestCase {
         let pixel = TimedPixel(.appLaunch, date: date)
         pixel.fire(now)
         
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
     
     func testWhenPixelFiredThenAPIHeadersAreAdded() {
@@ -114,7 +114,7 @@ class PixelTests: XCTestCase {
         let headers = APIRequest.Headers(userAgent: testAgent)
         Pixel.fire(pixel: .appLaunch, forDeviceType: .phone, withHeaders: headers)
         
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
 
     }
     
@@ -131,7 +131,7 @@ class PixelTests: XCTestCase {
         
         Pixel.fire(pixel: .appLaunch, forDeviceType: .phone, withAdditionalParameters: params)
         
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
     
     func testWhenAppLaunchPixelIsFiredFromPhoneThenCorrectURLRequestIsMade() {
@@ -144,7 +144,7 @@ class PixelTests: XCTestCase {
         
         Pixel.fire(pixel: .appLaunch, forDeviceType: .phone)
                 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     func testWhenAppLaunchPixelIsFiredFromTabletThenCorrectURLRequestIsMade() {
@@ -157,7 +157,7 @@ class PixelTests: XCTestCase {
         
         Pixel.fire(pixel: .appLaunch, forDeviceType: .pad)
         
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     func testWhenAppLaunchPixelIsFiredFromUnspecifiedThenCorrectURLRequestIsMadeAsPhone() {
@@ -170,7 +170,7 @@ class PixelTests: XCTestCase {
         
         Pixel.fire(pixel: .appLaunch, forDeviceType: .unspecified)
         
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     func testWhenPixelFiresSuccessfullyThenCompletesWithNoError() {

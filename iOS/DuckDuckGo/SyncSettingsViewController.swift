@@ -120,6 +120,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         setUpSyncPaused(viewModel, syncPausedStateManager: syncPausedStateManager)
         setUpSyncInvalidObjectsInfo(viewModel)
         setUpSyncFeatureFlags(viewModel)
+        setUpAIChatSyncFeatureFlag(viewModel)
         refreshForState(syncService.authState)
 
         syncService.authStatePublisher
@@ -161,6 +162,17 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
                 viewModel.isAccountCreationAvailable = featureFlags.contains(.accountCreation)
                 viewModel.isAccountRecoveryAvailable = featureFlags.contains(.accountRecovery)
                 viewModel.isAppVersionNotSupported = featureFlags.unavailableReason == .appVersionNotSupported
+            }
+            .store(in: &cancellables)
+    }
+
+    private func setUpAIChatSyncFeatureFlag(_ viewModel: SyncSettingsViewModel) {
+        featureFlagger.updatesPublisher
+            .prepend(())
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                viewModel.isAIChatSyncEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
             }
             .store(in: &cancellables)
     }

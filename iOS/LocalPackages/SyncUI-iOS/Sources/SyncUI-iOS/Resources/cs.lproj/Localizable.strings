@@ -31,8 +31,14 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Zrušit";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Zapnout synchronizaci a zálohování";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Na zabezpečeném serveru DuckDuckGo se vytvoří šifrovaná záloha záložek a dat automatického vyplňování, kterou můžeš synchronizovat s ostatními zařízeními.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Na zabezpečeném serveru DuckDuckGo se vytvoří šifrovaná záloha uložených záložek, hesel, kreditních karet a chatů Duck.ai, kterou můžeš synchronizovat s ostatními zařízeními.\n\n";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Šifrovací klíč se ukládá jenom na tvé zařízení, DuckDuckGo k němu nemá přístup.";
@@ -138,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Tvoje záložky a data automatického vyplňování připravujeme na synchronizaci. Nemělo by to trvat dlouho.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Tvoje záložky, hesla a chaty Duck.ai připravujeme k synchronizaci. Nemělo by to trvat dlouho.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Připojování...";
@@ -286,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Bezpečně synchronizuj záložky a hesla mezi svými zařízeními.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Bezpečně synchronizuj záložky, data pro automatické vyplnění a chaty Duck.ai mezi svými zařízeními.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Zahájení synchronizace";
 
@@ -300,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Vypnout synchronizaci a zálohování...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Záložky, data pro automatické vyplnění a chaty Duck.ai jsou aktuálně synchronizované na všech tvých zařízeních.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Synchronizace je aktivní";

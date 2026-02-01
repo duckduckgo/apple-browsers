@@ -45,7 +45,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         super.setUp()
         
         mockSubscriptionManager = SubscriptionManagerMock()
-        mockStripePurchaseFlow = StripePurchaseFlowMock(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success((purchaseUpdate: .completed, accountCreationDuration: nil)))
+        mockStripePurchaseFlow = StripePurchaseFlowMock(prepareSubscriptionPurchaseResult: .success((purchaseUpdate: .completed, accountCreationDuration: nil)))
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
         mockNotificationCenter = NotificationCenter()
         mockWideEvent = WideEventMock()
@@ -161,6 +161,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.usePaidDuckAi)
         XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
+        XCTAssertTrue(featureValue.useGetSubscriptionTierOptions)
     }
 
     func testGetFeatureConfig_WhenBothFeaturesDisabled_ReturnsCorrectConfig() async throws {
@@ -180,40 +181,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertFalse(featureValue.usePaidDuckAi)
         XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
-    }
-
-    func testGetFeatureConfig_WhenTierMessagingEnabled_ReturnsCorrectConfig() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isTierMessagingEnabled = true
-
-        // When
-        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
-
-        // Then
-        guard let featureValue = result as? GetFeatureConfigurationResponse else {
-            XCTFail("Expected GetFeatureConfigurationResponse type")
-            return
-        }
-
-        XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.useGetSubscriptionTierOptions)
-    }
-
-    func testGetFeatureConfig_WhenTierMessagingDisabled_ReturnsCorrectConfig() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isTierMessagingEnabled = false
-
-        // When
-        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
-
-        // Then
-        guard let featureValue = result as? GetFeatureConfigurationResponse else {
-            XCTFail("Expected GetFeatureConfigurationResponse type")
-            return
-        }
-
-        XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertFalse(featureValue.useGetSubscriptionTierOptions)
     }
 
     // MARK: - GetSubscriptionTierOptions Tests

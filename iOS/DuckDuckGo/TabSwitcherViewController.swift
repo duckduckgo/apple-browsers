@@ -351,6 +351,7 @@ class TabSwitcherViewController: UIViewController {
                                       preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountKeepAction, style: .cancel))
         alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountHideAction, style: .default) { [weak self] _ in
+            Pixel.fire(pixel: .tabSwitcherTrackerCountHidden)
             self?.trackerCountViewModel?.hide()
         })
         present(alert, animated: true)

@@ -31,8 +31,14 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Atšaukti";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Įjunkite sinchronizavimą ir atsarginės kopijos kūrimą";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Taip „DuckDuckGo“ saugiame serveryje sukuriama užšifruota atsarginė žymių ir automatinio pildymo duomenų kopija, kurią galima sinchronizuoti su kitais jūsų įrenginiais.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Tai sukuria užšifruotą išsaugotų žymių, slaptažodžių, kreditinių kortelių ir „Duck.ai“ pokalbių atsarginę kopiją saugiame „DuckDuckGo“ serveryje, kurį galima sinchronizuoti su kitais jūsų įrenginiais.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Šifravimo raktas saugomas tik jūsų įrenginyje, „DuckDuckGo“ negali jo pasiekti.";
@@ -138,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Jūsų žymės ir automatinio pildymo duomenys ruošiami sinchronizuoti. Tai turėtų užtrukti tik akimirką.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Jūsų žymos, slaptažodžiai ir „Duck.ai“ pokalbiai ruošiami sinchronizuoti. Tai turėtų užtrukti tik akimirką.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Jungiamasi...";
@@ -286,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Saugiai sinchronizuokite žymes ir slaptažodžius tarp savo įrenginių.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Saugiai sinchronizuokite žymes, automatinio pildymo duomenis ir „Duck.ai“ pokalbius tarp savo įrenginių.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Pradėti sinchronizavimą";
 
@@ -300,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Išjungti sinchronizavimą ir atsarginės kopijos kūrimą...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Žymės, automatinio pildymo duomenys ir „Duck.ai“ pokalbiai šiuo metu sinchronizuojami visuose jūsų įrenginiuose.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Sinchronizavimas įjungtas";

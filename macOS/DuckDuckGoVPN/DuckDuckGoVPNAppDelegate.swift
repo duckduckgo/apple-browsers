@@ -58,9 +58,10 @@ final class DuckDuckGoVPNApplication: NSApplication {
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
         subscriptionManager = DefaultSubscriptionManager(keychainType: keychainType,
-                                                             environment: subscriptionEnvironment,
-                                                             userDefaults: subscriptionUserDefaults,
-                                                             pixelHandlingSource: .vpnApp)
+                                                         environment: subscriptionEnvironment,
+                                                         userDefaults: subscriptionUserDefaults,
+                                                         pixelHandlingSource: .vpnApp,
+                                                         source: .vpn)
 
         _delegate = DuckDuckGoVPNAppDelegate(subscriptionManager: subscriptionManager,
                                              subscriptionEnvironment: subscriptionEnvironment)
@@ -77,14 +78,6 @@ final class DuckDuckGoVPNApplication: NSApplication {
 
     @MainActor
     private func setupPixelKit() {
-        let dryRun: Bool
-
-#if DEBUG || REVIEW
-        dryRun = true
-#else
-        dryRun = false
-#endif
-
         let pixelSource: String
 
 #if !APPSTORE
@@ -95,7 +88,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
 
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
-        PixelKit.setUp(dryRun: dryRun,
+        PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: pixelSource,
                        defaultHeaders: [:],

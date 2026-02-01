@@ -1,0 +1,114 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent when AuthV2 has completed a token refresh",
+    "$comment": "{\"owners\":[\"samsymons\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "ios-authv2-token-refresh" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version", "form_factor"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental"]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event" }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["authv2-token-refresh"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "The reason provided when the status is UNKNOWN",
+                                    "enum": ["partial_data"]
+                                },
+                                "application_state": {
+                                    "type": "string",
+                                    "description": "Whether the app is in the foreground or background at the time of the refresh.",
+                                    "enum": ["foreground", "background"]
+                                },
+                                "refresh_trigger": {
+                                    "type": "string",
+                                    "description": "The reason for the refresh.",
+                                    "enum": ["backend", "client", "token_adoption"]
+                                },
+                                "failing_step": {
+                                    "type": "string",
+                                    "description": "The step that the event failed on, if relevant.",
+                                    "enum": [
+                                        "token_read",
+                                        "refresh_access_token",
+                                        "fetch_jwks",
+                                        "verify_access_token",
+                                        "verify_refresh_token",
+                                        "token_write"
+                                    ]
+                                },
+                                "refresh_token_latency_ms_bucketed": {
+                                    "type": "integer",
+                                    "description": "The latency value of the token refresh call.",
+                                    "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                                },
+                                "fetch_jwks_latency_ms_bucketed": {
+                                    "type": "integer",
+                                    "description": "The latency value of the JWKS call.",
+                                    "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                                }
+                            }
+                        },
+                        "error": {
+                            "type": "object",
+                            "required": ["domain", "code"],
+                            "additionalProperties": false,
+                            "properties": {
+                                "domain": { "type": "string", "description": "The top level error domain" },
+                                "code": { "type": "integer", "description": "The top level error code" },
+                                "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                "underlying_code": { "type": "integer", "description": "The underlying error code" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

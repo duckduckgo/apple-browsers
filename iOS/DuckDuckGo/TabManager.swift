@@ -35,6 +35,12 @@ protocol TabManaging {
     @MainActor func prepareAllTabsExceptCurrentForDataClearing()
     @MainActor func prepareCurrentTabForDataClearing()
     func removeAll()
+    @MainActor func viewModelForCurrentTab() -> TabViewModel?
+    @MainActor func prepareTab(_ tab: Tab)
+    @MainActor func isCurrentTab(_ tab: Tab) -> Bool
+    @MainActor func closeTab(_ tab: Tab,
+                             shouldCreateEmptyTabAtSamePosition: Bool,
+                             clearTabHistory: Bool)
 }
 
 class TabManager: TabManaging {
@@ -230,6 +236,12 @@ class TabManager: TabManaging {
         }
     }
 
+    @MainActor
+    func viewModelForCurrentTab() -> TabViewModel? {
+        guard let tab = model.currentTab else { return nil }
+        return viewModel(for: tab)
+    }
+
     var isEmpty: Bool {
         return tabControllerCache.isEmpty
     }
@@ -380,27 +392,27 @@ class TabManager: TabManaging {
     func bulkRemoveTabs(_ indexPaths: [IndexPath]) {
         let tabs = indexPaths.map { model.get(tabAt: $0.row) }
         model.remove(indexPaths)
-        clean(tabs: tabs)
+        clean(tabs: tabs, clearTabHistory: true)
         save()
     }
 
-    func remove(at index: Int) {
+    func remove(at index: Int, clearTabHistory: Bool = true) {
         let tab = model.get(tabAt: index)
         model.remove(tab: tab)
-        clean(tabs: [tab])
+        clean(tabs: [tab], clearTabHistory: clearTabHistory)
         save()
     }
 
-    func replaceTab(at index: Int, withNewTab newTab: Tab) {
+    func replaceTab(at index: Int, withNewTab newTab: Tab, clearTabHistory: Bool = true) {
         // Removing a Tab automatically inserts a new one if tabs are empty. Hence add a new one only if needed
         if model.tabs.count == 1 {
             // Since we're not re-inserting we should use the proper removal to ensure
             //  things are cleaned up properly.
-            remove(at: index)
+            remove(at: index, clearTabHistory: clearTabHistory)
         } else {
             let oldTab = model.get(tabAt: index)
             model.remove(at: index)
-            clean(tabs: [oldTab])
+            clean(tabs: [oldTab], clearTabHistory: clearTabHistory)
             model.insert(tab: newTab, at: index)
         }
         save()
@@ -452,6 +464,23 @@ class TabManager: TabManaging {
     func prepareCurrentTabForDataClearing() {
         current()?.prepareForDataClearing()
     }
+    
+    @MainActor
+    func prepareTab(_ tab: Tab) {
+        controller(for: tab)?.prepareForDataClearing()
+    }
+    
+    @MainActor
+    func isCurrentTab(_ tab: Tab) -> Bool {
+        model.currentTab === tab
+    }
+    
+    @MainActor
+    func closeTab(_ tab: Tab, shouldCreateEmptyTabAtSamePosition: Bool, clearTabHistory: Bool) {
+        delegate?.tabDidRequestClose(tab,
+                                     shouldCreateEmptyTabAtSamePosition: shouldCreateEmptyTabAtSamePosition,
+                                     clearTabHistory: clearTabHistory)
+    }
 
     func cleanupTabsFaviconCache() {
         guard tabsCacheNeedsCleanup else { return }
@@ -488,7 +517,7 @@ class TabManager: TabManaging {
 
     // MARK: - Tab Cleanup
     
-    private func clean(tabs: [Tab]) {
+    private func clean(tabs: [Tab], clearTabHistory: Bool) {
         let tabIDs = tabs.map { $0.uid }
         tabs.forEach { tab in
             previewsSource.removePreview(forTab: tab)
@@ -497,7 +526,9 @@ class TabManager: TabManaging {
             }
             interactionStateSource?.removeStateForTab(tab)
         }
-        removeTabHistory(for: tabIDs)
+        if clearTabHistory {
+            removeTabHistory(for: tabIDs)
+        }
     }
 
     private func removeTabHistory(for tabIDs: [String]) {

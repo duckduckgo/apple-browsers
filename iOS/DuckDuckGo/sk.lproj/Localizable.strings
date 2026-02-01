@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Potvrdiť";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontextové uvádzanie";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Preskočiť";
 
@@ -2929,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Odstrániť karty a údaje stránok?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Odstrániť karty, údaje stránok a chaty?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Odstrániť všetko";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Vymazať túto záložku";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "Pomocou možnosti „Odstrániť túto kartu“ sa odstráni tento Duck.ai chat a všetky údaje o lokalite z lokalít navštívených na tejto karte.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Tým sa zrušia prebiehajúce sťahovania.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Nové karty, ktoré vytvoríš, je možné odstrániť aj jednotlivo.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Odstránením údajov z webových stránok sa môžeš odhlásiť z účtov.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Vyhľadajte alebo zadajte adresu";
 
@@ -2974,6 +3001,9 @@
 /* about tagline */
 "settings.about.tagline" = "Ochrana. Súkromie. Pokoj v duši.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo je nezávislá spoločnosť na ochranu súkromia online pre každého, kto chce získať späť kontrolu nad svojimi osobnými údajmi.\n\nVeríme, že najlepším spôsobom, ako chrániť tvoje osobné údaje pred hackermi, podvodníkmi a spoločnosťami, ktoré narušujú súkromie, je zabrániť ich zhromažďovaniu. Preto si milióny ľudí [vyberajú DuckDuckGo pred prehliadačom Chrome a inými prehliadačmi](ddgQuickLink://duckduckgo.com/compare-privacy) na online vyhľadávanie a prehliadanie. Náš vstavaný vyhľadávač je ako Google, ale nikdy nesleduje tvoje vyhľadávania. Naše ochrany prehliadania, ako je blokovanie sledovania reklám a blokovanie súborov cookie, pomáhajú zastaviť iné spoločnosti v zhromažďovaní tvojich údajov. A náš prehliadač je zadarmo – zarábame na [reklamách vo vyhľadávaní, ktoré rešpektujú súkromie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), a nie zneužívaním tvojich údajov. \n\n%@ \n\nZískaj späť kontrolu nad svojimi osobnými údajmi s prehliadačom, ktorý je určený na ochranu údajov a nie na ich zhromažďovanie.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Zjednodušenie prístupu";
 
@@ -2992,8 +3022,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Zobraziť úplnú adresu lokality";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Zobraziť animáciu blokovania sledovačov";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Zobraziť v adresnom riadku";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Vyhľadávanie & Duck.ai";
@@ -3118,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ak je povolená funkcia Touch ID, Face ID alebo systémový prístupový kód, pri otvorení aplikácie sa zobrazí výzva na odomknutie.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Vymazať";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatické vymazávanie údajov";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Automatické odstránenie údajov";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Spätná väzba prehliadača";
@@ -3148,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Správa kontextových okien súborov cookie";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Vymazať karty a údaje";
+
 /* Settings title for the customize section */
 "settings.customize" = "Prispôsobiť";
 
@@ -3165,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Predvolený prehliadač";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Odstrániť chaty Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Odstrániť karty a údaje";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Zakázať automatické vyplňovanie ochrany e-mailov";
@@ -3370,6 +3415,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synchronizácia a zálohovanie";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Zobraziť v Správcovi kariet";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Karty";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Predvolené zväčšenie textu";
 
@@ -3378,6 +3429,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Nastavenia";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animácia blokovania sledovačov";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Pomáha blokovať sledovacie programy tretích strán, ktoré sa snažia zamaskovať v rámci webovej lokality pomocou DNS.";
@@ -3619,11 +3673,11 @@
 /* Help and support Section header */
 "subscription.help" = "Pomoc a podpora";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Spravovať plán";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Spravovať platbu alebo zrušiť";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Spravovať plán";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Predplatné";
@@ -3787,6 +3841,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nastavenie synchronizácie";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synchronizuj a zálohuj svoje kreditné karty";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synchronizuj a zálohuj svoje dáta";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nie, ďakujem";
 
@@ -3876,6 +3936,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Uložiť všetky karty medzi záložky";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Skryť";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Túto funkciu môžeš znova zapnúť v časti Nastavenia > Vzhľad.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Skryť počet sledovaných položiek?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Možnosti počtu sledovačov";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Dvojitým klepnutím zobrazíš možnosti skrytia tohto bannera";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Ponechať";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "za posledných 7 dní";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Zväčšite alebo zmenšite veľkosť textu na všetkých stránkach.";
@@ -4261,15 +4345,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Čo chceš importovať?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Karty";
-"settings.tab.switcher.show.tracker.count" = "Počet sledovačov za 7 dní";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "za posledných 7 dní";
-"tab.switcher.tracker.count.hide.title" = "Skryť počet sledovačov?";
-"tab.switcher.tracker.count.hide.message" = "Znova to môžete zapnúť v Nastavenia > Vzhľad.";
-"tab.switcher.tracker.count.hide.action" = "Skryť";
-"tab.switcher.tracker.count.keep.action" = "Ponechať";
-"tab.switcher.tracker.count.info.a11y" = "Možnosti počtu sledovačov";
-"tab.switcher.tracker.count.info.hint.a11y" = "Dvojitým klepnutím zobrazíte možnosti na skrytie tohto banera";

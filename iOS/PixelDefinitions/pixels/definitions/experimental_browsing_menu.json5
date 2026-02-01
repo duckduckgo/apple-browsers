@@ -62,5 +62,45 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-01-19"
+    },
+    "m_sheet-menu_settings": {
+        "description": "Fires when the user taps Settings from the sheet browsing menu (used to compare engagement vs old menu)",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-03-16"
+    },
+    "m_sheet-menu_aichat": {
+        "description": "Fires when the user taps AI Chat from the sheet browsing menu (used to compare engagement vs old menu)",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-03-16"
+    },
+    "m_sheet-menu_vpn": {
+        "description": "Fires when the user taps VPN from the sheet browsing menu (used to compare engagement vs old menu)",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-03-16"
+    },
+    "m_sheet-menu_passwords": {
+        "description": "Fires when the user taps Passwords from the sheet browsing menu (used to compare engagement vs old menu)",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-03-16"
+    },
+    "m_sheet-menu_new-duck-address": {
+        "description": "Fires when the user taps New Duck Address from the sheet browsing menu (used to compare engagement vs old menu)",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-03-16"
     }
 }

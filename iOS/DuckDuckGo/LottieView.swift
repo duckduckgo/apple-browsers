@@ -19,7 +19,8 @@
 
 import SwiftUI
 import Lottie
- 
+
+/// Consider using Lottie.LottieView instead, as it's more feature rich and well-maintained.
 struct LottieView: UIViewRepresentable {
     
     struct LoopWithIntroTiming {

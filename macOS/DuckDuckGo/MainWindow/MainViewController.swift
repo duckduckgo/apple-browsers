@@ -274,8 +274,8 @@ final class MainViewController: NSViewController {
 
         // Create the shared AI Chat omnibar controller
         let suggestionsReader = AIChatSuggestionsReader(
-            featureFlagger: featureFlagger,
-            privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager
+            suggestionsReader: SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: contentBlocking.privacyConfigurationManager),
+            historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
         )
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,

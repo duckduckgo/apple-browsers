@@ -27,6 +27,7 @@ class MockMessageNavigationDelegate: MessageNavigationDelegate {
     private(set) var didCallSegueToSettingsAppearance: Bool = false
     private(set) var didCallSegueToFeedback: Bool = false
     private(set) var didCallSegueToSettingsSync: Bool = false
+    private(set) var didCallSegueToPIR: Bool = false
     private(set) var capturedSettingsSyncSource: String?
     private(set) var capturedSettingsSyncPairingInfo: PairingInfo?
 
@@ -64,6 +65,11 @@ class MockMessageNavigationDelegate: MessageNavigationDelegate {
 
     func segueToSettingsAppearance(presentationStyle: PresentationContext.Style) {
         didCallSegueToSettingsAppearance = true
+        capturedPresentationStyle = presentationStyle
+    }
+
+    func segueToPIR(presentationStyle: DuckDuckGo.PresentationContext.Style) {
+        didCallSegueToPIR = true
         capturedPresentationStyle = presentationStyle
     }
 }

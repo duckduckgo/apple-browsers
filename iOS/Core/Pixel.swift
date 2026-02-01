@@ -103,6 +103,8 @@ public struct PixelParameters {
 
     public static let isInternalUser = "is_internal_user"
 
+    public static let enabled = "enabled"
+
     // Email manager
     public static let emailKeychainAccessType = "access_type"
     public static let emailKeychainError = "error"
@@ -210,7 +212,7 @@ public class Pixel {
         case vpn
     }
 
-    public static var isDryRun = false
+    public static var isDryRun = PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild)
 
     private static var isInternalUser: Bool {
         DefaultInternalUserDecider(store: InternalUserStore()).isInternalUser

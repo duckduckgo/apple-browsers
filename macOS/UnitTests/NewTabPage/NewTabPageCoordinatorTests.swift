@@ -91,7 +91,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         customizationModel = NewTabPageCustomizationModel(
@@ -142,7 +143,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 remoteMessagingStore: MockRemoteMessagingStore(),
                 remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
                 openURLHandler: { _ in },
-                navigateToFeedbackHandler: { }
+                navigateToFeedbackHandler: { },
+                navigateToPIRHandler: { }
             ),
             historyCoordinator: HistoryCoordinatingMock(),
             contentBlocking: ContentBlockingMock(),

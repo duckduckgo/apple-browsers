@@ -155,41 +155,27 @@ class FireExecutor: FireExecuting {
         }
         
         delegate?.willStartBurning(fireRequest: request)
-        if request.options.contains(.tabs) {
-            delegate?.willStartBurningTabs(fireRequest: request)
-            burnTabs(scope: request.scope)
-            delegate?.didFinishBurningTabs(fireRequest: request)
-        }
         
         cancelOngoingDownloadsIfNeeded(request)
-
+        
+        let shouldBurnTabs = request.options.contains(.tabs)
+        async let tabsTask: Void = shouldBurnTabs ? burnTabsWithDelegateCallbacks(request: request) : ()
+        
         let shouldBurnData = request.options.contains(.data)
+        async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(request: request, applicationState: applicationState) : ()
         
-        // For auto-clear with enhancedDataClearingSettings FF ON:
-        // - User configures what to clear via the enhanced settings UI
-        // For manual fire OR auto-clear with FF OFF (legacy):
-        // - AI chats clear only if autoClearAIChatHistory setting is enabled
-        let chosenThroughNewAutoClearUI = featureFlagger.isFeatureOn(.enhancedDataClearingSettings) && request.trigger != .manualFire
-        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI || appSettings.autoClearAIChatHistory
+        let shouldBurnAIChats = shouldBurnAIHistory(request)
+        async let aiTask: Void = shouldBurnAIChats ? burnAIHistoryWithDelegateCallbacks(request: request) : ()
+
+        _ = await (tabsTask, dataTask, aiTask)
         
-        let shouldBurnAIChats = request.options.contains(.aiChats) && shouldAllowAIChatsBurn
-
-        if shouldBurnData { delegate?.willStartBurningData(fireRequest: request) }
-        if shouldBurnAIChats { delegate?.willStartBurningAIHistory(fireRequest: request) }
-
-        async let dataTask: Void = shouldBurnData ? burnData(applicationState: applicationState) : ()
-        async let aiTask: Void = shouldBurnAIChats ? burnAIHistory() : ()
-        _ = await (dataTask, aiTask)
-
-        if shouldBurnData { delegate?.didFinishBurningData(fireRequest: request) }
-        if shouldBurnAIChats { delegate?.didFinishBurningAIHistory(fireRequest: request) }
-        delegate?.didFinishBurning(fireRequest: request)
+        await didFinishBurning(fireRequest: request)
         
         // Reset prepared state for next burn cycle
         preparedOptions = []
     }
     
-    // MARK: - Clearing Downloads
+    // MARK: - General Helpers
     
     private func cancelOngoingDownloadsIfNeeded(_ request: FireRequest) {
         guard request.options.contains(.tabs), request.options.contains(.data) else {
@@ -197,30 +183,77 @@ class FireExecutor: FireExecuting {
         }
         downloadManager.cancelAllDownloads()
     }
+
+    @MainActor
+    private func didFinishBurning(fireRequest: FireRequest) async {
+        if case .tab(let viewModel) = fireRequest.scope,
+           fireRequest.options.contains(.tabs) {
+            await historyManager.removeTabHistory(for: [viewModel.tab.uid])
+        }
+        delegate?.didFinishBurning(fireRequest: fireRequest)
+    }
+    
+    @MainActor
+    private func burnTabsWithDelegateCallbacks(request: FireRequest) async {
+        delegate?.willStartBurningTabs(fireRequest: request)
+        await burnTabs(scope: request.scope)
+        delegate?.didFinishBurningTabs(fireRequest: request)
+    }
+    
+    @MainActor
+    private func burnDataWithDelegateCallbacks(request: FireRequest,
+                                               applicationState: DataStoreWarmup.ApplicationState) async {
+        delegate?.willStartBurningData(fireRequest: request)
+        await burnData(scope: request.scope, applicationState: applicationState)
+        delegate?.didFinishBurningData(fireRequest: request)
+    }
+    
+    @MainActor
+    private func burnAIHistoryWithDelegateCallbacks(request: FireRequest) async {
+        delegate?.willStartBurningAIHistory(fireRequest: request)
+        await burnAIHistory(scope: request.scope)
+        delegate?.didFinishBurningAIHistory(fireRequest: request)
+    }
     
     // MARK: Burn Tabs Helpers
+
     @MainActor
     private func prepareForBurningTabs(scope: FireRequest.Scope) {
         switch scope {
         case .all:
             tabManager.prepareAllTabsExceptCurrentForDataClearing()
-        case .tab:
-            return
-            // TODO: Prepare the tab if it's not the current tab
+        case .tab(let viewModel):
+            // Only prepare the tab if it's not the current tab
+            // Current tabs are prepared during burnTabs
+            if !tabManager.isCurrentTab(viewModel.tab) {
+                tabManager.prepareTab(viewModel.tab)
+            }
         }
     }
     
     @MainActor
-    private func burnTabs(scope: FireRequest.Scope) {
+    private func burnTabs(scope: FireRequest.Scope) async {
         switch scope {
         case .all:
             tabManager.prepareCurrentTabForDataClearing()
             tabManager.removeAll()
             Favicons.shared.clearCache(.tabs)
-        case .tab:
-            return
-            // TODO: Prepare the tab if it's the current tab (non-current tabs were prepared earlier)
-            // TODO: Remove just this tab from TabManager
+        case .tab(let viewModel):
+            // Prepare the tab if it's the current tab (non-current tabs were prepared earlier)
+            if tabManager.isCurrentTab(viewModel.tab) {
+                tabManager.prepareTab(viewModel.tab)
+            }
+            let isLastOpenTab = tabManager.count == 1
+
+            // Pass false to clearTabHistory to preserve tab history while burning
+            // As tab history is needed by other processes running in parallel
+            // didFinishBurning(fireRequest:) manually clears data after burn is complete
+            tabManager.closeTab(viewModel.tab,
+                                shouldCreateEmptyTabAtSamePosition: isLastOpenTab,
+                                clearTabHistory: false)
+            
+            let domainsToClear = await Array(viewModel.visitedDomains())
+            Favicons.shared.removeTabFavicons(forDomains: domainsToClear)
         }
     }
     
@@ -232,7 +265,7 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnData(applicationState: DataStoreWarmup.ApplicationState) async {
+    private func burnData(scope: FireRequest.Scope, applicationState: DataStoreWarmup.ApplicationState) async {
         guard !burnInProgress else {
             assertionFailure("Shouldn't get called multiple times")
             return
@@ -245,6 +278,18 @@ class FireExecutor: FireExecuting {
             self.dataStoreWarmup = nil
         }
 
+        switch scope {
+        case .tab(let viewModel):
+            await burnTabData(tab: viewModel)
+        case .all:
+            await burnAllData()
+        }
+
+        self.burnInProgress = false
+    }
+    
+    @MainActor
+    private func burnAllData() async {
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
 
         let pixel = TimedPixel(.forgetAllDataCleared)
@@ -265,13 +310,36 @@ class FireExecutor: FireExecuting {
         self.forgetTextZoom()
         await historyManager.removeAllHistory()
         await privacyStats?.clearPrivacyStats()
-
-        self.burnInProgress = false
+    }
+    
+    @MainActor
+    private func burnTabData(tab: TabViewModel) async {
+        // TODO: - Implement tab specific data burning
     }
     
     // MARK: - Clear AI History
     
-    private func burnAIHistory() async {
+    /// For auto-clear with enhancedDataClearingSettings FF ON:
+    /// - User configures what to clear via the enhanced settings UI
+    /// For manual fire OR auto-clear with FF OFF (legacy):
+    /// - AI chats clear only if autoClearAIChatHistory setting is enabled
+    /// - Returns: A boolean indicating if we should run the ai chats burn flow
+    private func shouldBurnAIHistory(_ request: FireRequest) -> Bool {
+        let chosenThroughNewAutoClearUI = featureFlagger.isFeatureOn(.enhancedDataClearingSettings) && request.trigger != .manualFire
+        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI || appSettings.autoClearAIChatHistory
+        return request.options.contains(.aiChats) && shouldAllowAIChatsBurn
+    }
+    
+    private func burnAIHistory(scope: FireRequest.Scope) async {
+        switch scope {
+        case .tab(let viewModel):
+            await burnTabAIHistory(tab: viewModel)
+        case .all:
+            await burnAllAIHistory()
+        }
+    }
+    
+    private func burnAllAIHistory() async {
         // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
         let result = await aiChatHistoryCleaner.cleanAIChatHistory()
         switch result {
@@ -285,5 +353,9 @@ class FireExecutor: FireExecuting {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
             }
         }
+    }
+    
+    private func burnTabAIHistory(tab: TabViewModel) async {
+        // TODO: - Implement tab specific AI chats burning
     }
 }

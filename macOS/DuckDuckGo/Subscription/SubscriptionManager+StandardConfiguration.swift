@@ -31,7 +31,8 @@ extension DefaultSubscriptionManager {
                             environment: SubscriptionEnvironment,
                             featureFlagger: FeatureFlagger? = nil,
                             userDefaults: UserDefaults,
-                            pixelHandlingSource: SubscriptionPixelHandler.Source) {
+                            pixelHandlingSource: SubscriptionPixelHandler.Source,
+                            source: KeychainErrorSource) {
 
         let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource)
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
@@ -41,7 +42,7 @@ extension DefaultSubscriptionManager {
                                                               userDefaults: userDefaults) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
-                                                                             source: KeychainErrorSource.shared,
+                                                                             source: source,
                                                                              authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }

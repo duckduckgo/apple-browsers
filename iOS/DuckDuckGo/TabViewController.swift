@@ -178,6 +178,8 @@ class TabViewController: UIViewController {
     private var fireproofingWorker: FireproofingWorking?
 
     private var trackersInfoWorkItem: DispatchWorkItem?
+    private var lastVisitedTrackerAnimationDomain: String?
+    private var lastNotifiedTrackerAnimationDomain: String?
     
     private var tabURLInterceptor: TabURLInterceptor
     private var currentlyLoadedURL: URL?
@@ -280,6 +282,7 @@ class TabViewController: UIViewController {
             updateTabModel()
             delegate?.tabLoadingStateDidChange(tab: self)
             checkLoginDetectionAfterNavigation()
+            updateTrackerAnimationDomainState(for: url)
         }
     }
     
@@ -637,7 +640,7 @@ class TabViewController: UIViewController {
         }
 
         observeNetPConnectionStatusChanges()
-        
+
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
     }
@@ -690,8 +693,20 @@ class TabViewController: UIViewController {
     }
 
     private func updateWebViewBottomAnchor() {
-        let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
-        webViewBottomAnchorConstraint?.constant = appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
+        updateWebViewBottomAnchor(for: 1.0)
+    }
+
+    func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
+        if appSettings.currentAddressBarPosition == .bottom {
+            /// When address bar is at bottom, offset webview to make room for the bars
+            let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
+            webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
+        } else {
+            /// When address bar is at top, webview fills the container
+            /// The container already follows the toolbar position
+            webViewBottomAnchorConstraint?.constant = 0
+        }
+        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -1932,6 +1947,7 @@ extension TabViewController: WKNavigationDelegate {
     private func scheduleTrackerNetworksAnimation(collapsing: Bool) {
         let trackersWorkItem = DispatchWorkItem {
             guard let privacyInfo = self.privacyInfo else { return }
+            guard self.shouldShowTrackersAnimation(for: privacyInfo) else { return }
             self.delegate?.tab(self, didRequestPresentingTrackerAnimation: privacyInfo, isCollapsing: collapsing)
         }
         trackersInfoWorkItem = trackersWorkItem
@@ -1942,6 +1958,32 @@ extension TabViewController: WKNavigationDelegate {
     private func cancelTrackerNetworksAnimation() {
         trackersInfoWorkItem?.cancel()
         trackersInfoWorkItem = nil
+    }
+
+    private func trackerAnimationDomain(for url: URL?) -> String? {
+        guard let host = url?.host?.lowercased() else { return nil }
+        return storageCache.tld.eTLDplus1(host) ?? host
+    }
+
+    private func updateTrackerAnimationDomainState(for url: URL?) {
+        let currentDomain = trackerAnimationDomain(for: url)
+        guard currentDomain != lastVisitedTrackerAnimationDomain else { return }
+        lastVisitedTrackerAnimationDomain = currentDomain
+        lastNotifiedTrackerAnimationDomain = nil
+    }
+
+    private func shouldShowTrackersAnimation(for privacyInfo: PrivacyInfo) -> Bool {
+        guard appSettings.showTrackersBlockedAnimation else { return false }
+        guard !privacyInfo.url.isDuckDuckGoSearch else { return false }
+        guard !privacyInfo.trackerInfo.trackersBlocked.isEmpty else { return false }
+
+        guard let currentDomain = trackerAnimationDomain(for: privacyInfo.url),
+              currentDomain != lastNotifiedTrackerAnimationDomain else {
+            return false
+        }
+
+        lastNotifiedTrackerAnimationDomain = currentDomain
+        return true
     }
     
     private func checkLoginDetectionAfterNavigation() {
@@ -3899,7 +3941,7 @@ extension WKWebView {
 extension TabViewController: SpecialErrorPageNavigationDelegate {
 
     func closeSpecialErrorPageTab(shouldCreateNewEmptyTab: Bool) {
-        delegate?.tabDidRequestClose(self, shouldCreateEmptyTabAtSamePosition: shouldCreateNewEmptyTab)
+        delegate?.tabDidRequestClose(tabModel, shouldCreateEmptyTabAtSamePosition: shouldCreateNewEmptyTab, clearTabHistory: true)
     }
 
 }

@@ -38,39 +38,84 @@ struct FireConfirmationPresenter {
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
+                                 tabViewModel: TabViewModel?,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
-        presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
+        if featureFlagger.isFeatureOn(.burnSingleTab) {
+            presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, onConfirm: onConfirm, onCancel: onCancel)
+        } else {
+            presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
+        }
     }
     
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  sourceRect: CGRect,
+                                 tabViewModel: TabViewModel?,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         guard let window = UIApplication.shared.firstKeyWindow else {
             assertionFailure("No key window available")
             return
         }
-        presentLegacyConfirmationAlert(on: viewController, from: window, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
+        if featureFlagger.isFeatureOn(.burnSingleTab) {
+            presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, onConfirm: onConfirm, onCancel: onCancel)
+        } else {
+            presentLegacyConfirmationAlert(on: viewController, from: window, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
+        }
     }
+    
+    // MARK: - Scope-based Confirmation (burnSingleTab feature flag)
+    
+    @MainActor
+        private func presentScopeConfirmationSheet(on viewController: UIViewController,
+                                                   from source: AnyObject,
+                                                   sourceRect: CGRect,
+                                                   tabViewModel: TabViewModel?,
+                                                   onConfirm: @escaping (FireRequest) -> Void,
+                                                   onCancel: @escaping () -> Void) {
+            let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
+                onConfirm: { [weak viewController] fireOptions in
+                    viewController?.dismiss(animated: true) {
+                        onConfirm(fireOptions)
+                    }
+                },
+                onCancel: { [weak viewController] in
+                    viewController?.dismiss(animated: true) {
+                        onCancel()
+                    }
+                }
+            )
+            
+            let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
+            let hostingController = makeHostingController(with: confirmationView)
+            let presentingWidth = viewController.view.frame.width
+            configurePresentation(for: hostingController,
+                                  source: source,
+                                  sourceRect: sourceRect,
+                                  presentingWidth: presentingWidth)
+            viewController.present(hostingController, animated: true)
+        }
+    
+    // MARK: - Granular Confirmation (legacy, currently unused)
     
     /// Presents a SwiftUI-based confirmation sheet as an alternative UI for the "Fire" action.
     /// 
-    /// This function builds a FireConfirmationView hosted in a UIHostingController and presents it
+    /// This function builds a GranularFireConfirmationView hosted in a UIHostingController and presents it
     /// as either a sheet or popover, depending on the device. Currently, this function is unused but
     /// demonstrates an alternate UI flow for fire confirmation.
     @MainActor
-    private func presentConfirmationSheet(on viewController: UIViewController,
-                                          from source: AnyObject,
-                                          sourceRect: CGRect,
-                                          onConfirm: @escaping (FireRequest) -> Void,
-                                          onCancel: @escaping () -> Void) {
+    private func presentGranularConfirmationSheet(on viewController: UIViewController,
+                                                  from source: AnyObject,
+                                                  sourceRect: CGRect,
+                                                  onConfirm: @escaping (FireRequest) -> Void,
+                                                  onCancel: @escaping () -> Void) {
         let viewModel = makeViewModel(dismissing: viewController,
                                       onConfirm: onConfirm,
                                       onCancel: onCancel)
-        let hostingController = makeHostingController(with: viewModel)
+        let confirmationView = GranularFireConfirmationView(viewModel: viewModel)
+        let hostingController = makeHostingController(with: confirmationView)
         let presentingWidth = viewController.view.frame.width
         
         configurePresentation(for: hostingController,
@@ -84,8 +129,8 @@ struct FireConfirmationPresenter {
     @MainActor
     private func makeViewModel(dismissing viewController: UIViewController,
                                onConfirm: @escaping (FireRequest) -> Void,
-                               onCancel: @escaping () -> Void) -> FireConfirmationViewModel {
-        FireConfirmationViewModel(
+                               onCancel: @escaping () -> Void) -> GranularFireConfirmationViewModel {
+        GranularFireConfirmationViewModel(
             tabsModel: tabsModel,
             historyManager: historyManager,
             fireproofing: fireproofing,
@@ -104,24 +149,24 @@ struct FireConfirmationPresenter {
         )
     }
     
-    private func makeHostingController(with viewModel: FireConfirmationViewModel) -> UIHostingController<FireConfirmationView> {
-        let confirmationView = FireConfirmationView(viewModel: viewModel)
-        let hostingController = UIHostingController(rootView: confirmationView)
+    // MARK: - Shared Presentation Helpers
+        
+    private func makeHostingController<Content: View>(with view: Content) -> UIHostingController<Content> {
+        let hostingController = UIHostingController(rootView: view)
         hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         hostingController.modalTransitionStyle = .coverVertical
         hostingController.modalPresentationStyle = DevicePlatform.isIpad ? .popover : .pageSheet
         return hostingController
     }
     
-    private func configurePresentation(for hostingController: UIHostingController<FireConfirmationView>,
-                                       source: AnyObject,
-                                       sourceRect: CGRect,
-                                       presentingWidth: CGFloat) {
+    private func configurePresentation<Content: View>(for hostingController: UIHostingController<Content>,
+                                                      source: AnyObject,
+                                                      sourceRect: CGRect,
+                                                      presentingWidth: CGFloat) {
         if let popoverController = hostingController.popoverPresentationController {
             configurePopoverSource(popoverController, source: source, sourceRect: sourceRect)
             
-            let sheetHeight = calculateSheetHeight(for: hostingController.rootView,
-                                                   width: Constants.iPadSheetWidth)
+            let sheetHeight = calculateSheetHeight(for: hostingController, width: Constants.iPadSheetWidth)
             hostingController.preferredContentSize = CGSize(width: Constants.iPadSheetWidth, height: sheetHeight)
             
             configureSheetDetents(popoverController.adaptiveSheetPresentationController,
@@ -144,12 +189,11 @@ struct FireConfirmationPresenter {
         }
     }
     
-    private func configureSheetDetents(_ sheet: UISheetPresentationController,
-                                       hostingController: UIHostingController<FireConfirmationView>,
-                                       presentingWidth: CGFloat) {
+    private func configureSheetDetents<Content: View>(_ sheet: UISheetPresentationController,
+                                                      hostingController: UIHostingController<Content>,
+                                                      presentingWidth: CGFloat) {
         if #available(iOS 16.0, *) {
-            let contentHeight = calculateContentHeight(for: hostingController.rootView,
-                                                       width: presentingWidth)
+            let contentHeight = calculateContentHeight(for: hostingController, width: presentingWidth)
             sheet.detents = [.custom { context in
                 let maxHeight = context.maximumDetentValue * Constants.maxHeightRatio
                 return min(contentHeight, maxHeight)
@@ -163,9 +207,11 @@ struct FireConfirmationPresenter {
         sheet.preferredCornerRadius = Constants.sheetCornerRadius
     }
     
-    private func calculateSheetHeight(for view: FireConfirmationView, width: CGFloat, maxHeight: CGFloat? = nil) -> CGFloat {
+    private func calculateSheetHeight<Content: View>(for hostingController: UIHostingController<Content>,
+                                                     width: CGFloat,
+                                                     maxHeight: CGFloat? = nil) -> CGFloat {
         if #available(iOS 16.0, *) {
-            let contentHeight = calculateContentHeight(for: view, width: width)
+            let contentHeight = calculateContentHeight(for: hostingController, width: width)
             if let maxHeight = maxHeight {
                 return min(contentHeight, maxHeight)
             }
@@ -176,8 +222,9 @@ struct FireConfirmationPresenter {
     }
     
     @available(iOS 16.0, *)
-    private func calculateContentHeight(for view: FireConfirmationView, width: CGFloat) -> CGFloat {
-        let sizingController = UIHostingController(rootView: view)
+    private func calculateContentHeight<Content: View>(for hostingController: UIHostingController<Content>,
+                                                       width: CGFloat) -> CGFloat {
+        let sizingController = UIHostingController(rootView: hostingController.rootView)
         sizingController.disableSafeArea()
         let targetSize = sizingController.sizeThatFits(in: CGSize(width: width, height: .infinity))
         return targetSize.height

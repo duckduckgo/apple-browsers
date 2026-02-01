@@ -31,8 +31,14 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Ακύρωση";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Ενεργοποίηση συγχρονισμού και δημιουργίας αντιγράφων ασφαλείας";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Αυτό δημιουργεί ένα κρυπτογραφημένο αντίγραφο ασφάλειας των σελιδοδεικτών και των δεδομένων αυτόματης συμπλήρωσης στον ασφαλή διακομιστή του DuckDuckGo, το οποίο μπορεί να συγχρονιστεί με τις άλλες συσκευές σας.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Αυτό δημιουργεί ένα κρυπτογραφημένο αντίγραφο ασφάλειας των αποθηκευμένων σελιδοδεικτών, κωδικών πρόσβασης, πιστωτικών καρτών και των συνομιλιών Duck.ai στον ασφαλή διακομιστή του DuckDuckGo, το οποίο μπορεί να συγχρονιστεί με τις άλλες συσκευές σας.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Το κλειδί κρυπτογράφησης αποθηκεύεται μόνο στη συσκευή σας. Δεν μπορεί να έχει πρόσβαση σε αυτό το DuckDuckGo.";
@@ -138,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Οι σελιδοδείκτες και τα δεδομένα αυτόματης συμπλήρωσης προετοιμάζονται για συγχρονισμό. Αυτό θα πρέπει να διαρκέσει ελάχιστο χρόνο.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Οι σελιδοδείκτες, οι κωδικοί πρόσβασης και οι συνομιλίες σας στο Duck.ai προετοιμάζονται για συγχρονισμό. Αυτό θα πρέπει να διαρκέσει ελάχιστο χρόνο.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Σύνδεση...";
@@ -286,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Συγχρονίστε με ασφάλεια σελιδοδείκτες και κωδικούς πρόσβασης μεταξύ των συσκευών σας.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Συγχρονίστε με ασφάλεια σελιδοδείκτες, δεδομένα αυτόματης συμπλήρωσης και συνομιλίες στο Duck.ai μεταξύ των συσκευών σας.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Έναρξη συγχρονισμού";
 
@@ -300,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Απενεργοποίηση Συγχρονισμού και δημιουργίας αντιγράφων ασφάλειας...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Οι σελιδοδείκτες, τα δεδομένα αυτόματης συμπλήρωσης και οι συνομιλίες του Duck.ai είναι επί του παρόντος συγχρονισμένα σε όλες τις συσκευές σας.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Ο συγχρονισμός ενεργοποιήθηκε";

@@ -87,16 +87,6 @@ final class AIChatContextualSheetViewModel {
         contextualChatURL ?? settings.aiChatURL
     }
 
-    /// Creates the attach actions for the contextual input view
-    func createAttachActions(onAttachPage: @escaping () -> Void) -> [AIChatAttachAction] {
-        let attachPageAction = AIChatAttachAction(
-            title: UserText.aiChatAttachPageContent,
-            icon: DesignResourcesKitIcons.DesignSystemImages.Glyphs.Size16.summary,
-            handler: onAttachPage
-        )
-        return [attachPageAction]
-    }
-
     /// Updates the context availability state.
     /// Called by coordinator when context changes.
     func updateContextAvailability(_ hasContext: Bool) {

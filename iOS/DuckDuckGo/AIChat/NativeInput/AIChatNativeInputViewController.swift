@@ -61,18 +61,8 @@ final class AIChatNativeInputViewController: UIViewController {
         set { nativeInputView.placeholder = newValue }
     }
 
-    var isAttachButtonHidden: Bool {
-        get { nativeInputView.isAttachButtonHidden }
-        set { nativeInputView.isAttachButtonHidden = newValue }
-    }
-
     var isContextChipVisible: Bool {
         nativeInputView.isContextChipVisible
-    }
-
-    var attachActions: [AIChatAttachAction] {
-        get { nativeInputView.attachActions }
-        set { nativeInputView.attachActions = newValue }
     }
 
     func setText(_ text: String) {
@@ -115,16 +105,20 @@ final class AIChatNativeInputViewController: UIViewController {
         return nativeInputView.resignFirstResponder()
     }
 
-    func showContextChip(_ chipView: UIView, animated: Bool = true) {
-        nativeInputView.showContextChip(chipView, animated: animated)
+    func showContextChip(_ chipView: UIView) {
+        nativeInputView.showContextChip(chipView)
     }
 
-    func hideContextChip(animated: Bool = true) {
-        nativeInputView.hideContextChip(animated: animated)
+    func hideContextChip() {
+        nativeInputView.hideContextChip()
     }
 
-    func updateContextChip(title: String, favicon: UIImage?) {
-        nativeInputView.updateContextChip(title: title, favicon: favicon)
+    func updateContextChipState(_ state: AIChatContextChipView.State) {
+        nativeInputView.updateContextChipState(state)
+    }
+
+    func setChipTapCallback(_ callback: @escaping () -> Void) {
+        nativeInputView.setChipTapCallback(callback)
     }
 }
 

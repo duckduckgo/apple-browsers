@@ -31,8 +31,14 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Отменить";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Включить синхронизацию и копирование";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "DuckDuckGo создаст зашифрованную резервную копию ваших закладок и данных автозаполнения на надежном сервере. Копию можно синхронизировать с другими устройствами.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "DuckDuckGo создаст зашифрованную резервную копию ваших сохраненных закладок, паролей, реквизитов платежных карт и чатов Duck.ai на надежном сервере. Копию можно синхронизировать с другими устройствами.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Ключ шифрования хранится только на вашем устройстве. У DuckDuckGo нет к нему доступа.";
@@ -138,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Закладки и данные автозаполнения готовятся к синхронизации. Это не займет много времени.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Ваши закладки, пароли и чаты Duck.ai готовятся к синхронизации. Это не займет много времени.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Выполняется подключение...";
@@ -286,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Безопасная синхронизация закладок и паролей на ваших устройствах.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Безопасная синхронизация закладок, данных автозаполнения и чатов Duck.ai между устройствами.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Начало синхронизации";
 
@@ -300,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Отключить синхронизацию и копирование...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Закладки, данные автозаполнения и чаты Duck.ai синхронизируются на всех ваших устройствах.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Синхронизация включена";

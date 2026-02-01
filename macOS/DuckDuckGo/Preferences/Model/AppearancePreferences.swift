@@ -47,7 +47,7 @@ protocol AppearancePreferencesPersistor {
     var homePageCustomBackground: String? { get set }
     var centerAlignedBookmarksBar: Bool { get set }
     var showTabsAndBookmarksBarOnFullScreen: Bool { get set }
-    var didOpenCustomizationSettings: Bool { get set }
+    var didChangeAnyNewTabPageCustomizationSetting: Bool { get set }
 }
 
 struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersistor {
@@ -55,12 +55,12 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
     enum Key: String {
         case newTabPageIsOmnibarVisible = "new-tab-page.omnibar.is-visible"
         case newTabPageIsProtectionsReportVisible = "new-tab-page.protections-report.is-visible"
-        case newTabPageDidOpenCustomizationSettings = "new-tab-page.did-open-customization-settings"
+        case newTabPageDidChangeAnyCustomizationSetting = "new-tab-page.did-change-any-customization-setting"
     }
 
-    var didOpenCustomizationSettings: Bool {
-        get { (try? keyValueStore.object(forKey: Key.newTabPageDidOpenCustomizationSettings.rawValue) as? Bool) ?? false }
-        set { try? keyValueStore.set(newValue, forKey: Key.newTabPageDidOpenCustomizationSettings.rawValue) }
+    var didChangeAnyNewTabPageCustomizationSetting: Bool {
+        get { (try? keyValueStore.object(forKey: Key.newTabPageDidChangeAnyCustomizationSetting.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.newTabPageDidChangeAnyCustomizationSetting.rawValue) }
     }
 
     var isOmnibarVisible: Bool {
@@ -166,18 +166,18 @@ protocol NewTabPageNavigator {
 final class DefaultNewTabPageNavigator: NewTabPageNavigator {
     func openNewTabPageBackgroundCustomizationSettings() {
         Task { @MainActor in
-            Application.appDelegate.windowControllersManager.showTab(with: .newtab)
-            try? await Task.sleep(interval: 0.2)
+            if Application.appDelegate.windowControllersManager.selectedTab?.content != .newtab {
+                Application.appDelegate.windowControllersManager.showTab(with: .newtab)
+                try? await Task.sleep(interval: 0.2)
+            }
             if let window = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
                 if Application.appDelegate.featureFlagger.isFeatureOn(.newTabPagePerTab) {
                     if let webView = window.mainViewController.browserTabViewController.webView {
                         Application.appDelegate.newTabPageCustomizationModel.customizerOpener.openSettings(for: webView)
-                        NSApp.delegateTyped.appearancePreferences.didOpenCustomizationSettings = true
                     }
                 } else {
                     let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
                     NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
-                    NSApp.delegateTyped.appearancePreferences.didOpenCustomizationSettings = true
                 }
             }
         }
@@ -438,9 +438,9 @@ final class AppearancePreferences: ObservableObject {
         NSApp.appearance = themeAppearance.appearance
     }
 
-    @Published var didOpenCustomizationSettings: Bool {
+    @Published var didChangeAnyNewTabPageCustomizationSetting: Bool {
         didSet {
-            persistor.didOpenCustomizationSettings = didOpenCustomizationSettings
+            persistor.didChangeAnyNewTabPageCustomizationSetting = didChangeAnyNewTabPageCustomizationSetting
         }
     }
 
@@ -454,7 +454,8 @@ final class AppearancePreferences: ObservableObject {
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
         dateTimeProvider: @escaping () -> Date = Date.init,
-        featureFlagger: FeatureFlagger?
+        featureFlagger: FeatureFlagger?,
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     ) {
         self.init(
             persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
@@ -462,7 +463,8 @@ final class AppearancePreferences: ObservableObject {
             pixelFiring: pixelFiring,
             newTabPageNavigator: newTabPageNavigator,
             dateTimeProvider: dateTimeProvider,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: aiChatMenuConfig
         )
     }
 
@@ -472,7 +474,8 @@ final class AppearancePreferences: ObservableObject {
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
         dateTimeProvider: @escaping () -> Date = Date.init,
-        featureFlagger: FeatureFlagger?
+        featureFlagger: FeatureFlagger?,
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     ) {
         self.persistor = persistor
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -480,6 +483,7 @@ final class AppearancePreferences: ObservableObject {
         self.newTabPageNavigator = newTabPageNavigator
         self.dateTimeProvider = dateTimeProvider
         self.featureFlagger = featureFlagger
+        self.aiChatMenuConfig = aiChatMenuConfig
 
         /// when adding new properties, make sure to update `reload()` to include them there.
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
@@ -497,10 +501,11 @@ final class AppearancePreferences: ObservableObject {
         homePageCustomBackground = persistor.homePageCustomBackground.flatMap(CustomBackground.init)
         centerAlignedBookmarksBarBool = persistor.centerAlignedBookmarksBar
         showTabsAndBookmarksBarOnFullScreen = persistor.showTabsAndBookmarksBarOnFullScreen
-        didOpenCustomizationSettings = persistor.didOpenCustomizationSettings
+        didChangeAnyNewTabPageCustomizationSetting = persistor.didChangeAnyNewTabPageCustomizationSetting
 
         isContinueSetUpCardsViewOutdated = shouldHideNextStepsCards
         subscribeToOmnibarFeatureFlagChanges()
+        subscribeToNewTabPageCustomizationSettingChanges()
     }
 
     /// This function reloads preferences with persisted values.
@@ -523,7 +528,7 @@ final class AppearancePreferences: ObservableObject {
         homePageCustomBackground = persistor.homePageCustomBackground.flatMap(CustomBackground.init)
         centerAlignedBookmarksBarBool = persistor.centerAlignedBookmarksBar
         showTabsAndBookmarksBarOnFullScreen = persistor.showTabsAndBookmarksBarOnFullScreen
-        didOpenCustomizationSettings = persistor.didOpenCustomizationSettings
+        didChangeAnyNewTabPageCustomizationSetting = persistor.didChangeAnyNewTabPageCustomizationSetting
     }
 
     private var persistor: AppearancePreferencesPersistor
@@ -532,6 +537,7 @@ final class AppearancePreferences: ObservableObject {
     private var newTabPageNavigator: NewTabPageNavigator
     private let dateTimeProvider: () -> Date
     private let featureFlagger: FeatureFlagger?
+    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private var cancellables = Set<AnyCancellable>()
 
     private func requestSync() {
@@ -551,6 +557,30 @@ final class AppearancePreferences: ObservableObject {
             .filter { $0.0 == .newTabPageOmnibar }
             .sink { _ in
                 self.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToNewTabPageCustomizationSettingChanges() {
+        let duckAISectionVisibilityPublisher = aiChatMenuConfig.valuesChangedPublisher
+            .compactMap { [weak self] in
+                self?.aiChatMenuConfig.shouldDisplayNewTabPageShortcut
+            }
+            .prepend(aiChatMenuConfig.shouldDisplayNewTabPageShortcut)
+            .removeDuplicates()
+
+        duckAISectionVisibilityPublisher
+            .combineLatest($themeAppearance,
+                           $themeName,
+                           $homePageCustomBackground)
+            .combineLatest($isOmnibarVisible,
+                           $isFavoriteVisible,
+                           $isProtectionsReportVisible)
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, !didChangeAnyNewTabPageCustomizationSetting else { return }
+                didChangeAnyNewTabPageCustomizationSetting = true
             }
             .store(in: &cancellables)
     }

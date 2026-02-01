@@ -36,14 +36,6 @@ public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService 
 
     public func clearSubscription() {}
 
-    public var getProductsResult: Result<[GetProductsItem], APIRequestV2Error>?
-    public func getProducts() async throws -> [Subscription.GetProductsItem] {
-        switch getProductsResult! {
-        case .success(let result): return result
-        case .failure(let error): throw error
-        }
-    }
-
     public var getTierProductsResult: Result<GetTierProductsResponse, APIRequestV2Error>?
     public func getTierProducts(region: String?, platform: String?) async throws -> Subscription.GetTierProductsResponse {
         switch getTierProductsResult! {
@@ -75,14 +67,6 @@ public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService 
     public var confirmPurchaseResult: Result<ConfirmPurchaseResponse, APIRequestV2Error>?
     public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> Subscription.ConfirmPurchaseResponse {
         switch confirmPurchaseResult! {
-        case .success(let result): return result
-        case .failure(let error): throw error
-        }
-    }
-
-    public var getSubscriptionFeaturesResult: Result<Subscription.GetSubscriptionFeaturesResponse, Error>?
-    public func getSubscriptionFeatures(for subscriptionID: String) async throws -> Subscription.GetSubscriptionFeaturesResponse {
-        switch getSubscriptionFeaturesResult! {
         case .success(let result): return result
         case .failure(let error): throw error
         }

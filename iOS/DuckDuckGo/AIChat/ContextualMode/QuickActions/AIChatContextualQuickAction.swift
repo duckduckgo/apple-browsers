@@ -37,7 +37,7 @@ enum AIChatContextualQuickAction: String, CaseIterable, AIChatQuickActionType {
     var prompt: String {
         switch self {
         case .summarize:
-            return "summarize this page"
+            return "Summarize this page"
         }
     }
 

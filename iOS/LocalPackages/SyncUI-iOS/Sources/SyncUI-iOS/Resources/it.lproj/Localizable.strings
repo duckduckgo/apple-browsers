@@ -31,8 +31,14 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Annulla";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Attiva Sincronizzazione e backup";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "La funzione crea un backup criptato dei tuoi segnalibri e dei tuoi dati di autocompilazione sul server sicuro di DuckDuckGo, in modo che possa essere sincronizzato con gli altri dispositivi.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Questa azione crea un backup crittografato dei tuoi segnalibri, password, carte di credito e chat di Duck.ai salvati sul server sicuro di DuckDuckGo, che può essere sincronizzato con gli altri tuoi dispositivi.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "La chiave di crittografia viene memorizzata solo sul tuo dispositivo e DuckDuckGo non può accedervi.";
@@ -138,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "I segnalibri e i dati di riempimento automatico sono pronti per la sincronizzazione. L'operazione dovrebbe richiedere pochi istanti.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Segnalibri, password e chat di Duck.ai sono in fase di preparazione per la sincronizzazione. L'operazione dovrebbe richiedere pochi istanti.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Connessione…";
@@ -286,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Sincronizza in sicurezza i segnalibri e le password tra i tuoi dispositivi.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Sincronizza in modo sicuro segnalibri, dati di compilazione automatica e chat di Duck.ai nei tuoi dispositivi.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Inizia la sincronizzazione";
 
@@ -300,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Disattiva Sincronizzazione e backup...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "I segnalibri, i dati di compilazione automatica e le chat di Duck.ai sono attualmente sincronizzati nei tuoi dispositivi.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Sincronizzazione abilitata";

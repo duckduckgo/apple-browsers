@@ -112,6 +112,7 @@ extension TabSwitcherViewController {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: sender,
+                tabViewModel: nil,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAll(fireRequest)
                 },

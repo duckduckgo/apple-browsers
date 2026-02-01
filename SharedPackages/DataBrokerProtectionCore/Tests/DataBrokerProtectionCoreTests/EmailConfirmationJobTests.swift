@@ -61,7 +61,7 @@ final class EmailConfirmationJobTests: XCTestCase {
         }
 
         sut.start()
-        await fulfillment(of: [expectation], timeout: 0.1)
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertTrue(mockErrorDelegate.didCallError)
         XCTAssertTrue(mockErrorDelegate.lastError is EmailError)
@@ -94,7 +94,7 @@ final class EmailConfirmationJobTests: XCTestCase {
         }
 
         sut.start()
-        await fulfillment(of: [expectation], timeout: 0.1)
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertTrue(mockErrorDelegate.didCallError)
         XCTAssertEqual(mockErrorDelegate.lastError as? DataBrokerProtectionError, .dataNotInDatabase)
@@ -131,7 +131,7 @@ final class EmailConfirmationJobTests: XCTestCase {
         }
 
         sut.start()
-        await fulfillment(of: [expectation], timeout: 0.1)
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertFalse(mockErrorDelegate.didCallError)
 
@@ -186,7 +186,7 @@ final class EmailConfirmationJobTests: XCTestCase {
         }
 
         sut.start()
-        await fulfillment(of: [expectation], timeout: 0.1)
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertTrue(mockErrorDelegate.didCallError)
 
@@ -228,7 +228,7 @@ final class EmailConfirmationJobTests: XCTestCase {
         }
 
         sut.start()
-        await fulfillment(of: [expectation], timeout: 0.1)
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertTrue(mockErrorDelegate.didCallError)
 

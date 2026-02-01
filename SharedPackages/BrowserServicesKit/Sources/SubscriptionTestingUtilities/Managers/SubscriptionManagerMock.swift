@@ -149,16 +149,6 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         }
     }
 
-    public var productsResponse: Result<[GetProductsItem], Error>?
-    public func getProducts() async throws -> [GetProductsItem] {
-        switch productsResponse! {
-        case .success(let result):
-            return result
-        case .failure(let error):
-            throw error
-        }
-    }
-
     public var tierProductsResponse: Result<GetTierProductsResponse, Error>?
     public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
         switch tierProductsResponse! {

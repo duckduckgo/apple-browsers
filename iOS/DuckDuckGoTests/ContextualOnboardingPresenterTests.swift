@@ -22,11 +22,11 @@ import SwiftUI
 @testable import DuckDuckGo
 
 final class ContextualOnboardingPresenterTests: XCTestCase {
-    private var contextualDaxDialogsFactory: ExperimentContextualDaxDialogsFactory!
+    private var contextualDaxDialogsFactory: ContextualDaxDialogsFactory!
 
     override func setUpWithError() throws {
         throw XCTSkip("Tests involving controllers. Sometimes they fail on CI. Disabling them for now")
-        contextualDaxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: ContextualOnboardingLogicMock(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
+        contextualDaxDialogsFactory = DefaultContextualDaxDialogsFactory(contextualOnboardingLogic: ContextualOnboardingLogicMock(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
         try super.setUpWithError()
     }
 

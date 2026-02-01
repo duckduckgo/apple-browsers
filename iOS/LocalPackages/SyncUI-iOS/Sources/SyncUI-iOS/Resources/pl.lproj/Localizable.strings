@@ -31,8 +31,14 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Anuluj";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Włącz synchronizację i kopię zapasową";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Tworzy na bezpiecznym serwerze DuckDuckGo zaszyfrowaną kopię zapasową zakładek i danych autouzupełniania, którą można zsynchronizować z innymi urządzeniami.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Tworzy na bezpiecznym serwerze DuckDuckGo zaszyfrowaną kopię zapasową zapisanych zakładek, haseł, kart kredytowych i czatów Duck.ai, którą można zsynchronizować z innymi urządzeniami. \n\n";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Klucz szyfrowania jest przechowywany tylko na urządzeniu użytkownika, DuckDuckGo nie może uzyskać do niego dostępu.";
@@ -138,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Twoje zakładki i dane autouzupełniania są przygotowywane do synchronizacji. To powinno zająć tylko chwilę.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Twoje zakładki, hasła i czaty Duck.ai są przygotowywane do synchronizacji. To powinno zająć tylko chwilę.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Łączenie...";
@@ -286,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Bezpiecznie synchronizuj zakładki i hasła między swoimi urządzeniami.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Bezpiecznie synchronizuj zakładki, dane autouzupełniania i czaty Duck.ai między swoimi urządzeniami.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Rozpocznij synchronizację";
 
@@ -300,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Wyłącz synchronizację i kopię zapasową...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Zakładki, dane autouzupełniania i czaty Duck.ai są obecnie synchronizowane na wszystkich urządzeniach.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Synchronizacja włączona";

@@ -201,6 +201,7 @@ public extension DesignSystemImages {
             public static var microphoneBlocked: DesignSystemImage { .init(resource: .microphoneBlocked16) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn16) }
             public static var options: DesignSystemImage { .init(resource: .options16) }
+            public static var pageContentAttach: DesignSystemImage { .init(resource: .pageContentAttach16) }
             public static var paste: DesignSystemImage { .init(resource: .paste16) }
             public static var permissions: DesignSystemImage { .init(resource: .permissions16) }
             public static var permissionsLocation: DesignSystemImage { .init(resource: .permissionsLocation16) }
@@ -394,6 +395,7 @@ public extension DesignSystemImages {
             public static var email: DesignSystemImage { .init(resource: .email24) }
             public static var emailCheck: DesignSystemImage { .init(resource: .emailCheck24) }
             public static var emailForward: DesignSystemImage { .init(resource: .emailForward24) }
+            public static var emailProtection: DesignSystemImage { .init(resource: .emailProtection24) }
             public static var enter: DesignSystemImage { .init(resource: .enter24) }
             public static var eye: DesignSystemImage { .init(resource: .eye24) }
             public static var eyeClosed: DesignSystemImage { .init(resource: .eyeClosed24) }
@@ -444,7 +446,9 @@ public extension DesignSystemImages {
             public static var news: DesignSystemImage { .init(resource: .news24) }
             public static var note: DesignSystemImage { .init(resource: .note24) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn24) }
+            public static var pageContentAttach: DesignSystemImage { .init(resource: .pageContentAttach24) }
             public static var paste: DesignSystemImage { .init(resource: .paste24) }
+            public static var pin: DesignSystemImage { .init(resource: .pin24) }
             public static var phone: DesignSystemImage { .init(resource: .phone24) }
             public static var platformPlayStore: DesignSystemImage { .init(resource: .platformPlayStore24) }
             public static var pointUp: DesignSystemImage { .init(resource: .pointUp24) }

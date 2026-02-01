@@ -81,6 +81,7 @@ public extension DesignSystemImages {
             public static var key: DesignSystemImage { .init(resource: .keyColor16) }
             public static var linkSecure: DesignSystemImage { .init(resource: .linkSecureColor16) }
             public static var lock: DesignSystemImage { .init(resource: .lockColor16) }
+            public static var paidAiChat: DesignSystemImage { .init(resource: .paidAiChatColor16) }
             public static var privacyCheck: DesignSystemImage { .init(resource: .privacyCheckColor16) }
             public static var privacyCheckGray: DesignSystemImage { .init(resource: .privacyCheckGrayColor16) }
             public static var profile: DesignSystemImage { .init(resource: .profileColor16) }
@@ -181,6 +182,7 @@ public extension DesignSystemImages {
             public static var microphone: DesignSystemImage { .init(resource: .microphoneColor24) }
             public static var microphoneAdd: DesignSystemImage { .init(resource: .microphoneAdd24) }
             public static var microphoneRemove: DesignSystemImage { .init(resource: .microphoneRemove24) }
+            public static var paidAiChat: DesignSystemImage { .init(resource: .paidAiChatColor24) }
             public static var platformApple: DesignSystemImage { .init(resource: .platformAppleColor24) }
             public static var platformMacOS: DesignSystemImage { .init(resource: .platformMacOSColor24) }
             public static var platformWindows: DesignSystemImage { .init(resource: .platformWindowsColor24) }
@@ -219,6 +221,7 @@ public extension DesignSystemImages {
         }
 
         public enum Size128 {
+            public static var duckAIPaid: DesignSystemImage { .init(resource: .duckAIPaid128) }
             public static var success: DesignSystemImage { .init(resource: .success128) }
             public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128) }
             public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop128) }

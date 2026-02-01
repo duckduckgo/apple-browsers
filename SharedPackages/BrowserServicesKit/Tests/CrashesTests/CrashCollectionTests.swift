@@ -159,6 +159,141 @@ class CrashCollectionTests: XCTestCase {
 
         XCTAssertEqual(store.object(forKey: CRCIDManager.crcidKey) as? String, crcid)
     }
+
+    // MARK: - limitCallStackTreeDepth Tests
+
+    func testLimitCallStackTreeDepth_withZeroMaxDepth_returnsEmptyDictionary() {
+        let tree: [AnyHashable: Any] = ["key": "value", "nested": ["inner": "data"]]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 0)
+
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    func testLimitCallStackTreeDepth_withShallowTree_preservesAllContent() {
+        let tree: [AnyHashable: Any] = [
+            "string": "value",
+            "number": 42,
+            "array": [1, 2, 3]
+        ]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 5)
+
+        XCTAssertEqual(result["string"] as? String, "value")
+        XCTAssertEqual(result["number"] as? Int, 42)
+        XCTAssertEqual(result["array"] as? [Int], [1, 2, 3])
+    }
+
+    func testLimitCallStackTreeDepth_withNestedDictionary_truncatesAtMaxDepth() {
+        let tree: [AnyHashable: Any] = [
+            "level0": "value0",
+            "nested": [
+                "level1": "value1",
+                "deeper": [
+                    "level2": "value2",
+                    "evenDeeper": [
+                        "level3": "value3"
+                    ]
+                ]
+            ]
+        ]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 2)
+
+        // Level 0 should be preserved
+        XCTAssertEqual(result["level0"] as? String, "value0")
+
+        // Level 1 nested dict should exist
+        let nested = result["nested"] as? [AnyHashable: Any]
+        XCTAssertNotNil(nested)
+        XCTAssertEqual(nested?["level1"] as? String, "value1")
+
+        // Level 2 should be truncated (depth 2 means levels 0 and 1 are preserved)
+        XCTAssertNil(nested?["deeper"])
+    }
+
+    func testLimitCallStackTreeDepth_withArrayOfDictionaries_truncatesAtMaxDepth() {
+        let tree: [AnyHashable: Any] = [
+            "frames": [
+                ["name": "frame1", "nested": ["deep": "value"]],
+                ["name": "frame2", "nested": ["deep": "value"]]
+            ]
+        ]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 2)
+
+        let frames = result["frames"] as? [[AnyHashable: Any]]
+        XCTAssertNotNil(frames)
+        XCTAssertEqual(frames?.count, 2)
+        XCTAssertEqual(frames?[0]["name"] as? String, "frame1")
+        XCTAssertEqual(frames?[1]["name"] as? String, "frame2")
+        // Nested dictionaries inside array items should be truncated at depth 2
+        XCTAssertNil(frames?[0]["nested"])
+        XCTAssertNil(frames?[1]["nested"])
+    }
+
+    func testLimitCallStackTreeDepth_preservesPrimitiveArrays() {
+        let tree: [AnyHashable: Any] = [
+            "addresses": [0x1000, 0x2000, 0x3000],
+            "names": ["a", "b", "c"]
+        ]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 1)
+
+        XCTAssertEqual(result["addresses"] as? [Int], [0x1000, 0x2000, 0x3000])
+        XCTAssertEqual(result["names"] as? [String], ["a", "b", "c"])
+    }
+
+    func testLimitCallStackTreeDepth_withDeeplyNestedStructure_doesNotCauseStackOverflow() {
+        // Build a deeply nested structure iteratively (simulating what could cause stack overflow)
+        var tree: [AnyHashable: Any] = ["leaf": "value"]
+        for i in 0..<1000 {
+            tree = ["level\(i)": tree]
+        }
+
+        // This should complete without stack overflow
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 10)
+
+        // Verify it truncated properly
+        XCTAssertFalse(result.isEmpty)
+    }
+
+    func testLimitCallStackTreeDepth_withCallStackTreeStructure_limitsDepthCorrectly() {
+        // Simulate a realistic callStackTree structure
+        let tree: [AnyHashable: Any] = [
+            "callStacks": [
+                [
+                    "threadAttributed": true,
+                    "callStackRootFrames": [
+                        [
+                            "address": 123456,
+                            "subFrames": [
+                                [
+                                    "address": 789012,
+                                    "subFrames": [
+                                        ["address": 345678]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 3)
+
+        let callStacks = result["callStacks"] as? [[AnyHashable: Any]]
+        XCTAssertNotNil(callStacks)
+        XCTAssertEqual(callStacks?.first?["threadAttributed"] as? Bool, true)
+
+        let rootFrames = callStacks?.first?["callStackRootFrames"] as? [[AnyHashable: Any]]
+        XCTAssertNotNil(rootFrames)
+        XCTAssertEqual(rootFrames?.first?["address"] as? Int, 123456)
+
+        // subFrames should be truncated at depth 3
+        XCTAssertNil(rootFrames?.first?["subFrames"])
+    }
 }
 
 class MockPayload: MXDiagnosticPayload {

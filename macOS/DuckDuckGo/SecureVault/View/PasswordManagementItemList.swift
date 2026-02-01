@@ -351,8 +351,8 @@ private struct ItemView: View {
                     } else {
                         LetterIconView(title: "#")
                     }
-                case .card:
-                    Image(.card)
+                case .card(let card):
+                    Image(nsImage: card.iconImage)
                         .frame(width: 32)
                         .padding(.leading, 6)
                 case .identity:

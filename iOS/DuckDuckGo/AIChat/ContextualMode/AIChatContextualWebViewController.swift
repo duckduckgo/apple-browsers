@@ -32,6 +32,7 @@ import WebKit
 protocol AIChatContextualWebViewControllerDelegate: AnyObject {
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestToLoad url: URL)
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?)
+    func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestOpenDownloadWithFileName fileName: String)
 }
 
 final class AIChatContextualWebViewController: UIViewController {
@@ -45,6 +46,8 @@ final class AIChatContextualWebViewController: UIViewController {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private var downloadHandler: DownloadHandling
+    private let pixelHandler: AIChatContextualModePixelFiring
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -101,18 +104,24 @@ final class AIChatContextualWebViewController: UIViewController {
     ///   - contentBlockingAssetsPublisher: Content blocking assets publisher
     ///   - featureDiscovery: Feature discovery
     ///   - featureFlagger: Feature flagger
+    ///   - downloadHandler: Download handler for managing file downloads
     ///   - getPageContext: Closure to get page context (used by ContentHandler for JS getAIChatPageContext requests)
+    ///   - pixelHandler: Pixel handler for contextual mode analytics
     init(aiChatSettings: AIChatSettingsProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
-         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
+         downloadHandler: DownloadHandling,
+         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
+         pixelHandler: AIChatContextualModePixelFiring) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        self.downloadHandler = downloadHandler
+        self.pixelHandler = pixelHandler
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
@@ -122,6 +131,7 @@ final class AIChatContextualWebViewController: UIViewController {
             productSurfaceTelemetry: productSurfaceTelemetry,
             getPageContext: getPageContext
         )
+
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -134,7 +144,9 @@ final class AIChatContextualWebViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
+        setupDownloadHandler()
         if let restoreURL = initialRestoreURL {
             loadChatURL(restoreURL)
         } else {
@@ -307,6 +319,23 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.load(request)
     }
 
+    private func setupDownloadHandler() {
+        downloadHandler.onDownloadComplete = { [weak self] result in
+            guard let self = self else { return }
+
+            switch result {
+            case .success(let filename):
+                self.view.showDownloadCompletionToast(for: filename) { [weak self] in
+                    guard let self = self else { return }
+                    self.delegate?.contextualWebViewController(self, didRequestOpenDownloadWithFileName: filename)
+                }
+
+            case .failure:
+                self.view.showDownloadFailedToast()
+            }
+        }
+    }
+
     /// Handles edge case where user submits before preloaded web view is fully ready.
     private func submitPendingPromptIfReady() {
         guard let prompt = pendingPrompt,
@@ -355,6 +384,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         }
 
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
+        userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
 
         isContentHandlerReady = true
         submitPendingPromptIfReady()
@@ -368,12 +398,23 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let url = navigationAction.request.url else { return .allow }
 
-        if url.isDuckAIURL || navigationAction.targetFrame?.isMainFrame == false {
+        if url.scheme == "blob" || url.isDuckAIURL || navigationAction.targetFrame?.isMainFrame == false {
             return .allow
         }
 
         delegate?.contextualWebViewController(self, didRequestToLoad: url)
         return .cancel
+    }
+
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        guard let url = navigationResponse.response.url else {
+            return .allow
+        }
+        return url.scheme == "blob" ? .download : .allow
+    }
+
+    func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+        download.delegate = downloadHandler
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {

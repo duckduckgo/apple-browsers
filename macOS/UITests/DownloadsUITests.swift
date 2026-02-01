@@ -35,6 +35,9 @@ class DownloadsUITests: UITestCase {
         table = popover.tables["DownloadsViewController.table"]
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Disable warn before quit to allow Cmd+Q to quit immediately in tests
+        app.disableWarnBeforeQuitting()
     }
 
     override func tearDown() {

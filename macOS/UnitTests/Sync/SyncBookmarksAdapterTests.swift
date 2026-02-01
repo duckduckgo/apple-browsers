@@ -40,7 +40,10 @@ final class SyncBookmarksAdapterTests: XCTestCase {
             XCTFail("Failed to load model")
             return
         }
-        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(),
+                                                      privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                      featureFlagger: MockFeatureFlagger(),
+                                                      aiChatMenuConfig: MockAIChatConfig())
         database = CoreDataDatabase(name: "", containerLocation: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), model: model, readOnly: true, options: [:])
         adapter = SyncBookmarksAdapter(database: database, bookmarkManager: MockBookmarkManager(), appearancePreferences: appearancePreferences, syncErrorHandler: errorHandler)
         cancellables = []

@@ -383,7 +383,7 @@ final class WideEventSenderTests: XCTestCase {
 
         let parameters = capturedPixels[0].parameters
         XCTAssertEqual(parameters["feature.status"], "SUCCESS")
-        XCTAssertNil(parameters["feature.status_reason"])
+        XCTAssertNil(parameters["feature.data.ext.status_reason"])
     }
 
     func testSendIncludesSuccessStatusWithReason() {
@@ -399,7 +399,7 @@ final class WideEventSenderTests: XCTestCase {
 
         let parameters = capturedPixels[0].parameters
         XCTAssertEqual(parameters["feature.status"], "SUCCESS")
-        XCTAssertEqual(parameters["feature.status_reason"], "completed_successfully")
+        XCTAssertEqual(parameters["feature.data.ext.status_reason"], "completed_successfully")
     }
 
     func testSendIncludesFailureStatus() {
@@ -415,7 +415,7 @@ final class WideEventSenderTests: XCTestCase {
 
         let parameters = capturedPixels[0].parameters
         XCTAssertEqual(parameters["feature.status"], "FAILURE")
-        XCTAssertNil(parameters["feature.status_reason"])
+        XCTAssertNil(parameters["feature.data.ext.status_reason"])
     }
 
     func testSendIncludesCancelledStatus() {
@@ -431,7 +431,7 @@ final class WideEventSenderTests: XCTestCase {
 
         let parameters = capturedPixels[0].parameters
         XCTAssertEqual(parameters["feature.status"], "CANCELLED")
-        XCTAssertNil(parameters["feature.status_reason"])
+        XCTAssertNil(parameters["feature.data.ext.status_reason"])
     }
 
     func testSendIncludesUnknownStatusWithReason() {
@@ -447,7 +447,7 @@ final class WideEventSenderTests: XCTestCase {
 
         let parameters = capturedPixels[0].parameters
         XCTAssertEqual(parameters["feature.status"], "UNKNOWN")
-        XCTAssertEqual(parameters["feature.status_reason"], "unexpected_state")
+        XCTAssertEqual(parameters["feature.data.ext.status_reason"], "unexpected_state")
     }
 
     // MARK: - POST Request Tests

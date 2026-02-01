@@ -59,7 +59,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -121,7 +122,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     func testWhenInitializedWithNoVisibleCardsThenContinueSetUpCardsClosedIsSet() {
         // Set up all conditions to hide all cards
-        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: true)
+        let testAppearancePreferences = createAppearancePrefs(didChangeAnyCustomizationSetting: true)
         let testProvider = createProvider(
             defaultBrowserIsDefault: true,
             dataImportDidImport: true,
@@ -396,15 +397,15 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     // Personalize Browser Card
-    func testWhenPersonalizeBrowserCardShouldShowThenPersonalizeBrowserCardIsVisible() {
-        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: false)
+    func testWhenCustomizationNotChangedThenPersonalizeBrowserCardIsVisible() {
+        let testAppearancePreferences = createAppearancePrefs(didChangeAnyCustomizationSetting: false)
         let testProvider = createProvider(appearancePreferences: testAppearancePreferences)
 
         XCTAssertTrue(testProvider.cards.contains(.personalizeBrowser))
     }
 
-    func testWhenPersonalizeBrowserCardShouldNotShowThenPersonalizeBrowserCardIsNotVisible() {
-        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: true)
+    func testWhenCustomizationChangedThenPersonalizeBrowserCardIsNotVisible() {
+        let testAppearancePreferences = createAppearancePrefs(didChangeAnyCustomizationSetting: true)
         let testProvider = createProvider(appearancePreferences: testAppearancePreferences)
 
         XCTAssertFalse(testProvider.cards.contains(.personalizeBrowser))
@@ -630,7 +631,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     func testWhenAllCardsAreNotVisibleThenCardsListIsEmpty() {
-        let testAppearancePreferences = createAppearancePrefs(didOpenCustomizationSettings: true)
+        let testAppearancePreferences = createAppearancePrefs(didChangeAnyCustomizationSetting: true)
         testAppearancePreferences.isContinueSetUpCardsViewOutdated = false
         let testProvider = createProvider(
             defaultBrowserIsDefault: true,
@@ -889,16 +890,17 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         )
     }
 
-    private func createAppearancePrefs(didOpenCustomizationSettings: Bool = false,
+    private func createAppearancePrefs(didChangeAnyCustomizationSetting: Bool = false,
                                        demonstrationDays: Int = 0) -> AppearancePreferences {
         let persistor = MockAppearancePreferencesPersistor(
             continueSetUpCardsNumberOfDaysDemonstrated: demonstrationDays,
-            didOpenCustomizationSettings: didOpenCustomizationSettings
+            didChangeAnyNewTabPageCustomizationSetting: didChangeAnyCustomizationSetting
         )
         return AppearancePreferences(
             persistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
     }
 }

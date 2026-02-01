@@ -1,0 +1,69 @@
+{
+    "ios-authv2-token-refresh": {
+        "description": "Sent when AuthV2 has completed a token refresh",
+        "owners": ["samsymons"],
+        "meta": {
+            "type": "ios-authv2-token-refresh",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "authv2-token-refresh",
+            "status": ["SUCCESS", "FAILURE", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "The reason provided when the status is UNKNOWN",
+                        "enum": ["partial_data"]
+                    },
+                    "application_state": "foregroundBackgroundState",
+                    "refresh_trigger": {
+                        "type": "string",
+                        "description": "The reason for the refresh.",
+                        "enum": ["backend", "client", "token_adoption"]
+                    },
+                    "failing_step": {
+                        "type": "string",
+                        "description": "The step that the event failed on, if relevant.",
+                        "enum": [
+                            "token_read",
+                            "refresh_access_token",
+                            "fetch_jwks",
+                            "verify_access_token",
+                            "verify_refresh_token",
+                            "token_write"
+                        ]
+                    },
+                    "refresh_token_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "The latency value of the token refresh call.",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "fetch_jwks_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "The latency value of the JWKS call.",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    }
+                },
+                "error": {
+                    "domain": {
+                        "type": "string",
+                        "description": "The top level error domain"
+                    },
+                    "code": {
+                        "type": "integer",
+                        "description": "The top level error code"
+                    },
+                    "underlying_domain": {
+                        "type": "string",
+                        "description": "The underlying error domain"
+                    },
+                    "underlying_code": {
+                        "type": "integer",
+                        "description": "The underlying error code"
+                    }
+                }
+            }
+        }
+    }
+}

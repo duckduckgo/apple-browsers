@@ -328,8 +328,8 @@ private struct EditableCreditCardNumberCell: View {
                 let currentSelectedRange = textField.selectedTextRange
                 var digitsOnly = CreditCardValidation.extractDigits(from: text)
                 
-                if digitsOnly.count > 19 {
-                    digitsOnly = String(digitsOnly.prefix(19))
+                if digitsOnly.count > CreditCardValidation.maximumCardNumberLength {
+                    digitsOnly = String(digitsOnly.prefix(CreditCardValidation.maximumCardNumberLength))
                 }
                 
                 let formatted = CreditCardValidation.formattedCardNumber(digitsOnly)

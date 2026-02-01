@@ -189,6 +189,11 @@ final class FireExecutorTests: XCTestCase {
         FireRequest(options: options, trigger: trigger, scope: scope)
     }
     
+    private func makeTabViewModel() -> TabViewModel {
+        let tab = Tab(uid: "test-tab-uid")
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+    
     // MARK: - prepare Tests
     
     func testPrepareWithTabsOptionCallsPrepareForBurningTabs() {
@@ -213,6 +218,35 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertFalse(mockTabManager.prepareAllTabsExceptCurrentCalled)
     }
     
+    func testPrepareWithTabScopeForNonCurrentTabCallsPrepareTab() {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = false
+        
+        // When
+        executor.prepare(for: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)))
+        
+        // Then
+        XCTAssertTrue(mockTabManager.prepareTabCalled)
+        XCTAssertEqual(mockTabManager.prepareTabCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.isCurrentTabCalledWith, tabViewModel.tab)
+    }
+    
+    func testPrepareWithTabScopeForCurrentTabDoesNotCallPrepareTab() {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = true
+        
+        // When
+        executor.prepare(for: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)))
+        
+        // Then
+        XCTAssertFalse(mockTabManager.prepareTabCalled)
+        XCTAssertEqual(mockTabManager.isCurrentTabCalledWith, tabViewModel.tab)
+    }
+    
     // MARK: - burn Tabs Tests
     
     func testBurnTabsCallsDelegateAndClearsTabs() async {
@@ -230,6 +264,99 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockTabManager.removeAllCalled)
         // Downloads are only cancelled when both .tabs and .data are present
         XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
+    }
+    
+    func testBurnTabsWithTabScopeForCurrentTabCallsPrepareTab() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = true
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then
+        XCTAssertTrue(mockTabManager.prepareTabCalled)
+        XCTAssertEqual(mockTabManager.prepareTabCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.isCurrentTabCalledWith, tabViewModel.tab)
+    }
+    
+    func testBurnTabsWithTabScopeForNonCurrentTabDoesNotCallPrepareTab() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = false
+        
+        // When
+        let request = makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel))
+        executor.prepare(for: request)
+        
+        // Then
+        XCTAssertTrue(mockTabManager.prepareTabCalled)
+        
+        // When
+        mockTabManager.prepareTabCalled = false
+        await executor.burn(request: request, applicationState: .unknown)
+        
+        // Then
+        XCTAssertFalse(mockTabManager.prepareTabCalled)
+    }
+    
+    func testBurnTabsWithTabScopeWhenLastTabCreatesEmptyTab() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.count = 1
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then
+        XCTAssertTrue(mockTabManager.closeTabCalled)
+        XCTAssertEqual(mockTabManager.closeTabCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.closeTabShouldCreateEmptyTab, true)
+        XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
+    }
+    
+    func testBurnTabsWithTabScopeWhenNotLastTabDoesNotCreateEmptyTab() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.count = 3
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then
+        XCTAssertTrue(mockTabManager.closeTabCalled)
+        XCTAssertEqual(mockTabManager.closeTabCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.closeTabShouldCreateEmptyTab, false)
+        XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
+    }
+    
+    func testBurnTabsWithTabScopeCleansUpTabHistoryAfterBurnCompletes() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Tab history should be removed after burn completes
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 1)
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.first, [tabViewModel.tab.uid])
+    }
+    
+    func testWhenBurningDataAndAIChatsWithTabScopeThenTabHistoryIsNotRemoved() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        
+        // When - Burn data and AI chats (but not tabs) for a specific tab
+        await executor.burn(request: makeFireRequest(options: [.data, .aiChats], scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Tab history should NOT be removed because the tab itself was not burned
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 0)
     }
     
     // MARK: - burn Data Tests

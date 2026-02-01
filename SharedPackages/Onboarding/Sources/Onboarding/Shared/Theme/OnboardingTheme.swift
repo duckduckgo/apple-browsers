@@ -22,44 +22,66 @@ import DesignResourcesKit
 // MARK: - OnboardingTheme
 
 public struct OnboardingTheme: Equatable {
-    let typography: Typography
-    let colorPalette: ColorPalette
-    let bubbleInsets: EdgeInsets
-    let bubbleCornerRadius: CGFloat
-    let bubbleShadowRadius: CGFloat
-    let bubbleShadowPosition: CGPoint
-    let linearTitleTextAlignment: TextAlignment
-    let linearBodyTextAlignment: TextAlignment
-    let contextualTitleTextAlignment: TextAlignment
-    let contextualBodyTextAlignment: TextAlignment
-    let primaryButtonStyle: OnboardingButtonStyle
+    public let typography: Typography
+    public let colorPalette: ColorPalette
+    public let bubbleMetrics: BubbleMetrics
+    public let stepProgressMetrics: StepProgressMetrics
+    public let linearTitleTextAlignment: TextAlignment
+    public let linearBodyTextAlignment: TextAlignment
+    public let contextualTitleTextAlignment: TextAlignment
+    public let contextualBodyTextAlignment: TextAlignment
+    public let primaryButtonStyle: OnboardingButtonStyle
 }
 
 public extension OnboardingTheme {
 
-    static let rebranding2026 = OnboardingTheme(
-        typography: .duckSans,
-        colorPalette: ColorPalette(
-            bubbleBorder: Color(singleUseColor: .rebranding(.textPrimary)),
-            bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
-            bubbleShadow: Color.shade(0.03),
-            textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
-            textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
-            primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.accentAltPrimary)),
-            primaryButtonTextColor: Color(singleUseColor: .controlWidgetBackground)
-        ),
-        bubbleInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
-        bubbleCornerRadius: 36.0,
-        bubbleShadowRadius: 6.0,
-        bubbleShadowPosition: CGPoint(x: 0, y: 7),
-        linearTitleTextAlignment: .center,
-        linearBodyTextAlignment: .center,
-        contextualTitleTextAlignment: .leading,
-        contextualBodyTextAlignment: .leading,
-        primaryButtonStyle: OnboardingButtonStyle(
-            id: .primary,
-            style: AnyButtonStyle(OnboardingPrimaryButtonStyle())
+    static let rebranding2026 = {
+        let bubbleCornerRadius = 36.0
+        let borderWidth = 1.5
+
+        return OnboardingTheme(
+            typography: .system,
+            colorPalette: ColorPalette(
+                bubbleBorder: Color(singleUseColor: .rebranding(.accentAltPrimary)),
+                bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
+                bubbleShadow: Color.shade(0.03),
+                stepProgressBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
+                stepProgressBorderColor: Color(singleUseColor: .rebranding(.accentAltPrimary)),
+                stepProgressSelectedDot: Color(singleUseColor: .rebranding(.accentPrimary)),
+                stepProgressUnselectedDot: Color(singleUseColor: .rebranding(.accentAltPrimary)),
+                textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
+                textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
+                primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
+                primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText))
+            ),
+            bubbleMetrics: BubbleMetrics(
+                contentInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
+                cornerRadius: bubbleCornerRadius,
+                borderWidth: borderWidth,
+                shadowRadius: 6.0,
+                shadowPosition: CGPoint(x: 0, y: 7),
+                stepProgressTrailingPadding: bubbleCornerRadius + 4
+            ),
+            stepProgressMetrics: StepProgressMetrics(
+                cornerRadius: 64.0,
+                contentInsets: EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 10),
+                contentSpacing: 20.0,
+                borderInset: 0.75,
+                borderWidth: borderWidth,
+                dotSpacing: 4.0,
+                selectedDotSize: 12.0,
+                unselectedDotSize: 6.0,
+                textAlignment: .trailing
+            ),
+            linearTitleTextAlignment: .center,
+            linearBodyTextAlignment: .center,
+            contextualTitleTextAlignment: .leading,
+            contextualBodyTextAlignment: .leading,
+            primaryButtonStyle: OnboardingButtonStyle(
+                id: .primary,
+                style: AnyButtonStyle(OnboardingPrimaryButtonStyle())
+            )
         )
-    )
+    }()
 
 }

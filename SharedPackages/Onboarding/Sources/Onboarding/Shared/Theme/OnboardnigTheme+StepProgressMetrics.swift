@@ -1,5 +1,5 @@
 //
-//  OnboardingTheme+Colors.swift
+//  OnboardingTheme+StepProgressMetrics.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,21 +20,16 @@ import SwiftUI
 
 public extension OnboardingTheme {
 
-    struct ColorPalette: Equatable {
-        let bubbleBorder: Color
-        let bubbleBackground: Color
-        let bubbleShadow: Color
-
-        let stepProgressBackground: Color
-        let stepProgressBorderColor: Color
-        let stepProgressSelectedDot: Color
-        let stepProgressUnselectedDot: Color
-
-        let textPrimary: Color
-        let textSecondary: Color
-
-        let primaryButtonBackgroundColor: Color
-        let primaryButtonTextColor: Color
+    struct StepProgressMetrics: Equatable {
+        let cornerRadius: CGFloat
+        let contentInsets: EdgeInsets
+        let contentSpacing: CGFloat
+        let borderInset: CGFloat
+        let borderWidth: CGFloat
+        let dotSpacing: CGFloat
+        let selectedDotSize: CGFloat
+        let unselectedDotSize: CGFloat
+        let textAlignment: TextAlignment
     }
 
 }

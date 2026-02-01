@@ -50,10 +50,10 @@ public struct AnyButtonStyle: ButtonStyle {
     }
 }
 
-// MARK: - Onboarding Buttons
+// MARK: - Button Styles
 
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
-    @Environment(\.onboardingTheme) var onboardingTheme
+    @Environment(\.onboardingTheme) private var onboardingTheme
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -65,7 +65,7 @@ struct OnboardingPrimaryButtonStyle: ButtonStyle {
             .padding(.vertical)
             .padding(.horizontal, nil)
             .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 40)
-            .background(onboardingTheme.colorPalette.primaryButtonTextColor)
+            .background(onboardingTheme.colorPalette.primaryButtonBackgroundColor)
             .cornerRadius(64.0)
     }
 

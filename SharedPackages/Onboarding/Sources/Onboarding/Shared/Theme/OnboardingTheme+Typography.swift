@@ -18,12 +18,13 @@
 
 import SwiftUI
 
-extension OnboardingTheme {
+public extension OnboardingTheme {
 
     struct Typography: Equatable {
         let largeTitle: Font
         let title: Font
         let body: Font
+        let progressIndicator: Font
         let row: Font
         let rowDetails: Font
         let small: Font
@@ -46,6 +47,7 @@ extension OnboardingTheme.Typography {
         largeTitle: makeFont(size: 44, family: .duckSansDisplay, weight: .bold),
         title: makeFont(size: 24, family: .duckSansDisplay, weight: .bold),
         body: makeFont(size: 18, family: .duckSansProduct, weight: .regular),
+        progressIndicator: makeFont(size: 12, family: .duckSansProduct, weight: .regular),
         row: makeFont(size: 16, family: .duckSansProduct, weight: .medium),
         rowDetails: makeFont(size: 14, family: .duckSansProduct, weight: .regular),
         small: makeFont(size: 14, family: .duckSansProduct, weight: .regular)
@@ -56,6 +58,7 @@ extension OnboardingTheme.Typography {
         largeTitle: .system(size: 44, weight: .bold),
         title: .system(size: 24, weight: .bold),
         body: .system(size: 18, weight: .regular),
+        progressIndicator: .system(size: 12, weight: .regular),
         row: .system(size: 16, weight: .medium),
         rowDetails: .system(size: 14, weight: .regular),
         small: .system(size: 14, weight: .regular)

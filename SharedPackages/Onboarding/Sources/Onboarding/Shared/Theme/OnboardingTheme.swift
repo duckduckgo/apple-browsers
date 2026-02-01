@@ -17,19 +17,49 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
 
 // MARK: - OnboardingTheme
 
 public struct OnboardingTheme: Equatable {
     let typography: Typography
     let colorPalette: ColorPalette
+    let bubbleInsets: EdgeInsets
+    let bubbleCornerRadius: CGFloat
+    let bubbleShadowRadius: CGFloat
+    let bubbleShadowPosition: CGPoint
+    let linearTitleTextAlignment: TextAlignment
+    let linearBodyTextAlignment: TextAlignment
+    let contextualTitleTextAlignment: TextAlignment
+    let contextualBodyTextAlignment: TextAlignment
+    let primaryButtonStyle: OnboardingButtonStyle
 }
 
 public extension OnboardingTheme {
 
     static let rebranding2026 = OnboardingTheme(
         typography: .duckSans,
-        colorPalette: ColorPalette(backgroundColor: .white)
+        colorPalette: ColorPalette(
+            bubbleBorder: Color(singleUseColor: .rebranding(.textPrimary)),
+            bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
+            bubbleShadow: Color.shade(0.03),
+            textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
+            textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
+            primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.accentAltPrimary)),
+            primaryButtonTextColor: Color(singleUseColor: .controlWidgetBackground)
+        ),
+        bubbleInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
+        bubbleCornerRadius: 36.0,
+        bubbleShadowRadius: 6.0,
+        bubbleShadowPosition: CGPoint(x: 0, y: 7),
+        linearTitleTextAlignment: .center,
+        linearBodyTextAlignment: .center,
+        contextualTitleTextAlignment: .leading,
+        contextualBodyTextAlignment: .leading,
+        primaryButtonStyle: OnboardingButtonStyle(
+            id: .primary,
+            style: AnyButtonStyle(OnboardingPrimaryButtonStyle())
+        )
     )
 
 }

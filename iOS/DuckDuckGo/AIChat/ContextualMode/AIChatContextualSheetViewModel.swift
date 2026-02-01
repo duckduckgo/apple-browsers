@@ -51,9 +51,6 @@ final class AIChatContextualSheetViewModel {
     /// Whether the new chat button should be visible
     @Published private(set) var isNewChatButtonVisible: Bool = false
 
-    /// Whether page context is available
-    @Published private(set) var hasContext: Bool
-
     // MARK: - Properties
 
     private let settings: AIChatSettingsProvider
@@ -70,7 +67,6 @@ final class AIChatContextualSheetViewModel {
          hasContext: Bool,
          hasExistingChat: Bool = false) {
         self.settings = settings
-        self.hasContext = hasContext
         if hasExistingChat {
             hasSubmittedPrompt = true
             isNewChatButtonVisible = true
@@ -85,12 +81,6 @@ final class AIChatContextualSheetViewModel {
     /// otherwise falls back to the base AI chat URL.
     func expandURL() -> URL {
         contextualChatURL ?? settings.aiChatURL
-    }
-
-    /// Updates the context availability state.
-    /// Called by coordinator when context changes.
-    func updateContextAvailability(_ hasContext: Bool) {
-        self.hasContext = hasContext
     }
 
     /// Whether automatic context attachment is enabled

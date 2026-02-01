@@ -210,8 +210,6 @@ final class AIChatContextualSheetCoordinator {
             return
         }
 
-        viewModel?.updateContextAvailability(true)
-
         guard let snapshot = currentSnapshot else {
             pixelHandler.endManualAttach()
             return
@@ -239,7 +237,6 @@ final class AIChatContextualSheetCoordinator {
     /// Clears the current page context.
     func clearPageContext() {
         pageContextHandler.clear()
-        viewModel?.updateContextAvailability(false)
     }
 
     /// Reloads the contextual chat web view if one exists.
@@ -367,8 +364,6 @@ final class AIChatContextualSheetCoordinator {
             return
         }
         lastProcessedContextHash = contextHash
-
-        viewModel?.updateContextAvailability(pageContextHandler.hasContext)
 
         guard isSheetPresented else {
             Logger.aiChat.debug("[PageContext] Context update - sheet not presented")

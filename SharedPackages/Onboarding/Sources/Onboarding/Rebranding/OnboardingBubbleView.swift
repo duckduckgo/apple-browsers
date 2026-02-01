@@ -20,8 +20,7 @@ import SwiftUI
 import UIComponents
 
 public struct OnboardingBubbleView<Content: View>: View {
-    // Replace values with @Environment(\.onboardingTheme) var onboardingTheme
-    let cornerRadius: CGFloat = 36.0
+    @Environment(\.onboardingTheme) private var onboardingTheme
 
     private let tailPosition: TailPosition?
     private let content: () -> Content
@@ -36,26 +35,30 @@ public struct OnboardingBubbleView<Content: View>: View {
 
     public var body: some View {
         let tail = TailConfig(position: tailPosition)
+        let shadowPosition = onboardingTheme.bubbleMetrics.shadowPosition
         BubbleView(
             arrowLength: tail.arrowLength,
             arrowWidth: tail.arrowWidth,
             arrowEdge: tail.arrowEdge,
             arrowOffset: tail.arrowOffset,
-            cornerRadius: cornerRadius,
+            cornerRadius: onboardingTheme.bubbleMetrics.cornerRadius,
             bend: tail.arrowBend,
             finSideCurve: tail.finSideCurve,
             finTipRadius: .greatestFiniteMagnitude,
             finTipRoundness: tail.finTipRoundness,
-            fillColor: Color(red: 1/255, green: 29/255, blue: 52/255),
-            borderColor: Color(red: 19/255, green: 62/255, blue: 124/255),
-            borderWidth: 1.5,
-            contentPadding: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
-            content: content
+            fillColor: onboardingTheme.colorPalette.bubbleBackground,
+            borderColor: onboardingTheme.colorPalette.bubbleBorder,
+            borderWidth: onboardingTheme.bubbleMetrics.borderWidth,
+            contentPadding: onboardingTheme.bubbleMetrics.contentInsets,
+            content: {
+                content()
+                    .background(onboardingTheme.colorPalette.bubbleBackground)
+            }
         )
         .shadow(
-            color: .black.opacity(0.3),
-            radius: 6,
-            x: 0, y: 7
+            color: onboardingTheme.colorPalette.bubbleShadow,
+            radius: onboardingTheme.bubbleMetrics.shadowRadius,
+            x: shadowPosition.x, y: shadowPosition.y
         )
     }
 }
@@ -207,76 +210,103 @@ private extension OnboardingBubbleView.TailPosition {
 
 // MARK: - Preview
 
-#Preview("Onboarding Speech Bubble") {
+#if DEBUG
+private struct OnboardingBubblePreviewContent: View {
+    @Environment(\.onboardingTheme) private var onboardingTheme
+
+    var body: some View {
+        VStack(alignment: .center, spacing: 20) {
+            VStack(alignment: .center, spacing: 28) {
+                Text(verbatim: "Hi there.")
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(onboardingTheme.linearTitleTextAlignment)
+
+                Text(verbatim: "Ready for a better, more private internet?")
+                    .font(onboardingTheme.typography.body)
+                    .multilineTextAlignment(onboardingTheme.linearBodyTextAlignment)
+            }
+            .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
+
+            Button(action: { }) {
+                Text(verbatim: "Let's do it!")
+            }
+            .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+        }
+    }
+}
+
+#Preview("Onboarding Speech Bubble - Light") {
+    ZStack {
+        Color.white.ignoresSafeArea()
+
+        OnboardingBubbleView(tailPosition: .bottom(offset: 0.4, direction: .leading)) {
+            OnboardingBubblePreviewContent()
+        }
+        .padding()
+        .applyOnboardingTheme(.rebranding2026)
+    }
+    .preferredColorScheme(.light)
+}
+
+#Preview("Onboarding Speech Bubble - Dark") {
     ZStack {
         Color(red: 43/255, green: 85/255, blue: 202/255).ignoresSafeArea()
 
         OnboardingBubbleView(tailPosition: .bottom(offset: 0.4, direction: .leading)) {
-            VStack(alignment: .center, spacing: 20) {
-                VStack(alignment: .center, spacing: 28) {
-                    Text(verbatim: "Hi there.")
-                        .font(.system(size: 24, weight: .bold))
+            OnboardingBubblePreviewContent()
+        }
+        .padding()
+        .applyOnboardingTheme(.rebranding2026)
+    }
+    .preferredColorScheme(.dark)
+}
 
-                    Text(verbatim: "Ready for a better, more private internet?")
-                        .font(.system(size: 18))
-                }
-                .foregroundStyle(Color.white)
-                .multilineTextAlignment(.center)
+#Preview("Onboarding Speech Bubble + Progress Indicator - Light") {
+    ZStack {
+        Color.white.ignoresSafeArea()
 
-                Button(action: { }) {
-                    Text(verbatim: "Let's do it!")
-                        .font(.system(size: 18))
-                        .foregroundStyle(Color.black)
-                        .padding()
-                }
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44.0)
-                .background(Color(red: 255/255, green: 216/255, blue: 133/255))
-                .cornerRadius(64)
-            }
+        OnboardingBubbleView.withStepProgressIndicator(
+            tailPosition: .bottom(offset: 0, direction: .leading),
+            currentStep: 1, totalSteps: 5,
+        ) {
+            OnboardingBubblePreviewContent()
+        }
+        .padding()
+    }
+    .preferredColorScheme(.light)
+}
+
+#Preview("Onboarding Speech Bubble + Progress Indicator - Dark") {
+    ZStack {
+        Color(red: 43/255, green: 85/255, blue: 202/255).ignoresSafeArea()
+
+        OnboardingBubbleView.withStepProgressIndicator(
+            tailPosition: .bottom(offset: 0, direction: .leading),
+            currentStep: 1, totalSteps: 5,
+        ) {
+            OnboardingBubblePreviewContent()
         }
         .padding()
     }
     .preferredColorScheme(.dark)
 }
 
-#Preview("Onboarding Speech Bubble + Progress Indicator") {
+#Preview("Onboarding Speech Bubble + Dismiss Button - Light") {
     ZStack {
-        Color(red: 43/255, green: 85/255, blue: 202/255).ignoresSafeArea()
+        Color.white.ignoresSafeArea()
 
-        OnboardingBubbleView.withStepProgressIndicator(
+        OnboardingBubbleView.withDismissButton(
             tailPosition: .bottom(offset: 0, direction: .leading),
-            currentStep: 1, totalSteps: 5
+            onDismiss: {}
         ) {
-                VStack(alignment: .center, spacing: 20) {
-                    VStack(alignment: .center, spacing: 28) {
-                        Text(verbatim: "Hi there.")
-                            .font(.system(size: 24, weight: .bold))
-
-                        Text(verbatim: "Ready for a better, more private internet?")
-                            .font(.system(size: 18))
-                    }
-                    .foregroundStyle(Color.white)
-                    .multilineTextAlignment(.center)
-
-                    Button(action: { }) {
-                        Text(verbatim: "Let's do it!")
-                            .font(.system(size: 18))
-                            .foregroundStyle(Color.black)
-                            .padding()
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44.0)
-                    .background(Color(red: 255/255, green: 216/255, blue: 133/255))
-                    .cornerRadius(64)
-                }
-            }
-            .padding()
+            OnboardingBubblePreviewContent()
+        }
+        .padding()
     }
-    .preferredColorScheme(.dark)
+    .preferredColorScheme(.light)
 }
 
-#Preview("Onboarding Speech Bubble + Dismiss Button") {
+#Preview("Onboarding Speech Bubble + Dismiss Button - Dark") {
     ZStack {
         Color(red: 43/255, green: 85/255, blue: 202/255).ignoresSafeArea()
 
@@ -284,63 +314,34 @@ private extension OnboardingBubbleView.TailPosition {
             tailPosition: .bottom(offset: 0, direction: .leading),
             onDismiss: {}
         ) {
-            VStack(alignment: .center, spacing: 20) {
-                VStack(alignment: .center, spacing: 28) {
-                    Text(verbatim: "Hi there.")
-                        .font(.system(size: 24, weight: .bold))
-
-                    Text(verbatim: "Ready for a better, more private internet?")
-                        .font(.system(size: 18))
-                }
-                .foregroundStyle(Color.white)
-                .multilineTextAlignment(.center)
-
-                Button(action: { }) {
-                    Text(verbatim: "Let's do it!")
-                        .font(.system(size: 18))
-                        .foregroundStyle(Color.black)
-                        .padding()
-                }
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44.0)
-                .background(Color(red: 255/255, green: 216/255, blue: 133/255))
-                .cornerRadius(64)
-            }
+            OnboardingBubblePreviewContent()
         }
         .padding()
     }
     .preferredColorScheme(.dark)
 }
 
-#Preview("Onboarding Speech Bubble No Tail") {
+#Preview("Onboarding Speech Bubble - No Tail - Light") {
+    ZStack {
+        Color.white.ignoresSafeArea()
+
+        OnboardingBubbleView(tailPosition: nil) {
+            OnboardingBubblePreviewContent()
+        }
+        .padding()
+    }
+    .preferredColorScheme(.light)
+}
+
+#Preview("Onboarding Speech Bubble - No Tail - Dark") {
     ZStack {
         Color(red: 43/255, green: 85/255, blue: 202/255).ignoresSafeArea()
 
         OnboardingBubbleView(tailPosition: nil) {
-            VStack(alignment: .center, spacing: 20) {
-                VStack(alignment: .center, spacing: 28) {
-                    Text(verbatim: "Hi there.")
-                        .font(.system(size: 24, weight: .bold))
-
-                    Text(verbatim: "Ready for a better, more private internet?")
-                        .font(.system(size: 18))
-                }
-                .foregroundStyle(Color.white)
-                .multilineTextAlignment(.center)
-
-                Button(action: { }) {
-                    Text(verbatim: "Let's do it!")
-                        .font(.system(size: 18))
-                        .foregroundStyle(Color.black)
-                        .padding()
-                }
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44.0)
-                .background(Color(red: 255/255, green: 216/255, blue: 133/255))
-                .cornerRadius(64)
-            }
+            OnboardingBubblePreviewContent()
         }
         .padding()
     }
     .preferredColorScheme(.dark)
 }
+#endif

@@ -87,6 +87,11 @@ public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging 
 
     @discardableResult
     public func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
+        // TEMPORARY: Force embedded config for testing - remove before merging
+        fetchedConfigData = nil
+        return .embedded
+
+        /*
         let result: PrivacyConfigurationManager.ReloadResult
 
         if let etag = etag, let data = data {
@@ -107,6 +112,7 @@ public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging 
         }
 
         return result
+        */
     }
 }
 

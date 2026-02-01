@@ -62,7 +62,6 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private var pendingPrompt: String?
     private var pendingPageContext: AIChatPageContextData?
-    private var userContentController: UserContentController?
     private var isPageReady = false
     private var isContentHandlerReady = false
     private var urlObservation: NSKeyValueObservation?
@@ -346,7 +345,6 @@ final class AIChatContextualWebViewController: UIViewController {
         )
         userContentController.delegate = self
         configuration.userContentController = userContentController
-        self.userContentController = userContentController
         return configuration
     }
 

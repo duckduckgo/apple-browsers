@@ -64,7 +64,6 @@ final class AIChatContextualSheetViewModel {
     // MARK: - Initialization
 
     init(settings: AIChatSettingsProvider,
-         hasContext: Bool,
          hasExistingChat: Bool = false) {
         self.settings = settings
         if hasExistingChat {

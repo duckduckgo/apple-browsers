@@ -21,7 +21,15 @@ import SwiftUI
 public extension OnboardingTheme {
 
     struct ColorPalette: Equatable {
-        let backgroundColor: Color
+        let bubbleBorder: Color
+        let bubbleBackground: Color
+        let bubbleShadow: Color
+
+        let textPrimary: Color
+        let textSecondary: Color
+
+        let primaryButtonBackgroundColor: Color
+        let primaryButtonTextColor: Color
     }
 
 }

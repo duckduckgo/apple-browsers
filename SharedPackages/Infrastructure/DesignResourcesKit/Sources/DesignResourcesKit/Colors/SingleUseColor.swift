@@ -51,6 +51,9 @@ public extension SingleUseColor {
         case accentAltPrimary
 
         case surfaceTertiary
+
+        case buttonsPrimaryDefault
+        case buttonsPrimaryText
     }
 
 }

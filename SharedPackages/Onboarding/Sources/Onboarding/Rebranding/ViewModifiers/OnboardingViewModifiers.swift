@@ -22,9 +22,7 @@ import SwiftUI
 // MARK: - Step Progress
 
 private struct OnboardingStepProgressViewModifier: ViewModifier {
-    // Replace values with @Environment(\.onboardingTheme) var onboardingTheme
-    private let cornerRadius = 36.0
-    private let stepProgressTrailingPadding = 4.0
+    @Environment(\.onboardingTheme) private var onboardingTheme
 
     let currentStep: Int
     let totalSteps: Int
@@ -34,7 +32,7 @@ private struct OnboardingStepProgressViewModifier: ViewModifier {
             .overlay(alignment: .topTrailing) {
                 OnboardingStepProgressView(currentStep: currentStep, totalSteps: totalSteps)
                     .alignmentGuide(VerticalAlignment.top) { $0.height / 2 }
-                    .alignmentGuide(HorizontalAlignment.trailing) { $0.width + cornerRadius + stepProgressTrailingPadding }
+                    .alignmentGuide(HorizontalAlignment.trailing) { $0.width + onboardingTheme.bubbleMetrics.stepProgressTrailingPadding }
             }
     }
 }
@@ -56,7 +54,7 @@ public extension View {
 // MARK: - Dismiss Button
 
 private struct OnboardingDismissButtonViewModifier: ViewModifier {
-    // Replace values with @Environment(\.onboardingTheme) var onboardingTheme
+    // Replace values with @Environment(\.onboardingTheme) private var onboardingTheme
     private let onboardingDismissButtonInternalPadding = 8.0
     private let onboardingDismissButtonPadding = 4.0
 

@@ -20,7 +20,8 @@ import SwiftUI
 import UIComponents
 
 public struct OnboardingStepProgressView: View {
-    //Replace Metrics with @Environment(\.onboardingTheme) var onboardingTheme
+    @Environment(\.onboardingTheme) private var onboardingTheme
+
     let currentStep: Int
     let totalSteps: Int
 
@@ -34,47 +35,35 @@ public struct OnboardingStepProgressView: View {
     }
 
     public var body: some View {
-        HStack(spacing: StepProgressMetrics.contentHorizontalSpacing) {
+        HStack(spacing: onboardingTheme.stepProgressMetrics.contentSpacing) {
             DottedStepIndicatorView(
                 selectedDot: currentStep,
                 totalDots: totalSteps,
                 style: .init(
-                    selectedDotFillColor: .blue,
-                    unselectedDotFillColor: .gray
+                    dotSpacing: onboardingTheme.stepProgressMetrics.dotSpacing,
+                    selectedDotSize: onboardingTheme.stepProgressMetrics.selectedDotSize,
+                    unselectedDotSize: onboardingTheme.stepProgressMetrics.unselectedDotSize,
+                    selectedDotFillColor: onboardingTheme.colorPalette.stepProgressSelectedDot,
+                    unselectedDotFillColor: onboardingTheme.colorPalette.stepProgressUnselectedDot
                 )
             )
             Text(verbatim: "\(currentStep) of \(totalSteps)")
-                .font(.system(size: StepProgressMetrics.fontSize))
-                .multilineTextAlignment(.trailing)
-                .foregroundStyle(Color.primary)
+                .font(onboardingTheme.typography.progressIndicator)
+                .multilineTextAlignment(onboardingTheme.stepProgressMetrics.textAlignment)
+                .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
         }
-        .padding(.leading, StepProgressMetrics.Padding.leading)
-        .padding(.trailing, StepProgressMetrics.Padding.trailing)
-        .padding(.vertical, StepProgressMetrics.Padding.vertical)
+        .padding(.leading, onboardingTheme.stepProgressMetrics.contentInsets.leading)
+        .padding(.trailing, onboardingTheme.stepProgressMetrics.contentInsets.trailing)
+        .padding(.top, onboardingTheme.stepProgressMetrics.contentInsets.top)
+        .padding(.bottom, onboardingTheme.stepProgressMetrics.contentInsets.bottom)
+        .background(onboardingTheme.colorPalette.bubbleBackground)
+        .clipShape(RoundedRectangle(cornerRadius: onboardingTheme.stepProgressMetrics.cornerRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: StepProgressMetrics.cornerRadius)
-                .inset(by: -StepProgressMetrics.Stroke.inset)
-                .stroke(.blue, lineWidth: StepProgressMetrics.Stroke.lineWidth)
+            RoundedRectangle(cornerRadius: onboardingTheme.stepProgressMetrics.cornerRadius)
+                .inset(by: -onboardingTheme.stepProgressMetrics.borderInset)
+                .stroke(onboardingTheme.colorPalette.stepProgressBorderColor, lineWidth: onboardingTheme.stepProgressMetrics.borderWidth)
         )
     }
-}
-
-private enum StepProgressMetrics {
-    static let contentHorizontalSpacing: CGFloat = 20
-    static let fontSize: CGFloat = 12
-    static let cornerRadius: CGFloat = 64
-
-    enum Stroke {
-        static let inset: CGFloat = 0.75
-        static let lineWidth: CGFloat = 1.5
-    }
-
-    enum Padding {
-        static let leading: CGFloat = 8
-        static let trailing: CGFloat = 10
-        static let vertical: CGFloat = 6
-    }
-
 }
 
 #Preview("Onboarding Step Progress Indicator") {
@@ -100,4 +89,5 @@ private enum StepProgressMetrics {
     }
 
     return PreviewWrapper()
+        .applyOnboardingTheme(.rebranding2026)
 }

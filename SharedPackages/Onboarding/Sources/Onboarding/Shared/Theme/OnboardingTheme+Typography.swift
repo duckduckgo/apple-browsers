@@ -1,6 +1,5 @@
 //
-//  OnboardingTheme.swift
-//  DuckDuckGo
+//  OnboardingTheme+Typography.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,24 +17,6 @@
 //
 
 import SwiftUI
-
-// MARK: - OnboardingTheme
-
-struct OnboardingTheme: Equatable {
-    let typography: Typography
-    let colorPalette: ColorPalette
-}
-
-extension OnboardingTheme {
-
-    static let rebranding2026 = OnboardingTheme(
-        typography: .duckSans,
-        colorPalette: ColorPalette(backgroundColor: .white)
-    )
-
-}
-
-// MARK: - OnboardingTheme + Typography
 
 extension OnboardingTheme {
 
@@ -79,15 +60,5 @@ extension OnboardingTheme.Typography {
         rowDetails: .system(size: 14, weight: .regular),
         small: .system(size: 14, weight: .regular)
     )
-
-}
-
-// MARK: - OnboardingTheme + Colors
-
-extension OnboardingTheme {
-
-    struct ColorPalette: Equatable {
-        let backgroundColor: Color
-    }
 
 }

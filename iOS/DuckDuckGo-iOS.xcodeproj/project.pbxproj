@@ -1412,9 +1412,6 @@
 		9F9A922E2C86A56B001D036D /* OnboardingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9A922D2C86A56B001D036D /* OnboardingManager.swift */; };
 		9F9A92312C86AAE9001D036D /* OnboardingDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9A92302C86AAE9001D036D /* OnboardingDebugView.swift */; };
 		9F9A92342C86B42B001D036D /* AppIconPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9A92332C86B42B001D036D /* AppIconPicker.swift */; };
-		9F9C1F3D2F289D45005E0D4F /* OnboardingTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9C1F3C2F289D41005E0D4F /* OnboardingTheme.swift */; };
-		9F9C1F3F2F28A291005E0D4F /* OnboardingTheme+Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9C1F3E2F28A289005E0D4F /* OnboardingTheme+Environment.swift */; };
-		9F9C1F432F297A61005E0D4F /* Font+Family.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9C1F422F297A5C005E0D4F /* Font+Family.swift */; };
 		9F9EE4D42C37BB1300D4118E /* OnboardingView+Landing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9EE4D32C37BB1300D4118E /* OnboardingView+Landing.swift */; };
 		9F9F325A2CEFA75100211B49 /* MaliciousSiteProtectionSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9F32592CEFA74600211B49 /* MaliciousSiteProtectionSettingsViewModel.swift */; };
 		9FA09D9F2EA5EE4500E26F3F /* Logger+ModalPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09D9E2EA5EE3D00E26F3F /* Logger+ModalPrompt.swift */; };
@@ -3828,9 +3825,6 @@
 		9F9A922D2C86A56B001D036D /* OnboardingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingManager.swift; sourceTree = "<group>"; };
 		9F9A92302C86AAE9001D036D /* OnboardingDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingDebugView.swift; sourceTree = "<group>"; };
 		9F9A92332C86B42B001D036D /* AppIconPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconPicker.swift; sourceTree = "<group>"; };
-		9F9C1F3C2F289D41005E0D4F /* OnboardingTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTheme.swift; sourceTree = "<group>"; };
-		9F9C1F3E2F28A289005E0D4F /* OnboardingTheme+Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingTheme+Environment.swift"; sourceTree = "<group>"; };
-		9F9C1F422F297A5C005E0D4F /* Font+Family.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Family.swift"; sourceTree = "<group>"; };
 		9F9EE4D32C37BB1300D4118E /* OnboardingView+Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView+Landing.swift"; sourceTree = "<group>"; };
 		9F9F32592CEFA74600211B49 /* MaliciousSiteProtectionSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionSettingsViewModel.swift; sourceTree = "<group>"; };
 		9FA09D9E2EA5EE3D00E26F3F /* Logger+ModalPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+ModalPrompt.swift"; sourceTree = "<group>"; };
@@ -7740,16 +7734,6 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
-		9F9C1F3B2F289D3D005E0D4F /* Theme */ = {
-			isa = PBXGroup;
-			children = (
-				9F9C1F422F297A5C005E0D4F /* Font+Family.swift */,
-				9F9C1F3C2F289D41005E0D4F /* OnboardingTheme.swift */,
-				9F9C1F3E2F28A289005E0D4F /* OnboardingTheme+Environment.swift */,
-			);
-			path = Theme;
-			sourceTree = "<group>";
-		};
 		9FA09DA52EA71F2900E26F3F /* Cooldown */ = {
 			isa = PBXGroup;
 			children = (
@@ -7998,7 +7982,6 @@
 		9FF7E9802C22A19800902BE5 /* OnboardingFlow */ = {
 			isa = PBXGroup;
 			children = (
-				9F9C1F3B2F289D3D005E0D4F /* Theme */,
 				9F8E0F2B2CCA617C001EA7C5 /* VideoPlayer */,
 				9F96F73D2C914C3D009E45D5 /* Background */,
 				9F9A922C2C86A560001D036D /* Manager */,
@@ -11360,7 +11343,6 @@
 				9FAB4B7D2E98D68900D8298A /* RemoteMessagingSurveyLastSearchStateRefresher.swift in Sources */,
 				8C4838B5221C8F7F008A6739 /* GestureToolbarButton.swift in Sources */,
 				859DB8172CE6263C001F7210 /* TextZoomLevel.swift in Sources */,
-				9F9C1F3D2F289D45005E0D4F /* OnboardingTheme.swift in Sources */,
 				31B5E8C02E1D54BB00EECC1E /* NavigationActionBarManager.swift in Sources */,
 				31B5E8C12E1D54BB00EECC1E /* SuggestionTrayManager.swift in Sources */,
 				31B5E8C22E1D54BB00EECC1E /* SwipeContainerManager.swift in Sources */,
@@ -11477,7 +11459,6 @@
 				85058366219AE9EA00ED4EDB /* HomePageConfiguration.swift in Sources */,
 				1E9529A12C4E748B006E80D4 /* UINavigationControllerExtension.swift in Sources */,
 				6F2331662DD4D046004D102D /* TabSwitcherStaticButton.swift in Sources */,
-				9F9C1F3F2F28A291005E0D4F /* OnboardingTheme+Environment.swift in Sources */,
 				EE0153E12A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift in Sources */,
 				C17B595B2A03AAD30055F2D1 /* PasswordGenerationPromptView.swift in Sources */,
 				C1AAECBD2E699F740016B82E /* SessionStateMetrics.swift in Sources */,

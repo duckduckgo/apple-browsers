@@ -1,6 +1,5 @@
 //
-//  OnboardingTheme+Environment.swift
-//  DuckDuckGo
+//  OnboardingTheme.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,23 +18,18 @@
 
 import SwiftUI
 
-private struct OnboardingThemeKey: EnvironmentKey {
-    static let defaultValue = OnboardingTheme.rebranding2026
+// MARK: - OnboardingTheme
+
+public struct OnboardingTheme: Equatable {
+    let typography: Typography
+    let colorPalette: ColorPalette
 }
 
-extension EnvironmentValues {
+public extension OnboardingTheme {
 
-    var onboardingTheme: OnboardingTheme {
-        get { self[OnboardingThemeKey.self] }
-        set { self[OnboardingThemeKey.self] = newValue }
-    }
-
-}
-
-extension View {
-
-    func onboardingTheme(_ theme: OnboardingTheme) -> some View {
-        environment(\.onboardingTheme, theme)
-    }
+    static let rebranding2026 = OnboardingTheme(
+        typography: .duckSans,
+        colorPalette: ColorPalette(backgroundColor: .white)
+    )
 
 }

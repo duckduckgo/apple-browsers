@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import Bookmarks
 import BrowserServicesKit
 import PrivacyConfig
 import Subscription
@@ -342,6 +343,8 @@ extension MainCoordinator: URLHandling {
             handleOpenPasswords(url: url)
         case .openAIChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
+        case .openFavorite:
+            handleOpenFavorite(url: url)
         default:
             if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
                 controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
@@ -383,6 +386,24 @@ extension MainCoordinator: URLHandling {
           }
           Pixel.fire(pixel: .openAIChatFromIconShortcut)
       }
+
+    private func handleOpenFavorite(url: URL) {
+        guard let bookmarkID = AppDeepLinkSchemes.bookmarkID(fromOpenFavorite: url) else {
+            return
+        }
+
+        let context = controller.bookmarksDatabase.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        let request = BookmarkEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "%K == %@", #keyPath(BookmarkEntity.uuid), bookmarkID)
+        request.fetchLimit = 1
+
+        guard let bookmark = try? context.fetch(request).first,
+              let bookmarkURL = bookmark.urlObject else {
+            return
+        }
+
+        controller.loadUrlInNewTab(bookmarkURL, reuseExisting: .any, inheritedAttribution: nil)
+    }
 }
 
 extension MainCoordinator: ShortcutItemHandling {

@@ -92,7 +92,7 @@ struct FavoriteView: View {
 
             if let favorite = favorite {
 
-                Link(destination: favorite.url) {
+                Link(destination: DeepLinks.openFavorite(withId: favorite.id)) {
                     ZStack {
                         RoundedRectangle(cornerRadius: cornerRadius)
                             .renderAwareBackgroundFill(favorite.needsColorBackground ? Color.forDomain(favorite.domain) : Color(designSystemColor: .surface))

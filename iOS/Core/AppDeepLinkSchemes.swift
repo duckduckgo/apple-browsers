@@ -31,6 +31,7 @@ public enum AppDeepLinkSchemes: String, CaseIterable {
     case openVPN = "ddgOpenVPN"
     case openPasswords = "ddgOpenPasswords"
     case openAIChat = "ddgOpenAIChat"
+    case openFavorite = "ddgOpenFavorite"
 
     public var url: URL {
         URL(string: rawValue + "://")!
@@ -52,6 +53,16 @@ public enum AppDeepLinkSchemes: String, CaseIterable {
                                   options: .caseInsensitive)
 
         return AppDeepLinkSchemes.fixURLScheme(query)
+    }
+
+    public static func bookmarkID(fromOpenFavorite url: URL) -> String? {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems,
+              let idValue = queryItems.first(where: { $0.name == "id" })?.value,
+              UUID(uuidString: idValue) != nil else {
+            return nil
+        }
+        return idValue
     }
 
     private static func fixURLScheme(_ urlString: String) -> String {

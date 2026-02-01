@@ -30,4 +30,7 @@ struct DeepLinks {
     static let openVPN = AppDeepLinkSchemes.openVPN.url
     static let openPasswords = AppDeepLinkSchemes.openPasswords.url
     static let openAIChat = AppDeepLinkSchemes.openAIChat.url
+    static func openFavorite(withId id: String) -> URL {
+        URL(string: "\(AppDeepLinkSchemes.openFavorite.rawValue)://?id=\(id)")!
+    }
 }

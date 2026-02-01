@@ -33,6 +33,7 @@ struct Favorite {
 
     static let ddgDomain = "duckduckgo.com"
 
+    let id: String
     let url: URL
     let domain: String
     let title: String
@@ -74,15 +75,17 @@ class Provider: TimelineProvider {
     private func coreDataFavoritesToFavorites(_ coreDataFavorites: [BookmarkEntity], returningNoMoreThan maxLength: Int) -> [Favorite] {
         
         let favorites: [Favorite] = coreDataFavorites.compactMap { favorite -> Favorite? in
-            guard let url = favorite.urlObject,
+            guard let id = favorite.uuid,
+                  let url = favorite.urlObject,
                   !url.isBookmarklet(),
                   let domain = url.host?.droppingWwwPrefix()
             else { return nil }
 
-            return Favorite(url: url,
+            return Favorite(id: id,
+                            url: url,
                             domain: domain,
                             title: favorite.title ?? domain,
-                            favicon: loadImageFromCache(forDomain: url.host) )
+                            favicon: loadImageFromCache(forDomain: url.host))
         }
         
         return Array(favorites.prefix(maxLength))

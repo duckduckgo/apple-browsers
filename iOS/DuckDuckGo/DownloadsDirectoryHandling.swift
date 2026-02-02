@@ -80,16 +80,19 @@ struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
     func deleteDownloadsDirectoryIfEmpty() {
         guard downloadsDirectoryExists() else { return }
         
-        let files: [URL]
+        // Check for ALL contents (files AND directories), not just files
+        let contents: [URL]
         do {
-            files = try downloadsDirectoryFiles
+            contents = try FileManager.default.contentsOfDirectory(at: downloadsDirectory,
+                                                                   includingPropertiesForKeys: nil,
+                                                                   options: .skipsHiddenFiles)
         } catch {
             // Don't delete if we couldn't enumerate - fail safe
             Logger.general.error("Could not read downloads directory, not deleting: \(error.localizedDescription)")
             return
         }
         
-        guard files.isEmpty else { return }
+        guard contents.isEmpty else { return }
         
         do {
             try FileManager.default.removeItem(at: downloadsDirectory)

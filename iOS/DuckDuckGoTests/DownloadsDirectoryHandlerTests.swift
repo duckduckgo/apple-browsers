@@ -115,14 +115,34 @@ class DownloadsDirectoryHandlerTests: XCTestCase {
         let subdirectoryURL = handler.downloadsDirectory.appendingPathComponent("Subdirectory")
         try? FileManager.default.createDirectory(at: subdirectoryURL, withIntermediateDirectories: true, attributes: nil)
         
-        // downloadsDirectoryFiles filters out directories
+        // downloadsDirectoryFiles filters out directories (for display purposes)
         XCTAssertTrue(try handler.downloadsDirectoryFiles.isEmpty, "Should be empty (no files)")
         
         // When
         handler.deleteDownloadsDirectoryIfEmpty()
         
-        // Then
-        XCTAssertFalse(handler.downloadsDirectoryExists(), "Directory with only subdirectories should be deleted")
+        // Then - subdirectories should prevent deletion to protect user data stored in folders
+        XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory with subdirectories should NOT be deleted")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: subdirectoryURL.path), "Subdirectory should still exist")
+    }
+    
+    func testDeleteDownloadsDirectoryIfEmptyWhenSubdirectoryContainsFiles() throws {
+        // Given
+        handler.createDownloadsDirectory()
+        let subdirectoryURL = handler.downloadsDirectory.appendingPathComponent("Subdirectory")
+        try FileManager.default.createDirectory(at: subdirectoryURL, withIntermediateDirectories: true, attributes: nil)
+        let fileInSubdirectory = subdirectoryURL.appendingPathComponent("userFile.txt")
+        FileManager.default.createFile(atPath: fileInSubdirectory.path, contents: Data("important data".utf8), attributes: nil)
+        
+        // downloadsDirectoryFiles only shows top-level files
+        XCTAssertTrue(try handler.downloadsDirectoryFiles.isEmpty, "Should be empty (no top-level files)")
+        
+        // When
+        handler.deleteDownloadsDirectoryIfEmpty()
+        
+        // Then - must preserve user data in subdirectories
+        XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory should NOT be deleted when subdirectory contains files")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: fileInSubdirectory.path), "User file in subdirectory should still exist")
     }
 
     func testDeleteDownloadsDirectoryIfEmptyWhenReadingDirectoryThrowsThenDirectoryNotDeleted() throws {

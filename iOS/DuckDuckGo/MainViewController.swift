@@ -3784,6 +3784,7 @@ extension MainViewController {
                                 transitionCompletion: (() -> Void)? = nil,
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
+        let tabsCount = tabManager.count
         Pixel.fire(pixel: .forgetAllExecuted)
         DailyPixel.fire(pixel: .forgetAllExecutedDaily)
         productSurfaceTelemetry.dataClearingUsed()
@@ -3794,9 +3795,8 @@ extension MainViewController {
             await self.fireExecutor.burn(request: request, applicationState: .unknown)
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
-        } onTransitionCompleted: {
-            ActionMessageView.present(message: UserText.actionForgetAllDone,
-                                      presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom))
+        } onTransitionCompleted: { [weak self] in
+            self?.presentPostBurnMessage(scope: request.scope, tabsCount: tabsCount)
             transitionCompletion?()
         } completion: {
             self.subscriptionDataReporter.saveFireCount()
@@ -3816,6 +3816,20 @@ extension MainViewController {
 
             self.daxDialogsManager.clearedBrowserData()
         }
+    }
+    
+    @MainActor
+    private func presentPostBurnMessage(scope: FireRequest.Scope, tabsCount: Int) {
+        let message: String
+        switch scope {
+        case .all:
+            message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
+            
+        case .tab:
+            message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: 1)
+        }
+        ActionMessageView.present(message: message,
+                                  presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom))
     }
     
     private func refreshUIAfterClear() {

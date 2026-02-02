@@ -448,7 +448,7 @@ class FireExecutor: FireExecuting {
 
     @discardableResult
     private func deleteChat(chatID: String) async -> Result<Void, Error> {
-        // TODO: - Record chat ID for sync
+        await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
         let result = await aiChatHistoryCleaner.deleteAIChat(chatID: chatID)
         switch result {
         case .success:

@@ -620,6 +620,8 @@ final class FireExecutorTests: XCTestCase {
         // Verify deleteAIChat was called with the correct chatID (not cleanAIChatHistory)
         XCTAssertEqual(mockHistoryCleaner.deleteAIChatCalls, [chatID])
         XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
+        // Verify sync cleaner was notified of the chat deletion
+        XCTAssertEqual(mockAIChatSyncCleaner.recordChatDeletionCalls, [chatID])
     }
     
     func testWhenScopeIsTabWithoutChatIDThenDeleteAIChatIsNotCalled() async {
@@ -635,6 +637,7 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
         XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
         XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
     }
     
     // MARK: - Contextual Chat Deletion Tests (Data Burn)
@@ -651,6 +654,7 @@ final class FireExecutorTests: XCTestCase {
         
         // Then - Contextual chat should be deleted
         XCTAssertEqual(mockHistoryCleaner.deleteAIChatCalls, [contextualChatID])
+        XCTAssertEqual(mockAIChatSyncCleaner.recordChatDeletionCalls, [contextualChatID])
     }
     
     func testWhenBurningDataForTabWithoutContextualChat_ThenNoContextualChatDeleted() async {
@@ -664,6 +668,7 @@ final class FireExecutorTests: XCTestCase {
         
         // Then - No contextual chat should be deleted
         XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
     }
     
     func testWhenAutoClearAIChatHistoryDisabled_ThenContextualChatNotDeleted() async {
@@ -678,5 +683,6 @@ final class FireExecutorTests: XCTestCase {
         
         // Then - Contextual chat should NOT be deleted because user setting is disabled
         XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
     }
 }

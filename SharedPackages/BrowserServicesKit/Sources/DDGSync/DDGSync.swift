@@ -190,6 +190,16 @@ public class DDGSync: DDGSyncing {
         }
     }
 
+    public func deleteAIChats(chatIds: [String]) async throws {
+        guard let account = account else { throw SyncError.accountNotFound }
+        guard let token = account.token else { throw SyncError.noToken }
+        do {
+            try await dependencies.createAIChats().delete(chatIds: chatIds, token: token)
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
     public func setAIChatHistoryEnabled(_ enabled: Bool) {
         try? dependencies.keyValueStore.set(enabled, forKey: Constants.aiChatHistoryEnabledKey)
     }

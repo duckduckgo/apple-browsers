@@ -332,7 +332,7 @@ struct RunDBPDebugModeView: View {
                 .disabled(!viewModel.canCheckEmailConfirmation(for: result))
 
                 Button("Continue opt-out") {
-                    viewModel.continueOptOutAfterEmailConfirmation(for: result)
+                    viewModel.continueOptOutAfterEmailConfirmation(scanResult: result)
                 }
                 .buttonStyle(.bordered)
                 .font(.caption)
@@ -527,7 +527,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             self.currentBrokerName = broker.name
 
             for (index, query) in queries.enumerated() {
-                let queryWithId = ensureDebugProfileQuery(query, index: index)
+                let queryWithId = query.with(id: DebugHelper.stableId(for: query))
                 let brokerProfileQueryData = BrokerProfileQueryData(
                     dataBroker: broker,
                     profileQuery: queryWithId,
@@ -556,7 +556,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         let result = DebugScanResult(
                             dataBroker: broker,
                             profileQuery: queryWithId,
-                            extractedProfile: ensureDebugExtractedProfile(profile)
+                            extractedProfile: profile.with(id: DebugHelper.stableId(for: profile))
                         )
 
                         allResults.append(result)
@@ -774,6 +774,20 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         alertTitle = title
         alertMessage = message
         showAlert = true
+    }
+
+    func emailConfirmationStatusText(for result: DebugScanResult) -> String? {
+        guard result.dataBroker.requiresEmailConfirmationDuringOptOut() else { return nil }
+
+        if confirmationURL(for: result) != nil {
+            return "Confirmation link ready"
+        }
+
+        if isAwaitingEmailConfirmation(for: result) {
+            return "Awaiting email confirmation"
+        }
+
+        return nil
     }
 }
 

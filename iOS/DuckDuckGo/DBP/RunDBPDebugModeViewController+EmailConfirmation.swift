@@ -21,27 +21,9 @@ import Foundation
 import DataBrokerProtectionCore
 import enum UserScript.UserScriptError
 
-// MARK: - Email Confirmation
-
 extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
     var emailConfirmationStore: EmailConfirmationSupporting {
         debugEmailConfirmationStore
-    }
-}
-
-extension RunDBPDebugModeViewModel {
-    func emailConfirmationStatusText(for result: DebugScanResult) -> String? {
-        guard result.dataBroker.requiresEmailConfirmationDuringOptOut() else { return nil }
-
-        if confirmationURL(for: result) != nil {
-            return "Confirmation link ready"
-        }
-
-        if isAwaitingEmailConfirmation(for: result) {
-            return "Awaiting email confirmation"
-        }
-
-        return nil
     }
 
     func checkForEmailConfirmation() {
@@ -56,15 +38,15 @@ extension RunDBPDebugModeViewModel {
         }
     }
 
-    func continueOptOutAfterEmailConfirmation(for result: DebugScanResult) {
-        guard let confirmationURL = confirmationURL(for: result) else { return }
+    func continueOptOutAfterEmailConfirmation(scanResult: DebugScanResult) {
+        guard let confirmationURL = confirmationURL(for: scanResult) else { return }
 
-        optOutInProgress.insert(result.id)
+        optOutInProgress.insert(scanResult.id)
         updateWebViewAvailability()
 
         Task { @MainActor in
             defer {
-                optOutInProgress.remove(result.id)
+                optOutInProgress.remove(scanResult.id)
                 updateWebViewAvailability()
                 self.currentOptOutRunner = nil
                 self.hideWebView()
@@ -72,11 +54,11 @@ extension RunDBPDebugModeViewModel {
             }
 
             do {
-                let brokerId = DebugHelper.stableId(for: result.dataBroker)
-                let profileQueryId = DebugHelper.stableId(for: result.profileQuery)
+                let brokerId = DebugHelper.stableId(for: scanResult.dataBroker)
+                let profileQueryId = DebugHelper.stableId(for: scanResult.profileQuery)
                 let brokerProfileQueryData = BrokerProfileQueryData(
-                    dataBroker: result.dataBroker,
-                    profileQuery: result.profileQuery,
+                    dataBroker: scanResult.dataBroker,
+                    profileQuery: scanResult.profileQuery,
                     scanJobData: ScanJobData(
                         brokerId: brokerId,
                         profileQueryId: profileQueryId,
@@ -101,12 +83,12 @@ extension RunDBPDebugModeViewModel {
 
                 try await runner.optOut(
                     profileQuery: brokerProfileQueryData,
-                    extractedProfile: result.extractedProfile,
+                    extractedProfile: scanResult.extractedProfile,
                     showWebView: true
                 ) { true }
 
                 showAlert(title: "Success",
-                          message: "Opt-out process completed for \(result.extractedProfile.name ?? "profile").")
+                          message: "Opt-out process completed for \(scanResult.extractedProfile.name ?? "profile").")
             } catch let UserScriptError.failedToLoadJS(jsFile, error) {
                 pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
                 try await Task.sleep(interval: 1.0)
@@ -117,29 +99,4 @@ extension RunDBPDebugModeViewModel {
         }
     }
 
-    func ensureDebugProfileQuery(_ query: ProfileQuery, index: Int) -> ProfileQuery {
-        if let id = query.id {
-            return query.with(id: id)
-        }
-
-        let fallbackId = DebugHelper.stableId(for: query)
-        return query.with(id: fallbackId == 0 ? Int64(index + 1) : fallbackId)
-    }
-
-    func ensureDebugExtractedProfile(_ profile: ExtractedProfile) -> ExtractedProfile {
-        guard profile.id == nil else { return profile }
-        return ExtractedProfile(id: DebugHelper.stableId(for: profile),
-                                name: profile.name,
-                                alternativeNames: profile.alternativeNames,
-                                addressFull: profile.addressFull,
-                                addresses: profile.addresses,
-                                phoneNumbers: profile.phoneNumbers,
-                                relatives: profile.relatives,
-                                profileUrl: profile.profileUrl,
-                                reportId: profile.reportId,
-                                age: profile.age,
-                                email: profile.email,
-                                removedDate: profile.removedDate,
-                                identifier: profile.identifier)
-    }
 }

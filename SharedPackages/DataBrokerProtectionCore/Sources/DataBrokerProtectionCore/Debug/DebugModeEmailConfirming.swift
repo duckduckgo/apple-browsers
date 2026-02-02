@@ -38,11 +38,13 @@ public struct DebugScanResult: Identifiable, Sendable {
 public protocol DebugModeEmailConfirming {
     var emailConfirmationStore: EmailConfirmationSupporting { get }
 
+    func checkForEmailConfirmation()
+    func continueOptOutAfterEmailConfirmation(scanResult: DebugScanResult)
+
     func canCheckEmailConfirmation(for scanResult: DebugScanResult) -> Bool
     func canContinueOptOutAfterEmailConfirmation(for scanResult: DebugScanResult) -> Bool
     func isAwaitingEmailConfirmation(for scanResult: DebugScanResult) -> Bool
     func confirmationURL(for scanResult: DebugScanResult) -> URL?
-    func confirmationIdentifiers(for scanResult: DebugScanResult) -> (brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64)?
 }
 
 public extension DebugModeEmailConfirming {

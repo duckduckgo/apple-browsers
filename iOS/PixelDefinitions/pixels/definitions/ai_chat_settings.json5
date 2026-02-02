@@ -12,5 +12,19 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_aichat_settings_chat_suggestions_turned_on": {
+        "description": "Fired when the user enables Chat Suggestions in AI Chat settings",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_settings_chat_suggestions_turned_off": {
+        "description": "Fired when the user disables Chat Suggestions in AI Chat settings",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

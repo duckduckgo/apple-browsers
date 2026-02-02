@@ -66,4 +66,10 @@ public extension OnboardingTheme {
     }()
 
 }
+            )
+        )
+    }()
+
+}
+
 #endif

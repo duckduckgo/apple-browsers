@@ -1447,6 +1447,18 @@ extension SettingsViewModel {
         )
     }
 
+    var isChatSuggestionsEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isChatSuggestionsEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableChatSuggestions(enable: newValue)
+                }
+            }
+        )
+    }
+
     var showTrackerCountInTabSwitcherBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.tabSwitcherSettings.showTrackerCountInTabSwitcher },

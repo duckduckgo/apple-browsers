@@ -66,6 +66,7 @@ public struct OnboardingTheme: Equatable {
         contextualBodyTextAlignment: TextAlignment,
         primaryButtonStyle: OnboardingButtonStyle,
         dismissButtonStyle: OnboardingButtonStyle
+        primaryButtonStyle: OnboardingButtonStyle
     ){
         self.typography = typography
         self.colorPalette = colorPalette

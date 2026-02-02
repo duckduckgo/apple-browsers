@@ -35,8 +35,7 @@ final class AIChatHistoryListViewController: UIViewController {
         static let iconTextSpacing: CGFloat = 12
         static let cellHeight: CGFloat = 44
         static let horizontalInset: CGFloat = 16
-        static let topContentInset: CGFloat = 0
-        static let sectionHeaderHeight: CGFloat = 32
+        static let topContentInset: CGFloat = -20
     }
 
     // MARK: - Properties
@@ -53,7 +52,6 @@ final class AIChatHistoryListViewController: UIViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
-        tableView.sectionHeaderHeight = UITableView.automaticDimension
         tableView.sectionFooterHeight = 0
         tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
         return tableView
@@ -157,7 +155,7 @@ extension AIChatHistoryListViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return UserText.aiChatRecentChatsTitle
+        return nil
     }
 }
 
@@ -181,7 +179,7 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return Constants.sectionHeaderHeight
+        return 0
     }
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {

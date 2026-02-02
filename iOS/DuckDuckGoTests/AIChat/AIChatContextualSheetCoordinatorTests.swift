@@ -182,36 +182,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNotNil(sut.sheetViewController?.delegate)
     }
 
-    // MARK: - clearActiveChat Tests
-
-    @MainActor
-    func testClearActiveChatRemovesSheet() async {
-        // Given
-        await sut.presentSheet(from: mockPresentingVC)
-        XCTAssertNotNil(sut.sheetViewController)
-
-        // When
-        sut.clearActiveChat()
-
-        // Then
-        XCTAssertNil(sut.sheetViewController)
-    }
-
-    @MainActor
-    func testClearActiveChatThenPresentCreatesNewSheet() async {
-        // Given
-        await sut.presentSheet(from: mockPresentingVC)
-        let firstSheet = sut.sheetViewController
-        sut.clearActiveChat()
-
-        // When
-        await sut.presentSheet(from: mockPresentingVC)
-        let secondSheet = sut.sheetViewController
-
-        // Then
-        XCTAssertFalse(firstSheet === secondSheet)
-    }
-
     // MARK: - Delegate Forwarding Tests
 
     @MainActor
@@ -284,15 +254,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     // MARK: - Page Context Handling Tests
-
-    @MainActor
-    func testClearActiveChatClearsPageContext() async {
-        await sut.presentSheet(from: mockPresentingVC)
-
-        sut.clearActiveChat()
-
-        XCTAssertEqual(mockPageContextHandler.clearCallCount, 1)
-    }
 
     @MainActor
     func testClearPageContextUpdatesViewModel() async {

@@ -34,7 +34,7 @@ on:
   push:
     branches: [ main, "release/macos/**", "hotfix/macos/**" ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/BrowserServicesKit/**'
       - 'macOS/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request

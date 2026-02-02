@@ -153,6 +153,11 @@ jobs:
         log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
 
+    - name: Override XCTest Baseline HW Specs
+      working-directory: macOS
+      run: |
+        ./scripts/override-test-baseline-specs.sh
+
     - name: Build Memory Usage Tests
       working-directory: macOS
       run: |
@@ -214,7 +219,7 @@ jobs:
           --start-time "$START_TIME" \
           > insert-statements.sql
 
-    - name: Debug Insert SQL SQL
+    - name: Debug Insert SQL
       working-directory: macOS
       run: |
         echo "Generated insert-statements.sql:"

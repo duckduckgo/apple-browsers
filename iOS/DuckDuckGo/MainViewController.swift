@@ -757,6 +757,27 @@ class MainViewController: UIViewController {
     private func keyboardDidShow() {
         keyboardShowing = true
         productSurfaceTelemetry.keyboardActive()
+
+        // Dismiss contextual sheet if keyboard is for background web view
+        dismissContextualSheetIfKeyboardIsForBackgroundContent()
+    }
+
+    private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
+        guard let currentTab,
+              currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
+              let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
+            return
+        }
+
+        // Check if first responder is within the sheet's view hierarchy
+        if let firstResponder = UIResponder.currentFirstResponder(),
+           firstResponder.isInViewHierarchy(of: sheetVC.view) {
+            // Keyboard is for the sheet, don't dismiss
+            return
+        }
+
+        // Keyboard is for background content (web view), dismiss the sheet
+        currentTab.aiChatContextualSheetCoordinator.dismissSheet()
     }
 
     @objc
@@ -3068,6 +3089,7 @@ extension MainViewController: OmniBarDelegate {
         hideSuggestionTray()
 
         if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
+            omniBar.endEditing()
             currentTab.presentContextualAIChatSheet(from: self)
         } else {
             openAIChatFromAddressBar()

@@ -389,36 +389,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         Logger.aiChat.debug("[PageContext] Latest context updated - title: \(snapshot.context.title)")
     }
 
-    /// Refreshes the chip UI to match the current session state.
-    /// Useful when state changes occur without context updates (e.g. navigation reset).
-    func refreshChipState() {
-        Logger.aiChat.debug("[PageContext] Refreshing chip state: \(self.sessionState.chipState)")
-        switch sessionState.chipState {
-        case .none:
-            contextualInputViewController.hideContextChip()
-        case .placeholder:
-            if contextualInputViewController.isContextChipVisible {
-                contextualInputViewController.updateContextChipState(.placeholder)
-                contextualInputViewController.setChipTapCallback { [weak self] in
-                    guard let self else { return }
-                    self.pixelHandler.firePageContextPlaceholderTapped()
-                    self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-                }
-            } else if let snapshot = latestSnapshot {
-                showPlaceholderContextChip(snapshot)
-            }
-        case .attached:
-            if let snapshot = latestSnapshot {
-                applyContextSnapshot(snapshot)
-            }
-        }
-    }
-
-    /// Marks the next context attachment as automatic (for pixel tracking).
-    func markNextAttachAsAutomatic() {
-        isPendingAttachAutomatic = true
-    }
-
     /// Fires the appropriate page context attached pixel based on the attach mode.
     private func firePageContextAttachedPixel() {
         // Check pixel handler's manual attach state first (takes precedence)

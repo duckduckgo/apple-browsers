@@ -35,7 +35,6 @@ public struct OnboardingBubbleView<Content: View>: View {
 
     public var body: some View {
         let tail = TailConfig(position: tailPosition)
-        let shadowPosition = onboardingTheme.bubbleMetrics.shadowPosition
         BubbleView(
             arrowLength: tail.arrowLength,
             arrowWidth: tail.arrowWidth,
@@ -55,11 +54,7 @@ public struct OnboardingBubbleView<Content: View>: View {
                     .background(onboardingTheme.colorPalette.bubbleBackground)
             }
         )
-        .shadow(
-            color: onboardingTheme.colorPalette.bubbleShadow,
-            radius: onboardingTheme.bubbleMetrics.shadowRadius,
-            x: shadowPosition.x, y: shadowPosition.y
-        )
+        .applyOnboardingShadow()
     }
 }
 

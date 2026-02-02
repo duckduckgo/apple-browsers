@@ -49,3 +49,30 @@ public extension View {
     }
 
 }
+
+// MARK: - Shadow
+
+private struct OnboardingShadowViewModifier: ViewModifier {
+    @Environment(\.onboardingTheme) private var onboardingTheme
+
+    func body(content: Content) -> some View {
+        let shadowPosition = onboardingTheme.bubbleMetrics.shadowPosition
+
+        content.shadow(
+            color: onboardingTheme.colorPalette.bubbleShadow,
+            radius: onboardingTheme.bubbleMetrics.shadowRadius,
+            x: shadowPosition.x, y: shadowPosition.y
+        )
+    }
+}
+
+public extension View {
+
+    /// Applies the onboarding shadow style defined by the active theme.
+    ///
+    /// - Returns: A view with onboarding shadow parameters applied.
+    func applyOnboardingShadow() -> some View {
+        self.modifier(OnboardingShadowViewModifier())
+    }
+
+}

@@ -22,18 +22,16 @@ import SwiftUI
 // MARK: - Dismiss Button
 
 private struct OnboardingDismissButtonViewModifier: ViewModifier {
-    // Replace values with @Environment(\.onboardingTheme) private var onboardingTheme
-    private let onboardingDismissButtonInternalPadding = 8.0
-    private let onboardingDismissButtonPadding = 4.0
+    @Environment(\.onboardingTheme) private var onboardingTheme
 
     let onDismiss: () -> Void
 
     func body(content: Content) -> some View {
         content
             .overlay(alignment: .topTrailing) {
-                OnboardingDismissButton(action: onDismiss)
-                    .alignmentGuide(VerticalAlignment.top) { _ in onboardingDismissButtonInternalPadding + onboardingDismissButtonPadding }
-                    .alignmentGuide(HorizontalAlignment.trailing) { $0.width - onboardingDismissButtonInternalPadding - onboardingDismissButtonPadding }
+                OnboardingBubbleDismissButton(action: onDismiss)
+                    .alignmentGuide(VerticalAlignment.top) { _ in onboardingTheme.dismissButtonMetrics.contentPadding + onboardingTheme.dismissButtonMetrics.offsetRelativeToBubble.y }
+                    .alignmentGuide(HorizontalAlignment.trailing) { $0.width - onboardingTheme.dismissButtonMetrics.contentPadding - onboardingTheme.dismissButtonMetrics.offsetRelativeToBubble.x }
             }
     }
 }

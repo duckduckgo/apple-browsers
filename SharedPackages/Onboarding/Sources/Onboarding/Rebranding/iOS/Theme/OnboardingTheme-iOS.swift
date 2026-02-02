@@ -47,6 +47,10 @@ public extension OnboardingTheme {
                 shadowRadius: 6.0,
                 shadowPosition: CGPoint(x: 0, y: 7)
             ),
+            dismissButtonMetrics: DismissButtonMetrics(
+                offsetRelativeToBubble: CGPoint(x: 4, y: 4),
+                contentPadding: 8
+            ),
             linearTitleTextAlignment: .center,
             linearBodyTextAlignment: .center,
             contextualTitleTextAlignment: .leading,
@@ -54,6 +58,10 @@ public extension OnboardingTheme {
             primaryButtonStyle: OnboardingButtonStyle(
                 id: .primary,
                 style: AnyButtonStyle(OnboardingPrimaryButtonStyle())
+            ),
+            dismissButtonStyle: OnboardingButtonStyle(
+                id: .dismiss,
+                style: AnyButtonStyle(OnboardingBubbleDismissButtonStyle())
             )
         )
     }()

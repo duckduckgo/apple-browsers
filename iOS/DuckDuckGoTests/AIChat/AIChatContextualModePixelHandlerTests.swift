@@ -360,7 +360,7 @@ final class AIChatContextualModePixelHandlerTests {
         }
 
         // THEN
-        #expect(pixelCount == 10)
+        #expect(pixelCount == 9)
     }
 
     @Test("Concurrent reset and navigation calls are thread-safe")

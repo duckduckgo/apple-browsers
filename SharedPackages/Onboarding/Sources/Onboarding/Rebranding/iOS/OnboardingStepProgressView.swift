@@ -37,10 +37,13 @@ public struct OnboardingStepProgressView: View {
     }
 
     public var body: some View {
+        let clampedTotal = max(1, totalSteps)
+        let clampedStep = max(1, min(currentStep, clampedTotal))
+
         HStack(spacing: stepProgressTheme.metrics.contentSpacing) {
             DottedStepIndicatorView(
-                selectedDot: currentStep,
-                totalDots: totalSteps,
+                selectedDot: clampedStep,
+                totalDots: clampedTotal,
                 style: .init(
                     dotSpacing: stepProgressTheme.metrics.dotSpacing,
                     selectedDotSize: stepProgressTheme.metrics.selectedDotSize,
@@ -49,7 +52,7 @@ public struct OnboardingStepProgressView: View {
                     unselectedDotFillColor: stepProgressTheme.colors.unselectedDot
                 )
             )
-            Text(verbatim: "\(currentStep) of \(totalSteps)")
+            Text(verbatim: "\(clampedStep) of \(clampedTotal)")
                 .font(onboardingTheme.typography.progressIndicator)
                 .multilineTextAlignment(stepProgressTheme.textAlignment)
                 .foregroundStyle(stepProgressTheme.colors.text)

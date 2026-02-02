@@ -46,21 +46,16 @@ public final class HistoryCleaner: HistoryCleaning {
     /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
     @MainActor
     public func cleanAIChatHistory() async -> Result<Void, Error> {
-        guard webView == nil else {
-            return .failure(HistoryCleanerError.operationInProgress)
-        }
-
-        return await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            Task { @MainActor in
-                await self.processAllDomains(chatID: nil)
-            }
-        }
+        await performDelete(chatID: nil)
     }
 
     /// Launches a headless web view to clear a single Duck.ai chat with a C-S-S feature.
     @MainActor
     public func deleteAIChat(chatID: String) async -> Result<Void, Error> {
+        await performDelete(chatID: chatID)
+    }
+
+    private func performDelete(chatID: String?) async -> Result<Void, Error> {
         guard webView == nil else {
             return .failure(HistoryCleanerError.operationInProgress)
         }

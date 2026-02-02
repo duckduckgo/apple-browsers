@@ -67,6 +67,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        ref: ${{ inputs.branch || github.sha }}
 
     - name: Start measuring duration
       id: start-duration
@@ -348,6 +349,9 @@ jobs:
     steps:
     - name: Check out the code
       uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch || github.sha }}
+
     - name: Create Asana task when workflow failed
       uses: duckduckgo/native-github-asana-sync@v1.1
       with:

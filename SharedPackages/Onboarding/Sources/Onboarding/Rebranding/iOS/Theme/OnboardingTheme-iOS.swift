@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import SwiftUI
 import DesignResourcesKit
 
@@ -131,3 +132,4 @@ public extension OnboardingTheme {
     }()
 
 }
+#endif

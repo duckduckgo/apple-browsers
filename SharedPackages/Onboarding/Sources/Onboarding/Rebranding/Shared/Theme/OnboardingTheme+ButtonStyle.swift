@@ -60,26 +60,3 @@ public struct AnyButtonStyle: ButtonStyle {
         makeBodyClosure(configuration)
     }
 }
-
-// MARK: - Button Styles
-
-// NOTE: Keep this style colocated with onboarding while rebranding is validated in this flow instead of DuckUI.
-// This avoids exposing a partially adopted visual style to the rest of the app.
-struct OnboardingPrimaryButtonStyle: ButtonStyle {
-    @Environment(\.onboardingTheme) private var onboardingTheme
-
-    public func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .fixedSize(horizontal: false, vertical: true)
-            .multilineTextAlignment(.center)
-            .lineLimit(nil)
-            .font(onboardingTheme.typography.small)
-            .foregroundColor(onboardingTheme.colorPalette.primaryButtonTextColor)
-            .padding(.vertical)
-            .padding(.horizontal, nil)
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 40)
-            .background(onboardingTheme.colorPalette.primaryButtonBackgroundColor)
-            .cornerRadius(64.0)
-    }
-
-}

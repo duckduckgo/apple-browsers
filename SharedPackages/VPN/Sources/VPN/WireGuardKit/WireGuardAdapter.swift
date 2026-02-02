@@ -33,13 +33,13 @@ public enum WireGuardAdapterEvent {
     case endTemporaryShutdownStateRecoveryFailure(Error)
 }
 
-enum WireGuardAdapterErrorInvalidStateReason: String {
+public enum WireGuardAdapterErrorInvalidStateReason: String {
     case alreadyStarted
     case alreadyStopped
     case updatedTunnelWhileStopped
 }
 
-enum WireGuardAdapterError: CustomNSError {
+public enum WireGuardAdapterError: CustomNSError {
     /// Failure to locate tunnel file descriptor.
     case cannotLocateTunnelFileDescriptor
 

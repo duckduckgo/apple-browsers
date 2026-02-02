@@ -24,6 +24,9 @@ public protocol WideEventStoring {
     func update<T: WideEventData>(_ data: T) throws
     func delete<T: WideEventData>(_ data: T)
     func allWideEvents<T: WideEventData>(for type: T.Type) -> [T]
+
+    func lastSentTimestamp(for eventType: String) -> Date?
+    func recordSentTimestamp(for eventType: String, date: Date)
 }
 
 public final class WideEventUserDefaultsStorage: WideEventStoring {
@@ -91,6 +94,22 @@ public final class WideEventUserDefaultsStorage: WideEventStoring {
 
     private func storageKey<T: WideEventData>(_ type: T.Type, globalID: String) -> String {
         return "\(T.metadata.pixelName).\(globalID)"
+    }
+
+    // MARK: - Daily Occurrence Tracking
+
+    public func lastSentTimestamp(for eventType: String) -> Date? {
+        let key = lastSentKey(for: eventType)
+        return defaults.object(forKey: key) as? Date
+    }
+
+    public func recordSentTimestamp(for eventType: String, date: Date) {
+        let key = lastSentKey(for: eventType)
+        defaults.set(date, forKey: key)
+    }
+
+    private func lastSentKey(for eventType: String) -> String {
+        return "last_sent.\(eventType)"
     }
 
 }

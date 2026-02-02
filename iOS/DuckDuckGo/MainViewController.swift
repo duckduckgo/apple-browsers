@@ -2920,8 +2920,7 @@ extension MainViewController: OmniBarDelegate {
 
         if let popoverController = controller.popoverPresentationController {
             popoverController.sourceView = omniBar.barView.menuButton
-            controller.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
-            controller.preferredContentSize = CGSize(width: 320, height: contentHeight)
+            controller.preferredContentSize = CGSize(width: 391, height: contentHeight)
 
             configureSheetPresentationController(popoverController.adaptiveSheetPresentationController)
         }

@@ -147,7 +147,11 @@ extension TabViewController: WKWebExtensionTab {
     }
 
     func close(for context: WKWebExtensionContext) async throws {
-        dismiss()
+        if let delegate = delegate {
+            delegate.tabDidRequestClose(self)
+        } else {
+            dismiss()
+        }
     }
 
     func shouldGrantPermissionsOnUserGesture(for context: WKWebExtensionContext) -> Bool {

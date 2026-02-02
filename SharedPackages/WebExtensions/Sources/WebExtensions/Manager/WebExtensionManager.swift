@@ -130,14 +130,21 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
         installationStore.remove(identifier)
 
+        Logger.webExtensions.debug("🔄 Unloading '\(identifier)' at \(storagePath.absoluteString)")
+
         do {
             try loader.unloadExtension(at: storagePath.absoluteString, from: controller)
+            Logger.webExtensions.debug("✅ Unloaded extension '\(identifier)' from memory")
         } catch {
-            Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
-            throw WebExtensionError.failedToUnloadWebExtension(error)
+            Logger.webExtensions.debug("⚠️ Extension '\(identifier)' was not loaded in memory: \(error.localizedDescription)")
         }
 
-        try storageProvider.removeExtension(identifier: identifier)
+        do {
+            try storageProvider.removeExtension(identifier: identifier)
+        } catch {
+            Logger.webExtensions.error("❌ Failed to remove extension files for '\(identifier)': \(error.localizedDescription)")
+            throw WebExtensionError.failedToRemoveWebExtension(error)
+        }
 
         Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
         notifyUpdate()

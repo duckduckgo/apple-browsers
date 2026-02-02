@@ -24,4 +24,5 @@ public enum WebExtensionError: Error {
     case extensionNotFound(_ identifier: String)
     case failedToLoadWebExtension(_ error: Error)
     case failedToUnloadWebExtension(_ error: Error)
+    case failedToRemoveWebExtension(_ error: Error)
 }

@@ -310,6 +310,8 @@ struct RunDBPDebugModeView: View {
                     .disabled(viewModel.isAnyOptOutInProgress)
                 }
             }
+
+            emailConfirmationControls(for: result)
             
             Text("Broker: \(result.dataBroker.name)")
                 .font(.caption)
@@ -318,6 +320,33 @@ struct RunDBPDebugModeView: View {
         .padding()
         .background(Color.gray.opacity(0.1))
         .cornerRadius(8)
+    }
+
+    @ViewBuilder
+    private func emailConfirmationControls(for result: ScanResult) -> some View {
+        if result.dataBroker.requiresEmailConfirmationDuringOptOut() {
+            if let statusText = viewModel.emailConfirmationStatusText(for: result) {
+                Text(statusText)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            HStack(spacing: 8) {
+                Button("Check for email confirmation") {
+                    viewModel.checkForEmailConfirmation()
+                }
+                .buttonStyle(.bordered)
+                .font(.caption)
+                .disabled(!viewModel.canCheckEmailConfirmation(for: result))
+
+                Button("Continue opt-out") {
+                    viewModel.continueOptOutAfterEmailConfirmation(for: result)
+                }
+                .buttonStyle(.bordered)
+                .font(.caption)
+                .disabled(!viewModel.canContinueOptOutAfterEmailConfirmation(for: result))
+            }
+        }
     }
 }
 
@@ -344,23 +373,24 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var isWebViewAvailable: Bool = false
 
     @Published private var currentRunner: BrokerProfileScanSubJobWebRunner?
-    private var currentOptOutRunner: BrokerProfileOptOutSubJobWebRunner?
+    var currentOptOutRunner: BrokerProfileOptOutSubJobWebRunner?
 
-    private var currentWebViewManager: DBPDebugWebViewWindowManager?
+    var currentWebViewManager: DBPDebugWebViewWindowManager?
     var cancellables = Set<AnyCancellable>()
     private var currentTask: Task<Void, Never>?
     
-    private var privacyConfigManager: PrivacyConfigurationManaging {
+    var privacyConfigManager: PrivacyConfigurationManaging {
         return ContentBlocking.shared.privacyConfigurationManager
     }
 
-    private let contentScopeProperties: ContentScopeProperties
-    private let emailConfirmationDataService: EmailConfirmationDataService
-    private let captchaService: CaptchaService
-    private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    private var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
-    private let executionConfig: BrokerJobExecutionConfig
-    private let featureFlagger: DBPFeatureFlagging
+    let contentScopeProperties: ContentScopeProperties
+    let emailConfirmationDataService: EmailConfirmationDataService
+    let emailConfirmationStore: DebugEmailConfirmationStore
+    let captchaService: CaptchaService
+    let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
+    let executionConfig: BrokerJobExecutionConfig
+    let featureFlagger: DBPFeatureFlagging
 
     var hasValidInput: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !city.isEmpty && !state.isEmpty && !birthYear.isEmpty
@@ -435,30 +465,11 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             servicePixel: backendServicePixels
         )
         
-        // Create database
-        let fakeBroker = DataBrokerDebugFlagFakeBroker()
-        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
-        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
-
-        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler!)
-
-        let vault: DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>
-        do {
-            vault = try vaultFactory.makeVault(reporter: reporter)
-        } catch {
-            fatalError("Failed to make secure storage vault")
-        }
-
-        let localBrokerService = LocalBrokerJSONService(resources: FileResources(runTypeProvider: dbpSettings),
-                                                        vault: vault,
-                                                        pixelHandler: pixelHandler!,
-                                                        runTypeProvider: dbpSettings)
-
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: pixelHandler!, vault: vault, localBrokerService: localBrokerService)
+        self.emailConfirmationStore = DebugEmailConfirmationStore()
         
         self.emailConfirmationDataService = EmailConfirmationDataService(
-            emailConfirmationStore: database,
-            database: database,
+            emailConfirmationStore: emailConfirmationStore,
+            database: nil,
             emailServiceV0: emailService,
             emailServiceV1: emailServiceV1,
             featureFlagger: featureFlagger,
@@ -522,11 +533,13 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 self.currentBrokerName = broker.name
 
                 for (index, query) in queries.enumerated() {
-                    let queryWithId = query.with(id: Int64(index + 1))
+                    let queryWithId = ensureDebugProfileQuery(query, index: index)
                     let brokerProfileQueryData = BrokerProfileQueryData(
                         dataBroker: broker,
                         profileQuery: queryWithId,
-                        scanJobData: ScanJobData(brokerId: broker.id ?? 1, profileQueryId: Int64(index + 1), historyEvents: [])
+                        scanJobData: ScanJobData(brokerId: broker.id ?? DebugHelper.stableId(for: broker),
+                                                 profileQueryId: queryWithId.id ?? DebugHelper.stableId(for: queryWithId),
+                                                 historyEvents: [])
                     )
                     
                     do {
@@ -549,7 +562,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                             let result = ScanResult(
                                 dataBroker: broker,
                                 profileQuery: queryWithId,
-                                extractedProfile: profile
+                                extractedProfile: ensureDebugExtractedProfile(profile)
                             )
 
                             allResults.append(result)
@@ -630,7 +643,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         return "PIR Debug Mode"
     }
     
-    private func updateWebViewAvailability() {
+    func updateWebViewAvailability() {
         isWebViewAvailable = isRunning || !optOutInProgress.isEmpty
     }
     
@@ -657,8 +670,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     dataBroker: result.dataBroker,
                     profileQuery: result.profileQuery,
                     scanJobData: ScanJobData(
-                        brokerId: result.dataBroker.id ?? 1,
-                        profileQueryId: result.profileQuery.id ?? 1,
+                        brokerId: result.dataBroker.id ?? DebugHelper.stableId(for: result.dataBroker),
+                        profileQueryId: result.profileQuery.id ?? DebugHelper.stableId(for: result.profileQuery),
                         historyEvents: []
                     )
                 )
@@ -683,8 +696,14 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     extractedProfile: result.extractedProfile,
                     showWebView: true
                 ) { true }
-                
-                showAlert(title: "Success", message: "Opt-out process completed for \(result.extractedProfile.name ?? "profile").")
+
+                if isAwaitingEmailConfirmation(for: result) {
+                    showAlert(title: "Awaiting Email Confirmation",
+                              message: "Check for an email confirmation link, then continue the opt-out.")
+                } else {
+                    showAlert(title: "Success",
+                              message: "Opt-out process completed for \(result.extractedProfile.name ?? "profile").")
+                }
                 
             } catch let UserScriptError.failedToLoadJS(jsFile, error) {
                 pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
@@ -763,7 +782,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         return csvContent
     }
     
-    private func showAlert(title: String, message: String) {
+    func showAlert(title: String, message: String) {
         alertTitle = title
         alertMessage = message
         showAlert = true

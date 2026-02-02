@@ -1581,6 +1581,7 @@
 		BD2F39EB2C19F955005B19E7 /* NetworkProtectionDNSSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD2F39EA2C19F955005B19E7 /* NetworkProtectionDNSSettingsView.swift */; };
 		BD408CED2DCDB17900265476 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = BD408CEC2DCDB17900265476 /* ZIPFoundation */; };
 		BD862E092B30F63E0073E2EE /* VPNMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD862E082B30F63E0073E2EE /* VPNMetadataCollector.swift */; };
+		BD999ED12F31053100B52566 /* RunDBPDebugModeViewController+EmailConfirmation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD999ED02F31053100B52566 /* RunDBPDebugModeViewController+EmailConfirmation.swift */; };
 		BDAA7F492E413DB7003A0833 /* DBPMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAA7F482E413DB7003A0833 /* DBPMetadataCollector.swift */; };
 		BDC234F72B27F51100D3C798 /* UniquePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDC234F62B27F51100D3C798 /* UniquePixel.swift */; };
 		BDD3B3552B8EF8DB005857A8 /* NetworkProtectionUNNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3766DD2AC5945500AAB575 /* NetworkProtectionUNNotificationPresenter.swift */; };
@@ -3967,6 +3968,7 @@
 		BD2F39EA2C19F955005B19E7 /* NetworkProtectionDNSSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionDNSSettingsView.swift; sourceTree = "<group>"; };
 		BD7008D32E1F1EED00CF9C3E /* DataBrokerProtection-iOS.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = "DataBrokerProtection-iOS.xctestplan"; path = "LocalPackages/DataBrokerProtection-iOS/Tests/DataBrokerProtection-iOS.xctestplan"; sourceTree = "<group>"; };
 		BD862E082B30F63E0073E2EE /* VPNMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNMetadataCollector.swift; sourceTree = "<group>"; };
+		BD999ED02F31053100B52566 /* RunDBPDebugModeViewController+EmailConfirmation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RunDBPDebugModeViewController+EmailConfirmation.swift"; sourceTree = "<group>"; };
 		BDAA7F482E413DB7003A0833 /* DBPMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBPMetadataCollector.swift; sourceTree = "<group>"; };
 		BDC234F62B27F51100D3C798 /* UniquePixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniquePixel.swift; sourceTree = "<group>"; };
 		BDE219E52C406D19005D5884 /* SubscriptionDataReporting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionDataReporting.swift; sourceTree = "<group>"; };
@@ -5854,6 +5856,7 @@
 		4B821FAA2E21CD2200685484 /* DBP */ = {
 			isa = PBXGroup;
 			children = (
+				BD999ED02F31053100B52566 /* RunDBPDebugModeViewController+EmailConfirmation.swift */,
 				BDFA663E2EB4186700F7801B /* HealthOverviewSectionPresenter.swift */,
 				4B821FAB2E21CD3600685484 /* RunDBPDebugModeViewController.swift */,
 				9DB4A2C62DCA609400DBE00C /* DataBrokerProtectionDebugViewController.swift */,
@@ -11768,6 +11771,7 @@
 				316931D727BD10BB0095F5ED /* SaveToDownloadsAlert.swift in Sources */,
 				31C70B5B2804C61000FB6AD1 /* SaveAutofillLoginManager.swift in Sources */,
 				C1D7F3F42D5F6D7B0029B213 /* BookmarksEmptyView.swift in Sources */,
+				BD999ED12F31053100B52566 /* RunDBPDebugModeViewController+EmailConfirmation.swift in Sources */,
 				982123502B6D233E00F08C57 /* UserSession.swift in Sources */,
 				85449EFD23FDA71F00512AAF /* KeyboardSettings.swift in Sources */,
 				98A860EF2C4682E00077FE4D /* BookmarksDebugViewController.swift in Sources */,

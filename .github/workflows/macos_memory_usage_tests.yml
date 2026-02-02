@@ -38,7 +38,7 @@ jobs:
     with:
       release-type: review
       create-dmg: false
-      branch: ${{ github.sha }}
+      branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
     secrets: inherit
 

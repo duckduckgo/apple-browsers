@@ -46,6 +46,7 @@ public extension OnboardingTheme {
                 shadowPosition: CGPoint(x: 0, y: 7)
             ),
             dismissButtonMetrics: DismissButtonMetrics(
+                buttonSize: CGSize(width: 44, height: 44),
                 offsetRelativeToBubble: CGPoint(x: 4, y: 4),
                 contentPadding: 8
             ),

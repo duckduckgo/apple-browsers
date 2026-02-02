@@ -1,5 +1,5 @@
 //
-//  OnboardingTheme+BubbleMetrics.swift
+//  OnboardingTheme+Bubble.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -32,8 +32,6 @@ public extension OnboardingTheme {
         public let shadowRadius: CGFloat
         /// Shadow offset position.
         public let shadowPosition: CGPoint
-        /// Trailing offset used to align the step progress from the trailing edge of the bubble.
-        public let stepProgressTrailingPadding: CGFloat
 
         /// Creates bubble metrics for onboarding layouts.
         public init(
@@ -41,15 +39,13 @@ public extension OnboardingTheme {
             cornerRadius: CGFloat,
             borderWidth: CGFloat,
             shadowRadius: CGFloat,
-            shadowPosition: CGPoint,
-            stepProgressTrailingPadding: CGFloat
+            shadowPosition: CGPoint
         ) {
             self.contentInsets = contentInsets
             self.cornerRadius = cornerRadius
             self.borderWidth = borderWidth
             self.shadowRadius = shadowRadius
             self.shadowPosition = shadowPosition
-            self.stepProgressTrailingPadding = stepProgressTrailingPadding
         }
     }
 

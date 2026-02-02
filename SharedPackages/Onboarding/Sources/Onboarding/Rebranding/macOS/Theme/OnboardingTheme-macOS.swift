@@ -1,5 +1,5 @@
 //
-//  OnboardingTheme-iOS.swift
+//  OnboardingTheme-macOS.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,29 +16,26 @@
 //  limitations under the License.
 //
 
-#if os(iOS)
+#if os(macOS)
 import SwiftUI
 import DesignResourcesKit
 
-// MARK: - Factory Helpers
-
 public extension OnboardingTheme {
 
-    /// Rebranding 2026 default onboarding theme.
-    static let iOSRebranding2026 = {
+    static let macOSRebranding2026 = {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
 
         return OnboardingTheme(
             typography: .system,
             colorPalette: ColorPalette(
-                bubbleBorder: Color(singleUseColor: .rebranding(.accentAltPrimary)),
-                bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
+                bubbleBorder: Color(designSystemColor: .accentAltPrimary),
+                bubbleBackground: Color(designSystemColor:.surfaceTertiary),
                 bubbleShadow: Color.shade(0.03),
-                textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
-                textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
-                primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
-                primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText))
+                textPrimary: Color(designSystemColor:.textPrimary),
+                textSecondary: Color(designSystemColor:.textSecondary),
+                primaryButtonBackgroundColor: Color(designSystemColor:.buttonsPrimaryDefault),
+                primaryButtonTextColor: Color(designSystemColor:.buttonsPrimaryText)
             ),
             bubbleMetrics: BubbleMetrics(
                 contentInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
@@ -59,4 +56,5 @@ public extension OnboardingTheme {
     }()
 
 }
+
 #endif

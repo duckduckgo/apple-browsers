@@ -33,7 +33,19 @@ extension EnvironmentValues {
 }
 
 public extension View {
-
+    #if os(iOS)
+    /// Applies an onboarding theme and an explicit step progress theme.
+    ///
+    /// - Parameters:
+    ///   - theme: The theme injected in the environment for onboarding views.
+    ///   - stepProgressTheme: The step progress theme injected for iOS step progress components.
+    /// - Returns: A view configured with the provided themes.
+    func applyOnboardingTheme(_ theme: OnboardingTheme, stepProgressTheme: OnboardingStepProgressTheme) -> some View {
+        self
+            .environment(\.onboardingTheme, theme)
+            .environment(\.onboardingStepProgressTheme, stepProgressTheme)
+    }
+    #elseif os(macOS)
     /// Applies an onboarding theme to the current view hierarchy.
     ///
     /// - Parameter theme: The theme injected in the environment for onboarding views.
@@ -41,5 +53,5 @@ public extension View {
     func applyOnboardingTheme(_ theme: OnboardingTheme) -> some View {
         environment(\.onboardingTheme, theme)
     }
-
+    #endif
 }

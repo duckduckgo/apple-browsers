@@ -1,5 +1,5 @@
 //
-//  OnboardingPrimaryButtonStyle.swift
+//  OnboardingPrimaryButtonStyle-macOS.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,13 +16,9 @@
 //  limitations under the License.
 //
 
-#if os(iOS)
+#if os(macOS)
 import SwiftUI
 
-// MARK: - Button Styles
-
-// NOTE: Keep this style colocated with onboarding while rebranding is validated in this flow instead of DuckUI.
-// This avoids exposing a partially adopted visual style to the rest of the app.
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
     @Environment(\.onboardingTheme) private var onboardingTheme
 
@@ -31,7 +27,7 @@ struct OnboardingPrimaryButtonStyle: ButtonStyle {
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .lineLimit(nil)
-            .font(onboardingTheme.typography.small)
+            .font(onboardingTheme.typography.body)
             .foregroundColor(onboardingTheme.colorPalette.primaryButtonTextColor)
             .padding(.vertical)
             .padding(.horizontal, nil)

@@ -1,5 +1,5 @@
 //
-//  OnboardingTheme+ButtonStyle.swift
+//  OnboardingTheme+Buttons.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //

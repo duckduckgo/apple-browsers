@@ -1,5 +1,5 @@
 //
-//  OnboardingTheme+Typography.swift
+//  OnboardingTheme-iOS+Typography.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -57,14 +57,6 @@ public extension OnboardingTheme {
             self.small = small
         }
 
-        private static func makeFont(size: CGFloat, family: Font.Family, weight: Font.Weight) -> Font {
-            switch family {
-            case .system:
-                return .system(size: size, weight: weight)
-            case let .custom(customFamily):
-                return Font.customFont(type: customFamily, weight: weight, size: size)
-            }
-        }
     }
 
 }

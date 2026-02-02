@@ -1,5 +1,5 @@
 //
-//  OnboardingTheme.swift
+//  OnboardingTheme+TypographyHelpers.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,19 +16,17 @@
 //  limitations under the License.
 //
 
-#if os(macOS)
 import SwiftUI
 
-public struct OnboardingTheme: Equatable {
+extension OnboardingTheme.Typography {
 
-    public init() {}
+    static func makeFont(size: CGFloat, family: Font.Family, weight: Font.Weight) -> Font {
+        switch family {
+        case .system:
+            return .system(size: size, weight: weight)
+        case let .custom(customFamily):
+            return Font.customFont(type: customFamily, weight: weight, size: size)
+        }
+    }
 
 }
-
-public extension OnboardingTheme {
-
-    static let rebranding2026 = OnboardingTheme()
-
-}
-
-#endif

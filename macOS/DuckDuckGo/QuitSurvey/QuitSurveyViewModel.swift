@@ -51,7 +51,7 @@ enum QuitSurveyState: Equatable {
 final class QuitSurveyViewModel: ObservableObject {
 
     // MARK: - Published Properties
- 
+
     @Published private(set) var state: QuitSurveyState = .initialQuestion
     @Published var selectedOptions: Set<String> = []
     @Published var feedbackText: String = ""

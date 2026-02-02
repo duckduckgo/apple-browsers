@@ -263,8 +263,8 @@ final public class HistoryCoordinator: HistoryCoordinating {
         }
 
         let visitIDs = try await historyStoring.pageVisitIDs(in: tabID)
-        let visistAndIDsArray = allVisits.map { ($0.identifier, $0) }
-        let visitByIDsDictionary = Dictionary(visistAndIDsArray) { existing, _ in
+        let visitsAndIDsArray = allVisits.map { ($0.identifier, $0) }
+        let visitByIDsDictionary = Dictionary(visitsAndIDsArray) { existing, _ in
             existing // Keep the first instance found.
         }
         let visits = visitIDs.compactMap { visitByIDsDictionary[$0] }

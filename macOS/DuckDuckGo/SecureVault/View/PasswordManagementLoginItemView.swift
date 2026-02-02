@@ -138,8 +138,8 @@ private struct Buttons: View {
                 Button(UserText.pmSave) {
                     model.save()
                 }
-                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty))
                 .disabled(!model.isDirty)
+                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty))
                 .keyboardShortcut(.defaultAction)
 
             } else {

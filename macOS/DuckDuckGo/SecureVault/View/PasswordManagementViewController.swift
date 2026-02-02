@@ -658,6 +658,25 @@ final class PasswordManagementViewController: NSViewController {
                   let ourWindow = view.window else {
                 return event
             }
+
+            // Check that our window or parent is focused
+            guard let keyWindow = NSApp.keyWindow,
+                  keyWindow === ourWindow || keyWindow === ourWindow.parent else {
+                return event
+            }
+
+            // Check the events are targetted at us or our parent
+            guard event.window === ourWindow || event.window === ourWindow.parent else {
+                return event
+            }
+
+            // Check that no sheets are presented
+            let parentSheets = ourWindow.parent?.sheets ?? []
+            guard ourWindow.sheets.isEmpty,
+                  parentSheets.isEmpty else {
+                return event
+            }
+
             itemModel?.cancel()
             removeEscapeKeyMonitor()
             return nil

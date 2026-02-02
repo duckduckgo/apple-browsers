@@ -119,36 +119,9 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testShowPlaceholder() {
         // When
         sessionState.showPlaceholder()
-
+        
         // Then
         XCTAssertEqual(sessionState.chipState, .placeholder)
-    }
-
-    func testHideChip() {
-        // Given
-        sessionState.attachChip()
-        XCTAssertEqual(sessionState.chipState, .attached)
-
-        // When
-        sessionState.hideChip()
-
-        // Then
-        XCTAssertEqual(sessionState.chipState, .none)
-        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
-    }
-
-    func testHideChipClearsUserDowngradeFlag() {
-        // Given
-        sessionState.attachChip()
-        sessionState.handleChipRemoval(hasSnapshot: true)
-        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
-
-        // When
-        sessionState.hideChip()
-
-        // Then
-        XCTAssertEqual(sessionState.chipState, .none)
-        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
     }
 
     // MARK: - Handle Chip Removal Tests
@@ -249,63 +222,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
-    }
-
-    // MARK: - Business Logic Tests: shouldCollectContext
-
-    func testShouldCollectContextWhenFrontendHasInitialContextReturnsFalse() {
-        // Given
-        sessionState.startChat(withContext: true)
-
-        // When
-        let shouldCollect = sessionState.shouldCollectContext(autoAttachEnabled: true)
-
-        // Then
-        XCTAssertFalse(shouldCollect)
-    }
-
-    func testShouldCollectContextWhenNoChatAndAutoAttachEnabledReturnsTrue() {
-        // Given
-        XCTAssertEqual(sessionState.frontendState, .noChat)
-
-        // When
-        let shouldCollect = sessionState.shouldCollectContext(autoAttachEnabled: true)
-
-        // Then
-        XCTAssertTrue(shouldCollect)
-    }
-
-    func testShouldCollectContextWhenNoChatAndAutoAttachDisabledReturnsFalse() {
-        // Given
-        XCTAssertEqual(sessionState.frontendState, .noChat)
-
-        // When
-        let shouldCollect = sessionState.shouldCollectContext(autoAttachEnabled: false)
-
-        // Then
-        XCTAssertFalse(shouldCollect)
-    }
-
-    func testShouldCollectContextWhenChatWithoutInitialContextAndAutoAttachEnabled() {
-        // Given
-        sessionState.startChat(withContext: false)
-
-        // When
-        let shouldCollect = sessionState.shouldCollectContext(autoAttachEnabled: true)
-
-        // Then
-        XCTAssertTrue(shouldCollect)
-    }
-
-    func testShouldCollectContextWhenChatWithoutInitialContextAndAutoAttachDisabled() {
-        // Given
-        sessionState.startChat(withContext: false)
-
-        // When
-        let shouldCollect = sessionState.shouldCollectContext(autoAttachEnabled: false)
-
-        // Then
-        XCTAssertFalse(shouldCollect)
     }
 
     // MARK: - Business Logic Tests: shouldUpdateUI
@@ -452,7 +368,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.$chipState
             .sink { state in
                 receivedStates.append(state)
-                if receivedStates.count == 4 {
+                if receivedStates.count == 3 {
                     expectation.fulfill()
                 }
             }
@@ -461,16 +377,14 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         // When
         sessionState.attachChip()
         sessionState.showPlaceholder()
-        sessionState.hideChip()
 
         waitForExpectations(timeout: 1.0)
 
         // Then
-        XCTAssertEqual(receivedStates.count, 4)
+        XCTAssertEqual(receivedStates.count, 3)
         XCTAssertEqual(receivedStates[0], .none)
         XCTAssertEqual(receivedStates[1], .attached)
         XCTAssertEqual(receivedStates[2], .placeholder)
-        XCTAssertEqual(receivedStates[3], .none)
     }
 
     // MARK: - Complex Scenario Tests
@@ -530,15 +444,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(sessionState.isShowingNativeInput)
     }
 
-    func testContextCollectionGateWhenChatHasInitialContext() {
-        // Given
-        sessionState.startChat(withContext: true)
-
-        // When / Then
-        XCTAssertFalse(sessionState.shouldCollectContext(autoAttachEnabled: true))
-        XCTAssertFalse(sessionState.shouldCollectContext(autoAttachEnabled: false))
-    }
-
     func testContextPushingOnlyAllowedForChatWithoutInitialContext() {
         // Given / When / Then
         XCTAssertFalse(sessionState.canPushToFrontend())
@@ -565,18 +470,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sessionState.chipState, .attached)
-        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
-    }
-
-    func testMultipleHideChipCallsDoNotBreakState() {
-        // When
-        sessionState.hideChip()
-        XCTAssertEqual(sessionState.chipState, .none)
-
-        sessionState.hideChip()
-
-        // Then
-        XCTAssertEqual(sessionState.chipState, .none)
         XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
     }
 

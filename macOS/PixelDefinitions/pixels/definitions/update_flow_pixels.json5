@@ -74,6 +74,7 @@
             "wideEventPlatform",
             "wideEventType",
             "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
             "wideEventFeatureStatus",
             "wideEventFeatureStatusReason",
             "wideEventErrorDomain",

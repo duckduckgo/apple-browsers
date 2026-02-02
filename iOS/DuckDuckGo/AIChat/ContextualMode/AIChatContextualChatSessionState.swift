@@ -95,12 +95,6 @@ final class AIChatContextualChatSessionState {
         Logger.aiChat.debug("[PageContext] Chip showing placeholder")
     }
 
-    func hideChip() {
-        chipState = .none
-        userDowngradedToPlaceholder = false
-        Logger.aiChat.debug("[PageContext] Chip hidden")
-    }
-
     /// Handles chip removal by user (X button tap)
     /// Returns true if should downgrade to placeholder, false if should hide
     func handleChipRemoval(hasSnapshot: Bool) -> Bool {
@@ -132,17 +126,6 @@ final class AIChatContextualChatSessionState {
     }
 
     // MARK: - Business Logic
-
-    /// Determines if context should be collected on navigation/DOM change
-    func shouldCollectContext(autoAttachEnabled: Bool) -> Bool {
-        guard frontendState != .chatWithInitialContext else {
-            Logger.aiChat.debug("[PageContext] shouldCollect=false (frontend has initial context)")
-            return false
-        }
-
-        Logger.aiChat.debug("[PageContext] shouldCollect=\(autoAttachEnabled) (autoAttach setting)")
-        return autoAttachEnabled
-    }
 
     /// Determines if UI should be updated when new context arrives
     func shouldUpdateUI(autoAttachEnabled: Bool) -> Bool {

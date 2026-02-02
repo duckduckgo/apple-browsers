@@ -18,6 +18,7 @@
 //
 
 import Core
+import Common
 import DDGSync
 import Bookmarks
 import AIChat
@@ -354,8 +355,8 @@ class FireExecutor: FireExecuting {
     }
     
     private func forgetTextZoom(forDomains domains: [String]) {
-        let domainsToReset = domains.filter { !fireproofing.isAllowed(fireproofDomain: $0) }
-        textZoomCoordinator.resetTextZoomLevels(forDomains: domainsToReset)
+        let allowedDomains = fireproofing.allowedDomains
+        textZoomCoordinator.resetTextZoomLevels(forVisitedDomains: domains, excludingDomains: allowedDomains)
     }
     
     // MARK: - Clear AI History

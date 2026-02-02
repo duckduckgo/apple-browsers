@@ -129,7 +129,7 @@ final class TextZoomTests: XCTestCase {
         XCTAssertEqual(coordinator.textZoomLevel(forHost: host2), AppSettingsMock().defaultTextZoomLevel)
     }
 
-    func testResetTextZoomLevelsForDomains_ClearsSpecifiedDomains() {
+    func testResetTextZoomLevelsForVisitedDomains_ClearsSpecifiedDomains() {
         let host1 = "example.com"
         let host2 = "another.org"
 
@@ -140,13 +140,13 @@ final class TextZoomTests: XCTestCase {
         coordinator.set(textZoomLevel: .percent120, forHost: host1)
         coordinator.set(textZoomLevel: .percent140, forHost: host2)
 
-        coordinator.resetTextZoomLevels(forDomains: [host1])
+        coordinator.resetTextZoomLevels(forVisitedDomains: [host1], excludingDomains: [])
 
         XCTAssertEqual(coordinator.textZoomLevel(forHost: host1), AppSettingsMock().defaultTextZoomLevel)
         XCTAssertEqual(coordinator.textZoomLevel(forHost: host2), .percent140)
     }
 
-    func testResetTextZoomLevelsForDomains_SubdomainClearsETLDplus1() {
+    func testResetTextZoomLevelsForVisitedDomains_SubdomainClearsETLDplus1() {
         let storage = TextZoomStorage()
         storage.textZoomLevels = [:]
 
@@ -154,9 +154,21 @@ final class TextZoomTests: XCTestCase {
         coordinator.set(textZoomLevel: .percent120, forHost: "example.com")
 
         // Passing a subdomain should clear the eTLD+1 stored value
-        coordinator.resetTextZoomLevels(forDomains: ["www.example.com"])
+        coordinator.resetTextZoomLevels(forVisitedDomains: ["www.example.com"], excludingDomains: [])
 
         XCTAssertEqual(coordinator.textZoomLevel(forHost: "example.com"), AppSettingsMock().defaultTextZoomLevel)
+    }
+
+    func testResetTextZoomLevelsForVisitedDomains_WhenSubdomainVisitedAndRootExcluded_ThenNotCleared() {
+        // Given - amazon.com is excluded (fireproofed), stored text zoom for amazon.com
+        let storage = TextZoomStorage()
+        storage.textZoomLevels = ["amazon.com": TextZoomLevel.percent120.rawValue]
+
+        // When - Visit mail.amazon.com (subdomain), exclude amazon.com
+        storage.resetTextZoomLevels(forVisitedDomains: ["mail.amazon.com"], excludingDomains: ["amazon.com"])
+
+        // Then - amazon.com text zoom should be preserved (excluded)
+        XCTAssertEqual(storage.textZoomLevelForDomain("amazon.com"), .percent120)
     }
 
     private func makeTextZoomCoordinator(
@@ -189,7 +201,7 @@ private class MockTextZoomStorage: TextZoomStoring {
     func resetTextZoomLevels(excludingDomains: [String]) {
     }
 
-    func resetTextZoomLevels(forDomains: [String]) {
+    func resetTextZoomLevels(forVisitedDomains visitedDomains: [String], excludingDomains: [String]) {
     }
 
 }

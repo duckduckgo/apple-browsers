@@ -161,10 +161,6 @@ struct DocumentPickerView: UIViewControllerRepresentable {
 
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
-
-//            guard url.startAccessingSecurityScopedResource() else { return }
-//            defer { url.stopAccessingSecurityScopedResource() }
-
             onSelect(url)
         }
     }

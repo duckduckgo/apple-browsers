@@ -49,7 +49,6 @@ import DataBrokerProtection_iOS
 import UserScript
 import PrivacyConfig
 import WebExtensions
-import WebExtensions
 
 class MainViewController: UIViewController {
 

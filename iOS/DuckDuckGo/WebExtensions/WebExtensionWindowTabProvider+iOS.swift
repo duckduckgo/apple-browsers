@@ -61,7 +61,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         }
 
         mainViewController.tabManager.addHomeTab()
-        return mainViewController.tabManager.current()
+        return mainViewController.tabManager.current(createIfNeeded: true)
     }
 
     func presentPopup(

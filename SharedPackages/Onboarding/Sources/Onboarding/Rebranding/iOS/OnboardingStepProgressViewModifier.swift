@@ -1,5 +1,5 @@
 //
-//  OnboardingViewModifiers.swift
+//  OnboardingStepProgressViewModifier.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,9 +17,8 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import SwiftUI
-
-// MARK: - Step Progress
 
 private struct OnboardingStepProgressViewModifier: ViewModifier {
     @Environment(\.onboardingTheme) private var onboardingTheme
@@ -50,34 +49,4 @@ public extension View {
     }
 
 }
-
-// MARK: - Dismiss Button
-
-private struct OnboardingDismissButtonViewModifier: ViewModifier {
-    // Replace values with @Environment(\.onboardingTheme) private var onboardingTheme
-    private let onboardingDismissButtonInternalPadding = 8.0
-    private let onboardingDismissButtonPadding = 4.0
-
-    let onDismiss: () -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .overlay(alignment: .topTrailing) {
-                OnboardingDismissButton(action: onDismiss)
-                    .alignmentGuide(VerticalAlignment.top) { _ in onboardingDismissButtonInternalPadding + onboardingDismissButtonPadding }
-                    .alignmentGuide(HorizontalAlignment.trailing) { $0.width - onboardingDismissButtonInternalPadding - onboardingDismissButtonPadding }
-            }
-    }
-}
-
-public extension View {
-
-    /// Adds a dismiss button to the top-trailing corner of the view to dismiss the onboarding dialog.
-    ///
-    /// - Parameter onDismiss: A closure that's called when the dismiss button is tapped.
-    /// - Returns: A view with a dismiss button overlay.
-    func onboardingDismissable(_ onDismiss: @escaping () -> Void) -> some View {
-        self.modifier(OnboardingDismissButtonViewModifier(onDismiss: onDismiss))
-    }
-
-}
+#endif

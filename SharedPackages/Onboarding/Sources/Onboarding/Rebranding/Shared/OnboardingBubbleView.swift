@@ -67,6 +67,7 @@ public struct OnboardingBubbleView<Content: View>: View {
 
 public extension OnboardingBubbleView {
 
+    #if os(iOS)
     static func withStepProgressIndicator(
         tailPosition: TailPosition,
         currentStep: Int,
@@ -76,6 +77,7 @@ public extension OnboardingBubbleView {
         OnboardingBubbleView(tailPosition: tailPosition, content: content)
             .onboardingStepProgress(currentStep: currentStep, totalSteps: totalSteps)
     }
+    #endif
 
     static func withDismissButton(
         tailPosition: TailPosition?,
@@ -225,7 +227,7 @@ private struct OnboardingBubblePreviewContent: View {
                     .font(onboardingTheme.typography.body)
                     .multilineTextAlignment(onboardingTheme.linearBodyTextAlignment)
             }
-            .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
+            .foregroundColor(onboardingTheme.colorPalette.textPrimary)
 
             Button(action: { }) {
                 Text(verbatim: "Let's do it!")
@@ -261,6 +263,7 @@ private struct OnboardingBubblePreviewContent: View {
     .preferredColorScheme(.dark)
 }
 
+#if os(iOS)
 #Preview("Onboarding Speech Bubble + Progress Indicator - Light") {
     ZStack {
         Color.white.ignoresSafeArea()
@@ -290,6 +293,7 @@ private struct OnboardingBubblePreviewContent: View {
     }
     .preferredColorScheme(.dark)
 }
+#endif
 
 #Preview("Onboarding Speech Bubble + Dismiss Button - Light") {
     ZStack {

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import SwiftUI
 import UIComponents
 
@@ -91,3 +92,4 @@ public struct OnboardingStepProgressView: View {
     return PreviewWrapper()
         .applyOnboardingTheme(.rebranding2026)
 }
+#endif

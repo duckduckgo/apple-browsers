@@ -149,9 +149,11 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
             return
         }
 
+        let chatsToDelete = Set(pendingChats)
         do {
-            try await sync.deleteAIChats(chatIds: pendingChats)
-            await state.clearChatsToBeDeleted()
+            try await sync.deleteAIChats(chatIds: Array(chatsToDelete))
+            // Only remove the specific chat IDs that were successfully deleted
+            await state.removeChatsFromPending(chatIDs: chatsToDelete)
         } catch {
             Logger.aiChat.debug("Failed to delete pending ai chats: \(error.localizedDescription)")
         }
@@ -203,7 +205,13 @@ private actor AIChatSyncState {
         try? store.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
     }
 
-    func clearChatsToBeDeleted() {
-        try? store.removeObject(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+    func removeChatsFromPending(chatIDs: Set<String>) {
+        var currentIDs = Set((try? store.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]) ?? [])
+        currentIDs.subtract(chatIDs)
+        if currentIDs.isEmpty {
+            try? store.removeObject(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        } else {
+            try? store.set(Array(currentIDs), forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        }
     }
 }

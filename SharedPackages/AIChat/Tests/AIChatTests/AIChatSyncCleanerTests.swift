@@ -435,6 +435,30 @@ final class AIChatSyncCleanerTests: XCTestCase {
         XCTAssertEqual(mockSync.deleteAIChatsByChatIdsCallCount, 0, "Delete by chat IDs should not be called when no chat IDs are pending")
     }
 
+    func testGivenChatIDsAddedDuringDelete_WhenDeleteSucceeds_ThenNewChatIDsArePreserved() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        try? mockKeyValueStore.set(["chat-1", "chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        sut = makeSUT()
+
+        // Simulate new chat ID being added during the network call
+        mockSync.onDeleteAIChatsByChatIds = { [weak mockKeyValueStore] in
+            var current = (try? mockKeyValueStore?.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]) ?? []
+            current.append("chat-3")
+            try? mockKeyValueStore?.set(current, forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        }
+
+        // When
+        await sut.deleteIfNeeded()
+
+        // Then
+        XCTAssertEqual(mockSync.deleteAIChatsByChatIdsCallCount, 1)
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
+        XCTAssertEqual(storedValue, ["chat-3"], "New chat ID added during delete should be preserved")
+    }
+
     func testGivenBothTimestampAndChatIDs_WhenDeleteIfNeeded_ThenBothAreProcessed() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true

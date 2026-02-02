@@ -116,12 +116,22 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertFalse(sut.canBurnSingleTab)
     }
     
-    func testWhenTabViewModelIsNotNilThenCanBurnSingleTabReturnsTrue() {
+    func testWhenTabSupportsTabHistoryThenCanBurnSingleTabReturnsTrue() {
         // Given
         let sut = makeSUT(tabViewModel: createTabViewModel())
         
         // Then
         XCTAssertTrue(sut.canBurnSingleTab)
+    }
+    
+    func testWhenTabDoesNotSupportTabHistoryThenCanBurnSingleTabReturnsFalse() {
+        // Given
+        let legacyTab = Tab(supportsTabHistory: false)
+        let tabViewModel = TabViewModel(tab: legacyTab, historyManager: mockHistoryManager)
+        let sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then
+        XCTAssertFalse(sut.canBurnSingleTab)
     }
     
     // MARK: - subtitle Tests - Ongoing Downloads

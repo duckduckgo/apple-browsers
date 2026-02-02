@@ -66,8 +66,10 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// Indicates whether the single tab burn option should be shown.
     /// Returns `true` when a tab view model is available.
     var canBurnSingleTab: Bool {
-        tabViewModel != nil
-        // TODO: - Check if tab is legacy
+        guard let tab = tabViewModel?.tab, tab.supportsTabHistory else {
+            return false
+        }
+        return true
     }
     
     // MARK: - Public Functions

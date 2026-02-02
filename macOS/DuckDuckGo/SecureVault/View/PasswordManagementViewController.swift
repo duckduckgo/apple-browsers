@@ -364,6 +364,10 @@ final class PasswordManagementViewController: NSViewController {
         removeEscapeKeyMonitor()
     }
 
+    deinit {
+        removeEscapeKeyMonitor()
+    }
+
     private func refetchAndPromptForAuthentication(text: String, selectItemMatchingDomain: String?, clearWhenNoMatches: Bool) {
         refetchWithText("", selectItemMatchingDomain: domain, clearWhenNoMatches: true) { [weak self] items in
             self?.promptForAuthenticationIfNecessary(items: items)

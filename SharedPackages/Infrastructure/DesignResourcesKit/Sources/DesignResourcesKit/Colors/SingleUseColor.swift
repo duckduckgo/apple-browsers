@@ -32,4 +32,28 @@ public enum SingleUseColor {
 
     /// Duck.ai contextual background color
     case duckAIContextualSheetBackground
+
+    /// Color used for 2026 Rebranding. Currently used only in Onboarding, hence they're isolated to avoid bleeding in other parts of the App.
+    /// DefaultColorPalette should be updated with new colors when the time comes.
+    case rebranding(Rebranding)
+}
+
+// MARK: - Onboarding Rebranding 2026
+
+public extension SingleUseColor {
+
+    enum Rebranding {
+        case textPrimary
+        case textSecondary
+
+        case accentPrimary
+
+        case accentAltPrimary
+
+        case surfaceTertiary
+
+        case buttonsPrimaryDefault
+        case buttonsPrimaryText
+    }
+
 }

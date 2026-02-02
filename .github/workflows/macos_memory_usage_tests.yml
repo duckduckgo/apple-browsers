@@ -6,8 +6,26 @@ defaults:
 
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      branch:
+        description: "Branch name"
+        required: false
+        type: string
   schedule:
     - cron: '0 5 * * *' # run at 5 AM UTC
+  push:
+    branches: [ main, "release/macos/**", "hotfix/macos/**" ]
+    paths:
+      - 'SharedPackages/BrowserServicesKit/**'
+      - 'macOS/**'
+  pull_request:
+    # opened, synchronize, reopened are the default triggering events for a pull request
+    # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/**'
+      - '.xcode-version'
 
 concurrency:
   group: ${{ github.workflow }}
@@ -20,7 +38,7 @@ jobs:
     with:
       release-type: review
       create-dmg: false
-      branch: ${{ github.sha }}
+      branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
     secrets: inherit
 
@@ -49,6 +67,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        ref: ${{ inputs.branch || github.sha }}
 
     - name: Start measuring duration
       id: start-duration
@@ -330,6 +349,9 @@ jobs:
     steps:
     - name: Check out the code
       uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch || github.sha }}
+
     - name: Create Asana task when workflow failed
       uses: duckduckgo/native-github-asana-sync@v1.1
       with:

@@ -24,13 +24,10 @@ PATCH="🟢"
 UPTODATE="✅"
 
 show_help() {
-    echo "Usage: $(basename "$0") [OPTIONS] [PATH]"
+    echo "Usage: $(basename "$0") [OPTIONS]"
     echo ""
     echo "Check for Swift Package updates in Xcode projects."
-    echo "Only shows direct (first-level) dependencies, not transitive ones."
-    echo ""
-    echo "Arguments:"
-    echo "  PATH                    Path to search for projects (default: current directory)"
+    echo "By default only shows direct (first-level) dependencies, not transitive ones."
     echo ""
     echo "Options:"
     echo "  -h, --help              Show this help message"
@@ -46,7 +43,8 @@ JSON_OUTPUT=false
 NO_COLOR=false
 SHOW_ALL=false
 LIST_OUTPUT=false
-SEARCH_PATH="."
+SEARCH_PATH=""
+WORKSPACE_PATH=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -57,7 +55,7 @@ while [[ $# -gt 0 ]]; do
         -l|--list) LIST_OUTPUT=true; shift ;;
         --no-color) NO_COLOR=true; shift ;;
         -*) echo "Unknown option: $1"; show_help; exit 1 ;;
-        *) SEARCH_PATH="$1"; shift ;;
+        *) echo "Unknown argument: $1"; show_help; exit 1 ;;
     esac
 done
 
@@ -223,15 +221,25 @@ extract_from_xcode_project() {
 # Build direct dependencies map (repo_id -> project names)
 build_direct_deps_map() {
     local path="$1"
+    local roots=()
 
-    # Clear file
-    > "$DIRECT_DEPS_FILE"
+    rm -rf "$DIRECT_DEPS_FILE"
 
-    # Extract from Package.swift files
-    extract_from_package_swift "$path" >> "$DIRECT_DEPS_FILE"
+    while IFS= read -r root; do
+        [[ -n "$root" ]] && roots+=("$root")
+    done < <(get_search_roots "$path")
 
-    # Extract from Xcode projects
-    extract_from_xcode_project "$path" >> "$DIRECT_DEPS_FILE"
+    if [[ ${#roots[@]} -eq 0 ]]; then
+        return
+    fi
+
+    for root in "${roots[@]}"; do
+        # Extract from Package.swift files
+        extract_from_package_swift "$root" >> "$DIRECT_DEPS_FILE"
+
+        # Extract from Xcode projects
+        extract_from_xcode_project "$root" >> "$DIRECT_DEPS_FILE"
+    done
 
     # Sort and dedupe
     if [[ -s "$DIRECT_DEPS_FILE" ]]; then
@@ -253,11 +261,98 @@ is_direct_dependency() {
     grep -q "^${repo_id}|" "$DIRECT_DEPS_FILE" 2>/dev/null
 }
 
+# Get search roots limited to expected directories
+get_search_roots() {
+    local path="$1"
+    local search_roots=(
+        "${path%/}/SharedPackages"
+        "${path%/}/iOS"
+        "${path%/}/macOS"
+        "${path%/}/DuckDuckGo.xcworkspace"
+    )
+
+    local root
+    for root in "${search_roots[@]}"; do
+        [[ -e "$root" ]] && echo "$root"
+    done
+
+    if [[ -z $(for root in "${search_roots[@]}"; do [[ -e "$root" ]] && echo "ok" && break; done) ]]; then
+        echo -e "${YELLOW}Warning: None of the expected search roots exist under ${path}.${NC}" >&2
+        echo -e "${YELLOW}Checked: ${search_roots[*]}${NC}" >&2
+        return 1
+    fi
+}
+
 # Find all Package.resolved files
 find_resolved_files() {
     local path="$1"
-    find "$path" \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) \
+    local roots=()
+
+    while IFS= read -r root; do
+        [[ -n "$root" ]] && roots+=("$root")
+    done < <(get_search_roots "$path")
+
+    if [[ ${#roots[@]} -eq 0 ]]; then
+        return
+    fi
+
+    find "${roots[@]}" \( -name "Package.resolved" -o -path "*/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" \) \
         -not -path "*/.build/*" 2>/dev/null
+}
+
+# Resolve packages for workspace
+resolve_workspace_packages() {
+    local workspace="$1"
+
+    if ! command -v xcodebuild >/dev/null 2>&1; then
+        echo -e "${YELLOW}Warning: xcodebuild not found; skipping package resolution.${NC}" >&2
+        return
+    fi
+
+    if [[ ! -d "$workspace" ]]; then
+        echo -e "${YELLOW}Warning: ${workspace} not found; skipping package resolution.${NC}" >&2
+        return
+    fi
+
+    if [[ "$JSON_OUTPUT" != true ]] && [[ "$QUIET" != true ]]; then
+        echo -e "${DIM}Resolving Swift packages for ${workspace}...${NC}" >&2
+    fi
+    if ! xcodebuild -resolvePackageDependencies -workspace "$workspace" >/dev/null 2>&1; then
+        local scheme
+        scheme=$(xcodebuild -list -workspace "$workspace" 2>/dev/null | \
+            awk '/Schemes:/ {found=1; next} found && NF {gsub(/^[ \t]+/, ""); print; exit}')
+        if [[ -n "$scheme" ]]; then
+            if [[ "$JSON_OUTPUT" != true ]] && [[ "$QUIET" != true ]]; then
+                echo -e "${DIM}Retrying package resolution with scheme ${scheme}...${NC}" >&2
+            fi
+            if ! xcodebuild -resolvePackageDependencies -workspace "$workspace" -scheme "$scheme" >/dev/null 2>&1; then
+                echo -e "${YELLOW}Warning: Package resolution failed for ${workspace} (scheme ${scheme}). Continuing.${NC}" >&2
+            fi
+        else
+            echo -e "${YELLOW}Warning: Package resolution failed for ${workspace}. Continuing.${NC}" >&2
+        fi
+    fi
+}
+
+# Detect DuckDuckGo.xcworkspace in . or ..
+detect_workspace() {
+    local cwd
+    cwd="$(dirname "${BASH_SOURCE[0]}")"
+
+    if [[ -d "${cwd}/DuckDuckGo.xcworkspace" ]]; then
+        WORKSPACE_PATH="${cwd}/DuckDuckGo.xcworkspace"
+        SEARCH_PATH="${cwd}"
+        return
+    fi
+
+    if [[ -d "${cwd%/}/../DuckDuckGo.xcworkspace" ]]; then
+        WORKSPACE_PATH="${cwd%/}/../DuckDuckGo.xcworkspace"
+        SEARCH_PATH="${cwd%/}/.."
+        return
+    fi
+
+    echo -e "${RED}DuckDuckGo.xcworkspace not found in ${cwd} or ${cwd%/}/..${NC}" >&2
+    echo -e "${YELLOW}Run this script from the repo root or the scripts directory.${NC}" >&2
 }
 
 # Parse Package.resolved and output packages (url|version per line)
@@ -265,7 +360,7 @@ parse_resolved_files() {
     local files="$1"
     local output_file="$2"
 
-    > "$output_file"
+    rm -rf "$output_file"
 
     echo "$files" | while IFS= read -r file; do
         [[ -z "$file" ]] && continue
@@ -290,6 +385,14 @@ parse_resolved_files() {
 # Main logic
 main() {
     local resolved_files
+
+    detect_workspace
+    if [[ -z "$WORKSPACE_PATH" ]] || [[ -z "$SEARCH_PATH" ]]; then
+        exit 1
+    fi
+
+    # Force workspace package resolution before reading Package.resolved files
+    resolve_workspace_packages "$WORKSPACE_PATH"
     resolved_files=$(find_resolved_files "$SEARCH_PATH")
 
     if [[ -z "$resolved_files" ]]; then
@@ -312,7 +415,7 @@ main() {
     parse_resolved_files "$resolved_files" "$RESOLVED_PKGS_FILE"
 
     # Filter to direct dependencies only
-    > "$FILTERED_PKGS_FILE"
+    rm -rf "$FILTERED_PKGS_FILE"
     if [[ "$SHOW_ALL" == true ]]; then
         cp "$RESOLVED_PKGS_FILE" "$FILTERED_PKGS_FILE"
     else
@@ -352,7 +455,7 @@ main() {
     fi
 
     local json_first=true
-    > "$UPDATE_TYPES_FILE"
+    rm -rf "$UPDATE_TYPES_FILE"
 
     if [[ "$JSON_OUTPUT" == true ]]; then
         echo "{"
@@ -388,7 +491,7 @@ main() {
                 comma=","
             fi
             local projects_json
-            projects_json=$(echo "$projects" | sed 's/,/","/g')
+            projects_json=${projects//,/\",\"}
             echo "    ${comma}{\"name\":\"$name\",\"url\":\"$url\",\"current\":\"$current\",\"latest\":\"$latest_display\",\"update_type\":\"$update_type\",\"projects\":[\"$projects_json\"]}"
             json_first=false
         else

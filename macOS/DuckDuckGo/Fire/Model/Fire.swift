@@ -791,6 +791,7 @@ final class Fire: FireProtocol {
 
         func burnPinnedTabs(in tabCollectionViewModel: TabCollectionViewModel) {
             guard let pinnedTabsManager = tabCollectionViewModel.pinnedTabsManager else {
+                FirePixels.fireErrorPixel(FirePixels.burnTabsError(BurnTabsError.noPinnedTabsManager))
                 assertionFailure("No pinned tabs manager")
                 return
             }
@@ -800,6 +801,11 @@ final class Fire: FireProtocol {
                 pinnedTabsManager.tabCollection.replaceTab(at: index, with: newTab)
             }
         }
+        
+        enum BurnTabsError: Error {
+            case noPinnedTabsManager
+            case tabsViewModelMismatch
+        }
 
         // Close tabs or reset history based on entity.close
         switch burningEntity {
@@ -808,7 +814,15 @@ final class Fire: FireProtocol {
                   selectedDomains: _,
                   parentTabCollectionViewModel: let tabCollectionViewModel,
                   close: let shouldClose):
-            assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
+            guard tabViewModel === tabCollectionViewModel.selectedTabViewModel else {
+                FirePixels.fireErrorPixel(FirePixels.burnTabsError(BurnTabsError.tabsViewModelMismatch))
+                assertionFailure("TabViewModel mismatch")
+                return
+            }
+
+            let startTime = Date()
+            let countBeforeBurn = tabCollectionViewModel.tabCollection.tabs.count
+
             if shouldClose {
                 if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
                     let tab = replacementPinnedTab(from: tabViewModel.tab)
@@ -824,11 +838,18 @@ final class Fire: FireProtocol {
                     tabCollectionViewModel.removeSelected(forceChange: true)
                 }
             }
+            
+            // Either replacing the only tab or minues 1 tab
+            let expectedCount = (countBeforeBurn == 1) ? 1 : countBeforeBurn - 1
+            FirePixels.fireResiduePixelIfNeeded(FirePixels.burnTabsHasResidue(entity: burningEntity.description)){
+                tabCollectionViewModel.tabCollection.tabs.count != expectedCount
+            }
 
         case .window(tabCollectionViewModel: let tabCollectionViewModel,
                      selectedDomains: _,
                      close: let shouldClose):
             if shouldClose {
+                let startTime = Date()
                 // If closing last Window: Insert a new tab to prevent key window closing:
                 var insertedTabIndex: Int?
                 if windowControllersManager.mainWindowControllers.count == 1 {
@@ -837,6 +858,10 @@ final class Fire: FireProtocol {
                 tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
                 burnPinnedTabs(in: tabCollectionViewModel)
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
+
+                FirePixels.fireResiduePixelIfNeeded(FirePixels.burnTabsHasResidue(entity: burningEntity.description)) {
+                    tabCollectionViewModel.tabCollection.tabs.count > 1
+                }
             }
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
@@ -844,6 +869,7 @@ final class Fire: FireProtocol {
                          customURLToOpen: let customURL,
                          close: let shouldClose):
             guard shouldClose else { break }
+            let startTime = Date()
             for windowController in mainWindowControllers {
                 // If closing all Tabs/Windows: Insert a new tab to prevent key window closing:
                 let insertedTabIndex = insertNewTabIfNeeded(into: windowController, with: customURL)
@@ -851,6 +877,12 @@ final class Fire: FireProtocol {
                 burnPinnedTabs(in: windowController.mainViewController.tabCollectionViewModel)
                 selectPinnedTabIfNeeded(in: windowController.mainViewController.tabCollectionViewModel)
             }
+
+            FirePixels.fireResiduePixelIfNeeded(FirePixels.burnTabsHasResidue(entity: burningEntity.description)) {
+                mainWindowControllers.contains { $0.mainViewController.tabCollectionViewModel.tabCollection.tabs.count > 1 }
+            }
+            
+        FirePixels.fireDurationPixel(FirePixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
         }
     }
 
@@ -899,7 +931,9 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnLastSessionState() {
+        let startTime = Date()
         stateRestorationManager?.clearLastSessionState()
+        FirePixels.fireDurationPixel(FirePixels.burnLastSessionStateDuration, from: startTime)
     }
 
     // MARK: - Burn Recently Closed
@@ -916,6 +950,11 @@ final class Fire: FireProtocol {
             syncDataProviders?.bookmarksAdapter.databaseCleaner.cleanUpDatabaseNow()
         }
     }
+}
+
+// MARK: - Instrumentation Helper
+
+private extension Fire {
 }
 
 extension TabCollection {

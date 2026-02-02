@@ -85,9 +85,17 @@ final class StatePersistenceService {
     func performClearState() {
         lastSessionStateArchive = nil
         let location = URL.persistenceLocation(for: self.fileName)
-        fileStore.remove(fileAtURL: location)
-        fileStore.remove(fileAtURL: .persistenceLocation(for: self.lastLoadedStateFileName))
-        fileStore.remove(fileAtURL: .persistenceLocation(for: self.oldStateFileName))
+        do {
+            try fileStore.removeOrThrow(fileAtURL: location)
+            try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.lastLoadedStateFileName))
+            try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.oldStateFileName))
+        } catch {
+            FirePixels.fireErrorPixel(FirePixels.burnLastSessionStateError(error))
+        }
+
+        FirePixels.fireResiduePixelIfNeeded(FirePixels.burnLastSessionStateHasResidue) {
+            check(at: location, fileStore: fileStore)
+        }
     }
 
     /// rename `persistentState` to `persistentState.1` after the state was loaded
@@ -153,4 +161,16 @@ final class StatePersistenceService {
         try restore(unarchiver)
     }
 
+}
+
+// MARK: - Instrumentation Helper
+
+private extension StatePersistenceService {
+    
+    func check(at location: URL, fileStore: FileStore) -> Bool {
+        let hasDataAtLocation = fileStore.hasData(at: location)
+        let hasDataAtLastLoadedStateFile = fileStore.hasData(at:  .persistenceLocation(for: self.lastLoadedStateFileName))
+        let hasDataAtOldStateFile = fileStore.hasData(at: .persistenceLocation(for: self.oldStateFileName))
+        return hasDataAtLocation || hasDataAtOldStateFile || hasDataAtLastLoadedStateFile
+    }
 }

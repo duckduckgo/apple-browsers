@@ -40,6 +40,15 @@ internal class WebCacheManager {
 
     private let fireproofDomains: FireproofDomains
     private let websiteDataStore: WebsiteDataStore
+    
+    enum ClearSteps: String {
+        case fileCache = "file_cache"
+        case deviceHashSalts = "device_hash_salts"
+        case safelyRemovableDataTypes = "safely_removable_data_types"
+        case localStorageAndIndexedDBForNonFireproofDomains = "local_storage_and_indexed_db_for_non_fireproof_domains"
+        case cookies
+        case resourceLoadStatisticsDatabase = "resource_load_statistics_database"
+    }
 
     init(fireproofDomains: FireproofDomains, websiteDataStore: WebsiteDataStore = WKWebsiteDataStore.default()) {
         self.fireproofDomains = fireproofDomains
@@ -47,6 +56,7 @@ internal class WebCacheManager {
     }
 
     func clear(baseDomains: Set<String>? = nil) async {
+        let startTime = Date()
         // first cleanup ~/Library/Caches
         await clearFileCache()
 
@@ -59,6 +69,9 @@ internal class WebCacheManager {
         await removeCookies(for: baseDomains)
 
         await self.removeResourceLoadStatisticsDatabase()
+
+        FirePixels.fireDurationPixel(FirePixels.burnWebCacheDuration, from: startTime)
+        checkResidue(for: baseDomains)
     }
 
     private func clearFileCache() async {
@@ -70,6 +83,7 @@ internal class WebCacheManager {
         do {
             try fm.createDirectory(at: tmpDir, withIntermediateDirectories: false, attributes: nil)
         } catch {
+            FirePixels.fireErrorPixel(FirePixels.burnWebCacheError(error))
             Logger.general.error("Could not create temporary directory: \(error.localizedDescription)")
             return
         }
@@ -77,12 +91,21 @@ internal class WebCacheManager {
         let contents = try? fm.contentsOfDirectory(atPath: cachesDir.path)
         for name in contents ?? [] {
             guard ["WebKit", "fsCachedData"].contains(name) || name.hasPrefix("Cache.") else { continue }
-            try? fm.moveItem(at: cachesDir.appendingPathComponent(name), to: tmpDir.appendingPathComponent(name))
+            
+            do {
+                try fm.moveItem(at: cachesDir.appendingPathComponent(name), to: tmpDir.appendingPathComponent(name))
+            } catch {
+                FirePixels.fireErrorPixel(FirePixels.burnWebCacheError(error))
+            }
         }
 
-        try? fm.createDirectory(at: cachesDir.appendingPathComponent("WebKit"),
-                                withIntermediateDirectories: false,
-                                attributes: nil)
+        do {
+            try fm.createDirectory(at: cachesDir.appendingPathComponent("WebKit"),
+                                    withIntermediateDirectories: false,
+                                    attributes: nil)
+        } catch {
+            FirePixels.fireErrorPixel(FirePixels.burnWebCacheError(error))
+        }
 
         Process("/bin/rm", "-rf", tmpDir.path).launch()
     }
@@ -100,14 +123,24 @@ internal class WebCacheManager {
         do {
             try fm.createDirectory(at: tmpDir, withIntermediateDirectories: false, attributes: nil)
         } catch {
+            FirePixels.fireErrorPixel(FirePixels.burnWebCacheError(error))
             Logger.general.error("Could not create temporary directory: \(error.localizedDescription)")
             return
         }
-
-        try? fm.moveItem(at: libraryURL, to: tmpDir.appendingPathComponent("1"))
-        try? fm.createDirectory(at: libraryURL,
-                                withIntermediateDirectories: false,
-                                attributes: nil)
+        
+        do {
+            try fm.moveItem(at: libraryURL, to: tmpDir.appendingPathComponent("1"))
+        } catch {
+            FirePixels.fireErrorPixel(FirePixels.burnWebCacheError(error))
+        }
+        
+        do {
+            try fm.createDirectory(at: libraryURL,
+                                    withIntermediateDirectories: false,
+                                    attributes: nil)
+        } catch {
+            FirePixels.fireErrorPixel(FirePixels.burnWebCacheError(error))
+        }
 
         Process("/bin/rm", "-rf", tmpDir.path).launch()
     }
@@ -185,7 +218,11 @@ internal class WebCacheManager {
         }
 
         removeObservationsData(from: pool)
-        try? await pool.vacuum()
+        do {
+            try await pool.vacuum()
+        } catch {
+            FirePixels.fireErrorPixel(FirePixels.burnWebCacheError(error))
+        }
 
         // For an unknown reason, domains may be still present in the database binary when running `strings` over it, despite SQL queries returning an
         // empty array, and despite vacuuming the database. Delete again to be safe.
@@ -204,10 +241,109 @@ internal class WebCacheManager {
                 }
             }
         } catch {
+            FirePixels.fireErrorPixel(FirePixels.burnWebCacheError(error))
             Logger.fire.error("Failed to clear observations database: \(error.localizedDescription)")
         }
     }
 
+}
+
+// MARK: - Residue Check
+
+private extension WebCacheManager {
+    func checkResidue(for baseDomains: Set<String>? = nil) {
+        Task {
+            var stepsWithResidue: [ClearSteps] = []
+            
+            if checkFileCacheResidue() {
+                stepsWithResidue.append(.fileCache)
+            }
+            if checkDeviceHashSalts() {
+                stepsWithResidue.append(.deviceHashSalts)
+            }
+            
+            if await checkSafelyRemovableDataTypesResidue() {
+                stepsWithResidue.append(.safelyRemovableDataTypes)
+            }
+            
+            if await checkLocalStorageResidue() {
+                stepsWithResidue.append(.localStorageAndIndexedDBForNonFireproofDomains)
+            }
+            
+            if await checkCookiesResidue(for: baseDomains) {
+                stepsWithResidue.append(.cookies)
+            }
+            
+            if !stepsWithResidue.isEmpty {
+                let stepsString = stepsWithResidue.map{ $0.rawValue }
+                FirePixels.fireResiduePixel(FirePixels.burnWebCacheHasResidue(steps: stepsString.joined(separator: ",")))
+            }
+        }
+    }
+    
+    func checkFileCacheResidue() -> Bool {
+        let fm = FileManager.default
+        guard let cachesDir = fm.urls(for: .cachesDirectory, in: .userDomainMask).first?
+            .appendingPathComponent(Bundle.main.bundleIdentifier!) else { return false }
+        
+        let contents = (try? fm.contentsOfDirectory(atPath: cachesDir.path)) ?? []
+        return contents.contains { name in
+            // "WebKit" is recreated. Skip it during recheck
+            ["fsCachedData"].contains(name) || name.hasPrefix("Cache.")
+        }
+    }
+    
+    func checkDeviceHashSalts() -> Bool {
+        guard let bundleID = Bundle.main.bundleIdentifier,
+              var libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first else {
+            return false
+        }
+        libraryURL.appendPathComponent("WebKit/\(bundleID)/WebsiteData/DeviceIdHashSalts/1")
+            
+        let contents = (try? FileManager.default.contentsOfDirectory(atPath: libraryURL.path)) ?? []
+        return !contents.isEmpty
+    }
+    
+    @MainActor
+    func checkSafelyRemovableDataTypesResidue() async -> Bool {
+        let safelyRemovableTypes = WKWebsiteDataStore.safelyRemovableWebsiteDataTypes
+        let records = await WKWebsiteDataStore.default().dataRecords(ofTypes: safelyRemovableTypes)
+        return !records.isEmpty
+    }
+    
+    @MainActor
+    func checkLocalStorageResidue() async -> Bool {
+        let records = await WKWebsiteDataStore.default().dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypesExceptCookies)
+        
+        return records.contains { record in
+            record.displayName != URL.duckduckgoDomain &&
+            record.displayName != URL.duckAiDomain &&
+            !fireproofDomains.fireproofDomains.contains(record.displayName)
+        }
+    }
+    
+    @MainActor
+    func checkCookiesResidue(for baseDomains: Set<String>? = nil) async -> Bool {
+        guard let cookieStore = websiteDataStore.cookieStore else { return false }
+        var cookies = await cookieStore.allCookies()
+            
+        if let baseDomains = baseDomains {
+            cookies = cookies.filter { cookie in
+                baseDomains.contains { cookie.belongsTo($0) }
+            }
+        }
+            
+        return cookies.contains { cookie in
+            cookie.domain != URL.duckduckgoDomain &&
+            cookie.domain != URL.duckAiDomain &&
+            !fireproofDomains.isFireproof(cookieDomain: cookie.domain)
+        }
+    }
+    
+    // No-op for now: Require db connection
+    func checkResourceLoadStatisticsDatabaseResidue() -> Bool {
+       return false
+    }
 }
 
 extension WKHTTPCookieStore: HTTPCookieStore {}

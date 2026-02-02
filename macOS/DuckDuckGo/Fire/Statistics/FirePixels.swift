@@ -118,15 +118,15 @@ extension FirePixels {
     }
     
     // Effectiveness
-    static func fireResiduePixelIfNeeded(_ residuePixel: FirePixels, recheck: () -> Bool) {
-        let hasResidue = recheck()
+    static func fireResiduePixelIfNeeded(_ residuePixel: FirePixels, check: () -> Bool) {
+        let hasResidue = check()
         if hasResidue {
             PixelKit.fire(residuePixel, frequency: .dailyAndStandard)
         }
     }
     
-    static func fireResiduePixel(_ residuePixel: @escaping (String) -> FirePixels, steps: String) {
-        PixelKit.fire(residuePixel(steps), frequency: .dailyAndStandard)
+    static func fireResiduePixel(_ residuePixel: FirePixels) {
+        PixelKit.fire(residuePixel, frequency: .dailyAndStandard)
     }
     
 

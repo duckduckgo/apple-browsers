@@ -148,6 +148,7 @@ final class BookmarksBarViewController: NSViewController {
         syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
         syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
         syncButtonIcon.contentTintColor = .textPrimary
+        syncButtonLabel.stringValue = UserText.bookmarksEmptyStateSyncButtonTitle
         syncButtonLabel.font = .systemFont(ofSize: 11, weight: .regular)
         syncButtonDivider.boxType = .separator
         syncButtonDivider.fillColor = .textPrimary

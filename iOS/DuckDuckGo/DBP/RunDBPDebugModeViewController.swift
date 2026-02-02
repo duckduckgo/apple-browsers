@@ -219,7 +219,7 @@ struct RunDBPDebugModeView: View {
             
             if viewModel.isRunning {
                 VStack(spacing: 10) {
-                    Text(viewModel.currentBrokerName != nil ? "Scanning \(viewModel.currentBrokerName!) (\(viewModel.currentBrokerIndex)/\(viewModel.totalBrokerCount))" : "Scanning...")
+                    Text(viewModel.currentBrokerName != nil ? "Scanning \(viewModel.currentBrokerName!)" : "Scanning...")
                 }
             } else {
                 VStack(spacing: 10) {
@@ -357,8 +357,6 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var results: [DebugScanResult] = []
     @Published var isRunning: Bool = false
     @Published var currentBrokerName: String?
-    @Published var currentBrokerIndex: Int = 0
-    @Published var totalBrokerCount: Int = 0
     @Published var showAlert: Bool = false
     @Published var alertTitle: String = ""
     @Published var alertMessage: String = ""
@@ -507,17 +505,13 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
         do {
             let broker = try JSONDecoder().decode(DataBroker.self, from: data)
-            runOperations(brokers: [broker.with(id: DebugHelper.stableId(for: broker))])
+            runOperations(broker: broker.with(id: DebugHelper.stableId(for: broker)))
         } catch {
             showAlert(title: "Invalid broker JSON", message: error.localizedDescription)
         }
     }
     
-    func runAllBrokers() {
-        runOperations(brokers: brokers)
-    }
-    
-    private func runOperations(brokers: [DataBroker]) {
+    private func runOperations(broker: DataBroker) {
         guard hasValidInput else { return }
         
         isRunning = true
@@ -529,59 +523,51 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             let queries = profile.profileQueries
             var allResults: [DebugScanResult] = []
 
-            self.totalBrokerCount = brokers.count
-            
-            for (brokerIndex, broker) in brokers.enumerated() {
-                self.currentBrokerIndex = brokerIndex + 1
-                self.currentBrokerName = broker.name
+            self.currentBrokerName = nil
+            self.currentBrokerName = broker.name
 
-                for (index, query) in queries.enumerated() {
-                    let queryWithId = ensureDebugProfileQuery(query, index: index)
-                    let brokerProfileQueryData = BrokerProfileQueryData(
-                        dataBroker: broker,
-                        profileQuery: queryWithId,
-                        scanJobData: ScanJobData(brokerId: DebugHelper.stableId(for: broker),
-                                                 profileQueryId: DebugHelper.stableId(for: queryWithId),
-                                                 historyEvents: [])
-                    )
+            for (index, query) in queries.enumerated() {
+                let queryWithId = ensureDebugProfileQuery(query, index: index)
+                let brokerProfileQueryData = BrokerProfileQueryData(
+                    dataBroker: broker,
+                    profileQuery: queryWithId,
+                    scanJobData: ScanJobData(brokerId: DebugHelper.stableId(for: broker),
+                                             profileQueryId: DebugHelper.stableId(for: queryWithId),
+                                             historyEvents: [])
+                )
+                
+                do {
+                    let runner = BrokerProfileScanSubJobWebRunner(
+                        privacyConfig: privacyConfigManager,
+                        prefs: contentScopeProperties,
+                        context: brokerProfileQueryData,
+                        emailConfirmationDataService: emailConfirmationDataService,
+                        captchaService: captchaService,
+                        featureFlagger: featureFlagger,
+                        stageDurationCalculator: FakeStageDurationCalculator(),
+                        pixelHandler: fakePixelHandler,
+                        executionConfig: executionConfig
+                    ) { true }
+
+                    self.currentRunner = runner
                     
-                    do {
-                        let runner = BrokerProfileScanSubJobWebRunner(
-                            privacyConfig: privacyConfigManager,
-                            prefs: contentScopeProperties,
-                            context: brokerProfileQueryData,
-                            emailConfirmationDataService: emailConfirmationDataService,
-                            captchaService: captchaService,
-                            featureFlagger: featureFlagger,
-                            stageDurationCalculator: FakeStageDurationCalculator(),
-                            pixelHandler: fakePixelHandler,
-                            executionConfig: executionConfig
-                        ) { true }
+                    let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
+                    for profile in extractedProfiles {
+                        let result = DebugScanResult(
+                            dataBroker: broker,
+                            profileQuery: queryWithId,
+                            extractedProfile: ensureDebugExtractedProfile(profile)
+                        )
 
-                        self.currentRunner = runner
-                        
-                        let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
-                        for profile in extractedProfiles {
-                            let result = DebugScanResult(
-                                dataBroker: broker,
-                                profileQuery: queryWithId,
-                                extractedProfile: ensureDebugExtractedProfile(profile)
-                            )
-
-                            allResults.append(result)
-                        }
-                        
-                    } catch let UserScriptError.failedToLoadJS(jsFile, error) {
-                        pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
-                        try? await Task.sleep(interval: 1.0) // give time for the pixel to be sent
-                        fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
-                    } catch {
-                        print("Error scanning \(broker.name): \(error)")
+                        allResults.append(result)
                     }
                     
-                    if Task.isCancelled {
-                        break
-                    }
+                } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                    pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                    try? await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                    fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
+                } catch {
+                    print("Error scanning \(broker.name): \(error)")
                 }
                 
                 if Task.isCancelled {
@@ -592,8 +578,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             self.results = allResults
             self.isRunning = false
             self.currentBrokerName = nil
-            self.currentBrokerIndex = 0
-            self.totalBrokerCount = 0
+            self.currentBrokerName = nil
             
             self.hideWebView()
             self.currentWebViewManager = nil

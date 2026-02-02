@@ -1936,9 +1936,9 @@ public struct UserText {
 
     public static let settingsAutomaticPageContextSubtitle = NSLocalizedString("settings.aifeatures.automatic.context.subtitle", value: "Automatically send page context to Duck.ai", comment: "Settings screen cell subtitle for enabling automatic page context")
 
-    public static let settingsChatSuggestionsTitle = NSLocalizedString("settings.aifeatures.chat.suggestions.title", value: "Chat Suggestions", comment: "Settings screen cell title for enabling chat suggestions")
+    public static let settingsChatSuggestionsTitle = NotLocalizedString("settings.aifeatures.chat.suggestions.title", value: "Chat Suggestions", comment: "Settings screen cell title for enabling chat suggestions")
 
-    public static let settingsChatSuggestionsSubtitle = NSLocalizedString("settings.aifeatures.chat.suggestions.subtitle", value: "Show recent Duck.ai chats", comment: "Settings screen cell subtitle for enabling chat suggestions")
+    public static let settingsChatSuggestionsSubtitle = NotLocalizedString("settings.aifeatures.chat.suggestions.subtitle", value: "Show recent Duck.ai chats", comment: "Settings screen cell subtitle for enabling chat suggestions")
 
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 

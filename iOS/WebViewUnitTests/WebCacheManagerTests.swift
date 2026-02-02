@@ -176,12 +176,12 @@ class WebCacheManagerTests: XCTestCase {
         await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "facebook.com"])
 
         // Verify data records were removed for specified domains only
-        XCTAssertEqual(1, dataStore.removedDataOfTypesForRecords.count)
-        let removedRecords = dataStore.removedDataOfTypesForRecords[0].records
-        XCTAssertEqual(2, removedRecords.count)
-        XCTAssertTrue(removedRecords.contains { $0.displayName == "example.com" })
-        XCTAssertTrue(removedRecords.contains { $0.displayName == "facebook.com" })
-        XCTAssertFalse(removedRecords.contains { $0.displayName == "other.com" })
+        // Two calls: one for safelyRemovableWebsiteDataTypes, one for fireproofableDataTypesExceptCookies
+        XCTAssertEqual(2, dataStore.removedDataOfTypesForRecords.count)
+        let allRemovedRecords = dataStore.removedDataOfTypesForRecords.flatMap { $0.records }
+        XCTAssertTrue(allRemovedRecords.contains { $0.displayName == "example.com" })
+        XCTAssertTrue(allRemovedRecords.contains { $0.displayName == "facebook.com" })
+        XCTAssertFalse(allRemovedRecords.contains { $0.displayName == "other.com" })
 
         // Verify cookies were removed for specified domains only
         XCTAssertEqual(2, mockCookieStore.cookiesThatWereDeleted.count)
@@ -208,14 +208,114 @@ class WebCacheManagerTests: XCTestCase {
         await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "facebook.com"])
 
         // Verify only non-fireproofed domain data records were removed
-        XCTAssertEqual(1, dataStore.removedDataOfTypesForRecords.count)
-        let removedRecords = dataStore.removedDataOfTypesForRecords[0].records
-        XCTAssertEqual(1, removedRecords.count)
-        XCTAssertEqual("facebook.com", removedRecords[0].displayName)
+        // Two calls: one for safelyRemovableWebsiteDataTypes, one for fireproofableDataTypesExceptCookies
+        XCTAssertEqual(2, dataStore.removedDataOfTypesForRecords.count)
+        let allRemovedRecords = dataStore.removedDataOfTypesForRecords.flatMap { $0.records }
+        // example.com is fireproofed, so only facebook.com should be in fireproofable records
+        // But safelyRemovableWebsiteDataTypes are cleared for all visited domains (example.com + facebook.com)
+        XCTAssertTrue(allRemovedRecords.contains { $0.displayName == "facebook.com" })
 
         // Verify only non-fireproofed domain cookies were removed
         XCTAssertEqual(1, mockCookieStore.cookiesThatWereDeleted.count)
         XCTAssertEqual("Cookie2", mockCookieStore.cookiesThatWereDeleted[0].name)
+    }
+
+    func test_WhenClearingForSubdomain_AndRootIsFireproofed_ThenDataIsProtected() async {
+        // Fireproof amazon.com
+        fireproofing = MockFireproofing(domains: ["amazon.com"])
+        let mockCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
+            .make(name: "AmazonCookie", value: "Value", domain: "amazon.com"),
+            .make(name: "MailAmazonCookie", value: "Value", domain: ".amazon.com"),
+            .make(name: "FacebookCookie", value: "Value", domain: "facebook.com"),
+        ])
+        let dataStore = MockWebsiteDataStore(
+            httpCookieStore: mockCookieStore,
+            dataRecordsOfTypesReturnValue: [
+                // Data records use eTLD+1 as displayName
+                MockWebsiteDataRecord(displayName: "amazon.com"),
+                MockWebsiteDataRecord(displayName: "facebook.com"),
+            ]
+        )
+
+        let webCacheManager = makeWebCacheManager()
+        // User visited mail.amazon.com (a subdomain), but amazon.com is fireproofed
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["mail.amazon.com", "facebook.com"])
+
+        // Two calls: safelyRemovableWebsiteDataTypes (for all visited) and fireproofableDataTypesExceptCookies (non-fireproofed only)
+        XCTAssertEqual(2, dataStore.removedDataOfTypesForRecords.count)
+        
+        // First call clears safelyRemovableWebsiteDataTypes for ALL visited domains (including fireproofed)
+        let safelyRemovableRecords = dataStore.removedDataOfTypesForRecords[0].records
+        XCTAssertTrue(safelyRemovableRecords.contains { $0.displayName == "amazon.com" })
+        XCTAssertTrue(safelyRemovableRecords.contains { $0.displayName == "facebook.com" })
+        
+        // Second call clears fireproofableDataTypesExceptCookies only for non-fireproofed domains
+        let fireproofableRecords = dataStore.removedDataOfTypesForRecords[1].records
+        XCTAssertEqual(1, fireproofableRecords.count)
+        XCTAssertEqual("facebook.com", fireproofableRecords[0].displayName)
+        XCTAssertFalse(fireproofableRecords.contains { $0.displayName == "amazon.com" })
+
+        // Verify amazon.com cookies were NOT removed (fireproofed)
+        XCTAssertEqual(1, mockCookieStore.cookiesThatWereDeleted.count)
+        XCTAssertEqual("FacebookCookie", mockCookieStore.cookiesThatWereDeleted[0].name)
+        XCTAssertFalse(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "AmazonCookie" })
+        XCTAssertFalse(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "MailAmazonCookie" })
+    }
+
+    func test_WhenClearingForSubdomain_AndRootIsNotFireproofed_ThenDataIsCleared() async {
+        // No fireproofing
+        fireproofing = MockFireproofing(domains: [])
+        let mockCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
+            .make(name: "AmazonCookie", value: "Value", domain: "amazon.com"),
+            .make(name: "SubdomainCookie", value: "Value", domain: ".amazon.com"),
+        ])
+        let dataStore = MockWebsiteDataStore(
+            httpCookieStore: mockCookieStore,
+            dataRecordsOfTypesReturnValue: [
+                MockWebsiteDataRecord(displayName: "amazon.com"),
+            ]
+        )
+
+        let webCacheManager = makeWebCacheManager()
+        // User visited mail.amazon.com subdomain
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["mail.amazon.com"])
+
+        // Verify amazon.com data record WAS removed (not fireproofed)
+        // Two calls: one for safelyRemovableWebsiteDataTypes, one for fireproofableDataTypesExceptCookies
+        XCTAssertEqual(2, dataStore.removedDataOfTypesForRecords.count)
+        
+        // Both calls should include amazon.com since it's not fireproofed
+        for removal in dataStore.removedDataOfTypesForRecords {
+            XCTAssertEqual(1, removal.records.count)
+            XCTAssertEqual("amazon.com", removal.records[0].displayName)
+        }
+
+        // Verify only the subdomain-applicable cookie was removed
+        XCTAssertEqual(1, mockCookieStore.cookiesThatWereDeleted.count)
+        XCTAssertEqual("SubdomainCookie", mockCookieStore.cookiesThatWereDeleted[0].name)
+    }
+
+    func test_WhenClearingForDomains_WithNoMatchingVisits_ThenNothingIsCleared() async {
+        let mockCookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
+            .make(name: "Cookie1", value: "Value", domain: "example.com"),
+        ])
+        let dataStore = MockWebsiteDataStore(
+            httpCookieStore: mockCookieStore,
+            dataRecordsOfTypesReturnValue: [
+                MockWebsiteDataRecord(displayName: "example.com"),
+            ]
+        )
+
+        let webCacheManager = makeWebCacheManager()
+        // Clear for domains that weren't visited
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["other.com"])
+
+        // Verify no data records were actually removed (calls may still happen but with empty records)
+        let totalRemovedRecords = dataStore.removedDataOfTypesForRecords.flatMap { $0.records }
+        XCTAssertEqual(0, totalRemovedRecords.count)
+
+        // Verify no cookies were removed
+        XCTAssertEqual(0, mockCookieStore.cookiesThatWereDeleted.count)
     }
 
     func test_WhenClearingForDomains_WithDotPrefixedCookies_ThenMatchingCookiesAreCleared() async {

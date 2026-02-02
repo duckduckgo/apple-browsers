@@ -74,6 +74,8 @@ protocol FireExecuting {
 
 class FireExecutor: FireExecuting {
     
+    typealias HistoryCleanerProvider = () -> HistoryCleaning
+    
     // MARK: - Variables
     
     private let tabManager: TabManaging
@@ -95,7 +97,7 @@ class FireExecutor: FireExecuting {
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
     private var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
-    private let aiChatHistoryCleaner: HistoryCleaning
+    private let historyCleanerProvider: HistoryCleanerProvider
     private var preparedOptions: FireRequest.Options = []
     
     // MARK: - Init
@@ -112,7 +114,7 @@ class FireExecutor: FireExecuting {
          featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          dataStore: (any DDGWebsiteDataStore)? = nil,
-         aiChatHistoryCleaner: HistoryCleaning? = nil,
+         historyCleanerProvider: HistoryCleanerProvider? = nil,
          appSettings: AppSettings,
          privacyStats: PrivacyStatsProviding? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning) {
@@ -128,8 +130,9 @@ class FireExecutor: FireExecuting {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.dataStore = dataStore
-        self.aiChatHistoryCleaner = aiChatHistoryCleaner ?? HistoryCleaner(featureFlagger: featureFlagger,
-                                                                          privacyConfig: privacyConfigurationManager)
+        self.historyCleanerProvider = historyCleanerProvider ??
+        { return HistoryCleaner(featureFlagger: featureFlagger,
+                                privacyConfig: privacyConfigurationManager)}
         self.appSettings = appSettings
         self.privacyStats = privacyStats
         self.aiChatSyncCleaner = aiChatSyncCleaner
@@ -415,10 +418,11 @@ class FireExecutor: FireExecuting {
     }
     
     private func burnAllAIHistory(trigger: FireRequest.Trigger) async {
-        await recordAIChatsClearDate(trigger: trigger)
-        let result = await aiChatHistoryCleaner.cleanAIChatHistory()
+        let cleaner = historyCleanerProvider()
+        let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
+            await recordAIChatsClearDate(trigger: trigger)
             DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
@@ -449,11 +453,11 @@ class FireExecutor: FireExecuting {
 
     @discardableResult
     private func deleteChat(chatID: String) async -> Result<Void, Error> {
-        await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
-        let result = await aiChatHistoryCleaner.deleteAIChat(chatID: chatID)
+        let cleaner = historyCleanerProvider()
+        let result = await cleaner.deleteAIChat(chatID: chatID)
         switch result {
         case .success:
-            break
+            await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
         case .failure(let error):
             Logger.aiChat.debug("Failed to delete AI Chat: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {

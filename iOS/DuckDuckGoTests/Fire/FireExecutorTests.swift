@@ -186,7 +186,7 @@ final class FireExecutorTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             dataStore: MockWebsiteDataStore(),
-            aiChatHistoryCleaner: mockHistoryCleaner,
+            historyCleanerProvider: { self.mockHistoryCleaner },
             appSettings: mockAppSettings,
             aiChatSyncCleaner: mockAIChatSyncCleaner
         )

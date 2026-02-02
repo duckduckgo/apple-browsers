@@ -46,7 +46,9 @@ public final class HistoryCleaner: HistoryCleaning {
     /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
     @MainActor
     public func cleanAIChatHistory() async -> Result<Void, Error> {
-        guard webView == nil else { return .success(()) }
+        guard webView == nil else {
+            return .failure(HistoryCleanerError.operationInProgress)
+        }
 
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
@@ -59,7 +61,9 @@ public final class HistoryCleaner: HistoryCleaning {
     /// Launches a headless web view to clear a single Duck.ai chat with a C-S-S feature.
     @MainActor
     public func deleteAIChat(chatID: String) async -> Result<Void, Error> {
-        guard webView == nil else { return .success(()) }
+        guard webView == nil else {
+            return .failure(HistoryCleanerError.operationInProgress)
+        }
 
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
@@ -215,6 +219,7 @@ extension HistoryCleaner {
     enum HistoryCleanerError: Error {
         case webViewNotInitialized
         case scriptNotInitialized
+        case operationInProgress
     }
 }
 

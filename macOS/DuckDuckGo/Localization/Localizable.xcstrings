@@ -84910,7 +84910,7 @@
     },
     "quit-survey.option.asked-to-disable-ad-blocker" : {
       "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84970,7 +84970,7 @@
     },
     "quit-survey.option.bad-ai-responses" : {
       "comment" : "Quit survey feedback option - AI",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85150,7 +85150,7 @@
     },
     "quit-survey.option.couldnt-change-search-engine" : {
       "comment" : "Quit survey feedback option - search",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85210,7 +85210,7 @@
     },
     "quit-survey.option.couldnt-check-out" : {
       "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85330,7 +85330,7 @@
     },
     "quit-survey.option.couldnt-find-incognito" : {
       "comment" : "Quit survey feedback option - features",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85390,7 +85390,7 @@
     },
     "quit-survey.option.couldnt-import-bookmarks" : {
       "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85450,7 +85450,7 @@
     },
     "quit-survey.option.couldnt-import-passwords" : {
       "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85510,7 +85510,7 @@
     },
     "quit-survey.option.couldnt-import-pay-details" : {
       "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85570,7 +85570,7 @@
     },
     "quit-survey.option.couldnt-sign-in-to-bank" : {
       "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85630,7 +85630,7 @@
     },
     "quit-survey.option.couldnt-skip-onboarding" : {
       "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85690,7 +85690,7 @@
     },
     "quit-survey.option.fire-button-removed-too-much" : {
       "comment" : "Quit survey feedback option - Fire Button",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85750,7 +85750,7 @@
     },
     "quit-survey.option.had-to-re-sign-in" : {
       "comment" : "Quit survey feedback option - ecosystem",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85870,7 +85870,7 @@
     },
     "quit-survey.option.hard-to-manage-downloads" : {
       "comment" : "Quit survey feedback option - UI",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85924,6 +85924,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сложно управлять загрузками"
+          }
+        }
+      }
+    },
+    "quit-survey.option.issue-importing-my-stuff" : {
+      "comment" : "Quit survey feedback option - onboarding",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Issue importing my stuff"
           }
         }
       }
@@ -85990,7 +86002,7 @@
     },
     "quit-survey.option.more-captchas" : {
       "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86050,7 +86062,7 @@
     },
     "quit-survey.option.navigation-unfamiliar" : {
       "comment" : "Quit survey feedback option - UI",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86108,9 +86120,45 @@
         }
       }
     },
+    "quit-survey.option.no-extensions" : {
+      "comment" : "Quit survey feedback option - features/extensions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No extensions"
+          }
+        }
+      }
+    },
+    "quit-survey.option.no-password-manager-extensions" : {
+      "comment" : "Quit survey feedback option - features/extensions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No password manager extensions"
+          }
+        }
+      }
+    },
+    "quit-survey.option.no-website-translations" : {
+      "comment" : "Quit survey feedback option - features/extensions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No website translations"
+          }
+        }
+      }
+    },
     "quit-survey.option.not-ready-to-switch-browsers" : {
       "comment" : "Quit survey feedback option - value proposition",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86350,7 +86398,7 @@
     },
     "quit-survey.option.password-manager-unavailable" : {
       "comment" : "Quit survey feedback option - features/extensions",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86470,7 +86518,7 @@
     },
     "quit-survey.option.shortcuts-didnt-work" : {
       "comment" : "Quit survey feedback option - UI",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86830,7 +86878,7 @@
     },
     "quit-survey.option.unexpected-search-results" : {
       "comment" : "Quit survey feedback option - search",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86890,7 +86938,7 @@
     },
     "quit-survey.option.unsure-how-history-is-handled" : {
       "comment" : "Quit survey feedback option - value proposition",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86950,7 +86998,7 @@
     },
     "quit-survey.option.videos-didnt-play" : {
       "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -87004,6 +87052,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Видео не воспроизводились"
+          }
+        }
+      }
+    },
+    "quit-survey.option.websites-didnt-work" : {
+      "comment" : "Quit survey feedback option - site breakage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Websites didn't work"
           }
         }
       }

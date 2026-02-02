@@ -8,6 +8,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 5 * * *' # run at 5 AM UTC
+  push:
+    branches: [ main, "release/macos/**", "hotfix/macos/**" ]
+    paths:
+      - 'BrowserServicesKit/**'
+      - 'macOS/**'
 
 concurrency:
   group: ${{ github.workflow }}

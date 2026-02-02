@@ -20,13 +20,37 @@ import SwiftUI
 
 public extension OnboardingTheme {
 
+    /// Layout and visual metrics for the onboarding bubble container.
     struct BubbleMetrics: Equatable {
+        /// Internal content padding for the bubble.
         public let contentInsets: EdgeInsets
+        /// Bubble corner radius.
         public let cornerRadius: CGFloat
+        /// Bubble border width.
         public let borderWidth: CGFloat
+        /// Shadow blur radius.
         public let shadowRadius: CGFloat
+        /// Shadow offset position.
         public let shadowPosition: CGPoint
+        /// Trailing offset used to align the step progress from the trailing edge of the bubble.
         public let stepProgressTrailingPadding: CGFloat
+
+        /// Creates bubble metrics for onboarding layouts.
+        public init(
+            contentInsets: EdgeInsets,
+            cornerRadius: CGFloat,
+            borderWidth: CGFloat,
+            shadowRadius: CGFloat,
+            shadowPosition: CGPoint,
+            stepProgressTrailingPadding: CGFloat
+        ) {
+            self.contentInsets = contentInsets
+            self.cornerRadius = cornerRadius
+            self.borderWidth = borderWidth
+            self.shadowRadius = shadowRadius
+            self.shadowPosition = shadowPosition
+            self.stepProgressTrailingPadding = stepProgressTrailingPadding
+        }
     }
 
 }

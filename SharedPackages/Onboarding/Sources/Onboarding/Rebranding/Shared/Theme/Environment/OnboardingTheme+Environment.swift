@@ -34,6 +34,10 @@ extension EnvironmentValues {
 
 public extension View {
 
+    /// Applies an onboarding theme to the current view hierarchy.
+    ///
+    /// - Parameter theme: The theme injected in the environment for onboarding views.
+    /// - Returns: A view configured with the provided onboarding theme.
     func applyOnboardingTheme(_ theme: OnboardingTheme) -> some View {
         environment(\.onboardingTheme, theme)
     }

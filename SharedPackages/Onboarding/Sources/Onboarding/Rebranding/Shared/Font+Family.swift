@@ -18,22 +18,31 @@
 
 import SwiftUI
 
+// NOTE: This helper is currently colocated within Onboarding package while the rebranding is being validated there first.
+// Keep the API generic so it can be moved to a shared typography module when rollout expands.
 public extension Font {
 
+    /// Font family selector used by app typography tokens.
     enum Family: Equatable {
 
+        /// Custom app font families.
         public enum Custom {
+            /// DuckSans Display family.
             case duckSansDisplay
+            /// DuckSans Product family.
             case duckSansProduct
         }
 
+        /// System font family.
         case system
+        /// A custom font family.
         case custom(Custom)
 
         static let duckSansDisplay = Family.custom(.duckSansDisplay)
         static let duckSansProduct = Family.custom(.duckSansProduct)
     }
 
+    /// Builds a concrete `Font` from a custom family, weight, and size.
     static func customFont(type: Font.Family.Custom, weight: Font.Weight, size: CGFloat) -> Font {
         let weightSuffix: String
         switch weight {

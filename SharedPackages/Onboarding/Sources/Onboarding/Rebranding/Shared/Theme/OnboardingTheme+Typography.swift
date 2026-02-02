@@ -20,14 +20,41 @@ import SwiftUI
 
 public extension OnboardingTheme {
 
+    /// Typography tokens used by onboarding content.
     struct Typography: Equatable {
-        let largeTitle: Font
-        let title: Font
-        let body: Font
-        let progressIndicator: Font
-        let row: Font
-        let rowDetails: Font
-        let small: Font
+        /// Largest display title style.
+        public let largeTitle: Font
+        /// Standard title style.
+        public let title: Font
+        /// Primary body text style.
+        public let body: Font
+        /// Step progress text style.
+        public let progressIndicator: Font
+        /// List row title style (E.g Address Bar position picker title).
+        public let row: Font
+        /// List row detail style (E.g Address Bar position picker subtitle).
+        public let rowDetails: Font
+        /// Small text and button label style.
+        public let small: Font
+
+        /// Creates a typography token set for onboarding.
+        public init(
+            largeTitle: Font,
+            title: Font,
+            body: Font,
+            progressIndicator: Font,
+            row: Font,
+            rowDetails: Font,
+            small: Font
+        ) {
+            self.largeTitle = largeTitle
+            self.title = title
+            self.body = body
+            self.progressIndicator = progressIndicator
+            self.row = row
+            self.rowDetails = rowDetails
+            self.small = small
+        }
 
         private static func makeFont(size: CGFloat, family: Font.Family, weight: Font.Weight) -> Font {
             switch family {
@@ -41,8 +68,11 @@ public extension OnboardingTheme {
 
 }
 
-extension OnboardingTheme.Typography {
+// MARK: - Factory Helpers
 
+public extension OnboardingTheme.Typography {
+
+    /// Typography preset using DuckSans families.
     static let duckSans = OnboardingTheme.Typography(
         largeTitle: makeFont(size: 44, family: .duckSansDisplay, weight: .bold),
         title: makeFont(size: 24, family: .duckSansDisplay, weight: .bold),
@@ -53,7 +83,7 @@ extension OnboardingTheme.Typography {
         small: makeFont(size: 14, family: .duckSansProduct, weight: .regular)
     )
 
-    // System font fallback for testing/preview
+    /// System font fallback preset, useful for testing and previews.
     static let system = OnboardingTheme.Typography(
         largeTitle: .system(size: 44, weight: .bold),
         title: .system(size: 24, weight: .bold),

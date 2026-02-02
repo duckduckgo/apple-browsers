@@ -18,16 +18,24 @@
 
 import SwiftUI
 
+/// Semantic identifiers for onboarding button styles.
 public enum OnboardingButtonStyleID {
+    /// Primary call-to-action button style.
     case primary
+    /// Secondary call-to-action button style.
     case secondary
+    /// List row button style.
     case list
 }
 
+/// Type-erased, equatable wrapper for onboarding button styles.
 public struct OnboardingButtonStyle: Equatable {
-    let id: OnboardingButtonStyleID
-    let style: AnyButtonStyle
+    /// Semantic identifier used for equality and style selection.
+    public let id: OnboardingButtonStyleID
+    /// Type-erased SwiftUI button style implementation.
+    public let style: AnyButtonStyle
 
+    /// Creates an onboarding button style token.
     public init(id: OnboardingButtonStyleID, style: AnyButtonStyle) {
         self.id = id
         self.style = style
@@ -38,6 +46,9 @@ public struct OnboardingButtonStyle: Equatable {
     }
 }
 
+// MARK: - Helpers
+
+/// Type-erased adapter that stores any `ButtonStyle`.
 public struct AnyButtonStyle: ButtonStyle {
     private let makeBodyClosure: (Configuration) -> AnyView
 
@@ -52,6 +63,8 @@ public struct AnyButtonStyle: ButtonStyle {
 
 // MARK: - Button Styles
 
+// NOTE: Keep this style colocated with onboarding while rebranding is validated in this flow instead of DuckUI.
+// This avoids exposing a partially adopted visual style to the rest of the app.
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
     @Environment(\.onboardingTheme) private var onboardingTheme
 

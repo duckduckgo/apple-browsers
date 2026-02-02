@@ -19,22 +19,68 @@
 import SwiftUI
 import DesignResourcesKit
 
-// MARK: - OnboardingTheme
-
+/// A set of style values used by the onboarding UI.
+/// Add here any new style used in the onboarding flow.
 public struct OnboardingTheme: Equatable {
+    /// Typography used across onboarding screens.
     public let typography: Typography
+    /// Colors used across onboarding screens.
     public let colorPalette: ColorPalette
+    /// Layout and visual metrics for the onboarding bubble container.
     public let bubbleMetrics: BubbleMetrics
+    /// Layout and visual metrics for the step progress component.
     public let stepProgressMetrics: StepProgressMetrics
+    /// Text alignment for linear flow titles.
     public let linearTitleTextAlignment: TextAlignment
+    /// Text alignment for linear flow body copy.
     public let linearBodyTextAlignment: TextAlignment
+    /// Text alignment for contextual flow titles.
     public let contextualTitleTextAlignment: TextAlignment
+    /// Text alignment for contextual flow body copy.
     public let contextualBodyTextAlignment: TextAlignment
+    /// Style used by the primary onboarding button.
     public let primaryButtonStyle: OnboardingButtonStyle
+
+    /// Creates a new onboarding theme.
+    ///
+    /// - Parameters:
+    ///   - typography: Typography to use throughout the onboarding flow.
+    ///   - colorPalette: Color palette to use throughout the onboarding flow.
+    ///   - bubbleMetrics: Bubble layout and visual metrics.
+    ///   - stepProgressMetrics: Step progress layout and visual metrics.
+    ///   - linearTitleTextAlignment: Title alignment for linear flows.
+    ///   - linearBodyTextAlignment: Body alignment for linear flows.
+    ///   - contextualTitleTextAlignment: Title alignment for contextual flows.
+    ///   - contextualBodyTextAlignment: Body alignment for contextual flows.
+    ///   - primaryButtonStyle: Primary button style.
+    public init(
+        typography: Typography,
+        colorPalette: ColorPalette,
+        bubbleMetrics: BubbleMetrics,
+        stepProgressMetrics: StepProgressMetrics,
+        linearTitleTextAlignment: TextAlignment,
+        linearBodyTextAlignment: TextAlignment,
+        contextualTitleTextAlignment: TextAlignment,
+        contextualBodyTextAlignment: TextAlignment,
+        primaryButtonStyle: OnboardingButtonStyle
+    ){
+        self.typography = typography
+        self.colorPalette = colorPalette
+        self.bubbleMetrics = bubbleMetrics
+        self.stepProgressMetrics = stepProgressMetrics
+        self.linearTitleTextAlignment = linearTitleTextAlignment
+        self.linearBodyTextAlignment = linearBodyTextAlignment
+        self.contextualTitleTextAlignment = contextualTitleTextAlignment
+        self.contextualBodyTextAlignment = contextualBodyTextAlignment
+        self.primaryButtonStyle = primaryButtonStyle
+    }
 }
+
+// MARK: - Factory Helpers
 
 public extension OnboardingTheme {
 
+    /// Rebranding 2026 default onboarding theme.
     static let rebranding2026 = {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5

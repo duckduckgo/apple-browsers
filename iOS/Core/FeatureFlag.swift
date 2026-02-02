@@ -293,7 +293,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
 
-    /// Whether the free trial conversion wide event is enabled
+    /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
 
     /// Shows tracker count banner in Tab Switcher and related settings item

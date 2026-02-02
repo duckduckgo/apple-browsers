@@ -19,17 +19,18 @@
 import XCTest
 import Common
 import PixelKit
+import PixelKitTestingUtilities
 @testable import Subscription
 
 final class FreeTrialConversionWideEventServiceTests: XCTestCase {
 
     private var sut: DefaultFreeTrialConversionWideEventService!
-    private var mockWideEvent: MockWideEventManaging!
+    private var mockWideEvent: WideEventMock!
     private var notificationCenter: NotificationCenter!
 
     override func setUp() {
         super.setUp()
-        mockWideEvent = MockWideEventManaging()
+        mockWideEvent = WideEventMock()
         notificationCenter = NotificationCenter()
         sut = DefaultFreeTrialConversionWideEventService(wideEvent: mockWideEvent, notificationCenter: notificationCenter)
         sut.startObservingSubscriptionChanges()
@@ -48,15 +49,15 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         // Given
         let subscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
         let expectation = expectation(description: "Flow started")
-        mockWideEvent.onStartFlow = { expectation.fulfill() }
+        mockWideEvent.onStart = { _ in expectation.fulfill() }
 
         // When
         postSubscriptionChange(subscription)
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertEqual(mockWideEvent.startedFlows.count, 1)
-        let startedData = mockWideEvent.startedFlows.first as? FreeTrialConversionWideEventData
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        let startedData = mockWideEvent.started.first as? FreeTrialConversionWideEventData
         XCTAssertNotNil(startedData)
         XCTAssertEqual(startedData?.freeTrialPlan, subscription.productId)
     }
@@ -65,24 +66,24 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         // Given
         let subscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
         let firstFlowExpectation = expectation(description: "First flow started")
-        mockWideEvent.onStartFlow = { firstFlowExpectation.fulfill() }
+        mockWideEvent.onStart = { _ in firstFlowExpectation.fulfill() }
 
         // Start first flow
         postSubscriptionChange(subscription)
         wait(for: [firstFlowExpectation], timeout: 1.0)
-        XCTAssertEqual(mockWideEvent.startedFlows.count, 1)
+        XCTAssertEqual(mockWideEvent.started.count, 1)
 
         // When - another subscription change while still in trial
         // The second notification should not trigger startFlow, so we wait briefly
         let secondFlowExpectation = expectation(description: "Second flow should not start")
         secondFlowExpectation.isInverted = true
-        mockWideEvent.onStartFlow = { secondFlowExpectation.fulfill() }
+        mockWideEvent.onStart = { _ in secondFlowExpectation.fulfill() }
 
         postSubscriptionChange(subscription)
         wait(for: [secondFlowExpectation], timeout: 0.2)
 
         // Then - should still be only one flow
-        XCTAssertEqual(mockWideEvent.startedFlows.count, 1)
+        XCTAssertEqual(mockWideEvent.started.count, 1)
     }
 
     // MARK: - Complete Flow Tests
@@ -91,15 +92,15 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         // Given - start a trial flow first
         let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
         let startExpectation = expectation(description: "Flow started")
-        mockWideEvent.onStartFlow = { startExpectation.fulfill() }
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
 
         postSubscriptionChange(trialSubscription)
         wait(for: [startExpectation], timeout: 1.0)
-        XCTAssertEqual(mockWideEvent.startedFlows.count, 1)
+        XCTAssertEqual(mockWideEvent.started.count, 1)
 
         // When - user converts to paid (active but no trial offer)
         let completeExpectation = expectation(description: "Flow completed")
-        mockWideEvent.onCompleteFlow = { completeExpectation.fulfill() }
+        mockWideEvent.onComplete = { _, _ in completeExpectation.fulfill() }
 
         let paidSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: false)
         postSubscriptionChange(paidSubscription)
@@ -107,22 +108,22 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
 
         // Then
         XCTAssertEqual(mockWideEvent.completions.count, 1)
-        XCTAssertEqual(mockWideEvent.completions.first?.status, .success)
+        XCTAssertEqual(mockWideEvent.completions.first?.1, .success)
     }
 
     func testWhenTrialExpires_ItCompletesTheFlowWithFailure() {
         // Given - start a trial flow first
         let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
         let startExpectation = expectation(description: "Flow started")
-        mockWideEvent.onStartFlow = { startExpectation.fulfill() }
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
 
         postSubscriptionChange(trialSubscription)
         wait(for: [startExpectation], timeout: 1.0)
-        XCTAssertEqual(mockWideEvent.startedFlows.count, 1)
+        XCTAssertEqual(mockWideEvent.started.count, 1)
 
         // When - trial expires (not active)
         let completeExpectation = expectation(description: "Flow completed")
-        mockWideEvent.onCompleteFlow = { completeExpectation.fulfill() }
+        mockWideEvent.onComplete = { _, _ in completeExpectation.fulfill() }
 
         let expiredSubscription = makeSubscription(status: .expired, hasTrialOffer: false)
         postSubscriptionChange(expiredSubscription)
@@ -130,7 +131,7 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
 
         // Then
         XCTAssertEqual(mockWideEvent.completions.count, 1)
-        XCTAssertEqual(mockWideEvent.completions.first?.status, .failure)
+        XCTAssertEqual(mockWideEvent.completions.first?.1, .failure)
     }
 
     func testWhenNoExistingFlow_ItDoesNotCompleteTheFlow() {
@@ -139,7 +140,7 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         // When - subscription changes to paid (but no flow was ever started)
         let completeExpectation = expectation(description: "Flow should not complete")
         completeExpectation.isInverted = true
-        mockWideEvent.onCompleteFlow = { completeExpectation.fulfill() }
+        mockWideEvent.onComplete = { _, _ in completeExpectation.fulfill() }
 
         let paidSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: false)
         postSubscriptionChange(paidSubscription)
@@ -155,7 +156,7 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         // Given - start a trial flow first
         let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
         let startExpectation = expectation(description: "Flow started")
-        mockWideEvent.onStartFlow = { startExpectation.fulfill() }
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
 
         postSubscriptionChange(trialSubscription)
         wait(for: [startExpectation], timeout: 1.0)
@@ -164,8 +165,8 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         sut.markVPNActivated()
 
         // Then
-        XCTAssertEqual(mockWideEvent.updatedFlows.count, 1)
-        let updatedData = mockWideEvent.updatedFlows.first as? FreeTrialConversionWideEventData
+        XCTAssertEqual(mockWideEvent.updates.count, 1)
+        let updatedData = mockWideEvent.updates.first as? FreeTrialConversionWideEventData
         XCTAssertNotNil(updatedData)
     }
 
@@ -173,7 +174,7 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         // Given - start a trial flow first
         let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
         let startExpectation = expectation(description: "Flow started")
-        mockWideEvent.onStartFlow = { startExpectation.fulfill() }
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
 
         postSubscriptionChange(trialSubscription)
         wait(for: [startExpectation], timeout: 1.0)
@@ -182,8 +183,8 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         sut.markPIRActivated()
 
         // Then
-        XCTAssertEqual(mockWideEvent.updatedFlows.count, 1)
-        let updatedData = mockWideEvent.updatedFlows.first as? FreeTrialConversionWideEventData
+        XCTAssertEqual(mockWideEvent.updates.count, 1)
+        let updatedData = mockWideEvent.updates.first as? FreeTrialConversionWideEventData
         XCTAssertNotNil(updatedData)
     }
 
@@ -194,7 +195,7 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         sut.markVPNActivated()
 
         // Then
-        XCTAssertEqual(mockWideEvent.updatedFlows.count, 0)
+        XCTAssertEqual(mockWideEvent.updates.count, 0)
     }
 
     func testWhenPIRActivatedWithNoExistingFlow_ItDoesNotUpdateTheFlow() {
@@ -204,14 +205,14 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         sut.markPIRActivated()
 
         // Then
-        XCTAssertEqual(mockWideEvent.updatedFlows.count, 0)
+        XCTAssertEqual(mockWideEvent.updates.count, 0)
     }
 
     // MARK: - Feature Flag Tests
 
     func testWhenFeatureFlagDisabled_ItDoesNotStartFlow() {
         // Given
-        let disabledMockWideEvent = MockWideEventManaging()
+        let disabledMockWideEvent = WideEventMock()
         let disabledNotificationCenter = NotificationCenter()
         let disabledSut = DefaultFreeTrialConversionWideEventService(
             wideEvent: disabledMockWideEvent,
@@ -225,7 +226,7 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         // Set up inverted expectation - flow should NOT start
         let startExpectation = expectation(description: "Flow should not start")
         startExpectation.isInverted = true
-        disabledMockWideEvent.onStartFlow = { startExpectation.fulfill() }
+        disabledMockWideEvent.onStart = { _ in startExpectation.fulfill() }
 
         // When
         disabledNotificationCenter.post(
@@ -236,7 +237,7 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
 
         // Then
         wait(for: [startExpectation], timeout: 0.2)
-        XCTAssertEqual(disabledMockWideEvent.startedFlows.count, 0)
+        XCTAssertEqual(disabledMockWideEvent.started.count, 0)
     }
 
     // MARK: - Helpers
@@ -257,61 +258,5 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
             object: nil,
             userInfo: [UserDefaultsCacheKey.subscription: subscription]
         )
-    }
-}
-
-// MARK: - Mock WideEventManaging
-
-/// A mock that properly tracks flow state for testing
-private final class MockWideEventManaging: WideEventManaging {
-
-    var startedFlows: [WideEventData] = []
-    var updatedFlows: [WideEventData] = []
-    var completions: [(data: WideEventData, status: WideEventStatus)] = []
-    var discardedFlows: [WideEventData] = []
-
-    var onStartFlow: (() -> Void)?
-    var onCompleteFlow: (() -> Void)?
-
-    func startFlow<T: WideEventData>(_ data: T) {
-        startedFlows.append(data)
-        onStartFlow?()
-    }
-
-    func updateFlow<T: WideEventData>(_ data: T) {
-        updatedFlows.append(data)
-    }
-
-    func updateFlow<T: WideEventData>(globalID: String, update: (inout T) -> Void) {
-        // Not needed for these tests
-    }
-
-    func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock) {
-        completions.append((data: data, status: status))
-        // Remove from started flows to simulate completion
-        startedFlows.removeAll { ($0 as? T)?.globalData.id == data.globalData.id }
-        onComplete(true, nil)
-        onCompleteFlow?()
-    }
-
-    func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus) async throws -> Bool {
-        completions.append((data: data, status: status))
-        // Remove from started flows to simulate completion
-        startedFlows.removeAll { ($0 as? T)?.globalData.id == data.globalData.id }
-        onCompleteFlow?()
-        return true
-    }
-
-    func discardFlow<T: WideEventData>(_ data: T) {
-        discardedFlows.append(data)
-        startedFlows.removeAll { ($0 as? T)?.globalData.id == data.globalData.id }
-    }
-
-    func getFlowData<T: WideEventData>(_ type: T.Type, globalID: String) -> T? {
-        return startedFlows.first { ($0 as? T)?.globalData.id == globalID } as? T
-    }
-
-    func getAllFlowData<T: WideEventData>(_ type: T.Type) -> [T] {
-        return startedFlows.compactMap { $0 as? T }
     }
 }

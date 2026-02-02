@@ -33,7 +33,8 @@
             {
                 "key": "feature.data.ext.free_trial_plan",
                 "type": "string",
-                "description": "The subscription plan ID for the free trial, e.g. ddg.privacy.pro.monthly.renews.us"
+                "description": "The subscription plan ID for the free trial",
+                "examples": ["ddg.privacy.pro.monthly.renews.us.freetrial", "ddg.privacy.pro.yearly.renews.us.freetrial"]
             },
             {
                 "key": "feature.data.ext.step.vpn_activated_d1",

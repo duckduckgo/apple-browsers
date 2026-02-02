@@ -336,7 +336,7 @@ struct RunDBPDebugModeView: View {
                 }
                 .buttonStyle(.bordered)
                 .font(.caption)
-                .disabled(!viewModel.canContinueOptOutAfterEmailConfirmation(for: result))
+                .disabled(!viewModel.canContinueOptOutAfterEmailConfirmation(for: result) || viewModel.isAnyOptOutInProgress)
             }
         }
     }
@@ -515,6 +515,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         
         isRunning = true
         results.removeAll()
+        debugEmailConfirmationStore.reset()
         updateWebViewAvailability()
         
         currentTask = Task { @MainActor in

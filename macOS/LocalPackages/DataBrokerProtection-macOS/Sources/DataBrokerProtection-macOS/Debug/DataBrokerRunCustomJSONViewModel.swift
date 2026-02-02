@@ -212,7 +212,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let featureFlagger: DBPFeatureFlagging
 
     private var isSyncingAgeFields = false
-    var awaitingEmailConfirmationProfileIds = Set<Int64>()
 
     var combinedDebugEvents: [DebugEventRow] {
         let debugRows = debugEvents.map { event in
@@ -292,7 +291,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.error = nil
         self.results.removeAll()
         self.debugEvents.removeAll()
-        self.awaitingEmailConfirmationProfileIds.removeAll()
         self.debugEmailConfirmationStore.reset()
         self.isProgressActive = true
         self.progressText = "Starting scan..."

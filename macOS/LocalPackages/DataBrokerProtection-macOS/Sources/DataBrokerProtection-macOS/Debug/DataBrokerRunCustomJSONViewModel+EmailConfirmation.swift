@@ -115,17 +115,4 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
         }
     }
 
-    @MainActor
-    func updateEmailConfirmationState(for event: HistoryEvent) {
-        guard let extractedProfileId = event.extractedProfileId else { return }
-        switch event.type {
-        case .optOutSubmittedAndAwaitingEmailConfirmation:
-            awaitingEmailConfirmationProfileIds.insert(extractedProfileId)
-        case .optOutConfirmed, .matchRemovedByUser:
-            awaitingEmailConfirmationProfileIds.remove(extractedProfileId)
-        default:
-            break
-        }
-    }
-
 }

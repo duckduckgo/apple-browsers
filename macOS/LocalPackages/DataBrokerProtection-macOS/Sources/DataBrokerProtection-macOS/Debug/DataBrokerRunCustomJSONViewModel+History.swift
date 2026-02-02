@@ -74,7 +74,6 @@ extension DataBrokerRunCustomJSONViewModel {
                                                   profileQueryLabel: self.historyEventDetails(event),
                                                   summary: self.historyEventDescription(event),
                                                   details: ""))
-            self.updateEmailConfirmationState(for: event)
         }
     }
 

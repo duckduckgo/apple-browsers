@@ -457,8 +457,10 @@ class FireExecutor: FireExecuting {
         let result = await cleaner.deleteAIChat(chatID: chatID)
         switch result {
         case .success:
+            // TODO: - Add Pixel
             await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
         case .failure(let error):
+            // TODO: - Add Pixel
             Logger.aiChat.debug("Failed to delete AI Chat: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()

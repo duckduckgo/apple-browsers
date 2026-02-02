@@ -994,10 +994,7 @@ final class Fire: FireProtocol {
     private func burnLastSessionState() {
         let startTime = Date()
         stateRestorationManager?.clearLastSessionState()
-        FirePixels.measure(with: FirePixels.burnLastSessionStateDuration, from: startTime)
-        FirePixels.measure(with: FirePixels.burnLastSessionStateHasResidue) {
-            stateRestorationManager?.canRestoreLastSessionState ?? false
-        }
+        FirePixels.fireDurationPixel(FirePixels.burnLastSessionStateDuration, from: startTime)
     }
 
     // MARK: - Burn Recently Closed

@@ -29,6 +29,7 @@ protocol FileStore {
     func hasData(at url: URL) -> Bool
     func directoryContents(at path: String) throws -> [String]
     func remove(fileAtURL url: URL)
+    func removeOrThrow(fileAtURL url: URL) throws
     func move(fileAt from: URL, to: URL)
 }
 
@@ -92,6 +93,13 @@ final class EncryptedFileStore: FileStore {
         guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir) && !isDir.boolValue else { return }
         try? fileManager.removeItem(at: url)
     }
+    
+    func removeOrThrow(fileAtURL url: URL) throws {
+        var isDir: ObjCBool = false
+        let fileManager = FileManager()
+        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir) && !isDir.boolValue else { return }
+        try fileManager.removeItem(at: url)
+    }
 
     func move(fileAt from: URL, to: URL) {
         try? FileManager.default.moveItem(at: from, to: to)
@@ -128,11 +136,11 @@ extension FileManager: FileStore {
     }
 
     func remove(fileAtURL url: URL) {
-        do {
-            try removeItem(at: url)
-        } catch {
-            FirePixels.measure(with: FirePixels.burnLastSessionStateError(error))
-        }
+        try? removeItem(at: url)
+    }
+    
+    func removeOrThrow(fileAtURL url: URL) throws {
+        try removeItem(at: url)
     }
 
     func move(fileAt from: URL, to: URL) {

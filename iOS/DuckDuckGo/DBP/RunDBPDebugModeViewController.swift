@@ -525,13 +525,15 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
             for query in queries {
                 let queryWithId = query.with(id: DebugHelper.stableId(for: query))
-                let brokerProfileQueryData = BrokerProfileQueryData(
-                    dataBroker: broker,
-                    profileQuery: queryWithId,
-                    scanJobData: ScanJobData(brokerId: DebugHelper.stableId(for: broker),
-                                             profileQueryId: DebugHelper.stableId(for: queryWithId),
-                                             historyEvents: [])
-                )
+                    let brokerId = DebugHelper.stableId(for: broker)
+                    let profileQueryId = DebugHelper.stableId(for: queryWithId)
+                    let brokerProfileQueryData = BrokerProfileQueryData(
+                        dataBroker: broker,
+                        profileQuery: queryWithId,
+                        scanJobData: ScanJobData(brokerId: brokerId,
+                                                 profileQueryId: profileQueryId,
+                                                 historyEvents: [])
+                    )
                 
                 do {
                     let runner = BrokerProfileScanSubJobWebRunner(
@@ -550,10 +552,16 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     
                     let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
                     for profile in extractedProfiles {
+                        let assignedProfile = debugEmailConfirmationStore.storeExtractedProfile(
+                            profile,
+                            brokerId: brokerId,
+                            profileQueryId: profileQueryId,
+                            stableId: DebugHelper.stableId(for: profile)
+                        )
                         let result = DebugScanResult(
                             dataBroker: broker,
                             profileQuery: queryWithId,
-                            extractedProfile: profile.with(id: DebugHelper.stableId(for: profile))
+                            extractedProfile: assignedProfile
                         )
 
                         allResults.append(result)

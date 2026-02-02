@@ -225,6 +225,19 @@ final class Fire: FireProtocol {
                 return nil
             }
         }
+        
+        var description: String {
+            switch self {
+            case .none:
+                return "none"
+            case .tab:
+                return "tab"
+            case .window:
+                return "window"
+            case .allWindows:
+                return "allWindows"
+            }
+        }
 
         func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
             switch self {

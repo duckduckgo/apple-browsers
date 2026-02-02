@@ -20,6 +20,7 @@ import AppKit
 import Combine
 import Foundation
 import AIChat
+import PixelKit
 
 protocol AutoClearAlertPresenting {
     func confirmAutoClear(clearChats: Bool) -> NSApplication.ModalResponse
@@ -109,7 +110,9 @@ final class AutoClearHandler: ApplicationTerminationDecider {
                 await aiChatSyncCleaner?.recordLocalClear(date: Date())
             }
         }
+        let startTime = Date()
         await fireViewModel.fire.burnAll(isBurnOnExit: true, includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
+        Self.fireCompletionPixel(from: startTime, isAutoClearAIChatHistoryEnabled: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
         appTerminationHandledCorrectly = true
     }
 
@@ -164,9 +167,28 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     func burnOnStartIfNeeded() -> Bool {
         let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
-
+        
+        let startTime = Date()
         fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
+        Self.fireCompletionPixel(from: startTime, isAutoClearAIChatHistoryEnabled: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
         return true
     }
 
+}
+
+// MARK: - Instrumentation
+
+extension AutoClearHandler {
+    private static func fireCompletionPixel(from startTime: Date, isAutoClearAIChatHistoryEnabled: Bool) {
+        PixelKit.fire(
+            FirePixels.fireCompletion(
+                duration: Int(Date().timeIntervalSince(startTime) * 1000),
+                option: "allData",
+                domains: isAutoClearAIChatHistoryEnabled ? "ChatHistory": "",
+                path: "burnAll",
+                autoClear: "true"
+            ),
+            frequency: .standard
+        )
+    }
 }

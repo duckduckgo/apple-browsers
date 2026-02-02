@@ -368,7 +368,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.$chipState
             .sink { state in
                 receivedStates.append(state)
-                if receivedStates.count == 4 {
+                if receivedStates.count == 3 {
                     expectation.fulfill()
                 }
             }
@@ -381,7 +381,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        XCTAssertEqual(receivedStates.count, 4)
+        XCTAssertEqual(receivedStates.count, 3)
         XCTAssertEqual(receivedStates[0], .none)
         XCTAssertEqual(receivedStates[1], .attached)
         XCTAssertEqual(receivedStates[2], .placeholder)

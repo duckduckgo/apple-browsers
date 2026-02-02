@@ -22,6 +22,7 @@ import DesignResourcesKit
 
 public extension OnboardingTheme {
 
+    // Temporary values. To Replace when working on macOS project.
     static let macOSRebranding2026 = {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
@@ -30,12 +31,12 @@ public extension OnboardingTheme {
             typography: .system,
             colorPalette: ColorPalette(
                 bubbleBorder: Color(designSystemColor: .accentAltPrimary),
-                bubbleBackground: Color(designSystemColor:.surfaceTertiary),
+                bubbleBackground: Color(designSystemColor: .surfaceTertiary),
                 bubbleShadow: Color.shade(0.03),
-                textPrimary: Color(designSystemColor:.textPrimary),
-                textSecondary: Color(designSystemColor:.textSecondary),
-                primaryButtonBackgroundColor: Color(designSystemColor:.buttonsPrimaryDefault),
-                primaryButtonTextColor: Color(designSystemColor:.buttonsPrimaryText)
+                textPrimary: Color(designSystemColor: .textPrimary),
+                textSecondary: Color(designSystemColor: .textSecondary),
+                primaryButtonBackgroundColor: Color(designSystemColor: .buttonsPrimaryDefault),
+                primaryButtonTextColor: Color(designSystemColor: .buttonsPrimaryText)
             ),
             bubbleMetrics: BubbleMetrics(
                 contentInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),

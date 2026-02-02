@@ -26,7 +26,7 @@ import SwiftUI
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
     @Environment(\.onboardingTheme) private var onboardingTheme
 
-    public func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)

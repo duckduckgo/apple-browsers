@@ -41,7 +41,7 @@ public struct OnboardingButtonStyle: Equatable {
         self.style = style
     }
 
-    public static func ==(lhs: Self, rhs: Self) -> Bool {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
 }

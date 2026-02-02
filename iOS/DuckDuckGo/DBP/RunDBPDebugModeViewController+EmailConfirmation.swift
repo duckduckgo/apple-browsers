@@ -23,19 +23,14 @@ import enum UserScript.UserScriptError
 
 // MARK: - Email Confirmation
 
+extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
+    var emailConfirmationStore: EmailConfirmationSupporting {
+        debugEmailConfirmationStore
+    }
+}
+
 extension RunDBPDebugModeViewModel {
-
-    func canCheckEmailConfirmation(for result: ScanResult) -> Bool {
-        guard result.dataBroker.requiresEmailConfirmationDuringOptOut() else { return false }
-        return isAwaitingEmailConfirmation(for: result)
-    }
-
-    func canContinueOptOutAfterEmailConfirmation(for result: ScanResult) -> Bool {
-        guard result.dataBroker.requiresEmailConfirmationDuringOptOut() else { return false }
-        return confirmationURL(for: result) != nil
-    }
-
-    func emailConfirmationStatusText(for result: ScanResult) -> String? {
+    func emailConfirmationStatusText(for result: DebugScanResult) -> String? {
         guard result.dataBroker.requiresEmailConfirmationDuringOptOut() else { return nil }
 
         if confirmationURL(for: result) != nil {
@@ -61,7 +56,7 @@ extension RunDBPDebugModeViewModel {
         }
     }
 
-    func continueOptOutAfterEmailConfirmation(for result: ScanResult) {
+    func continueOptOutAfterEmailConfirmation(for result: DebugScanResult) {
         guard let confirmationURL = confirmationURL(for: result) else { return }
 
         optOutInProgress.insert(result.id)
@@ -120,39 +115,6 @@ extension RunDBPDebugModeViewModel {
                 showAlert(title: "Error", message: "Opt-out failed: \(error.localizedDescription)")
             }
         }
-    }
-
-    func isAwaitingEmailConfirmation(for result: ScanResult) -> Bool {
-        guard let identifiers = confirmationIdentifiers(for: result),
-              let confirmations = try? emailConfirmationStore.fetchOptOutEmailConfirmationsAwaitingLink() else {
-            return false
-        }
-
-        return confirmations.contains(where: { confirmation in
-            confirmation.brokerId == identifiers.brokerId &&
-            confirmation.profileQueryId == identifiers.profileQueryId &&
-            confirmation.extractedProfileId == identifiers.extractedProfileId
-        })
-    }
-
-    func confirmationURL(for result: ScanResult) -> URL? {
-        guard let identifiers = confirmationIdentifiers(for: result),
-              let confirmations = try? emailConfirmationStore.fetchOptOutEmailConfirmationsWithLink(),
-              let match = confirmations.first(where: { confirmation in
-                  confirmation.brokerId == identifiers.brokerId &&
-                  confirmation.profileQueryId == identifiers.profileQueryId &&
-                  confirmation.extractedProfileId == identifiers.extractedProfileId
-              }),
-              let link = match.emailConfirmationLink else { return nil }
-        return URL(string: link)
-    }
-
-    func confirmationIdentifiers(for result: ScanResult) -> (brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64)? {
-        let brokerId = result.dataBroker.id ?? DebugHelper.stableId(for: result.dataBroker)
-        let profileQueryId = result.profileQuery.id ?? DebugHelper.stableId(for: result.profileQuery)
-
-        let extractedProfileId = result.extractedProfile.id ?? DebugHelper.stableId(for: result.extractedProfile)
-        return (brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
     }
 
     func ensureDebugProfileQuery(_ query: ProfileQuery, index: Int) -> ProfileQuery {

@@ -274,7 +274,7 @@ struct RunDBPDebugModeView: View {
         }
     }
     
-    private func resultRowView(result: ScanResult) -> some View {
+    private func resultRowView(result: DebugScanResult) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading) {
@@ -323,7 +323,7 @@ struct RunDBPDebugModeView: View {
     }
 
     @ViewBuilder
-    private func emailConfirmationControls(for result: ScanResult) -> some View {
+    private func emailConfirmationControls(for result: DebugScanResult) -> some View {
         if result.dataBroker.requiresEmailConfirmationDuringOptOut() {
             if let statusText = viewModel.emailConfirmationStatusText(for: result) {
                 Text(statusText)
@@ -361,7 +361,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var birthYear: String = ""
     @Published var brokers: [DataBroker] = []
     @Published var selectedBroker: DataBroker?
-    @Published var results: [ScanResult] = []
+    @Published var results: [DebugScanResult] = []
     @Published var isRunning: Bool = false
     @Published var currentBrokerName: String?
     @Published var currentBrokerIndex: Int = 0
@@ -385,7 +385,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
     let contentScopeProperties: ContentScopeProperties
     let emailConfirmationDataService: EmailConfirmationDataService
-    let emailConfirmationStore: DebugEmailConfirmationStore
+    let debugEmailConfirmationStore: DebugEmailConfirmationStore
     let captchaService: CaptchaService
     let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
@@ -465,10 +465,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             servicePixel: backendServicePixels
         )
         
-        self.emailConfirmationStore = DebugEmailConfirmationStore()
+        self.debugEmailConfirmationStore = DebugEmailConfirmationStore()
         
         self.emailConfirmationDataService = EmailConfirmationDataService(
-            emailConfirmationStore: emailConfirmationStore,
+            emailConfirmationStore: debugEmailConfirmationStore,
             database: nil,
             emailServiceV0: emailService,
             emailServiceV1: emailServiceV1,
@@ -524,7 +524,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         currentTask = Task { @MainActor in
             let profile = createProfile()
             let queries = profile.profileQueries
-            var allResults: [ScanResult] = []
+            var allResults: [DebugScanResult] = []
 
             self.totalBrokerCount = brokers.count
             
@@ -559,7 +559,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         
                         let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
                         for profile in extractedProfiles {
-                            let result = ScanResult(
+                            let result = DebugScanResult(
                                 dataBroker: broker,
                                 profileQuery: queryWithId,
                                 extractedProfile: ensureDebugExtractedProfile(profile)
@@ -651,7 +651,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         currentWebViewManager?.hideWebView()
     }
     
-    func runOptOut(for result: ScanResult) {
+    func runOptOut(for result: DebugScanResult) {
         // Add to in-progress set
         optOutInProgress.insert(result.id)
         updateWebViewAvailability()
@@ -790,13 +790,6 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 }
 
 // MARK: - Models
-
-struct ScanResult {
-    let id = UUID()
-    let dataBroker: DataBroker
-    let profileQuery: ProfileQuery
-    let extractedProfile: ExtractedProfile
-}
 
 // MARK: - Extensions
 

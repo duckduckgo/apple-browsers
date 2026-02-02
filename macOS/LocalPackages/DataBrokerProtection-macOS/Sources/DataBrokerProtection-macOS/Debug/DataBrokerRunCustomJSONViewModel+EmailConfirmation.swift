@@ -20,21 +20,13 @@ import Foundation
 import DataBrokerProtectionCore
 import UserScript
 
+extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
+    var emailConfirmationStore: EmailConfirmationSupporting {
+        debugEmailConfirmationStore
+    }
+}
+
 extension DataBrokerRunCustomJSONViewModel {
-
-    func canCheckEmailConfirmation(for scanResult: ScanResult) -> Bool {
-        guard let extractedProfileId = scanResult.extractedProfile.id,
-              scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() else {
-            return false
-        }
-        return awaitingEmailConfirmationProfileIds.contains(extractedProfileId)
-    }
-
-    func canContinueOptOutAfterEmailConfirmation(for scanResult: ScanResult) -> Bool {
-        guard canCheckEmailConfirmation(for: scanResult) else { return false }
-        return confirmationURL(for: scanResult) != nil
-    }
-
     func checkForEmailConfirmation() {
         updateProgress("Checking email confirmations...")
         let emailConfirmationDataService = emailConfirmationDataService
@@ -58,7 +50,7 @@ extension DataBrokerRunCustomJSONViewModel {
         }
     }
 
-    func continueOptOutAfterEmailConfirmation(scanResult: ScanResult) {
+    func continueOptOutAfterEmailConfirmation(scanResult: DebugScanResult) {
         guard let confirmationURL = confirmationURL(for: scanResult) else { return }
         isProgressActive = true
         progressText = "Continuing opt-out..."
@@ -138,17 +130,4 @@ extension DataBrokerRunCustomJSONViewModel {
         }
     }
 
-    private func confirmationURL(for scanResult: ScanResult) -> URL? {
-        guard let extractedProfileId = scanResult.extractedProfile.id else { return nil }
-        let brokerId = DebugHelper.stableId(for: scanResult.dataBroker)
-        let profileQueryId = DebugHelper.stableId(for: scanResult.profileQuery)
-        guard let confirmations = try? emailConfirmationStore.fetchOptOutEmailConfirmationsWithLink(),
-              let match = confirmations.first(where: {
-                  $0.brokerId == brokerId &&
-                  $0.profileQueryId == profileQueryId &&
-                  $0.extractedProfileId == extractedProfileId
-              }),
-              let link = match.emailConfirmationLink else { return nil }
-        return URL(string: link)
-    }
 }

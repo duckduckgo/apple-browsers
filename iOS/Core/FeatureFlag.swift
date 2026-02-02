@@ -350,7 +350,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dataImportSummarySyncPromotion,
              .crashCollectionDisableKeysSorting,
              .freeTrialConversionWideEvent,
-             .dataImportSummarySyncPromotion,
              .crashCollectionLimitCallStackTreeDepth,
              .tabSwitcherTrackerCount:
             true

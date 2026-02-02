@@ -23,7 +23,7 @@ import Foundation
 /// This protocol defines the interface for monitoring tunnel health by checking
 /// WireGuard handshakes and detecting connection failures.
 ///
-protocol TunnelFailureMonitoring: Actor {
+public protocol TunnelFailureMonitoring: Actor {
 
     /// Indicates whether the monitor is currently running.
     var isStarted: Bool { get }

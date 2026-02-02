@@ -235,28 +235,6 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
         XCTAssertEqual(receivedValues, [true, false, true])
     }
 
-    // MARK: - createAttachActions Tests
-
-    func testCreateAttachActionsReturnsOneAction() {
-        // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
-        var actionCalled = false
-
-        // When
-        let actions = sut.createAttachActions {
-            actionCalled = true
-        }
-
-        // Then
-        XCTAssertEqual(actions.count, 1)
-        XCTAssertNotNil(actions.first?.icon)
-
-        // When handler is called
-        actions.first?.handler()
-
-        // Then
-        XCTAssertTrue(actionCalled)
-    }
 
     // MARK: - updateContextAvailability Tests
 

@@ -32,7 +32,10 @@ public final class AIChatContextChipView: UIView {
     private enum Constants {
         static let chipWidth: CGFloat = 240
         static let cornerRadius: CGFloat = 15
-        static let borderWidth: CGFloat = 1
+        static let borderCornerRadius: CGFloat = 13
+        static let borderWidth: CGFloat = 1.5
+        static let dashLength: CGFloat = 5
+        static let dashSpacing: CGFloat = 5
 
         static let faviconSize: CGFloat = 24
         static let faviconCornerRadius: CGFloat = 4
@@ -47,10 +50,27 @@ public final class AIChatContextChipView: UIView {
         static let labelSpacing: CGFloat = 2
     }
 
+    // MARK: - State
+
+    public enum State {
+        case placeholder
+        case attached(title: String, favicon: UIImage?)
+    }
+
+    private var currentState: State = .placeholder
+
     // MARK: - Properties
 
     /// Callback invoked when the remove button is tapped.
     public var onRemove: (() -> Void)?
+
+    /// Callback invoked when the chip is tapped in the placeholder state.
+    public var onTapToAttach: (() -> Void)?
+
+    private var borderLayer: CAShapeLayer?
+    private var isDashedBorder = false
+    private var lastBorderBounds: CGRect = .zero
+    private var tapGesture: UITapGestureRecognizer?
 
     // MARK: - UI Components
 
@@ -82,9 +102,9 @@ public final class AIChatContextChipView: UIView {
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.daxButton()
+        label.font = UIFont.daxSubheadSemibold()
         label.adjustsFontForContentSizeCategory = true
-        label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.textColor = UIColor(designSystemColor: .textTertiary)
         label.numberOfLines = 1
         label.lineBreakMode = .byTruncatingTail
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -113,15 +133,21 @@ public final class AIChatContextChipView: UIView {
 
     // MARK: - Configuration
 
-    /// Configures the chip with the given title and optional favicon.
+    /// Configures the chip with the given state.
+    ///
+    /// - Parameter state: The state to display (placeholder or attached with title/favicon).
+    public func configure(state: State) {
+        currentState = state
+        updateUI(for: state)
+    }
+
+    /// Configures the chip with the given title and optional favicon (attached state).
     ///
     /// - Parameters:
     ///   - title: The page title to display.
     ///   - favicon: The favicon image. If nil, a placeholder is shown.
     public func configure(title: String, favicon: UIImage?) {
-        titleLabel.text = title
-        faviconView.image = favicon ?? placeholderFavicon()
-        accessibilityLabel = title
+        configure(state: .attached(title: title, favicon: favicon))
     }
 
     /// Updates the chip content, preserving the existing favicon if the new one is nil.
@@ -130,6 +156,7 @@ public final class AIChatContextChipView: UIView {
     ///   - title: The new page title to display.
     ///   - favicon: The new favicon image. If nil, the existing favicon is preserved.
     public func update(title: String, favicon: UIImage?) {
+        guard case .attached = currentState else { return }
         titleLabel.text = title
         if let favicon {
             faviconView.image = favicon
@@ -143,10 +170,9 @@ public final class AIChatContextChipView: UIView {
 private extension AIChatContextChipView {
 
     func setupUI() {
-        backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        backgroundColor = .clear
         layer.cornerRadius = Constants.cornerRadius
-        layer.borderWidth = Constants.borderWidth
-        layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
+        clipsToBounds = true
 
         addSubview(mainStackView)
 
@@ -155,8 +181,71 @@ private extension AIChatContextChipView {
         chipContentView.addSubview(removeButton)
         mainStackView.addArrangedSubview(chipContentView)
 
+        let gesture = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
+        tapGesture = gesture
+        addGestureRecognizer(gesture)
+
         setupConstraints()
         setupAccessibility()
+    }
+
+    func updateUI(for state: State) {
+        switch state {
+        case .placeholder:
+            titleLabel.text = UserText.attachPageContent
+            titleLabel.textColor = UIColor(designSystemColor: .textPlaceholder)
+            faviconView.image = DesignSystemImages.Glyphs.Size24.pageContentAttach.withRenderingMode(.alwaysTemplate)
+            faviconView.tintColor = UIColor(designSystemColor: .textTertiary)
+            faviconView.backgroundColor = .clear
+            faviconView.layer.borderWidth = 0
+            faviconView.layer.borderColor = nil
+            backgroundColor = .clear
+            removeButton.isHidden = true
+            accessibilityLabel = UserText.attachPageContent
+            updateBorder(dashed: true)
+            isUserInteractionEnabled = true
+            tapGesture?.isEnabled = true
+
+        case .attached(let title, let favicon):
+            titleLabel.text = title
+            titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+            removeButton.isHidden = false
+            faviconView.image = favicon ?? placeholderFavicon()
+            faviconView.backgroundColor = .clear
+            faviconView.layer.borderWidth = 0
+            faviconView.layer.borderColor = nil
+            backgroundColor = .clear
+            accessibilityLabel = title
+            updateBorder(dashed: false)
+            tapGesture?.isEnabled = false
+        }
+    }
+
+    func updateBorder(dashed: Bool) {
+        isDashedBorder = dashed
+        layer.borderWidth = 0
+        layer.borderColor = nil
+        clipsToBounds = true
+
+        let borderLayer = makeOrReuseBorderLayer()
+        borderLayer.strokeColor = UIColor(designSystemColor: dashed ? .decorationPrimary : .decorationQuaternary).cgColor
+        borderLayer.lineWidth = Constants.borderWidth
+        borderLayer.lineDashPattern = dashed ? [NSNumber(value: Constants.dashLength), NSNumber(value: Constants.dashSpacing)] : nil
+        borderLayer.fillColor = dashed ? nil : UIColor(designSystemColor: .controlsFillPrimary).cgColor
+
+        setNeedsLayout()
+    }
+
+    func makeOrReuseBorderLayer() -> CAShapeLayer {
+        if let borderLayer = borderLayer {
+            return borderLayer
+        }
+
+        let newLayer = CAShapeLayer()
+        newLayer.contentsScale = UIScreen.main.scale
+        layer.insertSublayer(newLayer, at: 0)
+        borderLayer = newLayer
+        return newLayer
     }
 
     func setupConstraints() {
@@ -199,6 +288,33 @@ private extension AIChatContextChipView {
     @objc func removeButtonTapped() {
         onRemove?()
     }
+
+    @objc func chipTapped() {
+        if case .placeholder = currentState {
+            onTapToAttach?()
+        }
+    }
+}
+
+// MARK: - Layout
+
+extension AIChatContextChipView {
+
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+
+        guard !bounds.isEmpty else { return }
+        guard let borderLayer = borderLayer else { return }
+
+        if lastBorderBounds != bounds {
+            let inset = Constants.borderWidth / 2
+            let insetBounds = CGRect(origin: .zero, size: bounds.size).insetBy(dx: inset, dy: inset)
+
+            borderLayer.frame = bounds
+            borderLayer.path = UIBezierPath(roundedRect: insetBounds, cornerRadius: Constants.borderCornerRadius).cgPath
+            lastBorderBounds = bounds
+        }
+    }
 }
 
 // MARK: - Trait Changes
@@ -209,7 +325,14 @@ extension AIChatContextChipView {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
+            if let borderLayer = borderLayer {
+                borderLayer.strokeColor = UIColor(designSystemColor: isDashedBorder ? .decorationPrimary : .decorationQuaternary).cgColor
+                borderLayer.fillColor = isDashedBorder ? nil : UIColor(designSystemColor: .controlsFillPrimary).cgColor
+            }
+            // Update favicon border color for dark mode (placeholder state only)
+            if faviconView.layer.borderWidth > 0 {
+                faviconView.layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
+            }
         }
     }
 }

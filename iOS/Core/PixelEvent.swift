@@ -1486,6 +1486,8 @@ extension Pixel {
         case aiChatContextualExpandButtonTapped
         case aiChatContextualNewChatButtonTapped
         case aiChatContextualQuickActionSummarizeSelected
+        case aiChatContextualPageContextPlaceholderShown
+        case aiChatContextualPageContextPlaceholderTapped
         case aiChatContextualPageContextAutoAttached
         case aiChatContextualPageContextUpdatedOnNavigation
         case aiChatContextualPageContextManuallyAttachedNative
@@ -2964,6 +2966,8 @@ extension Pixel.Event {
         case .aiChatContextualExpandButtonTapped: return "m_aichat_contextual_expand_button_tapped"
         case .aiChatContextualNewChatButtonTapped: return "m_aichat_contextual_new_chat_button_tapped"
         case .aiChatContextualQuickActionSummarizeSelected: return "m_aichat_contextual_quick_action_summarize_selected"
+        case .aiChatContextualPageContextPlaceholderShown: return "m_aichat_contextual_page_context_placeholder_shown"
+        case .aiChatContextualPageContextPlaceholderTapped: return "m_aichat_contextual_page_context_placeholder_tapped"
         case .aiChatContextualPageContextAutoAttached: return "m_aichat_contextual_page_context_auto_attached"
         case .aiChatContextualPageContextUpdatedOnNavigation: return "m_aichat_contextual_page_context_updated_on_navigation"
         case .aiChatContextualPageContextManuallyAttachedNative: return "m_aichat_contextual_page_context_manually_attached_native"

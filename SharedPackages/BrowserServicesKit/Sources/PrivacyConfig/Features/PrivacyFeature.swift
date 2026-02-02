@@ -214,6 +214,14 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
+
+    /// Failsafe flag to bring back keys sorting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
+
+    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
+    case crashCollectionLimitCallStackTreeDepth
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

@@ -1566,11 +1566,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - PixelKit
 
     static func configurePixelKit() {
-#if DEBUG || REVIEW
-            Self.setUpPixelKit(dryRun: true)
-#else
-            Self.setUpPixelKit(dryRun: false)
-#endif
+        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild))
     }
 
     private static func setUpPixelKit(dryRun: Bool) {

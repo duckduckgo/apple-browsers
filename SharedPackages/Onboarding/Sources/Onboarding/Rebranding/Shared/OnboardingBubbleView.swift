@@ -212,7 +212,7 @@ private extension OnboardingBubbleView.TailPosition {
 
 // MARK: - Preview
 
-#if DEBUG
+#if os(iOS) && DEBUG
 private struct OnboardingBubblePreviewContent: View {
     @Environment(\.onboardingTheme) private var onboardingTheme
 
@@ -245,7 +245,7 @@ private struct OnboardingBubblePreviewContent: View {
             OnboardingBubblePreviewContent()
         }
         .padding()
-        .applyOnboardingTheme(.rebranding2026)
+        .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
     }
     .preferredColorScheme(.light)
 }
@@ -258,12 +258,11 @@ private struct OnboardingBubblePreviewContent: View {
             OnboardingBubblePreviewContent()
         }
         .padding()
-        .applyOnboardingTheme(.rebranding2026)
+        .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
     }
     .preferredColorScheme(.dark)
 }
 
-#if os(iOS)
 #Preview("Onboarding Speech Bubble + Progress Indicator - Light") {
     ZStack {
         Color.white.ignoresSafeArea()
@@ -293,7 +292,6 @@ private struct OnboardingBubblePreviewContent: View {
     }
     .preferredColorScheme(.dark)
 }
-#endif
 
 #Preview("Onboarding Speech Bubble + Dismiss Button - Light") {
     ZStack {

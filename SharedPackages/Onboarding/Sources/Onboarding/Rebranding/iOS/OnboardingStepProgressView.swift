@@ -22,6 +22,7 @@ import UIComponents
 
 public struct OnboardingStepProgressView: View {
     @Environment(\.onboardingTheme) private var onboardingTheme
+    @Environment(\.onboardingStepProgressTheme) private var stepProgressTheme
 
     let currentStep: Int
     let totalSteps: Int
@@ -36,33 +37,33 @@ public struct OnboardingStepProgressView: View {
     }
 
     public var body: some View {
-        HStack(spacing: onboardingTheme.stepProgressMetrics.contentSpacing) {
+        HStack(spacing: stepProgressTheme.metrics.contentSpacing) {
             DottedStepIndicatorView(
                 selectedDot: currentStep,
                 totalDots: totalSteps,
                 style: .init(
-                    dotSpacing: onboardingTheme.stepProgressMetrics.dotSpacing,
-                    selectedDotSize: onboardingTheme.stepProgressMetrics.selectedDotSize,
-                    unselectedDotSize: onboardingTheme.stepProgressMetrics.unselectedDotSize,
-                    selectedDotFillColor: onboardingTheme.colorPalette.stepProgressSelectedDot,
-                    unselectedDotFillColor: onboardingTheme.colorPalette.stepProgressUnselectedDot
+                    dotSpacing: stepProgressTheme.metrics.dotSpacing,
+                    selectedDotSize: stepProgressTheme.metrics.selectedDotSize,
+                    unselectedDotSize: stepProgressTheme.metrics.unselectedDotSize,
+                    selectedDotFillColor: stepProgressTheme.colors.selectedDot,
+                    unselectedDotFillColor: stepProgressTheme.colors.unselectedDot
                 )
             )
             Text(verbatim: "\(currentStep) of \(totalSteps)")
                 .font(onboardingTheme.typography.progressIndicator)
-                .multilineTextAlignment(onboardingTheme.stepProgressMetrics.textAlignment)
-                .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
+                .multilineTextAlignment(stepProgressTheme.textAlignment)
+                .foregroundStyle(stepProgressTheme.colors.text)
         }
-        .padding(.leading, onboardingTheme.stepProgressMetrics.contentInsets.leading)
-        .padding(.trailing, onboardingTheme.stepProgressMetrics.contentInsets.trailing)
-        .padding(.top, onboardingTheme.stepProgressMetrics.contentInsets.top)
-        .padding(.bottom, onboardingTheme.stepProgressMetrics.contentInsets.bottom)
-        .background(onboardingTheme.colorPalette.bubbleBackground)
-        .clipShape(RoundedRectangle(cornerRadius: onboardingTheme.stepProgressMetrics.cornerRadius))
+        .padding(.leading, stepProgressTheme.metrics.contentInsets.leading)
+        .padding(.trailing, stepProgressTheme.metrics.contentInsets.trailing)
+        .padding(.top, stepProgressTheme.metrics.contentInsets.top)
+        .padding(.bottom, stepProgressTheme.metrics.contentInsets.bottom)
+        .background(stepProgressTheme.colors.background)
+        .clipShape(RoundedRectangle(cornerRadius: stepProgressTheme.metrics.cornerRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: onboardingTheme.stepProgressMetrics.cornerRadius)
-                .inset(by: -onboardingTheme.stepProgressMetrics.borderInset)
-                .stroke(onboardingTheme.colorPalette.stepProgressBorderColor, lineWidth: onboardingTheme.stepProgressMetrics.borderWidth)
+            RoundedRectangle(cornerRadius: stepProgressTheme.metrics.cornerRadius)
+                .inset(by: -stepProgressTheme.metrics.borderInset)
+                .stroke(stepProgressTheme.colors.border, lineWidth: stepProgressTheme.metrics.borderWidth)
         )
     }
 }
@@ -90,6 +91,6 @@ public struct OnboardingStepProgressView: View {
     }
 
     return PreviewWrapper()
-        .applyOnboardingTheme(.rebranding2026)
+        .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
 }
 #endif

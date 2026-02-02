@@ -21,7 +21,7 @@
 import SwiftUI
 
 private struct OnboardingStepProgressViewModifier: ViewModifier {
-    @Environment(\.onboardingTheme) private var onboardingTheme
+    @Environment(\.onboardingStepProgressTheme) private var stepProgressTheme
 
     let currentStep: Int
     let totalSteps: Int
@@ -31,7 +31,7 @@ private struct OnboardingStepProgressViewModifier: ViewModifier {
             .overlay(alignment: .topTrailing) {
                 OnboardingStepProgressView(currentStep: currentStep, totalSteps: totalSteps)
                     .alignmentGuide(VerticalAlignment.top) { $0.height / 2 }
-                    .alignmentGuide(HorizontalAlignment.trailing) { $0.width + onboardingTheme.bubbleMetrics.stepProgressTrailingPadding }
+                    .alignmentGuide(HorizontalAlignment.trailing) { $0.width + stepProgressTheme.trailingPadding }
             }
     }
 }

@@ -107,14 +107,33 @@ final class FirefoxHistoryReader {
                 guard let url = URL(string: site.url), let host = url.host else { return false }
                 return (url.isHttps || url.isHttp) && !searchHosts.contains(where: { host.droppingWwwPrefix().hasPrefix("\($0).") })
             }.map { site in
-                // If the site URL is from a site with search (in searchShortcuts), replace it with the corresponding shortcut URL.
-                if let secondLevelDomain = tld.extractSecondLevelDomain(fromStringURL: site.url),
-                   let shortcutURL = searchShortcuts[secondLevelDomain] {
+                // If the site URL matches a search shortcut host, replace it with the corresponding shortcut URL.
+                if let shortcutURL = extractSearchShortcutURL(for: site.url) {
                     site.url = shortcutURL
                 }
                 return site
             }
         return validFrecentSites
+    }
+
+    /// Returns the search shortcut URL for a given URL string, if applicable.
+    ///
+    /// Search site URLs with common subdomains (`www`, `m`, `mobile`) or different eTLDs are consolidated to a single shortcut:
+    /// - `www.amazon.com`, `m.amazon.de`, `amazon.co.uk` → `https://amazon.com`
+    ///
+    /// URLs from other sites or search sites with other subdomains are not consolidated and return `nil`:
+    /// - `photos.google.com`, `smile.amazon.com` → `nil`
+    private func extractSearchShortcutURL(for urlString: String) -> String? {
+        guard let host = URL(string: urlString)?.host,
+              let eTLD = tld.eTLD(forStringURL: urlString) else {
+            return nil
+        }
+        var shortHostname = host.dropping(suffix: ".\(eTLD)")
+        let commonSubdomains = ["www", "m", "mobile"]
+        for subdomain in commonSubdomains {
+            shortHostname = shortHostname.dropping(prefix: "\(subdomain).")
+        }
+        return searchShortcuts[shortHostname]
     }
 
     // MARK: - Database Queries

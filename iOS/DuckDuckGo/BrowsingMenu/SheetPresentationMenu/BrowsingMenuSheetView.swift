@@ -55,7 +55,7 @@ struct BrowsingMenuSheetView: View {
 
         static let websiteHeaderHeight: CGFloat = 56
         /// Height of header when only close button is shown (compact mode without website info)
-        static let closeButtonHeaderHeight: CGFloat = 40
+        static let closeButtonHeaderHeight: CGFloat = 48
     }
 
     @Environment(\.dismiss) var dismiss

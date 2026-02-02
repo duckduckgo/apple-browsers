@@ -72,8 +72,8 @@ extension RunDBPDebugModeViewModel {
             }
 
             do {
-                let brokerId = result.dataBroker.id ?? DebugHelper.stableId(for: result.dataBroker)
-                let profileQueryId = result.profileQuery.id ?? DebugHelper.stableId(for: result.profileQuery)
+                let brokerId = DebugHelper.stableId(for: result.dataBroker)
+                let profileQueryId = DebugHelper.stableId(for: result.profileQuery)
                 let brokerProfileQueryData = BrokerProfileQueryData(
                     dataBroker: result.dataBroker,
                     profileQuery: result.profileQuery,

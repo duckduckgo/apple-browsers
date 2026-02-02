@@ -92,7 +92,6 @@ final class RunDBPDebugModeViewController: UIHostingController<RunDBPDebugModeVi
 
 struct RunDBPDebugModeView: View {
     @ObservedObject var viewModel: RunDBPDebugModeViewModel
-    @State private var selectedBrokerJSON: String = ""
     // WebView functionality temporarily removed for minimal scope
     
     var body: some View {
@@ -174,14 +173,14 @@ struct RunDBPDebugModeView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 
                                 Button("View JSON") {
-                                    selectedBrokerJSON = broker.toJSONString()
+                                    viewModel.selectedBrokerJSON = broker.toJSONString()
                                 }
                                 .font(.caption)
                             }
                             .padding(4)
                             .onTapGesture {
                                 viewModel.selectedBroker = broker
-                                selectedBrokerJSON = broker.toJSONString()
+                                viewModel.selectedBrokerJSON = broker.toJSONString()
                             }
                             .background(viewModel.selectedBroker?.name == broker.name ? Color.blue.opacity(0.2) : Color.clear)
                             .cornerRadius(6)
@@ -196,22 +195,20 @@ struct RunDBPDebugModeView: View {
                 )
             }
             
-            if !selectedBrokerJSON.isEmpty {
+            if !viewModel.selectedBrokerJSON.isEmpty {
                 Text("Broker JSON:")
                     .font(.subheadline)
                     .bold()
                 
-                ScrollView {
-                    Text(selectedBrokerJSON)
-                        .font(.system(.caption, design: .monospaced))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(4)
-                }
-                .frame(height: 150)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                )
+                TextEditor(text: $viewModel.selectedBrokerJSON)
+                    .font(.system(.caption, design: .monospaced))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(4)
+                    .frame(height: 150)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
             }
         }
     }
@@ -232,11 +229,6 @@ struct RunDBPDebugModeView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(viewModel.selectedBroker == nil || !viewModel.hasValidInput)
                     
-                    Button("Run All Brokers") {
-                        viewModel.runAllBrokers()
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(!viewModel.hasValidInput)
                 }
             }
         }
@@ -361,6 +353,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var birthYear: String = ""
     @Published var brokers: [DataBroker] = []
     @Published var selectedBroker: DataBroker?
+    @Published var selectedBrokerJSON: String = ""
     @Published var results: [DebugScanResult] = []
     @Published var isRunning: Bool = false
     @Published var currentBrokerName: String?
@@ -506,8 +499,18 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     }
     
     func runSelectedBroker() {
-        guard let broker = selectedBroker else { return }
-        runOperations(brokers: [broker])
+        let json = selectedBrokerJSON.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let data = json.data(using: .utf8) else {
+            showAlert(title: "Invalid broker JSON", message: "Please double check your input.")
+            return
+        }
+
+        do {
+            let broker = try JSONDecoder().decode(DataBroker.self, from: data)
+            runOperations(brokers: [broker.with(id: DebugHelper.stableId(for: broker))])
+        } catch {
+            showAlert(title: "Invalid broker JSON", message: error.localizedDescription)
+        }
     }
     
     func runAllBrokers() {
@@ -537,8 +540,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     let brokerProfileQueryData = BrokerProfileQueryData(
                         dataBroker: broker,
                         profileQuery: queryWithId,
-                        scanJobData: ScanJobData(brokerId: broker.id ?? DebugHelper.stableId(for: broker),
-                                                 profileQueryId: queryWithId.id ?? DebugHelper.stableId(for: queryWithId),
+                        scanJobData: ScanJobData(brokerId: DebugHelper.stableId(for: broker),
+                                                 profileQueryId: DebugHelper.stableId(for: queryWithId),
                                                  historyEvents: [])
                     )
                     
@@ -670,8 +673,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     dataBroker: result.dataBroker,
                     profileQuery: result.profileQuery,
                     scanJobData: ScanJobData(
-                        brokerId: result.dataBroker.id ?? DebugHelper.stableId(for: result.dataBroker),
-                        profileQueryId: result.profileQuery.id ?? DebugHelper.stableId(for: result.profileQuery),
+                        brokerId: DebugHelper.stableId(for: result.dataBroker),
+                        profileQueryId: DebugHelper.stableId(for: result.profileQuery),
                         historyEvents: []
                     )
                 )

@@ -475,7 +475,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let profileQueries = profile.profileQueries
         var brokerProfileQueryData = [BrokerProfileQueryData]()
 
-        let resolvedBroker = brokerWithId(broker)
+        let resolvedBroker = broker.with(id: DebugHelper.stableId(for: broker))
         for profileQuery in profileQueries {
             let profileQueryId = DebugHelper.stableId(for: profileQuery)
             let fakeScanJobData = ScanJobData(brokerId: DebugHelper.stableId(for: resolvedBroker),
@@ -497,11 +497,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             self.showAlert = true
             self.alert = AlertUI.noResults()
         }
-    }
-
-    private func brokerWithId(_ broker: DataBroker) -> DataBroker {
-        guard broker.id == nil else { return broker }
-        return broker.with(id: DebugHelper.stableId(for: broker))
     }
 
     func showAlert(for error: Error) {

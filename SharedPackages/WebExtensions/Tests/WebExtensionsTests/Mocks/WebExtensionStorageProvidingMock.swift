@@ -1,0 +1,67 @@
+//
+//  WebExtensionStorageProvidingMock.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+@testable import WebExtensions
+
+@available(macOS 15.4, iOS 18.4, *)
+final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
+
+    var extensionsDirectory: URL = URL(fileURLWithPath: "/mock/extensions")
+
+    var storagePathCalled = false
+    var storagePathIdentifier: String?
+    func storagePath(for identifier: String) -> URL {
+        storagePathCalled = true
+        storagePathIdentifier = identifier
+        return extensionsDirectory.appendingPathComponent(identifier)
+    }
+
+    var installExtensionCalled = false
+    var installExtensionSourceURL: URL?
+    var mockInstallResult: (path: URL, identifier: String)?
+    var mockInstallError: Error?
+    func installExtension(from sourceURL: URL) throws -> (path: URL, identifier: String) {
+        installExtensionCalled = true
+        installExtensionSourceURL = sourceURL
+
+        if let error = mockInstallError {
+            throw error
+        }
+
+        if let result = mockInstallResult {
+            return result
+        }
+
+        let identifier = sourceURL.lastPathComponent
+        let path = extensionsDirectory.appendingPathComponent(identifier)
+        return (path, identifier)
+    }
+
+    var removeExtensionCalled = false
+    var removeExtensionIdentifier: String?
+    var mockRemoveError: Error?
+    func removeExtension(identifier: String) throws {
+        removeExtensionCalled = true
+        removeExtensionIdentifier = identifier
+
+        if let error = mockRemoveError {
+            throw error
+        }
+    }
+}

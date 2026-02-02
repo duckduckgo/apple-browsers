@@ -90,12 +90,14 @@ enum WebExtensionManagerFactory {
     @MainActor
     static func makeManager() -> WebExtensionManager {
         let windowTabProvider = WebExtensionWindowTabProvider()
+        let storageProvider = WebExtensionStorageProvider()
         let lifecycleDelegate = AppWebExtensionLifecycleDelegate()
         let internalSiteHandler = WebExtensionInternalSiteHandler()
 
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: windowTabProvider,
+            storageProvider: storageProvider,
             lifecycleDelegate: lifecycleDelegate,
             internalSiteHandler: internalSiteHandler
         )

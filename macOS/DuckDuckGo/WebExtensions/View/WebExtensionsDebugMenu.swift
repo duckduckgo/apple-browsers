@@ -46,11 +46,11 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(installExtensionMenuItem)
         addItem(uninstallAllExtensionsMenuItem)
 
-        if !webExtensionManager.webExtensionPaths.isEmpty {
+        if !webExtensionManager.webExtensionIdentifiers.isEmpty {
             addItem(.separator())
-            for webExtensionPath in webExtensionManager.webExtensionPaths {
-                let name = webExtensionManager.extensionName(from: webExtensionPath)
-                let menuItem = WebExtensionMenuItem(webExtensionPath: webExtensionPath, webExtensionName: name)
+            for identifier in webExtensionManager.webExtensionIdentifiers {
+                let name = webExtensionManager.extensionName(from: identifier)
+                let menuItem = WebExtensionMenuItem(identifier: identifier, webExtensionName: name)
                 self.addItem(menuItem)
             }
         }
@@ -93,7 +93,7 @@ final class WebExtensionsDebugMenu: NSMenu {
               let url = panel.url else { return }
 
         Task {
-            await webExtensionManager.installExtension(path: url.absoluteString)
+            try? await webExtensionManager.installExtension(from: url)
         }
     }
 
@@ -102,9 +102,9 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc func installBitwardenExtension() {
-        let path = WebExtensionIdentifier.bitwarden.defaultPath
+        guard let url = URL(string: WebExtensionIdentifier.bitwarden.defaultPath) else { return }
         Task {
-            await webExtensionManager.installExtension(path: path)
+            try? await webExtensionManager.installExtension(from: url)
         }
     }
 
@@ -117,11 +117,11 @@ final class WebExtensionMenuItem: NSMenuItem {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(webExtensionPath: String, webExtensionName: String?) {
-        super.init(title: webExtensionName ?? webExtensionPath,
+    init(identifier: String, webExtensionName: String?) {
+        super.init(title: webExtensionName ?? identifier,
                    action: nil,
                    keyEquivalent: "")
-        submenu = WebExtensionSubMenu(webExtensionPath: webExtensionPath)
+        submenu = WebExtensionSubMenu(identifier: identifier)
     }
 
 }
@@ -129,14 +129,14 @@ final class WebExtensionMenuItem: NSMenuItem {
 @available(macOS 15.4, *)
 final class WebExtensionSubMenu: NSMenu {
 
-    private let webExtensionPath: String
+    private let identifier: String
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(webExtensionPath: String) {
-        self.webExtensionPath = webExtensionPath
+    init(identifier: String) {
+        self.identifier = identifier
         super.init(title: "")
 
         buildItems {
@@ -149,6 +149,6 @@ final class WebExtensionSubMenu: NSMenu {
             return
         }
 
-        try? webExtensionManager.uninstallExtension(path: webExtensionPath)
+        try? webExtensionManager.uninstallExtension(identifier: identifier)
     }
 }

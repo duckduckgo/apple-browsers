@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Foundation
 import WebKit
 
 /// Protocol defining the interface for managing web extensions.
@@ -29,9 +30,9 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
 
-    /// The paths of installed web extensions.
+    /// The identifiers of installed web extensions.
     @available(macOS 15.4, iOS 18.4, *)
-    var webExtensionPaths: [String] { get }
+    var webExtensionIdentifiers: [String] { get }
 
     /// The web extension controller.
     @available(macOS 15.4, iOS 18.4, *)
@@ -50,13 +51,14 @@ public protocol WebExtensionManaging: AnyObject {
     @MainActor
     func loadInstalledExtensions() async
 
-    /// Installs an extension from the given path.
+    /// Installs an extension from a source URL, copying it to platform storage.
+    /// - Parameter sourceURL: The source URL of the extension (e.g., from document picker).
     @available(macOS 15.4, iOS 18.4, *)
-    func installExtension(path: String) async
+    func installExtension(from sourceURL: URL) async throws
 
-    /// Uninstalls an extension at the given path.
+    /// Uninstalls an extension with the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
-    func uninstallExtension(path: String) throws
+    func uninstallExtension(identifier: String) throws
 
     /// Uninstalls all extensions.
     @available(macOS 15.4, iOS 18.4, *)

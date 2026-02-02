@@ -29,6 +29,7 @@ struct WebExtensionsDebugView: View {
     @State private var installedExtensions: [InstalledExtension] = []
     @State private var showDocumentPicker = false
     @State private var isLoading = false
+    @State private var errorMessage: String?
 
     var body: some View {
         List {
@@ -42,6 +43,14 @@ struct WebExtensionsDebugView: View {
                 Text("Install Extension")
             }
 
+            if let errorMessage {
+                Section {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
+            }
+
             Section {
                 if isLoading {
                     SwiftUI.ProgressView()
@@ -50,12 +59,12 @@ struct WebExtensionsDebugView: View {
                     Text("No extensions installed")
                         .foregroundColor(.secondary)
                 } else {
-                    ForEach(installedExtensions) { extension_ in
+                    ForEach(installedExtensions) { installedExtension in
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(extension_.name)
+                                Text(installedExtension.name)
                                     .font(.body)
-                                Text(extension_.path)
+                                Text(installedExtension.identifier)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                     .lineLimit(1)
@@ -98,24 +107,29 @@ struct WebExtensionsDebugView: View {
 
     private func refreshExtensions() {
         isLoading = true
-        let paths = webExtensionManager.webExtensionPaths
-        installedExtensions = paths.map { path in
-            let name = webExtensionManager.extensionName(from: path) ?? "Unknown Extension"
-            return InstalledExtension(path: path, name: name)
+        let identifiers = webExtensionManager.webExtensionIdentifiers
+        installedExtensions = identifiers.map { identifier in
+            let name = webExtensionManager.extensionName(from: identifier) ?? "Unknown Extension"
+            return InstalledExtension(identifier: identifier, name: name)
         }
         isLoading = false
     }
 
     private func installExtension(from url: URL) async {
         isLoading = true
-        await webExtensionManager.installExtension(path: url.absoluteString)
+        errorMessage = nil
+        do {
+            try await webExtensionManager.installExtension(from: url)
+        } catch {
+            errorMessage = "Failed to install: \(error.localizedDescription)"
+        }
         refreshExtensions()
     }
 
     private func uninstallExtensions(at offsets: IndexSet) {
         for index in offsets {
-            let extension_ = installedExtensions[index]
-            try? webExtensionManager.uninstallExtension(path: extension_.path)
+            let installedExtension = installedExtensions[index]
+            try? webExtensionManager.uninstallExtension(identifier: installedExtension.identifier)
         }
         refreshExtensions()
     }
@@ -129,7 +143,7 @@ struct WebExtensionsDebugView: View {
 @available(iOS 18.4, *)
 struct InstalledExtension: Identifiable {
     let id = UUID()
-    let path: String
+    let identifier: String
     let name: String
 }
 

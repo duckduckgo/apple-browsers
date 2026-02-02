@@ -26,7 +26,7 @@ protocol TextZoomStoring {
     func set(textZoomLevel: TextZoomLevel, forDomain domain: String)
     func removeTextZoomLevel(forDomain domain: String)
     func resetTextZoomLevels(excludingDomains: [String])
-    func resetTextZoomLevels(forDomains: [String])
+    func resetTextZoomLevels(forVisitedDomains visitedDomains: [String], excludingDomains: [String])
 }
 
 class TextZoomStorage: TextZoomStoring {
@@ -57,12 +57,18 @@ class TextZoomStorage: TextZoomStoring {
             })
         }
     }
-    
-    func resetTextZoomLevels(forDomains domains: [String]) {
+
+    /// Iterates through stored text zoom levels, only removes if NOT fireproofed AND was visited.
+    func resetTextZoomLevels(forVisitedDomains visitedDomains: [String], excludingDomains: [String]) {
         let tld = TLD()
-        let domainsToRemove = Set(domains.compactMap { tld.eTLDplus1($0) })
+        let visitedETLDplus1 = Set(visitedDomains.compactMap { tld.eTLDplus1($0) ?? $0 })
+
+        // Keep if fireproofed OR not visited
         textZoomLevels = textZoomLevels.filter { level in
-            !domainsToRemove.contains(level.key)
+            excludingDomains.contains(where: {
+                tld.eTLDplus1($0) == level.key
+            })
+            || !visitedETLDplus1.contains(level.key)
         }
     }
 

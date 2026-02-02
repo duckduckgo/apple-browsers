@@ -55,6 +55,14 @@ public protocol WebsiteDataManaging {
 }
 
 public class WebCacheManager: WebsiteDataManaging {
+    
+    private typealias DataRecordInScopeEvaluator = (String) -> Bool
+    private typealias CookieInScopeEvaluator = (HTTPCookie) -> Bool
+    
+    private enum Scope {
+        case all
+        case some(dataRecords: DataRecordInScopeEvaluator, cookies: CookieInScopeEvaluator)
+    }
 
     static let safelyRemovableWebsiteDataTypes: Set<String> = {
         var types = WKWebsiteDataStore.allWebsiteDataTypes()
@@ -142,21 +150,32 @@ public class WebCacheManager: WebsiteDataManaging {
 
         let count = await dataStoreCleaner.countContainers()
         await performMigrationIfNeeded(dataStoreIDManager: dataStoreIDManager, cookieStorage: cookieStorage, destinationStore: dataStore)
-        await clearData(inDataStore: dataStore, withFireproofing: fireproofing)
+        await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: .all)
         await dataStoreCleaner.removeAllContainersAfterDelay(previousCount: count)
 
     }
     
     /// Clears website data for specific domains, respecting fireproofing settings.
+    ///
+    /// Uses a data-store-first approach: iterates through data records (which have eTLD+1 as displayName),
+    /// checks fireproofing on the displayName, then filters by whether the domain was visited.
+    /// This matches the behavior of "Burn All" for consistency.
     public func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async {
-        let domainsToRemove = domains.filter { domain in
-            !fireproofing.isAllowed(fireproofDomain: domain)
+        // Normalize visited domains to eTLD+1 upfront for matching against data records
+        let tld = TLD()
+        let visitedETLDplus1 = Set(domains.compactMap { tld.eTLDplus1($0) ?? $0 })
+        
+        let dataRecordInScope: DataRecordInScopeEvaluator = { recordDisplayName in
+            visitedETLDplus1.contains(recordDisplayName)
         }
-
-        guard !domainsToRemove.isEmpty else { return }
-
-        await clearDataRecords(fromStore: dataStore, forDomains: domainsToRemove)
-        await clearCookies(fromStore: dataStore, forDomains: domainsToRemove)
+        
+        let cookieInScope: CookieInScopeEvaluator = { cookie in
+            domains.contains(where: { HTTPCookie.cookieDomain(cookie.domain, matchesTestDomain: $0) })
+        }
+        
+        let scope = Scope.some(dataRecords: dataRecordInScope, cookies: cookieInScope)
+        await performMigrationIfNeeded(dataStoreIDManager: dataStoreIDManager, cookieStorage: cookieStorage, destinationStore: dataStore)
+        await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: scope)
     }
 
 }
@@ -190,12 +209,14 @@ extension WebCacheManager {
         await dataStoreCleaner.removeAllContainersAfterDelay(previousCount: previousCount)
     }
 
-    private func clearData(inDataStore dataStore: any DDGWebsiteDataStore, withFireproofing fireproofing: Fireproofing) async {
+    private func clearData(inDataStore dataStore: any DDGWebsiteDataStore,
+                           withFireproofing fireproofing: Fireproofing,
+                           scope: Scope) async {
         let startTime = CACurrentMediaTime()
 
-        await clearDataForSafelyRemovableDataTypes(fromStore: dataStore)
-        await clearFireproofableDataForNonFireproofDomains(fromStore: dataStore, usingFireproofing: fireproofing)
-        await clearCookiesForNonFireproofedDomains(fromStore: dataStore, usingFireproofing: fireproofing)
+        await clearDataForSafelyRemovableDataTypes(fromStore: dataStore, scope: scope)
+        await clearFireproofableDataForNonFireproofDomains(fromStore: dataStore, usingFireproofing: fireproofing, scope: scope)
+        await clearCookiesForNonFireproofedDomains(fromStore: dataStore, usingFireproofing: fireproofing, scope: scope)
         await observationsCleaner.removeObservationsData()
 
         let totalTime = CACurrentMediaTime() - startTime
@@ -203,64 +224,50 @@ extension WebCacheManager {
     }
 
     @MainActor
-    private func clearDataForSafelyRemovableDataTypes(fromStore dataStore: any DDGWebsiteDataStore) async {
-        await dataStore.removeData(ofTypes: Self.safelyRemovableWebsiteDataTypes, modifiedSince: Date.distantPast)
+    private func clearDataForSafelyRemovableDataTypes(fromStore dataStore: some DDGWebsiteDataStore,
+                                                      scope: Scope) async {
+        switch scope {
+        case .all:
+            await dataStore.removeData(ofTypes: Self.safelyRemovableWebsiteDataTypes, modifiedSince: Date.distantPast)
+        case .some(let dataRecords, _):
+            let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
+            let removableRecords = allRecords.filter { record in
+                dataRecords(record.displayName)
+            }
+            await dataStore.removeData(ofTypes: Self.safelyRemovableWebsiteDataTypes, for: removableRecords)
+        }
     }
 
     @MainActor
-    private func clearFireproofableDataForNonFireproofDomains(fromStore dataStore: some DDGWebsiteDataStore, usingFireproofing fireproofing: Fireproofing) async {
+    private func clearFireproofableDataForNonFireproofDomains(fromStore dataStore: some DDGWebsiteDataStore,
+                                                              usingFireproofing fireproofing: Fireproofing,
+                                                              scope: Scope) async {
         let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
         let removableRecords = allRecords.filter { record in
-            !fireproofing.isAllowed(fireproofDomain: record.displayName)
+            let fireproofed = fireproofing.isAllowed(fireproofDomain: record.displayName)
+            var inScope = true
+            if case .some(let dataRecords, _) = scope {
+                inScope = dataRecords(record.displayName)
+            }
+            return !fireproofed && inScope
         }
 
-        var fireproofableTypesExceptCookies = Self.fireproofableDataTypesExceptCookies
-        fireproofableTypesExceptCookies.remove(WKWebsiteDataTypeCookies)
+        let fireproofableTypesExceptCookies = Self.fireproofableDataTypesExceptCookies
         await dataStore.removeData(ofTypes: fireproofableTypesExceptCookies, for: removableRecords)
     }
 
     @MainActor
-    private func clearCookiesForNonFireproofedDomains(fromStore dataStore: any DDGWebsiteDataStore, usingFireproofing fireproofing: Fireproofing) async {
+    private func clearCookiesForNonFireproofedDomains(fromStore dataStore: any DDGWebsiteDataStore, usingFireproofing fireproofing: Fireproofing, scope: Scope) async {
         let cookieStore = dataStore.httpCookieStore
         let cookies = await cookieStore.allCookies()
 
         let cookiesToRemove = cookies.filter { cookie in
-            !fireproofing.isAllowed(cookieDomain: cookie.domain)
-        }
-
-        for cookie in cookiesToRemove {
-            await cookieStore.deleteCookie(cookie)
-        }
-    }
-
-    // MARK: - Domain-Specific Clearing
-
-    @MainActor
-    private func clearDataRecords(fromStore dataStore: some DDGWebsiteDataStore, forDomains domains: [String]) async {
-        // WKWebsiteDataRecord.displayName typically returns the registrable domain (eTLD+1),
-        // so we need to normalize visited domains for proper matching.
-        // e.g., visiting "docs.example.com" should match record with displayName "example.com"
-        let tld = TLD()
-        let normalizedDomains = Set(domains.compactMap { tld.eTLDplus1($0) ?? $0 })
-
-        let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
-        let recordsToRemove = allRecords.filter { record in
-            normalizedDomains.contains(record.displayName)
-        }
-
-        guard !recordsToRemove.isEmpty else { return }
-
-        // Remove all data types for these specific domains
-        await dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: recordsToRemove)
-    }
-
-    @MainActor
-    private func clearCookies(fromStore dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async {
-        let cookieStore = dataStore.httpCookieStore
-        let cookies = await cookieStore.allCookies()
-
-        let cookiesToRemove = cookies.filter { cookie in
-            domains.contains(where: { HTTPCookie.cookieDomain(cookie.domain, matchesTestDomain: $0) })
+            let fireproofed = fireproofing.isAllowed(cookieDomain: cookie.domain)
+            var inScope = true
+            if case .some(_, let cookies) = scope {
+                inScope = cookies(cookie)
+            }
+            return !fireproofed && inScope
         }
 
         for cookie in cookiesToRemove {

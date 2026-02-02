@@ -454,7 +454,7 @@ final class FireExecutorTests: XCTestCase {
 
         // Then - Verify text zoom is reset with fireproofed domains excluded
         XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsCallCount, 1)
-        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsExcludingDomains, fireproofedDomains)
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsExcludingDomainsArg, fireproofedDomains)
 
         // Then - Verify history is removed
         XCTAssertEqual(mockHistoryManager.removeAllHistoryCallCount, 1)
@@ -478,13 +478,37 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockWebsiteDataManager.clearWithDomainsCallCount, 1)
         XCTAssertEqual(mockWebsiteDataManager.clearCalledWithDomains, ["test.com"])
 
-        // Then - Verify text zoom is reset for the visited domains
-        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForDomainsCallCount, 1)
-        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForDomains, ["test.com"])
+        // Then - Verify text zoom reset is called with visited domains and excluding domains
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomainsCallCount, 1)
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomains, ["test.com"])
+        XCTAssertNotNil(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains)
 
         // Then - Verify browsing history is removed for the tab
         XCTAssertEqual(mockHistoryManager.removeBrowsingHistoryCalls.count, 1)
         XCTAssertEqual(mockHistoryManager.removeBrowsingHistoryCalls.first, tabViewModel.tab.uid)
+    }
+
+    func testBurnDataForTabScope_PassesVisitedDomainsAndExcludingDomainsToZoomCoordinator() async {
+        // Given - amazon.com is fireproofed, user visited mail.amazon.com and facebook.com
+        let fireproofing = MockFireproofing(domains: ["amazon.com"])
+        let executor = makeFireExecutor(fireproofing: fireproofing)
+        let tabViewModel = makeTabViewModel()
+
+        mockHistoryManager.tabHistoryResult = [
+            URL(string: "https://mail.amazon.com/inbox")!,
+            URL(string: "https://facebook.com/feed")!
+        ]
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - Verify coordinator receives visited domains and excluding domains
+        // The S3 filtering logic happens inside the coordinator/storage
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomainsCallCount, 1)
+        let visitedDomains = Set(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomains ?? [])
+        XCTAssertTrue(visitedDomains.contains("mail.amazon.com"))
+        XCTAssertTrue(visitedDomains.contains("facebook.com"))
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains, ["amazon.com"])
     }
     
     

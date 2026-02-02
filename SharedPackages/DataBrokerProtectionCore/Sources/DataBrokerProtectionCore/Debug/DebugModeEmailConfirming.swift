@@ -84,9 +84,9 @@ public extension DebugModeEmailConfirming {
     }
 
     func confirmationIdentifiers(for scanResult: DebugScanResult) -> (brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64)? {
-        let brokerId = DebugHelper.stableId(for: scanResult.dataBroker)
-        let profileQueryId = DebugHelper.stableId(for: scanResult.profileQuery)
         guard let extractedProfileId = scanResult.extractedProfile.id else { return nil }
-        return (brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+        return (brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
+                profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
+                extractedProfileId: extractedProfileId)
     }
 }

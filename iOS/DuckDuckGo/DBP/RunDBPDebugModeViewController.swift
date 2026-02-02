@@ -219,7 +219,7 @@ struct RunDBPDebugModeView: View {
             
             if viewModel.isRunning {
                 VStack(spacing: 10) {
-                    Text(viewModel.currentBrokerName != nil ? "Scanning \(viewModel.currentBrokerName!)" : "Scanning...")
+                    Text("Scanning...")
                 }
             } else {
                 VStack(spacing: 10) {
@@ -356,7 +356,6 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var selectedBrokerJSON: String = ""
     @Published var results: [DebugScanResult] = []
     @Published var isRunning: Bool = false
-    @Published var currentBrokerName: String?
     @Published var showAlert: Bool = false
     @Published var alertTitle: String = ""
     @Published var alertMessage: String = ""
@@ -364,24 +363,24 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var isWebViewAvailable: Bool = false
 
     @Published private var currentRunner: BrokerProfileScanSubJobWebRunner?
-    var currentOptOutRunner: BrokerProfileOptOutSubJobWebRunner?
+    private var currentOptOutRunner: BrokerProfileOptOutSubJobWebRunner?
 
-    var currentWebViewManager: DBPDebugWebViewWindowManager?
+    private var currentWebViewManager: DBPDebugWebViewWindowManager?
     var cancellables = Set<AnyCancellable>()
     private var currentTask: Task<Void, Never>?
     
-    var privacyConfigManager: PrivacyConfigurationManaging {
+    private var privacyConfigManager: PrivacyConfigurationManaging {
         return ContentBlocking.shared.privacyConfigurationManager
     }
 
-    let contentScopeProperties: ContentScopeProperties
-    let emailConfirmationDataService: EmailConfirmationDataService
-    let debugEmailConfirmationStore: DebugEmailConfirmationStore
-    let captchaService: CaptchaService
-    let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
-    let executionConfig: BrokerJobExecutionConfig
-    let featureFlagger: DBPFeatureFlagging
+    private let contentScopeProperties: ContentScopeProperties
+    private let emailConfirmationDataService: EmailConfirmationDataService
+    private let debugEmailConfirmationStore: DebugEmailConfirmationStore
+    private let captchaService: CaptchaService
+    private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
+    private let executionConfig: BrokerJobExecutionConfig
+    private let featureFlagger: DBPFeatureFlagging
 
     var hasValidInput: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !city.isEmpty && !state.isEmpty && !birthYear.isEmpty
@@ -523,10 +522,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             let queries = profile.profileQueries
             var allResults: [DebugScanResult] = []
 
-            self.currentBrokerName = nil
-            self.currentBrokerName = broker.name
-
-            for (index, query) in queries.enumerated() {
+            for query in queries {
                 let queryWithId = query.with(id: DebugHelper.stableId(for: query))
                 let brokerProfileQueryData = BrokerProfileQueryData(
                     dataBroker: broker,
@@ -577,9 +573,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             
             self.results = allResults
             self.isRunning = false
-            self.currentBrokerName = nil
-            self.currentBrokerName = nil
-            
+
             self.hideWebView()
             self.currentWebViewManager = nil
             self.currentRunner = nil
@@ -631,11 +625,11 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         return "PIR Debug Mode"
     }
     
-    func updateWebViewAvailability() {
+    private func updateWebViewAvailability() {
         isWebViewAvailable = isRunning || !optOutInProgress.isEmpty
     }
     
-    func hideWebView() {
+    private func hideWebView() {
         currentWebViewManager?.hideWebView()
     }
     
@@ -770,7 +764,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         return csvContent
     }
     
-    func showAlert(title: String, message: String) {
+    private func showAlert(title: String, message: String) {
         alertTitle = title
         alertMessage = message
         showAlert = true
@@ -788,6 +782,85 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         }
 
         return nil
+    }
+}
+
+// MARK: - Email Confirmation
+
+extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
+    var emailConfirmationStore: EmailConfirmationSupporting {
+        debugEmailConfirmationStore
+    }
+
+    func checkForEmailConfirmation() {
+        Task { @MainActor in
+            do {
+                try await emailConfirmationDataService.checkForEmailConfirmationData()
+                showAlert(title: "Email Confirmation Check Complete",
+                          message: "If a link is ready, you can continue the opt-out.")
+            } catch {
+                showAlert(title: "Error", message: error.localizedDescription)
+            }
+        }
+    }
+
+    func continueOptOutAfterEmailConfirmation(scanResult: DebugScanResult) {
+        guard let confirmationURL = confirmationURL(for: scanResult) else { return }
+
+        optOutInProgress.insert(scanResult.id)
+        updateWebViewAvailability()
+
+        Task { @MainActor in
+            defer {
+                optOutInProgress.remove(scanResult.id)
+                updateWebViewAvailability()
+                self.currentOptOutRunner = nil
+                self.hideWebView()
+                self.currentWebViewManager = nil
+            }
+
+            do {
+                let brokerProfileQueryData = BrokerProfileQueryData(
+                    dataBroker: scanResult.dataBroker,
+                    profileQuery: scanResult.profileQuery,
+                    scanJobData: ScanJobData(
+                        brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
+                        profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
+                        historyEvents: []
+                    )
+                )
+
+                let runner = BrokerProfileOptOutSubJobWebRunner(
+                    privacyConfig: privacyConfigManager,
+                    prefs: contentScopeProperties,
+                    context: brokerProfileQueryData,
+                    emailConfirmationDataService: emailConfirmationDataService,
+                    captchaService: captchaService,
+                    featureFlagger: featureFlagger,
+                    stageCalculator: FakeStageDurationCalculator(),
+                    pixelHandler: fakePixelHandler,
+                    executionConfig: executionConfig,
+                    actionsHandlerMode: .emailConfirmation(confirmationURL)
+                ) { true }
+
+                self.currentOptOutRunner = runner
+
+                try await runner.optOut(
+                    profileQuery: brokerProfileQueryData,
+                    extractedProfile: scanResult.extractedProfile,
+                    showWebView: true
+                ) { true }
+
+                showAlert(title: "Success",
+                          message: "Opt-out process completed for \(scanResult.extractedProfile.name ?? "profile").")
+            } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                try await Task.sleep(interval: 1.0)
+                fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
+            } catch {
+                showAlert(title: "Error", message: "Opt-out failed: \(error.localizedDescription)")
+            }
+        }
     }
 }
 

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Carbon.HIToolbox
 import BrowserServicesKit
 import Combine
 import Common
@@ -649,8 +650,8 @@ final class PasswordManagementViewController: NSViewController {
         guard escapeKeyMonitor == nil else { return }
         escapeKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self,
-                  event.keyCode == 53, // Escape
-                  view.window != nil else {
+                  event.keyCode == kVK_Escape,
+                  let ourWindow = view.window else {
                 return event
             }
             itemModel?.cancel()

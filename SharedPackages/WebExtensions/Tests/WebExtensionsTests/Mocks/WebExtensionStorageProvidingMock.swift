@@ -24,11 +24,19 @@ final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
 
     var extensionsDirectory: URL = URL(fileURLWithPath: "/mock/extensions")
 
-    var storagePathCalled = false
-    var storagePathIdentifier: String?
-    func storagePath(for identifier: String) -> URL {
-        storagePathCalled = true
-        storagePathIdentifier = identifier
+    var resolveInstalledExtensionCalled = false
+    var resolveInstalledExtensionIdentifier: String?
+    var shouldReturnNilForResolve = false
+    var mockResolveResult: URL?
+    func resolveInstalledExtension(identifier: String) -> URL? {
+        resolveInstalledExtensionCalled = true
+        resolveInstalledExtensionIdentifier = identifier
+        if shouldReturnNilForResolve {
+            return nil
+        }
+        if let mockResult = mockResolveResult {
+            return mockResult
+        }
         return extensionsDirectory.appendingPathComponent(identifier)
     }
 

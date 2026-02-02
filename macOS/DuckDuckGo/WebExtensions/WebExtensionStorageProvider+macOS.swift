@@ -21,7 +21,7 @@ import Foundation
 import WebExtensions
 
 @available(macOS 15.4, *)
-public final class macOSWebExtensionStorageProvider: WebExtensionStorageProviding {
+public final class WebExtensionStorageProvider: WebExtensionStorageProviding {
 
     public enum StorageError: Error {
         case applicationSupportDirectoryNotFound
@@ -43,13 +43,17 @@ public final class macOSWebExtensionStorageProvider: WebExtensionStorageProvidin
         return appSupport.appendingPathComponent("WebExtensions", isDirectory: true)
     }
 
-    public func storagePath(for identifier: String) -> URL {
-        extensionsDirectory.appendingPathComponent(identifier)
+    public func resolveInstalledExtension(identifier: String) -> URL? {
+        let path = extensionsDirectory.appendingPathComponent(identifier)
+        guard fileManager.fileExists(atPath: path.path) else {
+            return nil
+        }
+        return path
     }
 
     public func installExtension(from sourceURL: URL) throws -> (path: URL, identifier: String) {
         let identifier = sourceURL.lastPathComponent
-        let destinationURL = storagePath(for: identifier)
+        let destinationURL = extensionsDirectory.appendingPathComponent(identifier)
 
         do {
             try fileManager.createDirectory(at: extensionsDirectory,
@@ -72,7 +76,7 @@ public final class macOSWebExtensionStorageProvider: WebExtensionStorageProvidin
     }
 
     public func removeExtension(identifier: String) throws {
-        let path = storagePath(for: identifier)
+        let path = extensionsDirectory.appendingPathComponent(identifier)
         guard fileManager.fileExists(atPath: path.path) else {
             return
         }

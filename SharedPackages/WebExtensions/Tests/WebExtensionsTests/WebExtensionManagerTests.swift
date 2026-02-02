@@ -132,6 +132,18 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Uninstall Extension Tests
 
     @MainActor
+    func testWhenExtensionIsUninstalled_ThenStorageProviderResolvesPath() throws {
+        let manager = makeManager()
+        let identifier = "extension.zip"
+        pathsStoringMock.paths = [identifier]
+
+        try manager.uninstallExtension(identifier: identifier)
+
+        XCTAssertTrue(storageProvidingMock.resolveInstalledExtensionCalled)
+        XCTAssertEqual(storageProvidingMock.resolveInstalledExtensionIdentifier, identifier)
+    }
+
+    @MainActor
     func testWhenExtensionIsUninstalled_ThenIdentifierIsRemovedFromStore() throws {
         let manager = makeManager()
         let identifier = "extension.zip"
@@ -141,6 +153,22 @@ final class WebExtensionManagerTests: XCTestCase {
 
         XCTAssertTrue(pathsStoringMock.removeCalled)
         XCTAssertEqual(pathsStoringMock.removedPath, identifier)
+    }
+
+    @MainActor
+    func testWhenUninstallExtensionNotFound_ThenErrorIsThrown() {
+        let manager = makeManager()
+        let identifier = "extension.zip"
+        pathsStoringMock.paths = [identifier]
+        storageProvidingMock.shouldReturnNilForResolve = true
+
+        XCTAssertThrowsError(try manager.uninstallExtension(identifier: identifier)) { error in
+            if case WebExtensionError.extensionNotFound(let notFoundIdentifier) = error {
+                XCTAssertEqual(notFoundIdentifier, identifier)
+            } else {
+                XCTFail("Expected WebExtensionError.extensionNotFound, got \(error)")
+            }
+        }
     }
 
     @MainActor
@@ -236,8 +264,22 @@ final class WebExtensionManagerTests: XCTestCase {
 
         await manager.loadInstalledExtensions()
 
+        XCTAssertTrue(storageProvidingMock.resolveInstalledExtensionCalled)
         XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionsCalled)
         XCTAssertEqual(webExtensionLoadingMock.loadedPaths.count, 2)
+    }
+
+    @MainActor
+    func testWhenLoadInstalledExtensions_ThenMissingExtensionsAreRemovedFromStore() async {
+        let identifiers = ["extension1.zip", "extension2.zip"]
+        pathsStoringMock.paths = identifiers
+        storageProvidingMock.shouldReturnNilForResolve = true
+        let manager = makeManager()
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertTrue(pathsStoringMock.removeCalled)
+        XCTAssertFalse(webExtensionLoadingMock.loadWebExtensionsCalled)
     }
 
     @MainActor

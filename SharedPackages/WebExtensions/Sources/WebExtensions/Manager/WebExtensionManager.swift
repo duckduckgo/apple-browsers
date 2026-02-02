@@ -122,7 +122,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     public func uninstallExtension(identifier: String) throws {
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
 
-        let storagePath = storageProvider.storagePath(for: identifier)
+        guard let storagePath = storageProvider.resolveInstalledExtension(identifier: identifier) else {
+            Logger.webExtensions.error("❌ Extension '\(identifier)' not found in storage")
+            installationStore.remove(identifier)
+            throw WebExtensionError.extensionNotFound(identifier)
+        }
 
         installationStore.remove(identifier)
 
@@ -175,22 +179,35 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         let identifiers = installationStore.paths
         Logger.webExtensions.debug("🔄 Loading installed extensions (count: \(identifiers.count))")
 
-        let paths = identifiers.map { identifier in
-            storageProvider.storagePath(for: identifier).absoluteString
+        var resolvedExtensions: [(identifier: String, path: String)] = []
+        var missingIdentifiers: [String] = []
+
+        for identifier in identifiers {
+            if let path = storageProvider.resolveInstalledExtension(identifier: identifier) {
+                resolvedExtensions.append((identifier, path.absoluteString))
+            } else {
+                Logger.webExtensions.error("❌ Extension '\(identifier)' not found in storage, will be removed from store")
+                missingIdentifiers.append(identifier)
+            }
         }
 
+        for identifier in missingIdentifiers {
+            installationStore.remove(identifier)
+        }
+
+        let paths = resolvedExtensions.map(\.path)
         let results = await loader.loadWebExtensions(from: paths, into: controller)
 
         var failedIdentifiers: [String] = []
         var successCount = 0
-        for (identifier, result) in zip(identifiers, results) {
+        for (extension_, result) in zip(resolvedExtensions, results) {
             switch result {
             case .success:
-                Logger.webExtensions.debug("✅ Loaded extension '\(identifier)'")
+                Logger.webExtensions.debug("✅ Loaded extension '\(extension_.identifier)'")
                 successCount += 1
             case .failure(let failure):
-                Logger.webExtensions.error("❌ Failed to load web extension '\(identifier)': \(failure.localizedDescription)")
-                failedIdentifiers.append(identifier)
+                Logger.webExtensions.error("❌ Failed to load web extension '\(extension_.identifier)': \(failure.localizedDescription)")
+                failedIdentifiers.append(extension_.identifier)
             }
         }
 

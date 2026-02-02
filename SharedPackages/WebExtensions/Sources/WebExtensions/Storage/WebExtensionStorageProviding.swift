@@ -27,10 +27,10 @@ public protocol WebExtensionStorageProviding: AnyObject {
     /// Base directory where extensions are stored.
     var extensionsDirectory: URL { get }
 
-    /// Returns the storage path for a given extension identifier.
+    /// Resolves an extension identifier to its storage path if the extension exists.
     /// - Parameter identifier: The extension identifier (e.g., filename for zip files).
-    /// - Returns: The full URL where the extension is/should be stored.
-    func storagePath(for identifier: String) -> URL
+    /// - Returns: The full URL where the extension is stored, or nil if not found.
+    func resolveInstalledExtension(identifier: String) -> URL?
 
     /// Copies an extension from a source URL to platform storage.
     /// For zip files, the filename is used as the identifier.

@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Apstiprināt";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontekstuālā ievadīšana";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Izlaist";
 
@@ -2929,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Vai dzēst cilnes un vietņu datus?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Vai dzēst cilnes, vietnes datus un tērzēšanas sarunas?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Dzēst visus";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Dzēst šo cilni";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "\"Dzēst šo cilni\" notīra šo Duck.ai tērzēšanu un visus vietnes datus no šajā cilnē apmeklētajām vietnēm.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Tas atcels notiekošās lejupielādes.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Jaunizveidotās cilnes var arī dzēst atsevišķi.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Dzēšot vietnes datus, tu vari tikt izrakstīts no kontiem.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Meklē vai ievadi adresi";
 
@@ -2974,6 +3001,9 @@
 /* about tagline */
 "settings.about.tagline" = "Aizsardzība. Privātums. Sirds miers.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo ir neatkarīgs uzņēmums tiešsaistes aizsardzībai, kas pieejams ikvienam, kurš vēlas atgūt kontroli pār savu personisko informāciju.\n\nMēs uzskatām, ka labākais veids, kā aizsargāt savu personisko informāciju no hakeriem, krāpniekiem un privātumu apdraudošiem uzņēmumiem, ir to neievākt vispār. Tāpēc miljoniem cilvēku [izvēlas DuckDuckGo, nevis Chrome un citas pārlūkprogrammas](ddgQuickLink://duckduckgo.com/compare-privacy), lai meklētu un pārlūkotu tiešsaistē. Mūsu iebūvētā meklētājprogramma ir līdzīga Google, taču tā neizseko jūsu meklēšanas vaicājumus. Mūsu pārlūkošanas aizsardzība, piemēram, reklāmu izsekotāju bloķēšana un sīkfailu bloķēšana neļauj citiem uzņēmumiem ievākt tavus datus. Turklāt mūsu pārlūkprogramma ir bez maksas — mēs pelnām naudu no [privātumu respektējošām meklēšanas reklāmām](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), nevis izmantojot tavus datus. \n\n%@ \n\nAtgūsti kontroli pār savu personisko informāciju ar pārlūkprogrammu, kas paredzēta datu aizsardzībai, nevis datu apkopošanai.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Pieejamība";
 
@@ -2992,8 +3022,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Rādīt pilnu vietnes adresi";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Rādīt izsekotāju bloķēšanas animāciju";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Rādīt adreses joslā";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Meklēšana & Duck.ai";
@@ -3118,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ja ir iespējots Touch ID, Face ID vai sistēmas piekļuves kods, atverot lietotni, tev tā būs jāatbloķē.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Dzēst";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automātiskā datu dzēšana";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Automātiski dzēst datus";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Atsauksmes par pārlūkprogrammu";
@@ -3148,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Pārvaldīt sīkfailu uznirstošos logus";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Dzēst cilnes un datus";
+
 /* Settings title for the customize section */
 "settings.customize" = "Pielāgošana";
 
@@ -3165,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Noklusējuma pārlūks";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Dzēst Duck.ai tērzēšanas sarunas";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Dzēst cilnes un datus";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Atspējot Email Protection automātisko aizpildīšanu";
@@ -3370,6 +3415,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sinhronizācija un dublēšana";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Rādīt ciļņu pārvaldniekā";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Cilnes";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Noklusējuma teksta tālummaiņa";
 
@@ -3378,6 +3429,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Iestatījumi";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Izsekotāju bloķēšanas animācija";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Palīdz bloķēt trešo pušu izsekotājus, kas mēģina maskēties tīmekļa vietnē, izmantojot DNS.";
@@ -3619,11 +3673,11 @@
 /* Help and support Section header */
 "subscription.help" = "Palīdzība un atbalsts";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Plāna pārvaldība";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Pārvaldīt maksājumu vai atcelt";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Plāna pārvaldība";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonements";
@@ -3787,6 +3841,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Iestatīt sinhronizāciju";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Sinhronizē un dublē savas kredītkartes";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Sinhronizē un dublē savus datus";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nē, paldies";
 
@@ -3876,6 +3936,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Pievienot grāmatzīmes visām cilnēm";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Paslēpt";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Vari to atkal ieslēgt sadaļā Iestatījumi > Izskats.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Vai slēpt izsekotāju skaitu?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Izsekotāju skaita opcijas";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Divreiz pieskaries, lai parādītu šī reklāmkaroga paslēpšanas opcijas";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Saglabāt";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "pēdējo 7 dienu laikā";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Palielini vai samazini teksta lielumu visās vietnēs.";
@@ -4261,15 +4345,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Cilnes";
-"settings.tab.switcher.show.tracker.count" = "Pēdējo 7 dienu izsekotāju skaits";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "pēdējo 7 dienu laikā";
-"tab.switcher.tracker.count.hide.title" = "Paslēpt izsekotāju skaitu?";
-"tab.switcher.tracker.count.hide.message" = "To varat atkal ieslēgt sadaļā Iestatījumi > Izskats.";
-"tab.switcher.tracker.count.hide.action" = "Paslēpt";
-"tab.switcher.tracker.count.keep.action" = "Paturēt";
-"tab.switcher.tracker.count.info.a11y" = "Izsekotāju skaita opcijas";
-"tab.switcher.tracker.count.info.hint.a11y" = "Veiciet dubultskārienu, lai parādītu šī reklāmkaroga paslēpšanas opcijas";

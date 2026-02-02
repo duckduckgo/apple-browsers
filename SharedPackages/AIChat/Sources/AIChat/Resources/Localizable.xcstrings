@@ -505,6 +505,18 @@
         }
       },
       "shouldTranslate" : false
+    },
+    "duckai.contextual.attach.content" : {
+      "comment" : "Title for the attach placeholder chip in Duck.ai contextual sheet",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Attach Page Content"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -1060,6 +1060,9 @@
 /* No comment provided by engineer. */
 "Confirm" = "Megerősítés";
 
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontextusfüggő bevezetés";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Kihagyás";
 
@@ -2929,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Törlöd a lapokat és a webhelyadatokat?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Törlöd a lapokat, a webhelyadatokat és a csevegéseket?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Összes törlése";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Lap törlése";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "A „Lap törlése” művelet törli ezt a Duck.ai csevegést, valamint az ezen a lapon meglátogatott webhelyek minden webhelyadatát.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Ez megszakítja a folyamatban lévő letöltéseket.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "A létrehozott új lapok egyenként is törölhetők.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "A webhelyadatok törlése kijelentkeztethet a fiókjaidból.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Keresés vagy cím megadása";
 
@@ -2974,6 +3001,9 @@
 /* about tagline */
 "settings.about.tagline" = "Védelem. Adatvédelem. Nyugalom.";
 
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "A DuckDuckGo független online adatvédelmi cég azoknak kínál megoldást, akik vissza akarják venni a személyes adataik feletti irányítást.\n\nÚgy gondoljuk, hogy a legjobb módja annak, hogy megvédjük a személyes adataidat a hekkerektől, a csalóktól és az adatvédelmet sértő cégektől az, ha egyáltalán nem gyűjtjük őket. Emberek milliói ezért [választják a DuckDuckGót a Chrome és más böngészők helyett](ddgQuickLink://duckduckgo.com/compare-privacy) az online kereséshez és böngészéshez. Beépített keresőmotorunk olyan, mint a Google, de sosem követi a kereséseidet. Böngészési védelmeink, mint például a hirdetéskövetők és a sütik blokkolása, segítenek megakadályozni, hogy más cégek összegyűjtsék az adataidat. Ja, és a böngészőnk ingyenes – a bevételünket az [adatvédelmet tiszteletben tartó keresési hirdetésekből](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/) szerezzük, nem az adataid kihasználásából. \n\n%@ \n\nVedd vissza az irányítást a személyes adataid felett az adatgyűjtés helyett adatvédelemre tervezett böngészővel.";
+
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Kisegítő lehetőségek";
 
@@ -2992,8 +3022,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Teljes webhelycím megjelenítése";
 
-/* Settings screen cell title for toggling trackers blocked animation in address bar */
-"settings.address.trackers.animation" = "Blokkolt nyomkövetők animációjának megjelenítése";
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Megjelenítés a címsorban";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Keresés és Duck.ai";
@@ -3118,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ha az ujjlenyomat- vagy az arcfelismerés, illetve rendszerjelszó engedélyezve van, az alkalmazást annak megnyitásakor fel kell oldanod.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Törlés";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatikus adattörlés";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Adatok automatikus törlése";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Böngésző-visszajelzés";
@@ -3148,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Felugró sütiablakok kezelése";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Lapok és adatok törlése";
+
 /* Settings title for the customize section */
 "settings.customize" = "Testreszabás";
 
@@ -3165,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Alapértelmezett böngésző";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Duck.ai csevegések törlése";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Lapok és adatok törlése";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Email Protection automatikus kitöltésének letiltása";
@@ -3370,6 +3415,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Szinkronizálás és biztonsági mentés";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Megjelenítés a Lapkezelőben";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Lapok";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Alapértelmezett szövegnagyítás";
 
@@ -3378,6 +3429,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Beállítások";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Blokkolt nyomkövetők animációja";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Segít blokkolni a harmadik féltől származó olyan nyomkövetőket, amelyek DNS segítségével próbálják elrejteni magukat egy webhelyen.";
@@ -3619,11 +3673,11 @@
 /* Help and support Section header */
 "subscription.help" = "Segítség és támogatás";
 
-/* Manage Plan header */
-"subscription.manage.plan" = "Csomag kezelése";
-
 /* Manage Payment or cancel action title */
 "subscription.manage.payment" = "Fizetés kezelése vagy lemondása";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "Csomag kezelése";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Előfizetés";
@@ -3787,6 +3841,12 @@
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Szinkronizálás beállítása";
 
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Hitelkártyák szinkronizálása és biztonsági mentése";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Adatok szinkronizálása és biztonsági mentése";
+
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nem, köszönöm";
 
@@ -3876,6 +3936,30 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Összes lap könyvjelzőzése";
+
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Elrejtés";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Bármikor visszakapcsolhatod a Beállítások > Megjelenés menüben.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Elrejted a nyomkövető-számlálót?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Nyomkövető-számláló beállításai";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "A banner elrejtésének lehetőségei dupla koppintással jeleníthetők meg";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Megtartás.";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "az elmúlt 7 napban";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Növeld vagy csökkentsd a szöveg méretét az összes webhelyen.";
@@ -4261,15 +4345,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
-
-/* Tab Switcher tracker count */
-"settings.tabs" = "Lapok";
-"settings.tab.switcher.show.tracker.count" = "Az elmúlt 7 nap követőszáma";
-"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
-"tab.switcher.tracker.count.subtitle" = "az elmúlt 7 napban";
-"tab.switcher.tracker.count.hide.title" = "Elrejti a követők számát?";
-"tab.switcher.tracker.count.hide.message" = "Ezt újra bekapcsolhatod a Beállítások > Megjelenés menüben.";
-"tab.switcher.tracker.count.hide.action" = "Elrejtés";
-"tab.switcher.tracker.count.keep.action" = "Megtartás";
-"tab.switcher.tracker.count.info.a11y" = "Követőszám beállításai";
-"tab.switcher.tracker.count.info.hint.a11y" = "Koppints duplán a banner elrejtési lehetőségeinek megjelenítéséhez";

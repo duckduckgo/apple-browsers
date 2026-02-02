@@ -1679,6 +1679,66 @@
         }
       }
     },
+    "preferences.begin-sync.card-description-updated" : {
+      "comment" : "Begin Syncing card description in sync settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisiere Lesezeichen, Daten für das automatische Ausfüllen und Duck.ai-Chats sicher zwischen deinen Geräten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Securely sync bookmarks, autofill data, and Duck.ai chats between your devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza de forma segura los marcadores, los datos de autocompletado y los chats de Duck.ai entre tus dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisez en toute sécurité vos signets, données de remplissage automatique et discussions Duck.ai entre vos appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza in modo sicuro segnalibri, dati di compilazione automatica e chat di Duck.ai nei tuoi dispositivi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniseer veilig bladwijzers, autofill gegevens en Duck.ai chats tussen je apparaten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpiecznie synchronizuj zakładki, dane autouzupełniania i czaty Duck.ai między swoimi urządzeniami."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza de forma segura os teus marcadores, dados de preenchimento automático e conversas do Duck.ai entre os teus dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Безопасная синхронизация закладок, данных автозаполнения и чатов Duck.ai между устройствами."
+          }
+        }
+      }
+    },
     "preferences.begin-sync.card-footer" : {
       "comment" : "Footer / caption on the Begin Syncing card in sync settings",
       "extractionState" : "extracted_with_value",
@@ -2219,6 +2279,66 @@
         }
       }
     },
+    "preferences.preparing-to-sync.dialog-subtitle-updated" : {
+      "comment" : "Preparing to sync dialog subtitle during sync set up",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir richten die Verbindung ein, um deine Lesezeichen, Daten für das automatische Ausfüllen und Duck.ai-Chats mit dem anderen Gerät zu synchronisieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We're setting up the connection to synchronize your bookmarks, autofill data, and Duck.ai chats with the other device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estamos configurando la conexión para sincronizar tus marcadores, datos de autocompletado y chats de Duck.ai con el otro dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous configurons la connexion pour synchroniser vos signets, vos données de remplissage automatique et vos discussions Duck.ai avec l'autre appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stiamo configurando la connessione per sincronizzare i segnalibri, i dati di compilazione automatica e le chat di Duck.ai con l'altro dispositivo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We zijn de verbinding aan het instellen om je bladwijzers, automatisch in te vullen gegevens en Duck.ai-chats met het andere apparaat te synchroniseren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konfigurujemy połączenie, aby synchronizować zakładki, dane autouzupełniania i czaty Duck.ai z innym urządzeniem."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estamos a configurar a ligação para sincronizar os teus favoritos, preencher automaticamente os dados e as conversas do Duck.ai com o outro dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Идет подготовка подключения для синхронизации закладок, данных автозаполнения и чатов Duck.ai с другим устройством."
+          }
+        }
+      }
+    },
     "preferences.preparing-to-sync.dialog-title" : {
       "comment" : "Preparing to sync dialog title during sync set up",
       "extractionState" : "extracted_with_value",
@@ -2689,6 +2809,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A compatibilidade de determinados tipos de dados depende da plataforma. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддержка некоторых типов данных зависит от платформы. [Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        }
+      }
+    },
+    "preferences.sync.card-footer-updated" : {
+      "comment" : "Footer / caption on the Sync card in sync settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Unterstützung für bestimmte Datentypen variiert je nach Plattform. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Support for certain data types varies by platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La compatibilidad con determinados tipos de datos varía en función de la plataforma. [Más información](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prise en charge de certains types de données varie selon la plateforme. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il supporto per alcuni tipi di dati varia a seconda della piattaforma. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ondersteuning voor bepaalde gegevenstypen verschilt per platform. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wsparcie dla niektórych typów danych różni się w zależności od platformy. [Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A compatibilidade com determinados tipos de dados varia consoante a plataforma. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
           }
         },
         "ru" : {
@@ -4195,6 +4375,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DuckDuckGo создаст зашифрованную резервную копию ваших закладок и данных автозаполнения на надежном сервере. Копию можно синхронизировать с другими устройствами."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-server-subtitle1-updated" : {
+      "comment" : "Sync with server dialog first subtitle",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch wird ein verschlüsseltes Backup deiner Lesezeichen, Passwörter, Kreditkarten, Identitäten und Duck.ai-Chats auf dem sicheren Server von DuckDuckGo erstellt, der mit deinen anderen Geräten synchronisiert werden kann."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This creates an encrypted backup of your bookmarks, passwords, credit cards, identities, and Duck.ai chats on DuckDuckGo’s secure server, which can be synced with your other devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto crea una copia de seguridad encriptada de tus marcadores, contraseñas, tarjetas de crédito, identidades y chats de Duck.ai en el servidor seguro de DuckDuckGo que se puede sincronizar con tus otros dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela crée une sauvegarde cryptée de vos signets, mots de passe, cartes bancaires, identités et discussions Duck.ai sur le serveur sécurisé de DuckDuckGo, qui peut être synchronisée avec vos autres appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa azione crea un backup crittografato di segnalibri, password, carte di credito, identità e chat di Duck.ai sul server sicuro di DuckDuckGo, che può essere sincronizzato con gli altri tuoi dispositivi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiermee maak je een versleutelde back-up van je bladwijzers, wachtwoorden, creditcards, identiteiten en Duck.ai-chats op de beveiligde server van DuckDuckGo. Deze back-up kan met je andere apparaten worden gesynchroniseerd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tworzy na bezpiecznym serwerze DuckDuckGo zaszyfrowaną kopię zapasową zakładek, haseł, kart kredytowych, tożsamości i czatów Duck.ai, którą można zsynchronizować z innymi urządzeniami. \n\n"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isto cria uma cópia de segurança encriptada dos teus marcadores, palavras-passe, cartões de crédito, identidades e conversas do Duck.ai no servidor seguro da DuckDuckGo, que pode ser sincronizada com os teus outros dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo создаст зашифрованную резервную копию ваших закладок, паролей, реквизитов платежных карт, персональных данных и чатов Duck.ai на надежном сервере. Копию можно синхронизировать с другими устройствами."
           }
         }
       }

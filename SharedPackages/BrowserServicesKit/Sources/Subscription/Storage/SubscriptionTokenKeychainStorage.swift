@@ -25,7 +25,6 @@ public enum KeychainErrorSource: String {
     case browser
     case vpn
     case pir
-    case shared
 }
 
 public enum KeychainErrorAuthVersion: String {

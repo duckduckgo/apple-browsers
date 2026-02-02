@@ -22,14 +22,18 @@ import SwiftUI
 
 /// A shape representing a rectangular bubble with a directional arrow and rounded corners.
 /// Used internally by BubbleView.
-public struct Bubble: InsettableShape {
+struct Bubble: InsettableShape {
     let arrowLength: CGFloat
     let arrowWidth: CGFloat
     let arrowPositionPercent: CGFloat
     let cornerRadius: CGFloat
+    let bend: CGFloat
+    let finSideCurve: CGFloat
+    let finTipRadius: CGFloat
+    let finTipRoundness: CGFloat
 
     // swiftlint:disable:next cyclomatic_complexity
-    public func path(in rect: CGRect) -> Path {
+    func path(in rect: CGRect) -> Path {
 
         let radius = max(0, cornerRadius)
         guard rect.width >= 2 * radius, rect.height >= 2 * radius else {
@@ -90,15 +94,30 @@ public struct Bubble: InsettableShape {
             arrowCenterY = maxY - radius - centerOnFlat
         }
 
-        // Calculate Arrow Points (p1, p2, tip)
+        // Calculate Arrow Base Points (p1, p2)
         let halfArrowWidth = arrowWidth / 2
-        var p1, p2, tip: CGPoint
+        var p1, p2: CGPoint
         switch arrowEdge {
-        case .top:    p1 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY); p2 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY); tip = CGPoint(x: arrowCenterX, y: arrowCenterY - arrowLength)
-        case .right:  p1 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth); p2 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth); tip = CGPoint(x: arrowCenterX + arrowLength, y: arrowCenterY)
-        case .bottom: p1 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY); p2 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY); tip = CGPoint(x: arrowCenterX, y: arrowCenterY + arrowLength)
-        case .left:   p1 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth); p2 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth); tip = CGPoint(x: arrowCenterX - arrowLength, y: arrowCenterY)
+        case .top:
+            p1 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY)
+            p2 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY)
+        case .right:
+            p1 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth)
+            p2 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth)
+        case .bottom:
+            p1 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY)
+            p2 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY)
+        case .left:
+            p1 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth)
+            p2 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth)
         }
+
+        let outwardNormal = Bubble.outwardNormal(for: arrowEdge)
+        let tangent = Bubble.edgeTangent(for: arrowEdge)
+        let bendOffset = bend * halfArrowWidth
+        let tip = CGPoint(x: arrowCenterX + outwardNormal.x * arrowLength + tangent.x * bendOffset,
+                          y: arrowCenterY + outwardNormal.y * arrowLength + tangent.y * bendOffset)
+        let effectiveTipRadius = finTipRadius
 
         // Define Rounded Rectangle Corner Points & Arc Centers
         let pointTopLeft = CGPoint(x: minX + radius, y: minY)
@@ -116,19 +135,19 @@ public struct Bubble: InsettableShape {
         var path = Path()
         path.move(to: pointTopLeft)
 
-        if arrowEdge == .top { path.addLine(to: p1); path.addLine(to: tip); path.addLine(to: p2) }
+        if arrowEdge == .top { path.addLine(to: p1); Bubble.addFin(to: &path, from: p1, to: p2, tip: tip, tipRadius: effectiveTipRadius, tipRoundness: finTipRoundness, sideCurve: finSideCurve, bend: bend) }
         path.addLine(to: pointTopRight)
         if radius > 0 { path.addArc(center: centerTopRight, radius: radius, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false) }
 
-        if arrowEdge == .right { path.addLine(to: p1); path.addLine(to: tip); path.addLine(to: p2) }
+        if arrowEdge == .right { path.addLine(to: p1); Bubble.addFin(to: &path, from: p1, to: p2, tip: tip, tipRadius: effectiveTipRadius, tipRoundness: finTipRoundness, sideCurve: finSideCurve, bend: bend) }
         path.addLine(to: pointRightBottom)
         if radius > 0 { path.addArc(center: centerBottomRight, radius: radius, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false) }
 
-        if arrowEdge == .bottom { path.addLine(to: p1); path.addLine(to: tip); path.addLine(to: p2) }
+        if arrowEdge == .bottom { path.addLine(to: p1); Bubble.addFin(to: &path, from: p1, to: p2, tip: tip, tipRadius: effectiveTipRadius, tipRoundness: finTipRoundness, sideCurve: finSideCurve, bend: bend) }
         path.addLine(to: pointBottomLeft)
         if radius > 0 { path.addArc(center: centerBottomLeft, radius: radius, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false) }
 
-        if arrowEdge == .left { path.addLine(to: p1); path.addLine(to: tip); path.addLine(to: p2) }
+        if arrowEdge == .left { path.addLine(to: p1); Bubble.addFin(to: &path, from: p1, to: p2, tip: tip, tipRadius: effectiveTipRadius, tipRoundness: finTipRoundness, sideCurve: finSideCurve, bend: bend) }
         path.addLine(to: pointLeftTop)
         if radius > 0 { path.addArc(center: centerTopLeft, radius: radius, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false) }
 
@@ -136,13 +155,159 @@ public struct Bubble: InsettableShape {
         return path
     }
 
-    public func inset(by amount: CGFloat) -> some InsettableShape {
+    func inset(by amount: CGFloat) -> some InsettableShape {
          // Basic inset conformance, strokeBorder handles the rest
         return self
     }
 
-    // Make Edge public so BubbleView can access it
-    public enum Edge { case top, right, bottom, left }
+    // Make Edge internal (default) so BubbleView can access it
+    enum Edge { case top, right, bottom, left }
+
+    private static func outwardNormal(for edge: Edge) -> CGPoint {
+        switch edge {
+        case .top: return CGPoint(x: 0, y: -1)
+        case .right: return CGPoint(x: 1, y: 0)
+        case .bottom: return CGPoint(x: 0, y: 1)
+        case .left: return CGPoint(x: -1, y: 0)
+        }
+    }
+
+    private static func edgeTangent(for edge: Edge) -> CGPoint {
+        switch edge {
+        case .top: return CGPoint(x: 1, y: 0)
+        case .right: return CGPoint(x: 0, y: 1)
+        case .bottom: return CGPoint(x: -1, y: 0)
+        case .left: return CGPoint(x: 0, y: -1)
+        }
+    }
+
+    private static func addFin(
+        to path: inout Path,
+        from p1: CGPoint,
+        to p2: CGPoint,
+        tip: CGPoint,
+        tipRadius: CGFloat,
+        tipRoundness: CGFloat,
+        sideCurve: CGFloat,
+        bend: CGFloat
+    ) {
+        let sideLength1 = distance(p1, tip)
+        let sideLength2 = distance(p2, tip)
+        guard sideLength1 > 0.001, sideLength2 > 0.001 else {
+            path.addLine(to: tip)
+            path.addLine(to: p2)
+            return
+        }
+
+        let maxTipCut = max(0, min(sideLength1, sideLength2) - 0.001)
+        let roundness = max(0, min(1, tipRoundness))
+        let tipCut = min(maxTipCut * roundness, max(0, tipRadius))
+        let curveStrength = max(0, min(1, sideCurve)) * min(sideLength1, sideLength2) * min(1, abs(bend)) * 0.35
+        let baseMid = CGPoint(x: (p1.x + p2.x) * 0.5, y: (p1.y + p2.y) * 0.5)
+        let baseDX = p2.x - p1.x
+        let baseDY = p2.y - p1.y
+        let baseLen = sqrt(baseDX * baseDX + baseDY * baseDY)
+        let tanX = baseLen > 0.001 ? baseDX / baseLen : 0
+        let tanY = baseLen > 0.001 ? baseDY / baseLen : 0
+        let bendDir = (tip.x - baseMid.x) * tanX + (tip.y - baseMid.y) * tanY
+        let s1 = (p1.x - baseMid.x) * tanX + (p1.y - baseMid.y) * tanY
+        let outerIsFirst: Bool
+        if abs(bendDir) < 0.001 {
+            outerIsFirst = sideLength1 >= sideLength2
+        } else {
+            outerIsFirst = s1 * bendDir > 0
+        }
+
+        let interior1 = interiorNormal(from: p1, to: tip, interiorPoint: p2)
+        let interior2 = interiorNormal(from: tip, to: p2, interiorPoint: p1)
+        let normal1 = outerIsFirst ? interior1 : CGPoint(x: -interior1.x, y: -interior1.y)
+        let normal2 = outerIsFirst ? CGPoint(x: -interior2.x, y: -interior2.y) : interior2
+
+        if tipCut <= 0 {
+            if curveStrength > 0.001 {
+                let c1 = controlPoint(from: p1, to: tip, normal: normal1, curveAmount: curveStrength)
+                path.addQuadCurve(to: tip, control: c1)
+                let c2 = controlPoint(from: tip, to: p2, normal: normal2, curveAmount: curveStrength)
+                path.addQuadCurve(to: p2, control: c2)
+            } else {
+                path.addLine(to: tip)
+                path.addLine(to: p2)
+            }
+            return
+        }
+
+        let t1 = point(from: tip, toward: p1, distance: tipCut)
+        let t2 = point(from: tip, toward: p2, distance: tipCut)
+
+        if curveStrength > 0.001 {
+            let c1 = controlPoint(from: p1, to: t1, normal: normal1, curveAmount: curveStrength)
+            path.addQuadCurve(to: t1, control: c1)
+        } else {
+            path.addLine(to: t1)
+        }
+
+        let tipSpan = distance(t1, t2)
+        if tipSpan > 0.001 {
+            let u1 = unitVector(from: t1, toward: tip)
+            let u2 = unitVector(from: t2, toward: tip)
+            let k = min(tipSpan * 0.6, tipCut * 1.5)
+            let cTip1 = CGPoint(x: t1.x + u1.x * k, y: t1.y + u1.y * k)
+            let cTip2 = CGPoint(x: t2.x + u2.x * k, y: t2.y + u2.y * k)
+            path.addCurve(to: t2, control1: cTip1, control2: cTip2)
+        } else {
+            path.addLine(to: t2)
+        }
+
+        if curveStrength > 0.001 {
+            let c2 = controlPoint(from: t2, to: p2, normal: normal2, curveAmount: curveStrength)
+            path.addQuadCurve(to: p2, control: c2)
+        } else {
+            path.addLine(to: p2)
+        }
+    }
+
+    private static func distance(_ p1: CGPoint, _ p2: CGPoint) -> CGFloat {
+        let dx = p2.x - p1.x
+        let dy = p2.y - p1.y
+        return sqrt(dx * dx + dy * dy)
+    }
+
+    private static func point(from origin: CGPoint, toward target: CGPoint, distance: CGFloat) -> CGPoint {
+        let dx = target.x - origin.x
+        let dy = target.y - origin.y
+        let length = sqrt(dx * dx + dy * dy)
+        guard length > 0.001 else { return origin }
+        let ux = dx / length
+        let uy = dy / length
+        return CGPoint(x: origin.x + ux * distance, y: origin.y + uy * distance)
+    }
+
+    private static func unitVector(from origin: CGPoint, toward target: CGPoint) -> CGPoint {
+        let dx = target.x - origin.x
+        let dy = target.y - origin.y
+        let length = sqrt(dx * dx + dy * dy)
+        guard length > 0.001 else { return .zero }
+        return CGPoint(x: dx / length, y: dy / length)
+    }
+
+    private static func interiorNormal(from start: CGPoint, to end: CGPoint, interiorPoint: CGPoint) -> CGPoint {
+        let dx = end.x - start.x
+        let dy = end.y - start.y
+        let length = sqrt(dx * dx + dy * dy)
+        guard length > 0.001 else { return .zero }
+        let leftX = -dy / length
+        let leftY = dx / length
+        let cross = dx * (interiorPoint.y - start.y) - dy * (interiorPoint.x - start.x)
+        let sign: CGFloat = cross >= 0 ? 1 : -1
+        return CGPoint(x: leftX * sign, y: leftY * sign)
+    }
+
+    private static func controlPoint(from start: CGPoint, to end: CGPoint, normal: CGPoint, curveAmount: CGFloat) -> CGPoint {
+        let mid = CGPoint(x: (start.x + end.x) * 0.5, y: (start.y + end.y) * 0.5)
+        return CGPoint(x: mid.x + normal.x * curveAmount,
+                       y: mid.y + normal.y * curveAmount)
+    }
+
 }
 
 // MARK: - Bubble View Definition
@@ -157,6 +322,10 @@ public struct BubbleView<Content: View>: View {
     let arrowWidth: CGFloat
     let arrowPositionPercent: CGFloat // 0-100, position along FLAT edges
     let cornerRadius: CGFloat
+    let bend: CGFloat
+    let finSideCurve: CGFloat
+    let finTipRadius: CGFloat
+    let finTipRoundness: CGFloat
     let fillColor: Color
     let borderColor: Color
     let borderWidth: CGFloat
@@ -167,7 +336,11 @@ public struct BubbleView<Content: View>: View {
         Bubble(arrowLength: arrowLength,
                arrowWidth: arrowWidth,
                arrowPositionPercent: arrowPositionPercent,
-               cornerRadius: cornerRadius)
+               cornerRadius: cornerRadius,
+               bend: bend,
+               finSideCurve: finSideCurve,
+               finTipRadius: finTipRadius,
+               finTipRoundness: finTipRoundness)
     }
 
     public var body: some View {
@@ -183,10 +356,10 @@ public struct BubbleView<Content: View>: View {
                 bubbleShape.strokeBorder(borderColor, lineWidth: borderWidth)
             )
             // Add final padding to ensure arrow/border doesn't get clipped
-            .padding(.top, arrowEdge == .top ? arrowLength : 0)
-            .padding(.bottom, arrowEdge == .bottom ? arrowLength : 0)
-            .padding(.leading, arrowEdge == .left ? arrowLength : 0)
-            .padding(.trailing, arrowEdge == .right ? arrowLength : 0)
+            .padding(.top, arrowEdge == .top ? finDepth : 0)
+            .padding(.bottom, arrowEdge == .bottom ? finDepth : 0)
+            .padding(.leading, arrowEdge == .left ? finDepth : 0)
+            .padding(.trailing, arrowEdge == .right ? finDepth : 0)
     }
 
     // Helper to determine which edge the arrow is on based on parameters
@@ -217,6 +390,10 @@ public struct BubbleView<Content: View>: View {
         }
     }
 
+    private var finDepth: CGFloat {
+        max(0, arrowLength)
+    }
+
      /// Initializer with explicit parameters.
      ///
      /// - Parameters:
@@ -224,6 +401,10 @@ public struct BubbleView<Content: View>: View {
      ///   - arrowWidth: Width of the arrow pointer's base.
      ///   - arrowPositionPercent: Position (0-100) along the flat edges where the arrow center should be.
      ///   - cornerRadius: Radius for the bubble's corners.
+     ///   - bend: Amount of fin bend. `0` is straight; positive bends right when the arrow is on top (clockwise), negative bends left. Values beyond `1` push the tip further along the edge.
+     ///   - finSideCurve: Curvature for fin sides. `0` keeps sides straight; higher values curve the long side outward and short side inward.
+     ///   - finTipRadius: Radius for rounding the fin tip.
+     ///   - finTipRoundness: 0-1 multiplier for tip rounding to avoid distortion. Default: 0 (sharp).
      ///   - fillColor: Background color of the bubble.
      ///   - borderColor: Color of the bubble's border.
      ///   - borderWidth: Width of the bubble's border.
@@ -234,6 +415,10 @@ public struct BubbleView<Content: View>: View {
          arrowWidth: CGFloat = 30,
          arrowPositionPercent: CGFloat = 10,
          cornerRadius: CGFloat = 10,
+         bend: CGFloat = 0,
+         finSideCurve: CGFloat = 0,
+         finTipRadius: CGFloat = .greatestFiniteMagnitude,
+         finTipRoundness: CGFloat = 0,
          fillColor: Color = .blue,
          borderColor: Color = .clear,
          borderWidth: CGFloat = 0,
@@ -244,6 +429,10 @@ public struct BubbleView<Content: View>: View {
          self.arrowWidth = arrowWidth
          self.arrowPositionPercent = arrowPositionPercent
          self.cornerRadius = cornerRadius
+         self.bend = bend
+         self.finSideCurve = finSideCurve
+         self.finTipRadius = finTipRadius
+         self.finTipRoundness = finTipRoundness
          self.fillColor = fillColor
          self.borderColor = borderColor
          self.borderWidth = borderWidth
@@ -269,11 +458,15 @@ struct BubbleView_Previews: PreviewProvider {
                     .foregroundColor(.white)
             }
 
-             BubbleView(
+            BubbleView(
                  arrowLength: 20,
                  arrowWidth: 40,
                  arrowPositionPercent: 35, // Right edge
                  cornerRadius: 5,
+                 bend: 0.4,
+                 finSideCurve: 0.6,
+                 finTipRadius: .greatestFiniteMagnitude,
+                 finTipRoundness: 0.6,
                  fillColor: .orange,
                  borderColor: .black,
                  borderWidth: 2
@@ -294,10 +487,10 @@ struct BubbleView_Previews: PreviewProvider {
                  borderColor: .gray,
                  borderWidth: 1
              ) {
-                Text("Short text.")
-                    .font(.caption)
-                    .foregroundColor(.black)
-            }
+                 Text("Short text.")
+                     .font(.caption)
+                     .foregroundColor(.black)
+             }
         }
         .padding()
         .background(Color.gray.opacity(0.2))

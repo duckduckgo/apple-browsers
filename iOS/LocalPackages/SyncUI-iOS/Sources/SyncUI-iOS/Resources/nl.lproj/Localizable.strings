@@ -31,8 +31,14 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Annuleren";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "'Synchronisatie en back-up' inschakelen";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Hiermee maak je een versleutelde back-up van je bladwijzers en automatisch ingevulde gegevens op de beveiligde server van DuckDuckGo. Deze back-up kan met je andere apparaten worden gesynchroniseerd.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Hiermee maak je een versleutelde back-up van je opgeslagen bladwijzers, wachtwoorden, creditcards en Duck.ai-chats op de beveiligde server van DuckDuckGo. Deze back-up kan met je andere apparaten worden gesynchroniseerd.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "De versleutelingscode wordt alleen op je apparaat opgeslagen. DuckDuckGo heeft er geen toegang toe.";
@@ -138,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Je bladwijzers en automatisch ingevulde gegevens worden voorbereid voor synchronisatie. Even geduld.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Je bladwijzers, wachtwoorden en Duck.ai-chats worden voorbereid voor synchronisatie. Even geduld.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Er wordt verbinding gemaakt ...";
@@ -286,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Synchroniseer bladwijzers en wachtwoorden veilig tussen je apparaten.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Synchroniseer veilig bladwijzers, autofill gegevens en Duck.ai chats tussen je apparaten.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Synchroniseren starten";
 
@@ -300,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "'Synchronisatie en back-up' uitschakelen ...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Bladwijzers, autofill-gegevens en Duck.ai chats worden momenteel gesynchroniseerd op al je apparaten.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Synchronisatie ingeschakeld";

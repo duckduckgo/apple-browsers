@@ -1,0 +1,57 @@
+{
+    "meta": {
+        "version": {
+            "description": "Version of the base_event schema. During processing this is combined with the two-octet version of each event schema to form the full schema version in the form of <base_version>.<event_major_version>.<event_minor_version>",
+            "value": 1
+        }
+    },
+    "app": {
+        "name": {
+            "type": "string",
+            "description": "The name of the application",
+            "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental"]
+        },
+        "version": {
+            "type": "string",
+            "description": "The version of the application",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "form_factor": {
+            "type": "string",
+            "description": "The form factor of the device",
+            "enum": ["phone", "tablet"]
+        }
+    },
+    "global": {
+        "platform": {
+            "type": "string",
+            "description": "The platform the app is running on",
+            "enum": ["iOS"]
+        },
+        "type": {
+            "type": "string",
+            "description": "The type of application",
+            "enum": ["app"]
+        },
+        "sample_rate": {
+            "type": "number",
+            "description": "Sample rate for this event"
+        }
+    },
+    "feature": {
+        "name": {
+            "type": "string",
+            "description": "The feature name for this event"
+        },
+        "status": {
+            "type": "string",
+            "description": "The overall status of the operation"
+        }
+    },
+    "context": {
+        "name": {
+            "type": "string",
+            "description": "Context name for the event"
+        }
+    }
+}

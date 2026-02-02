@@ -30,7 +30,6 @@ public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvail
     public var isSubscriptionPurchaseAllowed: Bool
     public var isPaidAIChatEnabled: Bool = true
     public var isSupportsAlternateStripePaymentFlowEnabled: Bool = false
-    public var isTierMessagingEnabled: Bool = false
     public var isProTierPurchaseEnabled: Bool = false
 
     public init(isSubscriptionPurchaseAllowed: Bool) {

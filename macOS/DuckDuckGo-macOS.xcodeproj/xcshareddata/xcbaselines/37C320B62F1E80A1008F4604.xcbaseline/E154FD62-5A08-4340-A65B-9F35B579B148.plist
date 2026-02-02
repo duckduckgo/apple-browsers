@@ -6,19 +6,29 @@
 	<dict>
 		<key>MemoryUsageTests</key>
 		<dict>
+			<key>testMemoryAllocationsAfterLaunch()</key>
+			<dict>
+				<key>com.duckduckgo.memory.allocations.used.final</key>
+				<dict>
+					<key>baselineAverage</key>
+					<real>173542428.800000</real>
+					<key>baselineIntegrationDisplayName</key>
+					<string>Local Baseline</string>
+				</dict>
+			</dict>
 			<key>testMemoryAllocationsWhenOpeningSingleNewTab()</key>
 			<dict>
 				<key>com.duckduckgo.memory.allocations.used.final</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>178.200000</real>
+					<real>186860000.000000</real>
 					<key>baselineIntegrationDisplayName</key>
 					<string>Local Baseline</string>
 				</dict>
 				<key>com.duckduckgo.memory.allocations.used.initial</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>175.600000</real>
+					<real>184130000.000000</real>
 					<key>baselineIntegrationDisplayName</key>
 					<string>Local Baseline</string>
 				</dict>
@@ -28,14 +38,14 @@
 				<key>com.duckduckgo.memory.allocations.used.final</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>186.309030</real>
+					<real>208900000.000000</real>
 					<key>baselineIntegrationDisplayName</key>
 					<string>Local Baseline</string>
 				</dict>
 				<key>com.duckduckgo.memory.allocations.used.initial</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>178.914594</real>
+					<real>201350000.000000</real>
 					<key>baselineIntegrationDisplayName</key>
 					<string>Local Baseline</string>
 				</dict>

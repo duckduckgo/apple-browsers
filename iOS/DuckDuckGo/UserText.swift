@@ -49,6 +49,23 @@ public struct UserText {
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
     public static let actionForgetAllWithAIChat = NSLocalizedString("action.title.forgetAllWithAIChat", value: "Clear Tabs, Data, and Duck.ai Chats", comment: "Fire button title when AI chat clearing is enabled")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")
+
+    // MARK: Scoped Fire Confirmation
+
+    public static let scopedFireConfirmationAlertTitle = NSLocalizedString("scoped.fire.confirmation.alert.title", value: "Delete tabs and site data?", comment: "Title for scoped fire confirmation dialog asking user to delete tabs and site data")
+    public static let scopedFireConfirmationAlertTitleWithAIChat = NSLocalizedString("scoped.fire.confirmation.alert.title.with.aichat", value: "Delete tabs, site data, and chats?", comment: "Title for scoped fire confirmation dialog when AI chat clearing is enabled")
+    public static let scopedFireConfirmationDeleteAllButton = NSLocalizedString("scoped.fire.confirmation.delete.all.button", value: "Delete All", comment: "Button to delete all tabs and data in scoped fire confirmation dialog")
+    public static let scopedFireConfirmationDeleteThisTabButton = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.button", value: "Delete This Tab", comment: "Button to delete only the current tab in scoped fire confirmation dialog")
+    public static let scopedFireConfirmationSignOutWarning = NSLocalizedString("scoped.fire.confirmation.sign.out.warning", value: "Deleting site data can sign you out of accounts.", comment: "Warning message explaining that deleting site data may sign users out of accounts")
+    public static let scopedFireConfirmationDeleteThisTabDescription = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.description", value: "\"Delete This Tab\" clears this Duck.ai chat, and any site data from the sites visited in this tab.", comment: "Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data")
+    public static let scopedFireConfirmationDownloadsWarning = NSLocalizedString("scoped.fire.confirmation.downloads.warning", value: "This will cancel downloads in progress.", comment: "Warning message that deleting will cancel any active downloads")
+    public static let scopedFireConfirmationNewTabsInfo = NSLocalizedString("scoped.fire.confirmation.new.tabs.info", value: "New tabs you create also can be deleted individually.", comment: "Informational message explaining that new tabs can also be deleted individually")
+
+    public static func scopedFireConfirmationTabsDeletedToast(tabCount: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "scoped.fire.confirmation.tabs.deleted.toast", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, tabCount)
+    }
+
     public static let actionOpen = NSLocalizedString("action.title.open", value: "Open", comment: "Open action")
     public static let actionCopy = NSLocalizedString("action.title.copy", value: "Copy", comment: "Copy action")
     public static let actionCopyMessage = NSLocalizedString("action.title.copy.message", value: "URL copied", comment: "Floating message indicating URL has been copied")
@@ -59,6 +76,7 @@ public struct UserText {
     public static let actionNewAIChat = NSLocalizedString("action.title.aiChat.new", value: "New Chat", comment: "Start new AI Chat action in the menu list")
     public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
+    public static let aiChatRecentChatsTitle = NotLocalizedString("aiChat.recentChats.title", value: "Recent Chats", comment: "Section header title for the recent chats list in Duck.ai")
 
     public static let actionOpenBookmarks = NSLocalizedString("action.title.bookmarks", value: "Bookmarks", comment: "Button: Open bookmarks list")
     public static let actionOpenPasswords = NSLocalizedString("action.title.passwords", value: "Passwords", comment: "Button: Open passwords list")
@@ -1387,6 +1405,7 @@ public struct UserText {
     public static let general = NSLocalizedString("settings.general", value: "General", comment: "The name of the settings subsection containing general settings")
     public static let settingsAppearanceSection = NSLocalizedString("settings.appearance", value: "Appearance", comment: "Settings screen appearance section title")
     public static let settingsTabsSection = NSLocalizedString("settings.tabs", value: "Tabs", comment: "Settings screen section title for tab-related appearance options")
+    public static let settingsTrackerBlockingAnimationSection = NSLocalizedString("settings.tracker.blocking.animation.section", value: "Trackers Blocked Animation", comment: "Settings screen section title for tracker blocking animation options")
     public static let accessibility = NSLocalizedString("settings.accessibility", value: "Accessibility", comment: "Settings screen accessibility section title")
     public static let dataClearing = NSLocalizedString("settings.data.clearing", value: "Data Clearing", comment: "The name of a settings subsection related to the data clearing")
     public static let addressBar = NSLocalizedString("settings.address.bar", value: "Address Bar", comment: "Name of the settings subsection related to the address bar")
@@ -1416,11 +1435,12 @@ public struct UserText {
     public static let settingsTheme = NSLocalizedString("settings.theme", value: "Theme", comment: "Settings screen cell text for theme")
     public static let settingsIcon = NSLocalizedString("settings.icon", value: "App Icon", comment: "Settings screen cell text for app icon selection")
     public static let settingsFirebutton = NSLocalizedString("settings.firebutton", value: "Fire Button Animation", comment: "Settings screen cell text for fire button animation")
+    public static let settingsCustomizableButtonDeleteTabsAndData = NSLocalizedString("settings.customizable.button.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Label for customizable toolbar button that deletes tabs and data")
     public static let settingsText = NSLocalizedString("settings.text.size", value: "Default Text Zoom", comment: "Settings screen cell text for text size")
     public static let settingsAddressBarPosition = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
-    public static let tabSwitcherShowTrackerCount = NSLocalizedString("settings.tab.switcher.show.tracker.count", value: "7-Day Tracker Count", comment: "Settings screen cell title for toggling tracker count banner in tab switcher")
-    public static let settingsTrackersBlockedAnimation = NSLocalizedString("settings.address.trackers.animation", value: "Show Trackers Blocked Animation", comment: "Settings screen cell title for toggling trackers blocked animation in address bar")
+    public static let tabSwitcherShowTrackerCount = NSLocalizedString("settings.tab.switcher.show.tracker.count", value: "Show in Tabs Manager", comment: "Settings screen cell title for toggling tracker blocking animation in tabs manager")
+    public static let settingsTrackersBlockedAnimation = NSLocalizedString("settings.address.trackers.animation", value: "Show in Address Bar", comment: "Settings screen cell title for toggling tracker blocking animation in address bar")
     public static let settingsRefreshButtonPositionTitle = NSLocalizedString("settings.refreshButton.position.title", value: "Reload Button Position", comment: "Settings screen cell text for setting the refresh button position.")
     public static let settingsRefreshButtonPositionAddressBar = NSLocalizedString("settings.refreshButton.position.addressBar", value: "Address Bar", comment: "Settings screen option to set refresh button in the address bar")
     public static let settingsRefreshButtonPositionMenu = NSLocalizedString("settings.refreshButton.position.menu", value: "Menu", comment: "Settings screen option to set refresh button in the menu")
@@ -1431,6 +1451,7 @@ public struct UserText {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
+        formatter.usesGroupingSeparator = true
         return formatter
     }()
 
@@ -1439,7 +1460,7 @@ public struct UserText {
         let formattedCount = tabSwitcherTrackerCountFormatter.string(from: NSNumber(value: count)) ?? "\(count)"
         return String.localizedStringWithFormat(message, count, formattedCount)
     }
-    public static let tabSwitcherTrackerCountSubtitle = NSLocalizedString("tab.switcher.tracker.count.subtitle", value: "in the last 7 days", comment: "Subtitle for tracker count banner indicating time window")
+    public static let tabSwitcherTrackerCountSubtitle = NSLocalizedString("tab.switcher.tracker.count.subtitle", value: "in last 7 days", comment: "Subtitle for tracker count banner indicating time window")
     public static let tabSwitcherTrackerCountHideTitle = NSLocalizedString("tab.switcher.tracker.count.hide.title", value: "Hide tracker count?", comment: "Alert title asking user to hide the tracker count banner")
     public static let tabSwitcherTrackerCountHideMessage = NSLocalizedString("tab.switcher.tracker.count.hide.message", value: "You can turn this back on in Settings > Appearance.", comment: "Alert message explaining how to re-enable tracker count")
     public static let tabSwitcherTrackerCountHideAction = NSLocalizedString("tab.switcher.tracker.count.hide.action", value: "Hide", comment: "Action button to hide tracker count banner")
@@ -1477,6 +1498,13 @@ public struct UserText {
     public static let settingsAutoClearCookiesSubtitle = NSLocalizedString("settings.autoclear.cookies.subtitle", value: "Delete all site data, including visited sites. May sign you out of accounts.", comment: "Subtitle explaining what the cookies option does in auto clear settings")
     public static let settingsAutoClearDuckAIChatsTitle = NSLocalizedString("settings.autoclear.duckai.chats.title", value: "Duck.ai Chats", comment: "Title for the Duck.ai chats option in auto clear settings")
     public static let settingsAutoClearDuckAIChatsSubtitle = NSLocalizedString("settings.autoclear.duckai.chats.subtitle", value: "Delete all chats, including pinned chats", comment: "Subtitle explaining what the Duck.ai chats option does in auto clear settings")
+
+    // MARK: Scoped Fire Data Clearing Settings
+
+    public static let settingsDeleteDuckAIChats = NSLocalizedString("settings.delete.duckai.chats", value: "Delete Duck.ai Chats", comment: "Settings screen cell text for option to delete Duck.ai chats when using scoped fire")
+    public static let settingsAutomaticallyDeleteData = NSLocalizedString("settings.automatically.delete.data", value: "Automatically Delete Data", comment: "Settings screen cell text for automatic data deletion option")
+    public static let settingsDeleteTabsAndData = NSLocalizedString("settings.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Settings screen cell text for option to delete tabs and data")
+    public static let settingsAutomaticDataClearingDeleteSectionTitle = NSLocalizedString("settings.automatic.data.clearing.delete.section.title", value: "DELETE", comment: "Section title in automatic data clearing settings")
     public static let settingsAutoClearTimingSectionHeader = NSLocalizedString("settings.autoclear.timing.section.header", value: "Desired Timing", comment: "Section header for the timing options in auto clear settings")
     public static let settingsAutoClearTimingAppExitOnly = NSLocalizedString("settings.autoclear.timing.app.exit.only", value: "App Exit Only", comment: "Timing option to clear data only on app exit")
     public static let settingsAutoClearTimingAppExitInactive5Min = NSLocalizedString("settings.autoclear.timing.app.exit.inactive.5min", value: "App Exit, Inactive for 5 Minutes", comment: "Timing option to clear data on app exit or after 5 minutes of inactivity")
@@ -1963,10 +1991,10 @@ public struct UserText {
 
     // MARK: - AI Chat Quick Actions
     public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize this Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
+    public static let aiChatQuickActionAttach = NSLocalizedString("duckai.quick.action.attach", value: "Attach Page Content", comment: "Title for the attach page content quick action chip in Duck.ai contextual sheet")
 
     // MARK: - AI Chat Context Chip
     public static let aiChatAttachPageContent = NSLocalizedString("duckai.attach.page.content", value: "Attach Page Content", comment: "Menu option to attach current page content to Duck.ai chat")
-    public static let aiChatContextChipSubtitle = NSLocalizedString("duckai.context.chip.subtitle", value: "Page Content", comment: "Subtitle shown on the context chip indicating page content is attached")
     public static let aiChatContextChipInfoFooter = NSLocalizedString("duckai.context.chip.info", value: "Sent with your message to Duck.ai", comment: "Info text shown below the context chip explaining that content will be sent with the message")
 
     // MARK: - AI Chat Contextual Onboarding

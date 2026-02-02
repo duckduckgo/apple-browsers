@@ -471,6 +471,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         pageContextProviderSet = true
     }
 
+    func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {
+        // No-op for testing
+    }
+
     func setDisplayMode(_ displayMode: AIChatDisplayMode) {
         lastDisplayModeSet = displayMode
     }

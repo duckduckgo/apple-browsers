@@ -2,6 +2,24 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d filă și datele aferente au fost șterse</string>
+			<key>few</key>
+			<string>%1$d file și datele aferente au fost șterse</string>
+			<key>other</key>
+			<string>%1$d file și datele aferente au fost șterse</string>
+		</dict>
+	</dict>
 	<key>fire.confirmation.data.subtitle.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -185,7 +203,7 @@ I-am blocat!
 	<key>omnibar.notification.trackers-blocked</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@trackers@</string>
+		<string>%1$#@trackers@</string>
 		<key>trackers</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -733,7 +751,7 @@ I-am blocat!
 	<key>tab.switcher.tracker.count.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%1$#@trackers@</string>
+		<string>%#@trackers@</string>
 		<key>trackers</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>

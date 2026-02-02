@@ -37,7 +37,7 @@ final class AIChatContextualQuickActionTests: XCTestCase {
     // MARK: - Prompt Tests
 
     func testSummarizePromptIsExpectedValue() {
-        XCTAssertEqual(AIChatContextualQuickAction.summarize.prompt, "summarize this page")
+        XCTAssertEqual(AIChatContextualQuickAction.summarize.prompt, "Summarize this page")
     }
 
     // MARK: - Icon Tests

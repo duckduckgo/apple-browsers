@@ -21,14 +21,6 @@ import Foundation
 import Networking
 import os.log
 
-public struct GetProductsItem: Codable, Equatable {
-    public let productId: String
-    public let productLabel: String
-    public let billingPeriod: String
-    public let price: String
-    public let currency: String
-}
-
 public struct GetCustomerPortalURLResponse: Codable, Equatable {
     public let customerPortalUrl: String
 }
@@ -36,10 +28,6 @@ public struct GetCustomerPortalURLResponse: Codable, Equatable {
 public struct ConfirmPurchaseResponse: Codable, Equatable {
     public let email: String?
     public let subscription: DuckDuckGoSubscription
-}
-
-public struct GetSubscriptionFeaturesResponse: Decodable {
-    public let features: [SubscriptionEntitlement]
 }
 
 public struct GetSubscriptionTierFeaturesResponse: Codable {
@@ -114,7 +102,6 @@ public protocol SubscriptionEndpointService {
     func getSubscription(accessToken: String?, cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription
     func getCachedSubscription() -> DuckDuckGoSubscription?
     func clearSubscription()
-    func getProducts() async throws -> [GetProductsItem]
 
     /// Fetches products using the new /api/v2/products endpoint with tier information.
     /// - Parameters:
@@ -122,7 +109,6 @@ public protocol SubscriptionEndpointService {
     ///   - platform: Optional platform filter ("apple", "stripe")
     /// - Returns: A response containing products with tier and entitlement information
     func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
-    func getSubscriptionFeatures(for subscriptionID: String) async throws -> GetSubscriptionFeaturesResponse
 
     /// Fetches subscription features for multiple SKUs in a single API call.
     /// This uses the new /api/v2/features endpoint that returns features with tier information.
@@ -201,7 +187,9 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
         var subscription = subscription
         // fetch remote features
         Logger.subscriptionEndpointService.log("Getting features for subscription: \(subscription.productId, privacy: .public)")
-        subscription.features = try await getSubscriptionFeatures(for: subscription.productId).features
+        let tierFeaturesResponse = try await getSubscriptionTierFeatures(for: [subscription.productId])
+        let tierFeatures = tierFeaturesResponse.features[subscription.productId] ?? []
+        subscription.features = tierFeatures.map { $0.product }
         Logger.subscriptionEndpointService.debug("""
 Subscription:
 Cached: \(cachedSubscription?.debugDescription ?? "nil", privacy: .public)
@@ -292,21 +280,6 @@ New: \(subscription.debugDescription, privacy: .public)
 
     // MARK: -
 
-    public func getProducts() async throws -> [GetProductsItem] {
-        guard let request = SubscriptionRequest.getProducts(baseURL: baseURL) else {
-            throw SubscriptionEndpointServiceError.invalidRequest
-        }
-        let response = try await apiService.fetch(request: request.apiRequest)
-        let statusCode = response.httpResponse.httpStatus
-
-        if statusCode.isSuccess {
-            Logger.subscriptionEndpointService.log("\(#function) request completed")
-            return try response.decodeBody()
-        } else {
-            throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
-        }
-    }
-
     public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
         guard let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, region: region, platform: platform) else {
             throw SubscriptionEndpointServiceError.invalidRequest
@@ -345,20 +318,6 @@ New: \(subscription.debugDescription, privacy: .public)
                                                                 accessToken: accessToken,
                                                                 signature: signature,
                                                                 additionalParams: additionalParams) else {
-            throw SubscriptionEndpointServiceError.invalidRequest
-        }
-        let response = try await apiService.fetch(request: request.apiRequest)
-        let statusCode = response.httpResponse.httpStatus
-        if statusCode.isSuccess {
-            Logger.subscriptionEndpointService.log("\(#function) request completed")
-            return try response.decodeBody()
-        } else {
-            throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
-        }
-    }
-
-    public func getSubscriptionFeatures(for subscriptionID: String) async throws -> GetSubscriptionFeaturesResponse {
-        guard let request = SubscriptionRequest.subscriptionFeatures(baseURL: baseURL, subscriptionID: subscriptionID) else {
             throw SubscriptionEndpointServiceError.invalidRequest
         }
         let response = try await apiService.fetch(request: request.apiRequest)

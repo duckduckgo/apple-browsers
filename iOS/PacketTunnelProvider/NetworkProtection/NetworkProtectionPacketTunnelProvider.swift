@@ -501,10 +501,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
     @MainActor
     @objc init() {
-#if DEBUG
-        Pixel.isDryRun = true
-#endif
-
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 
         let settings = VPNSettings(defaults: .networkProtectionGroupDefaults)
@@ -512,8 +508,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: VPNAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
         configurationManager.start()
         let privacyConfigurationManager = VPNPrivacyConfigurationManager.shared
-        // Load cached config (if any)
-        privacyConfigurationManager.reload(etag: configurationStore.loadEtag(for: .privacyConfiguration), data: configurationStore.loadData(for: .privacyConfiguration))
+        // Privacy configuration is loaded in loadProtectedResources() after the device is confirmed unlocked.
+        // Until then, embedded config is used as fallback.
 
         let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: privacyConfigurationManager.internalUserDecider,
@@ -675,6 +671,16 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         activationDateStore.updateLastActiveDate()
 
         VPNReloadStatusWidgets()
+    }
+
+    public override func loadProtectedResources() async {
+        // Load cached privacy configuration now that the device is confirmed unlocked.
+        // This is deferred from init() because the config file may be protected by iOS data protection
+        // and inaccessible when Connect on Demand starts the VPN before the user unlocks after reboot.
+        VPNPrivacyConfigurationManager.shared.reload(
+            etag: configurationStore.loadEtag(for: .privacyConfiguration),
+            data: configurationStore.loadData(for: .privacyConfiguration)
+        )
     }
 }
 

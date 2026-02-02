@@ -31,8 +31,14 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Отмени";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Включване на Синхронизиране и архивиране";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Създава криптирано резервно копие на Вашите отметки и данни за автоматично попълване на защитения сървър на DuckDuckGo, което може да бъде синхронизирано с други Ваши устройства.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Това създава криптирано резервно копие на твоите запазени отметки, пароли, кредитни карти и чатове с Duck.ai на защитения сървър на DuckDuckGo, което може да се синхронизира с другите ти устройства.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Ключът за криптиране се съхранява само на Вашето устройство и DuckDuckGo няма достъп до него.";
@@ -138,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Вашите отметки и данни за автоматично попълване се подготвят за синхронизиране. Това ще отнеме само няколко секунди.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Отметките, паролите и чатовете в Duck.ai се подготвят за синхронизиране. Това ще отнеме само няколко секунди.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Свързване…";
@@ -286,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Сигурно синхронизиране на отметките и паролите между отделни устройства.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Синхронизирай сигурно отметки, данни за автоматично попълване и чатове с Duck.ai между своите устройства.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Стартиране на синхронизиране";
 
@@ -300,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Изключване на синхронизиране и архивиране...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Отметките, данните за автоматично попълване и чатовете с Duck.ai в момента са синхронизирани на всички твои устройства.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Активирано синхронизиране";

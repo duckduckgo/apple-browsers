@@ -25,9 +25,11 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
 
     // MARK: - Constants
 
-    private enum Constants {
-        static let maxSuggestions = 5
-    }
+    public static let defaultMaxSuggestions = 5
+
+    // MARK: - Properties
+
+    public let maxSuggestions: Int
 
     // MARK: - Published Properties
 
@@ -59,7 +61,11 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    public init() {}
+    /// Creates a new suggestions view model.
+    /// - Parameter maxSuggestions: Maximum number of suggestions to display. Defaults to 5.
+    public init(maxSuggestions: Int = defaultMaxSuggestions) {
+        self.maxSuggestions = maxSuggestions
+    }
 
     // MARK: - Data Management
 
@@ -81,7 +87,7 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
         }
 
         // Limit to max suggestions
-        filteredSuggestions = Array(allChats.prefix(Constants.maxSuggestions))
+        filteredSuggestions = Array(allChats.prefix(maxSuggestions))
 
         // Reset selection if it's now out of bounds
         if let index = selectedIndex, index >= filteredSuggestions.count {

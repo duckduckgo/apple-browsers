@@ -31,8 +31,14 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "キャンセル";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "同期とバックアップをオンにする";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "これにより、ブックマークと自動入力データの暗号化されたバックアップがDuckDuckGoの安全なサーバー上に作成され、他のデバイスと同期できるようになります。";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "これにより、保存されたブックマーク、パスワード、クレジットカード、Duck.aiのチャットがDuckDuckGoの安全なサーバー上に暗号化バックアップとして作成され、他のデバイスと同期できるようになります。";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "暗号化キーはデバイスにのみ保存され、DuckDuckGoはアクセスできません。";
@@ -138,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "ブックマークと自動入力データの同期が準備中です。これにはほんの少し時間がかかります。";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "ブックマーク、パスワード、Duck.aiのチャットを同期する準備をしています。これにはほんの少し時間がかかります。";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "接続中...";
@@ -286,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "デバイス間でブックマークとパスワードを安全に同期します。";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "デバイス間で、ブックマーク、オートフィル データ、Duck.aiのチャットを安全に同期します。";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "同期を開始";
 
@@ -300,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Sync & Backupをオフにします...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "ブックマーク、自動入力データ、Duck.aiのチャットは、現在デバイス間で同期されています。";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "同期が有効";

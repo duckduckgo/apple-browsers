@@ -521,6 +521,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         // no-op, but can be overridden by subclasses
     }
 
+    /// Called after the token check passes on iOS, indicating that protected data is available.
+    open func loadProtectedResources() async {
+        // no-op, but can be overridden by subclasses
+    }
+
     private func loadKeyValidity(from options: StartupOptions) {
         switch options.vpnSettings {
         case .set(let settingsSnapshot):
@@ -673,6 +678,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             if (try? await tokenHandlerProvider.getToken()) == nil {
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: nil)
             }
+
+            // Load resources that require the device to be unlocked.
+            // At this point, the token check has passed, so protected data is available.
+            await loadProtectedResources()
 #endif
         } catch {
             if startupOptions.startupMethod == .automaticOnDemand {

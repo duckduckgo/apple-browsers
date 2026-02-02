@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "647406e99129be6828fb4e2db0fe47d22e8065e9",
-        "version" : "12.31.0"
+        "revision" : "ac7d2b45a396c008942630ff16bd5e426880880c",
+        "version" : "12.38.0"
       }
     },
     {
@@ -131,8 +131,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "b456fd404954a9e13f55aa0c88cd5a40b8399638",
-        "version" : "2.6.3"
+        "revision" : "5581748cef2bae787496fe6d61139aebe0a451f6",
+        "version" : "2.8.1"
       }
     },
     {

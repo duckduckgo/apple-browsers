@@ -31,8 +31,14 @@
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Otkaži";
 
+/* Connect With Server Sheet - Button */
+"connect.with.server.sheet.button" = "Uključi sinkronizaciju i sigurnosno kopiranje";
+
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Time se stvara šifrirana sigurnosna kopija tvojih oznaka i podataka za automatsko popunjavanje na sigurnom poslužitelju DuckDuckGo, koja se može sinkronizirati s tvojim drugim uređajima.";
+
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Time se stvara šifrirana sigurnosna kopija tvojih spremljenih oznaka, lozinki, kreditnih kartica i Duck.ai čavrljanja na sigurnom poslužitelju DuckDuckGo, koji se može sinkronizirati s tvojim drugim uređajima.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Ključ za šifriranje pohranjen je samo na tvom uređaju, DuckDuckGo mu ne može pristupiti.";
@@ -138,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Vaše oznake i podaci za automatsko popunjavanje pripremaju se za sinkronizaciju. Ovo bi trebalo trajati samo trenutak.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Tvoje oznake, lozinke i Duck.ai čavrljanja pripremaju se za sinkronizaciju. Ovo bi trebalo trajati samo trenutak.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Povezivanje u tijeku...";
@@ -286,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Sigurno sinkroniziraj oznake i lozinke između svojih uređaja.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Sigurno sinkroniziraj oznake, podatke za automatsko popunjavanje i Duck.ai čavrljanja između svojih uređaja.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Započni sinkronizaciju";
 
@@ -300,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Isključi sinkronizaciju i sigurnosno kopiranje...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Oznake, podaci za automatsko popunjavanje i Duck.ai čavrljanja trenutno su sinkronizirani na svim tvojim uređajima.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Sinkronizacija je omogućena";

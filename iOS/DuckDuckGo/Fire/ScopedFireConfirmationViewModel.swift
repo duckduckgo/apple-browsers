@@ -19,24 +19,46 @@
 
 import Foundation
 import Core
+import Persistence
 
 @MainActor
 final class ScopedFireConfirmationViewModel: ObservableObject {
+    
+    // MARK: - Constants
+    
+    private enum Keys {
+        static let signOutWarningShowCount = "com.duckduckgo.fire.signOutWarningShowCount"
+        static let aiTabDescriptionShowCount = "com.duckduckgo.fire.aiTabDescriptionShowCount"
+    }
+    
+    private static let maxSubtitleShowCount = 2
         
+    // MARK: - Published Properties
+    
+    /// The subtitle text to display. Computed once during initialization.
+    @Published private(set) var subtitle: String?
+    
     // MARK: - Private Variables
     
     private let onConfirm: (FireRequest) -> Void
     private let onCancel: () -> Void
     private let tabViewModel: TabViewModel?
+    private let downloadManager: DownloadManaging
+    private let keyValueStore: KeyValueStoring
     
     // MARK: - Initializer
     
     init(tabViewModel: TabViewModel?,
+         downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
+         keyValueStore: KeyValueStoring = UserDefaults.standard,
          onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
         self.tabViewModel = tabViewModel
+        self.downloadManager = downloadManager
+        self.keyValueStore = keyValueStore
         self.onConfirm = onConfirm
         self.onCancel = onCancel
+        self.subtitle = computeSubtitle()
     }
     
     // MARK: - Computed Variables
@@ -45,6 +67,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// Returns `true` when a tab view model is available.
     var canBurnSingleTab: Bool {
         tabViewModel != nil
+        // TODO: - Check if tab is legacy
     }
     
     // MARK: - Public Functions
@@ -64,5 +87,67 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     
     func cancel() {
         onCancel()
+    }
+    
+    // MARK: - Private Functions
+    
+    /// Computes the subtitle text for the confirmation dialog.
+    ///
+    /// The logic follows this priority:
+    /// 1. If there are ongoing downloads → show downloads warning
+    /// 2. If no tab view model → return nil (tab switcher/settings)
+    /// 3. If tab doesn't support tab history → show new tabs info
+    /// 4. For AI tabs → show AI-specific description (up to 2 times)
+    /// 5. For normal web tabs → show sign out warning (up to 2 times)
+    /// 6. Otherwise → return nil
+    private func computeSubtitle() -> String? {
+        // Check for ongoing downloads first
+        if hasOngoingDownloads() {
+            return UserText.scopedFireConfirmationDownloadsWarning
+        }
+        
+        // No subtitle for tab switcher and settings
+        guard let tabViewModel else {
+            return nil
+        }
+        
+        // If tab doesn't support burning, show new tabs info
+        guard tabViewModel.tab.supportsTabHistory else {
+            return UserText.scopedFireConfirmationNewTabsInfo
+        }
+        
+        // Check tab type and show count
+        if tabViewModel.tab.isAITab {
+            return aiTabSubtitle()
+        } else {
+            return webTabSubtitle()
+        }
+    }
+    
+    private func hasOngoingDownloads() -> Bool {
+        let ongoingDownloads = downloadManager.downloadList.filter { $0.isRunning && !$0.temporary }
+        return !ongoingDownloads.isEmpty
+    }
+    
+    private func webTabSubtitle() -> String? {
+        let showCount = keyValueStore.object(forKey: Keys.signOutWarningShowCount) as? Int ?? 0
+        
+        guard showCount < Self.maxSubtitleShowCount else {
+            return nil
+        }
+        
+        keyValueStore.set(showCount + 1, forKey: Keys.signOutWarningShowCount)
+        return UserText.scopedFireConfirmationSignOutWarning
+    }
+    
+    private func aiTabSubtitle() -> String? {
+        let showCount = keyValueStore.object(forKey: Keys.aiTabDescriptionShowCount) as? Int ?? 0
+        
+        guard showCount < Self.maxSubtitleShowCount else {
+            return nil
+        }
+        
+        keyValueStore.set(showCount + 1, forKey: Keys.aiTabDescriptionShowCount)
+        return UserText.scopedFireConfirmationDeleteThisTabDescription
     }
 }

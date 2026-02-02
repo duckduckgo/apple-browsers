@@ -146,11 +146,11 @@ extension TabViewController {
     
     func buildAITabMenu(useSmallIcon: Bool = true,
                         includeSettings: Bool = true,
-                        separateUtililtyItems: Bool = false,
+                        separateUtilityItems: Bool = false,
                         useDetailTextForZoom: Bool = false) -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
         
-        entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon, addPrint: !separateUtililtyItems, useDetailTextForZoom: useDetailTextForZoom))
+        entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon, addPrint: !separateUtilityItems, useDetailTextForZoom: useDetailTextForZoom))
 
         entries.append(.separator)
         
@@ -164,7 +164,7 @@ extension TabViewController {
         
         entries.append(buildAIChatSidebarEntry(useSmallIcon: useSmallIcon))
 
-        if separateUtililtyItems {
+        if separateUtilityItems {
             entries.append(.separator)
             entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
         }
@@ -834,7 +834,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeAITabMenu() -> [BrowsingMenuEntry] {
-        buildAITabMenu(useSmallIcon: false, includeSettings: false, separateUtililtyItems: true, useDetailTextForZoom: true)
+        buildAITabMenu(useSmallIcon: false, includeSettings: false, separateUtilityItems: true, useDetailTextForZoom: true)
     }
     
     func makeAITabMenuHeaderContent() -> [BrowsingMenuEntry] {

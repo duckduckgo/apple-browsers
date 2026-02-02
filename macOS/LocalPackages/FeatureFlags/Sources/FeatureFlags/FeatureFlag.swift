@@ -400,8 +400,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .heuristicAction,
                 .nextStepsListWidget,
                 .wideEventPostEndpoint,
-                .nextStepsSingleCardIteration,
-                .wideEventPostEndpoint,
                 .freeTrialConversionWideEvent:
             return true
         case .freemiumDBP,

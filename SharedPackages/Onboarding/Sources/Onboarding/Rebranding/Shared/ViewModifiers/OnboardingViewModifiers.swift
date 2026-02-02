@@ -26,12 +26,23 @@ private struct OnboardingDismissButtonViewModifier: ViewModifier {
     let onDismiss: () -> Void
 
     func body(content: Content) -> some View {
-        content
-            .overlay(alignment: .topTrailing) {
-                OnboardingBubbleDismissButton(action: onDismiss)
-                    .alignmentGuide(VerticalAlignment.top) { _ in onboardingTheme.dismissButtonMetrics.contentPadding + onboardingTheme.dismissButtonMetrics.offsetRelativeToBubble.y }
-                    .alignmentGuide(HorizontalAlignment.trailing) { $0.width - onboardingTheme.dismissButtonMetrics.contentPadding - onboardingTheme.dismissButtonMetrics.offsetRelativeToBubble.x }
+        if #available(iOS 15.0, macOS 12.0, *) {
+            content
+                .overlay(alignment: .topTrailing) {
+                    dismissButton
+                }
+        } else {
+            ZStack(alignment: .topTrailing) {
+                content
+                dismissButton
             }
+        }
+    }
+
+    private var dismissButton: some View {
+        OnboardingBubbleDismissButton(action: onDismiss)
+            .alignmentGuide(VerticalAlignment.top) { _ in onboardingTheme.dismissButtonMetrics.contentPadding + onboardingTheme.dismissButtonMetrics.offsetRelativeToBubble.y }
+            .alignmentGuide(HorizontalAlignment.trailing) { $0.width - onboardingTheme.dismissButtonMetrics.contentPadding - onboardingTheme.dismissButtonMetrics.offsetRelativeToBubble.x }
     }
 }
 

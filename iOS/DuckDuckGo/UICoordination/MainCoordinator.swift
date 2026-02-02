@@ -222,7 +222,9 @@ final class MainCoordinator {
             controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
             controller.setWebExtensionManager(webExtensionManager)
             Task { @MainActor in
-                await webExtensionManager.loadInstalledExtensions()
+                // FIXME: Currently loading installed extensions does not work on iOS do to absolute paths being unstable
+                webExtensionManager.uninstallAllExtensions()
+//                await webExtensionManager.loadInstalledExtensions()
             }
         } else {
             self.webExtensionManager = nil

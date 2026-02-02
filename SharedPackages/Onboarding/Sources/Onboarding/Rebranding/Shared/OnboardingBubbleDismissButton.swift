@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct OnboardingBubbleDismissButton: View {
     @Environment(\.onboardingTheme) private var onboardingTheme
@@ -25,7 +26,11 @@ struct OnboardingBubbleDismissButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(.close16)
+            #if os(iOS)
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
+            #elseif os(macOS)
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+            #endif
         }
         .buttonStyle(onboardingTheme.dismissButtonStyle.style)
     }

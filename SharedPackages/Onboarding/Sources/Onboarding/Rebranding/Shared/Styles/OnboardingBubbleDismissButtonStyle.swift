@@ -24,11 +24,13 @@ struct OnboardingBubbleDismissButtonStyle: ButtonStyle {
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
             .padding(onboardingTheme.dismissButtonMetrics.contentPadding)
-            .background(onboardingTheme.colorPalette.bubbleBackground, in: Circle())
-            .overlay {
+            .background(
+                Circle().fill(onboardingTheme.colorPalette.bubbleBackground)
+            )
+            .overlay(
                 Circle()
                     .stroke(onboardingTheme.colorPalette.bubbleBorder, lineWidth: onboardingTheme.bubbleMetrics.borderWidth)
-            }
+            )
             .frame(
                 width: onboardingTheme.dismissButtonMetrics.buttonSize.width,
                 height: onboardingTheme.dismissButtonMetrics.buttonSize.height

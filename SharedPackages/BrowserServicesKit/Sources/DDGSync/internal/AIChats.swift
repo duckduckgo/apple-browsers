@@ -58,10 +58,8 @@ public final class AIChats: AIChatsHandling {
     public func delete(chatIds: [String], token: String) async throws {
         guard !chatIds.isEmpty else { return }
 
-        let deletedTimestamp = dateFormatter.string(from: Date())
-
         let updates: [[String: String]] = chatIds.map { chatId in
-            ["id": chatId, "deleted": deletedTimestamp]
+            ["id": chatId, "deleted": "true"]
         }
 
         let jsonData = try JSONSerialization.data(withJSONObject: updates)

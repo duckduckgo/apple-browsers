@@ -6,6 +6,12 @@ defaults:
 
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      branch:
+        description: "Branch name"
+        required: false
+        type: string
   schedule:
     - cron: '0 5 * * *' # run at 5 AM UTC
   push:

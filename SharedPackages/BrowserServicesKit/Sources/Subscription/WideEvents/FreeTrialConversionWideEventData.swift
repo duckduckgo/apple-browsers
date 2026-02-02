@@ -86,9 +86,6 @@ public class FreeTrialConversionWideEventData: WideEventData {
     }
 }
 
-// MARK: - Types
-
-
 // MARK: - Update Helpers
 
 extension FreeTrialConversionWideEventData {
